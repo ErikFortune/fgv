@@ -34,11 +34,11 @@ import {
   FillingName,
   FillingVersionSpec,
   SourceId
-} from '../common';
-import { IFillingRecipe } from '../entities';
-import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from './model';
+} from '../../common';
+import { IFillingRecipe } from '../../entities';
+import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from '../model';
 import { RuntimeVersion } from './runtimeVersion';
-import { AnyRuntimeIngredient } from './ingredients';
+import { AnyRuntimeIngredient } from '../ingredients';
 
 // Specialize the context interface with concrete ingredient type
 type RecipeContext = IVersionContext<AnyRuntimeIngredient>;

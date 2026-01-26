@@ -58,7 +58,7 @@ All available coating ingredient options
 </td></tr>
 <tr><td>
 
-[preferredId?](./ts-chocolate.runtime.iresolvedcoatings.preferredid.md)
+[preferred?](./ts-chocolate.runtime.iresolvedcoatings.preferred.md)
 
 
 </td><td>
@@ -68,12 +68,33 @@ All available coating ingredient options
 
 </td><td>
 
-[IngredientId](./ts-chocolate.ingredientid.md)
+[IResolvedCoatingOption](./ts-chocolate.runtime.iresolvedcoatingoption.md)
 
 
 </td><td>
 
-_(Optional)_ The preferred/default coating ID
+_(Optional)_ The preferred/default coating (resolved ingredient)
+
+
+</td></tr>
+<tr><td>
+
+[raw](./ts-chocolate.runtime.iresolvedcoatings.raw.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ICoatings
+
+
+</td><td>
+
+The original raw coatings spec
 
 
 </td></tr>

@@ -43,22 +43,36 @@ import {
   SourceId
 } from '../../../../packlets/common';
 import {
+  IAdditionalChocolate,
   IChocolateIngredient,
+  IChocolateSpec,
+  ICoatings,
+  IConfectionMoldRef,
   IFillingRecipe,
+  IFillingSlot,
   IGanacheCharacteristics,
   IMold,
   IMoldedBonBon,
   IBarTruffle,
   IProcedure,
+  IProcedureRef,
   IRolledTruffle,
   Ingredient
 } from '../../../../packlets/entities';
+import { IOptionsWithPreferred } from '../../../../packlets/common';
 import {
   RuntimeMoldedBonBon,
   RuntimeBarTruffle,
   RuntimeRolledTruffle,
   IConfectionContext,
+  IResolvedAdditionalChocolate,
+  IResolvedChocolateSpec,
+  IResolvedCoatings,
+  IResolvedConfectionMoldRef,
+  IResolvedConfectionProcedure,
+  IResolvedFillingSlot,
   IRuntimeAlcoholIngredient,
+  IRuntimeConfection,
   IRuntimeDairyIngredient,
   IRuntimeFatIngredient,
   IRuntimeFillingRecipe,
@@ -231,7 +245,114 @@ describe('ConfectionEditingSession', () => {
       if (id === 'common.molded-bonbon-double-shell')
         return succeed(mockProcedure(id, 'Double Shell Molded Bonbon'));
       return succeed(mockProcedure(id, `Mock ${id}`));
-    })
+    }),
+    getRuntimeConfection: jest.fn((id: ConfectionId) => {
+      // Return a minimal mock confection for parent navigation
+      return succeed({
+        id,
+        name: 'Mock Confection'
+      } as unknown as IRuntimeConfection);
+    }),
+    // Resolution helpers - delegate to the mock getRuntime* methods
+    resolveChocolateSpec: jest.fn(
+      (spec: IChocolateSpec, _confectionId: ConfectionId): IResolvedChocolateSpec => {
+        const primaryId = spec.preferredId ?? spec.ids[0];
+        const chocolate = mockContext.getRuntimeIngredient(primaryId).value as IRuntimeChocolateIngredient;
+        return {
+          chocolate,
+          alternates: [],
+          raw: spec
+        };
+      }
+    ),
+    resolveCoatings: jest.fn((coatings: ICoatings): IResolvedCoatings => {
+      const options = coatings.ids.map((id) => ({
+        id,
+        ingredient: mockContext.getRuntimeIngredient(id).value!
+      }));
+      const preferredId = coatings.preferredId ?? coatings.ids[0];
+      return {
+        options,
+        preferred: options.find((opt) => opt.id === preferredId),
+        raw: coatings
+      };
+    }),
+    resolveMoldRefs: jest.fn(
+      (
+        molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+      ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> => {
+        const options = molds.options.map((ref) => ({
+          id: ref.id,
+          mold: mockContext.getRuntimeMold(ref.id).value!,
+          notes: ref.notes,
+          raw: ref
+        }));
+        return {
+          options,
+          preferredId: molds.preferredId
+        };
+      }
+    ),
+    resolveAdditionalChocolates: jest.fn(
+      (
+        additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+        confectionId: ConfectionId
+      ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined => {
+        if (!additional || additional.length === 0) return undefined;
+        return additional.map((item) => ({
+          chocolate: mockContext.resolveChocolateSpec(item.chocolate, confectionId),
+          purpose: item.purpose,
+          raw: item
+        }));
+      }
+    ),
+    resolveFillingSlots: jest.fn(
+      (slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined => {
+        if (!slots || slots.length === 0) return undefined;
+        return slots.map((slot) => ({
+          slotId: slot.slotId,
+          name: slot.name,
+          filling: {
+            options: slot.filling.options.map((opt) => {
+              if (opt.type === 'recipe') {
+                return {
+                  type: 'recipe' as const,
+                  id: opt.id,
+                  filling: mockContext.getRuntimeFilling(opt.id).value!,
+                  notes: opt.notes,
+                  raw: opt
+                };
+              }
+              return {
+                type: 'ingredient' as const,
+                id: opt.id,
+                ingredient: mockContext.getRuntimeIngredient(opt.id).value!,
+                notes: opt.notes,
+                raw: opt
+              };
+            }),
+            preferredId: slot.filling.preferredId
+          }
+        }));
+      }
+    ),
+    resolveProcedures: jest.fn(
+      (
+        procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+      ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined => {
+        if (!procedures || procedures.options.length === 0) return undefined;
+        const options = procedures.options.map((ref) => ({
+          id: ref.id,
+          procedure: mockContext.getRuntimeProcedure(ref.id).value!,
+          notes: ref.notes,
+          raw: ref
+        }));
+        return {
+          options,
+          preferredId: procedures.preferredId
+        };
+      }
+    )
   };
 
   const moldedBonBonData: IMoldedBonBon = {

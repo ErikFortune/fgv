@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeConfectionBase.versions property
 
-All versions
+All versions - resolved. Resolved lazily on first access.
 
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<AnyConfectionVersion>;
+get versions(): ReadonlyArray<AnyRuntimeConfectionVersion>;
 ```

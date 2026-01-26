@@ -59,7 +59,7 @@ ReadonlyArray&lt;[IResolvedAdditionalChocolate](./ts-chocolate.runtime.iresolved
 
 </td><td>
 
-Resolved additional chocolates (from golden version, lazy-loaded)
+Resolved additional chocolates (from golden version).
 
 
 </td></tr>
@@ -101,7 +101,7 @@ ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillings
 
 </td><td>
 
-Resolved filling slots from the golden version (lazy-loaded)
+Resolved filling slots from the golden version.
 
 
 </td></tr>
@@ -117,12 +117,12 @@ Resolved filling slots from the golden version (lazy-loaded)
 
 </td><td>
 
-IMoldedBonBonVersion
+[IRuntimeMoldedBonBonVersion](./ts-chocolate.runtime.iruntimemoldedbonbonversion.md)
 
 
 </td><td>
 
-Golden version typed as IMoldedBonBonVersion
+Golden version typed as IRuntimeMoldedBonBonVersion.
 
 
 </td></tr>
@@ -143,7 +143,7 @@ Golden version typed as IMoldedBonBonVersion
 
 </td><td>
 
-Resolved molds with preferred selection (from golden version, lazy-loaded)
+Resolved molds with preferred selection (from golden version).
 
 
 </td></tr>
@@ -164,7 +164,7 @@ Resolved molds with preferred selection (from golden version, lazy-loaded)
 
 </td><td>
 
-Resolved procedures from the golden version (lazy-loaded)
+Resolved procedures from the golden version.
 
 
 </td></tr>
@@ -206,7 +206,7 @@ Gets the underlying raw molded bonbon data
 
 </td><td>
 
-Resolved shell chocolate specification (from golden version, lazy-loaded)
+Resolved shell chocolate specification (from golden version).
 
 
 </td></tr>
@@ -222,12 +222,12 @@ Resolved shell chocolate specification (from golden version, lazy-loaded)
 
 </td><td>
 
-ReadonlyArray&lt;IMoldedBonBonVersion&gt;
+ReadonlyArray&lt;[IRuntimeMoldedBonBonVersion](./ts-chocolate.runtime.iruntimemoldedbonbonversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions typed as IMoldedBonBonVersion
+All versions typed as IRuntimeMoldedBonBonVersion.
 
 
 </td></tr>
@@ -264,6 +264,20 @@ Description
 </td><td>
 
 Factory method for creating a RuntimeMoldedBonBon.
+
+
+</td></tr>
+<tr><td>
+
+[getVersion(versionSpec)](./ts-chocolate.runtime.runtimemoldedbonbon.getversion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a specific version by version specifier.
 
 
 </td></tr>

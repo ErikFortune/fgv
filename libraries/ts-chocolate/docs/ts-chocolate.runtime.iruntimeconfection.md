@@ -196,12 +196,12 @@ _(Optional)_ Resolved filling slots from the golden version
 
 </td><td>
 
-AnyConfectionVersion
+[AnyRuntimeConfectionVersion](./ts-chocolate.runtime.anyruntimeconfectionversion.md)
 
 
 </td><td>
 
-The golden (default) version.
+The golden (default) version - resolved.
 
 
 </td></tr>
@@ -385,12 +385,12 @@ _(Optional)_ Base URLs (version may add more)
 
 </td><td>
 
-ReadonlyArray&lt;AnyConfectionVersion&gt;
+ReadonlyArray&lt;[AnyRuntimeConfectionVersion](./ts-chocolate.runtime.anyruntimeconfectionversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions.
+All versions - resolved.
 
 
 </td></tr>

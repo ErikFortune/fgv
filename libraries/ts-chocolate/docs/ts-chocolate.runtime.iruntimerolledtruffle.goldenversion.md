@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeRolledTruffle.goldenVersion property
 
-Golden version typed as IRolledTruffleVersion
+Golden version typed as IRuntimeRolledTruffleVersion
 
 **Signature:**
 
 ```typescript
-readonly goldenVersion: IRolledTruffleVersion;
+readonly goldenVersion: IRuntimeRolledTruffleVersion;
 ```

@@ -92,9 +92,11 @@ import {
   IBarTruffleVersion,
   IBonBonDimensions,
   IChocolateSpec,
+  ICoatings,
   IConfectionDecoration,
   IConfectionMoldRef,
   IConfectionYield,
+  IFillingSlot,
   IFrameDimensions,
   IIngredientFillingOption,
   IMoldedBonBon,
@@ -1274,21 +1276,21 @@ export interface IRuntimeConfection {
   // ---- Version navigation ----
 
   /**
-   * The golden (default) version.
+   * The golden (default) version - resolved.
    */
-  readonly goldenVersion: AnyConfectionVersion;
+  readonly goldenVersion: AnyRuntimeConfectionVersion;
 
   /**
-   * All versions.
+   * All versions - resolved.
    */
-  readonly versions: ReadonlyArray<AnyConfectionVersion>;
+  readonly versions: ReadonlyArray<AnyRuntimeConfectionVersion>;
 
   /**
    * Gets a specific version by version specifier.
    * @param versionSpec - The version specifier to find
-   * @returns Success with version, or Failure if not found
+   * @returns Success with runtime version, or Failure if not found
    */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+  getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
 
   // ---- Effective tags/urls (merged from base + version) ----
 
@@ -1364,11 +1366,14 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   /** Type is always 'molded-bonbon' for this confection */
   readonly confectionType: 'molded-bonbon';
 
-  /** Golden version typed as IMoldedBonBonVersion */
-  readonly goldenVersion: IMoldedBonBonVersion;
+  /** Golden version typed as IRuntimeMoldedBonBonVersion */
+  readonly goldenVersion: IRuntimeMoldedBonBonVersion;
 
-  /** All versions typed as IMoldedBonBonVersion */
-  readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
+  /** All versions typed as IRuntimeMoldedBonBonVersion */
+  readonly versions: ReadonlyArray<IRuntimeMoldedBonBonVersion>;
+
+  /** Gets a specific version - returns typed version */
+  getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
 
   /** Resolved molds with preferred selection (from golden version) */
   readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
@@ -1391,11 +1396,14 @@ export interface IRuntimeBarTruffle extends IRuntimeConfection {
   /** Type is always 'bar-truffle' for this confection */
   readonly confectionType: 'bar-truffle';
 
-  /** Golden version typed as IBarTruffleVersion */
-  readonly goldenVersion: IBarTruffleVersion;
+  /** Golden version typed as IRuntimeBarTruffleVersion */
+  readonly goldenVersion: IRuntimeBarTruffleVersion;
 
-  /** All versions typed as IBarTruffleVersion */
-  readonly versions: ReadonlyArray<IBarTruffleVersion>;
+  /** All versions typed as IRuntimeBarTruffleVersion */
+  readonly versions: ReadonlyArray<IRuntimeBarTruffleVersion>;
+
+  /** Gets a specific version - returns typed version */
+  getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion>;
 
   /** Frame dimensions from the golden version */
   readonly frameDimensions: IFrameDimensions;
@@ -1418,11 +1426,14 @@ export interface IRuntimeRolledTruffle extends IRuntimeConfection {
   /** Type is always 'rolled-truffle' for this confection */
   readonly confectionType: 'rolled-truffle';
 
-  /** Golden version typed as IRolledTruffleVersion */
-  readonly goldenVersion: IRolledTruffleVersion;
+  /** Golden version typed as IRuntimeRolledTruffleVersion */
+  readonly goldenVersion: IRuntimeRolledTruffleVersion;
 
-  /** All versions typed as IRolledTruffleVersion */
-  readonly versions: ReadonlyArray<IRolledTruffleVersion>;
+  /** All versions typed as IRuntimeRolledTruffleVersion */
+  readonly versions: ReadonlyArray<IRuntimeRolledTruffleVersion>;
+
+  /** Gets a specific version - returns typed version */
+  getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion>;
 
   /** Resolved enrobing chocolate (from golden version, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
@@ -1570,8 +1581,10 @@ export interface IResolvedConfectionProcedure {
 export interface IResolvedCoatings {
   /** All available coating ingredient options */
   readonly options: ReadonlyArray<IResolvedCoatingOption>;
-  /** The preferred/default coating ID */
-  readonly preferredId?: IngredientId;
+  /** The preferred/default coating (resolved ingredient) */
+  readonly preferred?: IResolvedCoatingOption;
+  /** The original raw coatings spec */
+  readonly raw: ICoatings;
 }
 
 /**
@@ -1588,12 +1601,188 @@ export interface IResolvedCoatingOption {
 }
 
 // ============================================================================
+// Runtime Confection Version Interfaces
+// ============================================================================
+
+/**
+ * A resolved runtime view of a confection version with resolved references.
+ *
+ * This interface provides runtime-layer access to version data with:
+ * - Parent confection reference (ID and resolved object)
+ * - Resolved filling slots and procedures
+ * - Effective tags/urls (merged from base confection + version)
+ * - Raw access to underlying version data
+ *
+ * @public
+ */
+export interface IRuntimeConfectionVersionBase {
+  // ---- Identity ----
+
+  /**
+   * Version specifier for this version.
+   */
+  readonly versionSpec: ConfectionVersionSpec;
+
+  /**
+   * Date this version was created (ISO 8601 format).
+   */
+  readonly createdDate: string;
+
+  /**
+   * The parent confection ID.
+   */
+  readonly confectionId: ConfectionId;
+
+  /**
+   * The parent confection - resolved.
+   * Enables navigation: `version.confection.name`
+   */
+  readonly confection: IRuntimeConfection;
+
+  // ---- Version Properties ----
+
+  /**
+   * Yield specification for this version.
+   */
+  readonly yield: IConfectionYield;
+
+  /**
+   * Optional decorations for this version.
+   */
+  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+
+  /**
+   * Optional notes about this version.
+   */
+  readonly notes?: string;
+
+  // ---- Resolved References ----
+
+  /**
+   * Resolved filling slots for this version.
+   * Undefined if the version has no fillings.
+   */
+  readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
+
+  /**
+   * Resolved procedures for this version.
+   * Undefined if the version has no procedures.
+   */
+  readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+
+  // ---- Effective Tags/URLs ----
+
+  /**
+   * Effective tags for this version (base confection tags + version's additional tags).
+   */
+  readonly effectiveTags: ReadonlyArray<string>;
+
+  /**
+   * Effective URLs for this version (base confection URLs + version's additional URLs).
+   */
+  readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+
+  // ---- Type Guards ----
+
+  /**
+   * Returns true if this is a molded bonbon version.
+   */
+  isMoldedBonBonVersion(): this is IRuntimeMoldedBonBonVersion;
+
+  /**
+   * Returns true if this is a bar truffle version.
+   */
+  isBarTruffleVersion(): this is IRuntimeBarTruffleVersion;
+
+  /**
+   * Returns true if this is a rolled truffle version.
+   */
+  isRolledTruffleVersion(): this is IRuntimeRolledTruffleVersion;
+
+  // ---- Raw access ----
+
+  /**
+   * Gets the underlying raw version data.
+   */
+  readonly raw: AnyConfectionVersion;
+}
+
+/**
+ * Runtime confection version narrowed to molded bonbon type.
+ * @public
+ */
+export interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBase {
+  /** Parent confection narrowed to molded bonbon type */
+  readonly confection: IRuntimeMoldedBonBon;
+
+  /** Resolved molds with preferred selection */
+  readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+
+  /** Resolved shell chocolate specification */
+  readonly shellChocolate: IResolvedChocolateSpec;
+
+  /** Resolved additional chocolates (optional) */
+  readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
+
+  /** Raw version typed to IMoldedBonBonVersion */
+  readonly raw: IMoldedBonBonVersion;
+}
+
+/**
+ * Runtime confection version narrowed to bar truffle type.
+ * @public
+ */
+export interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase {
+  /** Parent confection narrowed to bar truffle type */
+  readonly confection: IRuntimeBarTruffle;
+
+  /** Frame dimensions for ganache slab */
+  readonly frameDimensions: IFrameDimensions;
+
+  /** Single bonbon dimensions for cutting */
+  readonly singleBonBonDimensions: IBonBonDimensions;
+
+  /** Resolved enrobing chocolate specification (optional) */
+  readonly enrobingChocolate?: IResolvedChocolateSpec;
+
+  /** Raw version typed to IBarTruffleVersion */
+  readonly raw: IBarTruffleVersion;
+}
+
+/**
+ * Runtime confection version narrowed to rolled truffle type.
+ * @public
+ */
+export interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionBase {
+  /** Parent confection narrowed to rolled truffle type */
+  readonly confection: IRuntimeRolledTruffle;
+
+  /** Resolved enrobing chocolate specification (optional) */
+  readonly enrobingChocolate?: IResolvedChocolateSpec;
+
+  /** Resolved coatings (optional) */
+  readonly coatings?: IResolvedCoatings;
+
+  /** Raw version typed to IRolledTruffleVersion */
+  readonly raw: IRolledTruffleVersion;
+}
+
+/**
+ * Union type for all runtime confection version types.
+ * @public
+ */
+export type AnyRuntimeConfectionVersion =
+  | IRuntimeMoldedBonBonVersion
+  | IRuntimeBarTruffleVersion
+  | IRuntimeRolledTruffleVersion;
+
+// ============================================================================
 // Confection Context Interface
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeConfection.
- * Provides what a confection needs for resolution.
+ * Minimal context interface for RuntimeConfection and RuntimeConfectionVersion.
+ * Provides what a confection and its versions need for resolution.
  * @internal
  */
 export interface IConfectionContext {
@@ -1620,4 +1809,67 @@ export interface IConfectionContext {
    * Used for resolving procedure references.
    */
   getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
+
+  /**
+   * Gets a runtime confection by ID.
+   * Used for parent navigation from versions.
+   */
+  getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
+
+  // ============================================================================
+  // Resolution Helpers
+  // ============================================================================
+
+  /**
+   * Resolves a chocolate specification to runtime ingredient objects.
+   * @param spec - The raw chocolate specification
+   * @param confectionId - The confection ID (for error messages)
+   * @returns Resolved chocolate specification with primary chocolate + alternates
+   */
+  resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+
+  /**
+   * Resolves coating specifications to runtime ingredient objects.
+   * @param coatings - The raw coatings specification
+   * @returns Resolved coatings specification
+   */
+  resolveCoatings(coatings: ICoatings): IResolvedCoatings;
+
+  /**
+   * Resolves mold references to runtime mold objects.
+   * @param molds - The raw mold references with preferred selection
+   * @returns Resolved mold references
+   */
+  resolveMoldRefs(
+    molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+  ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+
+  /**
+   * Resolves additional chocolates to runtime objects.
+   * @param additional - The raw additional chocolates
+   * @param confectionId - The confection ID (for error messages)
+   * @returns Resolved additional chocolates, or undefined if none
+   */
+  resolveAdditionalChocolates(
+    additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+    confectionId: ConfectionId
+  ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+
+  /**
+   * Resolves filling slots to runtime objects.
+   * @param slots - The raw filling slots
+   * @returns Resolved filling slots, or undefined if none
+   */
+  resolveFillingSlots(
+    slots: ReadonlyArray<IFillingSlot> | undefined
+  ): ReadonlyArray<IResolvedFillingSlot> | undefined;
+
+  /**
+   * Resolves procedure references to runtime objects.
+   * @param procedures - The raw procedure references
+   * @returns Resolved procedures, or undefined if none
+   */
+  resolveProcedures(
+    procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+  ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }

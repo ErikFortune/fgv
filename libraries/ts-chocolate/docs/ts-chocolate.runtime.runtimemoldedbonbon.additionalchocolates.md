@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeMoldedBonBon.additionalChocolates property
 
-Resolved additional chocolates (from golden version, lazy-loaded)
+Resolved additional chocolates (from golden version).
 
 **Signature:**
 

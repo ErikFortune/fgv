@@ -567,6 +567,90 @@ Invalidates all indexer caches. Call this when underlying library data changes.
 </td></tr>
 <tr><td>
 
+[resolveAdditionalChocolates(additional, confectionId)](./ts-chocolate.runtime.runtimecontext.resolveadditionalchocolates.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves additional chocolates to runtime objects.
+
+
+</td></tr>
+<tr><td>
+
+[resolveChocolateSpec(spec, confectionId)](./ts-chocolate.runtime.runtimecontext.resolvechocolatespec.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves a chocolate specification to runtime ingredient objects.
+
+
+</td></tr>
+<tr><td>
+
+[resolveCoatings(coatings)](./ts-chocolate.runtime.runtimecontext.resolvecoatings.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves coating specifications to runtime ingredient objects.
+
+
+</td></tr>
+<tr><td>
+
+[resolveFillingSlots(slots)](./ts-chocolate.runtime.runtimecontext.resolvefillingslots.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves filling slots to runtime objects.
+
+
+</td></tr>
+<tr><td>
+
+[resolveMoldRefs(molds)](./ts-chocolate.runtime.runtimecontext.resolvemoldrefs.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves mold references to runtime mold objects.
+
+
+</td></tr>
+<tr><td>
+
+[resolveProcedures(procedures)](./ts-chocolate.runtime.runtimecontext.resolveprocedures.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Resolves procedure references to runtime objects.
+
+
+</td></tr>
+<tr><td>
+
 [warmUp()](./ts-chocolate.runtime.runtimecontext.warmup.md)
 
 

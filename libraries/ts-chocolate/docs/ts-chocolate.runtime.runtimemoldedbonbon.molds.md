@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeMoldedBonBon.molds property
 
-Resolved molds with preferred selection (from golden version, lazy-loaded)
+Resolved molds with preferred selection (from golden version).
 
 **Signature:**
 

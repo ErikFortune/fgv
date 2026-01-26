@@ -90,12 +90,12 @@ Type is always 'molded-bonbon' for this confection
 
 </td><td>
 
-IMoldedBonBonVersion
+[IRuntimeMoldedBonBonVersion](./ts-chocolate.runtime.iruntimemoldedbonbonversion.md)
 
 
 </td><td>
 
-Golden version typed as IMoldedBonBonVersion
+Golden version typed as IRuntimeMoldedBonBonVersion
 
 
 </td></tr>
@@ -174,12 +174,38 @@ Resolved shell chocolate specification (from golden version)
 
 </td><td>
 
-ReadonlyArray&lt;IMoldedBonBonVersion&gt;
+ReadonlyArray&lt;[IRuntimeMoldedBonBonVersion](./ts-chocolate.runtime.iruntimemoldedbonbonversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions typed as IMoldedBonBonVersion
+All versions typed as IRuntimeMoldedBonBonVersion
+
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getVersion(versionSpec)](./ts-chocolate.runtime.iruntimemoldedbonbon.getversion.md)
+
+
+</td><td>
+
+Gets a specific version - returns typed version
 
 
 </td></tr>

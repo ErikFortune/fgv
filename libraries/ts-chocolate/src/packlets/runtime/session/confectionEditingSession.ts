@@ -702,8 +702,9 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return;
     }
 
-    // coatings is now resolved - use preferredId or first option
-    const ingredientId = coatings.preferredId ?? coatings.options[0]?.id;
+    // coatings is now resolved - use preferred option or first option
+    /* c8 ignore next - branch: fallback to first option if preferred ingredient missing from library */
+    const ingredientId = coatings.preferred?.id ?? coatings.options[0]?.id;
 
     if (ingredientId) {
       this._coating = {

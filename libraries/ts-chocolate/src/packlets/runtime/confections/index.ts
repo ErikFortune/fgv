@@ -37,3 +37,11 @@ export { RuntimeRolledTruffle } from './runtimeRolledTruffle';
 
 // Static factory and union type
 export { RuntimeConfection, AnyRuntimeConfection } from './runtimeConfection';
+
+// Version classes
+export {
+  RuntimeConfectionVersionBase,
+  RuntimeMoldedBonBonVersion,
+  RuntimeBarTruffleVersion,
+  RuntimeRolledTruffleVersion
+} from './versions';

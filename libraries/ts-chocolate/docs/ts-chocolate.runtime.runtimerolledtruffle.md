@@ -59,7 +59,7 @@ Description
 
 </td><td>
 
-Resolved coating specification (from golden version, optional, lazy-loaded)
+Resolved coating specification (from golden version, optional).
 
 
 </td></tr>
@@ -101,7 +101,7 @@ Confection type is always 'rolled-truffle' for this type
 
 </td><td>
 
-Resolved enrobing chocolate specification (from golden version, optional, lazy-loaded)
+Resolved enrobing chocolate specification (from golden version, optional).
 
 
 </td></tr>
@@ -122,7 +122,7 @@ ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillings
 
 </td><td>
 
-Resolved filling slots from the golden version (lazy-loaded)
+Resolved filling slots from the golden version.
 
 
 </td></tr>
@@ -138,12 +138,12 @@ Resolved filling slots from the golden version (lazy-loaded)
 
 </td><td>
 
-IRolledTruffleVersion
+[IRuntimeRolledTruffleVersion](./ts-chocolate.runtime.iruntimerolledtruffleversion.md)
 
 
 </td><td>
 
-Golden version typed as IRolledTruffleVersion
+Golden version typed as IRuntimeRolledTruffleVersion.
 
 
 </td></tr>
@@ -164,7 +164,7 @@ Golden version typed as IRolledTruffleVersion
 
 </td><td>
 
-Resolved procedures from the golden version (lazy-loaded)
+Resolved procedures from the golden version.
 
 
 </td></tr>
@@ -201,12 +201,12 @@ Gets the underlying raw rolled truffle data
 
 </td><td>
 
-ReadonlyArray&lt;IRolledTruffleVersion&gt;
+ReadonlyArray&lt;[IRuntimeRolledTruffleVersion](./ts-chocolate.runtime.iruntimerolledtruffleversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions typed as IRolledTruffleVersion
+All versions typed as IRuntimeRolledTruffleVersion.
 
 
 </td></tr>
@@ -243,6 +243,20 @@ Description
 </td><td>
 
 Factory method for creating a RuntimeRolledTruffle.
+
+
+</td></tr>
+<tr><td>
+
+[getVersion(versionSpec)](./ts-chocolate.runtime.runtimerolledtruffle.getversion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a specific version by version specifier.
 
 
 </td></tr>

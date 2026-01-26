@@ -19,32 +19,45 @@
 // SOFTWARE.
 
 /**
- * RuntimeScaledVersion - resolved scaled recipe view
+ * RuntimeVersion - resolved recipe version view
  * @packageDocumentation
  */
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Measurement, Helpers } from '../common';
-import { IComputedScaledFillingRecipe, IFillingRating } from '../entities';
+import {
+  Measurement,
+  Helpers,
+  IngredientId,
+  FillingId,
+  FillingVersionId,
+  FillingVersionSpec
+} from '../../common';
+import { IFillingRecipeVersion, IFillingRating } from '../../entities';
 import {
   IGanacheCalculation,
   calculateFromIngredients,
   IResolvedIngredient,
-  validateGanache
-} from '../calculations';
+  validateGanache,
+  scaleVersion,
+  IVersionScaleOptions
+} from '../../calculations';
 import {
   ICategoryFilter,
-  IResolvedScaledIngredient,
+  IResolvedFillingIngredient,
+  IResolvedFillingRecipeProcedure,
+  IResolvedProcedures,
+  IRuntimeFillingRecipe,
+  IRuntimeFillingRecipeVersion,
   IRuntimeScaledFillingRecipeVersion,
-  IRuntimeScalingSource,
-  IScaledVersionContext,
+  IVersionContext,
   RecipeIngredientsFilter
-} from './model';
-import { AnyRuntimeIngredient } from './ingredients';
+} from '../model';
+import { AnyRuntimeIngredient } from '../ingredients';
+import { RuntimeScaledVersion } from './runtimeScaledVersion';
 
 // Specialize the context interface with concrete ingredient type
-type ScaledVersionContext = IScaledVersionContext<AnyRuntimeIngredient>;
+type VersionContext = IVersionContext<AnyRuntimeIngredient>;
 
 // ============================================================================
 // Filter Helpers
@@ -61,7 +74,7 @@ function isCategoryFilter(filter: RecipeIngredientsFilter): filter is ICategoryF
  * Check if an ingredient matches a single filter
  */
 function matchesFilter(
-  resolved: IResolvedScaledIngredient<AnyRuntimeIngredient>,
+  resolved: IResolvedFillingIngredient<AnyRuntimeIngredient>,
   filter: RecipeIngredientsFilter
 ): boolean {
   const ingredient = resolved.ingredient;
@@ -89,95 +102,92 @@ function matchesFilter(
 /* c8 ignore end */
 
 // ============================================================================
-// RuntimeScaledVersion Class
+// RuntimeVersion Class
 // ============================================================================
 
 /**
- * A resolved view of a scaled recipe version with all ingredients resolved.
+ * A resolved view of a recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion {
-  private readonly _context: ScaledVersionContext;
-  private readonly _scaled: IComputedScaledFillingRecipe;
+export class RuntimeVersion implements IRuntimeFillingRecipeVersion {
+  private readonly _context: VersionContext;
+  private readonly _fillingId: FillingId;
+  private readonly _version: IFillingRecipeVersion;
 
   // Lazy-loaded resolved data
-  private _resolvedIngredients: ReadonlyArray<IResolvedScaledIngredient<AnyRuntimeIngredient>> | undefined;
+  private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyRuntimeIngredient>> | undefined;
   private _resolutionError: string | undefined;
-  private _scaledFrom: IRuntimeScalingSource | undefined;
-  private _scaledFromError: string | undefined;
+  private _recipe: IRuntimeFillingRecipe | undefined;
+  private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
 
   /**
-   * Creates a RuntimeScaledVersion.
+   * Creates a RuntimeVersion.
+   * Use RuntimeRecipe.getVersion() or goldenVersion instead of calling this directly.
    * @internal
    */
-  public constructor(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe) {
+  public constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion) {
     this._context = context;
-    this._scaled = scaled;
+    this._fillingId = fillingId;
+    this._version = version;
   }
 
   /**
-   * Factory method for creating a RuntimeScaledVersion.
+   * Factory method for creating a RuntimeVersion.
    * @param context - The runtime context
-   * @param scaled - The computed scaled recipe data
-   * @returns Success with RuntimeScaledVersion
+   * @param fillingId - The parent recipe ID
+   * @param version - The raw version data
+   * @returns Success with RuntimeVersion
    */
   public static create(
-    context: ScaledVersionContext,
-    scaled: IComputedScaledFillingRecipe
-  ): Result<RuntimeScaledVersion> {
-    return Success.with(new RuntimeScaledVersion(context, scaled));
+    context: VersionContext,
+    fillingId: FillingId,
+    version: IFillingRecipeVersion
+  ): Result<RuntimeVersion> {
+    return Success.with(new RuntimeVersion(context, fillingId, version));
   }
 
   // ============================================================================
-  // Scaling Info
+  // Identity
   // ============================================================================
 
   /**
-   * Information about the source recipe and version that was scaled.
-   * Provides direct access to the resolved source version.
-   * @throws Error if source version cannot be resolved (indicates data corruption)
+   * Qualified identifier for this version (fillingId\@versionSpec).
    */
-  public get scaledFrom(): IRuntimeScalingSource {
-    if (this._scaledFrom === undefined && this._scaledFromError === undefined) {
-      this._resolveScaledFrom();
-    }
-    /* c8 ignore next 3 - defensive coding: resolution errors would indicate data corruption */
-    if (this._scaledFromError) {
-      throw new Error(this._scaledFromError);
-    }
-    return this._scaledFrom!;
+  public get versionId(): FillingVersionId {
+    return Helpers.createFillingVersionId(this._fillingId, this._version.versionSpec);
   }
 
   /**
-   * The target weight that was requested
+   * The version specifier
    */
-  public get targetWeight(): Measurement {
-    return this._scaled.scaledFrom.targetWeight;
+  public get versionSpec(): FillingVersionSpec {
+    return this._version.versionSpec;
   }
 
   /**
-   * Resolves the source version reference lazily.
-   */
-  private _resolveScaledFrom(): void {
-    const sourceResult = this._context.getSourceVersion(this._scaled);
-    /* c8 ignore next 4 - defensive coding: missing source version would indicate data corruption */
-    if (sourceResult.isFailure()) {
-      this._scaledFromError = `Failed to resolve source version: ${sourceResult.message}`;
-      return;
-    }
-
-    this._scaledFrom = {
-      sourceVersion: sourceResult.value,
-      scaleFactor: this._scaled.scaledFrom.scaleFactor,
-      targetWeight: this._scaled.scaledFrom.targetWeight
-    };
-  }
-
-  /**
-   * Date this scaled version was created (ISO 8601 format)
+   * Date this version was created (ISO 8601 format)
    */
   public get createdDate(): string {
-    return this._scaled.createdDate;
+    return this._version.createdDate;
+  }
+
+  /**
+   * The parent filling ID
+   */
+  public get fillingId(): FillingId {
+    return this._fillingId;
+  }
+
+  /**
+   * The parent filling recipe - resolved.
+   * Enables navigation: `version.fillingRecipe.name`
+   */
+  public get fillingRecipe(): IRuntimeFillingRecipe {
+    if (this._recipe === undefined) {
+      // orThrow is safe - version was created from a valid recipe
+      this._recipe = this._context.fillings.get(this._fillingId).value;
+    }
+    return this._recipe!;
   }
 
   // ============================================================================
@@ -185,35 +195,31 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
   // ============================================================================
 
   /**
-   * Base weight of the scaled recipe (same as targetWeight)
+   * Base weight of the recipe (sum of all ingredient amounts)
    */
   public get baseWeight(): Measurement {
-    return this._scaled.baseWeight;
+    return this._version.baseWeight;
   }
 
-  // TODO: think about a structured representation for yield so we can scale automatically
   /**
-   * Optional yield description (may be scaled from original)
+   * Optional yield description (e.g., "50 bonbons")
    */
-  /* c8 ignore next 3 - tested via property access pattern check */
   public get yield(): string | undefined {
-    return this._scaled.yield;
+    return this._version.yield;
   }
 
   /**
-   * Optional notes from the source version
+   * Optional notes about this version
    */
-  /* c8 ignore next 3 - tested via property access pattern check */
   public get notes(): string | undefined {
-    return this._scaled.notes;
+    return this._version.notes;
   }
 
   /**
-   * Optional ratings from the source version
+   * Optional ratings for this version
    */
   public get ratings(): ReadonlyArray<IFillingRating> {
-    /* c8 ignore next - empty array returned when ratings undefined */
-    return this._scaled.ratings ?? [];
+    return this._version.ratings ?? [];
   }
 
   // ============================================================================
@@ -232,7 +238,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
    */
   public getIngredients(
     filter?: RecipeIngredientsFilter[]
-  ): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>> {
+  ): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>> {
     // Ensure ingredients are resolved
     if (this._resolvedIngredients === undefined) {
       this._resolveIngredients();
@@ -246,7 +252,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
     const resolved = this._resolvedIngredients!;
 
     // Create generator based on filter
-    function* ingredientIterator(): IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>> {
+    function* ingredientIterator(): IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>> {
       // undefined filter = all ingredients
       if (filter === undefined) {
         for (const ri of resolved) {
@@ -272,12 +278,56 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
   }
 
   // ============================================================================
+  // Ingredient Queries
+  // ============================================================================
+
+  /**
+   * Checks if this version uses a specific ingredient (as primary).
+   * @param ingredientId - The ingredient ID to check
+   * @returns True if the ingredient is used in this version
+   */
+  public usesIngredient(ingredientId: IngredientId): boolean {
+    return this._version.ingredients.some((ri) => ri.ingredient.ids.includes(ingredientId));
+  }
+
+  // ============================================================================
   // Operations
   // ============================================================================
 
   /**
-   * Calculates ganache characteristics for this scaled version.
-   * Note: Uses the scaled amounts, not original amounts.
+   * Scales this version to a target weight.
+   * @param targetWeight - Target total weight in grams
+   * @param options - Optional scaling options (precision, minimum amount)
+   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   */
+  public scale(
+    targetWeight: Measurement,
+    options?: IVersionScaleOptions
+  ): Result<IRuntimeScaledFillingRecipeVersion> {
+    return scaleVersion(this._version, this.versionId, targetWeight, options).onSuccess((scaled) =>
+      RuntimeScaledVersion.create(this._context, scaled)
+    );
+  }
+
+  /**
+   * Scales this version by a multiplicative factor.
+   * @param factor - Multiplicative factor (e.g., 2.0 for double)
+   * @param options - Optional scaling options
+   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   */
+  public scaleByFactor(
+    factor: number,
+    options?: IVersionScaleOptions
+  ): Result<IRuntimeScaledFillingRecipeVersion> {
+    if (factor <= 0) {
+      return Failure.with('Scale factor must be greater than zero');
+    }
+    const targetWeight = (this.baseWeight * factor) as Measurement;
+    return this.scale(targetWeight, options);
+  }
+
+  /**
+   * Calculates ganache characteristics for this version.
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
   public calculateGanache(): Result<IGanacheCalculation> {
@@ -285,7 +335,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
       // Convert to IResolvedIngredient format for calculation
       const resolvedForCalc: IResolvedIngredient[] = [...ingredientIterator].map((ri) => ({
         ingredient: ri.ingredient.raw,
-        amount: ri.amount // Use scaled amount
+        amount: ri.amount
       }));
 
       const analysis = calculateFromIngredients(resolvedForCalc);
@@ -298,16 +348,64 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
     });
   }
 
+  // ============================================================================
+  // Procedures (lazy)
+  // ============================================================================
+
   /**
-   * Gets the total weight difference from the original.
+   * Resolved procedures associated with this version.
+   * Undefined if the version has no associated procedures.
+   * Resolved lazily on first access.
    */
-  public get weightDifference(): Measurement {
-    // Calculate original total weight
-    let originalTotal = 0;
-    for (const ri of this._scaled.ingredients) {
-      originalTotal += ri.originalAmount;
+  public get procedures(): IResolvedProcedures | undefined {
+    // Use null to distinguish "not yet resolved" from "no procedures"
+    if (this._procedures === undefined) {
+      this._procedures = this._resolveProcedures();
     }
-    return (this.baseWeight - originalTotal) as Measurement;
+    return this._procedures ?? undefined;
+  }
+
+  /**
+   * Resolves procedure references to full procedure objects.
+   * @returns Resolved procedures, or null if version has no procedures
+   */
+  private _resolveProcedures(): IResolvedProcedures | null {
+    const rawProcedures = this._version.procedures;
+    if (!rawProcedures || rawProcedures.options.length === 0) {
+      return null;
+    }
+
+    const resolvedProcedures: IResolvedFillingRecipeProcedure[] = [];
+    for (const ref of rawProcedures.options) {
+      const procedureResult = this._context.getProcedure(ref.id);
+      if (procedureResult.isSuccess()) {
+        resolvedProcedures.push({
+          procedure: procedureResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip procedures that fail to resolve (e.g., missing from library)
+    }
+
+    // Resolve preferred procedure if specified
+    let recommendedProcedure = undefined;
+    if (rawProcedures.preferredId) {
+      const recommendedResult = this._context.getProcedure(rawProcedures.preferredId);
+      if (recommendedResult.isSuccess()) {
+        recommendedProcedure = recommendedResult.value;
+      }
+    }
+
+    // Return null if all procedures failed to resolve
+    if (resolvedProcedures.length === 0 && !recommendedProcedure) {
+      return null;
+    }
+
+    return {
+      procedures: resolvedProcedures,
+      recommendedProcedure
+    };
   }
 
   // ============================================================================
@@ -315,10 +413,10 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
   // ============================================================================
 
   /**
-   * Gets the underlying raw scaled version data
+   * Gets the underlying raw version data
    */
-  public get raw(): IComputedScaledFillingRecipe {
-    return this._scaled;
+  public get raw(): IFillingRecipeVersion {
+    return this._version;
   }
 
   // ============================================================================
@@ -326,15 +424,15 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
   // ============================================================================
 
   private _resolveIngredients(): void {
-    const resolved: IResolvedScaledIngredient<AnyRuntimeIngredient>[] = [];
+    const resolved: IResolvedFillingIngredient<AnyRuntimeIngredient>[] = [];
     const errors: string[] = [];
 
-    for (const ri of this._scaled.ingredients) {
+    for (const ri of this._version.ingredients) {
       // Get primary ingredient ID (preferred or first)
       const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
       /* c8 ignore next 4 - defensive coding: empty ids array would indicate data corruption */
       if (primaryId === undefined) {
-        errors.push(`Scaled ingredient has no ingredient ids`);
+        errors.push(`Recipe ingredient has no ingredient ids`);
         continue;
       }
 
@@ -354,14 +452,13 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
           if (altResult.isSuccess()) {
             alternates.push(altResult.value);
           }
+          // Silently skip missing alternates - they're optional
         }
       }
 
       resolved.push({
         ingredient: ingredientResult.value,
         amount: ri.amount,
-        originalAmount: ri.originalAmount,
-        scaleFactor: ri.scaleFactor,
         notes: ri.notes,
         alternates,
         raw: ri
@@ -370,7 +467,9 @@ export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
 
     /* c8 ignore next 4 - defensive coding: errors would indicate data corruption */
     if (errors.length > 0) {
-      this._resolutionError = `Failed to resolve scaled ingredients: ${errors.join('; ')}`;
+      this._resolutionError = `Failed to resolve ingredients for version ${
+        this._version.versionSpec
+      }: ${errors.join('; ')}`;
       this._resolvedIngredients = [];
     } else {
       this._resolvedIngredients = resolved;

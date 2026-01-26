@@ -24,7 +24,7 @@
  */
 
 import { ChocolateType, IngredientId, Percentage, SourceId } from '../../common';
-import { RuntimeRecipe } from '../runtimeRecipe';
+import { RuntimeRecipe } from '../fillings';
 import { RuntimeContext } from '../runtimeContext';
 import { RecipeFilter, containsIgnoreCase, hasTag, hasAnyTag, hasAllTags, atLeast, equals } from './filters';
 

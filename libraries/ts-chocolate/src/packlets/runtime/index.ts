@@ -59,11 +59,8 @@ export {
   AnyRuntimeIngredient
 } from './ingredients';
 
-export { RuntimeRecipe } from './runtimeRecipe';
-
-export { RuntimeVersion } from './runtimeVersion';
-
-export { RuntimeScaledVersion } from './runtimeScaledVersion';
+// Runtime filling recipe classes
+export { RuntimeRecipe, RuntimeVersion, RuntimeScaledVersion } from './fillings';
 
 // Runtime confection classes
 export {

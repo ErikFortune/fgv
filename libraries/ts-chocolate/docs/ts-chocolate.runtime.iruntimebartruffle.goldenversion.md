@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeBarTruffle.goldenVersion property
 
-Golden version typed as IBarTruffleVersion
+Golden version typed as IRuntimeBarTruffleVersion
 
 **Signature:**
 
 ```typescript
-readonly goldenVersion: IBarTruffleVersion;
+readonly goldenVersion: IRuntimeBarTruffleVersion;
 ```

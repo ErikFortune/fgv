@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeMoldedBonBon.versions property
 
-All versions typed as IMoldedBonBonVersion
+All versions typed as IRuntimeMoldedBonBonVersion.
 
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<IMoldedBonBonVersion>;
+get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion>;
 ```

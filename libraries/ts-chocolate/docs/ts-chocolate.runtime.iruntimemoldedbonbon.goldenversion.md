@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeMoldedBonBon.goldenVersion property
 
-Golden version typed as IMoldedBonBonVersion
+Golden version typed as IRuntimeMoldedBonBonVersion
 
 **Signature:**
 
 ```typescript
-readonly goldenVersion: IMoldedBonBonVersion;
+readonly goldenVersion: IRuntimeMoldedBonBonVersion;
 ```

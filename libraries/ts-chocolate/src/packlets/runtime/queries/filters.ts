@@ -24,7 +24,7 @@
  */
 
 import { AnyRuntimeIngredient } from '../ingredients';
-import { RuntimeRecipe } from '../runtimeRecipe';
+import { RuntimeRecipe } from '../fillings';
 
 // ============================================================================
 // Generic Filter Types

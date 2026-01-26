@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeConfection.goldenVersion property
 
-The golden (default) version.
+The golden (default) version - resolved.
 
 **Signature:**
 
 ```typescript
-readonly goldenVersion: AnyConfectionVersion;
+readonly goldenVersion: AnyRuntimeConfectionVersion;
 ```

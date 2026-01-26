@@ -80,7 +80,7 @@ Confection type is always 'bar-truffle' for this type
 
 </td><td>
 
-Resolved enrobing chocolate specification (from golden version, optional, lazy-loaded)
+Resolved enrobing chocolate specification (from golden version, optional).
 
 
 </td></tr>
@@ -101,7 +101,7 @@ ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillings
 
 </td><td>
 
-Resolved filling slots from the golden version (lazy-loaded)
+Resolved filling slots from the golden version.
 
 
 </td></tr>
@@ -122,7 +122,7 @@ IFrameDimensions
 
 </td><td>
 
-Frame dimensions for ganache slab (from golden version)
+Frame dimensions for ganache slab (from golden version).
 
 
 </td></tr>
@@ -138,12 +138,12 @@ Frame dimensions for ganache slab (from golden version)
 
 </td><td>
 
-IBarTruffleVersion
+[IRuntimeBarTruffleVersion](./ts-chocolate.runtime.iruntimebartruffleversion.md)
 
 
 </td><td>
 
-Golden version typed as IBarTruffleVersion
+Golden version typed as IRuntimeBarTruffleVersion.
 
 
 </td></tr>
@@ -164,7 +164,7 @@ Golden version typed as IBarTruffleVersion
 
 </td><td>
 
-Resolved procedures from the golden version (lazy-loaded)
+Resolved procedures from the golden version.
 
 
 </td></tr>
@@ -206,7 +206,7 @@ IBonBonDimensions
 
 </td><td>
 
-Single bonbon dimensions for cutting (from golden version)
+Single bonbon dimensions for cutting (from golden version).
 
 
 </td></tr>
@@ -222,12 +222,12 @@ Single bonbon dimensions for cutting (from golden version)
 
 </td><td>
 
-ReadonlyArray&lt;IBarTruffleVersion&gt;
+ReadonlyArray&lt;[IRuntimeBarTruffleVersion](./ts-chocolate.runtime.iruntimebartruffleversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions typed as IBarTruffleVersion
+All versions typed as IRuntimeBarTruffleVersion.
 
 
 </td></tr>
@@ -264,6 +264,20 @@ Description
 </td><td>
 
 Factory method for creating a RuntimeBarTruffle.
+
+
+</td></tr>
+<tr><td>
+
+[getVersion(versionSpec)](./ts-chocolate.runtime.runtimebartruffle.getversion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a specific version by version specifier.
 
 
 </td></tr>

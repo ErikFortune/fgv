@@ -37,7 +37,6 @@ import {
   ProcedureId,
   SourceId
 } from '../../common';
-import { AnyFillingOption, FillingOptionId, IFillingSlot, IProcedureRef } from '../../entities';
 import {
   AnyConfectionVersion,
   ConfectionData,
@@ -48,9 +47,9 @@ import {
   isRolledTruffle
 } from '../../entities';
 import {
+  AnyRuntimeConfectionVersion,
   IConfectionContext,
   IResolvedConfectionProcedure,
-  IResolvedFillingOption,
   IResolvedFillingSlot,
   IRuntimeConfection
 } from '../model';
@@ -75,7 +74,12 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected readonly _confection: ConfectionData;
   protected readonly _sourceId: SourceId;
   protected readonly _baseId: BaseConfectionId;
-  protected readonly _goldenVersion: AnyConfectionVersion;
+  protected readonly _rawGoldenVersion: AnyConfectionVersion;
+
+  // Lazy-resolved version caches (undefined = not yet resolved)
+  private _resolvedGoldenVersion: AnyRuntimeConfectionVersion | undefined;
+  private _resolvedVersions: ReadonlyArray<AnyRuntimeConfectionVersion> | undefined;
+  private _versionCache: Map<ConfectionVersionSpec, AnyRuntimeConfectionVersion> | undefined;
 
   /**
    * Creates a RuntimeConfectionBase.
@@ -94,13 +98,13 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
     this._sourceId = parts[0] as SourceId;
     this._baseId = parts[1] as BaseConfectionId;
 
-    // Find and cache the golden version
+    // Find and cache the raw golden version
     const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
     /* c8 ignore next 3 - defensive: converter validates golden version exists */
     if (!goldenVersion) {
       throw new Error(`Golden version ${confection.goldenVersionSpec} not found in confection ${id}`);
     }
-    this._goldenVersion = goldenVersion;
+    this._rawGoldenVersion = goldenVersion;
   }
 
   // ============================================================================
@@ -180,14 +184,14 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Decorations from the golden version
    */
   public get decorations(): ReadonlyArray<IConfectionDecoration> | undefined {
-    return this._goldenVersion.decorations;
+    return this._rawGoldenVersion.decorations;
   }
 
   /**
    * Yield specification from the golden version
    */
   public get yield(): IConfectionYield {
-    return this._goldenVersion.yield;
+    return this._rawGoldenVersion.yield;
   }
 
   /**
@@ -203,37 +207,78 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
     | undefined;
 
   // ============================================================================
-  // Version Navigation
+  // Version Navigation (lazy)
   // ============================================================================
 
   /**
-   * The golden (default) version
+   * The golden (default) version - resolved.
+   * Resolved lazily on first access.
    */
-  /* c8 ignore next 3 - base class getter overridden by all concrete subclasses */
-  public get goldenVersion(): AnyConfectionVersion {
-    return this._goldenVersion;
+  /* c8 ignore next 6 - base class getter overridden by all concrete subclasses */
+  public get goldenVersion(): AnyRuntimeConfectionVersion {
+    if (this._resolvedGoldenVersion === undefined) {
+      this._resolvedGoldenVersion = this._createVersion(this._rawGoldenVersion);
+    }
+    return this._resolvedGoldenVersion;
   }
 
   /**
-   * All versions
+   * All versions - resolved.
+   * Resolved lazily on first access.
    */
-  /* c8 ignore next 3 - base class getter overridden by all concrete subclasses */
-  public get versions(): ReadonlyArray<AnyConfectionVersion> {
-    return this._confection.versions;
+  /* c8 ignore next 6 - base class getter overridden by all concrete subclasses */
+  public get versions(): ReadonlyArray<AnyRuntimeConfectionVersion> {
+    if (this._resolvedVersions === undefined) {
+      this._resolvedVersions = this._confection.versions.map((v) => this._getOrCreateVersion(v));
+    }
+    return this._resolvedVersions;
   }
 
   /**
-   * Gets a specific version by version specifier
+   * Gets a specific version by version specifier.
    * @param versionSpec - The version specifier to find
-   * @returns Success with version, or Failure if not found
+   * @returns Success with runtime version, or Failure if not found
    */
-  public getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion> {
-    const version = this._confection.versions.find((v) => v.versionSpec === versionSpec);
-    if (!version) {
+  public getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion> {
+    const rawVersion = this._confection.versions.find((v) => v.versionSpec === versionSpec);
+    if (!rawVersion) {
       return Failure.with(`Version ${versionSpec} not found in confection ${this._id}`);
     }
-    return Success.with(version);
+    return Success.with(this._getOrCreateVersion(rawVersion));
   }
+
+  /**
+   * Gets or creates a runtime version from a raw version, using caching.
+   * @param rawVersion - The raw version data
+   * @returns The runtime version (from cache or newly created)
+   * @internal
+   */
+  private _getOrCreateVersion(rawVersion: AnyConfectionVersion): AnyRuntimeConfectionVersion {
+    // Initialize cache if needed
+    if (this._versionCache === undefined) {
+      this._versionCache = new Map();
+    }
+
+    // Check cache
+    const cached = this._versionCache.get(rawVersion.versionSpec);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    // Create new version and cache it
+    const runtimeVersion = this._createVersion(rawVersion);
+    this._versionCache.set(rawVersion.versionSpec, runtimeVersion);
+    return runtimeVersion;
+  }
+
+  /**
+   * Creates a runtime version from a raw version.
+   * Must be overridden by subclasses to return the appropriate typed version.
+   * @param rawVersion - The raw version data
+   * @returns The runtime version
+   * @internal
+   */
+  protected abstract _createVersion(rawVersion: AnyConfectionVersion): AnyRuntimeConfectionVersion;
 
   // ============================================================================
   // Effective Tags/URLs (merged from base + version)
@@ -243,14 +288,14 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Gets effective tags for the golden version (base tags + version's additional tags).
    */
   public get effectiveTags(): ReadonlyArray<string> {
-    return this.getEffectiveTags(this._goldenVersion);
+    return this.getEffectiveTags(this._rawGoldenVersion);
   }
 
   /**
    * Gets effective URLs for the golden version (base URLs + version's additional URLs).
    */
   public get effectiveUrls(): ReadonlyArray<ICategorizedUrl> {
-    return this.getEffectiveUrls(this._goldenVersion);
+    return this.getEffectiveUrls(this._rawGoldenVersion);
   }
 
   /**
@@ -258,7 +303,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @param version - The version to get tags for (defaults to golden version)
    */
   public getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string> {
-    const targetVersion = version ?? this._goldenVersion;
+    const targetVersion = version ?? this._rawGoldenVersion;
     const baseTags = this._confection.tags ?? [];
     const versionTags = targetVersion.additionalTags ?? [];
     // Deduplicate while preserving order (base first)
@@ -270,7 +315,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @param version - The version to get URLs for (defaults to golden version)
    */
   public getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl> {
-    const targetVersion = version ?? this._goldenVersion;
+    const targetVersion = version ?? this._rawGoldenVersion;
     const baseUrls = this._confection.urls ?? [];
     const versionUrls = targetVersion.additionalUrls ?? [];
     return [...baseUrls, ...versionUrls];
@@ -299,122 +344,6 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    */
   public isRolledTruffle(): this is RuntimeRolledTruffle {
     return isRolledTruffle(this._confection);
-  }
-
-  // ============================================================================
-  // Resolution Helper Methods (protected for use by subclasses)
-  // ============================================================================
-
-  /**
-   * Resolves filling options for a filling slot.
-   * Skips options that fail to resolve (graceful degradation).
-   * @param options - The raw filling options to resolve
-   * @returns Resolved filling options
-   * @internal
-   */
-  protected _resolveFillingOptions(
-    options: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>
-  ): IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId> {
-    const resolvedOptions = options.options
-      .map((opt) => this._resolveFillingOption(opt))
-      .filter((r): r is IResolvedFillingOption => r !== undefined);
-
-    return {
-      options: resolvedOptions,
-      preferredId: options.preferredId
-    };
-  }
-
-  /**
-   * Resolves a single filling option to either a recipe or ingredient.
-   * @param option - The raw filling option
-   * @returns Resolved filling option, or undefined if resolution fails
-   * @internal
-   */
-  protected _resolveFillingOption(option: AnyFillingOption): IResolvedFillingOption | undefined {
-    if (option.type === 'recipe') {
-      const filling = this._context.getRuntimeFilling(option.id);
-      /* c8 ignore next - defensive: skip fillings that fail to resolve */
-      if (filling.isFailure()) return undefined;
-      return {
-        type: 'recipe',
-        id: option.id,
-        filling: filling.value,
-        notes: option.notes,
-        raw: option
-      };
-    } else {
-      const ingredient = this._context.getRuntimeIngredient(option.id);
-      /* c8 ignore next - defensive: skip ingredients that fail to resolve */
-      if (ingredient.isFailure()) return undefined;
-      return {
-        type: 'ingredient',
-        id: option.id,
-        ingredient: ingredient.value,
-        notes: option.notes,
-        raw: option
-      };
-    }
-  }
-
-  /**
-   * Resolves filling slots.
-   * Skips slots where all options fail to resolve (graceful degradation).
-   * @param slots - The raw filling slots to resolve
-   * @returns Resolved filling slots, or null if no slots
-   * @internal
-   */
-  protected _resolveFillingSlots(
-    slots: ReadonlyArray<IFillingSlot> | undefined
-  ): ReadonlyArray<IResolvedFillingSlot> | null {
-    if (!slots || slots.length === 0) {
-      return null;
-    }
-
-    return slots.map((slot) => ({
-      slotId: slot.slotId,
-      name: slot.name,
-      filling: this._resolveFillingOptions(slot.filling)
-    }));
-  }
-
-  /**
-   * Resolves procedures.
-   * Skips procedures that fail to resolve (graceful degradation).
-   * @param procedures - The raw procedures to resolve
-   * @returns Resolved procedures, or null if no procedures or all fail
-   * @internal
-   */
-  protected _resolveProcedures(
-    procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
-  ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | null {
-    if (!procedures || procedures.options.length === 0) {
-      return null;
-    }
-
-    const resolvedOptions: IResolvedConfectionProcedure[] = [];
-    for (const ref of procedures.options) {
-      const procedureResult = this._context.getRuntimeProcedure(ref.id);
-      if (procedureResult.isSuccess()) {
-        resolvedOptions.push({
-          id: ref.id,
-          procedure: procedureResult.value,
-          notes: ref.notes,
-          raw: ref
-        });
-      }
-      // Skip procedures that fail to resolve
-    }
-
-    /* c8 ignore next 4 - defensive: return null if all procedures failed to resolve */
-    if (resolvedOptions.length === 0) {
-      return null;
-    }
-
-    return {
-      options: resolvedOptions,
-      preferredId: procedures.preferredId
-    };
   }
 
   // ============================================================================

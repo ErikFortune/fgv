@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeRolledTruffle.coatings property
 
-Resolved coating specification (from golden version, optional, lazy-loaded)
+Resolved coating specification (from golden version, optional).
 
 **Signature:**
 

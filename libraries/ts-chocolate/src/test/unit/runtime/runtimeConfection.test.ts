@@ -52,7 +52,14 @@ import {
 } from '../../../packlets/entities';
 import {
   IConfectionContext,
+  IResolvedAdditionalChocolate,
+  IResolvedChocolateSpec,
+  IResolvedCoatings,
+  IResolvedConfectionMoldRef,
+  IResolvedConfectionProcedure,
+  IResolvedFillingSlot,
   IRuntimeChocolateIngredient,
+  IRuntimeConfection,
   IRuntimeFillingRecipe,
   IRuntimeMold,
   IRuntimeProcedure,
@@ -61,6 +68,15 @@ import {
   RuntimeBarTruffle,
   RuntimeRolledTruffle
 } from '../../../packlets/runtime';
+import {
+  IAdditionalChocolate,
+  IChocolateSpec,
+  ICoatings,
+  IConfectionMoldRef,
+  IFillingSlot,
+  IProcedureRef
+} from '../../../packlets/entities';
+import { IOptionsWithPreferred } from '../../../packlets/common';
 
 describe('RuntimeConfection', () => {
   // ============================================================================
@@ -246,6 +262,147 @@ describe('RuntimeConfection', () => {
         name: 'Mock Procedure',
         steps: []
       } as unknown as IRuntimeProcedure);
+    },
+    getRuntimeConfection: (id: ConfectionId) => {
+      // Return confection data based on ID for proper parent navigation testing
+      if (id === 'test.test-bonbon') {
+        return Success.with({
+          id,
+          name: 'Test Bonbon',
+          confectionType: 'molded-bonbon',
+          tags: ['test', 'bonbon'],
+          urls: [{ url: 'https://example.com/bonbon', category: 'Reference' }]
+        } as unknown as IRuntimeConfection);
+      }
+      if (id === 'test.test-bar') {
+        return Success.with({
+          id,
+          name: 'Test Bar Truffle',
+          confectionType: 'bar-truffle',
+          tags: undefined,
+          urls: undefined
+        } as unknown as IRuntimeConfection);
+      }
+      if (id === 'test.test-rolled') {
+        return Success.with({
+          id,
+          name: 'Test Rolled Truffle',
+          confectionType: 'rolled-truffle',
+          tags: undefined,
+          urls: undefined
+        } as unknown as IRuntimeConfection);
+      }
+      if (id === 'test.minimal') {
+        return Success.with({
+          id,
+          name: 'Minimal Bonbon',
+          confectionType: 'molded-bonbon',
+          tags: undefined,
+          urls: undefined
+        } as unknown as IRuntimeConfection);
+      }
+      return Success.with({
+        id,
+        name: 'Mock Confection',
+        tags: undefined,
+        urls: undefined
+      } as unknown as IRuntimeConfection);
+    },
+    // Resolution helpers - these delegate to the mock getRuntime* methods
+    resolveChocolateSpec: (spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec => {
+      const primaryId = spec.preferredId ?? spec.ids[0];
+      const chocolate = mockContext.getRuntimeIngredient(primaryId).value as IRuntimeChocolateIngredient;
+      // Populate alternates from all IDs except the primary
+      const alternates = spec.ids
+        .filter((id) => id !== primaryId)
+        .map((id) => mockContext.getRuntimeIngredient(id).value as IRuntimeChocolateIngredient);
+      return {
+        chocolate,
+        alternates,
+        raw: spec
+      };
+    },
+    resolveCoatings: (coatings: ICoatings): IResolvedCoatings => {
+      const options = coatings.ids.map((id) => ({
+        id,
+        ingredient: mockContext.getRuntimeIngredient(id).value!
+      }));
+      const preferredId = coatings.preferredId ?? coatings.ids[0];
+      return {
+        options,
+        preferred: options.find((opt) => opt.id === preferredId),
+        raw: coatings
+      };
+    },
+    resolveMoldRefs: (
+      molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+    ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> => {
+      const options = molds.options.map((ref) => ({
+        id: ref.id,
+        mold: mockContext.getRuntimeMold(ref.id).value!,
+        notes: ref.notes,
+        raw: ref
+      }));
+      return {
+        options,
+        preferredId: molds.preferredId
+      };
+    },
+    resolveAdditionalChocolates: (
+      additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+      confectionId: ConfectionId
+    ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined => {
+      if (!additional || additional.length === 0) return undefined;
+      return additional.map((item) => ({
+        chocolate: mockContext.resolveChocolateSpec(item.chocolate, confectionId),
+        purpose: item.purpose,
+        raw: item
+      }));
+    },
+    resolveFillingSlots: (
+      slots: ReadonlyArray<IFillingSlot> | undefined
+    ): ReadonlyArray<IResolvedFillingSlot> | undefined => {
+      if (!slots || slots.length === 0) return undefined;
+      return slots.map((slot) => ({
+        slotId: slot.slotId,
+        name: slot.name,
+        filling: {
+          options: slot.filling.options.map((opt) => {
+            if (opt.type === 'recipe') {
+              return {
+                type: 'recipe' as const,
+                id: opt.id,
+                filling: mockContext.getRuntimeFilling(opt.id).value!,
+                notes: opt.notes,
+                raw: opt
+              };
+            }
+            return {
+              type: 'ingredient' as const,
+              id: opt.id,
+              ingredient: mockContext.getRuntimeIngredient(opt.id).value!,
+              notes: opt.notes,
+              raw: opt
+            };
+          }),
+          preferredId: slot.filling.preferredId
+        }
+      }));
+    },
+    resolveProcedures: (
+      procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+    ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined => {
+      if (!procedures || procedures.options.length === 0) return undefined;
+      const options = procedures.options.map((ref) => ({
+        id: ref.id,
+        procedure: mockContext.getRuntimeProcedure(ref.id).value!,
+        notes: ref.notes,
+        raw: ref
+      }));
+      return {
+        options,
+        preferredId: procedures.preferredId
+      };
     }
   };
 
@@ -347,6 +504,15 @@ describe('RuntimeConfection', () => {
       });
     });
 
+    test('getVersion returns cached version on subsequent calls', () => {
+      const firstCall = runtime.getVersion('2026-01-01-01' as ConfectionVersionSpec);
+      const secondCall = runtime.getVersion('2026-01-01-01' as ConfectionVersionSpec);
+      expect(firstCall).toSucceed();
+      expect(secondCall).toSucceed();
+      // Verify both calls return the same cached instance
+      expect(firstCall.value).toBe(secondCall.value);
+    });
+
     test('getVersion fails for invalid spec', () => {
       expect(runtime.getVersion('9999-99-99-99' as ConfectionVersionSpec)).toFailWith(/not found/i);
     });
@@ -386,8 +552,59 @@ describe('RuntimeConfection', () => {
       const golden = runtime.goldenVersion;
       expect(golden.versionSpec).toBe('2026-01-01-01');
       expect(golden.molds.options).toHaveLength(1);
-      // shellChocolate is now resolved on runtime but still raw IDs on golden version
-      expect(golden.shellChocolate.ids).toContain('common.chocolate-dark-64');
+      // shellChocolate is resolved with raw access for IDs
+      expect(golden.shellChocolate.raw.ids).toContain('common.chocolate-dark-64');
+    });
+
+    test('version exposes base properties', () => {
+      const golden = runtime.goldenVersion;
+      // Test base properties from RuntimeConfectionVersionBase
+      expect(golden.createdDate).toBe('2026-01-01');
+      expect(golden.confectionId).toBe('test.test-bonbon');
+      expect(golden.yield.count).toBe(24);
+      expect(golden.yield.unit).toBe('pieces');
+      expect(golden.decorations).toHaveLength(2);
+      expect(golden.notes).toBe('Initial version');
+    });
+
+    test('version exposes parent navigation', () => {
+      const golden = runtime.goldenVersion;
+      // Test parent navigation - version.confection returns the parent confection
+      const parent = golden.confection;
+      expect(parent.id).toBe('test.test-bonbon');
+      expect(parent.name).toBe('Test Bonbon');
+      expect(parent.confectionType).toBe('molded-bonbon');
+    });
+
+    test('version type guards work correctly', () => {
+      const golden = runtime.goldenVersion;
+      expect(golden.isMoldedBonBonVersion()).toBe(true);
+      expect(golden.isBarTruffleVersion()).toBe(false);
+      expect(golden.isRolledTruffleVersion()).toBe(false);
+    });
+
+    test('version exposes effectiveTags', () => {
+      const golden = runtime.goldenVersion;
+      // Test effectiveTags on the version object
+      const effective = golden.effectiveTags;
+      expect(effective).toContain('test');
+      expect(effective).toContain('bonbon');
+      expect(effective).toContain('v1');
+      expect(effective).toContain('classic');
+    });
+
+    test('version exposes effectiveUrls', () => {
+      const golden = runtime.goldenVersion;
+      // Test effectiveUrls on the version object
+      const effective = golden.effectiveUrls;
+      expect(effective).toHaveLength(2);
+      expect(effective[0].url).toBe('https://example.com/bonbon');
+      expect(effective[1].url).toBe('https://example.com/v1');
+    });
+
+    test('version exposes raw data', () => {
+      const golden = runtime.goldenVersion;
+      expect(golden.raw).toBe(moldedBonBonData.versions[0]);
     });
 
     test('exposes typed versions array', () => {
@@ -484,6 +701,50 @@ describe('RuntimeConfection', () => {
       expect(versions[0].versionSpec).toBe('2026-01-01-01');
       expect(versions[0].frameDimensions.width).toBe(300);
     });
+
+    test('version exposes base properties and parent navigation', () => {
+      const golden = runtime.goldenVersion;
+      // Test base properties
+      expect(golden.createdDate).toBe('2026-01-01');
+      expect(golden.confectionId).toBe('test.test-bar');
+      expect(golden.yield.count).toBe(48);
+      // Test parent navigation - confection getter override
+      const parent = golden.confection;
+      expect(parent.id).toBe('test.test-bar');
+      expect(parent.confectionType).toBe('bar-truffle');
+      // Test raw access
+      expect(golden.raw).toBe(barTruffleData.versions[0]);
+    });
+
+    test('version type guards work correctly', () => {
+      const golden = runtime.goldenVersion;
+      expect(golden.isMoldedBonBonVersion()).toBe(false);
+      expect(golden.isBarTruffleVersion()).toBe(true);
+      expect(golden.isRolledTruffleVersion()).toBe(false);
+    });
+
+    test('version effectiveTags handles undefined base tags', () => {
+      // Bar truffle mock has undefined tags
+      const golden = runtime.goldenVersion;
+      const effective = golden.effectiveTags;
+      // Version has no additionalTags, base confection has undefined tags
+      expect(effective).toHaveLength(0);
+    });
+
+    test('version effectiveUrls handles undefined base urls', () => {
+      // Bar truffle mock has undefined urls
+      const golden = runtime.goldenVersion;
+      const effective = golden.effectiveUrls;
+      // Version has no additionalUrls, base confection has undefined urls
+      expect(effective).toHaveLength(0);
+    });
+
+    test('getVersion returns typed version', () => {
+      expect(runtime.getVersion('2026-01-01-01' as ConfectionVersionSpec)).toSucceedAndSatisfy((version) => {
+        expect(version.versionSpec).toBe('2026-01-01-01');
+        expect(version.frameDimensions.width).toBe(300);
+      });
+    });
   });
 
   // ============================================================================
@@ -515,9 +776,10 @@ describe('RuntimeConfection', () => {
     test('exposes rolled truffle-specific properties', () => {
       // enrobingChocolate is now resolved
       expect(runtime.enrobingChocolate?.chocolate.id).toBe('common.chocolate-dark-64');
-      // coatings is now resolved
+      // coatings is now resolved with preferred ingredient
       expect(runtime.coatings?.options).toHaveLength(1);
-      expect(runtime.coatings?.preferredId).toBe('common.cocoa-powder');
+      expect(runtime.coatings?.preferred?.id).toBe('common.cocoa-powder');
+      expect(runtime.coatings?.preferred?.ingredient).toBeDefined();
     });
 
     test('type guards work correctly', () => {
@@ -534,7 +796,35 @@ describe('RuntimeConfection', () => {
       const versions = runtime.versions;
       expect(versions).toHaveLength(1);
       expect(versions[0].versionSpec).toBe('2026-01-01-01');
-      expect(versions[0].coatings?.ids).toHaveLength(1);
+      expect(versions[0].coatings?.raw.ids).toHaveLength(1);
+    });
+
+    test('version exposes base properties and parent navigation', () => {
+      const golden = runtime.goldenVersion;
+      // Test base properties
+      expect(golden.createdDate).toBe('2026-01-01');
+      expect(golden.confectionId).toBe('test.test-rolled');
+      expect(golden.yield.count).toBe(40);
+      // Test parent navigation - confection getter override
+      const parent = golden.confection;
+      expect(parent.id).toBe('test.test-rolled');
+      expect(parent.confectionType).toBe('rolled-truffle');
+      // Test raw access
+      expect(golden.raw).toBe(rolledTruffleData.versions[0]);
+    });
+
+    test('version type guards work correctly', () => {
+      const golden = runtime.goldenVersion;
+      expect(golden.isMoldedBonBonVersion()).toBe(false);
+      expect(golden.isBarTruffleVersion()).toBe(false);
+      expect(golden.isRolledTruffleVersion()).toBe(true);
+    });
+
+    test('getVersion returns typed version', () => {
+      expect(runtime.getVersion('2026-01-01-01' as ConfectionVersionSpec)).toSucceedAndSatisfy((version) => {
+        expect(version.versionSpec).toBe('2026-01-01-01');
+        expect(version.coatings?.raw.ids).toHaveLength(1);
+      });
     });
   });
 

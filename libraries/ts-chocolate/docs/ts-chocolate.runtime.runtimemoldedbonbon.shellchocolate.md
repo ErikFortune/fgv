@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeMoldedBonBon.shellChocolate property
 
-Resolved shell chocolate specification (from golden version, lazy-loaded)
+Resolved shell chocolate specification (from golden version).
 
 **Signature:**
 

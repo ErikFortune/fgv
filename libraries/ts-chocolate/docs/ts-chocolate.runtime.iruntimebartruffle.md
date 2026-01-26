@@ -111,12 +111,12 @@ Frame dimensions from the golden version
 
 </td><td>
 
-IBarTruffleVersion
+[IRuntimeBarTruffleVersion](./ts-chocolate.runtime.iruntimebartruffleversion.md)
 
 
 </td><td>
 
-Golden version typed as IBarTruffleVersion
+Golden version typed as IRuntimeBarTruffleVersion
 
 
 </td></tr>
@@ -174,12 +174,38 @@ Single bonbon dimensions from the golden version
 
 </td><td>
 
-ReadonlyArray&lt;IBarTruffleVersion&gt;
+ReadonlyArray&lt;[IRuntimeBarTruffleVersion](./ts-chocolate.runtime.iruntimebartruffleversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions typed as IBarTruffleVersion
+All versions typed as IRuntimeBarTruffleVersion
+
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getVersion(versionSpec)](./ts-chocolate.runtime.iruntimebartruffle.getversion.md)
+
+
+</td><td>
+
+Gets a specific version - returns typed version
 
 
 </td></tr>

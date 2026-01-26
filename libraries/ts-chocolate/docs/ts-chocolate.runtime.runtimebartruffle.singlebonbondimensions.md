@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeBarTruffle.singleBonBonDimensions property
 
-Single bonbon dimensions for cutting (from golden version)
+Single bonbon dimensions for cutting (from golden version).
 
 **Signature:**
 

@@ -29,6 +29,7 @@ import {
   ConfectionId,
   Helpers,
   IngredientId,
+  IOptionsWithPreferred,
   MoldId,
   ProcedureId,
   FillingId,
@@ -36,17 +37,38 @@ import {
   TaskId,
   Validation
 } from '../common';
-import { ConfectionData, ConfectionsLibrary } from '../entities';
+import {
+  AnyFillingOption,
+  ConfectionData,
+  ConfectionsLibrary,
+  FillingOptionId,
+  IAdditionalChocolate,
+  IChocolateSpec,
+  ICoatings,
+  IComputedScaledFillingRecipe,
+  IConfectionMoldRef,
+  IFillingRecipeJournalRecord,
+  IFillingSlot,
+  IProcedure,
+  IProcedureRef,
+  JournalLibrary
+} from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
-import { IComputedScaledFillingRecipe } from '../entities';
 import { IWeightCalculationContext } from '../calculations';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
-import { IProcedure } from '../entities';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IConfectionContext,
   IIngredientContext,
   IIngredientUsageInfo,
+  IResolvedAdditionalChocolate,
+  IResolvedChocolateSpec,
+  IResolvedCoatingOption,
+  IResolvedCoatings,
+  IResolvedConfectionMoldRef,
+  IResolvedConfectionProcedure,
+  IResolvedFillingOption,
+  IResolvedFillingSlot,
+  IRuntimeChocolateIngredient,
   IRuntimeIngredient,
   IRuntimeFillingRecipe,
   IRuntimeFillingRecipeVersion,
@@ -55,7 +77,7 @@ import {
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
 import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
-import { RuntimeRecipe } from './runtimeRecipe';
+import { RuntimeRecipe } from './fillings';
 import {
   IIngredientQuerySpec,
   IFillingRecipeQuerySpec,
@@ -307,6 +329,235 @@ export class RuntimeContext
       }
     }
     return Success.with(this._runtimeConfections);
+  }
+
+  // ============================================================================
+  // Resolution Helpers (IConfectionContext)
+  // ============================================================================
+
+  /**
+   * Resolves a chocolate specification to runtime ingredient objects.
+   * @param spec - The raw chocolate specification
+   * @param confectionId - The confection ID (for error messages)
+   * @returns Resolved chocolate specification with primary chocolate + alternates
+   */
+  public resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec {
+    // Determine primary chocolate ID (preferredId if set, otherwise first in list)
+    /* c8 ignore next - branch: preferredId set vs not set */
+    const primaryId = spec.preferredId ?? spec.ids[0];
+    const primaryResult = this.getRuntimeIngredient(primaryId);
+
+    // Primary chocolate must resolve successfully - throw if not
+    /* c8 ignore next 3 - defensive: library validation ensures chocolate ingredients exist */
+    if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
+      throw new Error(`Failed to resolve primary chocolate ${primaryId} for confection ${confectionId}`);
+    }
+
+    const chocolate = primaryResult.value;
+
+    // Resolve alternates (excluding primary)
+    const alternates: IRuntimeChocolateIngredient[] = [];
+    for (const id of spec.ids) {
+      /* c8 ignore next 6 - defensive: skip alternates that fail to resolve or aren't chocolate */
+      if (id !== primaryId) {
+        const altResult = this.getRuntimeIngredient(id);
+        if (altResult.isSuccess() && altResult.value.isChocolate()) {
+          alternates.push(altResult.value);
+        }
+      }
+    }
+
+    return {
+      chocolate,
+      alternates,
+      raw: spec
+    };
+  }
+
+  /**
+   * Resolves coating specifications to runtime ingredient objects.
+   * @param coatings - The raw coatings specification
+   * @returns Resolved coatings specification
+   */
+  public resolveCoatings(coatings: ICoatings): IResolvedCoatings {
+    // Resolve all coating ingredient options
+    const resolvedOptions: IResolvedCoatingOption[] = [];
+    for (const id of coatings.ids) {
+      const ingredientResult = this.getRuntimeIngredient(id);
+      if (ingredientResult.isSuccess()) {
+        resolvedOptions.push({
+          id,
+          ingredient: ingredientResult.value
+        });
+      }
+      // Skip ingredients that fail to resolve
+    }
+
+    // Find the preferred option (by preferredId, or first option if not specified)
+    const preferredId = coatings.preferredId ?? coatings.ids[0];
+    const preferred = resolvedOptions.find((opt) => opt.id === preferredId);
+
+    return {
+      options: resolvedOptions,
+      preferred,
+      raw: coatings
+    };
+  }
+
+  /**
+   * Resolves mold references to runtime mold objects.
+   * @param molds - The raw mold references with preferred selection
+   * @returns Resolved mold references
+   */
+  public resolveMoldRefs(
+    molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+  ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
+    const resolvedOptions: IResolvedConfectionMoldRef[] = [];
+    for (const ref of molds.options) {
+      const moldResult = this.getRuntimeMold(ref.id);
+      if (moldResult.isSuccess()) {
+        resolvedOptions.push({
+          id: ref.id,
+          mold: moldResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip molds that fail to resolve
+    }
+
+    return {
+      options: resolvedOptions,
+      preferredId: molds.preferredId
+    };
+  }
+
+  /**
+   * Resolves additional chocolates to runtime objects.
+   * @param additional - The raw additional chocolates
+   * @param confectionId - The confection ID (for error messages)
+   * @returns Resolved additional chocolates, or undefined if none
+   */
+  public resolveAdditionalChocolates(
+    additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+    confectionId: ConfectionId
+  ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
+    if (!additional || additional.length === 0) {
+      return undefined;
+    }
+
+    return additional.map((item) => ({
+      chocolate: this.resolveChocolateSpec(item.chocolate, confectionId),
+      purpose: item.purpose,
+      raw: item
+    }));
+  }
+
+  /**
+   * Resolves filling slots to runtime objects.
+   * @param slots - The raw filling slots
+   * @returns Resolved filling slots, or undefined if none
+   */
+  public resolveFillingSlots(
+    slots: ReadonlyArray<IFillingSlot> | undefined
+  ): ReadonlyArray<IResolvedFillingSlot> | undefined {
+    if (!slots || slots.length === 0) {
+      return undefined;
+    }
+
+    return slots.map((slot) => ({
+      slotId: slot.slotId,
+      name: slot.name,
+      filling: this._resolveFillingOptions(slot.filling)
+    }));
+  }
+
+  /**
+   * Resolves procedure references to runtime objects.
+   * @param procedures - The raw procedure references
+   * @returns Resolved procedures, or undefined if none
+   */
+  public resolveProcedures(
+    procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+  ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+    if (!procedures || procedures.options.length === 0) {
+      return undefined;
+    }
+
+    const resolvedOptions: IResolvedConfectionProcedure[] = [];
+    for (const ref of procedures.options) {
+      const procedureResult = this.getRuntimeProcedure(ref.id);
+      if (procedureResult.isSuccess()) {
+        resolvedOptions.push({
+          id: ref.id,
+          procedure: procedureResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip procedures that fail to resolve
+    }
+
+    /* c8 ignore next 4 - defensive: return undefined if all procedures failed to resolve */
+    if (resolvedOptions.length === 0) {
+      return undefined;
+    }
+
+    return {
+      options: resolvedOptions,
+      preferredId: procedures.preferredId
+    };
+  }
+
+  /**
+   * Resolves filling options for a filling slot.
+   * @param options - The raw filling options to resolve
+   * @returns Resolved filling options
+   * @internal
+   */
+  private _resolveFillingOptions(
+    options: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>
+  ): IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId> {
+    const resolvedOptions = options.options
+      .map((opt) => this._resolveFillingOption(opt))
+      .filter((r): r is IResolvedFillingOption => r !== undefined);
+
+    return {
+      options: resolvedOptions,
+      preferredId: options.preferredId
+    };
+  }
+
+  /**
+   * Resolves a single filling option to either a recipe or ingredient.
+   * @param option - The raw filling option
+   * @returns Resolved filling option, or undefined if resolution fails
+   * @internal
+   */
+  private _resolveFillingOption(option: AnyFillingOption): IResolvedFillingOption | undefined {
+    if (option.type === 'recipe') {
+      const filling = this.getRuntimeFilling(option.id);
+      /* c8 ignore next - defensive: skip fillings that fail to resolve */
+      if (filling.isFailure()) return undefined;
+      return {
+        type: 'recipe',
+        id: option.id,
+        filling: filling.value,
+        notes: option.notes,
+        raw: option
+      };
+    } else {
+      const ingredient = this.getRuntimeIngredient(option.id);
+      /* c8 ignore next - defensive: skip ingredients that fail to resolve */
+      if (ingredient.isFailure()) return undefined;
+      return {
+        type: 'ingredient',
+        id: option.id,
+        ingredient: ingredient.value,
+        notes: option.notes,
+        raw: option
+      };
+    }
   }
 
   // ============================================================================

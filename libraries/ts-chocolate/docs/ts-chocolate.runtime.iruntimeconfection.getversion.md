@@ -9,7 +9,7 @@ Gets a specific version by version specifier.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The version specifier to find
 
 **Returns:**
 
-Result&lt;AnyConfectionVersion&gt;
+Result&lt;[AnyRuntimeConfectionVersion](./ts-chocolate.runtime.anyruntimeconfectionversion.md)<!-- -->&gt;
 
-Success with version, or Failure if not found
+Success with runtime version, or Failure if not found
 

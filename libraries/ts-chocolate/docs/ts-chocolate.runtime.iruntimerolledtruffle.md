@@ -111,12 +111,12 @@ _(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 
 </td><td>
 
-IRolledTruffleVersion
+[IRuntimeRolledTruffleVersion](./ts-chocolate.runtime.iruntimerolledtruffleversion.md)
 
 
 </td><td>
 
-Golden version typed as IRolledTruffleVersion
+Golden version typed as IRuntimeRolledTruffleVersion
 
 
 </td></tr>
@@ -153,12 +153,38 @@ Raw data typed to IRolledTruffle
 
 </td><td>
 
-ReadonlyArray&lt;IRolledTruffleVersion&gt;
+ReadonlyArray&lt;[IRuntimeRolledTruffleVersion](./ts-chocolate.runtime.iruntimerolledtruffleversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions typed as IRolledTruffleVersion
+All versions typed as IRuntimeRolledTruffleVersion
+
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getVersion(versionSpec)](./ts-chocolate.runtime.iruntimerolledtruffle.getversion.md)
+
+
+</td><td>
+
+Gets a specific version - returns typed version
 
 
 </td></tr>

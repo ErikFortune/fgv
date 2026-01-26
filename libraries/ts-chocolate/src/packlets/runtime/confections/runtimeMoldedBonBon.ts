@@ -25,8 +25,14 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, IOptionsWithPreferred, MoldId, ProcedureId } from '../../common';
-import { IChocolateSpec, IMoldedBonBon, IMoldedBonBonVersion } from '../../entities';
+import {
+  ConfectionId,
+  ConfectionVersionSpec,
+  IOptionsWithPreferred,
+  MoldId,
+  ProcedureId
+} from '../../common';
+import { AnyConfectionVersion, IMoldedBonBon, IMoldedBonBonVersion } from '../../entities';
 import {
   IConfectionContext,
   IResolvedAdditionalChocolate,
@@ -34,10 +40,11 @@ import {
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeChocolateIngredient,
-  IRuntimeMoldedBonBon
+  IRuntimeMoldedBonBon,
+  IRuntimeMoldedBonBonVersion
 } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
+import { RuntimeMoldedBonBonVersion } from './versions';
 
 // ============================================================================
 // RuntimeMoldedBonBon Class
@@ -50,16 +57,6 @@ import { RuntimeConfectionBase } from './runtimeConfectionBase';
  */
 export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
   private readonly _moldedBonBon: IMoldedBonBon;
-
-  // Lazy-resolved caches (undefined = not yet resolved, null = no data)
-  private _resolvedShellChocolate: IResolvedChocolateSpec | undefined;
-  private _resolvedAdditionalChocolates: ReadonlyArray<IResolvedAdditionalChocolate> | undefined | null;
-  private _resolvedMolds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> | undefined;
-  private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined | null;
-  private _resolvedProcedures:
-    | IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
-    | undefined
-    | null;
 
   /**
    * Creates a RuntimeMoldedBonBon.
@@ -102,160 +99,79 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   // ============================================================================
 
   /**
-   * Golden version typed as IMoldedBonBonVersion
+   * Golden version typed as IRuntimeMoldedBonBonVersion.
    */
-  public override get goldenVersion(): IMoldedBonBonVersion {
-    return this._goldenVersion as IMoldedBonBonVersion;
+  public override get goldenVersion(): IRuntimeMoldedBonBonVersion {
+    return super.goldenVersion as IRuntimeMoldedBonBonVersion;
   }
 
   /**
-   * All versions typed as IMoldedBonBonVersion
+   * All versions typed as IRuntimeMoldedBonBonVersion.
    */
-  public override get versions(): ReadonlyArray<IMoldedBonBonVersion> {
-    return this._moldedBonBon.versions;
+  public override get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion> {
+    return super.versions as ReadonlyArray<IRuntimeMoldedBonBonVersion>;
+  }
+
+  /**
+   * Gets a specific version by version specifier.
+   * @param versionSpec - The version specifier to find
+   * @returns Success with typed runtime version, or Failure if not found
+   */
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion> {
+    return super.getVersion(versionSpec) as Result<IRuntimeMoldedBonBonVersion>;
+  }
+
+  /**
+   * Creates a runtime version from a raw version.
+   * @param rawVersion - The raw version data
+   * @returns The runtime version
+   * @internal
+   */
+  protected override _createVersion(rawVersion: AnyConfectionVersion): IRuntimeMoldedBonBonVersion {
+    return RuntimeMoldedBonBonVersion.create(
+      this._context,
+      this._id,
+      rawVersion as IMoldedBonBonVersion
+    ).orThrow();
   }
 
   // ============================================================================
-  // Molded BonBon-Specific Properties (from golden version)
+  // Molded BonBon-Specific Properties (delegate to golden version)
   // ============================================================================
 
   /**
-   * Resolved filling slots from the golden version (lazy-loaded)
+   * Resolved filling slots from the golden version.
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
-    if (this._resolvedFillings === undefined) {
-      this._resolvedFillings = this._resolveFillingSlots(this.goldenVersion.fillings);
-    }
-    return this._resolvedFillings ?? undefined;
+    return this.goldenVersion.fillings;
   }
 
   /**
-   * Resolved procedures from the golden version (lazy-loaded)
+   * Resolved procedures from the golden version.
    */
   public get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
-    if (this._resolvedProcedures === undefined) {
-      this._resolvedProcedures = this._resolveProcedures(this.goldenVersion.procedures);
-    }
-    return this._resolvedProcedures ?? undefined;
+    return this.goldenVersion.procedures;
   }
 
   /**
-   * Resolved molds with preferred selection (from golden version, lazy-loaded)
+   * Resolved molds with preferred selection (from golden version).
    */
   public get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
-    if (this._resolvedMolds === undefined) {
-      this._resolvedMolds = this._resolveMoldRefs();
-    }
-    return this._resolvedMolds;
+    return this.goldenVersion.molds;
   }
 
   /**
-   * Resolved shell chocolate specification (from golden version, lazy-loaded)
+   * Resolved shell chocolate specification (from golden version).
    */
   public get shellChocolate(): IResolvedChocolateSpec {
-    if (this._resolvedShellChocolate === undefined) {
-      this._resolvedShellChocolate = this._resolveChocolateSpec(this.goldenVersion.shellChocolate);
-    }
-    return this._resolvedShellChocolate;
+    return this.goldenVersion.shellChocolate;
   }
 
   /**
-   * Resolved additional chocolates (from golden version, lazy-loaded)
+   * Resolved additional chocolates (from golden version).
    */
   public get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
-    if (this._resolvedAdditionalChocolates === undefined) {
-      this._resolvedAdditionalChocolates = this._resolveAdditionalChocolates();
-    }
-    return this._resolvedAdditionalChocolates ?? undefined;
-  }
-
-  // ============================================================================
-  // Resolution Methods (private, lazy-loaded)
-  // ============================================================================
-
-  /**
-   * Resolves a chocolate specification to ingredient objects.
-   * @param spec - The raw chocolate specification
-   * @returns Resolved chocolate specification with primary + alternates
-   * @internal
-   */
-  private _resolveChocolateSpec(spec: IChocolateSpec): IResolvedChocolateSpec {
-    // Determine primary chocolate ID (preferredId if set, otherwise first in list)
-    /* c8 ignore next - branch: preferredId set vs not set */
-    const primaryId = spec.preferredId ?? spec.ids[0];
-    const primaryResult = this._context.getRuntimeIngredient(primaryId);
-
-    // Primary chocolate must resolve successfully - throw if not
-    /* c8 ignore next 3 - defensive: library validation ensures chocolate ingredients exist */
-    if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
-      throw new Error(`Failed to resolve primary chocolate ${primaryId} for confection ${this._id}`);
-    }
-
-    const chocolate = primaryResult.value;
-
-    // Resolve alternates (excluding primary)
-    const alternates: IRuntimeChocolateIngredient[] = [];
-    for (const id of spec.ids) {
-      if (id !== primaryId) {
-        const altResult = this._context.getRuntimeIngredient(id);
-        if (altResult.isSuccess() && altResult.value.isChocolate()) {
-          alternates.push(altResult.value);
-        }
-        // Skip alternates that fail to resolve or aren't chocolate
-      }
-    }
-
-    return {
-      chocolate,
-      alternates,
-      raw: spec
-    };
-  }
-
-  /**
-   * Resolves mold references from the golden version.
-   * @returns Resolved mold references with preferred selection
-   * @internal
-   */
-  private _resolveMoldRefs(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
-    const rawMolds = this.goldenVersion.molds;
-
-    const resolvedOptions: IResolvedConfectionMoldRef[] = [];
-    for (const ref of rawMolds.options) {
-      const moldResult = this._context.getRuntimeMold(ref.id);
-      if (moldResult.isSuccess()) {
-        resolvedOptions.push({
-          id: ref.id,
-          mold: moldResult.value,
-          notes: ref.notes,
-          raw: ref
-        });
-      }
-      // Skip molds that fail to resolve
-    }
-
-    return {
-      options: resolvedOptions,
-      preferredId: rawMolds.preferredId
-    };
-  }
-
-  /**
-   * Resolves additional chocolates from the golden version.
-   * @returns Resolved additional chocolates, or null if none
-   * @internal
-   */
-  private _resolveAdditionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | null {
-    const rawAdditional = this.goldenVersion.additionalChocolates;
-    if (!rawAdditional || rawAdditional.length === 0) {
-      return null;
-    }
-
-    return rawAdditional.map((additional) => ({
-      chocolate: this._resolveChocolateSpec(additional.chocolate),
-      purpose: additional.purpose,
-      raw: additional
-    }));
+    return this.goldenVersion.additionalChocolates;
   }
 
   // ============================================================================

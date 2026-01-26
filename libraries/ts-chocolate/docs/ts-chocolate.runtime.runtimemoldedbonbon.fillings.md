@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeMoldedBonBon.fillings property
 
-Resolved filling slots from the golden version (lazy-loaded)
+Resolved filling slots from the golden version.
 
 **Signature:**
 

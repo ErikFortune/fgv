@@ -105,27 +105,6 @@ IConfectionContext
 </td></tr>
 <tr><td>
 
-[\_goldenVersion](./ts-chocolate.runtime.runtimeconfectionbase._goldenversion.md)
-
-
-</td><td>
-
-`protected`
-
-`readonly`
-
-
-</td><td>
-
-AnyConfectionVersion
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [\_id](./ts-chocolate.runtime.runtimeconfectionbase._id.md)
 
 
@@ -139,6 +118,27 @@ AnyConfectionVersion
 </td><td>
 
 [ConfectionId](./ts-chocolate.confectionid.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[\_rawGoldenVersion](./ts-chocolate.runtime.runtimeconfectionbase._rawgoldenversion.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+AnyConfectionVersion
 
 
 </td><td>
@@ -329,12 +329,12 @@ Resolved filling slots from the golden version (lazy-loaded)
 
 </td><td>
 
-AnyConfectionVersion
+[AnyRuntimeConfectionVersion](./ts-chocolate.runtime.anyruntimeconfectionversion.md)
 
 
 </td><td>
 
-The golden (default) version
+The golden (default) version - resolved. Resolved lazily on first access.
 
 
 </td></tr>
@@ -522,12 +522,12 @@ Base URLs (version may add more via additionalUrls)
 
 </td><td>
 
-ReadonlyArray&lt;AnyConfectionVersion&gt;
+ReadonlyArray&lt;[AnyRuntimeConfectionVersion](./ts-chocolate.runtime.anyruntimeconfectionversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-All versions
+All versions - resolved. Resolved lazily on first access.
 
 
 </td></tr>
@@ -610,7 +610,7 @@ Gets effective URLs for a specific version (base URLs + version's additional URL
 
 </td><td>
 
-Gets a specific version by version specifier
+Gets a specific version by version specifier.
 
 
 </td></tr>

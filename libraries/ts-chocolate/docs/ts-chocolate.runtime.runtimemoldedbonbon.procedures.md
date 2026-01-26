@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeMoldedBonBon.procedures property
 
-Resolved procedures from the golden version (lazy-loaded)
+Resolved procedures from the golden version.
 
 **Signature:**
 

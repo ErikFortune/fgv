@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeRolledTruffle.versions property
 
-All versions typed as IRolledTruffleVersion
+All versions typed as IRuntimeRolledTruffleVersion.
 
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<IRolledTruffleVersion>;
+get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion>;
 ```

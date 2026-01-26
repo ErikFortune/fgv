@@ -21,6 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import {
+  AdditionalChocolatePurpose,
   BaseConfectionId,
   BaseIngredientId,
   BaseProcedureId,
@@ -1204,6 +1205,211 @@ describe('RuntimeContext', () => {
 
       test('fails for non-existent ID', () => {
         expect(testCtx.getRuntimeFilling('test.nonexistent' as FillingId)).toFail();
+      });
+    });
+
+    // ============================================================================
+    // Resolution Helpers
+    // ============================================================================
+
+    describe('resolveChocolateSpec', () => {
+      test('resolves chocolate specification with primary and alternates', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const spec = {
+          ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-milk-38' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        };
+
+        const resolved = ctx.resolveChocolateSpec(spec, 'test.confection' as ConfectionId);
+
+        expect(resolved.chocolate).toBeDefined();
+        expect(resolved.chocolate.id).toBe('common.chocolate-dark-64');
+        expect(resolved.alternates).toHaveLength(1);
+        expect(resolved.alternates[0].id).toBe('common.chocolate-milk-38');
+        expect(resolved.raw).toBe(spec);
+      });
+
+      test('uses first id as primary when preferredId not set', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const spec = {
+          ids: ['common.chocolate-dark-64' as IngredientId]
+        };
+
+        const resolved = ctx.resolveChocolateSpec(spec, 'test.confection' as ConfectionId);
+
+        expect(resolved.chocolate.id).toBe('common.chocolate-dark-64');
+        expect(resolved.alternates).toHaveLength(0);
+      });
+    });
+
+    describe('resolveCoatings', () => {
+      test('resolves coating options with preferred', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const coatings = {
+          ids: ['common.cocoa-powder' as IngredientId],
+          preferredId: 'common.cocoa-powder' as IngredientId
+        };
+
+        const resolved = ctx.resolveCoatings(coatings);
+
+        expect(resolved.options).toHaveLength(1);
+        expect(resolved.options[0].id).toBe('common.cocoa-powder');
+        expect(resolved.preferred).toBeDefined();
+        expect(resolved.preferred?.id).toBe('common.cocoa-powder');
+        expect(resolved.raw).toBe(coatings);
+      });
+
+      test('uses first option as preferred when preferredId not set', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const coatings = {
+          ids: ['common.cocoa-powder' as IngredientId]
+        };
+
+        const resolved = ctx.resolveCoatings(coatings);
+
+        expect(resolved.preferred?.id).toBe('common.cocoa-powder');
+      });
+    });
+
+    describe('resolveMoldRefs', () => {
+      test('resolves mold references', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const molds = {
+          options: [
+            { id: 'common.dome-25mm' as MoldId, notes: 'Primary mold' },
+            { id: 'common.hemisphere-20mm' as MoldId }
+          ],
+          preferredId: 'common.dome-25mm' as MoldId
+        };
+
+        const resolved = ctx.resolveMoldRefs(molds);
+
+        expect(resolved.options.length).toBeGreaterThanOrEqual(1);
+        expect(resolved.preferredId).toBe('common.dome-25mm');
+        if (resolved.options.length > 0) {
+          expect(resolved.options[0].mold).toBeDefined();
+          expect(resolved.options[0].raw).toBeDefined();
+        }
+      });
+    });
+
+    describe('resolveAdditionalChocolates', () => {
+      test('returns undefined for empty array', () => {
+        const ctx = RuntimeContext.create().orThrow();
+
+        expect(ctx.resolveAdditionalChocolates([], 'test.confection' as ConfectionId)).toBeUndefined();
+      });
+
+      test('returns undefined for undefined input', () => {
+        const ctx = RuntimeContext.create().orThrow();
+
+        expect(ctx.resolveAdditionalChocolates(undefined, 'test.confection' as ConfectionId)).toBeUndefined();
+      });
+
+      test('resolves additional chocolates with purpose', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const additional = [
+          {
+            chocolate: {
+              ids: ['common.chocolate-dark-64' as IngredientId]
+            },
+            purpose: 'decoration' as AdditionalChocolatePurpose
+          }
+        ];
+
+        const resolved = ctx.resolveAdditionalChocolates(additional, 'test.confection' as ConfectionId);
+
+        expect(resolved).toBeDefined();
+        expect(resolved).toHaveLength(1);
+        expect(resolved![0].chocolate.chocolate.id).toBe('common.chocolate-dark-64');
+        expect(resolved![0].purpose).toBe('decoration');
+        expect(resolved![0].raw).toBe(additional[0]);
+      });
+    });
+
+    describe('resolveFillingSlots', () => {
+      test('returns undefined for empty array', () => {
+        const ctx = RuntimeContext.create().orThrow();
+
+        expect(ctx.resolveFillingSlots([])).toBeUndefined();
+      });
+
+      test('returns undefined for undefined input', () => {
+        const ctx = RuntimeContext.create().orThrow();
+
+        expect(ctx.resolveFillingSlots(undefined)).toBeUndefined();
+      });
+
+      test('resolves filling slots with recipe options', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const slots = [
+          {
+            slotId: 'center' as import('../../../packlets/common').SlotId,
+            name: 'Center Filling',
+            filling: {
+              options: [{ type: 'recipe' as const, id: 'common.dark-ganache-classic' as FillingId }],
+              preferredId:
+                'common.dark-ganache-classic' as import('../../../packlets/entities').FillingOptionId
+            }
+          }
+        ];
+
+        const resolved = ctx.resolveFillingSlots(slots);
+
+        expect(resolved).toBeDefined();
+        expect(resolved).toHaveLength(1);
+        expect(resolved![0].slotId).toBe('center');
+        expect(resolved![0].filling.options).toHaveLength(1);
+        expect(resolved![0].filling.options[0].type).toBe('recipe');
+      });
+
+      test('resolves filling slots with ingredient options', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const slots = [
+          {
+            slotId: 'center' as import('../../../packlets/common').SlotId,
+            name: 'Center Filling',
+            filling: {
+              options: [{ type: 'ingredient' as const, id: 'common.chocolate-dark-64' as IngredientId }]
+            }
+          }
+        ];
+
+        const resolved = ctx.resolveFillingSlots(slots);
+
+        expect(resolved).toBeDefined();
+        expect(resolved![0].filling.options[0].type).toBe('ingredient');
+      });
+    });
+
+    describe('resolveProcedures', () => {
+      test('returns undefined for empty options', () => {
+        const ctx = RuntimeContext.create().orThrow();
+
+        expect(ctx.resolveProcedures({ options: [] })).toBeUndefined();
+      });
+
+      test('returns undefined for undefined input', () => {
+        const ctx = RuntimeContext.create().orThrow();
+
+        expect(ctx.resolveProcedures(undefined)).toBeUndefined();
+      });
+
+      test('resolves procedure references', () => {
+        const ctx = RuntimeContext.create().orThrow();
+        const procedures = {
+          options: [{ id: 'common.ganache-cold-method' as ProcedureId, notes: 'Preferred method' }],
+          preferredId: 'common.ganache-cold-method' as ProcedureId
+        };
+
+        const resolved = ctx.resolveProcedures(procedures);
+
+        expect(resolved).toBeDefined();
+        expect(resolved!.options.length).toBe(1);
+        expect(resolved!.preferredId).toBe('common.ganache-cold-method');
+        expect(resolved!.options[0].procedure).toBeDefined();
+        expect(resolved!.options[0].procedure.name).toBe('Ganache (Cold Method)');
+        expect(resolved!.options[0].notes).toBe('Preferred method');
       });
     });
   });

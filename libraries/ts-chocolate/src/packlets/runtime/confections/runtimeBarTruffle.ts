@@ -25,12 +25,12 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ProcedureId, IOptionsWithPreferred } from '../../common';
+import { ConfectionId, ConfectionVersionSpec, ProcedureId, IOptionsWithPreferred } from '../../common';
 import {
+  AnyConfectionVersion,
   IBarTruffle,
   IBarTruffleVersion,
   IBonBonDimensions,
-  IChocolateSpec,
   IFrameDimensions
 } from '../../entities';
 import {
@@ -38,10 +38,11 @@ import {
   IResolvedChocolateSpec,
   IResolvedFillingSlot,
   IRuntimeBarTruffle,
-  IResolvedConfectionProcedure,
-  IRuntimeChocolateIngredient
+  IRuntimeBarTruffleVersion,
+  IResolvedConfectionProcedure
 } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
+import { RuntimeBarTruffleVersion } from './versions';
 
 // ============================================================================
 // RuntimeBarTruffle Class
@@ -54,14 +55,6 @@ import { RuntimeConfectionBase } from './runtimeConfectionBase';
  */
 export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
   private readonly _barTruffle: IBarTruffle;
-
-  // Lazy-resolved caches (undefined = not yet resolved, null = no data)
-  private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
-  private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined | null;
-  private _resolvedProcedures:
-    | IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
-    | undefined
-    | null;
 
   /**
    * Creates a RuntimeBarTruffle.
@@ -104,111 +97,79 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   // ============================================================================
 
   /**
-   * Golden version typed as IBarTruffleVersion
+   * Golden version typed as IRuntimeBarTruffleVersion.
    */
-  public override get goldenVersion(): IBarTruffleVersion {
-    return this._goldenVersion as IBarTruffleVersion;
+  public override get goldenVersion(): IRuntimeBarTruffleVersion {
+    return super.goldenVersion as IRuntimeBarTruffleVersion;
   }
 
   /**
-   * All versions typed as IBarTruffleVersion
+   * All versions typed as IRuntimeBarTruffleVersion.
    */
-  public override get versions(): ReadonlyArray<IBarTruffleVersion> {
-    return this._barTruffle.versions;
+  public override get versions(): ReadonlyArray<IRuntimeBarTruffleVersion> {
+    return super.versions as ReadonlyArray<IRuntimeBarTruffleVersion>;
+  }
+
+  /**
+   * Gets a specific version by version specifier.
+   * @param versionSpec - The version specifier to find
+   * @returns Success with typed runtime version, or Failure if not found
+   */
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion> {
+    return super.getVersion(versionSpec) as Result<IRuntimeBarTruffleVersion>;
+  }
+
+  /**
+   * Creates a runtime version from a raw version.
+   * @param rawVersion - The raw version data
+   * @returns The runtime version
+   * @internal
+   */
+  protected override _createVersion(rawVersion: AnyConfectionVersion): IRuntimeBarTruffleVersion {
+    return RuntimeBarTruffleVersion.create(
+      this._context,
+      this._id,
+      rawVersion as IBarTruffleVersion
+    ).orThrow();
   }
 
   // ============================================================================
-  // Bar Truffle-Specific Properties (from golden version)
+  // Bar Truffle-Specific Properties (delegate to golden version)
   // ============================================================================
 
   /**
-   * Frame dimensions for ganache slab (from golden version)
+   * Frame dimensions for ganache slab (from golden version).
    */
   public get frameDimensions(): IFrameDimensions {
     return this.goldenVersion.frameDimensions;
   }
 
   /**
-   * Single bonbon dimensions for cutting (from golden version)
+   * Single bonbon dimensions for cutting (from golden version).
    */
   public get singleBonBonDimensions(): IBonBonDimensions {
     return this.goldenVersion.singleBonBonDimensions;
   }
 
   /**
-   * Resolved filling slots from the golden version (lazy-loaded)
+   * Resolved filling slots from the golden version.
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
-    if (this._resolvedFillings === undefined) {
-      this._resolvedFillings = this._resolveFillingSlots(this.goldenVersion.fillings);
-    }
-    /* c8 ignore next - defensive: null indicates no fillings, converted to undefined for interface */
-    return this._resolvedFillings ?? undefined;
+    return this.goldenVersion.fillings;
   }
 
   /**
-   * Resolved procedures from the golden version (lazy-loaded)
+   * Resolved procedures from the golden version.
    */
   public get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
-    if (this._resolvedProcedures === undefined) {
-      this._resolvedProcedures = this._resolveProcedures(this.goldenVersion.procedures);
-    }
-    /* c8 ignore next - defensive: null indicates no procedures, converted to undefined for interface */
-    return this._resolvedProcedures ?? undefined;
+    return this.goldenVersion.procedures;
   }
 
   /**
-   * Resolved enrobing chocolate specification (from golden version, optional, lazy-loaded)
+   * Resolved enrobing chocolate specification (from golden version, optional).
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
-    if (this._resolvedEnrobingChocolate === undefined) {
-      const raw = this.goldenVersion.enrobingChocolate;
-      this._resolvedEnrobingChocolate = raw ? this._resolveChocolateSpec(raw) : null;
-    }
-    return this._resolvedEnrobingChocolate ?? undefined;
-  }
-
-  // ============================================================================
-  // Resolution Methods (private, lazy-loaded)
-  // ============================================================================
-
-  /**
-   * Resolves a chocolate specification to ingredient objects.
-   * @param spec - The raw chocolate specification
-   * @returns Resolved chocolate specification with primary + alternates
-   * @internal
-   */
-  private _resolveChocolateSpec(spec: IChocolateSpec): IResolvedChocolateSpec {
-    // Determine primary chocolate ID (preferredId if set, otherwise first in list)
-    /* c8 ignore next - branch: preferredId set vs not set */
-    const primaryId = spec.preferredId ?? spec.ids[0];
-    const primaryResult = this._context.getRuntimeIngredient(primaryId);
-
-    // Primary chocolate must resolve successfully - throw if not
-    /* c8 ignore next 3 - defensive: library validation ensures chocolate ingredients exist */
-    if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
-      throw new Error(`Failed to resolve primary chocolate ${primaryId} for confection ${this._id}`);
-    }
-
-    const chocolate = primaryResult.value;
-
-    // Resolve alternates (excluding primary)
-    const alternates: IRuntimeChocolateIngredient[] = [];
-    for (const id of spec.ids) {
-      /* c8 ignore next 6 - defensive: skip alternates that fail to resolve or aren't chocolate */
-      if (id !== primaryId) {
-        const altResult = this._context.getRuntimeIngredient(id);
-        if (altResult.isSuccess() && altResult.value.isChocolate()) {
-          alternates.push(altResult.value);
-        }
-      }
-    }
-
-    return {
-      chocolate,
-      alternates,
-      raw: spec
-    };
+    return this.goldenVersion.enrobingChocolate;
   }
 
   // ============================================================================

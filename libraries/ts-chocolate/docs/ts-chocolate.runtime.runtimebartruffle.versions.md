@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeBarTruffle.versions property
 
-All versions typed as IBarTruffleVersion
+All versions typed as IRuntimeBarTruffleVersion.
 
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<IBarTruffleVersion>;
+get versions(): ReadonlyArray<IRuntimeBarTruffleVersion>;
 ```
