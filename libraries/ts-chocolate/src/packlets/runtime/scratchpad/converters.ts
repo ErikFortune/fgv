@@ -31,6 +31,7 @@ import {
   allPersistedSessionStatuses,
   AnyPersistedSession,
   IPersistedConfectionSession,
+  IPersistedConfectionSessionProduction,
   IPersistedFillingSession,
   IPersistedSessionDestination,
   ISessionScratchpad,
@@ -67,6 +68,14 @@ export const persistedSessionDestination: Converter<IPersistedSessionDestination
     overrideCollectionId: CommonConverters.sourceId.optional()
   });
 
+export const persistedConfectionSessionProduction: Converter<IPersistedConfectionSessionProduction> =
+  Converters.object<IPersistedConfectionSessionProduction>({
+    moldId: CommonConverters.moldId.optional(),
+    frames: Converters.number
+      .withConstraint((n) => Number.isInteger(n) && n > 0, { description: 'must be a positive integer' })
+      .optional()
+  });
+
 // ============================================================================
 // Session Converters
 // ============================================================================
@@ -84,6 +93,7 @@ export const persistedConfectionSession: Converter<IPersistedConfectionSession> 
     updatedAt: Converters.string,
     label: Converters.string.optional(),
     destination: persistedSessionDestination.optional(),
+    production: persistedConfectionSessionProduction.optional(),
     base: Converters.object({
       confectionId: CommonConverters.confectionId,
       versionSpec: CommonConverters.confectionVersionSpec

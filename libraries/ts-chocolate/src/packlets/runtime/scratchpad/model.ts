@@ -32,6 +32,7 @@ import {
   ConfectionVersionSpec,
   FillingId,
   FillingVersionSpec,
+  MoldId,
   SessionId,
   SourceId
 } from '../../common';
@@ -125,6 +126,11 @@ export interface IPersistedConfectionSessionBasePointer {
   readonly versionSpec: ConfectionVersionSpec;
 }
 
+export interface IPersistedConfectionSessionProduction {
+  readonly moldId?: MoldId;
+  readonly frames?: number;
+}
+
 /**
  * Persisted confection session.
  * @public
@@ -132,6 +138,7 @@ export interface IPersistedConfectionSessionBasePointer {
 export interface IPersistedConfectionSession extends IPersistedSessionBase {
   readonly sessionType: 'confection';
   readonly base: IPersistedConfectionSessionBasePointer;
+  readonly production?: IPersistedConfectionSessionProduction;
 }
 
 // ============================================================================

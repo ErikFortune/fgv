@@ -894,6 +894,7 @@ declare namespace Converters_3 {
         persistedSessionType,
         persistedSessionStatus,
         persistedSessionDestination,
+        persistedConfectionSessionProduction,
         persistedConfectionSession,
         persistedFillingSession,
         anyPersistedSession,
@@ -3116,6 +3117,8 @@ interface IPersistedConfectionSession extends IPersistedSessionBase {
     // (undocumented)
     readonly base: IPersistedConfectionSessionBasePointer;
     // (undocumented)
+    readonly production?: IPersistedConfectionSessionProduction;
+    // (undocumented)
     readonly sessionType: 'confection';
 }
 
@@ -3125,6 +3128,14 @@ interface IPersistedConfectionSessionBasePointer {
     readonly confectionId: ConfectionId;
     // (undocumented)
     readonly versionSpec: ConfectionVersionSpec;
+}
+
+// @public (undocumented)
+interface IPersistedConfectionSessionProduction {
+    // (undocumented)
+    readonly frames?: number;
+    // (undocumented)
+    readonly moldId?: MoldId;
 }
 
 // @public
@@ -4699,6 +4710,9 @@ const percentage: Converter<Percentage>;
 // @public
 const persistedConfectionSession: Converter<IPersistedConfectionSession>;
 
+// @public (undocumented)
+const persistedConfectionSessionProduction: Converter<IPersistedConfectionSessionProduction>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedFillingSession"
 //
 // @public
@@ -5566,6 +5580,7 @@ declare namespace Scratchpad {
         IPersistedSessionDestination,
         IPersistedSessionBase,
         IPersistedConfectionSessionBasePointer,
+        IPersistedConfectionSessionProduction,
         IPersistedConfectionSession,
         IPersistedFillingSessionBasePointer,
         IPersistedFillingSession,

@@ -41,6 +41,15 @@ Base pointer for a confection production session.
 </td></tr>
 <tr><td>
 
+[IPersistedConfectionSessionProduction](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessionproduction.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [IPersistedFillingSession](./ts-chocolate.runtime.scratchpad.ipersistedfillingsession.md)
 
 

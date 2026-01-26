@@ -41,6 +41,15 @@ Converter for .
 </td></tr>
 <tr><td>
 
+[persistedConfectionSessionProduction](./ts-chocolate.runtime.session.scratchpad.converters.persistedconfectionsessionproduction.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [persistedFillingSession](./ts-chocolate.runtime.session.scratchpad.converters.persistedfillingsession.md)
 
 

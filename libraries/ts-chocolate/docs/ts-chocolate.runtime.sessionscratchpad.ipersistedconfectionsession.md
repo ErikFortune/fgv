@@ -57,6 +57,27 @@ Description
 </td></tr>
 <tr><td>
 
+[production?](./ts-chocolate.runtime.sessionscratchpad.ipersistedconfectionsession.production.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IPersistedConfectionSessionProduction](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsessionproduction.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [sessionType](./ts-chocolate.runtime.sessionscratchpad.ipersistedconfectionsession.sessiontype.md)
 
 
