@@ -4,6 +4,8 @@
 
 ## Runtime.Session.Scratchpad.IPersistedConfectionSessionProduction interface
 
+Production properties for a confection production session.
+
 **Signature:**
 
 ```typescript

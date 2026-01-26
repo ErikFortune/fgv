@@ -32,6 +32,7 @@ import {
   ConfectionVersionSpec,
   FillingId,
   FillingVersionSpec,
+  IngredientId,
   MoldId,
   SessionId,
   SourceId
@@ -126,9 +127,21 @@ export interface IPersistedConfectionSessionBasePointer {
   readonly versionSpec: ConfectionVersionSpec;
 }
 
+/**
+ * Production properties for a confection production session.
+ * @public
+ */
 export interface IPersistedConfectionSessionProduction {
   readonly moldId?: MoldId;
   readonly frames?: number;
+}
+
+/**
+ * Draft properties for a confection production session.
+ * @public
+ */
+export interface IPersistedConfectionSessionDraft {
+  readonly shellPreferredChocolateId?: IngredientId;
 }
 
 /**
@@ -139,6 +152,7 @@ export interface IPersistedConfectionSession extends IPersistedSessionBase {
   readonly sessionType: 'confection';
   readonly base: IPersistedConfectionSessionBasePointer;
   readonly production?: IPersistedConfectionSessionProduction;
+  readonly draft?: IPersistedConfectionSessionDraft;
 }
 
 // ============================================================================

@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { useMemo, useState } from 'react';
-import type { ConfectionId, ConfectionVersionSpec, MoldId } from '@fgv/ts-chocolate';
+import type { ConfectionId, ConfectionVersionSpec, IngredientId, MoldId } from '@fgv/ts-chocolate';
 import { Converters, Entities, Runtime, type JournalId, type SourceId } from '@fgv/ts-chocolate';
 import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useEditing } from '../../../contexts/EditingContext';
 import { useSessionScratchpad } from '../../../contexts/SessionScratchpadContext';
 
 const LOCAL_JOURNAL_COLLECTIONS_KEY = 'chocolate-lab-web:journals:collections:v1';
@@ -25,6 +26,33 @@ function readLocalJournalCollections(): Record<string, unknown> {
 
 function writeLocalJournalCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_JOURNAL_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
+function nextConfectionVersionSpec(existing: ReadonlyArray<{ versionSpec: string }>): ConfectionVersionSpec {
+  const date = Runtime.Session.getCurrentDateString();
+  const prefix = `${date}-`;
+  let max = 0;
+  for (const v of existing) {
+    const spec = v.versionSpec;
+    if (!spec.startsWith(prefix)) {
+      continue;
+    }
+    const suffix = spec.slice(prefix.length);
+    const counter = Number(suffix.slice(0, 2));
+    if (Number.isFinite(counter) && counter > max) {
+      max = counter;
+    }
+  }
+  const next = String(max + 1).padStart(2, '0');
+  return `${date}-${next}` as unknown as ConfectionVersionSpec;
+}
+
+function getConfectionSourceId(id: ConfectionId): SourceId {
+  return (id as unknown as string).split('.')[0] as unknown as SourceId;
+}
+
+function getConfectionBaseId(id: ConfectionId): string {
+  return (id as unknown as string).split('.')[1] ?? '';
 }
 
 function upsertJournalToLocalCollection(params: {
@@ -67,6 +95,7 @@ export function ProductionView({
   selectedConfectionId: ConfectionId | null;
 }): React.ReactElement {
   const { runtime, loadingState } = useChocolate();
+  const { commitConfectionCollection } = useEditing();
   const {
     scratchpad,
     createConfectionSession,
@@ -74,6 +103,7 @@ export function ProductionView({
     setActiveSessionId,
     setSessionStatus,
     updateConfectionProduction,
+    updateConfectionDraft,
     updateSessionLabel
   } = useSessionScratchpad();
 
@@ -163,6 +193,22 @@ export function ProductionView({
               (confectionForRow as unknown as { molds?: { options: Array<{ id: MoldId; mold?: unknown }> } })
                 ?.molds?.options ?? [];
 
+            const versionForRow =
+              s.sessionType === 'confection' && confectionForRow
+                ? confectionForRow.getVersion(s.base.versionSpec).orDefault(undefined)
+                : undefined;
+            const rawShellSpec = (
+              versionForRow as unknown as {
+                raw?: { shellChocolate?: { ids: IngredientId[]; preferredId?: IngredientId } };
+              }
+            )?.raw?.shellChocolate;
+
+            const draftShellPreferredId =
+              s.sessionType === 'confection' ? s.draft?.shellPreferredChocolateId : undefined;
+            const baseShellPreferredId = rawShellSpec?.preferredId ?? rawShellSpec?.ids?.[0];
+            const effectiveShellPreferredId = draftShellPreferredId ?? baseShellPreferredId;
+            const shellChoices = rawShellSpec?.ids ?? [];
+
             const production = s.sessionType === 'confection' ? s.production : undefined;
             const selectedMoldId = production?.moldId;
             const selectedMold =
@@ -230,66 +276,204 @@ export function ProductionView({
                 return;
               }
 
-              const journalId = Runtime.Session.generateJournalId().orThrow();
-              const confectionVersionId = Converters.confectionVersionId
-                .convert(
-                  `${s.base.confectionId as unknown as string}@${s.base.versionSpec as unknown as string}`
-                )
-                .orThrow();
+              void (async () => {
+                setError(null);
 
-              const sessionFrames = s.production?.frames;
-              const sessionMoldId = s.production?.moldId;
-              const sessionMold = sessionMoldId
-                ? runtime.getRuntimeMold(sessionMoldId).toOptional()
-                : undefined;
-              const scaledYield =
-                sessionMold && sessionFrames && sessionFrames > 0
-                  ? sessionMold.cavityCount * sessionFrames
+                const sessionFrames = s.production?.frames;
+                const sessionMoldId = s.production?.moldId;
+                const sessionMold = sessionMoldId
+                  ? runtime.getRuntimeMold(sessionMoldId).orDefault(undefined)
                   : undefined;
+                const scaledYield =
+                  sessionMold && sessionFrames && sessionFrames > 0
+                    ? sessionMold.cavityCount * sessionFrames
+                    : undefined;
 
-              const entries: Entities.Journal.IConfectionJournalEntry[] = [];
-              if (sessionMoldId) {
-                entries.push({
-                  timestamp: Runtime.Session.getCurrentTimestamp(),
-                  eventType: 'mold-select',
-                  moldId: sessionMoldId
+                const baseConfectionId = s.base.confectionId;
+                const baseVersionSpec = s.base.versionSpec;
+
+                let targetConfectionId = baseConfectionId;
+                let targetVersionSpec = baseVersionSpec;
+
+                const shellChanged =
+                  rawShellSpec &&
+                  effectiveShellPreferredId !== undefined &&
+                  baseShellPreferredId !== undefined &&
+                  effectiveShellPreferredId !== baseShellPreferredId;
+
+                if (shellChanged) {
+                  const desired = effectiveShellPreferredId as IngredientId;
+                  if (!shellChoices.includes(desired)) {
+                    setError('Selected shell chocolate is not in the allowed options for this version');
+                    return;
+                  }
+
+                  const sourceId = getConfectionSourceId(baseConfectionId);
+                  const fallbackTargets = Array.from(
+                    runtime.library.confections.collections.keys()
+                  ) as SourceId[];
+                  const candidates = [sourceId, ...fallbackTargets];
+
+                  let destination: SourceId | undefined;
+                  for (const id of candidates) {
+                    const c = runtime.library.confections.collections.get(id).asResult;
+                    if (c.isSuccess() && c.value.isMutable) {
+                      destination = id;
+                      break;
+                    }
+                  }
+
+                  if (!destination) {
+                    setError('No mutable confection collection available to save a new version');
+                    return;
+                  }
+
+                  const baseIdString = getConfectionBaseId(baseConfectionId);
+                  const baseIdResult = Converters.baseConfectionId.convert(baseIdString);
+                  if (baseIdResult.isFailure()) {
+                    setError(baseIdResult.message);
+                    return;
+                  }
+
+                  const confectionResult = runtime.library.getConfection(baseConfectionId);
+                  if (confectionResult.isFailure()) {
+                    setError(confectionResult.message);
+                    return;
+                  }
+
+                  const rawConfection = confectionResult.value;
+                  const rawVersions = rawConfection.versions as ReadonlyArray<Record<string, unknown>>;
+                  const rawVersion = rawVersions.find(
+                    (v) => v.versionSpec === (baseVersionSpec as unknown as string)
+                  );
+                  if (!rawVersion) {
+                    setError(`Version ${baseVersionSpec as unknown as string} not found`);
+                    return;
+                  }
+
+                  const newVersionSpec = nextConfectionVersionSpec(
+                    rawConfection.versions as unknown as ReadonlyArray<{ versionSpec: string }>
+                  );
+
+                  const newVersion: Record<string, unknown> = {
+                    ...rawVersion,
+                    versionSpec: newVersionSpec as unknown as string,
+                    createdDate: new Date().toISOString(),
+                    shellChocolate: {
+                      ...(rawShellSpec as unknown as Record<string, unknown>),
+                      preferredId: desired as unknown as string
+                    }
+                  };
+
+                  const updatedConfection: Record<string, unknown> = {
+                    ...rawConfection,
+                    versions: [...rawVersions, newVersion]
+                  };
+
+                  const validated = Entities.Confections.Converters.confectionData.convert(updatedConfection);
+                  if (validated.isFailure()) {
+                    setError(validated.message);
+                    return;
+                  }
+
+                  const collectionResult = runtime.library.confections.collections.get(destination).asResult;
+                  if (collectionResult.isFailure()) {
+                    setError(collectionResult.message);
+                    return;
+                  }
+                  if (!collectionResult.value.isMutable) {
+                    setError(`Collection "${destination as unknown as string}" is not mutable`);
+                    return;
+                  }
+
+                  if (collectionResult.value.items.has(baseIdResult.value)) {
+                    // allow overwrite only if it's the same confection being edited
+                    // (baseId collision across different sources isn't representable here)
+                  }
+
+                  const setResult = collectionResult.value.items.validating.set(
+                    baseIdResult.value,
+                    validated.value
+                  ).asResult;
+                  if (setResult.isFailure()) {
+                    setError(setResult.message);
+                    return;
+                  }
+
+                  const persistResult = await commitConfectionCollection(destination);
+                  if (persistResult.isFailure()) {
+                    setError(persistResult.message);
+                    return;
+                  }
+
+                  targetConfectionId = `${destination as unknown as string}.${
+                    baseIdResult.value as unknown as string
+                  }` as unknown as ConfectionId;
+                  targetVersionSpec = newVersionSpec;
+
+                  updateConfectionDraft(s.sessionId, {});
+                }
+
+                const journalId = Runtime.Session.generateJournalId().orThrow();
+                const confectionVersionId = Converters.confectionVersionId
+                  .convert(
+                    `${targetConfectionId as unknown as string}@${targetVersionSpec as unknown as string}`
+                  )
+                  .orThrow();
+
+                const entries: Entities.Journal.IConfectionJournalEntry[] = [];
+                if (shellChanged && effectiveShellPreferredId) {
+                  entries.push({
+                    timestamp: Runtime.Session.getCurrentTimestamp(),
+                    eventType: 'chocolate-select',
+                    chocolateRole: 'shell',
+                    ingredientId: effectiveShellPreferredId,
+                    previousIngredientId: baseShellPreferredId
+                  });
+                }
+                if (sessionMoldId) {
+                  entries.push({
+                    timestamp: Runtime.Session.getCurrentTimestamp(),
+                    eventType: 'mold-select',
+                    moldId: sessionMoldId
+                  });
+                }
+                if (scaledYield !== undefined) {
+                  entries.push({
+                    timestamp: Runtime.Session.getCurrentTimestamp(),
+                    eventType: 'yield-modify',
+                    newYieldCount: scaledYield,
+                    previousYieldCount: versionResult.value.yield.count
+                  });
+                }
+
+                const journal: Entities.Journal.IConfectionJournalRecord = {
+                  journalType: 'confection',
+                  journalId,
+                  confectionVersionId,
+                  date: Runtime.Session.getCurrentDateString(),
+                  yieldCount: scaledYield ?? versionResult.value.yield.count,
+                  ...(versionResult.value.yield.weightPerPiece !== undefined
+                    ? { weightPerPiece: versionResult.value.yield.weightPerPiece }
+                    : {}),
+                  ...(s.label ? { notes: s.label } : {}),
+                  ...(entries.length > 0 ? { entries } : {})
+                };
+
+                const addResult = runtime.journals.addJournal(journal);
+                if (addResult.isFailure()) {
+                  setError(addResult.message);
+                  return;
+                }
+
+                upsertJournalToLocalCollection({
+                  collectionId: 'local' as unknown as SourceId,
+                  journalId,
+                  journal
                 });
-              }
-              if (scaledYield !== undefined) {
-                entries.push({
-                  timestamp: Runtime.Session.getCurrentTimestamp(),
-                  eventType: 'yield-modify',
-                  newYieldCount: scaledYield,
-                  previousYieldCount: versionResult.value.yield.count
-                });
-              }
 
-              const journal: Entities.Journal.IConfectionJournalRecord = {
-                journalType: 'confection',
-                journalId,
-                confectionVersionId,
-                date: Runtime.Session.getCurrentDateString(),
-                yieldCount: scaledYield ?? versionResult.value.yield.count,
-                ...(versionResult.value.yield.weightPerPiece !== undefined
-                  ? { weightPerPiece: versionResult.value.yield.weightPerPiece }
-                  : {}),
-                ...(s.label ? { notes: s.label } : {}),
-                ...(entries.length > 0 ? { entries } : {})
-              };
-
-              const addResult = runtime.journals.addJournal(journal);
-              if (addResult.isFailure()) {
-                setError(addResult.message);
-                return;
-              }
-
-              upsertJournalToLocalCollection({
-                collectionId: 'local' as unknown as SourceId,
-                journalId,
-                journal
-              });
-
-              setSessionStatus(s.sessionId, 'committed');
+                setSessionStatus(s.sessionId, 'committed');
+              })();
             };
 
             return (
@@ -414,6 +598,52 @@ export function ProductionView({
                       <div className="text-sm text-gray-700 dark:text-gray-200">
                         {selectedMold.cavityCount} cavities × {frames} frames ={' '}
                         <span className="font-semibold">{scaledYieldCount}</span> pieces
+                      </div>
+                    ) : null}
+
+                    {shellChoices.length > 0 ? (
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Shell chocolate
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                            value={(effectiveShellPreferredId as unknown as string) ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const next = raw.length > 0 ? (raw as unknown as IngredientId) : undefined;
+                              updateConfectionDraft(s.sessionId, {
+                                shellPreferredChocolateId:
+                                  next && baseShellPreferredId && next !== baseShellPreferredId
+                                    ? next
+                                    : undefined
+                              });
+                            }}
+                          >
+                            {shellChoices.map((id) => {
+                              const ingredient = runtime?.getRuntimeIngredient(id).orDefault(undefined);
+                              const label = ingredient?.name ?? (id as unknown as string);
+                              return (
+                                <option key={id as unknown as string} value={id as unknown as string}>
+                                  {label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => updateConfectionDraft(s.sessionId, {})}
+                            className="px-2 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                        {draftShellPreferredId && baseShellPreferredId ? (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Draft override (base: {baseShellPreferredId as unknown as string})
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

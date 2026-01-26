@@ -895,6 +895,7 @@ declare namespace Converters_3 {
         persistedSessionStatus,
         persistedSessionDestination,
         persistedConfectionSessionProduction,
+        persistedConfectionSessionDraft,
         persistedConfectionSession,
         persistedFillingSession,
         anyPersistedSession,
@@ -3117,6 +3118,8 @@ interface IPersistedConfectionSession extends IPersistedSessionBase {
     // (undocumented)
     readonly base: IPersistedConfectionSessionBasePointer;
     // (undocumented)
+    readonly draft?: IPersistedConfectionSessionDraft;
+    // (undocumented)
     readonly production?: IPersistedConfectionSessionProduction;
     // (undocumented)
     readonly sessionType: 'confection';
@@ -3130,7 +3133,13 @@ interface IPersistedConfectionSessionBasePointer {
     readonly versionSpec: ConfectionVersionSpec;
 }
 
-// @public (undocumented)
+// @public
+interface IPersistedConfectionSessionDraft {
+    // (undocumented)
+    readonly shellPreferredChocolateId?: IngredientId;
+}
+
+// @public
 interface IPersistedConfectionSessionProduction {
     // (undocumented)
     readonly frames?: number;
@@ -4710,7 +4719,14 @@ const percentage: Converter<Percentage>;
 // @public
 const persistedConfectionSession: Converter<IPersistedConfectionSession>;
 
-// @public (undocumented)
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedConfectionSessionDraft"
+//
+// @public
+const persistedConfectionSessionDraft: Converter<IPersistedConfectionSessionDraft>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedConfectionSessionProduction"
+//
+// @public
 const persistedConfectionSessionProduction: Converter<IPersistedConfectionSessionProduction>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedFillingSession"
@@ -5581,6 +5597,7 @@ declare namespace Scratchpad {
         IPersistedSessionBase,
         IPersistedConfectionSessionBasePointer,
         IPersistedConfectionSessionProduction,
+        IPersistedConfectionSessionDraft,
         IPersistedConfectionSession,
         IPersistedFillingSessionBasePointer,
         IPersistedFillingSession,

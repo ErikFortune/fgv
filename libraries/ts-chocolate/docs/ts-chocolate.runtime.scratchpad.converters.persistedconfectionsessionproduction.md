@@ -4,6 +4,8 @@
 
 ## Runtime.Scratchpad.Converters.persistedConfectionSessionProduction variable
 
+Converter for .
+
 **Signature:**
 
 ```typescript

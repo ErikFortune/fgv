@@ -41,10 +41,23 @@ Base pointer for a confection production session.
 </td></tr>
 <tr><td>
 
+[IPersistedConfectionSessionDraft](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsessiondraft.md)
+
+
+</td><td>
+
+Draft properties for a confection production session.
+
+
+</td></tr>
+<tr><td>
+
 [IPersistedConfectionSessionProduction](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsessionproduction.md)
 
 
 </td><td>
+
+Production properties for a confection production session.
 
 
 </td></tr>

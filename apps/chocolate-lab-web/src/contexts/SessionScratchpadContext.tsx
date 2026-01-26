@@ -3,6 +3,7 @@ import {
   Runtime,
   type ConfectionId,
   type ConfectionVersionSpec,
+  type IngredientId,
   type MoldId,
   type SessionId
 } from '@fgv/ts-chocolate';
@@ -10,6 +11,7 @@ import {
 type Scratchpad = Runtime.Scratchpad.ISessionScratchpad;
 type PersistedSessionStatus = Runtime.Scratchpad.PersistedSessionStatus;
 type ConfectionProduction = Runtime.Scratchpad.IPersistedConfectionSessionProduction;
+type ConfectionDraft = Runtime.Scratchpad.IPersistedConfectionSessionDraft;
 
 type SessionScratchpadContextValue = {
   scratchpad: Scratchpad;
@@ -23,6 +25,7 @@ type SessionScratchpadContextValue = {
   updateSessionLabel: (sessionId: SessionId, label: string | undefined) => void;
   setSessionStatus: (sessionId: SessionId, status: PersistedSessionStatus) => void;
   updateConfectionProduction: (sessionId: SessionId, production: ConfectionProduction) => void;
+  updateConfectionDraft: (sessionId: SessionId, draft: ConfectionDraft) => void;
 };
 
 const STORAGE_KEY = 'chocolate-lab-web:scratchpad:sessions:v1';
@@ -104,6 +107,41 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
         updatedAt: nowIso(),
         activeSessionId: sessionId
       }));
+    },
+    [updateScratchpad]
+  );
+
+  const updateConfectionDraft = useCallback(
+    (sessionId: SessionId, draft: ConfectionDraft) => {
+      updateScratchpad((prev) => {
+        const existing = prev.sessions[sessionId];
+        if (!existing || existing.sessionType !== 'confection') {
+          return prev;
+        }
+
+        const ts = nowIso();
+
+        const cleaned: ConfectionDraft = {
+          ...(draft.shellPreferredChocolateId
+            ? { shellPreferredChocolateId: draft.shellPreferredChocolateId as IngredientId }
+            : {})
+        };
+
+        const nextSession: Runtime.Scratchpad.IPersistedConfectionSession = {
+          ...existing,
+          updatedAt: ts,
+          draft: Object.keys(cleaned).length > 0 ? cleaned : undefined
+        };
+
+        return {
+          ...prev,
+          updatedAt: ts,
+          sessions: {
+            ...prev.sessions,
+            [sessionId]: nextSession
+          }
+        };
+      });
     },
     [updateScratchpad]
   );
@@ -260,7 +298,8 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
       setActiveSessionId,
       updateSessionLabel,
       setSessionStatus,
-      updateConfectionProduction
+      updateConfectionProduction,
+      updateConfectionDraft
     }),
     [
       createConfectionSession,
@@ -269,6 +308,7 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
       setActiveSessionId,
       setSessionStatus,
       updateConfectionProduction,
+      updateConfectionDraft,
       updateSessionLabel
     ]
   );

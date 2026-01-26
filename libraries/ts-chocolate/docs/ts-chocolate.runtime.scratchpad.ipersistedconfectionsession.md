@@ -57,6 +57,27 @@ Description
 </td></tr>
 <tr><td>
 
+[draft?](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsession.draft.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IPersistedConfectionSessionDraft](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsessiondraft.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [production?](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsession.production.md)
 
 

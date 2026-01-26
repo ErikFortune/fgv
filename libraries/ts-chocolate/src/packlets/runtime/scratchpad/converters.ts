@@ -31,6 +31,7 @@ import {
   allPersistedSessionStatuses,
   AnyPersistedSession,
   IPersistedConfectionSession,
+  IPersistedConfectionSessionDraft,
   IPersistedConfectionSessionProduction,
   IPersistedFillingSession,
   IPersistedSessionDestination,
@@ -68,12 +69,25 @@ export const persistedSessionDestination: Converter<IPersistedSessionDestination
     overrideCollectionId: CommonConverters.sourceId.optional()
   });
 
+/**
+ * Converter for {@link IPersistedConfectionSessionProduction}.
+ * @public
+ */
 export const persistedConfectionSessionProduction: Converter<IPersistedConfectionSessionProduction> =
   Converters.object<IPersistedConfectionSessionProduction>({
     moldId: CommonConverters.moldId.optional(),
     frames: Converters.number
       .withConstraint((n) => Number.isInteger(n) && n > 0, { description: 'must be a positive integer' })
       .optional()
+  });
+
+/**
+ * Converter for {@link IPersistedConfectionSessionDraft}.
+ * @public
+ */
+export const persistedConfectionSessionDraft: Converter<IPersistedConfectionSessionDraft> =
+  Converters.object<IPersistedConfectionSessionDraft>({
+    shellPreferredChocolateId: CommonConverters.ingredientId.optional()
   });
 
 // ============================================================================
@@ -94,6 +108,7 @@ export const persistedConfectionSession: Converter<IPersistedConfectionSession> 
     label: Converters.string.optional(),
     destination: persistedSessionDestination.optional(),
     production: persistedConfectionSessionProduction.optional(),
+    draft: persistedConfectionSessionDraft.optional(),
     base: Converters.object({
       confectionId: CommonConverters.confectionId,
       versionSpec: CommonConverters.confectionVersionSpec
