@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly byChocolateType?: IRecipesByChocolateTypeConfig;
+readonly byChocolateType?: IFillingRecipesByChocolateTypeConfig;
 ```

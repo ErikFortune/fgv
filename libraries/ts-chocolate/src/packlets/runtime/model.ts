@@ -377,7 +377,7 @@ export interface ICategoryFilter {
  * - ICategoryFilter: Match by category
  * @public
  */
-export type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
+export type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
 // ============================================================================
 // Runtime Version Interfaces
@@ -483,7 +483,7 @@ export interface IRuntimeFillingRecipeVersion {
    * ```
    */
   getIngredients(
-    filter?: RecipeIngredientsFilter[]
+    filter?: FillingRecipeIngredientsFilter[]
   ): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
 
   // ---- Ingredient queries ----
@@ -501,7 +501,7 @@ export interface IRuntimeFillingRecipeVersion {
    * Scales this version to a target weight.
    * @param targetWeight - Target total weight in grams
    * @param options - Optional scaling options (precision, minimum amount)
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   * @returns Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
    */
   scale(
     targetWeight: Measurement,
@@ -512,7 +512,7 @@ export interface IRuntimeFillingRecipeVersion {
    * Scales this version by a multiplicative factor.
    * @param factor - Multiplicative factor (e.g., 2.0 for double)
    * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   * @returns Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
    */
   scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
 
@@ -648,7 +648,7 @@ export interface IRuntimeScaledFillingRecipeVersion {
    * ```
    */
   getIngredients(
-    filter?: RecipeIngredientsFilter[]
+    filter?: FillingRecipeIngredientsFilter[]
   ): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
 
   // ---- Scaling info ----
@@ -793,7 +793,7 @@ export interface IRuntimeFillingRecipe {
   /**
    * Gets a specific version by {@link FillingVersionSpec | version specifier}.
    * @param versionSpec - The version specifier to find
-   * @returns Success with RuntimeVersion, or Failure if not found
+   * @returns Success with RuntimeFillingRecipeVersion, or Failure if not found
    */
   getVersion(versionSpec: FillingVersionSpec): Result<IRuntimeFillingRecipeVersion>;
 
@@ -1059,7 +1059,7 @@ export interface IIngredientUsageInfo {
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeScaledVersion.
+ * Minimal context interface for RuntimeScaledFillingRecipeVersion.
  * Provides only what a scaled version needs to resolve its dependencies.
  *
  * @typeParam TIngredient - The ingredient type returned by ingredients map
@@ -1073,7 +1073,7 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
 }
 
 /**
- * Minimal context interface for RuntimeVersion and RuntimeRecipe.
+ * Minimal context interface for RuntimeFillingRecipeVersion and RuntimeFillingRecipe.
  * Provides ingredient/recipe resolution and scaled version creation.
  *
  * Generic type parameter allows internal implementations to use concrete types

@@ -89,12 +89,23 @@ Calculates the base weight from filling recipe version (sum of ingredient amount
 </td></tr>
 <tr><td>
 
-[calculateForRecipe(recipe, resolver, versionSpec)](./ts-chocolate.calculations.calculateforrecipe.md)
+[calculateForFillingRecipe(recipe, resolver, versionSpec)](./ts-chocolate.calculations.calculateforfillingrecipe.md)
 
 
 </td><td>
 
 Resolves and calculates characteristics for a complete recipe
+
+
+</td></tr>
+<tr><td>
+
+[calculateFromFillingRecipeIngredients(recipeIngredients, resolver)](./ts-chocolate.calculations.calculatefromfillingrecipeingredients.md)
+
+
+</td><td>
+
+Resolves recipe ingredients and calculates blended characteristics
 
 
 </td></tr>
@@ -106,17 +117,6 @@ Resolves and calculates characteristics for a complete recipe
 </td><td>
 
 Calculates blended characteristics from resolved ingredients
-
-
-</td></tr>
-<tr><td>
-
-[calculateFromRecipeIngredients(recipeIngredients, resolver)](./ts-chocolate.calculations.calculatefromrecipeingredients.md)
-
-
-</td><td>
-
-Resolves recipe ingredients and calculates blended characteristics
 
 
 </td></tr>

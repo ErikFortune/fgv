@@ -34,23 +34,23 @@ Provides unified access to: - Ingredient management (multi-source with built-ins
 </td></tr>
 <tr><td>
 
+[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
+
+
+</td><td>
+
+Fluent query builder for recipes. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
 [IngredientQuery](./ts-chocolate.ingredientquery.md)
 
 
 </td><td>
 
 Fluent query builder for ingredients. Allows chaining filters to build complex queries.
-
-
-</td></tr>
-<tr><td>
-
-[RecipeQuery](./ts-chocolate.recipequery.md)
-
-
-</td><td>
-
-Fluent query builder for recipes. Allows chaining filters to build complex queries.
 
 
 </td></tr>

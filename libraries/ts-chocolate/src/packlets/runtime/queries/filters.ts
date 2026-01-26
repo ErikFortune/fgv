@@ -24,7 +24,7 @@
  */
 
 import { AnyRuntimeIngredient } from '../ingredients';
-import { RuntimeRecipe } from '../fillings';
+import { RuntimeFillingRecipe } from '../fillings';
 
 // ============================================================================
 // Generic Filter Types
@@ -43,10 +43,10 @@ export type FilterPredicate<T> = (item: T) => boolean;
 export type IngredientFilter = FilterPredicate<AnyRuntimeIngredient>;
 
 /**
- * Filter for RuntimeRecipe
+ * Filter for RuntimeFillingRecipe
  * @public
  */
-export type RecipeFilter = FilterPredicate<RuntimeRecipe>;
+export type FillingRecipeFilter = FilterPredicate<RuntimeFillingRecipe>;
 
 // ============================================================================
 // Filter Combinators

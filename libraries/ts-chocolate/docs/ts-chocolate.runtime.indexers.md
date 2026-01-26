@@ -19,6 +19,65 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[FillingRecipeIndexerOrchestrator](./ts-chocolate.runtime.indexers.fillingrecipeindexerorchestrator.md)
+
+
+</td><td>
+
+Orchestrator for filling recipe indexers.
+
+Encapsulates all filling recipe-related indexers and provides a unified find interface. The resolver is provided by the RuntimeContext to enable ID-to-entity resolution.
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipesByCategoryIndexer](./ts-chocolate.runtime.indexers.fillingrecipesbycategoryindexer.md)
+
+
+</td><td>
+
+Indexer that finds recipes with a specific category.
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipesByChocolateTypeIndexer](./ts-chocolate.runtime.indexers.fillingrecipesbychocolatetypeindexer.md)
+
+
+</td><td>
+
+Indexer that finds recipes containing a specific chocolate type. Only checks the golden version of each recipe.
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipesByIngredientIndexer](./ts-chocolate.runtime.indexers.fillingrecipesbyingredientindexer.md)
+
+
+</td><td>
+
+Indexer that finds recipes using a specific ingredient.
+
+Supports filtering by: - Primary usage only - Alternate usage only - Any usage
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipesByTagIndexer](./ts-chocolate.runtime.indexers.fillingrecipesbytagindexer.md)
+
+
+</td><td>
+
+Indexer that finds recipes with a specific tag. Tag matching is case-insensitive.
+
+
+</td></tr>
+<tr><td>
+
 [IngredientIndexerOrchestrator](./ts-chocolate.runtime.indexers.ingredientindexerorchestrator.md)
 
 
@@ -38,65 +97,6 @@ Encapsulates all ingredient-related indexers and provides a unified find interfa
 </td><td>
 
 Indexer that finds ingredients with a specific tag. Tag matching is case-insensitive.
-
-
-</td></tr>
-<tr><td>
-
-[RecipeIndexerOrchestrator](./ts-chocolate.runtime.indexers.recipeindexerorchestrator.md)
-
-
-</td><td>
-
-Orchestrator for recipe indexers.
-
-Encapsulates all recipe-related indexers and provides a unified find interface. The resolver is provided by the RuntimeContext to enable ID-to-entity resolution.
-
-
-</td></tr>
-<tr><td>
-
-[RecipesByCategoryIndexer](./ts-chocolate.runtime.indexers.recipesbycategoryindexer.md)
-
-
-</td><td>
-
-Indexer that finds recipes with a specific category.
-
-
-</td></tr>
-<tr><td>
-
-[RecipesByChocolateTypeIndexer](./ts-chocolate.runtime.indexers.recipesbychocolatetypeindexer.md)
-
-
-</td><td>
-
-Indexer that finds recipes containing a specific chocolate type. Only checks the golden version of each recipe.
-
-
-</td></tr>
-<tr><td>
-
-[RecipesByIngredientIndexer](./ts-chocolate.runtime.indexers.recipesbyingredientindexer.md)
-
-
-</td><td>
-
-Indexer that finds recipes using a specific ingredient.
-
-Supports filtering by: - Primary usage only - Alternate usage only - Any usage
-
-
-</td></tr>
-<tr><td>
-
-[RecipesByTagIndexer](./ts-chocolate.runtime.indexers.recipesbytagindexer.md)
-
-
-</td><td>
-
-Indexer that finds recipes with a specific tag. Tag matching is case-insensitive.
 
 
 </td></tr>
@@ -156,18 +156,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ingredientsByTagConfig(tag)](./ts-chocolate.runtime.indexers.ingredientsbytagconfig.md)
-
-
-</td><td>
-
-Creates an IngredientsByTag config.
-
-
-</td></tr>
-<tr><td>
-
-[recipesByCategoryConfig(category)](./ts-chocolate.runtime.indexers.recipesbycategoryconfig.md)
+[fillingRecipesByCategoryConfig(category)](./ts-chocolate.runtime.indexers.fillingrecipesbycategoryconfig.md)
 
 
 </td><td>
@@ -178,7 +167,7 @@ Creates a RecipesByCategory config.
 </td></tr>
 <tr><td>
 
-[recipesByChocolateTypeConfig(chocolateType)](./ts-chocolate.runtime.indexers.recipesbychocolatetypeconfig.md)
+[fillingRecipesByChocolateTypeConfig(chocolateType)](./ts-chocolate.runtime.indexers.fillingrecipesbychocolatetypeconfig.md)
 
 
 </td><td>
@@ -189,7 +178,7 @@ Creates a RecipesByChocolateType config.
 </td></tr>
 <tr><td>
 
-[recipesByIngredientConfig(ingredientId, usageType)](./ts-chocolate.runtime.indexers.recipesbyingredientconfig.md)
+[fillingRecipesByIngredientConfig(ingredientId, usageType)](./ts-chocolate.runtime.indexers.fillingrecipesbyingredientconfig.md)
 
 
 </td><td>
@@ -200,12 +189,23 @@ Creates a RecipesByIngredient config.
 </td></tr>
 <tr><td>
 
-[recipesByTagConfig(tag)](./ts-chocolate.runtime.indexers.recipesbytagconfig.md)
+[fillingRecipesByTagConfig(tag)](./ts-chocolate.runtime.indexers.fillingrecipesbytagconfig.md)
 
 
 </td><td>
 
 Creates a RecipesByTag config.
+
+
+</td></tr>
+<tr><td>
+
+[ingredientsByTagConfig(tag)](./ts-chocolate.runtime.indexers.ingredientsbytagconfig.md)
+
+
+</td><td>
+
+Creates an IngredientsByTag config.
 
 
 </td></tr>
@@ -242,7 +242,51 @@ Interface for resolving entity IDs to entities. The orchestrator uses this to re
 
 </td><td>
 
-Query specification for recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
+Query specification for filling recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
+
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbycategoryconfig.md)
+
+
+</td><td>
+
+Configuration for the RecipesByCategory indexer.
+
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbychocolatetypeconfig.md)
+
+
+</td><td>
+
+Configuration for the RecipesByChocolateType indexer.
+
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipesByIngredientConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbyingredientconfig.md)
+
+
+</td><td>
+
+Configuration for the RecipesByIngredient indexer.
+
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipesByTagConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbytagconfig.md)
+
+
+</td><td>
+
+Configuration for the RecipesByTag indexer.
 
 
 </td></tr>
@@ -294,50 +338,6 @@ Configuration for the IngredientsByTag indexer.
 
 
 </td></tr>
-<tr><td>
-
-[IRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.irecipesbycategoryconfig.md)
-
-
-</td><td>
-
-Configuration for the RecipesByCategory indexer.
-
-
-</td></tr>
-<tr><td>
-
-[IRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.irecipesbychocolatetypeconfig.md)
-
-
-</td><td>
-
-Configuration for the RecipesByChocolateType indexer.
-
-
-</td></tr>
-<tr><td>
-
-[IRecipesByIngredientConfig](./ts-chocolate.runtime.indexers.irecipesbyingredientconfig.md)
-
-
-</td><td>
-
-Configuration for the RecipesByIngredient indexer.
-
-
-</td></tr>
-<tr><td>
-
-[IRecipesByTagConfig](./ts-chocolate.runtime.indexers.irecipesbytagconfig.md)
-
-
-</td><td>
-
-Configuration for the RecipesByTag indexer.
-
-
-</td></tr>
 </tbody></table>
 
 ## Variables
@@ -354,6 +354,61 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[fillingRecipeQuerySpecConverter](./ts-chocolate.runtime.indexers.fillingrecipequeryspecconverter.md)
+
+
+</td><td>
+
+Converter for filling recipe query specification from JSON.
+
+
+</td></tr>
+<tr><td>
+
+[fillingRecipesByCategoryConfigConverter](./ts-chocolate.runtime.indexers.fillingrecipesbycategoryconfigconverter.md)
+
+
+</td><td>
+
+Converter for RecipesByCategory config from JSON.
+
+
+</td></tr>
+<tr><td>
+
+[fillingRecipesByChocolateTypeConfigConverter](./ts-chocolate.runtime.indexers.fillingrecipesbychocolatetypeconfigconverter.md)
+
+
+</td><td>
+
+Converter for RecipesByChocolateType config from JSON.
+
+
+</td></tr>
+<tr><td>
+
+[fillingRecipesByIngredientConfigConverter](./ts-chocolate.runtime.indexers.fillingrecipesbyingredientconfigconverter.md)
+
+
+</td><td>
+
+Converter for RecipesByIngredient config from JSON.
+
+
+</td></tr>
+<tr><td>
+
+[fillingRecipesByTagConfigConverter](./ts-chocolate.runtime.indexers.fillingrecipesbytagconfigconverter.md)
+
+
+</td><td>
+
+Converter for RecipesByTag config from JSON.
+
+
+</td></tr>
+<tr><td>
 
 [ingredientQuerySpecConverter](./ts-chocolate.runtime.indexers.ingredientqueryspecconverter.md)
 
@@ -372,61 +427,6 @@ Converter for ingredient query specification from JSON.
 </td><td>
 
 Converter for IngredientsByTag config from JSON.
-
-
-</td></tr>
-<tr><td>
-
-[recipeQuerySpecConverter](./ts-chocolate.runtime.indexers.recipequeryspecconverter.md)
-
-
-</td><td>
-
-Converter for recipe query specification from JSON.
-
-
-</td></tr>
-<tr><td>
-
-[recipesByCategoryConfigConverter](./ts-chocolate.runtime.indexers.recipesbycategoryconfigconverter.md)
-
-
-</td><td>
-
-Converter for RecipesByCategory config from JSON.
-
-
-</td></tr>
-<tr><td>
-
-[recipesByChocolateTypeConfigConverter](./ts-chocolate.runtime.indexers.recipesbychocolatetypeconfigconverter.md)
-
-
-</td><td>
-
-Converter for RecipesByChocolateType config from JSON.
-
-
-</td></tr>
-<tr><td>
-
-[recipesByIngredientConfigConverter](./ts-chocolate.runtime.indexers.recipesbyingredientconfigconverter.md)
-
-
-</td><td>
-
-Converter for RecipesByIngredient config from JSON.
-
-
-</td></tr>
-<tr><td>
-
-[recipesByTagConfigConverter](./ts-chocolate.runtime.indexers.recipesbytagconfigconverter.md)
-
-
-</td><td>
-
-Converter for RecipesByTag config from JSON.
 
 
 </td></tr>
@@ -453,6 +453,28 @@ Description
 </td><td>
 
 Aggregation mode for combining results from multiple indexers.
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipeIndexerName](./ts-chocolate.runtime.indexers.fillingrecipeindexername.md)
+
+
+</td><td>
+
+Valid filling recipe indexer names (inferred from query spec keys).
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipeResolver](./ts-chocolate.runtime.indexers.fillingreciperesolver.md)
+
+
+</td><td>
+
+Filling recipe resolver function type. Provided by RuntimeContext to resolve filling recipe IDs to entities.
 
 
 </td></tr>
@@ -486,28 +508,6 @@ Ingredient resolver function type. Provided by RuntimeContext to resolve ingredi
 </td><td>
 
 Usage type filter for ingredient lookups.
-
-
-</td></tr>
-<tr><td>
-
-[RecipeIndexerName](./ts-chocolate.runtime.indexers.recipeindexername.md)
-
-
-</td><td>
-
-Valid recipe indexer names (inferred from query spec keys).
-
-
-</td></tr>
-<tr><td>
-
-[RecipeResolver](./ts-chocolate.runtime.indexers.reciperesolver.md)
-
-
-</td><td>
-
-Recipe resolver function type. Provided by RuntimeContext to resolve recipe IDs to entities.
 
 
 </td></tr>

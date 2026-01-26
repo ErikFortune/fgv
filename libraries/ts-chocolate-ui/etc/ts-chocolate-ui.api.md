@@ -91,7 +91,7 @@ export interface IDetailSectionProps {
 // @public
 export interface IFillingCardProps {
     className?: string;
-    filling: Runtime.RuntimeRecipe;
+    filling: Runtime.RuntimeFillingRecipe;
     isSelected?: boolean;
     onClick?: () => void;
     showCollection?: boolean;

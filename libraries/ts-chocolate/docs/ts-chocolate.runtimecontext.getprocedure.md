@@ -4,7 +4,7 @@
 
 ## RuntimeContext.getProcedure() method
 
-Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+Gets a procedure by its composite ID. Used internally by RuntimeFillingRecipe for procedure resolution.
 
 **Signature:**
 

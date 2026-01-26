@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly byCategory?: IRecipesByCategoryConfig;
+readonly byCategory?: IFillingRecipesByCategoryConfig;
 ```

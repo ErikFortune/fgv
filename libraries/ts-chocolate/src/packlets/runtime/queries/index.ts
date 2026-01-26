@@ -25,4 +25,4 @@
 
 export * from './filters';
 export * from './ingredientQuery';
-export * from './recipeQuery';
+export * from './fillingRecipeQuery';

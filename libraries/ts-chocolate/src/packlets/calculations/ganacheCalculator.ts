@@ -255,7 +255,7 @@ export function calculateFromIngredients(
  * @returns Success with ganache analysis, or Failure if resolution fails
  * @public
  */
-export function calculateFromRecipeIngredients(
+export function calculateFromFillingRecipeIngredients(
   recipeIngredients: ReadonlyArray<IFillingIngredient>,
   resolver: IngredientResolver
 ): Result<IGanacheAnalysis> {
@@ -288,7 +288,7 @@ export function calculateFromRecipeIngredients(
  * @returns Success with ganache analysis, or Failure if resolution fails
  * @public
  */
-export function calculateForRecipe(
+export function calculateForFillingRecipe(
   recipe: IFillingRecipe,
   resolver: IngredientResolver,
   versionSpec?: FillingVersionSpec
@@ -300,7 +300,7 @@ export function calculateForRecipe(
     return Failure.with(`Version ${targetVersionSpec} not found in recipe ${recipe.baseId}`);
   }
 
-  return calculateFromRecipeIngredients(version.ingredients, resolver);
+  return calculateFromFillingRecipeIngredients(version.ingredients, resolver);
 }
 
 // ============================================================================
@@ -424,7 +424,7 @@ export function calculateGanache(
   resolver: IngredientResolver,
   versionSpec?: FillingVersionSpec
 ): Result<IGanacheCalculation> {
-  return calculateForRecipe(recipe, resolver, versionSpec).onSuccess((analysis) =>
+  return calculateForFillingRecipe(recipe, resolver, versionSpec).onSuccess((analysis) =>
     Success.with({
       analysis,
       validation: validateGanache(analysis)

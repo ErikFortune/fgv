@@ -9,5 +9,5 @@ Filling recipe to display
 **Signature:**
 
 ```typescript
-filling: Runtime.RuntimeRecipe;
+filling: Runtime.RuntimeFillingRecipe;
 ```

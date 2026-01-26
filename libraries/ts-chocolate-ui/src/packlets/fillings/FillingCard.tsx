@@ -23,7 +23,7 @@ function getFillingSourceId(id: FillingId): string {
  */
 export interface IFillingCardProps {
   /** Filling recipe to display */
-  filling: Runtime.RuntimeRecipe;
+  filling: Runtime.RuntimeFillingRecipe;
   /** Whether to show collection badge */
   showCollection?: boolean;
   /** Optional additional CSS classes */

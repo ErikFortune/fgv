@@ -60,7 +60,11 @@ export {
 } from './ingredients';
 
 // Runtime filling recipe classes
-export { RuntimeRecipe, RuntimeVersion, RuntimeScaledVersion } from './fillings';
+export {
+  RuntimeFillingRecipe,
+  RuntimeFillingRecipeVersion,
+  RuntimeScaledFillingRecipeVersion
+} from './fillings';
 
 // Runtime confection classes
 export {

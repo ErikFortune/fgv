@@ -306,13 +306,13 @@ export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Tri
 function calculateBaseWeight(version: IFillingRecipeVersion): Measurement;
 
 // @public
-function calculateForRecipe(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
+function calculateForFillingRecipe(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
+
+// @public
+function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<IFillingIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
-
-// @public
-function calculateFromRecipeIngredients(recipeIngredients: ReadonlyArray<IFillingIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 
 // @public
 function calculateGanache(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
@@ -329,8 +329,8 @@ function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredi
 declare namespace Calculations {
     export {
         calculateFromIngredients,
-        calculateFromRecipeIngredients,
-        calculateForRecipe,
+        calculateFromFillingRecipeIngredients,
+        calculateForFillingRecipe,
         validateGanache,
         calculateGanache,
         IGanacheAnalysis,
@@ -1380,10 +1380,158 @@ const fillingRecipe: Converter<IFillingRecipe>;
 // @public
 const fillingRecipeData: Converter<IFillingRecipe>;
 
+// @public
+type FillingRecipeFilter = FilterPredicate<RuntimeFillingRecipe>;
+
+// @public
+type FillingRecipeIndexerName = keyof IFillingRecipeQuerySpec;
+
+// @public
+class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeFillingRecipe, FillingId> {
+    constructor(library: ChocolateLibrary, resolver: FillingRecipeResolver);
+    convertConfig(json: unknown): Result<IFillingRecipeQuerySpec>;
+    find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeFillingRecipe>>;
+    invalidate(): void;
+    warmUp(): void;
+}
+
+// @public
+type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const fillingRecipeJournalRecord: Converter<IFillingRecipeJournalRecord>;
+
+// @public
+export class FillingRecipeQuery {
+    constructor(context: RuntimeContext);
+    count(): number;
+    descriptionContains(text: string): FillingRecipeQuery;
+    execute(): ReadonlyArray<RuntimeFillingRecipe>;
+    exists(): boolean;
+    first(): RuntimeFillingRecipe | undefined;
+    fromSource(sourceId: SourceId): FillingRecipeQuery;
+    ganacheFatContent(min: Percentage, max?: Percentage): FillingRecipeQuery;
+    ganacheWithWarnings(): FillingRecipeQuery;
+    hasMultipleVersions(): FillingRecipeQuery;
+    minVersions(count: number): FillingRecipeQuery;
+    nameContains(text: string): FillingRecipeQuery;
+    validGanache(): FillingRecipeQuery;
+    where(predicate: FillingRecipeFilter): FillingRecipeQuery;
+    withAllIngredients(ingredientIds: IngredientId[]): FillingRecipeQuery;
+    withAllTags(tags: string[]): FillingRecipeQuery;
+    withAnyIngredient(ingredientIds: IngredientId[]): FillingRecipeQuery;
+    withAnyTag(tags: string[]): FillingRecipeQuery;
+    withChocolateType(type: ChocolateType): FillingRecipeQuery;
+    withDarkChocolate(): FillingRecipeQuery;
+    withIngredient(ingredientId: IngredientId): FillingRecipeQuery;
+    withMilkChocolate(): FillingRecipeQuery;
+    withoutIngredient(ingredientId: IngredientId): FillingRecipeQuery;
+    withRubyChocolate(): FillingRecipeQuery;
+    withTag(tag: string): FillingRecipeQuery;
+    withWhiteChocolate(): FillingRecipeQuery;
+}
+
+// @public
+const fillingRecipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec>;
+
+// @public
+type FillingRecipeResolver = (id: FillingId) => Result<IRuntimeFillingRecipe>;
+
+// @public
+function fillingRecipesByCategoryConfig(category: FillingCategory_2): IFillingRecipesByCategoryConfig;
+
+// @public
+const fillingRecipesByCategoryConfigConverter: Converter<IFillingRecipesByCategoryConfig>;
+
+// @public
+class FillingRecipesByCategoryIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IFillingRecipesByCategoryConfig> {
+    constructor(library: ChocolateLibrary);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _buildIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _clearIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _findInternal(config: IFillingRecipesByCategoryConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
+    getAllCategories(): ReadonlyArray<FillingCategory_2>;
+}
+
+// @public
+function fillingRecipesByChocolateTypeConfig(chocolateType: ChocolateType): IFillingRecipesByChocolateTypeConfig;
+
+// @public
+const fillingRecipesByChocolateTypeConfigConverter: Converter<IFillingRecipesByChocolateTypeConfig>;
+
+// @public
+class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IFillingRecipesByChocolateTypeConfig> {
+    constructor(library: ChocolateLibrary);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _buildIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _clearIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _findInternal(config: IFillingRecipesByChocolateTypeConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
+}
+
+// @public
+function fillingRecipesByIngredientConfig(ingredientId: IngredientId, usageType?: IngredientUsageType): IFillingRecipesByIngredientConfig;
+
+// @public
+const fillingRecipesByIngredientConfigConverter: Converter<IFillingRecipesByIngredientConfig>;
+
+// @public
+class FillingRecipesByIngredientIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IFillingRecipesByIngredientConfig> {
+    constructor(library: ChocolateLibrary);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _buildIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _clearIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _findInternal(config: IFillingRecipesByIngredientConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
+}
+
+// @public
+function fillingRecipesByTagConfig(tag: string): IFillingRecipesByTagConfig;
+
+// @public
+const fillingRecipesByTagConfigConverter: Converter<IFillingRecipesByTagConfig>;
+
+// @public
+class FillingRecipesByTagIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IFillingRecipesByTagConfig> {
+    constructor(library: ChocolateLibrary);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _buildIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _clearIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _findInternal(config: IFillingRecipesByTagConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
+    getAllTags(): ReadonlyArray<string>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2239,13 +2387,34 @@ interface IFillingRecipeJournalRecord {
 // @public
 interface IFillingRecipeQuerySpec {
     // (undocumented)
-    readonly byCategory?: IRecipesByCategoryConfig;
+    readonly byCategory?: IFillingRecipesByCategoryConfig;
     // (undocumented)
-    readonly byChocolateType?: IRecipesByChocolateTypeConfig;
+    readonly byChocolateType?: IFillingRecipesByChocolateTypeConfig;
     // (undocumented)
-    readonly byIngredient?: IRecipesByIngredientConfig;
+    readonly byIngredient?: IFillingRecipesByIngredientConfig;
     // (undocumented)
-    readonly byTag?: IRecipesByTagConfig;
+    readonly byTag?: IFillingRecipesByTagConfig;
+}
+
+// @public
+interface IFillingRecipesByCategoryConfig {
+    readonly category: FillingCategory_2;
+}
+
+// @public
+interface IFillingRecipesByChocolateTypeConfig {
+    readonly chocolateType: ChocolateType;
+}
+
+// @public
+interface IFillingRecipesByIngredientConfig {
+    readonly ingredientId: IngredientId;
+    readonly usageType?: IngredientUsageType;
+}
+
+// @public
+interface IFillingRecipesByTagConfig {
+    readonly tag: string;
 }
 
 // @public
@@ -2645,32 +2814,32 @@ declare namespace Indexers {
     export {
         BaseIndexer,
         BaseIndexerOrchestrator,
-        IRecipesByIngredientConfig,
+        IFillingRecipesByIngredientConfig,
         IngredientUsageType,
-        RecipesByIngredientIndexer,
-        recipesByIngredientConfig,
-        recipesByIngredientConfigConverter,
-        IRecipesByTagConfig,
-        RecipesByTagIndexer,
-        recipesByTagConfig,
-        recipesByTagConfigConverter,
+        FillingRecipesByIngredientIndexer,
+        fillingRecipesByIngredientConfig,
+        fillingRecipesByIngredientConfigConverter,
+        IFillingRecipesByTagConfig,
+        FillingRecipesByTagIndexer,
+        fillingRecipesByTagConfig,
+        fillingRecipesByTagConfigConverter,
         IIngredientsByTagConfig,
         IngredientsByTagIndexer,
         ingredientsByTagConfig,
         ingredientsByTagConfigConverter,
-        IRecipesByChocolateTypeConfig,
-        RecipesByChocolateTypeIndexer,
-        recipesByChocolateTypeConfig,
-        recipesByChocolateTypeConfigConverter,
-        IRecipesByCategoryConfig,
-        RecipesByCategoryIndexer,
-        recipesByCategoryConfig,
-        recipesByCategoryConfigConverter,
+        IFillingRecipesByChocolateTypeConfig,
+        FillingRecipesByChocolateTypeIndexer,
+        fillingRecipesByChocolateTypeConfig,
+        fillingRecipesByChocolateTypeConfigConverter,
+        IFillingRecipesByCategoryConfig,
+        FillingRecipesByCategoryIndexer,
+        fillingRecipesByCategoryConfig,
+        fillingRecipesByCategoryConfigConverter,
         IFillingRecipeQuerySpec,
-        RecipeIndexerName,
-        RecipeIndexerOrchestrator,
-        RecipeResolver,
-        recipeQuerySpecConverter,
+        FillingRecipeIndexerName,
+        FillingRecipeIndexerOrchestrator,
+        FillingRecipeResolver,
+        fillingRecipeQuerySpecConverter,
         IIngredientQuerySpec,
         IngredientIndexerName,
         IngredientIndexerOrchestrator,
@@ -3006,27 +3175,6 @@ interface IRecipeFillingOption {
 }
 
 // @public
-interface IRecipesByCategoryConfig {
-    readonly category: FillingCategory_2;
-}
-
-// @public
-interface IRecipesByChocolateTypeConfig {
-    readonly chocolateType: ChocolateType;
-}
-
-// @public
-interface IRecipesByIngredientConfig {
-    readonly ingredientId: IngredientId;
-    readonly usageType?: IngredientUsageType;
-}
-
-// @public
-interface IRecipesByTagConfig {
-    readonly tag: string;
-}
-
-// @public
 export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
     readonly id: TId;
     readonly notes?: string;
@@ -3351,7 +3499,7 @@ interface IRuntimeFillingRecipeVersion {
     readonly createdDate: string;
     readonly fillingId: FillingId;
     readonly fillingRecipe: IRuntimeFillingRecipe;
-    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
+    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
     readonly notes?: string;
     readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IFillingRating>;
@@ -3502,7 +3650,7 @@ interface IRuntimeScaledFillingRecipeVersion {
     readonly baseWeight: Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
     readonly createdDate: string;
-    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
+    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
     readonly notes?: string;
     readonly ratings: ReadonlyArray<IFillingRating>;
     readonly raw: IComputedScaledFillingRecipe;
@@ -4594,154 +4742,6 @@ class RecipeEditingSession implements ISessionState {
 const recipeFillingOption: Converter<IRecipeFillingOption>;
 
 // @public
-type RecipeFilter = FilterPredicate<RuntimeRecipe>;
-
-// @public
-type RecipeIndexerName = keyof IFillingRecipeQuerySpec;
-
-// @public
-class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeFillingRecipe, FillingId> {
-    constructor(library: ChocolateLibrary, resolver: RecipeResolver);
-    convertConfig(json: unknown): Result<IFillingRecipeQuerySpec>;
-    find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeFillingRecipe>>;
-    invalidate(): void;
-    warmUp(): void;
-}
-
-// @public
-type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
-
-// @public
-export class RecipeQuery {
-    constructor(context: RuntimeContext);
-    count(): number;
-    descriptionContains(text: string): RecipeQuery;
-    execute(): ReadonlyArray<RuntimeRecipe>;
-    exists(): boolean;
-    first(): RuntimeRecipe | undefined;
-    fromSource(sourceId: SourceId): RecipeQuery;
-    ganacheFatContent(min: Percentage, max?: Percentage): RecipeQuery;
-    ganacheWithWarnings(): RecipeQuery;
-    hasMultipleVersions(): RecipeQuery;
-    minVersions(count: number): RecipeQuery;
-    nameContains(text: string): RecipeQuery;
-    validGanache(): RecipeQuery;
-    where(predicate: RecipeFilter): RecipeQuery;
-    withAllIngredients(ingredientIds: IngredientId[]): RecipeQuery;
-    withAllTags(tags: string[]): RecipeQuery;
-    withAnyIngredient(ingredientIds: IngredientId[]): RecipeQuery;
-    withAnyTag(tags: string[]): RecipeQuery;
-    withChocolateType(type: ChocolateType): RecipeQuery;
-    withDarkChocolate(): RecipeQuery;
-    withIngredient(ingredientId: IngredientId): RecipeQuery;
-    withMilkChocolate(): RecipeQuery;
-    withoutIngredient(ingredientId: IngredientId): RecipeQuery;
-    withRubyChocolate(): RecipeQuery;
-    withTag(tag: string): RecipeQuery;
-    withWhiteChocolate(): RecipeQuery;
-}
-
-// @public
-const recipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec>;
-
-// @public
-type RecipeResolver = (id: FillingId) => Result<IRuntimeFillingRecipe>;
-
-// @public
-function recipesByCategoryConfig(category: FillingCategory_2): IRecipesByCategoryConfig;
-
-// @public
-const recipesByCategoryConfigConverter: Converter<IRecipesByCategoryConfig>;
-
-// @public
-class RecipesByCategoryIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByCategoryConfig> {
-    constructor(library: ChocolateLibrary);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _buildIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _clearIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _findInternal(config: IRecipesByCategoryConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
-    getAllCategories(): ReadonlyArray<FillingCategory_2>;
-}
-
-// @public
-function recipesByChocolateTypeConfig(chocolateType: ChocolateType): IRecipesByChocolateTypeConfig;
-
-// @public
-const recipesByChocolateTypeConfigConverter: Converter<IRecipesByChocolateTypeConfig>;
-
-// @public
-class RecipesByChocolateTypeIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByChocolateTypeConfig> {
-    constructor(library: ChocolateLibrary);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _buildIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _clearIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _findInternal(config: IRecipesByChocolateTypeConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
-}
-
-// @public
-function recipesByIngredientConfig(ingredientId: IngredientId, usageType?: IngredientUsageType): IRecipesByIngredientConfig;
-
-// @public
-const recipesByIngredientConfigConverter: Converter<IRecipesByIngredientConfig>;
-
-// @public
-class RecipesByIngredientIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByIngredientConfig> {
-    constructor(library: ChocolateLibrary);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _buildIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _clearIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _findInternal(config: IRecipesByIngredientConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
-}
-
-// @public
-function recipesByTagConfig(tag: string): IRecipesByTagConfig;
-
-// @public
-const recipesByTagConfigConverter: Converter<IRecipesByTagConfig>;
-
-// @public
-class RecipesByTagIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByTagConfig> {
-    constructor(library: ChocolateLibrary);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _buildIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _clearIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    protected _findInternal(config: IRecipesByTagConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
-    getAllTags(): ReadonlyArray<string>;
-}
-
-// @public
 function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>>;
 
 // @public
@@ -4794,9 +4794,9 @@ declare namespace Runtime {
         RuntimeAlcoholIngredient,
         RuntimeIngredient,
         AnyRuntimeIngredient,
-        RuntimeRecipe,
-        RuntimeVersion,
-        RuntimeScaledVersion,
+        RuntimeFillingRecipe,
+        RuntimeFillingRecipeVersion,
+        RuntimeScaledFillingRecipeVersion,
         RuntimeConfectionBase,
         RuntimeMoldedBonBon,
         RuntimeBarTruffle,
@@ -4827,7 +4827,7 @@ declare namespace Runtime {
         IRuntimeFatIngredient,
         IRuntimeAlcoholIngredient,
         ICategoryFilter,
-        RecipeIngredientsFilter,
+        FillingRecipeIngredientsFilter,
         IRuntimeFillingRecipeVersion,
         IRuntimeScalingSource,
         IRuntimeScaledFillingRecipeVersion,
@@ -4884,9 +4884,9 @@ declare namespace Runtime {
         oneOf,
         FilterPredicate,
         IngredientFilter,
-        RecipeFilter,
+        FillingRecipeFilter,
         IngredientQuery,
-        RecipeQuery
+        FillingRecipeQuery
     }
 }
 export { Runtime }
@@ -5022,26 +5022,26 @@ export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     get confections(): ConfectionsLibrary;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createWeightContext(): IWeightCalculationContext;
-    get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeRecipe, IFillingRecipeQuerySpec>;
+    get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getConfection(id: ConfectionId): Result<ConfectionData>;
     // @internal
-    getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeRecipe[];
+    _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe>;
     // @internal
-    getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeRecipe[];
+    getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
     // @internal
-    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[];
+    getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    // @internal
+    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
     // @internal
     _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord>;
     getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
     getProcedure(id: string): Result<IProcedure>;
-    // @internal
-    _getRecipe(id: FillingId): Result<RuntimeRecipe>;
     getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection>;
     getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
@@ -5093,6 +5093,56 @@ class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatI
     static create(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredient): Result<RuntimeFatIngredient>;
     get meltingPoint(): Celsius | undefined;
     get raw(): IFatIngredient;
+}
+
+// @public
+class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
+    // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "RuntimeFillingRecipe"
+    //
+    // @internal
+    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe);
+    get baseId(): BaseFillingId;
+    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipe): Result<RuntimeFillingRecipe>;
+    get description(): string | undefined;
+    getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
+    getVersion(versionSpec: FillingVersionSpec): Result<RuntimeFillingRecipeVersion>;
+    get goldenVersion(): RuntimeFillingRecipeVersion;
+    get goldenVersionSpec(): FillingVersionSpec;
+    get id(): FillingId;
+    get latestVersion(): RuntimeFillingRecipeVersion;
+    get name(): FillingName;
+    get raw(): IFillingRecipe;
+    get sourceId(): SourceId;
+    get tags(): ReadonlyArray<string>;
+    usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
+    get versionCount(): number;
+    get versions(): ReadonlyArray<RuntimeFillingRecipeVersion>;
+}
+
+// @public
+class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
+    // Warning: (ae-forgotten-export) The symbol "VersionContext" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion);
+    get baseWeight(): Measurement;
+    calculateGanache(): Result<IGanacheCalculation>;
+    static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion): Result<RuntimeFillingRecipeVersion>;
+    get createdDate(): string;
+    get fillingId(): FillingId;
+    get fillingRecipe(): IRuntimeFillingRecipe;
+    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
+    get notes(): string | undefined;
+    get procedures(): IResolvedProcedures | undefined;
+    get ratings(): ReadonlyArray<IFillingRating>;
+    get raw(): IFillingRecipeVersion;
+    scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
+    scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
+    usesIngredient(ingredientId: IngredientId): boolean;
+    get versionId(): FillingVersionId;
+    get versionSpec(): FillingVersionSpec;
+    get yield(): string | undefined;
 }
 
 // @public
@@ -5217,31 +5267,6 @@ class RuntimeProcedure implements IRuntimeProcedure {
     get totalWaitTime(): Minutes | undefined;
 }
 
-// @public
-class RuntimeRecipe implements IRuntimeFillingRecipe {
-    // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "RuntimeRecipe"
-    //
-    // @internal
-    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe);
-    get baseId(): BaseFillingId;
-    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipe): Result<RuntimeRecipe>;
-    get description(): string | undefined;
-    getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
-    getVersion(versionSpec: FillingVersionSpec): Result<RuntimeVersion>;
-    get goldenVersion(): RuntimeVersion;
-    get goldenVersionSpec(): FillingVersionSpec;
-    get id(): FillingId;
-    get latestVersion(): RuntimeVersion;
-    get name(): FillingName;
-    get raw(): IFillingRecipe;
-    get sourceId(): SourceId;
-    get tags(): ReadonlyArray<string>;
-    usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
-    get versionCount(): number;
-    get versions(): ReadonlyArray<RuntimeVersion>;
-}
-
 // @internal
 class RuntimeReverseIndex {
     constructor(library: ChocolateLibrary);
@@ -5279,16 +5304,16 @@ class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRoll
 }
 
 // @public
-class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion {
+class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingRecipeVersion {
     // Warning: (ae-forgotten-export) The symbol "ScaledVersionContext" needs to be exported by the entry point index.d.ts
     //
     // @internal
     constructor(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe);
     get baseWeight(): Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe): Result<RuntimeScaledVersion>;
+    static create(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
     get createdDate(): string;
-    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
+    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
     get notes(): string | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
     get raw(): IComputedScaledFillingRecipe;
@@ -5334,31 +5359,6 @@ class RuntimeTask implements IRuntimeTask {
     get template(): string;
     validateAndRender(params: Record<string, unknown>): Result<string>;
     validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
-}
-
-// @public
-class RuntimeVersion implements IRuntimeFillingRecipeVersion {
-    // Warning: (ae-forgotten-export) The symbol "VersionContext" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion);
-    get baseWeight(): Measurement;
-    calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion): Result<RuntimeVersion>;
-    get createdDate(): string;
-    get fillingId(): FillingId;
-    get fillingRecipe(): IRuntimeFillingRecipe;
-    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
-    get notes(): string | undefined;
-    get procedures(): IResolvedProcedures | undefined;
-    get ratings(): ReadonlyArray<IFillingRating>;
-    get raw(): IFillingRecipeVersion;
-    scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
-    scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
-    usesIngredient(ingredientId: IngredientId): boolean;
-    get versionId(): FillingVersionId;
-    get versionSpec(): FillingVersionSpec;
-    get yield(): string | undefined;
 }
 
 // @public

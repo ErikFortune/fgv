@@ -421,7 +421,7 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('recipes.get returns RuntimeRecipe', () => {
+    test('recipes.get returns RuntimeFillingRecipe', () => {
       expect(ctx.fillings.get('test.dark-ganache' as FillingId)).toSucceedAndSatisfy((recipe) => {
         expect(recipe.id).toBe('test.dark-ganache');
         expect(recipe.name).toBe('Dark Ganache');
@@ -1194,7 +1194,7 @@ describe('RuntimeContext', () => {
         testCtx = RuntimeContext.fromLibrary(library).orThrow();
       });
 
-      test('returns RuntimeRecipe for valid ID', () => {
+      test('returns RuntimeFillingRecipe for valid ID', () => {
         expect(testCtx.getRuntimeFilling('test.dark-ganache' as FillingId)).toSucceedAndSatisfy(
           (runtimeRecipe) => {
             expect(runtimeRecipe.id).toBe('test.dark-ganache');

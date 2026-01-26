@@ -45,7 +45,7 @@ import {
   ChocolateLibrary,
   RuntimeContext,
   IngredientQuery,
-  RecipeQuery,
+  FillingRecipeQuery,
   andFilters,
   orFilters,
   notFilter,
@@ -739,20 +739,20 @@ describe('Query Filters and Builders', () => {
   });
 
   // ============================================================================
-  // RecipeQuery Tests
+  // FillingRecipeQuery Tests
   // ============================================================================
 
-  describe('RecipeQuery', () => {
+  describe('FillingRecipeQuery', () => {
     describe('ingredient filters', () => {
       test('withIngredient() filters by ingredient', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withIngredient('test.dark-chocolate' as IngredientId).execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');
       });
 
       test('withAnyIngredient() filters by any ingredient', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query
           .withAnyIngredient(['test.dark-chocolate' as IngredientId, 'test.milk-chocolate' as IngredientId])
           .execute();
@@ -760,7 +760,7 @@ describe('Query Filters and Builders', () => {
       });
 
       test('withAllIngredients() filters by all ingredients', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query
           .withAllIngredients(['test.dark-chocolate' as IngredientId, 'test.cream' as IngredientId])
           .execute();
@@ -768,7 +768,7 @@ describe('Query Filters and Builders', () => {
       });
 
       test('withoutIngredient() excludes ingredient', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withoutIngredient('test.dark-chocolate' as IngredientId).execute();
         expect(results.length).toBe(2);
       });
@@ -776,34 +776,34 @@ describe('Query Filters and Builders', () => {
 
     describe('chocolate type filters', () => {
       test('withDarkChocolate() filters to dark chocolate recipes', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withDarkChocolate().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');
       });
 
       test('withMilkChocolate() filters to milk chocolate recipes', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withMilkChocolate().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Milk Ganache');
       });
 
       test('withWhiteChocolate() filters to white chocolate recipes', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withWhiteChocolate().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('White Ganache');
       });
 
       test('withRubyChocolate() returns empty for no ruby recipes', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withRubyChocolate().execute();
         expect(results.length).toBe(0);
       });
 
       test('withChocolateType() filters by type', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withChocolateType('dark').execute();
         expect(results.length).toBe(1);
       });
@@ -811,19 +811,19 @@ describe('Query Filters and Builders', () => {
 
     describe('tag filters', () => {
       test('withTag() filters by tag', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withTag('classic').execute();
         expect(results.length).toBe(2);
       });
 
       test('withAnyTag() filters by any tag', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withAnyTag(['dark', 'milk']).execute();
         expect(results.length).toBe(2);
       });
 
       test('withAllTags() filters by all tags', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withAllTags(['classic', 'dark']).execute();
         expect(results.length).toBe(1);
       });
@@ -831,7 +831,7 @@ describe('Query Filters and Builders', () => {
 
     describe('source filters', () => {
       test('fromSource() filters by source', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.fromSource('test' as SourceId).execute();
         expect(results.length).toBe(3);
       });
@@ -839,25 +839,25 @@ describe('Query Filters and Builders', () => {
 
     describe('ganache filters', () => {
       test('ganacheFatContent() filters by fat content', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.ganacheFatContent(20 as Percentage).execute();
         expect(results.length).toBeGreaterThan(0);
       });
 
       test('ganacheFatContent() with max', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.ganacheFatContent(10 as Percentage, 50 as Percentage).execute();
         expect(results.length).toBeGreaterThan(0);
       });
 
       test('validGanache() filters to valid recipes', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.validGanache().execute();
         expect(results.length).toBeGreaterThan(0);
       });
 
       test('ganacheWithWarnings() filters to recipes with warnings', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.ganacheWithWarnings().execute();
         // May or may not have warnings depending on test data
         expect(Array.isArray(results)).toBe(true);
@@ -866,14 +866,14 @@ describe('Query Filters and Builders', () => {
 
     describe('version filters', () => {
       test('hasMultipleVersions() filters to multi-version recipes', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.hasMultipleVersions().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');
       });
 
       test('minVersions() filters by version count', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.minVersions(2).execute();
         expect(results.length).toBe(1);
       });
@@ -881,13 +881,13 @@ describe('Query Filters and Builders', () => {
 
     describe('text search', () => {
       test('nameContains() searches name', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.nameContains('ganache').execute();
         expect(results.length).toBe(3);
       });
 
       test('descriptionContains() searches description', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.descriptionContains('classic').execute();
         expect(results.length).toBe(1);
       });
@@ -895,7 +895,7 @@ describe('Query Filters and Builders', () => {
 
     describe('custom filter', () => {
       test('where() applies custom predicate', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.where((r) => r.versionCount > 1).execute();
         expect(results.length).toBe(1);
       });
@@ -903,32 +903,32 @@ describe('Query Filters and Builders', () => {
 
     describe('execution methods', () => {
       test('execute() returns all matching', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.execute();
         expect(results.length).toBe(3);
       });
 
       test('first() returns first matching', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const result = query.first();
         expect(result).toBeDefined();
       });
 
       test('count() returns match count', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const count = query.count();
         expect(count).toBe(3);
       });
 
       test('exists() returns true when matches exist', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         expect(query.exists()).toBe(true);
       });
     });
 
     describe('chained queries', () => {
       test('multiple filters combine with AND logic', () => {
-        const query = new RecipeQuery(ctx);
+        const query = new FillingRecipeQuery(ctx);
         const results = query.withTag('classic').hasMultipleVersions().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');

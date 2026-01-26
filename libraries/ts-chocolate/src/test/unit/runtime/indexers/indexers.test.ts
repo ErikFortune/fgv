@@ -49,26 +49,26 @@ import {
 
 // Destructure the Indexers namespace for convenient access
 const {
-  RecipesByIngredientIndexer,
-  RecipesByTagIndexer,
+  FillingRecipesByIngredientIndexer,
+  FillingRecipesByTagIndexer,
   IngredientsByTagIndexer,
-  RecipesByChocolateTypeIndexer,
-  RecipesByCategoryIndexer,
-  RecipeIndexerOrchestrator,
+  FillingRecipesByChocolateTypeIndexer,
+  FillingRecipesByCategoryIndexer,
+  FillingRecipeIndexerOrchestrator,
   IngredientIndexerOrchestrator,
-  recipesByIngredientConfig,
-  recipesByTagConfig,
+  fillingRecipesByIngredientConfig,
+  fillingRecipesByTagConfig,
   ingredientsByTagConfig,
-  recipesByChocolateTypeConfig,
-  recipesByCategoryConfig
+  fillingRecipesByChocolateTypeConfig,
+  fillingRecipesByCategoryConfig
 } = Indexers;
 
 // Type aliases for types from Indexers namespace
-type RecipesByIngredientIndexerType = InstanceType<typeof RecipesByIngredientIndexer>;
-type RecipesByTagIndexerType = InstanceType<typeof RecipesByTagIndexer>;
+type FillingRecipesByIngredientIndexerType = InstanceType<typeof FillingRecipesByIngredientIndexer>;
+type FillingRecipesByTagIndexerType = InstanceType<typeof FillingRecipesByTagIndexer>;
 type IngredientsByTagIndexerType = InstanceType<typeof IngredientsByTagIndexer>;
-type RecipesByChocolateTypeIndexerType = InstanceType<typeof RecipesByChocolateTypeIndexer>;
-type RecipesByCategoryIndexerType = InstanceType<typeof RecipesByCategoryIndexer>;
+type FillingRecipesByChocolateTypeIndexerType = InstanceType<typeof FillingRecipesByChocolateTypeIndexer>;
+type FillingRecipesByCategoryIndexerType = InstanceType<typeof FillingRecipesByCategoryIndexer>;
 
 describe('Indexers', () => {
   // ============================================================================
@@ -234,18 +234,18 @@ describe('Indexers', () => {
   });
 
   // ============================================================================
-  // RecipesByIngredientIndexer Tests
+  // FillingRecipesByIngredientIndexer Tests
   // ============================================================================
 
-  describe('RecipesByIngredientIndexer', () => {
-    let indexer: RecipesByIngredientIndexerType;
+  describe('FillingRecipesByIngredientIndexer', () => {
+    let indexer: FillingRecipesByIngredientIndexerType;
 
     beforeEach(() => {
-      indexer = new RecipesByIngredientIndexer(library);
+      indexer = new FillingRecipesByIngredientIndexer(library);
     });
 
     test('finds recipes by primary ingredient', () => {
-      const config = recipesByIngredientConfig('test.dark-chocolate' as IngredientId, 'primary');
+      const config = fillingRecipesByIngredientConfig('test.dark-chocolate' as IngredientId, 'primary');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -255,7 +255,7 @@ describe('Indexers', () => {
     });
 
     test('finds recipes by alternate ingredient', () => {
-      const config = recipesByIngredientConfig('test.alt-chocolate' as IngredientId, 'alternate');
+      const config = fillingRecipesByIngredientConfig('test.alt-chocolate' as IngredientId, 'alternate');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -265,7 +265,7 @@ describe('Indexers', () => {
     });
 
     test('finds recipes by any usage', () => {
-      const config = recipesByIngredientConfig('test.cream' as IngredientId);
+      const config = fillingRecipesByIngredientConfig('test.cream' as IngredientId);
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -278,7 +278,7 @@ describe('Indexers', () => {
     });
 
     test('returns empty array for unknown ingredient', () => {
-      const config = recipesByIngredientConfig('test.unknown' as IngredientId);
+      const config = fillingRecipesByIngredientConfig('test.unknown' as IngredientId);
       const result = indexer.find(config);
 
       expect(result).toSucceedWith([]);
@@ -287,7 +287,7 @@ describe('Indexers', () => {
     test('warmUp pre-builds the index', () => {
       indexer.warmUp();
       // Subsequent query should work without rebuilding
-      const config = recipesByIngredientConfig('test.cream' as IngredientId);
+      const config = fillingRecipesByIngredientConfig('test.cream' as IngredientId);
       const result = indexer.find(config);
       expect(result).toSucceedAndSatisfy((ids) => {
         // All three recipes use cream
@@ -297,13 +297,13 @@ describe('Indexers', () => {
 
     test('invalidate clears the index', () => {
       // First query to build index
-      indexer.find(recipesByIngredientConfig('test.cream' as IngredientId));
+      indexer.find(fillingRecipesByIngredientConfig('test.cream' as IngredientId));
 
       // Invalidate
       indexer.invalidate();
 
       // Index should be rebuilt on next query
-      const result = indexer.find(recipesByIngredientConfig('test.cream' as IngredientId));
+      const result = indexer.find(fillingRecipesByIngredientConfig('test.cream' as IngredientId));
       expect(result).toSucceedAndSatisfy((ids) => {
         // All three recipes use cream
         expect(ids).toHaveLength(3);
@@ -312,18 +312,18 @@ describe('Indexers', () => {
   });
 
   // ============================================================================
-  // RecipesByTagIndexer Tests
+  // FillingRecipesByTagIndexer Tests
   // ============================================================================
 
-  describe('RecipesByTagIndexer', () => {
-    let indexer: RecipesByTagIndexerType;
+  describe('FillingRecipesByTagIndexer', () => {
+    let indexer: FillingRecipesByTagIndexerType;
 
     beforeEach(() => {
-      indexer = new RecipesByTagIndexer(library);
+      indexer = new FillingRecipesByTagIndexer(library);
     });
 
     test('finds recipes by tag (case-insensitive)', () => {
-      const config = recipesByTagConfig('CLASSIC');
+      const config = fillingRecipesByTagConfig('CLASSIC');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -336,7 +336,7 @@ describe('Indexers', () => {
     });
 
     test('finds recipes by specific tag', () => {
-      const config = recipesByTagConfig('dark');
+      const config = fillingRecipesByTagConfig('dark');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -346,7 +346,7 @@ describe('Indexers', () => {
     });
 
     test('returns empty array for unknown tag', () => {
-      const config = recipesByTagConfig('unknown-tag');
+      const config = fillingRecipesByTagConfig('unknown-tag');
       const result = indexer.find(config);
 
       expect(result).toSucceedWith([]);
@@ -414,18 +414,18 @@ describe('Indexers', () => {
   });
 
   // ============================================================================
-  // RecipesByChocolateTypeIndexer Tests
+  // FillingRecipesByChocolateTypeIndexer Tests
   // ============================================================================
 
-  describe('RecipesByChocolateTypeIndexer', () => {
-    let indexer: RecipesByChocolateTypeIndexerType;
+  describe('FillingRecipesByChocolateTypeIndexer', () => {
+    let indexer: FillingRecipesByChocolateTypeIndexerType;
 
     beforeEach(() => {
-      indexer = new RecipesByChocolateTypeIndexer(library);
+      indexer = new FillingRecipesByChocolateTypeIndexer(library);
     });
 
     test('finds recipes by chocolate type', () => {
-      const config = recipesByChocolateTypeConfig('dark');
+      const config = fillingRecipesByChocolateTypeConfig('dark');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -435,7 +435,7 @@ describe('Indexers', () => {
     });
 
     test('finds recipes by milk chocolate type', () => {
-      const config = recipesByChocolateTypeConfig('milk');
+      const config = fillingRecipesByChocolateTypeConfig('milk');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -445,7 +445,7 @@ describe('Indexers', () => {
     });
 
     test('returns empty array for unused chocolate type', () => {
-      const config = recipesByChocolateTypeConfig('white');
+      const config = fillingRecipesByChocolateTypeConfig('white');
       const result = indexer.find(config);
 
       expect(result).toSucceedWith([]);
@@ -453,18 +453,18 @@ describe('Indexers', () => {
   });
 
   // ============================================================================
-  // RecipesByCategoryIndexer Tests
+  // FillingRecipesByCategoryIndexer Tests
   // ============================================================================
 
-  describe('RecipesByCategoryIndexer', () => {
-    let indexer: RecipesByCategoryIndexerType;
+  describe('FillingRecipesByCategoryIndexer', () => {
+    let indexer: FillingRecipesByCategoryIndexerType;
 
     beforeEach(() => {
-      indexer = new RecipesByCategoryIndexer(library);
+      indexer = new FillingRecipesByCategoryIndexer(library);
     });
 
     test('finds recipes by ganache category', () => {
-      const config = recipesByCategoryConfig('ganache');
+      const config = fillingRecipesByCategoryConfig('ganache');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -475,7 +475,7 @@ describe('Indexers', () => {
     });
 
     test('finds recipes by caramel category', () => {
-      const config = recipesByCategoryConfig('caramel');
+      const config = fillingRecipesByCategoryConfig('caramel');
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
@@ -494,7 +494,7 @@ describe('Indexers', () => {
     test('warmUp pre-builds the index', () => {
       indexer.warmUp();
       // Subsequent query should work without rebuilding
-      const config = recipesByCategoryConfig('ganache');
+      const config = fillingRecipesByCategoryConfig('ganache');
       const result = indexer.find(config);
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(2);
@@ -503,13 +503,13 @@ describe('Indexers', () => {
 
     test('invalidate clears the index', () => {
       // First query to build index
-      indexer.find(recipesByCategoryConfig('ganache'));
+      indexer.find(fillingRecipesByCategoryConfig('ganache'));
 
       // Invalidate
       indexer.invalidate();
 
       // Index should be rebuilt on next query
-      const result = indexer.find(recipesByCategoryConfig('ganache'));
+      const result = indexer.find(fillingRecipesByCategoryConfig('ganache'));
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(2);
       });
@@ -517,10 +517,10 @@ describe('Indexers', () => {
   });
 
   // ============================================================================
-  // RecipeIndexerOrchestrator Tests
+  // FillingRecipeIndexerOrchestrator Tests
   // ============================================================================
 
-  describe('RecipeIndexerOrchestrator', () => {
+  describe('FillingRecipeIndexerOrchestrator', () => {
     // Mock recipe resolver that just returns ID as "resolved"
     const mockRecipeResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
       // Create a minimal mock recipe - in real usage this would come from RuntimeContext
@@ -530,10 +530,10 @@ describe('Indexers', () => {
       } as unknown as IRuntimeFillingRecipe);
     };
 
-    let orchestrator: InstanceType<typeof RecipeIndexerOrchestrator>;
+    let orchestrator: InstanceType<typeof FillingRecipeIndexerOrchestrator>;
 
     beforeEach(() => {
-      orchestrator = new RecipeIndexerOrchestrator(library, mockRecipeResolver);
+      orchestrator = new FillingRecipeIndexerOrchestrator(library, mockRecipeResolver);
     });
 
     test('finds with single indexer', () => {
@@ -732,7 +732,7 @@ describe('Indexers', () => {
           } as unknown as IRuntimeFillingRecipe);
         };
 
-        const orchestrator = new RecipeIndexerOrchestrator(library, mockRecipeResolver);
+        const orchestrator = new FillingRecipeIndexerOrchestrator(library, mockRecipeResolver);
 
         // Find recipes that have BOTH 'dark' tag AND milk chocolate type
         // dark-ganache has 'dark' tag but dark chocolate type
@@ -754,7 +754,7 @@ describe('Indexers', () => {
           return Failure.with(`Cannot resolve recipe: ${id}`);
         };
 
-        const orchestrator = new RecipeIndexerOrchestrator(library, failingResolver);
+        const orchestrator = new FillingRecipeIndexerOrchestrator(library, failingResolver);
 
         const result = orchestrator.find({
           byTag: { tag: 'classic' }
@@ -784,7 +784,7 @@ describe('Indexers', () => {
           return Failure.with(`Not found: ${id}`);
         };
 
-        const orchestrator = new RecipeIndexerOrchestrator(library, failingResolver);
+        const orchestrator = new FillingRecipeIndexerOrchestrator(library, failingResolver);
 
         // classic tag matches both recipes, so both should fail to resolve
         const result = orchestrator.find({

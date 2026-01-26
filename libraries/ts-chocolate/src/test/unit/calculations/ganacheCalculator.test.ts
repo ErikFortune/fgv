@@ -37,8 +37,8 @@ import { IFillingRecipe, IFillingRecipeVersion, IFillingIngredient } from '../..
 
 import {
   calculateFromIngredients,
-  calculateFromRecipeIngredients,
-  calculateForRecipe,
+  calculateFromFillingRecipeIngredients,
+  calculateForFillingRecipe,
   calculateGanache,
   validateGanache,
   IResolvedIngredient,
@@ -177,17 +177,17 @@ describe('Ganache Calculator', () => {
   });
 
   // ============================================================================
-  // calculateFromRecipeIngredients Tests
+  // calculateFromFillingRecipeIngredients Tests
   // ============================================================================
 
-  describe('calculateFromRecipeIngredients', () => {
+  describe('calculateFromFillingRecipeIngredients', () => {
     test('resolves and calculates ingredients', () => {
       const fillingIngredients: IFillingIngredient[] = [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
         { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ];
 
-      expect(calculateFromRecipeIngredients(fillingIngredients, testResolver)).toSucceedAndSatisfy(
+      expect(calculateFromFillingRecipeIngredients(fillingIngredients, testResolver)).toSucceedAndSatisfy(
         (analysis) => {
           expect(analysis.totalWeight).toBe(150);
         }
@@ -199,17 +199,17 @@ describe('Ganache Calculator', () => {
         { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Measurement }
       ];
 
-      expect(calculateFromRecipeIngredients(fillingIngredients, testResolver)).toFailWith(
+      expect(calculateFromFillingRecipeIngredients(fillingIngredients, testResolver)).toFailWith(
         /Unknown ingredient/
       );
     });
   });
 
   // ============================================================================
-  // calculateForRecipe Tests
+  // calculateForFillingRecipe Tests
   // ============================================================================
 
-  describe('calculateForRecipe', () => {
+  describe('calculateForFillingRecipe', () => {
     const testVersion: IFillingRecipeVersion = {
       versionSpec: '2026-01-01-01' as FillingVersionSpec,
       createdDate: '2026-01-01',
@@ -229,23 +229,23 @@ describe('Ganache Calculator', () => {
     };
 
     test('calculates for golden version by default', () => {
-      expect(calculateForRecipe(testRecipe, testResolver)).toSucceedAndSatisfy((analysis) => {
+      expect(calculateForFillingRecipe(testRecipe, testResolver)).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
     });
 
     test('calculates for specific version by ID', () => {
       expect(
-        calculateForRecipe(testRecipe, testResolver, '2026-01-01-01' as FillingVersionSpec)
+        calculateForFillingRecipe(testRecipe, testResolver, '2026-01-01-01' as FillingVersionSpec)
       ).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
     });
 
     test('fails for invalid version ID', () => {
-      expect(calculateForRecipe(testRecipe, testResolver, '2026-12-31-99' as FillingVersionSpec)).toFailWith(
-        /not found/
-      );
+      expect(
+        calculateForFillingRecipe(testRecipe, testResolver, '2026-12-31-99' as FillingVersionSpec)
+      ).toFailWith(/not found/);
     });
   });
 

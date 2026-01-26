@@ -32,23 +32,23 @@ Provides unified access to: - Ingredient management (multi-source with built-ins
 </td></tr>
 <tr><td>
 
+[FillingRecipeQuery](./ts-chocolate.runtime.fillingrecipequery.md)
+
+
+</td><td>
+
+Fluent query builder for recipes. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
 [IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
 
 
 </td><td>
 
 Fluent query builder for ingredients. Allows chaining filters to build complex queries.
-
-
-</td></tr>
-<tr><td>
-
-[RecipeQuery](./ts-chocolate.runtime.recipequery.md)
-
-
-</td><td>
-
-Fluent query builder for recipes. Allows chaining filters to build complex queries.
 
 
 </td></tr>
@@ -122,6 +122,28 @@ A resolved view of a fat ingredient with navigation capabilities. Immutable - do
 </td></tr>
 <tr><td>
 
+[RuntimeFillingRecipe](./ts-chocolate.runtime.runtimefillingrecipe.md)
+
+
+</td><td>
+
+A resolved view of a recipe with navigation and version access. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeFillingRecipeVersion](./ts-chocolate.runtime.runtimefillingrecipeversion.md)
+
+
+</td><td>
+
+A resolved view of a recipe version with all ingredients resolved.
+
+
+</td></tr>
+<tr><td>
+
 [RuntimeMold](./ts-chocolate.runtime.runtimemold.md)
 
 
@@ -161,17 +183,6 @@ Unlike the data-layer Procedure.render() which returns `[Task: taskId]` placehol
 </td></tr>
 <tr><td>
 
-[RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)
-
-
-</td><td>
-
-A resolved view of a recipe with navigation and version access. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeRolledTruffle](./ts-chocolate.runtime.runtimerolledtruffle.md)
 
 
@@ -183,7 +194,7 @@ A resolved view of a rolled truffle confection with navigation capabilities. Imm
 </td></tr>
 <tr><td>
 
-[RuntimeScaledVersion](./ts-chocolate.runtime.runtimescaledversion.md)
+[RuntimeScaledFillingRecipeVersion](./ts-chocolate.runtime.runtimescaledfillingrecipeversion.md)
 
 
 </td><td>
@@ -213,17 +224,6 @@ A resolved view of a sugar ingredient with navigation capabilities. Immutable - 
 A resolved view of a task with rendering capabilities.
 
 RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Template parsing and required variable extraction - Parameter validation - Template rendering - Context access for resolving task references (future use)
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeVersion](./ts-chocolate.runtime.runtimeversion.md)
-
-
-</td><td>
-
-A resolved view of a recipe version with all ingredients resolved.
 
 
 </td></tr>
@@ -1174,6 +1174,28 @@ Comparison operators for numeric filters
 </td></tr>
 <tr><td>
 
+[FillingRecipeFilter](./ts-chocolate.runtime.fillingrecipefilter.md)
+
+
+</td><td>
+
+Filter for RuntimeFillingRecipe
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipeIngredientsFilter](./ts-chocolate.runtime.fillingrecipeingredientsfilter.md)
+
+
+</td><td>
+
+Filter for recipe ingredients. - string: Match ingredient ID exactly - RegExp: Match ingredient ID by pattern - ICategoryFilter: Match by category
+
+
+</td></tr>
+<tr><td>
+
 [FilterPredicate](./ts-chocolate.runtime.filterpredicate.md)
 
 
@@ -1202,28 +1224,6 @@ Filter for RuntimeIngredient
 </td><td>
 
 A resolved filling option with the full recipe or ingredient object. Discriminated union for type-safe access.
-
-
-</td></tr>
-<tr><td>
-
-[RecipeFilter](./ts-chocolate.runtime.recipefilter.md)
-
-
-</td><td>
-
-Filter for RuntimeRecipe
-
-
-</td></tr>
-<tr><td>
-
-[RecipeIngredientsFilter](./ts-chocolate.runtime.recipeingredientsfilter.md)
-
-
-</td><td>
-
-Filter for recipe ingredients. - string: Match ingredient ID exactly - RegExp: Match ingredient ID by pattern - ICategoryFilter: Match by category
 
 
 </td></tr>

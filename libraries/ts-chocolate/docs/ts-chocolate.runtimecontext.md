@@ -134,7 +134,7 @@ The confections library for accessing confection data.
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [RuntimeFillingRecipe](./ts-chocolate.runtime.runtimefillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
@@ -435,7 +435,7 @@ Gets all journal records for a specific filling version.
 
 </td><td>
 
-Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+Gets a procedure by its composite ID. Used internally by RuntimeFillingRecipe for procedure resolution.
 
 
 </td></tr>

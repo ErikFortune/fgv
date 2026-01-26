@@ -68,5 +68,5 @@ _(Optional)_ Optional scaling options (precision, minimum amount)
 
 Result&lt;[IRuntimeScaledFillingRecipeVersion](./ts-chocolate.runtime.iruntimescaledfillingrecipeversion.md)<!-- -->&gt;
 
-Success with RuntimeScaledVersion, or Failure if scaling fails
+Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
 

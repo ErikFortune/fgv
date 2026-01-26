@@ -27,6 +27,6 @@
  * @packageDocumentation
  */
 
-export { RuntimeRecipe } from './runtimeRecipe';
-export { RuntimeVersion } from './runtimeVersion';
-export { RuntimeScaledVersion } from './runtimeScaledVersion';
+export { RuntimeFillingRecipe } from './runtimeFillingRecipe';
+export { RuntimeFillingRecipeVersion } from './runtimeFillingRecipeVersion';
+export { RuntimeScaledFillingRecipeVersion } from './runtimeScaledFillingRecipeVersion';

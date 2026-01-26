@@ -35,7 +35,7 @@ export { ChocolateLibrary } from './packlets/runtime';
 export { RuntimeContext } from './packlets/runtime';
 
 // Query builders
-export { RecipeQuery, IngredientQuery } from './packlets/runtime';
+export { FillingRecipeQuery, IngredientQuery } from './packlets/runtime';
 
 // All branded types and common utilities
 export * from './packlets/common';
@@ -48,7 +48,7 @@ export * from './packlets/common';
 import * as Entities from './packlets/entities';
 export { Entities };
 
-// Runtime classes - RuntimeRecipe, RuntimeIngredient, etc.
+// Runtime classes - RuntimeFillingRecipe, RuntimeIngredient, etc.
 import * as Runtime from './packlets/runtime';
 export { Runtime };
 

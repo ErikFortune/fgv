@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly byIngredient?: IRecipesByIngredientConfig;
+readonly byIngredient?: IFillingRecipesByIngredientConfig;
 ```

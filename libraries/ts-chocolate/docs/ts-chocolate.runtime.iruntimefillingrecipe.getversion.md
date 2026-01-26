@@ -52,5 +52,5 @@ The version specifier to find
 
 Result&lt;[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)<!-- -->&gt;
 
-Success with RuntimeVersion, or Failure if not found
+Success with RuntimeFillingRecipeVersion, or Failure if not found
 

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly byTag?: IRecipesByTagConfig;
+readonly byTag?: IFillingRecipesByTagConfig;
 ```

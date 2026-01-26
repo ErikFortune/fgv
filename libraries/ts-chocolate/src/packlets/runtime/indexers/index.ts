@@ -36,22 +36,22 @@ export * from './model';
 export { BaseIndexer } from './baseIndexer';
 export { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 
-// Concrete indexers - recipes by ingredient
+// Concrete indexers - filling recipes by ingredient
 export {
-  IRecipesByIngredientConfig,
+  IFillingRecipesByIngredientConfig,
   IngredientUsageType,
-  RecipesByIngredientIndexer,
-  recipesByIngredientConfig,
-  recipesByIngredientConfigConverter
-} from './recipesByIngredientIndexer';
+  FillingRecipesByIngredientIndexer,
+  fillingRecipesByIngredientConfig,
+  fillingRecipesByIngredientConfigConverter
+} from './fillingRecipesByIngredientIndexer';
 
-// Concrete indexers - recipes by tag
+// Concrete indexers - filling recipes by tag
 export {
-  IRecipesByTagConfig,
-  RecipesByTagIndexer,
-  recipesByTagConfig,
-  recipesByTagConfigConverter
-} from './recipesByTagIndexer';
+  IFillingRecipesByTagConfig,
+  FillingRecipesByTagIndexer,
+  fillingRecipesByTagConfig,
+  fillingRecipesByTagConfigConverter
+} from './fillingRecipesByTagIndexer';
 
 // Concrete indexers - ingredients by tag
 export {
@@ -61,30 +61,30 @@ export {
   ingredientsByTagConfigConverter
 } from './ingredientsByTagIndexer';
 
-// Concrete indexers - recipes by chocolate type
+// Concrete indexers - filling recipes by chocolate type
 export {
-  IRecipesByChocolateTypeConfig,
-  RecipesByChocolateTypeIndexer,
-  recipesByChocolateTypeConfig,
-  recipesByChocolateTypeConfigConverter
-} from './recipesByChocolateTypeIndexer';
+  IFillingRecipesByChocolateTypeConfig,
+  FillingRecipesByChocolateTypeIndexer,
+  fillingRecipesByChocolateTypeConfig,
+  fillingRecipesByChocolateTypeConfigConverter
+} from './fillingRecipesByChocolateTypeIndexer';
 
-// Concrete indexers - recipes by category
+// Concrete indexers - filling recipes by category
 export {
-  IRecipesByCategoryConfig,
-  RecipesByCategoryIndexer,
-  recipesByCategoryConfig,
-  recipesByCategoryConfigConverter
-} from './recipesByCategoryIndexer';
+  IFillingRecipesByCategoryConfig,
+  FillingRecipesByCategoryIndexer,
+  fillingRecipesByCategoryConfig,
+  fillingRecipesByCategoryConfigConverter
+} from './fillingRecipesByCategoryIndexer';
 
-// Recipe orchestrator with query spec types
+// Filling recipe orchestrator with query spec types
 export {
   IFillingRecipeQuerySpec,
-  RecipeIndexerName,
-  RecipeIndexerOrchestrator,
-  RecipeResolver,
-  recipeQuerySpecConverter
-} from './recipeIndexerOrchestrator';
+  FillingRecipeIndexerName,
+  FillingRecipeIndexerOrchestrator,
+  FillingRecipeResolver,
+  fillingRecipeQuerySpecConverter
+} from './fillingRecipeIndexerOrchestrator';
 
 // Ingredient orchestrator with query spec types
 export {

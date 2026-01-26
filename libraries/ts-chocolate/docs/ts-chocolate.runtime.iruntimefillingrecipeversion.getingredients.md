@@ -9,7 +9,7 @@ Gets ingredients, optionally filtered.
 **Signature:**
 
 ```typescript
-getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
+getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ filter
 
 </td><td>
 
-[RecipeIngredientsFilter](./ts-chocolate.runtime.recipeingredientsfilter.md)<!-- -->\[\]
+[FillingRecipeIngredientsFilter](./ts-chocolate.runtime.fillingrecipeingredientsfilter.md)<!-- -->\[\]
 
 
 </td><td>

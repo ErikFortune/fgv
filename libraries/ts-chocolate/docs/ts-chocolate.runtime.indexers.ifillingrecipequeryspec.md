@@ -4,7 +4,7 @@
 
 ## Runtime.Indexers.IFillingRecipeQuerySpec interface
 
-Query specification for recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
+Query specification for filling recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
 
 **Signature:**
 
@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.irecipesbycategoryconfig.md)
+[IFillingRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbycategoryconfig.md)
 
 
 </td><td>
@@ -68,7 +68,7 @@ _(Optional)_
 
 </td><td>
 
-[IRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.irecipesbychocolatetypeconfig.md)
+[IFillingRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbychocolatetypeconfig.md)
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_
 
 </td><td>
 
-[IRecipesByIngredientConfig](./ts-chocolate.runtime.indexers.irecipesbyingredientconfig.md)
+[IFillingRecipesByIngredientConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbyingredientconfig.md)
 
 
 </td><td>
@@ -110,7 +110,7 @@ _(Optional)_
 
 </td><td>
 
-[IRecipesByTagConfig](./ts-chocolate.runtime.indexers.irecipesbytagconfig.md)
+[IFillingRecipesByTagConfig](./ts-chocolate.runtime.indexers.ifillingrecipesbytagconfig.md)
 
 
 </td><td>

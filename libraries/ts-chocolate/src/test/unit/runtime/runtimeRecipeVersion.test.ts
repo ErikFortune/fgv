@@ -40,9 +40,14 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
-import { ChocolateLibrary, RuntimeContext, RuntimeRecipe, RuntimeVersion } from '../../../packlets/runtime';
+import {
+  ChocolateLibrary,
+  RuntimeContext,
+  RuntimeFillingRecipe,
+  RuntimeFillingRecipeVersion
+} from '../../../packlets/runtime';
 
-describe('RuntimeRecipe and RuntimeVersion', () => {
+describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
   // ============================================================================
   // Test Data
   // ============================================================================
@@ -208,10 +213,10 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
   });
 
   // ============================================================================
-  // RuntimeRecipe Tests
+  // RuntimeFillingRecipe Tests
   // ============================================================================
 
-  describe('RuntimeRecipe', () => {
+  describe('RuntimeFillingRecipe', () => {
     describe('identity', () => {
       test('provides composite ID', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
@@ -361,16 +366,16 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     describe('create factory', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(RuntimeRecipe.create(ctx as never, recipe.id, recipe.raw)).toSucceed();
+        expect(RuntimeFillingRecipe.create(ctx as never, recipe.id, recipe.raw)).toSucceed();
       });
     });
   });
 
   // ============================================================================
-  // RuntimeVersion Tests
+  // RuntimeFillingRecipeVersion Tests
   // ============================================================================
 
-  describe('RuntimeVersion', () => {
+  describe('RuntimeFillingRecipeVersion', () => {
     describe('identity', () => {
       test('provides versionSpec', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
@@ -616,16 +621,18 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     describe('create factory', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(RuntimeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.raw)).toSucceed();
+        expect(
+          RuntimeFillingRecipeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.raw)
+        ).toSucceed();
       });
     });
   });
 
   // ============================================================================
-  // RuntimeScaledVersion Tests
+  // RuntimeScaledFillingRecipeVersion Tests
   // ============================================================================
 
-  describe('RuntimeScaledVersion', () => {
+  describe('RuntimeScaledFillingRecipeVersion', () => {
     describe('getIngredients filtering', () => {
       test('getIngredients with no filter returns all ingredients', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();

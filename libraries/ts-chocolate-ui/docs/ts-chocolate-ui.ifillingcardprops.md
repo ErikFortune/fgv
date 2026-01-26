@@ -64,7 +64,7 @@ _(Optional)_ Optional additional CSS classes
 
 </td><td>
 
-Runtime.RuntimeRecipe
+Runtime.RuntimeFillingRecipe
 
 
 </td><td>
