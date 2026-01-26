@@ -66,7 +66,8 @@ export { Calculations };
 // eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific crypto exports
 import * as Crypto from './packlets/crypto/index.browser';
 import * as LibraryData from './packlets/library-data';
+import * as LibraryPersistence from './packlets/library-persistence';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
 
-export { Crypto, LibraryData, BuiltIn, Editing };
+export { Crypto, LibraryData, LibraryPersistence, BuiltIn, Editing };

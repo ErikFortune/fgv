@@ -12,7 +12,15 @@ import React, {
   useMemo,
   ReactNode
 } from 'react';
-import { BuiltIn, Crypto, Runtime, type IngredientId, type FillingId, LibraryData } from '@fgv/ts-chocolate';
+import {
+  BuiltIn,
+  Crypto,
+  Runtime,
+  LibraryData,
+  LibraryPersistence,
+  type IngredientId,
+  type FillingId
+} from '@fgv/ts-chocolate';
 import { FileTree, type JsonObject } from '@fgv/ts-json-base';
 import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
 import {
@@ -34,14 +42,6 @@ import { useSecrets } from './SecretsContext';
 
 // Default PBKDF2 iterations for password derivation (used only if keyDerivation is missing)
 const DEFAULT_PBKDF2_ITERATIONS = 100000;
-
-const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
-const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1';
-const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
-const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
-const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
-const LOCAL_JOURNAL_COLLECTIONS_KEY = 'chocolate-lab-web:journals:collections:v1';
-const LOCAL_CONFECTION_COLLECTIONS_KEY = 'chocolate-lab-web:confections:collections:v1';
 
 function getStartupLoadFlags(): { suppressBuiltIn: boolean; suppressLocal: boolean } {
   const params = new URLSearchParams(window.location.search);
@@ -102,275 +102,15 @@ class VirtualDirectoryItem implements FileTree.IFileTreeDirectoryItem {
   }
 }
 
-function readLocalConfectionCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_CONFECTION_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-      files.push({
-        path: `/data/confections/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
-}
-
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function readLocalIngredientCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_INGREDIENT_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-      files.push({
-        path: `/data/ingredients/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
-}
-
-function readLocalFillingCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_FILLING_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-      files.push({
-        path: `/data/fillings/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
-}
-
-function readLocalJournalCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_JOURNAL_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-
-      files.push({
-        path: `/data/journals/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
-}
-
-function readLocalProcedureCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_PROCEDURE_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-      files.push({
-        path: `/data/procedures/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
-}
-
-function readLocalTaskCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_TASK_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-      files.push({
-        path: `/data/tasks/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
-}
-
-function readLocalMoldCollectionFiles(): FileTree.IInMemoryFile[] {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_MOLD_COLLECTIONS_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isJsonObject(parsed)) {
-      return [];
-    }
-
-    const files: FileTree.IInMemoryFile[] = [];
-    for (const [collectionId, contents] of Object.entries(parsed)) {
-      if (!isJsonObject(contents)) {
-        continue;
-      }
-
-      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
-      if (!isEncrypted) {
-        if (!('items' in contents) || !isJsonObject(contents.items)) {
-          continue;
-        }
-        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-          continue;
-        }
-      }
-      files.push({
-        path: `/data/molds/${collectionId}.json`,
-        contents
-      });
-    }
-    return files;
-  } catch {
-    return [];
-  }
+/**
+ * Helper to read local collection files for a sublibrary
+ */
+function readLocalCollectionFiles(
+  subLibrary: LibraryPersistence.SubLibraryStorageKey
+): FileTree.IInMemoryFile[] {
+  const storageKey = LibraryPersistence.getStorageKey(subLibrary);
+  const rawJson = window.localStorage.getItem(storageKey) ?? undefined;
+  return LibraryPersistence.parseSubLibraryStorageData(subLibrary, rawJson);
 }
 
 /**
@@ -664,13 +404,13 @@ export function ChocolateProvider({
         let localFiles = suppressLocal
           ? []
           : [
-              ...readLocalIngredientCollectionFiles(),
-              ...readLocalFillingCollectionFiles(),
-              ...readLocalJournalCollectionFiles(),
-              ...readLocalMoldCollectionFiles(),
-              ...readLocalTaskCollectionFiles(),
-              ...readLocalProcedureCollectionFiles(),
-              ...readLocalConfectionCollectionFiles()
+              ...readLocalCollectionFiles('ingredients'),
+              ...readLocalCollectionFiles('fillings'),
+              ...readLocalCollectionFiles('journals'),
+              ...readLocalCollectionFiles('molds'),
+              ...readLocalCollectionFiles('tasks'),
+              ...readLocalCollectionFiles('procedures'),
+              ...readLocalCollectionFiles('confections')
             ];
 
         // If built-ins are enabled, evict only local collections that conflict by collectionId.
