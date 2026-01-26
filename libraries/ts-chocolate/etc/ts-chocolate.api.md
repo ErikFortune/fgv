@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_5 } from '@fgv/ts-utils';
+import { Converters as Converters_6 } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
@@ -101,6 +101,12 @@ export const allMeasurementUnits: MeasurementUnit[];
 export const allMoldFormats: MoldFormat[];
 
 // @public
+const allPersistedSessionStatuses: ReadonlyArray<PersistedSessionStatus>;
+
+// @public
+const allPersistedSessionTypes: ReadonlyArray<PersistedSessionType>;
+
+// @public
 export const allProcedureTypes: ProcedureType[];
 
 // @public
@@ -143,6 +149,14 @@ type AnyJournalRecord = IFillingRecipeJournalRecord | IConfectionJournalRecord;
 //
 // @public
 const anyJournalRecord: Converter<AnyJournalRecord>;
+
+// @public
+type AnyPersistedSession = IPersistedConfectionSession | IPersistedFillingSession;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "AnyPersistedSession"
+//
+// @public
+const anyPersistedSession: Converter<AnyPersistedSession>;
 
 // @public
 type AnyRuntimeConfection = RuntimeMoldedBonBon | RuntimeBarTruffle | RuntimeRolledTruffle;
@@ -877,6 +891,18 @@ declare namespace Converters_2 {
 
 declare namespace Converters_3 {
     export {
+        persistedSessionType,
+        persistedSessionStatus,
+        persistedSessionDestination,
+        persistedConfectionSession,
+        persistedFillingSession,
+        anyPersistedSession,
+        sessionScratchpad
+    }
+}
+
+declare namespace Converters_4 {
+    export {
         isEncryptedCollectionFile,
         encryptionAlgorithm,
         encryptedCollectionFormat,
@@ -891,7 +917,7 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_4 {
+declare namespace Converters_5 {
     export {
         removeExtension,
         collectionSourceFile,
@@ -928,7 +954,7 @@ function createOperation<T>(description: string, execute: () => Result<T>, rollb
 
 declare namespace Crypto_2 {
     export {
-        Converters_3 as Converters,
+        Converters_4 as Converters,
         isEncryptedCollectionFile,
         NodeCryptoProvider,
         nodeCryptoProvider,
@@ -3086,6 +3112,64 @@ export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends 
 }
 
 // @public
+interface IPersistedConfectionSession extends IPersistedSessionBase {
+    // (undocumented)
+    readonly base: IPersistedConfectionSessionBasePointer;
+    // (undocumented)
+    readonly sessionType: 'confection';
+}
+
+// @public
+interface IPersistedConfectionSessionBasePointer {
+    // (undocumented)
+    readonly confectionId: ConfectionId;
+    // (undocumented)
+    readonly versionSpec: ConfectionVersionSpec;
+}
+
+// @public
+interface IPersistedFillingSession extends IPersistedSessionBase {
+    // (undocumented)
+    readonly base: IPersistedFillingSessionBasePointer;
+    // (undocumented)
+    readonly sessionType: 'filling';
+}
+
+// @public
+interface IPersistedFillingSessionBasePointer {
+    // (undocumented)
+    readonly fillingId: FillingId;
+    // (undocumented)
+    readonly versionSpec: FillingVersionSpec;
+}
+
+// @public
+interface IPersistedSessionBase {
+    // (undocumented)
+    readonly createdAt: string;
+    // (undocumented)
+    readonly destination?: IPersistedSessionDestination;
+    // (undocumented)
+    readonly label?: string;
+    // (undocumented)
+    readonly sessionId: SessionId;
+    // (undocumented)
+    readonly sessionType: PersistedSessionType;
+    // (undocumented)
+    readonly status: PersistedSessionStatus;
+    // (undocumented)
+    readonly updatedAt: string;
+}
+
+// @public
+interface IPersistedSessionDestination {
+    // (undocumented)
+    readonly defaultCollectionId?: SourceId;
+    // (undocumented)
+    readonly overrideCollectionId?: SourceId;
+}
+
+// @public
 interface IProcedure {
     readonly baseId: BaseProcedureId;
     readonly category?: ProcedureType;
@@ -3844,6 +3928,18 @@ interface ISessionProcedure {
 }
 
 // @public
+interface ISessionScratchpad {
+    // (undocumented)
+    readonly activeSessionId?: SessionId;
+    // (undocumented)
+    readonly schemaVersion: SessionScratchpadSchemaVersion;
+    // (undocumented)
+    readonly sessions: Record<SessionId, AnyPersistedSession>;
+    // (undocumented)
+    readonly updatedAt: string;
+}
+
+// @public
 interface ISessionState {
     readonly ingredients: ReadonlyMap<IngredientId, ISessionIngredient>;
     readonly isDirty: boolean;
@@ -4276,7 +4372,7 @@ const keyDerivationParams: Converter<IKeyDerivationParams>;
 
 declare namespace LibraryData {
     export {
-        Converters_4 as Converters,
+        Converters_5 as Converters,
         resolveSubLibraryLoadSpec,
         ICollectionSourceMetadata,
         ICollectionSourceFile,
@@ -4530,49 +4626,49 @@ function parseCollection<T>(content: string): Result<ICollectionSourceFile<T>>;
 function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
 
 // @public
-type ParsedConfectionId = Converters_5.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_6.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_5.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionVersionId = Converters_6.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 // @public
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_5.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_6.ICompositeId<SourceId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_5.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingVersionId = Converters_6.ICompositeId<FillingId, FillingVersionSpec>;
 
 // @public
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_5.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_6.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedMoldId = Converters_5.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_6.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
 
 // @public
-type ParsedProcedureId = Converters_5.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_6.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedTaskId = Converters_5.ICompositeId<SourceId, BaseTaskId>;
+type ParsedTaskId = Converters_6.ICompositeId<SourceId, BaseTaskId>;
 
 // @public
 const parsedTaskId: Converter<ParsedTaskId>;
@@ -4597,6 +4693,37 @@ export type Percentage = Brand<number, 'Percentage'>;
 
 // @public
 const percentage: Converter<Percentage>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedConfectionSession"
+//
+// @public
+const persistedConfectionSession: Converter<IPersistedConfectionSession>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedFillingSession"
+//
+// @public
+const persistedFillingSession: Converter<IPersistedFillingSession>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedSessionDestination"
+//
+// @public
+const persistedSessionDestination: Converter<IPersistedSessionDestination>;
+
+// @public
+type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedSessionStatus"
+//
+// @public
+const persistedSessionStatus: Converter<PersistedSessionStatus>;
+
+// @public
+type PersistedSessionType = 'confection' | 'filling';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedSessionType"
+//
+// @public
+const persistedSessionType: Converter<PersistedSessionType>;
 
 // @public
 class PinchScaler implements IUnitScaler {
@@ -4805,6 +4932,7 @@ declare namespace Runtime {
         AnyRuntimeConfection,
         Indexers,
         Session,
+        Scratchpad,
         ITaskContext,
         IRuntimeTask,
         RuntimeTask,
@@ -5425,6 +5553,26 @@ const scalingRef: Converter<IScalingRef>;
 // @public
 const scalingSource: Converter<IScalingSource>;
 
+declare namespace Scratchpad {
+    export {
+        Converters_3 as Converters,
+        SESSION_SCRATCHPAD_SCHEMA_VERSION,
+        SessionScratchpadSchemaVersion,
+        PersistedSessionType,
+        allPersistedSessionTypes,
+        PersistedSessionStatus,
+        allPersistedSessionStatuses,
+        IPersistedSessionDestination,
+        IPersistedSessionBase,
+        IPersistedConfectionSessionBasePointer,
+        IPersistedConfectionSession,
+        IPersistedFillingSessionBasePointer,
+        IPersistedFillingSession,
+        AnyPersistedSession,
+        ISessionScratchpad
+    }
+}
+
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
@@ -5475,6 +5623,9 @@ declare namespace Session {
 export const SESSION_ID_PATTERN: RegExp;
 
 // @public
+const SESSION_SCRATCHPAD_SCHEMA_VERSION: 1;
+
+// @public
 export type SessionId = Brand<string, 'SessionId'>;
 
 // @public
@@ -5482,6 +5633,14 @@ const sessionId: Converter<SessionId>;
 
 // @public
 type SessionIngredientStatus = 'original' | 'modified' | 'added' | 'removed' | 'substituted';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISessionScratchpad"
+//
+// @public
+const sessionScratchpad: Converter<ISessionScratchpad>;
+
+// @public
+type SessionScratchpadSchemaVersion = typeof SESSION_SCRATCHPAD_SCHEMA_VERSION;
 
 // @public
 export type SlotId = Brand<string, 'SlotId'>;

@@ -10,6 +10,7 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { SecretsProvider } from './contexts/SecretsContext';
 import { ChocolateProvider } from './contexts/ChocolateContext';
 import { EditingProvider } from './contexts/EditingContext';
+import { SessionScratchpadProvider } from './contexts/SessionScratchpadContext';
 import { AppShell } from './components/layout';
 import type { ToolId } from './types/navigation';
 
@@ -197,7 +198,9 @@ function App(): React.ReactElement {
           <ObservabilityProvider>
             <ChocolateProvider>
               <EditingProvider>
-                <AppContent />
+                <SessionScratchpadProvider>
+                  <AppContent />
+                </SessionScratchpadProvider>
               </EditingProvider>
             </ChocolateProvider>
           </ObservabilityProvider>

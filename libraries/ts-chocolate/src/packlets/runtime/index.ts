@@ -87,6 +87,10 @@ export { Indexers };
 import * as Session from './session';
 export { Session };
 
+// Persisted session scratchpad model + converters (as namespace)
+import * as Scratchpad from './scratchpad';
+export { Scratchpad };
+
 // Runtime tasks
 export { ITaskContext, IRuntimeTask, RuntimeTask } from './tasks';
 

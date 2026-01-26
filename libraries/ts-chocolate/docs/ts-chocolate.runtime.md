@@ -1106,6 +1106,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Scratchpad](./ts-chocolate.runtime.scratchpad.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Session](./ts-chocolate.runtime.session.md)
 
 
