@@ -35,6 +35,7 @@ import {
   IngredientId,
   MoldId,
   SessionId,
+  SlotId,
   SourceId
 } from '../../common';
 
@@ -142,6 +143,7 @@ export interface IPersistedConfectionSessionProduction {
  */
 export interface IPersistedConfectionSessionDraft {
   readonly shellPreferredChocolateId?: IngredientId;
+  readonly fillingPreferredOptionIds?: Readonly<Record<SlotId, FillingId | IngredientId>>;
 }
 
 /**

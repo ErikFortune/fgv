@@ -3,9 +3,11 @@ import {
   Runtime,
   type ConfectionId,
   type ConfectionVersionSpec,
+  type FillingId,
   type IngredientId,
   type MoldId,
   type SessionId,
+  type SlotId,
   type SourceId
 } from '@fgv/ts-chocolate';
 
@@ -161,9 +163,42 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
 
         const ts = nowIso();
 
+        if (Object.keys(draft).length === 0) {
+          const nextSession: Runtime.Scratchpad.IPersistedConfectionSession = {
+            ...existing,
+            updatedAt: ts,
+            draft: undefined
+          };
+
+          return {
+            ...prev,
+            updatedAt: ts,
+            sessions: {
+              ...prev.sessions,
+              [sessionId]: nextSession
+            }
+          };
+        }
+
+        const hasShell = Object.prototype.hasOwnProperty.call(draft, 'shellPreferredChocolateId');
+        const hasFillings = Object.prototype.hasOwnProperty.call(draft, 'fillingPreferredOptionIds');
+
+        const nextShell = hasShell
+          ? (draft.shellPreferredChocolateId as IngredientId | undefined)
+          : (existing.draft?.shellPreferredChocolateId as IngredientId | undefined);
+
+        const nextFillings = hasFillings
+          ? (draft.fillingPreferredOptionIds as
+              | Readonly<Record<SlotId, FillingId | IngredientId>>
+              | undefined)
+          : (existing.draft?.fillingPreferredOptionIds as
+              | Readonly<Record<SlotId, FillingId | IngredientId>>
+              | undefined);
+
         const cleaned: ConfectionDraft = {
-          ...(draft.shellPreferredChocolateId
-            ? { shellPreferredChocolateId: draft.shellPreferredChocolateId as IngredientId }
+          ...(nextShell ? { shellPreferredChocolateId: nextShell } : {}),
+          ...(nextFillings && Object.keys(nextFillings).length > 0
+            ? { fillingPreferredOptionIds: nextFillings }
             : {})
         };
 

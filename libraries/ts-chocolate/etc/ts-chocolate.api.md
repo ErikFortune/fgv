@@ -3136,6 +3136,8 @@ interface IPersistedConfectionSessionBasePointer {
 // @public
 interface IPersistedConfectionSessionDraft {
     // (undocumented)
+    readonly fillingPreferredOptionIds?: Readonly<Record<SlotId, FillingId | IngredientId>>;
+    // (undocumented)
     readonly shellPreferredChocolateId?: IngredientId;
 }
 

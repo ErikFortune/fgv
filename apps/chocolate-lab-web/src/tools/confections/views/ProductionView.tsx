@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { useMemo, useState } from 'react';
-import type { ConfectionId, ConfectionVersionSpec, IngredientId, MoldId } from '@fgv/ts-chocolate';
+import type {
+  ConfectionId,
+  ConfectionVersionSpec,
+  FillingId,
+  IngredientId,
+  MoldId,
+  SlotId
+} from '@fgv/ts-chocolate';
 import { Converters, Entities, Runtime, type JournalId, type SourceId } from '@fgv/ts-chocolate';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useEditing } from '../../../contexts/EditingContext';
@@ -204,8 +211,29 @@ export function ProductionView({
               }
             )?.raw?.shellChocolate;
 
+            const rawFillings = (
+              versionForRow as unknown as {
+                raw?: {
+                  fillings?: Array<{
+                    slotId: SlotId;
+                    name?: string;
+                    filling: {
+                      options: Array<{
+                        type: 'recipe' | 'ingredient';
+                        id: FillingId | IngredientId;
+                        notes?: string;
+                      }>;
+                      preferredId?: FillingId | IngredientId;
+                    };
+                  }>;
+                };
+              }
+            )?.raw?.fillings;
+
             const draftShellPreferredId =
               s.sessionType === 'confection' ? s.draft?.shellPreferredChocolateId : undefined;
+            const draftFillingPreferredOptionIds =
+              s.sessionType === 'confection' ? s.draft?.fillingPreferredOptionIds : undefined;
             const baseShellPreferredId = rawShellSpec?.preferredId ?? rawShellSpec?.ids?.[0];
             const effectiveShellPreferredId = draftShellPreferredId ?? baseShellPreferredId;
             const shellChoices = rawShellSpec?.ids ?? [];
@@ -312,11 +340,61 @@ export function ProductionView({
                   baseShellPreferredId !== undefined &&
                   effectiveShellPreferredId !== baseShellPreferredId;
 
-                if (shellChanged) {
-                  const desired = effectiveShellPreferredId as IngredientId;
-                  if (!shellChoices.includes(desired)) {
-                    setError('Selected shell chocolate is not in the allowed options for this version');
+                const fillingChanges: Array<{
+                  slotId: SlotId;
+                  previousOptionId?: FillingId | IngredientId;
+                  nextOptionId: FillingId | IngredientId;
+                  nextType: 'recipe' | 'ingredient';
+                  previousType?: 'recipe' | 'ingredient';
+                }> = [];
+
+                const fillingsForCommit = rawFillings ?? [];
+                const fillingOverrideMap = (draftFillingPreferredOptionIds ?? {}) as Record<
+                  string,
+                  FillingId | IngredientId
+                >;
+
+                for (const slot of fillingsForCommit) {
+                  const basePreferred = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
+                  const desired =
+                    (fillingOverrideMap[slot.slotId as unknown as string] as
+                      | FillingId
+                      | IngredientId
+                      | undefined) ?? basePreferred;
+
+                  if (!desired) {
+                    continue;
+                  }
+
+                  const desiredOpt = slot.filling.options.find((o) => o.id === desired);
+                  if (!desiredOpt) {
+                    setError('Selected filling option is not in the allowed options for this version');
                     return;
+                  }
+
+                  if (basePreferred && desired !== basePreferred) {
+                    const previousOpt = slot.filling.options.find((o) => o.id === basePreferred);
+                    fillingChanges.push({
+                      slotId: slot.slotId,
+                      previousOptionId: basePreferred,
+                      nextOptionId: desired,
+                      nextType: desiredOpt.type,
+                      previousType: previousOpt?.type
+                    });
+                  }
+                }
+
+                const fillingsChanged = fillingChanges.length > 0;
+
+                const recipeChanged = shellChanged || fillingsChanged;
+
+                if (recipeChanged) {
+                  const desiredShell = effectiveShellPreferredId as IngredientId | undefined;
+                  if (shellChanged) {
+                    if (!desiredShell || !shellChoices.includes(desiredShell)) {
+                      setError('Selected shell chocolate is not in the allowed options for this version');
+                      return;
+                    }
                   }
 
                   const sourceId = getConfectionSourceId(baseConfectionId);
@@ -384,12 +462,40 @@ export function ProductionView({
                   const newVersion: Record<string, unknown> = {
                     ...rawVersion,
                     versionSpec: newVersionSpec as unknown as string,
-                    createdDate: new Date().toISOString(),
-                    shellChocolate: {
-                      ...(rawShellSpec as unknown as Record<string, unknown>),
-                      preferredId: desired as unknown as string
-                    }
+                    createdDate: new Date().toISOString()
                   };
+
+                  if (shellChanged && desiredShell) {
+                    newVersion.shellChocolate = {
+                      ...((rawVersion.shellChocolate as unknown as Record<string, unknown>) ?? {}),
+                      preferredId: desiredShell as unknown as string
+                    };
+                  }
+
+                  if (rawFillings && rawFillings.length > 0) {
+                    const fillingOverrideMapForVersion = (draftFillingPreferredOptionIds ?? {}) as Record<
+                      string,
+                      FillingId | IngredientId
+                    >;
+
+                    const updatedFillings = rawFillings.map((slot) => {
+                      const basePreferred = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
+                      const desired =
+                        (fillingOverrideMapForVersion[slot.slotId as unknown as string] as
+                          | FillingId
+                          | IngredientId
+                          | undefined) ?? basePreferred;
+                      return {
+                        ...slot,
+                        filling: {
+                          ...slot.filling,
+                          ...(desired ? { preferredId: desired as unknown as string } : {})
+                        }
+                      };
+                    });
+
+                    newVersion.fillings = updatedFillings;
+                  }
 
                   const updatedConfection: Record<string, unknown> = {
                     ...rawConfection,
@@ -456,6 +562,33 @@ export function ProductionView({
                     ingredientId: effectiveShellPreferredId,
                     previousIngredientId: baseShellPreferredId
                   });
+                }
+
+                if (fillingsChanged) {
+                  for (const change of fillingChanges) {
+                    const entry: Entities.Journal.IConfectionJournalEntry = {
+                      timestamp: Runtime.Session.getCurrentTimestamp(),
+                      eventType: 'filling-select',
+                      fillingSlotId: change.slotId
+                    };
+
+                    if (change.nextType === 'recipe') {
+                      entry.fillingRecipeId = change.nextOptionId as unknown as FillingId;
+                    } else {
+                      entry.fillingIngredientId = change.nextOptionId as unknown as IngredientId;
+                    }
+
+                    if (change.previousOptionId) {
+                      if (change.previousType === 'recipe') {
+                        entry.previousFillingRecipeId = change.previousOptionId as unknown as FillingId;
+                      } else if (change.previousType === 'ingredient') {
+                        entry.previousFillingIngredientId =
+                          change.previousOptionId as unknown as IngredientId;
+                      }
+                    }
+
+                    entries.push(entry);
+                  }
                 }
                 if (sessionMoldId) {
                   entries.push({
@@ -625,6 +758,80 @@ export function ProductionView({
                       <div className="text-sm text-gray-700 dark:text-gray-200">
                         {selectedMold.cavityCount} cavities × {frames} frames ={' '}
                         <span className="font-semibold">{scaledYieldCount}</span> pieces
+                      </div>
+                    ) : null}
+
+                    {rawFillings && rawFillings.length > 0 ? (
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                        <label className="block text-xs text-gray-600 dark:text-gray-400">Fillings</label>
+                        {rawFillings.map((slot) => {
+                          const basePreferred = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
+                          const effectivePreferred =
+                            (draftFillingPreferredOptionIds?.[slot.slotId] as
+                              | FillingId
+                              | IngredientId
+                              | undefined) ?? basePreferred;
+
+                          const label = slot.name ?? (slot.slotId as unknown as string);
+
+                          return (
+                            <div key={slot.slotId as unknown as string} className="space-y-1">
+                              <label className="block text-[11px] text-gray-500 dark:text-gray-500">
+                                {label}
+                              </label>
+                              <select
+                                className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
+                                value={(effectivePreferred as unknown as string) ?? ''}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const next =
+                                    raw.length > 0 ? (raw as unknown as FillingId | IngredientId) : undefined;
+                                  const prevMap =
+                                    (draftFillingPreferredOptionIds as unknown as Record<
+                                      string,
+                                      FillingId | IngredientId
+                                    >) ?? {};
+                                  const nextMap: Record<string, FillingId | IngredientId> = { ...prevMap };
+
+                                  if (next && basePreferred && next !== basePreferred) {
+                                    nextMap[slot.slotId as unknown as string] = next;
+                                  } else {
+                                    delete nextMap[slot.slotId as unknown as string];
+                                  }
+
+                                  updateConfectionDraft(s.sessionId, {
+                                    fillingPreferredOptionIds:
+                                      Object.keys(nextMap).length > 0
+                                        ? (nextMap as unknown as Record<SlotId, FillingId | IngredientId>)
+                                        : undefined
+                                  });
+                                }}
+                              >
+                                {slot.filling.options.map((opt) => {
+                                  let name: string;
+                                  if (opt.type === 'recipe') {
+                                    name =
+                                      runtime?.getRuntimeFilling(opt.id as FillingId).orDefault(undefined)
+                                        ?.name ?? (opt.id as unknown as string);
+                                  } else {
+                                    name =
+                                      runtime
+                                        ?.getRuntimeIngredient(opt.id as IngredientId)
+                                        .orDefault(undefined)?.name ?? (opt.id as unknown as string);
+                                  }
+                                  return (
+                                    <option
+                                      key={opt.id as unknown as string}
+                                      value={opt.id as unknown as string}
+                                    >
+                                      {name}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : null}
 
