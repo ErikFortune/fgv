@@ -24,6 +24,9 @@ export type {
   IProcedureOption,
   IShellChocolateState,
   IProcedureState,
+  IMoldOption,
+  IMoldState,
+  IMoldActions,
   IProductionSessionState,
   IProductionSessionActions,
   IShellChocolateActions,
@@ -61,6 +64,13 @@ export {
   type IUseProcedureSelectionResult
 } from './useProcedureSelection';
 
+export {
+  useMoldSelection,
+  type IMoldSpec,
+  type IUseMoldSelectionOptions,
+  type IUseMoldSelectionResult
+} from './useMoldSelection';
+
 // Components
 export { ShellChocolateSelector, type IShellChocolateSelectorProps } from './ShellChocolateSelector';
 export {
@@ -69,3 +79,4 @@ export {
   type IFillingOptionDisplayProps
 } from './FillingSlotManager';
 export { ProcedureSelector, type IProcedureSelectorProps } from './ProcedureSelector';
+export { ItemPickerDialog, type IItemPickerDialogProps, type IPickerItem } from './ItemPickerDialog';

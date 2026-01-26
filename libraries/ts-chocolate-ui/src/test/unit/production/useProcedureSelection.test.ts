@@ -66,10 +66,32 @@ describe('useProcedureSelection', () => {
       expect(result.current.state.basePreferredId).toBe('proc-001');
       expect(result.current.state.effectivePreferredId).toBe('proc-001');
     });
+
+    test('uses productionSelectedId for display when provided', () => {
+      const baseSpec = createBaseSpec();
+
+      const { result } = renderHook(() =>
+        useProcedureSelection({
+          baseSpec,
+          draftSpec: undefined,
+          onUpdateDraft: jest.fn(),
+          onResetDraft: jest.fn(),
+          productionSelectedId: 'proc-002'
+        })
+      );
+
+      // productionSelectedId overrides the effectivePreferredId for display
+      expect(result.current.state.effectivePreferredId).toBe('proc-002');
+      // But basePreferredId is unchanged
+      expect(result.current.state.basePreferredId).toBe('proc-001');
+      // And this doesn't count as a change (it's just a production run selection)
+      expect(result.current.state.hasChanges).toBe(false);
+    });
   });
 
   describe('draft state', () => {
-    test('detects changes when preferred ID differs', () => {
+    test('does not detect changes when only preferred ID differs', () => {
+      // Per design: selecting from existing options is NOT a recipe change
       const baseSpec = createBaseSpec();
       const draftSpec = createBaseSpec({ preferredId: 'proc-002' });
 
@@ -82,7 +104,8 @@ describe('useProcedureSelection', () => {
         })
       );
 
-      expect(result.current.state.hasChanges).toBe(true);
+      // hasChanges should be false - only option additions/removals count as changes
+      expect(result.current.state.hasChanges).toBe(false);
       expect(result.current.state.effectivePreferredId).toBe('proc-002');
     });
 
@@ -106,7 +129,31 @@ describe('useProcedureSelection', () => {
   });
 
   describe('select action', () => {
-    test('calls onUpdateDraft with new preferred ID', () => {
+    test('calls onSelectProduction when provided (production mode)', () => {
+      const baseSpec = createBaseSpec();
+      const onUpdateDraft = jest.fn();
+      const onSelectProduction = jest.fn();
+
+      const { result } = renderHook(() =>
+        useProcedureSelection({
+          baseSpec,
+          draftSpec: undefined,
+          onUpdateDraft,
+          onResetDraft: jest.fn(),
+          onSelectProduction
+        })
+      );
+
+      act(() => {
+        result.current.actions.select('proc-002');
+      });
+
+      // Should call production callback, NOT update draft
+      expect(onSelectProduction).toHaveBeenCalledWith('proc-002');
+      expect(onUpdateDraft).not.toHaveBeenCalled();
+    });
+
+    test('calls onUpdateDraft when onSelectProduction not provided (legacy mode)', () => {
       const baseSpec = createBaseSpec();
       const onUpdateDraft = jest.fn();
 

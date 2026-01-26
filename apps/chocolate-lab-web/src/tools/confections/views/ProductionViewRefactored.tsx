@@ -10,13 +10,19 @@ import type {
   ConfectionVersionSpec,
   FillingId,
   IngredientId,
-  MoldId,
   ProcedureId,
   SessionId,
   SlotId,
   SourceId
 } from '@fgv/ts-chocolate';
-import { Converters, Entities, Runtime, type JournalId } from '@fgv/ts-chocolate';
+import {
+  Converters,
+  Editing,
+  Entities,
+  Runtime,
+  type JournalId,
+  type BaseConfectionId
+} from '@fgv/ts-chocolate';
 import { useObservability } from '@fgv/ts-chocolate-ui';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useEditing } from '../../../contexts/EditingContext';
@@ -359,17 +365,59 @@ export function ProductionViewRefactored({
             return;
           }
 
-          const baseIdString = getConfectionBaseId(baseConfectionId);
-          const baseIdResult = Converters.baseConfectionId.convert(baseIdString);
-          if (baseIdResult.isFailure()) {
-            setError(baseIdResult.message);
-            return;
-          }
-
           const rawConfection = runtime.library.getConfection(baseConfectionId);
           if (rawConfection.isFailure()) {
             setError(rawConfection.message);
             return;
+          }
+
+          // Determine if we need a new ID (saving to different collection)
+          const isSavingToNewCollection = destination !== sourceId;
+          let finalBaseId: BaseConfectionId;
+
+          if (isSavingToNewCollection) {
+            // Derive a new ID from the session label or confection name
+            const collection = runtime.library.confections.collections.get(destination).asResult;
+            if (collection.isFailure()) {
+              setError(`Collection "${destination as unknown as string}" not found`);
+              return;
+            }
+
+            const existingBaseIds = Array.from(collection.value.items.keys()) as string[];
+            const deriveName =
+              session.label?.trim() || (rawConfection.value.name as unknown as string) || 'confection';
+            const deriveResult = Editing.Helpers.generateUniqueBaseIdFromName(deriveName, existingBaseIds);
+            const suggestedId = deriveResult.isSuccess()
+              ? (deriveResult.value as string)
+              : deriveName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+            // Prompt user to confirm or edit the ID
+            const confirmedId = window.prompt(
+              `Enter ID for the new confection in "${destination as unknown as string}":\n\n` +
+                `(Derived from "${deriveName}")`,
+              suggestedId
+            );
+
+            if (!confirmedId) {
+              user.info('Commit cancelled');
+              return;
+            }
+
+            const idResult = Converters.baseConfectionId.convert(confirmedId.trim());
+            if (idResult.isFailure()) {
+              setError(`Invalid ID: ${idResult.message}`);
+              return;
+            }
+            finalBaseId = idResult.value;
+          } else {
+            // Same collection - keep existing ID
+            const baseIdString = getConfectionBaseId(baseConfectionId);
+            const baseIdResult = Converters.baseConfectionId.convert(baseIdString);
+            if (baseIdResult.isFailure()) {
+              setError(baseIdResult.message);
+              return;
+            }
+            finalBaseId = baseIdResult.value;
           }
 
           const rawVersions = rawConfection.value.versions as ReadonlyArray<Record<string, unknown>>;
@@ -391,10 +439,18 @@ export function ProductionViewRefactored({
             createdDate: new Date().toISOString()
           };
 
+          // If saving to new collection with a session label, update the confection name
+          const confectionName =
+            isSavingToNewCollection && session.label?.trim()
+              ? session.label.trim()
+              : (rawConfection.value.name as unknown as string);
+
           const updatedConfection = {
             ...rawConfection.value,
+            baseId: finalBaseId,
+            name: confectionName,
             goldenVersionSpec: newVersionSpec as unknown as string,
-            versions: [...rawVersions, newVersion]
+            versions: isSavingToNewCollection ? [newVersion] : [...rawVersions, newVersion]
           };
 
           const validated = Entities.Confections.Converters.confectionData.convert(updatedConfection);
@@ -409,10 +465,7 @@ export function ProductionViewRefactored({
             return;
           }
 
-          const setResult = collection.value.items.validating.set(
-            baseIdResult.value,
-            validated.value
-          ).asResult;
+          const setResult = collection.value.items.validating.set(finalBaseId, validated.value).asResult;
           if (setResult.isFailure()) {
             setError(setResult.message);
             return;
@@ -425,7 +478,7 @@ export function ProductionViewRefactored({
           }
 
           targetConfectionId = `${destination as unknown as string}.${
-            baseIdResult.value as unknown as string
+            finalBaseId as unknown as string
           }` as unknown as ConfectionId;
           targetVersionSpec = newVersionSpec;
 

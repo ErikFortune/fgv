@@ -283,6 +283,18 @@ export interface IIngredientCardProps {
 }
 
 // @public
+export interface IItemPickerDialogProps<TId extends string = string> {
+    emptyMessage?: string;
+    excludeIds?: readonly TId[];
+    isOpen: boolean;
+    items: readonly IPickerItem<TId>[];
+    onClose: () => void;
+    onSelect: (item: IPickerItem<TId>) => void;
+    searchPlaceholder?: string;
+    title: string;
+}
+
+// @public
 export interface IMessage {
     id: string;
     source?: string;
@@ -300,8 +312,36 @@ export interface IMessagesPaneProps {
 }
 
 // @public
+export interface IMoldActions {
+    addOption: (option: IMoldOption) => void;
+    removeOption: (id: string) => void;
+    reset: () => void;
+    select: (id: string) => void;
+}
+
+// @public
 export interface IMoldData {
     cavityCount: number;
+}
+
+// @public
+export interface IMoldOption {
+    id: string;
+    notes?: string;
+}
+
+// @public
+export interface IMoldSpec {
+    options: readonly IMoldOption[];
+    preferredId?: string;
+}
+
+// @public
+export interface IMoldState {
+    basePreferredId: string | undefined;
+    effectivePreferredId: string | undefined;
+    hasChanges: boolean;
+    options: readonly IMoldOption[];
 }
 
 // @public
@@ -359,6 +399,14 @@ export interface IPersistedSessionData {
     sessionId: SessionId;
     sessionType: 'confection';
     status: PersistedSessionStatus;
+}
+
+// @public
+export interface IPickerItem<TId extends string = string> {
+    category?: string;
+    description?: string;
+    id: TId;
+    name: string;
 }
 
 // @public
@@ -480,6 +528,9 @@ export interface ITemperatureCurveDisplayProps {
 }
 
 // @public
+export function ItemPickerDialog<TId extends string = string>({ isOpen, title, items, onSelect, onClose, searchPlaceholder, excludeIds, emptyMessage }: IItemPickerDialogProps<TId>): React_2.ReactElement | null;
+
+// @public
 export interface IUseBrowseDetailStateResult<TId extends string> {
     // (undocumented)
     actions: IBrowseDetailActions<TId>;
@@ -493,7 +544,9 @@ export interface IUseFillingSlotManagementOptions {
     draftSlots: readonly IFillingSlotData[] | undefined;
     generateSlotId?: () => string;
     onResetDraft: () => void;
+    onSelectProduction?: (slotId: SlotId, fillingId: string) => void;
     onUpdateDraft: (slots: IFillingSlotData[]) => void;
+    productionSelections?: Readonly<Record<SlotId, string>>;
 }
 
 // @public
@@ -518,11 +571,29 @@ export interface IUseHashNavigationResult<TId extends string> {
 }
 
 // @public
+export interface IUseMoldSelectionOptions {
+    baseSpec: IMoldSpec | undefined;
+    draftSpec: IMoldSpec | undefined;
+    onResetDraft: () => void;
+    onSelectProduction?: (id: string) => void;
+    onUpdateDraft: (spec: IMoldSpec) => void;
+    productionSelectedId?: string;
+}
+
+// @public
+export interface IUseMoldSelectionResult {
+    actions: IMoldActions;
+    state: IMoldState;
+}
+
+// @public
 export interface IUseProcedureSelectionOptions {
     baseSpec: IProcedureSpec | undefined;
     draftSpec: IProcedureSpec | undefined;
     onResetDraft: () => void;
+    onSelectProduction?: (id: string) => void;
     onUpdateDraft: (spec: IProcedureSpec) => void;
+    productionSelectedId?: string;
 }
 
 // @public
@@ -562,7 +633,9 @@ export interface IUseShellChocolateSelectionOptions {
     baseSpec: IShellChocolateSpec | undefined;
     draftSpec: IShellChocolateSpec | undefined;
     onResetDraft: () => void;
+    onSelectProduction?: (id: string) => void;
     onUpdateDraft: (spec: IShellChocolateSpec) => void;
+    productionSelectedId?: string;
 }
 
 // @public
@@ -616,6 +689,9 @@ declare namespace ProductionTools {
         IProcedureOption,
         IShellChocolateState,
         IProcedureState,
+        IMoldOption,
+        IMoldState,
+        IMoldActions,
         IProductionSessionState,
         IProductionSessionActions,
         IShellChocolateActions,
@@ -638,13 +714,20 @@ declare namespace ProductionTools {
         IProcedureSpec,
         IUseProcedureSelectionOptions,
         IUseProcedureSelectionResult,
+        useMoldSelection,
+        IMoldSpec,
+        IUseMoldSelectionOptions,
+        IUseMoldSelectionResult,
         ShellChocolateSelector,
         IShellChocolateSelectorProps,
         FillingSlotManager,
         IFillingSlotManagerProps,
         IFillingOptionDisplayProps,
         ProcedureSelector,
-        IProcedureSelectorProps
+        IProcedureSelectorProps,
+        ItemPickerDialog,
+        IItemPickerDialogProps,
+        IPickerItem
     }
 }
 export { ProductionTools }
@@ -690,6 +773,9 @@ export function useMessages(): {
     clearMessagesByType: (type: MessageType) => void;
     messageCounts: Record<MessageType, number>;
 };
+
+// @public
+export function useMoldSelection(options: IUseMoldSelectionOptions): IUseMoldSelectionResult;
 
 // @public
 export function useObservability(): IObservabilityContext;

@@ -4,7 +4,7 @@
 
 ## IUseFillingSlotManagementOptions.onUpdateDraft property
 
-Callback when draft changes
+Callback when draft changes (for recipe modifications like addFillingOption, removeFillingOption)
 
 **Signature:**
 

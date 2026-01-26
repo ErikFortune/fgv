@@ -4,24 +4,18 @@
  */
 
 import * as React from 'react';
-import { useCallback, useMemo } from 'react';
-import type {
-  ConfectionId,
-  FillingId,
-  IngredientId,
-  MoldId,
-  ProcedureId,
-  SessionId,
-  SlotId,
-  SourceId
-} from '@fgv/ts-chocolate';
+import { useCallback, useMemo, useState } from 'react';
+import type { FillingId, IngredientId, MoldId, ProcedureId, SessionId, SourceId } from '@fgv/ts-chocolate';
 import { Runtime } from '@fgv/ts-chocolate';
 import {
   ProductionTools,
   type IFillingSlotData,
   type IShellChocolateSpec,
   type IProcedureSpec,
-  type IFillingOption
+  type IMoldSpec,
+  type IFillingOption,
+  type IPickerItem,
+  type SlotId
 } from '@fgv/ts-chocolate-ui';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useSessionScratchpad } from '../../../contexts/SessionScratchpadContext';
@@ -143,7 +137,7 @@ function useShellChocolateAdapter(
   baseRawVersion: Record<string, unknown> | undefined,
   draftRawVersion: Record<string, unknown> | undefined
 ) {
-  const { updateConfectionDraft } = useSessionScratchpad();
+  const { updateConfectionDraft, updateConfectionProduction } = useSessionScratchpad();
 
   const baseSpec = useMemo((): IShellChocolateSpec | undefined => {
     const shell = baseRawVersion?.shellChocolate as { ids: string[]; preferredId?: string } | undefined;
@@ -157,6 +151,9 @@ function useShellChocolateAdapter(
     if (!shell) return undefined;
     return { ids: shell.ids, preferredId: shell.preferredId };
   }, [draftRawVersion]);
+
+  // Production selection (for this run, not recipe edit)
+  const productionSelectedId = (session.production?.shellChocolateId as unknown as string) ?? undefined;
 
   const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -174,11 +171,22 @@ function useShellChocolateAdapter(
     updateConfectionDraft(session.sessionId, { draftVersion: undefined });
   }, [session.sessionId, updateConfectionDraft]);
 
+  const onSelectProduction = useCallback(
+    (id: string) => {
+      updateConfectionProduction(session.sessionId, {
+        shellChocolateId: id as unknown as IngredientId
+      });
+    },
+    [session.sessionId, updateConfectionProduction]
+  );
+
   return ProductionTools.useShellChocolateSelection({
     baseSpec,
     draftSpec,
     onUpdateDraft,
-    onResetDraft
+    onResetDraft,
+    productionSelectedId,
+    onSelectProduction
   });
 }
 
@@ -190,7 +198,7 @@ function useFillingSlotAdapter(
   baseRawVersion: Record<string, unknown> | undefined,
   draftRawVersion: Record<string, unknown> | undefined
 ) {
-  const { updateConfectionDraft } = useSessionScratchpad();
+  const { updateConfectionDraft, updateConfectionProduction } = useSessionScratchpad();
 
   const baseSlots = useMemo((): IFillingSlotData[] | undefined => {
     const fillings = baseRawVersion?.fillings as
@@ -225,6 +233,12 @@ function useFillingSlotAdapter(
     }));
   }, [draftRawVersion]);
 
+  // Production selections (for this run, not recipe edit)
+  const productionSelections = useMemo(() => {
+    const selections = session.production?.fillingSelections;
+    return selections as Readonly<Record<SlotId, string>> | undefined;
+  }, [session.production?.fillingSelections]);
+
   const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
   const onUpdateDraft = useCallback(
@@ -241,11 +255,26 @@ function useFillingSlotAdapter(
     updateConfectionDraft(session.sessionId, { draftVersion: undefined });
   }, [session.sessionId, updateConfectionDraft]);
 
+  const onSelectProduction = useCallback(
+    (slotId: SlotId, fillingId: string) => {
+      const existingSelections = session.production?.fillingSelections ?? {};
+      updateConfectionProduction(session.sessionId, {
+        fillingSelections: {
+          ...existingSelections,
+          [slotId]: fillingId
+        } as Record<SlotId, string>
+      });
+    },
+    [session.sessionId, session.production?.fillingSelections, updateConfectionProduction]
+  );
+
   return ProductionTools.useFillingSlotManagement({
     baseSlots,
     draftSlots,
     onUpdateDraft,
-    onResetDraft
+    onResetDraft,
+    productionSelections,
+    onSelectProduction
   });
 }
 
@@ -257,7 +286,7 @@ function useProcedureAdapter(
   baseRawVersion: Record<string, unknown> | undefined,
   draftRawVersion: Record<string, unknown> | undefined
 ) {
-  const { updateConfectionDraft } = useSessionScratchpad();
+  const { updateConfectionDraft, updateConfectionProduction } = useSessionScratchpad();
 
   const baseSpec = useMemo((): IProcedureSpec | undefined => {
     const procs = baseRawVersion?.procedures as
@@ -276,6 +305,9 @@ function useProcedureAdapter(
     return { options: procs.options, preferredId: procs.preferredId };
   }, [draftRawVersion]);
 
+  // Production selection (for this run, not recipe edit)
+  const productionSelectedId = (session.production?.procedureId as unknown as string) ?? undefined;
+
   const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
   const onUpdateDraft = useCallback(
@@ -292,11 +324,87 @@ function useProcedureAdapter(
     updateConfectionDraft(session.sessionId, { draftVersion: undefined });
   }, [session.sessionId, updateConfectionDraft]);
 
+  const onSelectProduction = useCallback(
+    (id: string) => {
+      updateConfectionProduction(session.sessionId, {
+        procedureId: id as unknown as ProcedureId
+      });
+    },
+    [session.sessionId, updateConfectionProduction]
+  );
+
   return ProductionTools.useProcedureSelection({
     baseSpec,
     draftSpec,
     onUpdateDraft,
-    onResetDraft
+    onResetDraft,
+    productionSelectedId,
+    onSelectProduction
+  });
+}
+
+/**
+ * Hook to adapt draft editing for molds
+ */
+function useMoldAdapter(
+  session: PersistedConfectionSession,
+  baseRawVersion: Record<string, unknown> | undefined,
+  draftRawVersion: Record<string, unknown> | undefined
+) {
+  const { updateConfectionDraft, updateConfectionProduction } = useSessionScratchpad();
+
+  const baseSpec = useMemo((): IMoldSpec | undefined => {
+    const molds = baseRawVersion?.molds as
+      | { options: Array<{ id: string; notes?: string }>; preferredId?: string }
+      | undefined;
+    if (!molds) return undefined;
+    return { options: molds.options, preferredId: molds.preferredId };
+  }, [baseRawVersion]);
+
+  const draftSpec = useMemo((): IMoldSpec | undefined => {
+    if (!draftRawVersion) return undefined;
+    const molds = draftRawVersion.molds as
+      | { options: Array<{ id: string; notes?: string }>; preferredId?: string }
+      | undefined;
+    if (!molds) return undefined;
+    return { options: molds.options, preferredId: molds.preferredId };
+  }, [draftRawVersion]);
+
+  // Production selection - moldId is stored in session.production.moldId
+  const productionSelectedId = (session.production?.moldId as unknown as string) ?? undefined;
+
+  const cloneJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+  const onUpdateDraft = useCallback(
+    (spec: IMoldSpec) => {
+      if (!baseRawVersion) return;
+      const nextDraft = cloneJson(draftRawVersion ?? baseRawVersion);
+      nextDraft.molds = spec;
+      updateConfectionDraft(session.sessionId, { draftVersion: nextDraft as unknown });
+    },
+    [baseRawVersion, draftRawVersion, session.sessionId, updateConfectionDraft]
+  );
+
+  const onResetDraft = useCallback(() => {
+    updateConfectionDraft(session.sessionId, { draftVersion: undefined });
+  }, [session.sessionId, updateConfectionDraft]);
+
+  const onSelectProduction = useCallback(
+    (id: string) => {
+      updateConfectionProduction(session.sessionId, {
+        moldId: id as unknown as MoldId
+      });
+    },
+    [session.sessionId, updateConfectionProduction]
+  );
+
+  return ProductionTools.useMoldSelection({
+    baseSpec,
+    draftSpec,
+    onUpdateDraft,
+    onResetDraft,
+    productionSelectedId,
+    onSelectProduction
   });
 }
 
@@ -334,12 +442,12 @@ export function ProductionSessionRow({
     baseRawVersion,
     draftRawVersion
   );
+  const { state: moldState, actions: moldActions } = useMoldAdapter(session, baseRawVersion, draftRawVersion);
 
-  // Get mold options for the confection
+  // Get mold options from the mold state (which includes draft changes)
   const moldOptions = useMemo(() => {
-    const molds = (confection as unknown as { molds?: { options: Array<{ id: MoldId }> } })?.molds?.options;
-    return molds ?? [];
-  }, [confection]);
+    return moldState.options.map((opt) => ({ id: opt.id as unknown as MoldId }));
+  }, [moldState.options]);
 
   // Get mutable confection collections
   const mutableCollectionIds = useMemo((): SourceId[] => {
@@ -389,6 +497,124 @@ export function ProductionSessionRow({
   );
 
   const isMoldedBonBon = confection?.isMoldedBonBon?.() ?? false;
+
+  // Picker dialog state
+  const [fillingPickerSlotId, setFillingPickerSlotId] = useState<SlotId | null>(null);
+  const [showChocolatePicker, setShowChocolatePicker] = useState(false);
+  const [showProcedurePicker, setShowProcedurePicker] = useState(false);
+  const [showMoldPicker, setShowMoldPicker] = useState(false);
+
+  // Available items for pickers
+  const availableFillings = useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    return Array.from(runtime.fillings.values()).map((f) => ({
+      id: f.id as unknown as string,
+      name: f.name as unknown as string
+    }));
+  }, [runtime]);
+
+  const availableChocolates = useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    // Filter to chocolate ingredients
+    return Array.from(runtime.ingredients.values())
+      .filter((i) => {
+        const category = (i as unknown as { category?: string }).category;
+        return category === 'chocolate' || category === 'couverture';
+      })
+      .map((i) => ({
+        id: i.id as unknown as string,
+        name: i.name as unknown as string,
+        description: (i as unknown as { category?: string }).category
+      }));
+  }, [runtime]);
+
+  const availableProcedures = useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    return Array.from(runtime.library.procedures.entries()).map(([id, p]) => ({
+      id: id as unknown as string,
+      name: (p as unknown as { name: string }).name
+    }));
+  }, [runtime]);
+
+  const availableMolds = useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    const items: IPickerItem[] = [];
+    for (const [id] of runtime.library.molds.entries()) {
+      const moldResult = runtime.getRuntimeMold(id as MoldId);
+      if (moldResult.isSuccess()) {
+        const mold = moldResult.value;
+        items.push({
+          id: id as unknown as string,
+          name: mold.displayName ?? (id as unknown as string),
+          description: `${mold.cavityCount} cavities`
+        });
+      }
+    }
+    return items;
+  }, [runtime]);
+
+  // Get existing IDs for exclusion
+  const existingChocolateIds = useMemo(() => shellState.availableChoices, [shellState.availableChoices]);
+  const existingProcedureIds = useMemo(
+    () => procedureState.options.map((o) => o.id),
+    [procedureState.options]
+  );
+  const existingMoldIds = useMemo(() => moldOptions.map((o) => o.id as unknown as string), [moldOptions]);
+  const getExistingFillingIdsForSlot = useCallback(
+    (slotId: SlotId): string[] => {
+      const slot = slots.find((s) => s.slotId === slotId);
+      return slot?.options.map((o) => o.id) ?? [];
+    },
+    [slots]
+  );
+
+  // Picker handlers
+  const handleAddFillingOption = useCallback((slotId: SlotId) => {
+    setFillingPickerSlotId(slotId);
+  }, []);
+
+  const handleFillingSelect = useCallback(
+    (item: IPickerItem) => {
+      if (fillingPickerSlotId) {
+        slotActions.addFillingOption(fillingPickerSlotId, { type: 'recipe', id: item.id });
+      }
+      setFillingPickerSlotId(null);
+    },
+    [fillingPickerSlotId, slotActions]
+  );
+
+  const handleChocolateSelect = useCallback(
+    (item: IPickerItem) => {
+      shellActions.addChoice(item.id);
+      setShowChocolatePicker(false);
+    },
+    [shellActions]
+  );
+
+  const handleProcedureSelect = useCallback(
+    (item: IPickerItem) => {
+      procedureActions.addOption({ id: item.id });
+      setShowProcedurePicker(false);
+    },
+    [procedureActions]
+  );
+
+  const handleMoldSelect = useCallback(
+    (item: IPickerItem) => {
+      // Check if this mold is already in the options
+      const isExisting = moldState.options.some((opt) => opt.id === item.id);
+
+      if (!isExisting) {
+        // Add the mold to the draft (this creates a recipe edit)
+        moldActions.addOption({ id: item.id });
+      }
+
+      // Also set as production mold
+      sessionActions.selectMold(item.id);
+      setShowMoldPicker(false);
+    },
+    [moldState.options, moldActions, sessionActions]
+  );
 
   return (
     <React.Fragment>
@@ -459,23 +685,48 @@ export function ProductionSessionRow({
           {/* Mold and Frames */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="md:col-span-2">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Mold</label>
-              <select
-                className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
-                value={sessionState.moldId ?? ''}
-                onChange={handleMoldChange}
-              >
-                <option value="">Unspecified</option>
-                {moldOptions.map((opt) => {
-                  const mold = runtime?.getRuntimeMold(opt.id).orDefault(undefined);
-                  const displayName = mold?.displayName ?? mold?.name ?? (opt.id as unknown as string);
-                  return (
-                    <option key={opt.id as unknown as string} value={opt.id as unknown as string}>
-                      {displayName}
-                    </option>
-                  );
-                })}
-              </select>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs text-gray-600 dark:text-gray-400">Mold</label>
+                {moldState.hasChanges && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Modified</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
+                  value={sessionState.moldId ?? ''}
+                  onChange={handleMoldChange}
+                >
+                  <option value="">Unspecified</option>
+                  {moldOptions.map((opt) => {
+                    const mold = runtime?.getRuntimeMold(opt.id).orDefault(undefined);
+                    const displayName = mold?.displayName ?? mold?.name ?? (opt.id as unknown as string);
+                    return (
+                      <option key={opt.id as unknown as string} value={opt.id as unknown as string}>
+                        {displayName}
+                      </option>
+                    );
+                  })}
+                  {/* Show current selection if not in options */}
+                  {sessionState.moldId &&
+                    !moldOptions.some((o) => (o.id as unknown as string) === sessionState.moldId) && (
+                      <option value={sessionState.moldId}>
+                        {runtime?.getRuntimeMold(sessionState.moldId as MoldId).orDefault(undefined)
+                          ?.displayName ??
+                          runtime?.getRuntimeMold(sessionState.moldId as MoldId).orDefault(undefined)?.name ??
+                          sessionState.moldId}
+                      </option>
+                    )}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowMoldPicker(true)}
+                  className="px-2 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-chocolate-600 dark:text-chocolate-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  title="Pick any mold from library"
+                >
+                  Pick...
+                </button>
+              </div>
             </div>
 
             <div>
@@ -517,22 +768,22 @@ export function ProductionSessionRow({
                     runtime?.getRuntimeIngredient(opt.id as IngredientId).orDefault(undefined)?.name ?? opt.id
                   );
                 }}
+                onAddFillingOption={handleAddFillingOption}
               />
             </div>
           )}
 
           {/* Procedures */}
-          {procedureState.options.length > 0 && (
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-              <ProductionTools.ProcedureSelector
-                state={procedureState}
-                actions={procedureActions}
-                getProcedureName={(id) =>
-                  runtime?.getRuntimeProcedure(id as ProcedureId).orDefault(undefined)?.name ?? id
-                }
-              />
-            </div>
-          )}
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+            <ProductionTools.ProcedureSelector
+              state={procedureState}
+              actions={procedureActions}
+              getProcedureName={(id) =>
+                runtime?.getRuntimeProcedure(id as ProcedureId).orDefault(undefined)?.name ?? id
+              }
+              onAddProcedure={() => setShowProcedurePicker(true)}
+            />
+          </div>
 
           {/* Shell Chocolate */}
           {shellState.availableChoices.length > 0 && (
@@ -543,6 +794,7 @@ export function ProductionSessionRow({
                 getChocolateName={(id) =>
                   runtime?.getRuntimeIngredient(id as IngredientId).orDefault(undefined)?.name ?? id
                 }
+                onAddChocolate={() => setShowChocolatePicker(true)}
               />
             </div>
           )}
@@ -601,6 +853,51 @@ export function ProductionSessionRow({
           )}
         </div>
       )}
+
+      {/* Picker Dialogs */}
+      <ProductionTools.ItemPickerDialog
+        isOpen={fillingPickerSlotId !== null}
+        title="Add Filling Option"
+        items={availableFillings}
+        onSelect={handleFillingSelect}
+        onClose={() => setFillingPickerSlotId(null)}
+        excludeIds={fillingPickerSlotId ? getExistingFillingIdsForSlot(fillingPickerSlotId) : []}
+        searchPlaceholder="Search fillings..."
+        emptyMessage="No fillings available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={showChocolatePicker}
+        title="Add Shell Chocolate"
+        items={availableChocolates}
+        onSelect={handleChocolateSelect}
+        onClose={() => setShowChocolatePicker(false)}
+        excludeIds={existingChocolateIds}
+        searchPlaceholder="Search chocolates..."
+        emptyMessage="No chocolates available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={showProcedurePicker}
+        title="Add Procedure Option"
+        items={availableProcedures}
+        onSelect={handleProcedureSelect}
+        onClose={() => setShowProcedurePicker(false)}
+        excludeIds={existingProcedureIds}
+        searchPlaceholder="Search procedures..."
+        emptyMessage="No procedures available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={showMoldPicker}
+        title="Select Mold"
+        items={availableMolds}
+        onSelect={handleMoldSelect}
+        onClose={() => setShowMoldPicker(false)}
+        excludeIds={existingMoldIds}
+        searchPlaceholder="Search molds..."
+        emptyMessage="No molds available"
+      />
     </React.Fragment>
   );
 }

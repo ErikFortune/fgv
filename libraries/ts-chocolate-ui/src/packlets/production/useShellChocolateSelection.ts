@@ -26,10 +26,20 @@ export interface IUseShellChocolateSelectionOptions {
   baseSpec: IShellChocolateSpec | undefined;
   /** Draft shell chocolate spec (with edits applied) */
   draftSpec: IShellChocolateSpec | undefined;
-  /** Callback when draft changes */
+  /** Callback when draft changes (for recipe modifications like addChoice, removeChoice) */
   onUpdateDraft: (spec: IShellChocolateSpec) => void;
   /** Callback to reset draft (clear draft version) */
   onResetDraft: () => void;
+  /**
+   * Production-selected chocolate ID (for this run, not recipe edit).
+   * If provided, this overrides preferredId for display but doesn't modify the draft.
+   */
+  productionSelectedId?: string;
+  /**
+   * Callback when selecting from existing options (production selection, not recipe edit).
+   * If provided, select() calls this instead of onUpdateDraft.
+   */
+  onSelectProduction?: (id: string) => void;
 }
 
 /**
@@ -72,18 +82,23 @@ export interface IUseShellChocolateSelectionResult {
 export function useShellChocolateSelection(
   options: IUseShellChocolateSelectionOptions
 ): IUseShellChocolateSelectionResult {
-  const { baseSpec, draftSpec, onUpdateDraft, onResetDraft } = options;
+  const { baseSpec, draftSpec, onUpdateDraft, onResetDraft, productionSelectedId, onSelectProduction } =
+    options;
 
   const state = useMemo((): IShellChocolateState => {
     const effectiveSpec = draftSpec ?? baseSpec;
     const availableChoices = effectiveSpec?.ids ?? [];
     const basePreferredId = baseSpec?.preferredId ?? baseSpec?.ids?.[0];
-    const effectivePreferredId = effectiveSpec?.preferredId ?? effectiveSpec?.ids?.[0];
 
-    const hasChanges =
-      draftSpec !== undefined &&
-      (effectivePreferredId !== basePreferredId ||
-        JSON.stringify([...availableChoices].sort()) !== JSON.stringify([...(baseSpec?.ids ?? [])].sort()));
+    // For display, use: production selection > draft preferredId > base preferredId
+    const specPreferredId = effectiveSpec?.preferredId ?? effectiveSpec?.ids?.[0];
+    const effectivePreferredId = productionSelectedId ?? specPreferredId;
+
+    // hasChanges only tracks RECIPE changes (options added/removed), not production selection
+    // Comparing sorted IDs to detect if options have changed
+    const baseIds = [...(baseSpec?.ids ?? [])].sort();
+    const currentIds = [...availableChoices].sort();
+    const hasChanges = draftSpec !== undefined && JSON.stringify(currentIds) !== JSON.stringify(baseIds);
 
     return {
       availableChoices,
@@ -91,7 +106,7 @@ export function useShellChocolateSelection(
       effectivePreferredId,
       hasChanges
     };
-  }, [baseSpec, draftSpec]);
+  }, [baseSpec, draftSpec, productionSelectedId]);
 
   const select = useCallback(
     (id: string): void => {
@@ -101,18 +116,33 @@ export function useShellChocolateSelection(
       // Verify the ID is in available choices
       if (!effectiveSpec.ids.includes(id)) return;
 
+      // Use production selection callback if provided (doesn't modify draft)
+      if (onSelectProduction) {
+        onSelectProduction(id);
+        return;
+      }
+
+      // Fallback: modify draft (legacy behavior)
       onUpdateDraft({
         ids: [...effectiveSpec.ids],
         preferredId: id
       });
     },
-    [baseSpec, draftSpec, onUpdateDraft]
+    [baseSpec, draftSpec, onSelectProduction, onUpdateDraft]
   );
 
   const addChoice = useCallback(
     (id: string): void => {
       const effectiveSpec = draftSpec ?? baseSpec;
-      if (!effectiveSpec) return;
+
+      // If no spec exists yet, create one with just this choice
+      if (!effectiveSpec) {
+        onUpdateDraft({
+          ids: [id],
+          preferredId: id
+        });
+        return;
+      }
 
       // Don't add duplicates
       if (effectiveSpec.ids.includes(id)) return;

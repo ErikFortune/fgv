@@ -94,6 +94,25 @@ Callback to reset draft
 </td></tr>
 <tr><td>
 
+[onSelectProduction?](./ts-chocolate-ui.iuseprocedureselectionoptions.onselectproduction.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(id: string) =&gt; void
+
+
+</td><td>
+
+_(Optional)_ Callback when selecting from existing options (production selection, not recipe edit). If provided, select() calls this instead of onUpdateDraft.
+
+
+</td></tr>
+<tr><td>
+
 [onUpdateDraft](./ts-chocolate-ui.iuseprocedureselectionoptions.onupdatedraft.md)
 
 
@@ -107,7 +126,26 @@ Callback to reset draft
 
 </td><td>
 
-Callback when draft changes
+Callback when draft changes (for recipe modifications like addOption, removeOption)
+
+
+</td></tr>
+<tr><td>
+
+[productionSelectedId?](./ts-chocolate-ui.iuseprocedureselectionoptions.productionselectedid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Production-selected procedure ID (for this run, not recipe edit). If provided, this overrides preferredId for display but doesn't modify the draft.
 
 
 </td></tr>

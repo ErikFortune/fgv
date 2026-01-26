@@ -9,8 +9,9 @@ Production properties for a confection production session.
 **Signature:**
 
 ```typescript
-export interface IPersistedConfectionSessionProduction 
+export interface IPersistedConfectionSessionProduction extends IPersistedConfectionSessionSelections 
 ```
+**Extends:** [IPersistedConfectionSessionSelections](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsessionselections.md)
 
 ## Properties
 

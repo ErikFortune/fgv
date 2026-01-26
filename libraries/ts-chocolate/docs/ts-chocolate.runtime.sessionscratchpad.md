@@ -63,6 +63,19 @@ Production properties for a confection production session.
 </td></tr>
 <tr><td>
 
+[IPersistedConfectionSessionSelections](./ts-chocolate.runtime.sessionscratchpad.ipersistedconfectionsessionselections.md)
+
+
+</td><td>
+
+Production selections for a specific production run.
+
+These are the choices made for THIS production run, not recipe edits. Selecting from existing options does NOT modify the recipe (draft).
+
+
+</td></tr>
+<tr><td>
+
 [IPersistedFillingSession](./ts-chocolate.runtime.sessionscratchpad.ipersistedfillingsession.md)
 
 

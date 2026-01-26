@@ -3148,11 +3148,18 @@ interface IPersistedConfectionSessionDraft {
 }
 
 // @public
-interface IPersistedConfectionSessionProduction {
+interface IPersistedConfectionSessionProduction extends IPersistedConfectionSessionSelections {
     // (undocumented)
     readonly frames?: number;
     // (undocumented)
     readonly moldId?: MoldId;
+}
+
+// @public
+interface IPersistedConfectionSessionSelections {
+    readonly fillingSelections?: Readonly<Record<SlotId, string>>;
+    readonly procedureId?: ProcedureId;
+    readonly shellChocolateId?: IngredientId;
 }
 
 // @public
@@ -5640,6 +5647,7 @@ declare namespace Scratchpad {
         IPersistedSessionDestination,
         IPersistedSessionBase,
         IPersistedConfectionSessionBasePointer,
+        IPersistedConfectionSessionSelections,
         IPersistedConfectionSessionProduction,
         IPersistedConfectionSessionDraft,
         IPersistedConfectionSession,

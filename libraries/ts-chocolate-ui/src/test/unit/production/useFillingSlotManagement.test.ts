@@ -81,10 +81,35 @@ describe('useFillingSlotManagement', () => {
 
       expect(result.current.slots[0].name).toBe('slot-001');
     });
+
+    test('uses productionSelections for display when provided', () => {
+      const baseSlots = createBaseSlots();
+
+      const { result } = renderHook(() =>
+        useFillingSlotManagement({
+          baseSlots,
+          draftSlots: undefined,
+          onUpdateDraft: jest.fn(),
+          onResetDraft: jest.fn(),
+          productionSelections: {
+            ['slot-001' as SlotId]: 'filling-002'
+          }
+        })
+      );
+
+      // productionSelections overrides the preferredId for display
+      expect(result.current.slots[0].preferredId).toBe('filling-002');
+      // But basePreferredId is unchanged
+      expect(result.current.slots[0].basePreferredId).toBe('filling-001');
+      // And this doesn't count as a change (it's just a production run selection)
+      expect(result.current.slots[0].hasChanges).toBe(false);
+      expect(result.current.hasChanges).toBe(false);
+    });
   });
 
   describe('change detection', () => {
-    test('detects selection changes', () => {
+    test('does not detect changes when only preferredId differs', () => {
+      // Per design: selecting from existing options is NOT a recipe change
       const baseSlots = createBaseSlots();
       const draftSlots = [
         createMockSlot({
@@ -105,8 +130,34 @@ describe('useFillingSlotManagement', () => {
         })
       );
 
-      expect(result.current.slots[0].hasChanges).toBe(true);
+      // hasChanges should be false - only option additions/removals count as changes
+      expect(result.current.slots[0].hasChanges).toBe(false);
       expect(result.current.slots[1].hasChanges).toBe(false);
+      expect(result.current.hasChanges).toBe(false);
+    });
+
+    test('detects changes when filling options differ', () => {
+      const baseSlots = createBaseSlots();
+      const draftSlots = [
+        createMockSlot({
+          filling: {
+            options: [...baseSlots[0].filling.options, { type: 'recipe' as const, id: 'filling-003' }],
+            preferredId: 'filling-001'
+          }
+        }),
+        baseSlots[1]
+      ];
+
+      const { result } = renderHook(() =>
+        useFillingSlotManagement({
+          baseSlots,
+          draftSlots,
+          onUpdateDraft: jest.fn(),
+          onResetDraft: jest.fn()
+        })
+      );
+
+      expect(result.current.slots[0].hasChanges).toBe(true);
       expect(result.current.hasChanges).toBe(true);
     });
 
@@ -303,7 +354,31 @@ describe('useFillingSlotManagement', () => {
   });
 
   describe('selectFilling action', () => {
-    test('selects a filling from options', () => {
+    test('calls onSelectProduction when provided (production mode)', () => {
+      const baseSlots = createBaseSlots();
+      const onUpdateDraft = jest.fn();
+      const onSelectProduction = jest.fn();
+
+      const { result } = renderHook(() =>
+        useFillingSlotManagement({
+          baseSlots,
+          draftSlots: undefined,
+          onUpdateDraft,
+          onResetDraft: jest.fn(),
+          onSelectProduction
+        })
+      );
+
+      act(() => {
+        result.current.actions.selectFilling('slot-001' as SlotId, 'filling-002');
+      });
+
+      // Should call production callback, NOT update draft
+      expect(onSelectProduction).toHaveBeenCalledWith('slot-001', 'filling-002');
+      expect(onUpdateDraft).not.toHaveBeenCalled();
+    });
+
+    test('calls onUpdateDraft when onSelectProduction not provided (legacy mode)', () => {
       const baseSlots = createBaseSlots();
       const onUpdateDraft = jest.fn();
 

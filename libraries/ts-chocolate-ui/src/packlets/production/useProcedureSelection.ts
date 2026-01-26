@@ -26,10 +26,20 @@ export interface IUseProcedureSelectionOptions {
   baseSpec: IProcedureSpec | undefined;
   /** Draft procedure spec (with edits applied) */
   draftSpec: IProcedureSpec | undefined;
-  /** Callback when draft changes */
+  /** Callback when draft changes (for recipe modifications like addOption, removeOption) */
   onUpdateDraft: (spec: IProcedureSpec) => void;
   /** Callback to reset draft */
   onResetDraft: () => void;
+  /**
+   * Production-selected procedure ID (for this run, not recipe edit).
+   * If provided, this overrides preferredId for display but doesn't modify the draft.
+   */
+  productionSelectedId?: string;
+  /**
+   * Callback when selecting from existing options (production selection, not recipe edit).
+   * If provided, select() calls this instead of onUpdateDraft.
+   */
+  onSelectProduction?: (id: string) => void;
 }
 
 /**
@@ -70,18 +80,24 @@ export interface IUseProcedureSelectionResult {
  * @public
  */
 export function useProcedureSelection(options: IUseProcedureSelectionOptions): IUseProcedureSelectionResult {
-  const { baseSpec, draftSpec, onUpdateDraft, onResetDraft } = options;
+  const { baseSpec, draftSpec, onUpdateDraft, onResetDraft, productionSelectedId, onSelectProduction } =
+    options;
 
   const state = useMemo((): IProcedureState => {
     const effectiveSpec = draftSpec ?? baseSpec;
     const procedureOptions = effectiveSpec?.options ?? [];
-    const basePreferredId = baseSpec?.preferredId ?? baseSpec?.options[0]?.id;
-    const effectivePreferredId = effectiveSpec?.preferredId ?? effectiveSpec?.options[0]?.id;
+    const basePreferredId = baseSpec?.preferredId ?? baseSpec?.options?.[0]?.id;
 
+    // For display, use: production selection > draft preferredId > base preferredId
+    const specPreferredId = effectiveSpec?.preferredId ?? effectiveSpec?.options?.[0]?.id;
+    const effectivePreferredId = productionSelectedId ?? specPreferredId;
+
+    // hasChanges only tracks RECIPE changes (options added/removed), not production selection
+    // Comparing option IDs to detect if options have changed
+    const baseOptionIds = [...(baseSpec?.options ?? [])].map((o) => o.id).sort();
+    const currentOptionIds = [...procedureOptions].map((o) => o.id).sort();
     const hasChanges =
-      draftSpec !== undefined &&
-      (effectivePreferredId !== basePreferredId ||
-        JSON.stringify(procedureOptions) !== JSON.stringify(baseSpec?.options ?? []));
+      draftSpec !== undefined && JSON.stringify(currentOptionIds) !== JSON.stringify(baseOptionIds);
 
     return {
       options: procedureOptions,
@@ -89,7 +105,7 @@ export function useProcedureSelection(options: IUseProcedureSelectionOptions): I
       effectivePreferredId,
       hasChanges
     };
-  }, [baseSpec, draftSpec]);
+  }, [baseSpec, draftSpec, productionSelectedId]);
 
   const select = useCallback(
     (id: string): void => {
@@ -99,18 +115,33 @@ export function useProcedureSelection(options: IUseProcedureSelectionOptions): I
       // Verify the ID is in available options
       if (!effectiveSpec.options.some((opt) => opt.id === id)) return;
 
+      // Use production selection callback if provided (doesn't modify draft)
+      if (onSelectProduction) {
+        onSelectProduction(id);
+        return;
+      }
+
+      // Fallback: modify draft (legacy behavior)
       onUpdateDraft({
         options: [...effectiveSpec.options],
         preferredId: id
       });
     },
-    [baseSpec, draftSpec, onUpdateDraft]
+    [baseSpec, draftSpec, onSelectProduction, onUpdateDraft]
   );
 
   const addOption = useCallback(
     (option: IProcedureOption): void => {
       const effectiveSpec = draftSpec ?? baseSpec;
-      if (!effectiveSpec) return;
+
+      // If no spec exists yet, create one with just this option
+      if (!effectiveSpec) {
+        onUpdateDraft({
+          options: [option],
+          preferredId: option.id
+        });
+        return;
+      }
 
       // Don't add duplicates
       if (effectiveSpec.options.some((opt) => opt.id === option.id)) return;

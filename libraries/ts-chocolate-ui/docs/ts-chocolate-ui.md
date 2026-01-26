@@ -194,6 +194,19 @@ Displays an ingredient as a summary card for browse views
 </td></tr>
 <tr><td>
 
+[ItemPickerDialog({ isOpen, title, items, onSelect, onClose, searchPlaceholder, excludeIds, emptyMessage })](./ts-chocolate-ui.itempickerdialog.md)
+
+
+</td><td>
+
+Generic item picker dialog with search functionality.
+
+Displays a modal overlay with a searchable list of items. Used for selecting fillings, chocolates, procedures, etc.
+
+
+</td></tr>
+<tr><td>
+
 [MessagesPane({ visible, defaultCollapsed, maxHeight, className })](./ts-chocolate-ui.messagespane.md)
 
 
@@ -344,6 +357,19 @@ Enables deep linking to specific items via hash URLs like \#confections/my-item.
 </td><td>
 
 Hook to access just the messages (for the message pane)
+
+
+</td></tr>
+<tr><td>
+
+[useMoldSelection(options)](./ts-chocolate-ui.usemoldselection.md)
+
+
+</td><td>
+
+Hook for managing mold selection.
+
+Supports selecting from available molds, adding new options, and removing options from the list.
 
 
 </td></tr>
@@ -656,6 +682,17 @@ Props for the IngredientCard component
 </td></tr>
 <tr><td>
 
+[IItemPickerDialogProps](./ts-chocolate-ui.iitempickerdialogprops.md)
+
+
+</td><td>
+
+Props for the ItemPickerDialog component
+
+
+</td></tr>
+<tr><td>
+
 [IMessage](./ts-chocolate-ui.imessage.md)
 
 
@@ -678,12 +715,56 @@ Props for the MessagesPane component
 </td></tr>
 <tr><td>
 
+[IMoldActions](./ts-chocolate-ui.imoldactions.md)
+
+
+</td><td>
+
+Actions for mold selection
+
+
+</td></tr>
+<tr><td>
+
 [IMoldData](./ts-chocolate-ui.imolddata.md)
 
 
 </td><td>
 
 Mold data needed for yield calculation
+
+
+</td></tr>
+<tr><td>
+
+[IMoldOption](./ts-chocolate-ui.imoldoption.md)
+
+
+</td><td>
+
+Mold option with optional notes
+
+
+</td></tr>
+<tr><td>
+
+[IMoldSpec](./ts-chocolate-ui.imoldspec.md)
+
+
+</td><td>
+
+Mold spec from version data
+
+
+</td></tr>
+<tr><td>
+
+[IMoldState](./ts-chocolate-ui.imoldstate.md)
+
+
+</td><td>
+
+State for mold selection
 
 
 </td></tr>
@@ -739,6 +820,17 @@ A segment in the percentage bar
 </td><td>
 
 Raw session data from scratchpad
+
+
+</td></tr>
+<tr><td>
+
+[IPickerItem](./ts-chocolate-ui.ipickeritem.md)
+
+
+</td><td>
+
+Item for the picker dialog
 
 
 </td></tr>
@@ -948,6 +1040,28 @@ Return type for useFilterState hook
 </td><td>
 
 Return type for useHashNavigation hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseMoldSelectionOptions](./ts-chocolate-ui.iusemoldselectionoptions.md)
+
+
+</td><td>
+
+Options for useMoldSelection hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseMoldSelectionResult](./ts-chocolate-ui.iusemoldselectionresult.md)
+
+
+</td><td>
+
+Result type for useMoldSelection hook
 
 
 </td></tr>

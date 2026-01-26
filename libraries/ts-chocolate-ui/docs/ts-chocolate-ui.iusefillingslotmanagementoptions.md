@@ -113,6 +113,25 @@ Callback to reset draft
 </td></tr>
 <tr><td>
 
+[onSelectProduction?](./ts-chocolate-ui.iusefillingslotmanagementoptions.onselectproduction.md)
+
+
+</td><td>
+
+
+</td><td>
+
+(slotId: [SlotId](./ts-chocolate-ui.slotid.md)<!-- -->, fillingId: string) =&gt; void
+
+
+</td><td>
+
+_(Optional)_ Callback when selecting from existing options (production selection, not recipe edit). If provided, selectFilling() calls this instead of onUpdateDraft.
+
+
+</td></tr>
+<tr><td>
+
 [onUpdateDraft](./ts-chocolate-ui.iusefillingslotmanagementoptions.onupdatedraft.md)
 
 
@@ -126,7 +145,26 @@ Callback to reset draft
 
 </td><td>
 
-Callback when draft changes
+Callback when draft changes (for recipe modifications like addFillingOption, removeFillingOption)
+
+
+</td></tr>
+<tr><td>
+
+[productionSelections?](./ts-chocolate-ui.iusefillingslotmanagementoptions.productionselections.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Readonly&lt;Record&lt;[SlotId](./ts-chocolate-ui.slotid.md)<!-- -->, string&gt;&gt;
+
+
+</td><td>
+
+_(Optional)_ Production-selected fillings per slot (for this run, not recipe edit). If provided, this overrides preferredId for display but doesn't modify the draft.
 
 
 </td></tr>

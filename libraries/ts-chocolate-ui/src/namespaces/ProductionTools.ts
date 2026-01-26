@@ -52,6 +52,9 @@ export {
   type IProcedureOption,
   type IShellChocolateState,
   type IProcedureState,
+  type IMoldOption,
+  type IMoldState,
+  type IMoldActions,
   type IProductionSessionState,
   type IProductionSessionActions,
   type IShellChocolateActions,
@@ -75,6 +78,10 @@ export {
   type IProcedureSpec,
   type IUseProcedureSelectionOptions,
   type IUseProcedureSelectionResult,
+  useMoldSelection,
+  type IMoldSpec,
+  type IUseMoldSelectionOptions,
+  type IUseMoldSelectionResult,
   // Components
   ShellChocolateSelector,
   type IShellChocolateSelectorProps,
@@ -82,5 +89,8 @@ export {
   type IFillingSlotManagerProps,
   type IFillingOptionDisplayProps,
   ProcedureSelector,
-  type IProcedureSelectorProps
+  type IProcedureSelectorProps,
+  ItemPickerDialog,
+  type IItemPickerDialogProps,
+  type IPickerItem
 } from '../packlets/production';

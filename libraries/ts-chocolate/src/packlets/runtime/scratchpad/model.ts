@@ -32,8 +32,11 @@ import {
   ConfectionVersionSpec,
   FillingId,
   FillingVersionSpec,
+  IngredientId,
   MoldId,
+  ProcedureId,
   SessionId,
+  SlotId,
   SourceId
 } from '../../common';
 
@@ -129,10 +132,26 @@ export interface IPersistedConfectionSessionBasePointer {
 }
 
 /**
+ * Production selections for a specific production run.
+ *
+ * These are the choices made for THIS production run, not recipe edits.
+ * Selecting from existing options does NOT modify the recipe (draft).
+ * @public
+ */
+export interface IPersistedConfectionSessionSelections {
+  /** Selected shell chocolate from available options */
+  readonly shellChocolateId?: IngredientId;
+  /** Selected filling for each slot (slotId to fillingId mapping) */
+  readonly fillingSelections?: Readonly<Record<SlotId, string>>;
+  /** Selected procedure from available options */
+  readonly procedureId?: ProcedureId;
+}
+
+/**
  * Production properties for a confection production session.
  * @public
  */
-export interface IPersistedConfectionSessionProduction {
+export interface IPersistedConfectionSessionProduction extends IPersistedConfectionSessionSelections {
   readonly moldId?: MoldId;
   readonly frames?: number;
 }

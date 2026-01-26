@@ -31,12 +31,22 @@ export interface IUseFillingSlotManagementOptions {
   baseSlots: readonly IFillingSlotData[] | undefined;
   /** Draft filling slots (with edits applied) */
   draftSlots: readonly IFillingSlotData[] | undefined;
-  /** Callback when draft changes */
+  /** Callback when draft changes (for recipe modifications like addFillingOption, removeFillingOption) */
   onUpdateDraft: (slots: IFillingSlotData[]) => void;
   /** Callback to reset draft */
   onResetDraft: () => void;
   /** Function to generate a new slot ID */
   generateSlotId?: () => string;
+  /**
+   * Production-selected fillings per slot (for this run, not recipe edit).
+   * If provided, this overrides preferredId for display but doesn't modify the draft.
+   */
+  productionSelections?: Readonly<Record<SlotId, string>>;
+  /**
+   * Callback when selecting from existing options (production selection, not recipe edit).
+   * If provided, selectFilling() calls this instead of onUpdateDraft.
+   */
+  onSelectProduction?: (slotId: SlotId, fillingId: string) => void;
 }
 
 /**
@@ -96,7 +106,9 @@ export function useFillingSlotManagement(
     draftSlots,
     onUpdateDraft,
     onResetDraft,
-    generateSlotId = defaultGenerateSlotId
+    generateSlotId = defaultGenerateSlotId,
+    productionSelections,
+    onSelectProduction
   } = options;
 
   const slots = useMemo((): readonly IFillingSlotState[] => {
@@ -105,15 +117,19 @@ export function useFillingSlotManagement(
     return effectiveSlots.map((slot): IFillingSlotState => {
       const baseSlot = baseSlots?.find((b) => b.slotId === slot.slotId);
       const basePreferredId = baseSlot?.filling.preferredId ?? baseSlot?.filling.options[0]?.id;
-      const preferredId = slot.filling.preferredId ?? slot.filling.options[0]?.id;
+      const specPreferredId = slot.filling.preferredId ?? slot.filling.options[0]?.id;
 
-      // Detect changes - either preferred changed or options changed
+      // For display, use: production selection > draft preferredId > base preferredId
+      const productionSelectedId = productionSelections?.[slot.slotId as SlotId];
+      const preferredId = productionSelectedId ?? specPreferredId;
+
+      // hasChanges only tracks RECIPE changes (options added/removed, slots added/removed, renamed), not production selection
+      const baseOptionIds = [...(baseSlot?.filling.options ?? [])].map((o) => o.id).sort();
+      const currentOptionIds = [...slot.filling.options].map((o) => o.id).sort();
       const optionsChanged =
         draftSlots !== undefined &&
         baseSlot !== undefined &&
-        JSON.stringify(slot.filling.options) !== JSON.stringify(baseSlot.filling.options);
-      const selectionChanged =
-        draftSlots !== undefined && baseSlot !== undefined && preferredId !== basePreferredId;
+        JSON.stringify(currentOptionIds) !== JSON.stringify(baseOptionIds);
       const nameChanged = draftSlots !== undefined && baseSlot !== undefined && slot.name !== baseSlot.name;
       const isNewSlot = draftSlots !== undefined && !baseSlot;
 
@@ -123,10 +139,10 @@ export function useFillingSlotManagement(
         options: slot.filling.options,
         preferredId,
         basePreferredId,
-        hasChanges: optionsChanged || selectionChanged || nameChanged || isNewSlot
+        hasChanges: optionsChanged || nameChanged || isNewSlot
       };
     });
-  }, [baseSlots, draftSlots]);
+  }, [baseSlots, draftSlots, productionSelections]);
 
   const hasChanges = useMemo((): boolean => {
     if (draftSlots === undefined) return false;
@@ -211,6 +227,13 @@ export function useFillingSlotManagement(
       // Verify the filling is in the options
       if (!slot.filling.options.some((opt) => opt.id === fillingId)) return;
 
+      // Use production selection callback if provided (doesn't modify draft)
+      if (onSelectProduction) {
+        onSelectProduction(slotId, fillingId);
+        return;
+      }
+
+      // Fallback: modify draft (legacy behavior)
       effectiveSlots[slotIndex] = {
         ...slot,
         filling: {
@@ -221,7 +244,7 @@ export function useFillingSlotManagement(
 
       onUpdateDraft(effectiveSlots);
     },
-    [getEffectiveSlots, onUpdateDraft]
+    [getEffectiveSlots, onSelectProduction, onUpdateDraft]
   );
 
   const addFillingOption = useCallback(

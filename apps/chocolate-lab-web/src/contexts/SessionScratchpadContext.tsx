@@ -218,9 +218,45 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
 
         const ts = nowIso();
 
+        // Merge new production values with existing ones
+        const existingProd = existing.production ?? {};
+
         const cleaned: ConfectionProduction = {
-          ...(production.moldId ? { moldId: production.moldId as MoldId } : {}),
-          ...(production.frames !== undefined ? { frames: production.frames } : {})
+          // Mold and frames
+          ...(production.moldId !== undefined
+            ? production.moldId
+              ? { moldId: production.moldId as MoldId }
+              : {}
+            : existingProd.moldId
+            ? { moldId: existingProd.moldId }
+            : {}),
+          ...(production.frames !== undefined
+            ? { frames: production.frames }
+            : existingProd.frames !== undefined
+            ? { frames: existingProd.frames }
+            : {}),
+          // Production selections (choosing from existing options, not recipe edits)
+          ...(production.shellChocolateId !== undefined
+            ? production.shellChocolateId
+              ? { shellChocolateId: production.shellChocolateId as IngredientId }
+              : {}
+            : existingProd.shellChocolateId
+            ? { shellChocolateId: existingProd.shellChocolateId }
+            : {}),
+          ...(production.fillingSelections !== undefined
+            ? Object.keys(production.fillingSelections).length > 0
+              ? { fillingSelections: production.fillingSelections as Record<SlotId, string> }
+              : {}
+            : existingProd.fillingSelections
+            ? { fillingSelections: existingProd.fillingSelections }
+            : {}),
+          ...(production.procedureId !== undefined
+            ? production.procedureId
+              ? { procedureId: production.procedureId as ProcedureId }
+              : {}
+            : existingProd.procedureId
+            ? { procedureId: existingProd.procedureId }
+            : {})
         };
 
         const nextSession: Runtime.Scratchpad.IPersistedConfectionSession = {

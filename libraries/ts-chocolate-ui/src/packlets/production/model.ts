@@ -100,6 +100,47 @@ export interface IProcedureState {
 }
 
 /**
+ * Mold option with optional notes
+ * @public
+ */
+export interface IMoldOption {
+  /** Mold ID */
+  id: string;
+  /** Optional notes for this mold */
+  notes?: string;
+}
+
+/**
+ * State for mold selection
+ * @public
+ */
+export interface IMoldState {
+  /** Available mold options */
+  options: readonly IMoldOption[];
+  /** Base preferred mold ID (before draft changes) */
+  basePreferredId: string | undefined;
+  /** Effective preferred mold ID (with draft changes applied) */
+  effectivePreferredId: string | undefined;
+  /** Whether selection differs from base */
+  hasChanges: boolean;
+}
+
+/**
+ * Actions for mold selection
+ * @public
+ */
+export interface IMoldActions {
+  /** Select a mold from available options */
+  select: (id: string) => void;
+  /** Add a new mold option */
+  addOption: (option: IMoldOption) => void;
+  /** Remove a mold option */
+  removeOption: (id: string) => void;
+  /** Reset to base selection */
+  reset: () => void;
+}
+
+/**
  * Production session state for a confection
  * @public
  */

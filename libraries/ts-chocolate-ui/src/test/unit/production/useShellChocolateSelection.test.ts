@@ -63,10 +63,32 @@ describe('useShellChocolateSelection', () => {
       expect(result.current.state.basePreferredId).toBe('choco-001');
       expect(result.current.state.effectivePreferredId).toBe('choco-001');
     });
+
+    test('uses productionSelectedId for display when provided', () => {
+      const baseSpec = createBaseSpec();
+
+      const { result } = renderHook(() =>
+        useShellChocolateSelection({
+          baseSpec,
+          draftSpec: undefined,
+          onUpdateDraft: jest.fn(),
+          onResetDraft: jest.fn(),
+          productionSelectedId: 'choco-002'
+        })
+      );
+
+      // productionSelectedId overrides the effectivePreferredId for display
+      expect(result.current.state.effectivePreferredId).toBe('choco-002');
+      // But basePreferredId is unchanged
+      expect(result.current.state.basePreferredId).toBe('choco-001');
+      // And this doesn't count as a change (it's just a production run selection)
+      expect(result.current.state.hasChanges).toBe(false);
+    });
   });
 
   describe('draft state', () => {
-    test('detects changes when preferred ID differs', () => {
+    test('does not detect changes when only preferred ID differs', () => {
+      // Per design: selecting from existing options is NOT a recipe change
       const baseSpec = createBaseSpec();
       const draftSpec = createBaseSpec({ preferredId: 'choco-002' });
 
@@ -79,7 +101,8 @@ describe('useShellChocolateSelection', () => {
         })
       );
 
-      expect(result.current.state.hasChanges).toBe(true);
+      // hasChanges should be false - only option additions/removals count as changes
+      expect(result.current.state.hasChanges).toBe(false);
       expect(result.current.state.effectivePreferredId).toBe('choco-002');
     });
 
@@ -101,7 +124,31 @@ describe('useShellChocolateSelection', () => {
   });
 
   describe('select action', () => {
-    test('calls onUpdateDraft with new preferred ID', () => {
+    test('calls onSelectProduction when provided (production mode)', () => {
+      const baseSpec = createBaseSpec();
+      const onUpdateDraft = jest.fn();
+      const onSelectProduction = jest.fn();
+
+      const { result } = renderHook(() =>
+        useShellChocolateSelection({
+          baseSpec,
+          draftSpec: undefined,
+          onUpdateDraft,
+          onResetDraft: jest.fn(),
+          onSelectProduction
+        })
+      );
+
+      act(() => {
+        result.current.actions.select('choco-002');
+      });
+
+      // Should call production callback, NOT update draft
+      expect(onSelectProduction).toHaveBeenCalledWith('choco-002');
+      expect(onUpdateDraft).not.toHaveBeenCalled();
+    });
+
+    test('calls onUpdateDraft when onSelectProduction not provided (legacy mode)', () => {
       const baseSpec = createBaseSpec();
       const onUpdateDraft = jest.fn();
 

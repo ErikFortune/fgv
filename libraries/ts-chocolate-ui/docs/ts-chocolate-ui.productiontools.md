@@ -32,6 +32,19 @@ Provides management of filling slots including: - Add/remove/rename slots - Sele
 </td></tr>
 <tr><td>
 
+[ItemPickerDialog({ isOpen, title, items, onSelect, onClose, searchPlaceholder, excludeIds, emptyMessage })](./ts-chocolate-ui.productiontools.itempickerdialog.md)
+
+
+</td><td>
+
+Generic item picker dialog with search functionality.
+
+Displays a modal overlay with a searchable list of items. Used for selecting fillings, chocolates, procedures, etc.
+
+
+</td></tr>
+<tr><td>
+
 [ProcedureSelector({ state, actions, getProcedureName, onAddProcedure, showRemove, label, disabled })](./ts-chocolate-ui.productiontools.procedureselector.md)
 
 
@@ -66,6 +79,19 @@ Provides selection from available chocolates, with optional ability to add new c
 Hook for managing filling slots.
 
 Supports full CRUD operations on filling slots including adding/removing slots, renaming slots, and managing filling options within each slot.
+
+
+</td></tr>
+<tr><td>
+
+[useMoldSelection(options)](./ts-chocolate-ui.productiontools.usemoldselection.md)
+
+
+</td><td>
+
+Hook for managing mold selection.
+
+Supports selecting from available molds, adding new options, and removing options from the list.
 
 
 </td></tr>
@@ -191,6 +217,28 @@ State for a single filling slot
 </td></tr>
 <tr><td>
 
+[IItemPickerDialogProps](./ts-chocolate-ui.productiontools.iitempickerdialogprops.md)
+
+
+</td><td>
+
+Props for the ItemPickerDialog component
+
+
+</td></tr>
+<tr><td>
+
+[IMoldActions](./ts-chocolate-ui.productiontools.imoldactions.md)
+
+
+</td><td>
+
+Actions for mold selection
+
+
+</td></tr>
+<tr><td>
+
 [IMoldData](./ts-chocolate-ui.productiontools.imolddata.md)
 
 
@@ -202,12 +250,56 @@ Mold data needed for yield calculation
 </td></tr>
 <tr><td>
 
+[IMoldOption](./ts-chocolate-ui.productiontools.imoldoption.md)
+
+
+</td><td>
+
+Mold option with optional notes
+
+
+</td></tr>
+<tr><td>
+
+[IMoldSpec](./ts-chocolate-ui.productiontools.imoldspec.md)
+
+
+</td><td>
+
+Mold spec from version data
+
+
+</td></tr>
+<tr><td>
+
+[IMoldState](./ts-chocolate-ui.productiontools.imoldstate.md)
+
+
+</td><td>
+
+State for mold selection
+
+
+</td></tr>
+<tr><td>
+
 [IPersistedSessionData](./ts-chocolate-ui.productiontools.ipersistedsessiondata.md)
 
 
 </td><td>
 
 Raw session data from scratchpad
+
+
+</td></tr>
+<tr><td>
+
+[IPickerItem](./ts-chocolate-ui.productiontools.ipickeritem.md)
+
+
+</td><td>
+
+Item for the picker dialog
 
 
 </td></tr>
@@ -351,6 +443,28 @@ Options for useFillingSlotManagement hook
 </td><td>
 
 Result type for useFillingSlotManagement hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseMoldSelectionOptions](./ts-chocolate-ui.productiontools.iusemoldselectionoptions.md)
+
+
+</td><td>
+
+Options for useMoldSelection hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseMoldSelectionResult](./ts-chocolate-ui.productiontools.iusemoldselectionresult.md)
+
+
+</td><td>
+
+Result type for useMoldSelection hook
 
 
 </td></tr>
