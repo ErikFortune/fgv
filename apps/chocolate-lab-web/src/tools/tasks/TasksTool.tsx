@@ -4,8 +4,8 @@
  */
 
 import * as React from 'react';
-import { useState } from 'react';
 import type { TaskId } from '@fgv/ts-chocolate';
+import { BrowseTools } from '@fgv/ts-chocolate-ui';
 import type { ITaskFilters } from './TasksToolSidebar';
 import { BrowseView } from './views/BrowseView';
 import { DetailView } from './views/DetailView';
@@ -15,22 +15,11 @@ export interface ITasksToolProps {
 }
 
 export function TasksTool({ filters }: ITasksToolProps): React.ReactElement {
-  const [selectedId, setSelectedId] = useState<TaskId | null>(null);
-  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+  const { state, actions } = BrowseTools.useBrowseDetailState<TaskId>();
 
-  const handleSelect = (id: TaskId): void => {
-    setSelectedId(id);
-    setViewMode('detail');
-  };
-
-  const handleBack = (): void => {
-    setViewMode('browse');
-    setSelectedId(null);
-  };
-
-  if (viewMode === 'detail' && selectedId) {
-    return <DetailView taskId={selectedId} onBack={handleBack} />;
+  if (state.viewMode === 'detail' && state.selectedId) {
+    return <DetailView taskId={state.selectedId} onBack={actions.back} />;
   }
 
-  return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
+  return <BrowseView filters={filters} selectedId={state.selectedId} onSelect={actions.select} />;
 }

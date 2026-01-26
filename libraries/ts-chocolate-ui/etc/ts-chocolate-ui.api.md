@@ -17,8 +17,24 @@ import { ReactNode } from 'react';
 import type { Runtime } from '@fgv/ts-chocolate';
 import type { Success } from '@fgv/ts-utils';
 
+declare namespace BrowseTools {
+    export {
+        useBrowseDetailState,
+        IBrowseDetailState,
+        IBrowseDetailActions,
+        IUseBrowseDetailStateResult,
+        useHashNavigation,
+        IHashNavigationOptions,
+        IUseHashNavigationResult
+    }
+}
+export { BrowseTools }
+
 // @public
 export function CategoryBadge({ category, className, iconOnly, size }: ICategoryBadgeProps): React_2.ReactElement;
+
+// @public
+export function CollapsibleSection({ title, isOpen, onToggle, children, className }: ICollapsibleSectionProps): React_2.ReactElement;
 
 // @public
 export function CollectionBadge({ name, isProtected, isLocked, className, size, onClick }: ICollectionBadgeProps): React_2.ReactElement;
@@ -30,6 +46,9 @@ export function ConfectionCard({ confection, showCollection, className, onClick,
 export function ConfectionTypeBadge({ confectionType, size, className }: IConfectionTypeBadgeProps): React_2.ReactElement;
 
 // @public
+export function createInitialFilterState(): IBaseFilterState;
+
+// @public
 export function DetailSection({ title, children, icon: Icon, collapsible, defaultCollapsed, className, badge }: IDetailSectionProps): React_2.ReactElement;
 
 // @public
@@ -39,7 +58,47 @@ export function FillingCard({ filling, showCollection, className, onClick, isSel
 export function FillingCategoryBadge({ category, size, className }: IFillingCategoryBadgeProps): React_2.ReactElement;
 
 // @public
+export function FilterSidebar<TFilters extends IBaseFilterState>({ filters, actions, tags, collectionsPanel, children, searchPlaceholder, showTags, filtersLabel, tagsLabel, collectionsLabel }: IFilterSidebarProps<TFilters>): React_2.ReactElement;
+
+declare namespace FilterTools {
+    export {
+        useFilterState,
+        createInitialFilterState,
+        IBaseFilterState,
+        IFilterActions,
+        IUseFilterStateResult,
+        FilterSidebar,
+        SearchInput,
+        CollapsibleSection,
+        IFilterSidebarProps,
+        ISearchInputProps,
+        ICollapsibleSectionProps
+    }
+}
+export { FilterTools }
+
+// @public
 export function GanacheCharacteristicsDisplay({ characteristics, className, showLegend, mode }: IGanacheCharacteristicsDisplayProps): React_2.ReactElement;
+
+// @public
+export interface IBaseFilterState {
+    collections: string[];
+    search: string;
+    tags: string[];
+}
+
+// @public
+export interface IBrowseDetailActions<TId extends string> {
+    back: () => void;
+    reset: () => void;
+    select: (id: TId) => void;
+}
+
+// @public
+export interface IBrowseDetailState<TId extends string> {
+    selectedId: TId | null;
+    viewMode: 'browse' | 'detail';
+}
 
 // @public
 export interface ICategoryBadgeProps {
@@ -47,6 +106,15 @@ export interface ICategoryBadgeProps {
     className?: string;
     iconOnly?: boolean;
     size?: 'sm' | 'md' | 'lg';
+}
+
+// @public
+export interface ICollapsibleSectionProps {
+    children: React_2.ReactNode;
+    className?: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    title: string;
 }
 
 // @public
@@ -105,11 +173,40 @@ export interface IFillingCategoryBadgeProps {
 }
 
 // @public
+export interface IFilterActions<TFilters extends IBaseFilterState> {
+    clearFilters: () => void;
+    hasActiveFilters: boolean;
+    setFilters: (filters: TFilters) => void;
+    setSearch: (search: string) => void;
+    toggleCollection: (collectionId: string) => void;
+    toggleTag: (tag: string) => void;
+}
+
+// @public
+export interface IFilterSidebarProps<TFilters extends IBaseFilterState> {
+    actions: IFilterActions<TFilters>;
+    children?: React_2.ReactNode;
+    collectionsLabel?: string;
+    collectionsPanel: React_2.ReactNode;
+    filters: TFilters;
+    filtersLabel?: string;
+    searchPlaceholder?: string;
+    showTags?: boolean;
+    tags: ReadonlyArray<string>;
+    tagsLabel?: string;
+}
+
+// @public
 export interface IGanacheCharacteristicsDisplayProps {
     characteristics: Entities.Ingredients.IGanacheCharacteristics;
     className?: string;
     mode?: 'bar' | 'detailed';
     showLegend?: boolean;
+}
+
+// @public
+export interface IHashNavigationOptions {
+    prefix: string;
 }
 
 // @public
@@ -179,6 +276,14 @@ export interface IPercentageSegment {
 }
 
 // @public
+export interface ISearchInputProps {
+    className?: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    value: string;
+}
+
+// @public
 export interface ITagBadgeProps {
     className?: string;
     isActive?: boolean;
@@ -194,6 +299,28 @@ export interface ITemperatureCurveDisplayProps {
     curve: Entities.Ingredients.ITemperatureCurve;
     mode?: 'inline' | 'vertical';
     showFahrenheit?: boolean;
+}
+
+// @public
+export interface IUseBrowseDetailStateResult<TId extends string> {
+    // (undocumented)
+    actions: IBrowseDetailActions<TId>;
+    // (undocumented)
+    state: IBrowseDetailState<TId>;
+}
+
+// @public
+export interface IUseFilterStateResult<TFilters extends IBaseFilterState> {
+    // (undocumented)
+    actions: IFilterActions<TFilters>;
+    // (undocumented)
+    state: TFilters;
+}
+
+// @public
+export interface IUseHashNavigationResult<TId extends string> {
+    currentId: TId | null;
+    setId: (id: TId | null) => void;
 }
 
 // @public
@@ -235,10 +362,22 @@ export function ObservabilityProvider({ children, maxMessages, userLogLevel, dia
 export function PercentageBar({ segments, className, height, showLabels, showLegend }: IPercentageBarProps): React_2.ReactElement;
 
 // @public
+export function SearchInput({ value, onChange, placeholder, className }: ISearchInputProps): React_2.ReactElement;
+
+// @public
 export function TagBadge({ tag, className, size, onClick, onRemove, isActive }: ITagBadgeProps): React_2.ReactElement;
 
 // @public
 export function TemperatureCurveDisplay({ curve, className, showFahrenheit, mode }: ITemperatureCurveDisplayProps): React_2.ReactElement;
+
+// @public
+export function useBrowseDetailState<TId extends string>(): IUseBrowseDetailStateResult<TId>;
+
+// @public
+export function useFilterState<TFilters extends IBaseFilterState>(initialFilters: TFilters): IUseFilterStateResult<TFilters>;
+
+// @public
+export function useHashNavigation<TId extends string>(options: IHashNavigationOptions): IUseHashNavigationResult<TId>;
 
 // @public
 export function useMessages(): {

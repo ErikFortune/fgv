@@ -45,3 +45,12 @@ export * from './packlets/confections';
 
 // Observability (logging and messaging)
 export * from './packlets/observability';
+
+// Hooks for state management
+export * from './packlets/hooks';
+
+// Filter components for sidebars
+export * from './packlets/filters';
+
+// Organized tool namespaces
+export * from './namespaces';

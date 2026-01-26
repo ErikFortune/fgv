@@ -58,6 +58,17 @@ Displays an ingredient category as a styled badge with icon
 </td></tr>
 <tr><td>
 
+[CollapsibleSection({ title, isOpen, onToggle, children, className })](./ts-chocolate-ui.collapsiblesection.md)
+
+
+</td><td>
+
+Collapsible section with header toggle.
+
+
+</td></tr>
+<tr><td>
+
 [CollectionBadge({ name, isProtected, isLocked, className, size, onClick })](./ts-chocolate-ui.collectionbadge.md)
 
 
@@ -91,6 +102,17 @@ Badge displaying a confection type with appropriate styling
 </td></tr>
 <tr><td>
 
+[createInitialFilterState()](./ts-chocolate-ui.createinitialfilterstate.md)
+
+
+</td><td>
+
+Creates initial filter state with empty values
+
+
+</td></tr>
+<tr><td>
+
 [DetailSection({ title, children, icon: Icon, collapsible, defaultCollapsed, className, badge })](./ts-chocolate-ui.detailsection.md)
 
 
@@ -119,6 +141,19 @@ Displays a filling recipe as a summary card for browse views
 </td><td>
 
 Badge displaying a filling category with appropriate styling
+
+
+</td></tr>
+<tr><td>
+
+[FilterSidebar({ filters, actions, tags, collectionsPanel, children, searchPlaceholder, showTags, filtersLabel, tagsLabel, collectionsLabel })](./ts-chocolate-ui.filtersidebar.md)
+
+
+</td><td>
+
+Composable sidebar for filtering tool content.
+
+Provides consistent filter UI across all tools with search, tags, and collections sections. Tool-specific filters can be added via children.
 
 
 </td></tr>
@@ -179,6 +214,17 @@ Displays a horizontal stacked percentage bar with colored segments
 </td></tr>
 <tr><td>
 
+[SearchInput({ value, onChange, placeholder, className })](./ts-chocolate-ui.searchinput.md)
+
+
+</td><td>
+
+Search input with magnifying glass icon and clear button.
+
+
+</td></tr>
+<tr><td>
+
 [TagBadge({ tag, className, size, onClick, onRemove, isActive })](./ts-chocolate-ui.tagbadge.md)
 
 
@@ -196,6 +242,45 @@ Displays a tag as an interactive badge
 </td><td>
 
 Displays chocolate tempering temperature curve
+
+
+</td></tr>
+<tr><td>
+
+[useBrowseDetailState()](./ts-chocolate-ui.usebrowsedetailstate.md)
+
+
+</td><td>
+
+Hook for managing browse/detail view state.
+
+Provides a consistent pattern for tools that have a list view (browse) and a detail view for individual items.
+
+
+</td></tr>
+<tr><td>
+
+[useFilterState(initialFilters)](./ts-chocolate-ui.usefilterstate.md)
+
+
+</td><td>
+
+Hook for managing filter state in tool sidebars.
+
+Provides a consistent pattern for filtering across all tools. Supports search, collection, and tag filtering with easy extension for tool-specific filters.
+
+
+</td></tr>
+<tr><td>
+
+[useHashNavigation(options)](./ts-chocolate-ui.usehashnavigation.md)
+
+
+</td><td>
+
+Hook for syncing navigation state with URL hash.
+
+Enables deep linking to specific items via hash URLs like \#confections/my-item. Listens for hash changes and updates state accordingly.
 
 
 </td></tr>
@@ -238,12 +323,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IBaseFilterState](./ts-chocolate-ui.ibasefilterstate.md)
+
+
+</td><td>
+
+Base filter state that all filter configurations extend. Provides the common fields used across all tool sidebars.
+
+
+</td></tr>
+<tr><td>
+
+[IBrowseDetailActions](./ts-chocolate-ui.ibrowsedetailactions.md)
+
+
+</td><td>
+
+Actions for browse/detail navigation
+
+
+</td></tr>
+<tr><td>
+
+[IBrowseDetailState](./ts-chocolate-ui.ibrowsedetailstate.md)
+
+
+</td><td>
+
+State for browse/detail navigation
+
+
+</td></tr>
+<tr><td>
+
 [ICategoryBadgeProps](./ts-chocolate-ui.icategorybadgeprops.md)
 
 
 </td><td>
 
 Props for the CategoryBadge component
+
+
+</td></tr>
+<tr><td>
+
+[ICollapsibleSectionProps](./ts-chocolate-ui.icollapsiblesectionprops.md)
+
+
+</td><td>
+
+Props for the CollapsibleSection component
 
 
 </td></tr>
@@ -315,12 +444,45 @@ Props for the FillingCategoryBadge component
 </td></tr>
 <tr><td>
 
+[IFilterActions](./ts-chocolate-ui.ifilteractions.md)
+
+
+</td><td>
+
+Actions for managing filter state
+
+
+</td></tr>
+<tr><td>
+
+[IFilterSidebarProps](./ts-chocolate-ui.ifiltersidebarprops.md)
+
+
+</td><td>
+
+Props for the FilterSidebar component
+
+
+</td></tr>
+<tr><td>
+
 [IGanacheCharacteristicsDisplayProps](./ts-chocolate-ui.iganachecharacteristicsdisplayprops.md)
 
 
 </td><td>
 
 Props for the GanacheCharacteristicsDisplay component
+
+
+</td></tr>
+<tr><td>
+
+[IHashNavigationOptions](./ts-chocolate-ui.ihashnavigationoptions.md)
+
+
+</td><td>
+
+Options for useHashNavigation hook
 
 
 </td></tr>
@@ -403,6 +565,17 @@ A segment in the percentage bar
 </td></tr>
 <tr><td>
 
+[ISearchInputProps](./ts-chocolate-ui.isearchinputprops.md)
+
+
+</td><td>
+
+Props for the SearchInput component
+
+
+</td></tr>
+<tr><td>
+
 [ITagBadgeProps](./ts-chocolate-ui.itagbadgeprops.md)
 
 
@@ -425,6 +598,39 @@ Props for the TemperatureCurveDisplay component
 </td></tr>
 <tr><td>
 
+[IUseBrowseDetailStateResult](./ts-chocolate-ui.iusebrowsedetailstateresult.md)
+
+
+</td><td>
+
+Return type for useBrowseDetailState hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseFilterStateResult](./ts-chocolate-ui.iusefilterstateresult.md)
+
+
+</td><td>
+
+Return type for useFilterState hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseHashNavigationResult](./ts-chocolate-ui.iusehashnavigationresult.md)
+
+
+</td><td>
+
+Return type for useHashNavigation hook
+
+
+</td></tr>
+<tr><td>
+
 [IUserLogger](./ts-chocolate-ui.iuserlogger.md)
 
 
@@ -442,6 +648,39 @@ User logger interface that extends ILogger with success method for UI feedback.
 </td><td>
 
 User log reporter interface that combines IUserLogger with IResultReporter.
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[BrowseTools](./ts-chocolate-ui.browsetools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[FilterTools](./ts-chocolate-ui.filtertools.md)
+
+
+</td><td>
 
 
 </td></tr>

@@ -237,6 +237,15 @@ Description
 </td></tr>
 <tr><td>
 
+[LibraryPersistence](./ts-chocolate.librarypersistence.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Runtime](./ts-chocolate.runtime.md)
 
 

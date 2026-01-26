@@ -1741,6 +1741,9 @@ function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(co
 function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
+function getStorageKey(subLibrary: SubLibraryStorageKey): string;
+
+// @public
 function getSubLibraryPath(subLibraryId: SubLibraryId): string;
 
 // @public
@@ -2003,6 +2006,11 @@ interface ICollectionSourceMetadata {
     readonly secretName?: string;
     readonly tags?: ReadonlyArray<string>;
     readonly version?: string;
+}
+
+// @public
+interface ICollectionStorageConfig {
+    readonly dataPath: string;
 }
 
 // @public
@@ -4480,6 +4488,22 @@ const LibraryPaths: {
     readonly confections: "data/confections";
 };
 
+declare namespace LibraryPersistence {
+    export {
+        ICollectionStorageConfig,
+        LocalStorageKeys,
+        SubLibraryStorageKey,
+        SubLibraryDataPaths,
+        parseCollectionStorageData,
+        parseSubLibraryStorageData,
+        getStorageKey,
+        serializeCollectionsForStorage,
+        upsertCollectionInStorage,
+        removeCollectionFromStorage
+    }
+}
+export { LibraryPersistence }
+
 // @public
 class LinearScaler implements IUnitScaler {
     constructor(options: ILinearScalerOptions);
@@ -4488,6 +4512,17 @@ class LinearScaler implements IUnitScaler {
     // (undocumented)
     readonly supportsScaling: boolean;
 }
+
+// @public
+const LocalStorageKeys: {
+    readonly ingredients: "chocolate-lab-web:ingredients:collections:v1";
+    readonly fillings: "chocolate-lab-web:fillings:collections:v1";
+    readonly molds: "chocolate-lab-web:molds:collections:v1";
+    readonly tasks: "chocolate-lab-web:tasks:collections:v1";
+    readonly procedures: "chocolate-lab-web:procedures:collections:v1";
+    readonly journals: "chocolate-lab-web:journals:collections:v1";
+    readonly confections: "chocolate-lab-web:confections:collections:v1";
+};
 
 // @public
 export type Measurement = Brand<number, 'Measurement'>;
@@ -4643,6 +4678,9 @@ function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 function parseCollection<T>(content: string): Result<ICollectionSourceFile<T>>;
 
 // @public
+function parseCollectionStorageData(rawJson: string | undefined, dataPath: string): FileTree.IInMemoryFile[];
+
+// @public
 function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
 
 // @public
@@ -4704,6 +4742,9 @@ function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
 
 // @public
 function parseJson<T>(content: string): Result<ICollectionSourceFile<T>>;
+
+// @public
+function parseSubLibraryStorageData(subLibrary: SubLibraryStorageKey, rawJson: string | undefined): FileTree.IInMemoryFile[];
 
 // @public
 function parseYaml<T>(content: string): Result<ICollectionSourceFile<T>>;
@@ -4900,6 +4941,9 @@ const recipeFillingOption: Converter<IRecipeFillingOption>;
 
 // @public
 function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>>;
+
+// @public
+function removeCollectionFromStorage(existingJson: string | undefined, collectionId: string): string | undefined;
 
 // @public
 function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
@@ -5616,6 +5660,9 @@ type SecretProvider_2 = (secretName: string) => Promise<Result<Uint8Array>>;
 function serializeCollection<T>(collection: ICollectionSourceFile<T>, format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
 
 // @public
+function serializeCollectionsForStorage(collections: Record<string, JsonObject>): string;
+
+// @public
 function serializeToJson<T>(collection: ICollectionSourceFile<T>, options?: IExportOptions): Result<string>;
 
 // @public
@@ -5745,6 +5792,9 @@ type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.Aggr
 type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
 
 // @public
+const SubLibraryDataPaths: Record<SubLibraryStorageKey, string>;
+
+// @public
 type SubLibraryDirectoryNavigator = (tree: FileTree.FileTreeItem) => Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -5758,6 +5808,9 @@ type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedu
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
+
+// @public
+type SubLibraryStorageKey = keyof typeof LocalStorageKeys;
 
 // @public
 const sugarIngredient: Converter<ISugarIngredient>;
@@ -5976,6 +6029,9 @@ class UnitScalerRegistry {
     scale(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
     supportsScaling(unit: MeasurementUnit): boolean;
 }
+
+// @public
+function upsertCollectionInStorage(existingJson: string | undefined, collectionId: string, collectionData: JsonObject): string;
 
 // @public
 export type UrlCategory = Brand<string, 'UrlCategory'>;
