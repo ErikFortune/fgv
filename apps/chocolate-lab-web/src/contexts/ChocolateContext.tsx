@@ -40,6 +40,7 @@ const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
+const LOCAL_JOURNAL_COLLECTIONS_KEY = 'chocolate-lab-web:journals:collections:v1';
 
 function getStartupLoadFlags(): { suppressBuiltIn: boolean; suppressLocal: boolean } {
   const params = new URLSearchParams(window.location.search);
@@ -180,6 +181,45 @@ function readLocalFillingCollectionFiles(): FileTree.IInMemoryFile[] {
   }
 }
 
+function readLocalJournalCollectionFiles(): FileTree.IInMemoryFile[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_JOURNAL_COLLECTIONS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isJsonObject(parsed)) {
+      return [];
+    }
+
+    const files: FileTree.IInMemoryFile[] = [];
+    for (const [collectionId, contents] of Object.entries(parsed)) {
+      if (!isJsonObject(contents)) {
+        continue;
+      }
+
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
+      }
+
+      files.push({
+        path: `/data/journals/${collectionId}.json`,
+        contents
+      });
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
+
 function readLocalProcedureCollectionFiles(): FileTree.IInMemoryFile[] {
   try {
     const raw = window.localStorage.getItem(LOCAL_PROCEDURE_COLLECTIONS_KEY);
@@ -297,7 +337,14 @@ function readLocalMoldCollectionFiles(): FileTree.IInMemoryFile[] {
 /**
  * Sub-library type for tracking which libraries a collection belongs to
  */
-export type SubLibraryType = 'ingredients' | 'fillings' | 'procedures' | 'tasks' | 'molds' | 'confections';
+export type SubLibraryType =
+  | 'ingredients'
+  | 'fillings'
+  | 'journals'
+  | 'procedures'
+  | 'tasks'
+  | 'molds'
+  | 'confections';
 
 interface IFileBackedCollectionTarget {
   readonly baseDir: FileSystemDirectoryHandle;
@@ -580,6 +627,7 @@ export function ChocolateProvider({
           : [
               ...readLocalIngredientCollectionFiles(),
               ...readLocalFillingCollectionFiles(),
+              ...readLocalJournalCollectionFiles(),
               ...readLocalMoldCollectionFiles(),
               ...readLocalTaskCollectionFiles(),
               ...readLocalProcedureCollectionFiles()
@@ -593,6 +641,7 @@ export function ChocolateProvider({
             const subLibraries: ReadonlyArray<{ id: SubLibraryType; folder: string }> = [
               { id: 'ingredients', folder: 'ingredients' },
               { id: 'fillings', folder: 'fillings' },
+              { id: 'journals', folder: 'journals' },
               { id: 'molds', folder: 'molds' },
               { id: 'procedures', folder: 'procedures' },
               { id: 'tasks', folder: 'tasks' },
@@ -672,6 +721,7 @@ export function ChocolateProvider({
         let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
         let localHasIngredients = false;
         let localHasFillings = false;
+        let localHasJournals = false;
         let localHasMolds = false;
         let localHasTasks = false;
         let localHasProcedures = false;
@@ -682,6 +732,9 @@ export function ChocolateProvider({
 
           const fillingsDirResult = localTreeResult.value.getItem('/data/fillings');
           localHasFillings = fillingsDirResult.isSuccess() && fillingsDirResult.value.type === 'directory';
+
+          const journalsDirResult = localTreeResult.value.getItem('/data/journals');
+          localHasJournals = journalsDirResult.isSuccess() && journalsDirResult.value.type === 'directory';
 
           const moldsDirResult = localTreeResult.value.getItem('/data/molds');
           localHasMolds = moldsDirResult.isSuccess() && moldsDirResult.value.type === 'directory';
@@ -708,7 +761,12 @@ export function ChocolateProvider({
               ]
             : []),
           ...(localRootDir &&
-          (localHasIngredients || localHasFillings || localHasMolds || localHasTasks || localHasProcedures)
+          (localHasIngredients ||
+            localHasFillings ||
+            localHasJournals ||
+            localHasMolds ||
+            localHasTasks ||
+            localHasProcedures)
             ? [
                 {
                   directory: localRootDir,
@@ -716,6 +774,7 @@ export function ChocolateProvider({
                     default: false,
                     ingredients: localHasIngredients,
                     fillings: localHasFillings,
+                    journals: localHasJournals,
                     molds: localHasMolds,
                     procedures: localHasProcedures,
                     tasks: localHasTasks
@@ -974,6 +1033,8 @@ export function ChocolateProvider({
           ? 'ingredients'
           : subLibrary === 'fillings'
           ? 'fillings'
+          : subLibrary === 'journals'
+          ? 'journals'
           : subLibrary === 'molds'
           ? 'molds'
           : subLibrary === 'procedures'
@@ -1011,6 +1072,7 @@ export function ChocolateProvider({
           default: false,
           ingredients: subLibrary === 'ingredients',
           fillings: subLibrary === 'fillings',
+          journals: subLibrary === 'journals',
           molds: subLibrary === 'molds',
           procedures: subLibrary === 'procedures',
           tasks: subLibrary === 'tasks'
@@ -1193,6 +1255,7 @@ export function ChocolateProvider({
         const subLibrarySpecs: Array<{ id: SubLibraryType; folderName: string }> = [
           { id: 'ingredients', folderName: 'ingredients' },
           { id: 'fillings', folderName: 'fillings' },
+          { id: 'journals', folderName: 'journals' },
           { id: 'molds', folderName: 'molds' },
           { id: 'procedures', folderName: 'procedures' },
           { id: 'tasks', folderName: 'tasks' },
@@ -1333,6 +1396,8 @@ export function ChocolateProvider({
           ? 'ingredients'
           : subLibrary === 'fillings'
           ? 'fillings'
+          : subLibrary === 'journals'
+          ? 'journals'
           : subLibrary === 'molds'
           ? 'molds'
           : subLibrary === 'procedures'

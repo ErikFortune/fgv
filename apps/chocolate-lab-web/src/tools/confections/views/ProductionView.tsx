@@ -1,8 +1,65 @@
 import * as React from 'react';
 import { useMemo, useState } from 'react';
 import type { ConfectionId, ConfectionVersionSpec } from '@fgv/ts-chocolate';
+import { Converters, Entities, Runtime, type JournalId, type SourceId } from '@fgv/ts-chocolate';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useSessionScratchpad } from '../../../contexts/SessionScratchpadContext';
+
+const LOCAL_JOURNAL_COLLECTIONS_KEY = 'chocolate-lab-web:journals:collections:v1';
+
+function readLocalJournalCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_JOURNAL_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalJournalCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_JOURNAL_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
+function upsertJournalToLocalCollection(params: {
+  collectionId: SourceId;
+  journalId: JournalId;
+  journal: Entities.Journal.AnyJournalRecord;
+}): void {
+  const all = readLocalJournalCollections();
+  const existing = all[params.collectionId as unknown as string];
+  const baseObject: Record<string, unknown> =
+    typeof existing === 'object' && existing !== null && !Array.isArray(existing)
+      ? (existing as Record<string, unknown>)
+      : {};
+
+  const itemsObject: Record<string, unknown> =
+    typeof baseObject.items === 'object' && baseObject.items !== null && !Array.isArray(baseObject.items)
+      ? (baseObject.items as Record<string, unknown>)
+      : {};
+
+  itemsObject[params.journalId as unknown as string] = params.journal as unknown;
+
+  const nextCollection = {
+    ...baseObject,
+    metadata:
+      typeof baseObject.metadata === 'object' &&
+      baseObject.metadata !== null &&
+      !Array.isArray(baseObject.metadata)
+        ? baseObject.metadata
+        : { name: params.collectionId as unknown as string },
+    items: itemsObject
+  };
+
+  all[params.collectionId as unknown as string] = nextCollection;
+  writeLocalJournalCollections(all);
+}
 
 export function ProductionView({
   selectedConfectionId
@@ -10,7 +67,14 @@ export function ProductionView({
   selectedConfectionId: ConfectionId | null;
 }): React.ReactElement {
   const { runtime, loadingState } = useChocolate();
-  const { scratchpad, createConfectionSession, deleteSession, setActiveSessionId } = useSessionScratchpad();
+  const {
+    scratchpad,
+    createConfectionSession,
+    deleteSession,
+    setActiveSessionId,
+    setSessionStatus,
+    updateSessionLabel
+  } = useSessionScratchpad();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +176,75 @@ export function ProductionView({
 
             const rowTitle = s.label?.trim().length ? s.label : computedTitle;
 
+            const statusLabel = s.status;
+
+            const onRename = (): void => {
+              const next = window.prompt('Session name', s.label ?? '');
+              if (next === null) {
+                return;
+              }
+              updateSessionLabel(s.sessionId, next);
+            };
+
+            const onAbandon = (): void => {
+              const ok = window.confirm('Mark this session as abandoned?');
+              if (!ok) {
+                return;
+              }
+              setSessionStatus(s.sessionId, 'abandoned');
+            };
+
+            const onCommit = (): void => {
+              if (!runtime || s.sessionType !== 'confection') {
+                return;
+              }
+
+              const confectionResult = runtime.getRuntimeConfection(s.base.confectionId);
+              if (confectionResult.isFailure()) {
+                setError(confectionResult.message);
+                return;
+              }
+
+              const versionResult = confectionResult.value.getVersion(s.base.versionSpec);
+              if (versionResult.isFailure()) {
+                setError(versionResult.message);
+                return;
+              }
+
+              const journalId = Runtime.Session.generateJournalId().orThrow();
+              const confectionVersionId = Converters.confectionVersionId
+                .convert(
+                  `${s.base.confectionId as unknown as string}@${s.base.versionSpec as unknown as string}`
+                )
+                .orThrow();
+
+              const journal: Entities.Journal.IConfectionJournalRecord = {
+                journalType: 'confection',
+                journalId,
+                confectionVersionId,
+                date: Runtime.Session.getCurrentDateString(),
+                yieldCount: versionResult.value.yield.count,
+                ...(versionResult.value.yield.weightPerPiece !== undefined
+                  ? { weightPerPiece: versionResult.value.yield.weightPerPiece }
+                  : {}),
+                ...(s.label ? { notes: s.label } : {})
+              };
+
+              const addResult = runtime.journals.addJournal(journal);
+              if (addResult.isFailure()) {
+                setError(addResult.message);
+                return;
+              }
+
+              upsertJournalToLocalCollection({
+                collectionId: 'local' as unknown as SourceId,
+                journalId,
+                journal
+              });
+
+              setSessionStatus(s.sessionId, 'committed');
+            };
+
             return (
               <div
                 key={s.sessionId as unknown as string}
@@ -132,6 +265,36 @@ export function ProductionView({
                   <div className="truncate text-xs text-gray-500 dark:text-gray-400 font-mono">
                     {subtitle}
                   </div>
+                </button>
+
+                <span className="px-2 py-1 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                  {statusLabel}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={onRename}
+                  className="px-2 py-1 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Rename
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onCommit}
+                  disabled={s.status !== 'active'}
+                  className="px-2 py-1 text-xs rounded-md bg-chocolate-600 text-white hover:bg-chocolate-700 disabled:opacity-50"
+                >
+                  Commit
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onAbandon}
+                  disabled={s.status !== 'active'}
+                  className="px-2 py-1 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                >
+                  Abandon
                 </button>
 
                 <button

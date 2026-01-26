@@ -23,10 +23,11 @@
  * @packageDocumentation
  */
 
-import { Logging, Result, Success } from '@fgv/ts-utils';
+import { Logging, Result, Success, fail } from '@fgv/ts-utils';
 
 import {
   ConfectionId,
+  Converters as CommonConverters,
   IngredientId,
   JournalId,
   MoldId,
@@ -40,16 +41,23 @@ import {
 import { ConfectionData, ConfectionsLibrary } from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
 import { IFillingRecipe, FillingsLibrary } from '../entities';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
+import {
+  AnyJournalRecord,
+  IFillingRecipeJournalRecord,
+  JournalLibrary,
+  Converters as EntityConverters
+} from '../entities';
 import { IMold, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
+  CollectionLoader,
   FullLibraryLoadSpec,
   IFileTreeSource,
   ILibraryFileTreeSource,
   normalizeFileSources,
+  resolveFileTreeSourceForSubLibrary,
   resolveBuiltInSpec,
   SubLibraryId
 } from '../library-data';
@@ -230,6 +238,39 @@ export class ChocolateLibrary {
         : JournalLibrary.create({ logger })
     ).report(logger);
 
+    // Load journals from file sources (data/journals) and import them into the JournalLibrary.
+    // Journals are stored as collections where items are AnyJournalRecord keyed by journalId.
+    const journalsFromFilesResult = journalsResult.onSuccess((journals) => {
+      const loader = new CollectionLoader<AnyJournalRecord, SourceId, JournalId>({
+        collectionIdConverter: CommonConverters.sourceId,
+        itemIdConverter: CommonConverters.journalId,
+        itemConverter: EntityConverters.Journal.anyJournalRecord,
+        mutable: true,
+        logger
+      });
+
+      for (const source of fileSources) {
+        const resolved = resolveFileTreeSourceForSubLibrary(source, 'journals');
+        if (resolved.isFailure() || resolved.value === undefined) {
+          continue;
+        }
+
+        const loadResult = loader.loadFromFileTree(resolved.value.directory, resolved.value.loadParams);
+        if (loadResult.isFailure()) {
+          return fail<JournalLibrary>(loadResult.message);
+        }
+
+        for (const collection of loadResult.value.collections) {
+          const importResult = journals.importJournals(Object.values(collection.items));
+          if (importResult.isFailure()) {
+            return fail<JournalLibrary>(importResult.message);
+          }
+        }
+      }
+
+      return Success.with(journals);
+    });
+
     const moldsResult = MoldsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'molds'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'molds'),
@@ -260,7 +301,7 @@ export class ChocolateLibrary {
 
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
-        journalsResult.onSuccess((journals) =>
+        journalsFromFilesResult.onSuccess((journals) =>
           moldsResult.onSuccess((molds) =>
             proceduresResult.onSuccess((procedures) =>
               tasksResult.onSuccess((tasks) =>

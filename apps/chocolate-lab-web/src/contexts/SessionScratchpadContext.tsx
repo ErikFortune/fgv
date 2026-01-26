@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Runtime, type ConfectionId, type ConfectionVersionSpec, type SessionId } from '@fgv/ts-chocolate';
 
 type Scratchpad = Runtime.Scratchpad.ISessionScratchpad;
+type PersistedSessionStatus = Runtime.Scratchpad.PersistedSessionStatus;
 
 type SessionScratchpadContextValue = {
   scratchpad: Scratchpad;
@@ -13,6 +14,7 @@ type SessionScratchpadContextValue = {
   deleteSession: (sessionId: SessionId) => void;
   setActiveSessionId: (sessionId: SessionId | undefined) => void;
   updateSessionLabel: (sessionId: SessionId, label: string | undefined) => void;
+  setSessionStatus: (sessionId: SessionId, status: PersistedSessionStatus) => void;
 };
 
 const STORAGE_KEY = 'chocolate-lab-web:scratchpad:sessions:v1';
@@ -157,6 +159,31 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
     [updateScratchpad]
   );
 
+  const setSessionStatus = useCallback(
+    (sessionId: SessionId, status: PersistedSessionStatus) => {
+      updateScratchpad((prev) => {
+        const existing = prev.sessions[sessionId];
+        if (!existing) {
+          return prev;
+        }
+        const ts = nowIso();
+        return {
+          ...prev,
+          updatedAt: ts,
+          sessions: {
+            ...prev.sessions,
+            [sessionId]: {
+              ...existing,
+              status,
+              updatedAt: ts
+            }
+          }
+        };
+      });
+    },
+    [updateScratchpad]
+  );
+
   const updateSessionLabel = useCallback(
     (sessionId: SessionId, label: string | undefined) => {
       updateScratchpad((prev) => {
@@ -189,9 +216,17 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
       createConfectionSession,
       deleteSession,
       setActiveSessionId,
-      updateSessionLabel
+      updateSessionLabel,
+      setSessionStatus
     }),
-    [createConfectionSession, deleteSession, scratchpad, setActiveSessionId, updateSessionLabel]
+    [
+      createConfectionSession,
+      deleteSession,
+      scratchpad,
+      setActiveSessionId,
+      setSessionStatus,
+      updateSessionLabel
+    ]
   );
 
   return <SessionScratchpadContext.Provider value={value}>{children}</SessionScratchpadContext.Provider>;
