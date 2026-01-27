@@ -79,8 +79,10 @@ export function ShellChocolateSelector({
   disabled = false
 }: IShellChocolateSelectorProps): React.ReactElement | null {
   const canRemove = showRemove && state.availableChoices.length > 1;
+  const hasChoices = state.availableChoices.length > 0;
 
-  if (state.availableChoices.length === 0) {
+  // If no choices and no way to add, don't render
+  if (!hasChoices && !onAddChocolate) {
     return null;
   }
 
@@ -93,35 +95,41 @@ export function ShellChocolateSelector({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <select
-          className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          value={state.effectivePreferredId ?? ''}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value) actions.select(value);
-          }}
-          disabled={disabled}
-        >
-          {state.availableChoices.map((id) => (
-            <option key={id} value={id}>
-              {getChocolateName(id)}
-            </option>
-          ))}
-        </select>
-
-        {canRemove && state.effectivePreferredId && (
-          <button
-            type="button"
-            onClick={() => actions.removeChoice(state.effectivePreferredId!)}
+      {hasChoices && (
+        <div className="flex items-center gap-2">
+          <select
+            className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            value={state.effectivePreferredId ?? ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value) actions.select(value);
+            }}
             disabled={disabled}
-            className="px-2 py-2 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Remove this chocolate from choices"
           >
-            Remove
-          </button>
-        )}
-      </div>
+            {state.availableChoices.map((id) => (
+              <option key={id} value={id}>
+                {getChocolateName(id)}
+              </option>
+            ))}
+          </select>
+
+          {canRemove && state.effectivePreferredId && (
+            <button
+              type="button"
+              onClick={() => actions.removeChoice(state.effectivePreferredId!)}
+              disabled={disabled}
+              className="px-2 py-2 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Remove this chocolate from choices"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      )}
+
+      {!hasChoices && (
+        <div className="text-xs text-gray-500 dark:text-gray-400 italic">No shell chocolates configured</div>
+      )}
 
       {onAddChocolate && (
         <button

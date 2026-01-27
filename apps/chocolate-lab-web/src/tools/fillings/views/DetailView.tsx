@@ -19,7 +19,15 @@ import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useEditing } from '../../../contexts/EditingContext';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { LoadingSpinner } from '../../../components/common';
-import { CollectionBadge, TagBadge, DetailSection, FillingCategoryBadge } from '@fgv/ts-chocolate-ui';
+import {
+  CollectionBadge,
+  TagBadge,
+  DetailSection,
+  FillingCategoryBadge,
+  ProductionTools,
+  type IProcedureSpec,
+  type IPickerItem
+} from '@fgv/ts-chocolate-ui';
 import {
   Calculations,
   Entities,
@@ -245,7 +253,8 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
   const [draftYield, setDraftYield] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
   const [draftIngredients, setDraftIngredients] = useState<DraftIngredient[]>([]);
-  const [draftPreferredProcedureId, setDraftPreferredProcedureId] = useState('');
+  const [draftProcedureSpec, setDraftProcedureSpec] = useState<IProcedureSpec | undefined>(undefined);
+  const [showProcedurePicker, setShowProcedurePicker] = useState(false);
   const [draftDerivedSourceVersionId, setDraftDerivedSourceVersionId] = useState('');
   const [draftDerivedDate, setDraftDerivedDate] = useState('');
   const [draftDerivedNotes, setDraftDerivedNotes] = useState('');
@@ -391,7 +400,21 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
     setDraftCreatedDate(now.toISOString().slice(0, 10));
     setDraftYield(goldenVersion.yield ?? '');
     setDraftNotes(goldenVersion.notes ?? '');
-    setDraftPreferredProcedureId((goldenVersion.raw.procedures?.preferredId as unknown as string) ?? '');
+
+    // Procedures - extract full spec for production hooks
+    const rawProcs = goldenVersion.raw.procedures;
+    if (rawProcs && rawProcs.options && rawProcs.options.length > 0) {
+      setDraftProcedureSpec({
+        options: rawProcs.options.map((opt: { id: unknown; notes?: string }) => ({
+          id: opt.id as string,
+          notes: opt.notes
+        })),
+        preferredId: rawProcs.preferredId as unknown as string | undefined
+      });
+    } else {
+      setDraftProcedureSpec(undefined);
+    }
+
     setDraftDerivedSourceVersionId((filling.raw.derivedFrom?.sourceVersionId as unknown as string) ?? '');
     setDraftDerivedDate((filling.raw.derivedFrom?.derivedDate as unknown as string) ?? '');
     setDraftDerivedNotes((filling.raw.derivedFrom?.notes as unknown as string) ?? '');
@@ -427,7 +450,21 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
     setDraftCreatedDate((goldenVersion.createdDate ?? '').split('T')[0] ?? '');
     setDraftYield(goldenVersion.yield ?? '');
     setDraftNotes(goldenVersion.notes ?? '');
-    setDraftPreferredProcedureId((goldenVersion.raw.procedures?.preferredId as unknown as string) ?? '');
+
+    // Procedures - extract full spec for production hooks
+    const rawProcs = goldenVersion.raw.procedures;
+    if (rawProcs && rawProcs.options && rawProcs.options.length > 0) {
+      setDraftProcedureSpec({
+        options: rawProcs.options.map((opt: { id: unknown; notes?: string }) => ({
+          id: opt.id as string,
+          notes: opt.notes
+        })),
+        preferredId: rawProcs.preferredId as unknown as string | undefined
+      });
+    } else {
+      setDraftProcedureSpec(undefined);
+    }
+
     setDraftIngredients(
       goldenVersion.raw.ingredients.map((ing) => {
         const ids = ing.ingredient.ids as unknown as string[];
@@ -575,11 +612,11 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
       nextVersion.notes = draftNotes.trim();
     }
 
-    const preferredProcedureId = draftPreferredProcedureId.trim();
-    if (preferredProcedureId.length > 0) {
+    // Use procedure spec from production hooks
+    if (draftProcedureSpec && draftProcedureSpec.options.length > 0) {
       nextVersion.procedures = {
-        options: [{ id: preferredProcedureId }],
-        preferredId: preferredProcedureId
+        options: draftProcedureSpec.options,
+        preferredId: draftProcedureSpec.preferredId
       };
     }
 
@@ -644,6 +681,55 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
       setIsEditing(false);
     })();
   };
+
+  // =========================================================================
+  // Production hooks for Browse/Edit mode
+  // =========================================================================
+
+  // Extract base spec from the filling for hooks
+  const baseProcedureSpec = React.useMemo((): IProcedureSpec | undefined => {
+    const rawProcs = goldenVersion.raw.procedures;
+    if (!rawProcs || !rawProcs.options || rawProcs.options.length === 0) return undefined;
+    return {
+      options: rawProcs.options.map((opt: { id: unknown; notes?: string }) => ({
+        id: opt.id as string,
+        notes: opt.notes
+      })),
+      preferredId: rawProcs.preferredId as unknown as string | undefined
+    };
+  }, [goldenVersion]);
+
+  // Procedure selection hook (Browse/Edit mode)
+  const { state: procedureState, actions: procedureActions } = ProductionTools.useProcedureSelection({
+    baseSpec: isEditing ? baseProcedureSpec : undefined,
+    draftSpec: isEditing ? draftProcedureSpec : undefined,
+    onUpdateDraft: setDraftProcedureSpec,
+    onResetDraft: () => setDraftProcedureSpec(undefined)
+  });
+
+  // Available procedures for picker
+  const availableProcedures = React.useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    return Array.from(runtime.library.procedures.entries()).map(([id, p]) => ({
+      id: id as unknown as string,
+      name: (p as unknown as { name: string }).name
+    }));
+  }, [runtime]);
+
+  // Existing procedure IDs for exclusion
+  const existingProcedureIds = React.useMemo(
+    () => procedureState.options.map((o) => o.id),
+    [procedureState.options]
+  );
+
+  // Picker handler
+  const handleProcedureSelect = React.useCallback(
+    (item: IPickerItem) => {
+      procedureActions.addOption({ id: item.id });
+      setShowProcedurePicker(false);
+    },
+    [procedureActions]
+  );
 
   return (
     <div className="w-full max-w-6xl">
@@ -917,31 +1003,16 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Preferred Procedure
-                  </label>
-                  <select
-                    value={draftPreferredProcedureId}
-                    onChange={(e) => setDraftPreferredProcedureId(e.target.value)}
-                    disabled={isSaving}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">(none)</option>
-                    {runtime
-                      ? (
-                          Array.from(runtime.library.procedures.entries()) as Array<
-                            [ProcedureId, { name: string }]
-                          >
-                        )
-                          .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                          .map(([id, proc]) => (
-                            <option key={id as unknown as string} value={id as unknown as string}>
-                              {proc.name} ({id as unknown as string})
-                            </option>
-                          ))
-                      : null}
-                  </select>
+                {/* Procedures - using production ProcedureSelector */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                  <ProductionTools.ProcedureSelector
+                    state={procedureState}
+                    actions={procedureActions}
+                    getProcedureName={(id) =>
+                      runtime?.getRuntimeProcedure(id as ProcedureId).orDefault(undefined)?.name ?? id
+                    }
+                    onAddProcedure={() => setShowProcedurePicker(true)}
+                  />
                 </div>
 
                 <div className="border border-gray-200 dark:border-gray-700 rounded-md">
@@ -1542,6 +1613,18 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
           </div>
         </div>
       </div>
+
+      {/* Picker Dialog for Browse/Edit mode */}
+      <ProductionTools.ItemPickerDialog
+        isOpen={showProcedurePicker}
+        title="Add Procedure Option"
+        items={availableProcedures}
+        onSelect={handleProcedureSelect}
+        onClose={() => setShowProcedurePicker(false)}
+        excludeIds={existingProcedureIds}
+        searchPlaceholder="Search procedures..."
+        emptyMessage="No procedures available"
+      />
     </div>
   );
 }

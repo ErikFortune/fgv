@@ -11,17 +11,41 @@ import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useEditing } from '../../../contexts/EditingContext';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { LoadingSpinner } from '../../../components/common';
-import { CollectionBadge, TagBadge, DetailSection, ConfectionTypeBadge } from '@fgv/ts-chocolate-ui';
+import {
+  CollectionBadge,
+  TagBadge,
+  DetailSection,
+  ConfectionTypeBadge,
+  ProductionTools,
+  type IFillingSlotData,
+  type IShellChocolateSpec,
+  type IProcedureSpec,
+  type IMoldSpec,
+  type IFillingOption,
+  type IPickerItem,
+  type SlotId
+} from '@fgv/ts-chocolate-ui';
 import {
   Entities,
+  type AdditionalChocolatePurpose,
   type ConfectionId,
   type ConfectionType,
   type FillingId,
   type IngredientId,
   type MoldId,
+  type ProcedureId,
   type Runtime,
   type SourceId
 } from '@fgv/ts-chocolate';
+
+/**
+ * Additional chocolate spec for editing
+ * @internal
+ */
+interface IAdditionalChocolateSpec {
+  purpose: AdditionalChocolatePurpose;
+  chocolate: IShellChocolateSpec;
+}
 
 /**
  * Extract source ID from composite confection ID
@@ -579,12 +603,28 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
   const [draftYieldUnit, setDraftYieldUnit] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
 
-  // Filling slots draft - array of {slotName, preferredFillingId}
-  const [draftFillings, setDraftFillings] = useState<Array<{ slotName: string; preferredId: string }>>([]);
+  // Filling slots draft - spec-based for production hooks compatibility
+  const [draftFillingSlots, setDraftFillingSlots] = useState<IFillingSlotData[] | undefined>(undefined);
 
-  // Molded bonbon specific
-  const [draftPreferredMoldId, setDraftPreferredMoldId] = useState('');
-  const [draftShellChocolateId, setDraftShellChocolateId] = useState('');
+  // Molded bonbon specific - spec-based for production hooks compatibility
+  const [draftMoldSpec, setDraftMoldSpec] = useState<IMoldSpec | undefined>(undefined);
+  const [draftShellChocolateSpec, setDraftShellChocolateSpec] = useState<IShellChocolateSpec | undefined>(
+    undefined
+  );
+  const [draftAdditionalChocolates, setDraftAdditionalChocolates] = useState<
+    IAdditionalChocolateSpec[] | undefined
+  >(undefined);
+
+  // Procedures - spec-based for production hooks compatibility
+  const [draftProcedureSpec, setDraftProcedureSpec] = useState<IProcedureSpec | undefined>(undefined);
+
+  // Picker dialog state for Browse/Edit mode
+  const [fillingPickerSlotId, setFillingPickerSlotId] = useState<SlotId | null>(null);
+  const [showChocolatePicker, setShowChocolatePicker] = useState(false);
+  const [showProcedurePicker, setShowProcedurePicker] = useState(false);
+  const [showMoldPicker, setShowMoldPicker] = useState(false);
+  const [additionalChocolatePickerPurpose, setAdditionalChocolatePickerPurpose] =
+    useState<AdditionalChocolatePurpose | null>(null);
 
   // Bar truffle specific
   const [draftFrameLength, setDraftFrameLength] = useState('');
@@ -649,20 +689,93 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
     setDraftYieldUnit(confection.yield.unit ?? '');
     setDraftNotes(goldenVersion.notes ?? '');
 
-    // Filling slots
-    const fillingSlots = goldenVersion.fillings ?? [];
-    setDraftFillings(
-      fillingSlots.map((slot) => ({
-        slotName: slot.name,
-        preferredId: (slot.filling.preferredId as unknown as string) ?? ''
-      }))
-    );
+    // Filling slots - extract full spec for production hooks
+    const fillingSlots = (goldenVersion.fillings ?? []).filter((slot) => slot.filling?.options);
+    if (fillingSlots.length > 0) {
+      setDraftFillingSlots(
+        fillingSlots.map((slot) => ({
+          slotId: slot.slotId as unknown as SlotId,
+          name: slot.name,
+          filling: {
+            options: slot.filling.options.map((opt) => ({
+              type: opt.type,
+              id: opt.id as unknown as string
+            })),
+            preferredId: slot.filling.preferredId as unknown as string | undefined
+          }
+        }))
+      );
+    } else {
+      setDraftFillingSlots(undefined);
+    }
+
+    // Procedures - extract full spec for production hooks
+    const rawVersion = goldenVersion.raw as unknown as Record<string, unknown>;
+    const procedures = rawVersion.procedures as
+      | { options: Array<{ id: string; notes?: string }>; preferredId?: string }
+      | undefined;
+    if (procedures?.options) {
+      setDraftProcedureSpec({
+        options: procedures.options,
+        preferredId: procedures.preferredId
+      });
+    } else {
+      setDraftProcedureSpec(undefined);
+    }
 
     // Type-specific properties
     if (confection.isMoldedBonBon()) {
       const mbVersion = goldenVersion as Entities.Confections.IMoldedBonBonVersion;
-      setDraftPreferredMoldId((mbVersion.molds?.preferredId as unknown as string) ?? '');
-      setDraftShellChocolateId((mbVersion.shellChocolate?.preferredId as unknown as string) ?? '');
+
+      // Molds - extract full spec
+      if (mbVersion.molds?.options) {
+        setDraftMoldSpec({
+          options: mbVersion.molds.options.map((opt) => ({
+            id: opt.id as unknown as string,
+            notes: opt.notes
+          })),
+          preferredId: mbVersion.molds.preferredId as unknown as string | undefined
+        });
+      } else {
+        setDraftMoldSpec(undefined);
+      }
+
+      // Shell chocolate - extract full spec from raw data
+      const shellRaw = (mbVersion.shellChocolate as { raw?: { ids?: unknown[]; preferredId?: unknown } })
+        ?.raw;
+      if (shellRaw?.ids) {
+        setDraftShellChocolateSpec({
+          ids: shellRaw.ids.map((id) => id as unknown as string),
+          preferredId: shellRaw.preferredId as unknown as string | undefined
+        });
+      } else {
+        setDraftShellChocolateSpec(undefined);
+      }
+
+      // Additional chocolates (seal, decoration) - extract from runtime resolved data
+      const additionalChocs = (
+        mbVersion as unknown as {
+          additionalChocolates?: Array<{
+            purpose: AdditionalChocolatePurpose;
+            chocolate: { raw?: { ids?: unknown[]; preferredId?: unknown } };
+          }>;
+        }
+      ).additionalChocolates;
+      if (additionalChocs && additionalChocs.length > 0) {
+        setDraftAdditionalChocolates(
+          additionalChocs
+            .filter((ac) => ac.chocolate?.raw?.ids)
+            .map((ac) => ({
+              purpose: ac.purpose,
+              chocolate: {
+                ids: ac.chocolate.raw!.ids!.map((id) => id as unknown as string),
+                preferredId: ac.chocolate.raw!.preferredId as unknown as string | undefined
+              }
+            }))
+        );
+      } else {
+        setDraftAdditionalChocolates(undefined);
+      }
     }
 
     if (confection.isBarTruffle()) {
@@ -722,58 +835,55 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
       ...(draftNotes.trim().length > 0 ? { notes: draftNotes.trim() } : {})
     };
 
-    // Update filling slots if there are any
-    if (draftFillings.length > 0) {
-      const existingFillings = goldenVersion.fillings ?? [];
-      const updatedFillings = draftFillings
-        .map((draft, idx) => {
-          const existing = existingFillings[idx];
-          if (!existing) return null;
-          const existingRaw = existing.raw as unknown as Record<string, unknown>;
-          const fillingSpec = existingRaw.filling as Record<string, unknown>;
-          return {
-            ...existingRaw,
-            filling: {
-              ...fillingSpec,
-              preferredId: draft.preferredId
-            }
-          };
-        })
-        .filter((f): f is Record<string, unknown> => f !== null);
+    // Update filling slots from spec-based draft
+    if (draftFillingSlots && draftFillingSlots.length > 0) {
+      updatedVersion.fillings = draftFillingSlots.map((slot) => ({
+        slotId: slot.slotId,
+        name: slot.name,
+        filling: {
+          options: slot.filling.options,
+          preferredId: slot.filling.preferredId
+        }
+      }));
+    }
 
-      if (updatedFillings.length > 0) {
-        updatedVersion.fillings = updatedFillings;
-      }
+    // Update procedures from spec-based draft
+    if (draftProcedureSpec && draftProcedureSpec.options.length > 0) {
+      updatedVersion.procedures = {
+        options: draftProcedureSpec.options,
+        preferredId: draftProcedureSpec.preferredId
+      };
     }
 
     // Type-specific version updates
     const confectionType = confection.confectionType;
 
     if (confectionType === 'molded-bonbon') {
-      // Update molds preferred ID
-      if (draftPreferredMoldId.trim().length > 0) {
-        const existingMolds = rawVersion.molds as Record<string, unknown> | undefined;
-        if (existingMolds) {
-          updatedVersion.molds = {
-            ...existingMolds,
-            preferredId: draftPreferredMoldId.trim()
-          };
-        }
+      // Update molds from spec-based draft
+      if (draftMoldSpec && draftMoldSpec.options.length > 0) {
+        updatedVersion.molds = {
+          options: draftMoldSpec.options,
+          preferredId: draftMoldSpec.preferredId
+        };
       }
-      // Update shell chocolate
-      if (draftShellChocolateId.trim().length > 0) {
-        const existingShell = rawVersion.shellChocolate as Record<string, unknown> | undefined;
-        if (existingShell) {
-          updatedVersion.shellChocolate = {
-            ...existingShell,
-            preferredId: draftShellChocolateId.trim()
-          };
-        } else {
-          updatedVersion.shellChocolate = {
-            ids: [draftShellChocolateId.trim()],
-            preferredId: draftShellChocolateId.trim()
-          };
-        }
+      // Update shell chocolate from spec-based draft
+      if (draftShellChocolateSpec && draftShellChocolateSpec.ids.length > 0) {
+        updatedVersion.shellChocolate = {
+          ids: draftShellChocolateSpec.ids,
+          preferredId: draftShellChocolateSpec.preferredId
+        };
+      }
+      // Update additional chocolates from spec-based draft
+      if (draftAdditionalChocolates && draftAdditionalChocolates.length > 0) {
+        updatedVersion.additionalChocolates = draftAdditionalChocolates
+          .filter((ac) => ac.chocolate.ids.length > 0)
+          .map((ac) => ({
+            purpose: ac.purpose,
+            chocolate: {
+              ids: ac.chocolate.ids,
+              preferredId: ac.chocolate.preferredId
+            }
+          }));
       }
     }
 
@@ -895,6 +1005,244 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
       setIsEditing(false);
     })();
   };
+
+  // =========================================================================
+  // Production hooks for Browse/Edit mode
+  // In this mode, onSelectProduction is NOT provided, so all selections
+  // go through onUpdateDraft (modifying the recipe).
+  // =========================================================================
+
+  // Extract base specs from the confection for hooks
+  const baseFillingSlots = React.useMemo((): IFillingSlotData[] | undefined => {
+    const fillings = goldenVersion.fillings;
+    if (!fillings || fillings.length === 0) return undefined;
+    return fillings
+      .filter((slot) => slot.filling?.options)
+      .map((slot) => ({
+        slotId: slot.slotId as unknown as SlotId,
+        name: slot.name,
+        filling: {
+          options: slot.filling.options.map((opt) => ({
+            type: opt.type,
+            id: opt.id as unknown as string
+          })),
+          preferredId: slot.filling.preferredId as unknown as string | undefined
+        }
+      }));
+  }, [goldenVersion.fillings]);
+
+  const baseProcedureSpec = React.useMemo((): IProcedureSpec | undefined => {
+    const rawVersion = goldenVersion.raw as unknown as Record<string, unknown>;
+    const procs = rawVersion.procedures as
+      | { options: Array<{ id: string; notes?: string }>; preferredId?: string }
+      | undefined;
+    if (!procs?.options) return undefined;
+    return { options: procs.options, preferredId: procs.preferredId };
+  }, [goldenVersion]);
+
+  const baseMoldSpec = React.useMemo((): IMoldSpec | undefined => {
+    if (!confection.isMoldedBonBon()) return undefined;
+    const mbVersion = goldenVersion as Entities.Confections.IMoldedBonBonVersion;
+    if (!mbVersion.molds?.options) return undefined;
+    return {
+      options: mbVersion.molds.options.map((opt) => ({
+        id: opt.id as unknown as string,
+        notes: opt.notes
+      })),
+      preferredId: mbVersion.molds.preferredId as unknown as string | undefined
+    };
+  }, [confection, goldenVersion]);
+
+  const baseShellChocolateSpec = React.useMemo((): IShellChocolateSpec | undefined => {
+    if (!confection.isMoldedBonBon()) return undefined;
+    // Runtime version has resolved spec with .raw containing the original IChocolateSpec
+    const shellRaw = (
+      confection.shellChocolate as { raw?: { ids?: unknown[]; preferredId?: unknown } } | undefined
+    )?.raw;
+    if (!shellRaw?.ids) return undefined;
+    return {
+      ids: shellRaw.ids.map((id) => id as unknown as string),
+      preferredId: shellRaw.preferredId as unknown as string | undefined
+    };
+  }, [confection]);
+
+  // Filling slot management hook (Browse/Edit mode - no onSelectProduction)
+  const {
+    slots: fillingSlots,
+    actions: fillingSlotActions,
+    hasChanges: fillingHasChanges
+  } = ProductionTools.useFillingSlotManagement({
+    baseSlots: isEditing ? baseFillingSlots : undefined,
+    draftSlots: isEditing ? draftFillingSlots : undefined,
+    onUpdateDraft: setDraftFillingSlots,
+    onResetDraft: () => setDraftFillingSlots(undefined)
+  });
+
+  // Procedure selection hook (Browse/Edit mode)
+  const { state: procedureState, actions: procedureActions } = ProductionTools.useProcedureSelection({
+    baseSpec: isEditing ? baseProcedureSpec : undefined,
+    draftSpec: isEditing ? draftProcedureSpec : undefined,
+    onUpdateDraft: setDraftProcedureSpec,
+    onResetDraft: () => setDraftProcedureSpec(undefined)
+  });
+
+  // Mold selection hook (Browse/Edit mode, molded bonbon only)
+  const { state: moldState, actions: moldActions } = ProductionTools.useMoldSelection({
+    baseSpec: isEditing && confection.isMoldedBonBon() ? baseMoldSpec : undefined,
+    draftSpec: isEditing && confection.isMoldedBonBon() ? draftMoldSpec : undefined,
+    onUpdateDraft: setDraftMoldSpec,
+    onResetDraft: () => setDraftMoldSpec(undefined)
+  });
+
+  // Shell chocolate selection hook (Browse/Edit mode, molded bonbon only)
+  const { state: shellState, actions: shellActions } = ProductionTools.useShellChocolateSelection({
+    baseSpec: isEditing && confection.isMoldedBonBon() ? baseShellChocolateSpec : undefined,
+    draftSpec: isEditing && confection.isMoldedBonBon() ? draftShellChocolateSpec : undefined,
+    onUpdateDraft: setDraftShellChocolateSpec,
+    onResetDraft: () => setDraftShellChocolateSpec(undefined)
+  });
+
+  // Available items for picker dialogs
+  const availableFillings = React.useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    return Array.from(runtime.fillings.values()).map((f) => ({
+      id: f.id as unknown as string,
+      name: f.name as unknown as string
+    }));
+  }, [runtime]);
+
+  const availableChocolates = React.useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    return Array.from(runtime.ingredients.values())
+      .filter((i) => {
+        const category = (i as unknown as { category?: string }).category;
+        return category === 'chocolate' || category === 'couverture';
+      })
+      .map((i) => ({
+        id: i.id as unknown as string,
+        name: i.name as unknown as string,
+        description: (i as unknown as { category?: string }).category
+      }));
+  }, [runtime]);
+
+  const availableProcedures = React.useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    return Array.from(runtime.library.procedures.entries()).map(([id, p]) => ({
+      id: id as unknown as string,
+      name: (p as unknown as { name: string }).name
+    }));
+  }, [runtime]);
+
+  const availableMolds = React.useMemo((): IPickerItem[] => {
+    if (!runtime) return [];
+    const items: IPickerItem[] = [];
+    for (const [id] of runtime.library.molds.entries()) {
+      const moldResult = runtime.getRuntimeMold(id as MoldId);
+      if (moldResult.isSuccess()) {
+        const mold = moldResult.value;
+        items.push({
+          id: id as unknown as string,
+          name: mold.displayName ?? (id as unknown as string),
+          description: `${mold.cavityCount} cavities`
+        });
+      }
+    }
+    return items;
+  }, [runtime]);
+
+  // Get existing IDs for exclusion in pickers (defensive checks for undefined)
+  const existingChocolateIds = React.useMemo(
+    () => shellState.availableChoices ?? [],
+    [shellState.availableChoices]
+  );
+  const existingProcedureIds = React.useMemo(
+    () => procedureState.options?.map((o) => o.id) ?? [],
+    [procedureState.options]
+  );
+  const existingMoldIds = React.useMemo(() => moldState.options?.map((o) => o.id) ?? [], [moldState.options]);
+  const getExistingFillingIdsForSlot = React.useCallback(
+    (slotId: SlotId): string[] => {
+      const slot = fillingSlots?.find((s) => s.slotId === slotId);
+      return slot?.options?.map((o) => o.id) ?? [];
+    },
+    [fillingSlots]
+  );
+
+  // Picker handlers
+  const handleAddFillingOption = React.useCallback((slotId: SlotId) => {
+    setFillingPickerSlotId(slotId);
+  }, []);
+
+  const handleFillingSelect = React.useCallback(
+    (item: IPickerItem) => {
+      if (fillingPickerSlotId) {
+        fillingSlotActions.addFillingOption(fillingPickerSlotId, { type: 'recipe', id: item.id });
+      }
+      setFillingPickerSlotId(null);
+    },
+    [fillingPickerSlotId, fillingSlotActions]
+  );
+
+  const handleChocolateSelect = React.useCallback(
+    (item: IPickerItem) => {
+      shellActions.addChoice(item.id);
+      setShowChocolatePicker(false);
+    },
+    [shellActions]
+  );
+
+  const handleProcedureSelect = React.useCallback(
+    (item: IPickerItem) => {
+      procedureActions.addOption({ id: item.id });
+      setShowProcedurePicker(false);
+    },
+    [procedureActions]
+  );
+
+  const handleMoldSelect = React.useCallback(
+    (item: IPickerItem) => {
+      moldActions.addOption({ id: item.id });
+      setShowMoldPicker(false);
+    },
+    [moldActions]
+  );
+
+  const handleAdditionalChocolateSelect = React.useCallback(
+    (item: IPickerItem) => {
+      if (!additionalChocolatePickerPurpose) return;
+      const purpose = additionalChocolatePickerPurpose;
+      setDraftAdditionalChocolates((prev) => {
+        const existing = prev?.find((ac) => ac.purpose === purpose);
+        if (existing) {
+          // Add to existing
+          if (existing.chocolate.ids.includes(item.id)) return prev;
+          return prev?.map((ac) =>
+            ac.purpose === purpose
+              ? {
+                  ...ac,
+                  chocolate: {
+                    ids: [...ac.chocolate.ids, item.id],
+                    preferredId: item.id // Select the newly added
+                  }
+                }
+              : ac
+          );
+        } else {
+          // Create new
+          return [...(prev ?? []), { purpose, chocolate: { ids: [item.id], preferredId: item.id } }];
+        }
+      });
+      setAdditionalChocolatePickerPurpose(null);
+    },
+    [additionalChocolatePickerPurpose]
+  );
+
+  // Get existing IDs for additional chocolate picker exclusion
+  const existingAdditionalChocolateIds = React.useMemo(() => {
+    if (!additionalChocolatePickerPurpose) return [];
+    const existing = draftAdditionalChocolates?.find((ac) => ac.purpose === additionalChocolatePickerPurpose);
+    return existing?.chocolate.ids ?? [];
+  }, [additionalChocolatePickerPurpose, draftAdditionalChocolates]);
 
   return (
     <div className="w-full max-w-6xl">
@@ -1077,65 +1425,202 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
                   </div>
                 </div>
 
-                {/* Fillings */}
-                {draftFillings.length > 0 && (
+                {/* Fillings - using production FillingSlotManager */}
+                {fillingSlots.length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Fillings</h3>
-                    <div className="space-y-3">
-                      {draftFillings.map((slot, idx) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <span className="text-sm text-gray-700 dark:text-gray-300 min-w-[100px] pt-2">
-                            {slot.slotName}:
-                          </span>
-                          <FillingAutocompleteInput
-                            value={slot.preferredId}
-                            onChange={(value) => {
-                              const newFillings = [...draftFillings];
-                              newFillings[idx] = { ...slot, preferredId: value };
-                              setDraftFillings(newFillings);
-                            }}
-                            placeholder="Search fillings..."
-                            disabled={isSaving}
-                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    <ProductionTools.FillingSlotManager
+                      slots={fillingSlots}
+                      actions={fillingSlotActions}
+                      hasChanges={fillingHasChanges}
+                      getFillingName={(opt: IFillingOption) => {
+                        if (opt.type === 'recipe') {
+                          return (
+                            runtime?.getRuntimeFilling(opt.id as FillingId).orDefault(undefined)?.name ??
+                            opt.id
+                          );
+                        }
+                        return (
+                          runtime?.getRuntimeIngredient(opt.id as IngredientId).orDefault(undefined)?.name ??
+                          opt.id
+                        );
+                      }}
+                      onAddFillingOption={handleAddFillingOption}
+                    />
                   </div>
                 )}
 
-                {/* Molded Bonbon Specific */}
+                {/* Molded Bonbon Specific - using production hooks/components */}
                 {confection.confectionType === 'molded-bonbon' && (
-                  <div>
+                  <div className="space-y-4">
                     <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
                       Molded Bonbon Details
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Preferred Mold
-                        </label>
-                        <MoldAutocompleteInput
-                          value={draftPreferredMoldId}
-                          onChange={setDraftPreferredMoldId}
-                          placeholder="Search molds..."
-                          disabled={isSaving}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        />
+
+                    {/* Molds */}
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs text-gray-600 dark:text-gray-400">Mold</label>
+                        {moldState.hasChanges && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                            Modified
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Shell Chocolate
-                        </label>
-                        <IngredientAutocompleteInput
-                          value={draftShellChocolateId}
-                          onChange={setDraftShellChocolateId}
-                          placeholder="Search chocolates..."
-                          disabled={isSaving}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        />
-                      </div>
+                      {moldState.options.length > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            value={moldState.effectivePreferredId ?? ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value) moldActions.select(value);
+                            }}
+                            disabled={isSaving}
+                          >
+                            {moldState.options.map((opt) => {
+                              const mold = runtime?.getRuntimeMold(opt.id as MoldId).orDefault(undefined);
+                              const displayName = mold?.displayName ?? mold?.name ?? opt.id;
+                              return (
+                                <option key={opt.id} value={opt.id}>
+                                  {displayName}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          {moldState.options.length > 1 && moldState.effectivePreferredId && (
+                            <button
+                              type="button"
+                              onClick={() => moldActions.removeOption(moldState.effectivePreferredId!)}
+                              disabled={isSaving}
+                              className="px-2 py-2 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Remove this mold from options"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                          No molds configured
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowMoldPicker(true)}
+                        disabled={isSaving}
+                        className="text-xs text-chocolate-600 dark:text-chocolate-400 hover:text-chocolate-700 dark:hover:text-chocolate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        + Add mold option
+                      </button>
                     </div>
+
+                    {/* Shell Chocolate */}
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <ProductionTools.ShellChocolateSelector
+                        state={shellState}
+                        actions={shellActions}
+                        getChocolateName={(id) =>
+                          runtime?.getRuntimeIngredient(id as IngredientId).orDefault(undefined)?.name ?? id
+                        }
+                        onAddChocolate={() => setShowChocolatePicker(true)}
+                      />
+                    </div>
+
+                    {/* Additional Chocolates (seal, decoration) */}
+                    {(['seal', 'decoration'] as const).map((purpose) => {
+                      const existing = draftAdditionalChocolates?.find((ac) => ac.purpose === purpose);
+                      return (
+                        <div key={purpose} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs text-gray-600 dark:text-gray-400 capitalize">
+                              {purpose} Chocolate
+                            </label>
+                          </div>
+                          {existing && existing.chocolate.ids.length > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <select
+                                className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                value={existing.chocolate.preferredId ?? existing.chocolate.ids[0]}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDraftAdditionalChocolates((prev) =>
+                                    prev?.map((ac) =>
+                                      ac.purpose === purpose
+                                        ? { ...ac, chocolate: { ...ac.chocolate, preferredId: value } }
+                                        : ac
+                                    )
+                                  );
+                                }}
+                                disabled={isSaving}
+                              >
+                                {existing.chocolate.ids.map((id) => (
+                                  <option key={id} value={id}>
+                                    {runtime?.getRuntimeIngredient(id as IngredientId).orDefault(undefined)
+                                      ?.name ?? id}
+                                  </option>
+                                ))}
+                              </select>
+                              {existing.chocolate.ids.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentId =
+                                      existing.chocolate.preferredId ?? existing.chocolate.ids[0];
+                                    setDraftAdditionalChocolates((prev) =>
+                                      prev?.map((ac) =>
+                                        ac.purpose === purpose
+                                          ? {
+                                              ...ac,
+                                              chocolate: {
+                                                ids: ac.chocolate.ids.filter((id) => id !== currentId),
+                                                preferredId: ac.chocolate.ids.filter(
+                                                  (id) => id !== currentId
+                                                )[0]
+                                              }
+                                            }
+                                          : ac
+                                      )
+                                    );
+                                  }}
+                                  disabled={isSaving}
+                                  className="px-2 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md disabled:opacity-50"
+                                  title="Remove this chocolate from options"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Remove this additional chocolate entirely
+                                  setDraftAdditionalChocolates((prev) =>
+                                    prev?.filter((ac) => ac.purpose !== purpose)
+                                  );
+                                }}
+                                disabled={isSaving}
+                                className="px-2 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md disabled:opacity-50"
+                                title={`Remove ${purpose} chocolate`}
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                              No {purpose} chocolate configured
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setAdditionalChocolatePickerPurpose(purpose)}
+                            disabled={isSaving}
+                            className="text-xs text-chocolate-600 dark:text-chocolate-400 hover:text-chocolate-700 dark:hover:text-chocolate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            + Add {purpose} chocolate option
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -1274,6 +1759,18 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
                     </div>
                   </div>
                 )}
+
+                {/* Procedures - using production ProcedureSelector */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                  <ProductionTools.ProcedureSelector
+                    state={procedureState}
+                    actions={procedureActions}
+                    getProcedureName={(id) =>
+                      runtime?.getRuntimeProcedure(id as ProcedureId).orDefault(undefined)?.name ?? id
+                    }
+                    onAddProcedure={() => setShowProcedurePicker(true)}
+                  />
+                </div>
 
                 {/* Notes */}
                 <div>
@@ -1476,6 +1973,62 @@ export function DetailView({ confectionId, onBack }: IDetailViewProps): React.Re
           </div>
         </div>
       </div>
+
+      {/* Picker Dialogs for Browse/Edit mode */}
+      <ProductionTools.ItemPickerDialog
+        isOpen={fillingPickerSlotId !== null}
+        title="Add Filling Option"
+        items={availableFillings}
+        onSelect={handleFillingSelect}
+        onClose={() => setFillingPickerSlotId(null)}
+        excludeIds={fillingPickerSlotId ? getExistingFillingIdsForSlot(fillingPickerSlotId) : []}
+        searchPlaceholder="Search fillings..."
+        emptyMessage="No fillings available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={showChocolatePicker}
+        title="Add Shell Chocolate"
+        items={availableChocolates}
+        onSelect={handleChocolateSelect}
+        onClose={() => setShowChocolatePicker(false)}
+        excludeIds={existingChocolateIds}
+        searchPlaceholder="Search chocolates..."
+        emptyMessage="No chocolates available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={showProcedurePicker}
+        title="Add Procedure Option"
+        items={availableProcedures}
+        onSelect={handleProcedureSelect}
+        onClose={() => setShowProcedurePicker(false)}
+        excludeIds={existingProcedureIds}
+        searchPlaceholder="Search procedures..."
+        emptyMessage="No procedures available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={showMoldPicker}
+        title="Add Mold Option"
+        items={availableMolds}
+        onSelect={handleMoldSelect}
+        onClose={() => setShowMoldPicker(false)}
+        excludeIds={existingMoldIds}
+        searchPlaceholder="Search molds..."
+        emptyMessage="No molds available"
+      />
+
+      <ProductionTools.ItemPickerDialog
+        isOpen={additionalChocolatePickerPurpose !== null}
+        title={`Add ${additionalChocolatePickerPurpose ?? ''} Chocolate`}
+        items={availableChocolates}
+        onSelect={handleAdditionalChocolateSelect}
+        onClose={() => setAdditionalChocolatePickerPurpose(null)}
+        excludeIds={existingAdditionalChocolateIds}
+        searchPlaceholder="Search chocolates..."
+        emptyMessage="No chocolates available"
+      />
     </div>
   );
 }
@@ -1633,7 +2186,7 @@ function MoldedBonBonDetails({
               return (
                 <li key={idx} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
                   <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {resolved?.ingredient?.name ?? 'Unknown'}
+                    {resolved?.chocolate?.chocolate?.name ?? 'Unknown'}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Purpose: {choc.purpose}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
