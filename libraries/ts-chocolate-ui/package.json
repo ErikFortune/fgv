@@ -12,7 +12,7 @@
     "test": "heft test --clean",
     "lint": "eslint src --ext .ts,.tsx",
     "fixlint": "eslint src --ext .ts,.tsx --fix",
-    "coverage": "jest --coverage"
+    "coverage": "heft test --clean"
   },
   "sideEffects": false,
   "keywords": [

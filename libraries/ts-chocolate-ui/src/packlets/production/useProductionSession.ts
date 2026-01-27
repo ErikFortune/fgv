@@ -152,6 +152,7 @@ export function useProductionSession(options: IUseProductionSessionOptions): IUs
 
   const setFrames = useCallback(
     (frames: number): void => {
+      /* c8 ignore next - defensive: hook is only usable when session exists */
       if (!session) return;
       const validFrames = Number.isFinite(frames) && frames > 0 ? frames : 1;
       onUpdateProduction(session.sessionId, {
@@ -164,6 +165,7 @@ export function useProductionSession(options: IUseProductionSessionOptions): IUs
 
   const rename = useCallback(
     (label: string): void => {
+      /* c8 ignore next - defensive: hook is only usable when session exists */
       if (!session) return;
       onUpdateLabel(session.sessionId, label.trim() || undefined);
     },

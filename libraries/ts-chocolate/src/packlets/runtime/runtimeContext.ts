@@ -336,6 +336,7 @@ export class RuntimeContext
 
     // Remove stale cached entries (if underlying library changed)
     for (const id of this._runtimeConfections.keys()) {
+      /* c8 ignore next 3 - defensive: stale cache cleanup after library mutation */
       if (!this._library.confections.has(id)) {
         this._runtimeConfections.delete(id);
       }

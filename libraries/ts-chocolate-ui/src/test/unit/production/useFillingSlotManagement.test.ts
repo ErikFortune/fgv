@@ -227,6 +227,35 @@ describe('useFillingSlotManagement', () => {
       );
     });
 
+    test('uses default slot ID generator when not provided', () => {
+      const onUpdateDraft = jest.fn();
+
+      const { result } = renderHook(() =>
+        useFillingSlotManagement({
+          baseSlots: [],
+          draftSlots: undefined,
+          onUpdateDraft,
+          onResetDraft: jest.fn()
+          // generateSlotId intentionally not provided to test default
+        })
+      );
+
+      act(() => {
+        const newSlotId = result.current.actions.addSlot('Test Slot');
+        // The default generator creates IDs like "slot-{timestamp}-{random}"
+        expect(newSlotId).toMatch(/^slot-\d+-[a-z0-9]+$/);
+      });
+
+      expect(onUpdateDraft).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: 'Test Slot',
+            filling: { options: [], preferredId: undefined }
+          })
+        ])
+      );
+    });
+
     test('uses default name when empty string provided', () => {
       const baseSlots = createBaseSlots();
       const onUpdateDraft = jest.fn();

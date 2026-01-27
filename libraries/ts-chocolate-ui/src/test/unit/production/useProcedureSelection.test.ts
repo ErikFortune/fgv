@@ -266,6 +266,28 @@ describe('useProcedureSelection', () => {
 
       expect(onUpdateDraft).not.toHaveBeenCalled();
     });
+
+    test('creates new spec when baseSpec is undefined', () => {
+      const onUpdateDraft = jest.fn();
+
+      const { result } = renderHook(() =>
+        useProcedureSelection({
+          baseSpec: undefined,
+          draftSpec: undefined,
+          onUpdateDraft,
+          onResetDraft: jest.fn()
+        })
+      );
+
+      act(() => {
+        result.current.actions.addOption({ id: 'proc-new', notes: 'First procedure' });
+      });
+
+      expect(onUpdateDraft).toHaveBeenCalledWith({
+        options: [{ id: 'proc-new', notes: 'First procedure' }],
+        preferredId: 'proc-new'
+      });
+    });
   });
 
   describe('removeOption action', () => {

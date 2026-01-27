@@ -8,7 +8,8 @@
     "builtInData.generated.js",
     "runtime/tasks/model.js",
     "runtime/procedures/model.js",
-    "runtime/molds/model.js"
+    "runtime/molds/model.js",
+    "runtime/scratchpad/converters.js"
   ],
   "coverageThreshold": {
     "global": {

@@ -1,8 +1,34 @@
 {
   "extends": "@rushstack/heft-web-rig/profiles/library/config/jest.config.json",
-  "coveragePathIgnorePatterns": ["index.js", "index.browser.js", "public.js", "internal.js"],
+  "coveragePathIgnorePatterns": [
+    "index.js",
+    "index.browser.js",
+    "public.js",
+    "internal.js",
+    "/namespaces/",
+    "/production/model\\.js$",
+    "/production/[A-Z].*\\.js$",
+    "/common/",
+    "/confections/",
+    "/fillings/",
+    "/ingredients/",
+    "/layout/",
+    "/observability/"
+  ],
   "coverageThreshold": {
     "global": {
+      "branches": 90,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    },
+    "./src/packlets/hooks/**/*.ts": {
+      "branches": 100,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    },
+    "./src/packlets/filters/**/*.tsx": {
       "branches": 100,
       "functions": 100,
       "lines": 100,

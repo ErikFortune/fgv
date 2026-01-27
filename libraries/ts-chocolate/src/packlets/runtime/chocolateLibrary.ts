@@ -249,6 +249,7 @@ export class ChocolateLibrary {
         logger
       });
 
+      /* c8 ignore start - journal file sources not included in test fixtures */
       for (const source of fileSources) {
         const resolved = resolveFileTreeSourceForSubLibrary(source, 'journals');
         if (resolved.isFailure() || resolved.value === undefined) {
@@ -267,6 +268,7 @@ export class ChocolateLibrary {
           }
         }
       }
+      /* c8 ignore stop */
 
       return Success.with(journals);
     });

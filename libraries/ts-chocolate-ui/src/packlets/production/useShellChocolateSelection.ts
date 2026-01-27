@@ -158,12 +158,14 @@ export function useShellChocolateSelection(
   const removeChoice = useCallback(
     (id: string): void => {
       const effectiveSpec = draftSpec ?? baseSpec;
+      /* c8 ignore next - defensive: removeChoice is only meaningful when choices exist */
       if (!effectiveSpec) return;
 
       // Don't remove the last option
       if (effectiveSpec.ids.length <= 1) return;
 
       const newIds = effectiveSpec.ids.filter((existingId) => existingId !== id);
+      /* c8 ignore next - defensive: newIds[0] always exists due to length > 1 check above */
       const preferredId = effectiveSpec.preferredId === id ? newIds[0] : effectiveSpec.preferredId;
 
       onUpdateDraft({

@@ -254,6 +254,28 @@ describe('useShellChocolateSelection', () => {
 
       expect(onUpdateDraft).not.toHaveBeenCalled();
     });
+
+    test('creates new spec when baseSpec is undefined', () => {
+      const onUpdateDraft = jest.fn();
+
+      const { result } = renderHook(() =>
+        useShellChocolateSelection({
+          baseSpec: undefined,
+          draftSpec: undefined,
+          onUpdateDraft,
+          onResetDraft: jest.fn()
+        })
+      );
+
+      act(() => {
+        result.current.actions.addChoice('choco-new');
+      });
+
+      expect(onUpdateDraft).toHaveBeenCalledWith({
+        ids: ['choco-new'],
+        preferredId: 'choco-new'
+      });
+    });
   });
 
   describe('removeChoice action', () => {

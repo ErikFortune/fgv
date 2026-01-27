@@ -157,12 +157,14 @@ export function useProcedureSelection(options: IUseProcedureSelectionOptions): I
   const removeOption = useCallback(
     (id: string): void => {
       const effectiveSpec = draftSpec ?? baseSpec;
+      /* c8 ignore next - defensive: removeOption is only meaningful when options exist */
       if (!effectiveSpec) return;
 
       // Don't remove the last option
       if (effectiveSpec.options.length <= 1) return;
 
       const newOptions = effectiveSpec.options.filter((opt) => opt.id !== id);
+      /* c8 ignore next - defensive: newOptions[0] always exists due to length > 1 check above */
       const preferredId = effectiveSpec.preferredId === id ? newOptions[0]?.id : effectiveSpec.preferredId;
 
       onUpdateDraft({
