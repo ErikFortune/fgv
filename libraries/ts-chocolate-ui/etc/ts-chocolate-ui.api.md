@@ -331,6 +331,17 @@ export interface IMoldOption {
 }
 
 // @public
+export interface IMoldSelectorProps {
+    actions: IMoldActions;
+    disabled?: boolean;
+    getMoldName: (id: string) => string;
+    label?: string;
+    onAddMold?: () => void;
+    showRemove?: boolean;
+    state: IMoldState;
+}
+
+// @public
 export interface IMoldSpec {
     options: readonly IMoldOption[];
     preferredId?: string;
@@ -663,6 +674,9 @@ export function MessagesPane({ visible, defaultCollapsed, maxHeight, className }
 
 // @public
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'debug';
+
+// @public
+export function MoldSelector({ state, actions, getMoldName, onAddMold, showRemove, label, disabled }: IMoldSelectorProps): React_2.ReactElement | null;
 
 // @public
 export const ObservabilityContext: React_3.Context<IObservabilityContext>;

@@ -79,4 +79,5 @@ export {
   type IFillingOptionDisplayProps
 } from './FillingSlotManager';
 export { ProcedureSelector, type IProcedureSelectorProps } from './ProcedureSelector';
+export { MoldSelector, type IMoldSelectorProps } from './MoldSelector';
 export { ItemPickerDialog, type IItemPickerDialogProps, type IPickerItem } from './ItemPickerDialog';

@@ -209,11 +209,16 @@ export class RuntimeMold implements IRuntimeMold {
   }
 
   /**
-   * Gets a display string for this mold (manufacturer + product number).
-   * Example: "Chocolate World CW 2227"
+   * Gets a display string for this mold.
+   * Example: "Hex Swirl (Chocolate World CW-2227)"
+   * Falls back to manufacturer + product number if no description.
    */
   public get displayName(): string {
-    return `${this._mold.manufacturer} ${this._mold.productNumber}`;
+    const manufacturerModel = `${this._mold.manufacturer} ${this._mold.productNumber}`;
+    if (this._mold.description) {
+      return `${this._mold.description} (${manufacturerModel})`;
+    }
+    return manufacturerModel;
   }
 
   // ============================================================================

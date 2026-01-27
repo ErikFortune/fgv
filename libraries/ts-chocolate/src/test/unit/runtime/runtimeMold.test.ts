@@ -110,9 +110,17 @@ describe('RuntimeMold', () => {
 
   describe('computed properties', () => {
     describe('displayName', () => {
-      test('should return manufacturer + product number', () => {
+      test('should return description with manufacturer + product number', () => {
         const moldId = 'cw.cw-2227' as MoldId;
         const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
+
+        expect(runtimeMold.displayName).toBe('Rectangle bar mold (Chocolate World CW 2227)');
+      });
+
+      test('should fall back to manufacturer + product number when no description', () => {
+        const moldId = 'cw.cw-2227' as MoldId;
+        const moldWithoutDescription = { ...simpleMold, description: undefined };
+        const runtimeMold = RuntimeMold.create(mockContext, moldId, moldWithoutDescription).orThrow();
 
         expect(runtimeMold.displayName).toBe('Chocolate World CW 2227');
       });

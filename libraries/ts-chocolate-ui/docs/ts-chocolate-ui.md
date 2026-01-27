@@ -218,6 +218,19 @@ Collapsible message pane for observability
 </td></tr>
 <tr><td>
 
+[MoldSelector({ state, actions, getMoldName, onAddMold, showRemove, label, disabled })](./ts-chocolate-ui.moldselector.md)
+
+
+</td><td>
+
+Mold selector component with full CRUD support.
+
+Provides selection from available molds, with optional ability to add new molds and remove existing ones from the options.
+
+
+</td></tr>
+<tr><td>
+
 [ObservabilityProvider({ children, maxMessages, userLogLevel, diagLogLevel })](./ts-chocolate-ui.observabilityprovider.md)
 
 
@@ -743,6 +756,17 @@ Mold data needed for yield calculation
 </td><td>
 
 Mold option with optional notes
+
+
+</td></tr>
+<tr><td>
+
+[IMoldSelectorProps](./ts-chocolate-ui.imoldselectorprops.md)
+
+
+</td><td>
+
+Props for the MoldSelector component
 
 
 </td></tr>

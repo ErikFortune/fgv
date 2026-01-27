@@ -181,7 +181,7 @@ string
 
 </td><td>
 
-Gets a display string for this mold (manufacturer + product number). Example: "Chocolate World CW 2227"
+Gets a display string for this mold. Example: "Hex Swirl (Chocolate World CW-2227)" Falls back to manufacturer + product number if no description.
 
 
 </td></tr>
