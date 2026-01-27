@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import { useMemo } from 'react';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import { ConfectionCard } from '@fgv/ts-chocolate-ui';
 import type { ConfectionId } from '@fgv/ts-chocolate';
@@ -27,7 +27,7 @@ export interface IBrowseViewProps {
  * Browse view for confections
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, confectionCount, dataVersion } = useChocolate();
+  const { runtime, loadingState, confectionCount, dataVersion } = useRuntime();
 
   // Filter and sort confections - dataVersion triggers recalculation when library data changes
   const filteredConfections = useMemo(() => {

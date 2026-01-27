@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import type { MoldId } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import type { IMoldFilters } from '../MoldsToolSidebar';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -104,7 +104,7 @@ function MoldRow({
 }
 
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, moldCount, dataVersion } = useChocolate();
+  const { runtime, loadingState, moldCount, dataVersion } = useRuntime();
   const { settings } = useSettings();
   const [showAddMold, setShowAddMold] = React.useState(false);
 

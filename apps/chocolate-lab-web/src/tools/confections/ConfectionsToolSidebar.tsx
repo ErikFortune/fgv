@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import type { ConfectionType } from '@fgv/ts-chocolate';
 import { FilterTools, type IFilterActions } from '@fgv/ts-chocolate-ui';
 import { ConfectionCollectionManagementPanel } from '../../components/collections';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
 import type { IConfectionFilters } from './types';
 
 /**
@@ -37,7 +37,7 @@ export function ConfectionsToolSidebar({
   filters,
   onFiltersChange
 }: IConfectionsToolSidebarProps): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
 
   // Get all unique tags from confections
   const allTags = useMemo(() => {

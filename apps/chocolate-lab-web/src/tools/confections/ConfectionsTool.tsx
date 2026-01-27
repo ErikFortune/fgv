@@ -9,7 +9,7 @@ import type { ConfectionId } from '@fgv/ts-chocolate';
 import { BrowseTools } from '@fgv/ts-chocolate-ui';
 import { BrowseView } from './views/BrowseView';
 import { DetailView } from './views/DetailView';
-import { ProductionViewRefactored as ProductionView } from './views/ProductionViewRefactored';
+import { ProductionView } from './views/ProductionView';
 import type { IConfectionFilters } from './types';
 
 /**

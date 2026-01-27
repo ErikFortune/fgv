@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useMemo } from 'react';
 import type { MoldFormat } from '@fgv/ts-chocolate';
 import { FilterTools, type IFilterActions, type IBaseFilterState } from '@fgv/ts-chocolate-ui';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
 import { MoldCollectionManagementPanel } from '../../components/collections';
 
 export interface IMoldFilters extends IBaseFilterState {
@@ -33,7 +33,7 @@ function toNumberOrNull(raw: string): number | null {
 }
 
 export function MoldsToolSidebar({ filters, onFiltersChange }: IMoldsToolSidebarProps): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
 
   const allTags = useMemo((): ReadonlyArray<string> => {
     void dataVersion;

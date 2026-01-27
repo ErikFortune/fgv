@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeftIcon, BeakerIcon, CubeIcon, PencilIcon } from '@heroicons/react/24/outline';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { useEditing } from '../../../contexts/EditingContext';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { LoadingSpinner } from '../../../components/common';
@@ -71,7 +71,7 @@ function IngredientAutocompleteInput({
   placeholder?: string;
   className?: string;
 }): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
   const [hasFocus, setHasFocus] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({
@@ -234,7 +234,7 @@ function MoldAutocompleteInput({
   placeholder?: string;
   className?: string;
 }): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
   const [hasFocus, setHasFocus] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({
@@ -423,7 +423,7 @@ function FillingAutocompleteInput({
   placeholder?: string;
   className?: string;
 }): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
   const [hasFocus, setHasFocus] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({
@@ -586,7 +586,7 @@ export interface IDetailViewProps {
  * Detail view for a single confection
  */
 export function DetailView({ confectionId, onBack }: IDetailViewProps): React.ReactElement {
-  const { runtime, loadingState } = useChocolate();
+  const { runtime, loadingState } = useRuntime();
   const { commitConfectionCollection } = useEditing();
   const { settings } = useSettings();
 

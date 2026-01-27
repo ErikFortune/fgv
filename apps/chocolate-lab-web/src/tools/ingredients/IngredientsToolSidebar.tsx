@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
 import { FilterTools, type IFilterActions, type IBaseFilterState } from '@fgv/ts-chocolate-ui';
 import { CollectionManagementPanel } from '../../components/collections';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
 
 /**
  * Filter state for ingredients
@@ -45,7 +45,7 @@ export function IngredientsToolSidebar({
   filters,
   onFiltersChange
 }: IIngredientsToolSidebarProps): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
 
   // Get all unique tags from ingredients
   const allTags = useMemo(() => {

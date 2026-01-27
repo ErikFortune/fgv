@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import { useMemo, useState } from 'react';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import { IngredientCard } from '@fgv/ts-chocolate-ui';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -30,7 +30,7 @@ export interface IBrowseViewProps {
  * Browse view for ingredients
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, ingredientCount, dataVersion } = useChocolate();
+  const { runtime, loadingState, ingredientCount, dataVersion } = useRuntime();
   const { settings } = useSettings();
 
   const [showAddIngredient, setShowAddIngredient] = useState(false);

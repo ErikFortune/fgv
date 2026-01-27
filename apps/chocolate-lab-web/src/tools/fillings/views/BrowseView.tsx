@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import { useMemo } from 'react';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import { FillingCard } from '@fgv/ts-chocolate-ui';
 import type { FillingId, SourceId } from '@fgv/ts-chocolate';
@@ -30,7 +30,7 @@ export interface IBrowseViewProps {
  * Browse view for fillings
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, fillingCount, dataVersion } = useChocolate();
+  const { runtime, loadingState, fillingCount, dataVersion } = useRuntime();
   const { settings } = useSettings();
   const [showAddFilling, setShowAddFilling] = React.useState(false);
 

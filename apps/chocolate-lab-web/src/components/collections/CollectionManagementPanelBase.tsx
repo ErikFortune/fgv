@@ -22,7 +22,8 @@ import { safeShowDirectoryPicker } from '@fgv/ts-web-extras';
 import { ProvideSecretModal, UnlockCollectionModal } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useSecrets } from '../../contexts/SecretsContext';
-import { useChocolate, type SubLibraryType } from '../../contexts/ChocolateContext';
+import { useLibraryImport } from '../../contexts/LibraryImportContext';
+import type { SubLibraryType } from '../../contexts/RuntimeContext';
 import type { SourceId } from '@fgv/ts-chocolate';
 import type { Result } from '@fgv/ts-utils';
 import type { ICreateCollectionParams, IExportParams, IImportParams } from '../../contexts/EditingContext';
@@ -200,7 +201,7 @@ export function CollectionManagementPanelBase({
     loadLibraryFromZip,
     loadLibraryFromFolder,
     clearExternalSources
-  } = useChocolate();
+  } = useLibraryImport();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<SourceId | null>(null);

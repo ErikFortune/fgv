@@ -8,7 +8,9 @@ import { ObservabilityProvider } from '@fgv/ts-chocolate-ui';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SecretsProvider } from './contexts/SecretsContext';
-import { ChocolateProvider } from './contexts/ChocolateContext';
+import { RuntimeProvider } from './contexts/RuntimeContext';
+import { CollectionsProvider } from './contexts/CollectionsContext';
+import { LibraryImportProvider } from './contexts/LibraryImportContext';
 import { EditingProvider } from './contexts/EditingContext';
 import { SessionScratchpadProvider } from './contexts/SessionScratchpadContext';
 import { AppShell } from './components/layout';
@@ -196,13 +198,17 @@ function App(): React.ReactElement {
       <SettingsProvider>
         <SecretsProvider>
           <ObservabilityProvider>
-            <ChocolateProvider>
-              <EditingProvider>
-                <SessionScratchpadProvider>
-                  <AppContent />
-                </SessionScratchpadProvider>
-              </EditingProvider>
-            </ChocolateProvider>
+            <RuntimeProvider>
+              <CollectionsProvider>
+                <LibraryImportProvider>
+                  <EditingProvider>
+                    <SessionScratchpadProvider>
+                      <AppContent />
+                    </SessionScratchpadProvider>
+                  </EditingProvider>
+                </LibraryImportProvider>
+              </CollectionsProvider>
+            </RuntimeProvider>
           </ObservabilityProvider>
         </SecretsProvider>
       </SettingsProvider>

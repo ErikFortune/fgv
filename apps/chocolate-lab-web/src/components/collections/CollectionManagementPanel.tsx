@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
+import { useCollections } from '../../contexts/CollectionsContext';
 import { useEditing, useCollectionManager, useIngredientEditor } from '../../contexts/EditingContext';
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
 import {
@@ -45,7 +46,8 @@ export function CollectionManagementPanel({
   showHeader = true,
   headerTitle = toolId === 'ingredients' ? 'Ingredient Collections' : 'Collections'
 }: ICollectionManagementPanelProps): React.ReactElement {
-  const { runtime, collections } = useChocolate();
+  const { runtime } = useRuntime();
+  const { collections } = useCollections();
   const { dirtyCollections, editingVersion, commitCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useCollectionManager();
@@ -264,7 +266,7 @@ export function AddIngredientDialog({
   collectionId: SourceId;
   onClose: () => void;
 }): React.ReactElement {
-  const { runtime, notifyLibraryChanged } = useChocolate();
+  const { runtime, notifyLibraryChanged } = useRuntime();
 
   const [targetCollectionId, setTargetCollectionId] = useState<SourceId>(collectionId);
   const { editor, error: editorError, markDirty } = useIngredientEditor(targetCollectionId);

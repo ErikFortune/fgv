@@ -10,7 +10,7 @@ import {
   type SourceId,
   type TaskId
 } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { KeyValueTableEditor, LoadingSpinner, Modal, type IKeyValueRow } from '../../../components/common';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 import { useEditing } from '../../../contexts/EditingContext';
@@ -120,7 +120,7 @@ function omitEmptyStringValues(input: Record<string, unknown>): Record<string, u
 }
 
 export function DetailView({ procedureId, onBack }: IDetailViewProps): React.ReactElement {
-  const { runtime, loadingState, dataVersion } = useChocolate();
+  const { runtime, loadingState, dataVersion } = useRuntime();
   const { commitProcedureCollection, commitTaskCollection } = useEditing();
   const { settings } = useSettings();
 

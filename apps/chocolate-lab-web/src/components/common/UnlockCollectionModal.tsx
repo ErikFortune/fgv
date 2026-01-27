@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Modal } from './Modal';
 import { LockOpenIcon, KeyIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
-import { useChocolate, type IUnlockOptions } from '../../contexts/ChocolateContext';
+import { useCollections, type IUnlockOptions } from '../../contexts/CollectionsContext';
 
 /**
  * Props for the UnlockCollectionModal component
@@ -31,7 +31,7 @@ export function UnlockCollectionModal({
   onClose,
   collectionId
 }: IUnlockCollectionModalProps): React.ReactElement {
-  const { unlockCollection } = useChocolate();
+  const { unlockCollection } = useCollections();
   const [inputMode, setInputMode] = useState<InputMode>('password');
   const [password, setPassword] = useState('');
   const [keyBase64, setKeyBase64] = useState('');

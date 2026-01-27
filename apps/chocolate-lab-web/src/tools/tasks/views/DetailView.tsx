@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { TaskId } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { KeyValueTableEditor, LoadingSpinner, type IKeyValueRow } from '../../../components/common';
 
 export interface IDetailViewProps {
@@ -31,7 +31,7 @@ function parsePrimitiveValue(text: string): unknown {
 }
 
 export function DetailView({ taskId, onBack }: IDetailViewProps): React.ReactElement {
-  const { runtime, loadingState } = useChocolate();
+  const { runtime, loadingState } = useRuntime();
 
   const [paramsRows, setParamsRows] = useState<IKeyValueRow[]>([]);
   const [rendered, setRendered] = useState<string | null>(null);

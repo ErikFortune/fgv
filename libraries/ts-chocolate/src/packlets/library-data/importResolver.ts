@@ -26,12 +26,13 @@
 import { FileTree } from '@fgv/ts-json-base';
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import type {
-  IDirectorySearchQueueItem,
-  IImportRootCandidate,
-  IResolvedImportRoot,
-  IResolveImportRootOptions,
-  SubLibraryId
+import {
+  allSubLibraryIds,
+  type IDirectorySearchQueueItem,
+  type IImportRootCandidate,
+  type IResolvedImportRoot,
+  type IResolveImportRootOptions,
+  type SubLibraryId
 } from './model';
 
 class VirtualDirectoryItem implements FileTree.IFileTreeDirectoryItem {
@@ -208,6 +209,150 @@ export function resolveImportRootForSubLibrary(
   if (!selected) {
     return Failure.with(
       `Unable to resolve import root for '${subLibraryId}' (expected data/${subLibraryId}/, ${subLibraryId}/, or loose collection files)`
+    );
+  }
+
+  return Success.with({
+    root: selected.root,
+    kind: selected.kind,
+    visited,
+    matches
+  });
+}
+
+/**
+ * Try to resolve at a directory for a full library (any sub-library).
+ *
+ * @param dir - Directory to check.
+ * @returns A candidate if found, undefined otherwise.
+ */
+function tryResolveLibraryAt(dir: FileTree.IFileTreeDirectoryItem): Result<IImportRootCandidate | undefined> {
+  const childrenResult = dir.getChildren();
+  /* c8 ignore next 3 - defensive: would only fail if FileTree implementation is broken */
+  if (childrenResult.isFailure()) {
+    return Failure.with(`Failed to enumerate directory '${dir.name}': ${childrenResult.message}`);
+  }
+
+  const children = childrenResult.value;
+
+  // Case 1: canonical library root contains data/ with any sub-library
+  const dataDir = children.find(
+    (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'data'
+  );
+  if (dataDir) {
+    const dataChildrenResult = dataDir.getChildren();
+    /* c8 ignore next 3 - defensive: would only fail if FileTree implementation is broken */
+    if (dataChildrenResult.isFailure()) {
+      return Failure.with(`Failed to enumerate directory '${dataDir.name}': ${dataChildrenResult.message}`);
+    }
+
+    const hasAnySubLib = dataChildrenResult.value.some(
+      (c) => c.type === 'directory' && (allSubLibraryIds as readonly string[]).includes(c.name)
+    );
+    if (hasAnySubLib) {
+      return Success.with({ root: dir, kind: 'canonical' });
+    }
+  }
+
+  // Case 2: caller selected 'data' directory directly
+  if (dir.name === 'data') {
+    const hasAnySubLib = children.some(
+      (c) => c.type === 'directory' && (allSubLibraryIds as readonly string[]).includes(c.name)
+    );
+    if (hasAnySubLib) {
+      const virtualRoot = new VirtualDirectoryItem('', '/', () => Success.with([dir]));
+      return Success.with({ root: virtualRoot, kind: 'data-dir' });
+    }
+  }
+
+  // Case 3: direct sub-library directories exist at this level
+  const directSubDirs = children.filter(
+    (c): c is FileTree.IFileTreeDirectoryItem =>
+      c.type === 'directory' && (allSubLibraryIds as readonly string[]).includes(c.name)
+  );
+  if (directSubDirs.length > 0) {
+    const virtualData = new VirtualDirectoryItem('data', '/data', () => Success.with(directSubDirs));
+    const virtualRoot = new VirtualDirectoryItem('', '/', () => Success.with([virtualData]));
+    return Success.with({ root: virtualRoot, kind: 'direct-subdir' });
+  }
+
+  return Success.with(undefined);
+}
+
+/**
+ * Resolves a directory that can be treated as a library root for any sub-libraries.
+ *
+ * The returned directory is guaranteed (if successful) to contain a navigable `data/` directory
+ * with at least one standard sub-library directory (ingredients, fillings, etc.).
+ *
+ * This is intended to unify import behavior across zip, filesystem, and in-memory sources
+ * when importing a full library rather than a specific sub-library.
+ *
+ * @param root - Root directory to search.
+ * @param options - Search options (allowLooseFiles is ignored for full library resolution).
+ * @public
+ */
+export function resolveImportRootForLibrary(
+  root: FileTree.IFileTreeDirectoryItem,
+  options?: Omit<IResolveImportRootOptions, 'allowLooseFiles'>
+): Result<IResolvedImportRoot> {
+  const resolvedOptions: Required<IResolveImportRootOptions> = {
+    ...defaultOptions,
+    ...(options ?? {}),
+    allowLooseFiles: false // Not applicable for full library resolution
+  };
+
+  let visited = 0;
+  let matches = 0;
+
+  const queue: IDirectorySearchQueueItem[] = [{ dir: root, depth: 0 }];
+
+  let selected: IImportRootCandidate | undefined;
+
+  while (queue.length > 0 && visited < resolvedOptions.visitLimit && matches < resolvedOptions.matchLimit) {
+    const current = queue.shift();
+    /* c8 ignore next 3 - defensive: while condition ensures queue.length > 0 before shift */
+    if (!current) {
+      break;
+    }
+
+    visited += 1;
+
+    const resolvedResult = tryResolveLibraryAt(current.dir);
+    /* c8 ignore next 3 - defensive: tryResolveLibraryAt only fails if FileTree implementation is broken */
+    if (resolvedResult.isFailure()) {
+      return Failure.with(resolvedResult.message);
+    }
+
+    const resolved = resolvedResult.value;
+    if (resolved) {
+      matches += 1;
+      if (!selected) {
+        selected = resolved;
+      }
+      continue;
+    }
+
+    if (current.depth >= resolvedOptions.maxDepth) {
+      continue;
+    }
+
+    const childrenResult = current.dir.getChildren();
+    /* c8 ignore next 3 - defensive: would only fail if FileTree implementation is broken */
+    if (childrenResult.isFailure()) {
+      return Failure.with(`Failed to enumerate directory '${current.dir.name}': ${childrenResult.message}`);
+    }
+
+    for (const child of childrenResult.value) {
+      if (child.type === 'directory') {
+        queue.push({ dir: child, depth: current.depth + 1 });
+      }
+    }
+  }
+
+  if (!selected) {
+    return Failure.with(
+      `Unable to resolve library root (expected data/ with sub-library directories like ingredients/, fillings/, etc.)`
     );
   }
 

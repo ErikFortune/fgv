@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import type { ProcedureId, SourceId } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import type { IProcedureFilters } from '../ProceduresToolSidebar';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -85,7 +85,7 @@ function ProcedureRow({
 }
 
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, dataVersion } = useChocolate();
+  const { runtime, loadingState, dataVersion } = useRuntime();
   const { settings } = useSettings();
   const [showAddProcedure, setShowAddProcedure] = React.useState(false);
 

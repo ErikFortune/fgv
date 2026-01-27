@@ -21,7 +21,11 @@
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { resolveImportRootForSubLibrary, SubLibraryId } from '../../../packlets/library-data';
+import {
+  resolveImportRootForSubLibrary,
+  resolveImportRootForLibrary,
+  SubLibraryId
+} from '../../../packlets/library-data';
 
 describe('importResolver', () => {
   describe('resolveImportRootForSubLibrary', () => {
@@ -544,6 +548,313 @@ describe('importResolver', () => {
         const result = resolveImportRootForSubLibrary(rootDir, 'ingredients' as SubLibraryId, {
           maxDepth: 3
         });
+        expect(result).toSucceed();
+      });
+    });
+  });
+
+  describe('resolveImportRootForLibrary', () => {
+    describe('Case 1: canonical layout (data/ with sub-library directories)', () => {
+      it('should resolve canonical library root with data/ containing sub-library directories', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/data/ingredients/common.yaml', contents: 'test: value' },
+          { path: '/data/fillings/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('canonical');
+          expect(resolved.visited).toBe(1);
+          expect(resolved.matches).toBe(1);
+
+          // Verify the returned root works - can navigate to data/
+          expect(resolved.root.getChildren()).toSucceedAndSatisfy((children) => {
+            const dataDir = children.find((c) => c.type === 'directory' && c.name === 'data');
+            expect(dataDir).toBeDefined();
+          });
+        });
+      });
+
+      it('should resolve with a single sub-library', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/data/ingredients/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('canonical');
+        });
+      });
+    });
+
+    describe('Case 2: data directory selected directly', () => {
+      it('should resolve when data directory containing sub-libraries is selected directly', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/data/ingredients/common.yaml', contents: 'test: value' },
+          { path: '/data/fillings/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dataDir = tree.getItem('/data').orThrow();
+        if (dataDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(dataDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('data-dir');
+          expect(resolved.visited).toBe(1);
+          expect(resolved.matches).toBe(1);
+
+          // Verify the virtual root contains a 'data' directory
+          expect(resolved.root.getChildren()).toSucceedAndSatisfy((children) => {
+            expect(children).toHaveLength(1);
+            expect(children[0].name).toBe('data');
+          });
+        });
+      });
+    });
+
+    describe('Case 3: direct sub-library directories at root', () => {
+      it('should resolve when sub-library directories are at root level', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/ingredients/common.yaml', contents: 'test: value' },
+          { path: '/fillings/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('direct-subdir');
+          expect(resolved.visited).toBe(1);
+          expect(resolved.matches).toBe(1);
+
+          // Verify virtual directory structure: root -> data -> [sub-libraries]
+          expect(resolved.root.getChildren()).toSucceedAndSatisfy((children) => {
+            expect(children).toHaveLength(1);
+            const dataDir = children[0];
+            expect(dataDir.name).toBe('data');
+            expect(dataDir.type).toBe('directory');
+
+            if (dataDir.type === 'directory') {
+              expect(dataDir.getChildren()).toSucceedAndSatisfy((dataChildren) => {
+                const names = dataChildren.map((c) => c.name).sort();
+                expect(names).toEqual(['fillings', 'ingredients']);
+              });
+            }
+          });
+        });
+      });
+
+      it('should resolve with a single direct sub-library directory', () => {
+        const files: FileTree.IInMemoryFile[] = [{ path: '/molds/common.yaml', contents: 'test: value' }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('direct-subdir');
+        });
+      });
+    });
+
+    describe('BFS traversal', () => {
+      it('should search nested directories up to maxDepth', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/level1/level2/data/ingredients/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('canonical');
+          expect(resolved.visited).toBeGreaterThan(1);
+        });
+      });
+
+      it('should not find matches beyond maxDepth', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/level1/level2/level3/level4/data/ingredients/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        // With maxDepth 1, should not reach level4
+        const result = resolveImportRootForLibrary(rootDir, { maxDepth: 1 });
+        expect(result).toFailWith(/Unable to resolve library root/i);
+      });
+
+      it('should respect visitLimit option', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/dir1/empty.txt', contents: '' },
+          { path: '/dir2/empty.txt', contents: '' },
+          { path: '/dir3/empty.txt', contents: '' },
+          { path: '/dir4/data/ingredients/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        // With visitLimit of 2, should not find the match in dir4
+        const result = resolveImportRootForLibrary(rootDir, { visitLimit: 2 });
+        expect(result).toFailWith(/Unable to resolve library root/i);
+      });
+
+      it('should respect matchLimit and count matches correctly', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/match1/data/ingredients/common.yaml', contents: 'first: match' },
+          { path: '/match2/data/fillings/common.yaml', contents: 'second: match' },
+          { path: '/match3/data/molds/common.yaml', contents: 'third: match' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir, { matchLimit: 10 });
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.matches).toBeGreaterThanOrEqual(1);
+        });
+      });
+    });
+
+    describe('error cases', () => {
+      it('should fail when no sub-library directories are found', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/random/folder/data.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toFailWith(/Unable to resolve library root/i);
+      });
+
+      it('should fail for directory with only non-sub-library directories', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/data/other/data.yaml', contents: 'test: value' },
+          { path: '/data/misc/data.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toFailWith(/Unable to resolve library root/i);
+      });
+
+      it('should fail for empty directory', () => {
+        const files: FileTree.IInMemoryFile[] = [{ path: '/placeholder.txt', contents: '' }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toFailWith(/Unable to resolve library root/i);
+      });
+    });
+
+    describe('all sub-library types', () => {
+      it.each([
+        'ingredients',
+        'fillings',
+        'journals',
+        'molds',
+        'procedures',
+        'tasks',
+        'confections'
+      ] as const)('should recognize %s as a valid sub-library', (subLibrary) => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: `/data/${subLibrary}/common.yaml`, contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceedAndSatisfy((resolved) => {
+          expect(resolved.kind).toBe('canonical');
+        });
+      });
+    });
+
+    describe('options handling', () => {
+      it('should use default options when none provided', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/data/ingredients/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        const result = resolveImportRootForLibrary(rootDir);
+        expect(result).toSucceed();
+      });
+
+      it('should merge partial options with defaults', () => {
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/level1/data/ingredients/common.yaml', contents: 'test: value' }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        if (rootDir.type !== 'directory') {
+          throw new Error('Expected directory');
+        }
+
+        // Only specify maxDepth, other options should use defaults
+        const result = resolveImportRootForLibrary(rootDir, { maxDepth: 3 });
         expect(result).toSucceed();
       });
     });

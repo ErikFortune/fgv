@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import type { SourceId, TaskId } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import type { ITaskFilters } from '../TasksToolSidebar';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -80,7 +80,7 @@ function TaskRow({
 }
 
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, taskCount, dataVersion } = useChocolate();
+  const { runtime, loadingState, taskCount, dataVersion } = useRuntime();
   const { settings } = useSettings();
   const [showAddTask, setShowAddTask] = React.useState(false);
 

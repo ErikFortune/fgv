@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import { FilterTools, type IFilterActions, type IBaseFilterState } from '@fgv/ts-chocolate-ui';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
 import { ProcedureCollectionManagementPanel } from '../../components/collections';
 
 export interface IProcedureFilters extends IBaseFilterState {
@@ -22,7 +22,7 @@ export function ProceduresToolSidebar({
   filters,
   onFiltersChange
 }: IProceduresToolSidebarProps): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
 
   const allTags = useMemo((): ReadonlyArray<string> => {
     void dataVersion;

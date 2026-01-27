@@ -7,7 +7,8 @@ import {
   type SourceId
 } from '@fgv/ts-chocolate';
 import { succeed, type Result } from '@fgv/ts-utils';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
+import { useCollections } from '../../contexts/CollectionsContext';
 import { useEditing, useProcedureCollectionManager } from '../../contexts/EditingContext';
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
 
@@ -27,7 +28,7 @@ export function AddProcedureDialog({
   collectionId: SourceId;
   onClose: () => void;
 }): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
   const { commitProcedureCollection } = useEditing();
 
   const [targetCollectionId, setTargetCollectionId] = useState<SourceId>(collectionId);
@@ -370,7 +371,8 @@ export function ProcedureCollectionManagementPanel({
   showHeader = true,
   headerTitle = toolId === 'procedures' ? 'Procedure Collections' : 'Collections'
 }: IProcedureCollectionManagementPanelProps): React.ReactElement {
-  const { runtime, collections } = useChocolate();
+  const { runtime } = useRuntime();
+  const { collections } = useCollections();
   const { dirtyCollections, editingVersion, commitProcedureCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useProcedureCollectionManager();

@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { ArrowLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { useIngredientEditor, useEditing } from '../../../contexts/EditingContext';
 import { LoadingSpinner } from '../../../components/common';
 import {
@@ -41,7 +41,7 @@ export interface IEditableDetailViewProps {
  * Detail view with edit capability
  */
 export function EditableDetailView({ ingredientId, onBack }: IEditableDetailViewProps): React.ReactElement {
-  const { runtime, loadingState } = useChocolate();
+  const { runtime, loadingState } = useRuntime();
   const { isCollectionMutable, commitCollection } = useEditing();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -698,7 +698,7 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
  * Component showing fillings that use this ingredient
  */
 function RecipeUsageList({ ingredientId }: { ingredientId: IngredientId }): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
 
   if (!runtime) {
     return <p className="text-gray-400 dark:text-gray-500">Loading...</p>;

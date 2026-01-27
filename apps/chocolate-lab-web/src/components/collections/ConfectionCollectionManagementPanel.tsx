@@ -12,7 +12,8 @@ import {
   type ConfectionType,
   type SourceId
 } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
+import { useCollections } from '../../contexts/CollectionsContext';
 import { useEditing, useConfectionCollectionManager } from '../../contexts/EditingContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
@@ -34,7 +35,7 @@ export function AddConfectionDialog({
   collectionId: SourceId;
   onClose: () => void;
 }): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
   const { settings } = useSettings();
   const { commitConfectionCollection } = useEditing();
 
@@ -422,7 +423,8 @@ export function ConfectionCollectionManagementPanel({
   showHeader = true,
   headerTitle = toolId === 'confections' ? 'Confection Collections' : 'Collections'
 }: IConfectionCollectionManagementPanelProps): React.ReactElement {
-  const { runtime, collections } = useChocolate();
+  const { runtime } = useRuntime();
+  const { collections } = useCollections();
   const { dirtyCollections, editingVersion, commitConfectionCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useConfectionCollectionManager();

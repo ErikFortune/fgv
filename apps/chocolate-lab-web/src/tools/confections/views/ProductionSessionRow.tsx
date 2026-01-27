@@ -17,7 +17,7 @@ import {
   type IPickerItem,
   type SlotId
 } from '@fgv/ts-chocolate-ui';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { useSessionScratchpad } from '../../../contexts/SessionScratchpadContext';
 
 type PersistedConfectionSession = Runtime.Scratchpad.IPersistedConfectionSession;
@@ -42,7 +42,7 @@ export interface IProductionSessionRowProps {
  * Extracts version data needed by the hooks
  */
 function useVersionData(session: PersistedConfectionSession) {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
 
   return useMemo(() => {
     if (!runtime) return { baseRawVersion: undefined, draftRawVersion: undefined };
@@ -71,7 +71,7 @@ function useVersionData(session: PersistedConfectionSession) {
  * Hook to adapt session data for useProductionSession
  */
 function useProductionSessionAdapter(session: PersistedConfectionSession) {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
   const { updateConfectionProduction, updateSessionLabel } = useSessionScratchpad();
 
   const getMold = useCallback(
@@ -419,7 +419,7 @@ export function ProductionSessionRow({
   onAbandon,
   onDelete
 }: IProductionSessionRowProps): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
   const { setActiveSessionId, updateSessionDestination } = useSessionScratchpad();
 
   // Extract version data

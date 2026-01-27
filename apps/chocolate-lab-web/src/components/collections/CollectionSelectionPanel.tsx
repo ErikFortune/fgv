@@ -2,8 +2,8 @@ import * as React from 'react';
 import { useMemo, useState } from 'react';
 import { KeyIcon, LockClosedIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import type { SubLibraryType } from '../../contexts/ChocolateContext';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime, type SubLibraryType } from '../../contexts/RuntimeContext';
+import { useCollections } from '../../contexts/CollectionsContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { UnlockCollectionModal } from '../common';
 
@@ -30,7 +30,8 @@ export function CollectionSelectionPanel({
   onToggleSelected,
   className = ''
 }: ICollectionSelectionPanelProps): React.ReactElement {
-  const { runtime, collections } = useChocolate();
+  const { runtime } = useRuntime();
+  const { collections } = useCollections();
   const { settings, setDefaultCollection } = useSettings();
 
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);

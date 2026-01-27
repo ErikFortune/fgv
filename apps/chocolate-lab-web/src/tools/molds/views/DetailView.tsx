@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { MoldId } from '@fgv/ts-chocolate';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 
 export interface IDetailViewProps {
@@ -15,7 +15,7 @@ export interface IDetailViewProps {
 }
 
 export function DetailView({ moldId, onBack }: IDetailViewProps): React.ReactElement {
-  const { runtime, loadingState } = useChocolate();
+  const { runtime, loadingState } = useRuntime();
 
   if (loadingState === 'loading' || !runtime) {
     return (

@@ -4464,6 +4464,7 @@ declare namespace LibraryData {
         ICollectionSet,
         INormalizedMergeSource,
         resolveImportRootForSubLibrary,
+        resolveImportRootForLibrary,
         SubLibraryCollectionEntry,
         SubLibraryEntryInit,
         SubLibraryCollectionValidator,
@@ -4972,6 +4973,9 @@ function resolveFileTreeSource(source: ILibraryFileTreeSource): Result<ReadonlyA
 
 // @public
 function resolveFileTreeSourceForSubLibrary(source: ILibraryFileTreeSource, subLibraryId: SubLibraryId): Result<IResolvedSubLibrarySource | undefined>;
+
+// @public
+function resolveImportRootForLibrary(root: FileTree.IFileTreeDirectoryItem, options?: Omit<IResolveImportRootOptions, 'allowLooseFiles'>): Result<IResolvedImportRoot>;
 
 // @public
 function resolveImportRootForSubLibrary(root: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId, options?: IResolveImportRootOptions): Result<IResolvedImportRoot>;

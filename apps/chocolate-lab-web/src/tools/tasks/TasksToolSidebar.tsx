@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import { FilterTools, type IFilterActions, type IBaseFilterState } from '@fgv/ts-chocolate-ui';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
 import { TaskCollectionManagementPanel } from '../../components/collections';
 
 export interface ITaskFilters extends IBaseFilterState {
@@ -19,7 +19,7 @@ export interface ITasksToolSidebarProps {
 }
 
 export function TasksToolSidebar({ filters, onFiltersChange }: ITasksToolSidebarProps): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
 
   const allTags = useMemo((): ReadonlyArray<string> => {
     void dataVersion;

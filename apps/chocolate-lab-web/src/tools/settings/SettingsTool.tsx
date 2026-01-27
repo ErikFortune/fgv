@@ -6,7 +6,7 @@
 import * as React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSettings } from '../../contexts/SettingsContext';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useRuntime } from '../../contexts/RuntimeContext';
 import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline';
 
 /**
@@ -16,7 +16,7 @@ export function SettingsTool(): React.ReactElement {
   const { mode, setMode } = useTheme();
   const { settings, updateSetting } = useSettings();
   const { ingredientCount, fillingCount, moldCount, procedureCount, taskCount, confectionCount } =
-    useChocolate();
+    useRuntime();
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">

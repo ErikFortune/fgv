@@ -27,7 +27,8 @@ import {
 import type { JsonObject } from '@fgv/ts-json-base';
 import type { Result } from '@fgv/ts-utils';
 import { fail, recordFromEntries, succeed } from '@fgv/ts-utils';
-import { useChocolate } from './ChocolateContext';
+import { useRuntime } from './RuntimeContext';
+import { useLibraryImport } from './LibraryImportContext';
 import { useSettings } from './SettingsContext';
 import { useSecrets } from './SecretsContext';
 
@@ -606,8 +607,8 @@ export interface IEditingProviderProps {
  * Provider component that manages editing state
  */
 export function EditingProvider({ children }: { children: ReactNode }): React.ReactElement {
-  const { runtime, notifyLibraryChanged, getFileBackedCollectionExportFormat, tryWriteFileBackedCollection } =
-    useChocolate();
+  const { runtime, notifyLibraryChanged } = useRuntime();
+  const { getFileBackedCollectionExportFormat, tryWriteFileBackedCollection } = useLibraryImport();
   const { settings } = useSettings();
   const { secrets: sessionSecrets } = useSecrets();
 

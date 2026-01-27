@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { LoadingSpinner } from '../../../components/common';
 import {
   CategoryBadge,
@@ -38,7 +38,7 @@ export interface IDetailViewProps {
  * Detail view for a single ingredient
  */
 export function DetailView({ ingredientId, onBack }: IDetailViewProps): React.ReactElement {
-  const { runtime, loadingState } = useChocolate();
+  const { runtime, loadingState } = useRuntime();
 
   if (loadingState === 'loading' || !runtime) {
     return (
@@ -178,7 +178,7 @@ export function DetailView({ ingredientId, onBack }: IDetailViewProps): React.Re
  * Component showing recipes that use this ingredient
  */
 function RecipeUsageList({ ingredientId }: { ingredientId: IngredientId }): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
 
   if (!runtime) {
     return <p className="text-gray-400 dark:text-gray-500">Loading...</p>;

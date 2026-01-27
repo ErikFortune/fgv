@@ -15,7 +15,7 @@ import {
   PlusIcon,
   ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline';
-import { useChocolate } from '../../../contexts/ChocolateContext';
+import { useRuntime } from '../../../contexts/RuntimeContext';
 import { useEditing } from '../../../contexts/EditingContext';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { LoadingSpinner } from '../../../components/common';
@@ -85,7 +85,7 @@ function IngredientAutocompleteInput({
   disabled?: boolean;
   className?: string;
 }): React.ReactElement {
-  const { runtime, dataVersion } = useChocolate();
+  const { runtime, dataVersion } = useRuntime();
   const [hasFocus, setHasFocus] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({
@@ -235,7 +235,7 @@ export interface IDetailViewProps {
  * Detail view for a single filling
  */
 export function DetailView({ fillingId, onBack }: IDetailViewProps): React.ReactElement {
-  const { runtime, loadingState } = useChocolate();
+  const { runtime, loadingState } = useRuntime();
   const { commitFillingCollection } = useEditing();
   const { settings } = useSettings();
 
@@ -1738,7 +1738,7 @@ function AlternatesPopover({
  * Component showing ingredients list for a filling
  */
 function IngredientsList({ fillingId }: { fillingId: FillingId }): React.ReactElement {
-  const { runtime } = useChocolate();
+  const { runtime } = useRuntime();
 
   if (!runtime) {
     return <p className="text-gray-400 dark:text-gray-500">Loading...</p>;
