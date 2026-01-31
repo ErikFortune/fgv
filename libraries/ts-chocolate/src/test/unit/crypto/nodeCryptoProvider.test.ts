@@ -26,7 +26,7 @@ import {
   GCM_IV_SIZE,
   NodeCryptoProvider,
   nodeCryptoProvider
-} from '../../../packlets/crypto';
+} from '../../../packlets/crypto-utils';
 
 describe('NodeCryptoProvider', () => {
   const provider = nodeCryptoProvider;

@@ -26,7 +26,7 @@ import {
   IEncryptedCollectionFile,
   IKeyDerivationParams,
   INamedSecret
-} from '../crypto';
+} from '../crypto-utils';
 
 // ============================================================================
 // Collection Source Metadata Types

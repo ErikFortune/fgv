@@ -46,7 +46,7 @@ import {
   isEncryptedCollectionFile,
   Converters as CryptoConverters,
   IEncryptedCollectionFile
-} from '../crypto';
+} from '../crypto-utils';
 
 /**
  * Parameters used to initialize a {@link LibraryData.CollectionLoader | CollectionLoader}.

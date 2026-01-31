@@ -20,7 +20,7 @@
 
 import { FileTree, isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
-import * as Crypto from '../crypto';
+import * as Crypto from '../crypto-utils';
 import { LocalStorageKeys, SubLibraryDataPaths, type SubLibraryStorageKey } from './model';
 
 /**

@@ -37,7 +37,7 @@ import {
   isAlcoholIngredient
 } from '../../../packlets/entities';
 
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 
 describe('IngredientsLibrary', () => {
   // ============================================================================

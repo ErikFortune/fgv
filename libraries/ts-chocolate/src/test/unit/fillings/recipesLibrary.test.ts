@@ -46,7 +46,7 @@ import {
   recalculateFillingRecipeVersion
 } from '../../../packlets/calculations';
 
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 
 describe('FillingsLibrary', () => {
   // ============================================================================

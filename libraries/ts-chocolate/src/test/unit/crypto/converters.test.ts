@@ -25,7 +25,7 @@ import {
   ENCRYPTED_COLLECTION_FORMAT,
   DEFAULT_ALGORITHM,
   isEncryptedCollectionFile
-} from '../../../packlets/crypto';
+} from '../../../packlets/crypto-utils';
 
 describe('Crypto Converters', () => {
   describe('encryptionAlgorithm', () => {

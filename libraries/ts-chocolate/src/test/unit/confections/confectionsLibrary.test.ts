@@ -444,7 +444,7 @@ describe('ConfectionsLibrary', () => {
 // ============================================================================
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 import { IConfectionFileTreeSource } from '../../../packlets/entities';
 
 describe('ConfectionsLibrary.createAsync', () => {

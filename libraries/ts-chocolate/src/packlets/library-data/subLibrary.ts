@@ -44,7 +44,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { collectionSourceMetadata as collectionSourceMetadataConverter } from './converters';
-import { decryptCollectionFile } from '../crypto';
+import { decryptCollectionFile } from '../crypto-utils';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
 import {

@@ -28,7 +28,7 @@ import {
   createEncryptedCollectionFile,
   ENCRYPTED_COLLECTION_FORMAT,
   nodeCryptoProvider
-} from '../../../packlets/crypto';
+} from '../../../packlets/crypto-utils';
 
 /**
  * Creates a mock logger that captures log messages for testing.

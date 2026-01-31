@@ -25,7 +25,7 @@ import { BaseMoldId, Measurement, Millimeters, MoldId, SourceId } from '../../..
 
 import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/entities';
 
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 
 describe('MoldsLibrary', () => {
   // ============================================================================

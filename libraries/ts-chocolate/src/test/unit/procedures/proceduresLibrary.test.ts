@@ -25,7 +25,7 @@ import { BaseProcedureId, Minutes, ProcedureId, SourceId } from '../../../packle
 
 import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/entities';
 
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 

@@ -23,7 +23,7 @@ import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseTaskId, Minutes, SourceId, TaskId } from '../../../packlets/common';
 import { TasksLibrary, ITaskData, ITaskFileTreeSource } from '../../../packlets/entities';
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 
 describe('TasksLibrary', () => {
   // ============================================================================
