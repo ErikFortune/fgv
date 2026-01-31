@@ -47,7 +47,7 @@ import {
   ICoatings,
   IComputedScaledFillingRecipe,
   IConfectionMoldRef,
-  IFillingRecipeJournalRecord,
+  AnyFillingJournalEntry,
   IFillingSlot,
   IProcedure,
   IProcedureRef,
@@ -233,7 +233,7 @@ export class RuntimeContext
    * @param fillingId - The filling ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord> {
+  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry> {
     return this._library.getJournalsForFilling(fillingId);
   }
 
@@ -242,9 +242,7 @@ export class RuntimeContext
    * @param versionId - The filling version ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  public getJournalsForFillingVersion(
-    versionId: FillingVersionId
-  ): ReadonlyArray<IFillingRecipeJournalRecord> {
+  public getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry> {
     return this._library.getJournalsForFillingVersion(versionId);
   }
 

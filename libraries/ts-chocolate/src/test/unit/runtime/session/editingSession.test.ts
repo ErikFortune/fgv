@@ -265,16 +265,13 @@ describe('EditingSession', () => {
       });
     });
 
-    test('adds journal entry for scale change', () => {
+    test('marks session as dirty after scale change', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.setScaleFactor(1.5).orThrow();
-
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('scale-adjust');
-      expect(session.journalEntries[0].text).toContain('1.00');
-      expect(session.journalEntries[0].text).toContain('1.50');
+      expect(session.isDirty).toBe(true);
     });
 
     test('fails for non-positive scale factor', () => {
@@ -376,17 +373,13 @@ describe('EditingSession', () => {
       });
     });
 
-    test('adds journal entry for amount change', () => {
+    test('marks session as dirty after amount change', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
-
-      const modifyEntries = session.journalEntries.filter((e) => e.eventType === 'ingredient-modify');
-      expect(modifyEntries.length).toBe(1);
-      expect(modifyEntries[0].ingredientId).toBe('test.dark-chocolate');
-      expect(modifyEntries[0].originalAmount).toBe(200);
-      expect(modifyEntries[0].newAmount).toBe(250);
+      expect(session.isDirty).toBe(true);
     });
 
     test('fails for non-existent ingredient', () => {
@@ -462,16 +455,13 @@ describe('EditingSession', () => {
       });
     });
 
-    test('adds journal entry for new ingredient', () => {
+    test('marks session as dirty after adding ingredient', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-
-      const addEntries = session.journalEntries.filter((e) => e.eventType === 'ingredient-add');
-      expect(addEntries.length).toBe(1);
-      expect(addEntries[0].ingredientId).toBe('test.butter');
-      expect(addEntries[0].newAmount).toBe(30);
+      expect(session.isDirty).toBe(true);
     });
 
     test('fails if ingredient already exists', () => {
@@ -512,15 +502,13 @@ describe('EditingSession', () => {
       expect(session.ingredients.has('test.butter' as IngredientId)).toBe(false);
     });
 
-    test('adds journal entry for removal', () => {
+    test('marks session as dirty after removing ingredient', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.removeIngredient('test.cream' as IngredientId).orThrow();
-
-      const removeEntries = session.journalEntries.filter((e) => e.eventType === 'ingredient-remove');
-      expect(removeEntries.length).toBe(1);
-      expect(removeEntries[0].ingredientId).toBe('test.cream');
+      expect(session.isDirty).toBe(true);
     });
 
     test('fails for non-existent ingredient', () => {
@@ -571,16 +559,13 @@ describe('EditingSession', () => {
       });
     });
 
-    test('adds journal entry for substitution', () => {
+    test('marks session as dirty after substitution', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.substituteIngredient('test.cream' as IngredientId, 'test.butter' as IngredientId).orThrow();
-
-      const subEntries = session.journalEntries.filter((e) => e.eventType === 'ingredient-substitute');
-      expect(subEntries.length).toBe(1);
-      expect(subEntries[0].ingredientId).toBe('test.cream');
-      expect(subEntries[0].substituteIngredientId).toBe('test.butter');
+      expect(session.isDirty).toBe(true);
     });
 
     test('fails if original not found', () => {
@@ -603,26 +588,21 @@ describe('EditingSession', () => {
   });
 
   describe('addNote', () => {
-    test('adds note to journal', () => {
+    test('adds note without error', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      session.addNote('Starting cooking session');
-
-      const noteEntries = session.journalEntries.filter((e) => e.eventType === 'note');
-      expect(noteEntries.length).toBe(1);
-      expect(noteEntries[0].text).toBe('Starting cooking session');
+      expect(() => session.addNote('Starting cooking session')).not.toThrow();
     });
 
-    test('does not add note when journaling is disabled', () => {
+    test('accepts note when journaling is disabled', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({
         sourceVersion: version,
         enableJournal: false
       }).orThrow();
 
-      session.addNote('This should not appear');
-      expect(session.journalEntries.length).toBe(0);
+      expect(() => session.addNote('This note is accepted')).not.toThrow();
     });
   });
 
@@ -630,33 +610,36 @@ describe('EditingSession', () => {
   // Output Methods Tests
   // ============================================================================
 
-  describe('toJournalRecord', () => {
-    test('creates journal record from session', () => {
+  describe('toEditJournalEntry', () => {
+    test('creates journal entry from session', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setScaleFactor(1.5).orThrow();
       session.addNote('Test note');
 
-      expect(session.toJournalRecord('Session notes')).toSucceedAndSatisfy((record) => {
-        expect(record.journalId).toBeDefined();
-        expect(record.fillingVersionId).toBe('test.test-ganache@2026-01-01-01');
-        expect(record.targetWeight).toBe(450);
-        expect(record.scaleFactor).toBe(1.5);
-        expect(record.notes).toBe('Session notes');
-        expect(record.entries).toHaveLength(2); // scale + note
-      });
+      expect(session.toEditJournalEntry(undefined, undefined, 'Session notes')).toSucceedAndSatisfy(
+        (entry) => {
+          expect(entry.type).toBe('filling-edit');
+          expect(entry.id).toBeDefined();
+          expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
+          expect(entry.recipe).toBeDefined();
+          expect(entry.notes).toBeDefined();
+          expect(entry.notes?.[0]?.note).toBe('Session notes');
+        }
+      );
     });
 
-    test('omits entries when journaling is disabled', () => {
+    test('includes source recipe in entry', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({
         sourceVersion: version,
-        enableJournal: false
+        enableJournal: true
       }).orThrow();
 
-      expect(session.toJournalRecord()).toSucceedAndSatisfy((record) => {
-        expect(record.entries).toBeUndefined();
+      expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
+        expect(entry.recipe).toBeDefined();
+        expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
       });
     });
   });
@@ -695,11 +678,13 @@ describe('EditingSession', () => {
 
       session.setScaleFactor(2).orThrow();
 
-      expect(session.toRecipeVersion('2026-02-01-01')).toSucceedAndSatisfy((newVersion) => {
-        expect(newVersion.versionSpec).toBe('2026-02-01-01');
-        expect(newVersion.ingredients.length).toBe(2);
-        expect(newVersion.baseWeight).toBe(600); // 200*2 + 100*2
-      });
+      expect(session.toRecipeVersion('2026-02-01-01' as FillingVersionSpec)).toSucceedAndSatisfy(
+        (newVersion) => {
+          expect(newVersion.versionSpec).toBe('2026-02-01-01');
+          expect(newVersion.ingredients.length).toBe(2);
+          expect(newVersion.baseWeight).toBe(600); // 200*2 + 100*2
+        }
+      );
     });
 
     test('fails if no ingredients remain', () => {
@@ -709,12 +694,12 @@ describe('EditingSession', () => {
       session.removeIngredient('test.dark-chocolate' as IngredientId).orThrow();
       session.removeIngredient('test.cream' as IngredientId).orThrow();
 
-      expect(session.toRecipeVersion('2026-02-01-01')).toFailWith(/no ingredients/);
+      expect(session.toRecipeVersion('2026-02-01-01' as FillingVersionSpec)).toFailWith(/no ingredients/);
     });
   });
 
   describe('save', () => {
-    test('creates journal record when requested', () => {
+    test('creates journal entry when requested', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
@@ -725,6 +710,7 @@ describe('EditingSession', () => {
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
+        expect(result.journalEntry).toBeDefined();
       });
       expect(session.isDirty).toBe(false);
     });
@@ -736,7 +722,7 @@ describe('EditingSession', () => {
       expect(
         session.save({
           createNewVersion: true,
-          versionLabel: '2026-02-01-01'
+          versionLabel: '2026-02-01-01' as FillingVersionSpec
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.newVersionSpec).toBe('2026-02-01-01');
@@ -754,7 +740,7 @@ describe('EditingSession', () => {
       ).toFailWith(/versionLabel.*required/);
     });
 
-    test('creates both journal record and version', () => {
+    test('creates both journal entry and version', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
@@ -762,11 +748,12 @@ describe('EditingSession', () => {
         session.save({
           createJournalRecord: true,
           createNewVersion: true,
-          versionLabel: '2026-02-01-01',
+          versionLabel: '2026-02-01-01' as FillingVersionSpec,
           journalNotes: 'Created new version'
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
+        expect(result.journalEntry).toBeDefined();
         expect(result.newVersionSpec).toBe('2026-02-01-01');
       });
     });
@@ -777,19 +764,22 @@ describe('EditingSession', () => {
   // ============================================================================
 
   describe('journaling disabled', () => {
-    test('does not record journal entries when disabled', () => {
+    test('tracks dirty state even when journaling is disabled', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({
         sourceVersion: version,
         enableJournal: false
       }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.setScaleFactor(2).orThrow();
+      expect(session.isDirty).toBe(true);
+
       session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
       session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
       session.removeIngredient('test.cream' as IngredientId).orThrow();
 
-      expect(session.journalEntries.length).toBe(0);
+      expect(session.isDirty).toBe(true);
     });
   });
 });

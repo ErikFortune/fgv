@@ -100,27 +100,6 @@ Whether journaling is enabled
 </td></tr>
 <tr><td>
 
-[journalEntries](./ts-chocolate.runtime.session.isessionstate.journalentries.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;IJournalEntry&gt;
-
-
-</td><td>
-
-Journal entries recording what happened in this session
-
-
-</td></tr>
-<tr><td>
-
 [scaleFactor](./ts-chocolate.runtime.session.isessionstate.scalefactor.md)
 
 

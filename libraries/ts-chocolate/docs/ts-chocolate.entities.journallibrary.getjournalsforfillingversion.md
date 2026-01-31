@@ -4,12 +4,12 @@
 
 ## Entities.JournalLibrary.getJournalsForFillingVersion() method
 
-Gets all [filling recipe journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a specific filling version
+Gets all filling journal entries for a specific filling version
 
 **Signature:**
 
 ```typescript
-getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
+getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [filling version ID](./ts-chocolate.fillingversionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IFillingRecipeJournalRecord&gt;
+ReadonlyArray&lt;AnyFillingJournalEntry&gt;
 
-Array of filling recipe journal records (empty if none found)
+Array of filling journal entries (empty if none found)
 

@@ -210,6 +210,27 @@ Gets the underlying raw version data
 </td></tr>
 <tr><td>
 
+[version](./ts-chocolate.runtime.runtimefillingrecipeversion.version.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+IFillingRecipeVersion
+
+
+</td><td>
+
+The underlying filling recipe version. Use this to get the raw version data for persistence or journaling.
+
+
+</td></tr>
+<tr><td>
+
 [versionId](./ts-chocolate.runtime.runtimefillingrecipeversion.versionid.md)
 
 

@@ -96,7 +96,7 @@ Resolved enrobing chocolate specification (from golden version, optional).
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
 
 
 </td><td>

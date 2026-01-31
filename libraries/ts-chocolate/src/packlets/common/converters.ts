@@ -95,7 +95,9 @@ import {
   VERSION_ID_SEPARATOR,
   WeightUnit,
   allProcedureTypes,
-  ProcedureType
+  ProcedureType,
+  NoteCategory,
+  ICategorizedNote
 } from './model';
 import {
   toBaseConfectionId,
@@ -114,6 +116,7 @@ import {
   toMeasurement,
   toMillimeters,
   toMinutes,
+  toNoteCategory,
   toPercentage,
   toRatingScore,
   toSessionId,
@@ -671,6 +674,7 @@ export function idsWithPreferred<TId extends string>(
 ): Converter<IIdsWithPreferred<TId>> {
   return Converters.generic<IIdsWithPreferred<TId>>((from: unknown): Result<IIdsWithPreferred<TId>> => {
     const baseConverter = Converters.object<IIdsWithPreferred<TId>>({
+      slotId: slotId.optional(),
       ids: Converters.arrayOf(idConverter),
       preferredId: idConverter.optional()
     });
@@ -696,6 +700,25 @@ export function refWithNotes<TId extends string>(idConverter: Converter<TId>): C
     notes: Converters.string.optional()
   });
 }
+
+// ============================================================================
+// Note Converters
+// ============================================================================
+
+/**
+ * Converter for {@link NoteCategory | NoteCategory}.
+ * @public
+ */
+export const noteCategory: Converter<NoteCategory> = Converters.generic(toNoteCategory);
+
+/**
+ * Converter for {@link ICategorizedNote | ICategorizedNote}.
+ * @public
+ */
+export const categorizedNote: Converter<ICategorizedNote> = Converters.object<ICategorizedNote>({
+  category: noteCategory,
+  note: Converters.string
+});
 
 // ============================================================================
 // URL Converters

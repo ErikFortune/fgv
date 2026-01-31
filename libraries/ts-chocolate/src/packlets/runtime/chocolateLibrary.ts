@@ -42,8 +42,8 @@ import { ConfectionData, ConfectionsLibrary } from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
 import { IFillingRecipe, FillingsLibrary } from '../entities';
 import {
-  AnyJournalRecord,
-  IFillingRecipeJournalRecord,
+  AnyFillingJournalEntry,
+  AnyJournalEntry,
   JournalLibrary,
   Converters as EntityConverters
 } from '../entities';
@@ -239,12 +239,12 @@ export class ChocolateLibrary {
     ).report(logger);
 
     // Load journals from file sources (data/journals) and import them into the JournalLibrary.
-    // Journals are stored as collections where items are AnyJournalRecord keyed by journalId.
+    // Journals are stored as collections where items are AnyJournalEntry keyed by journalId.
     const journalsFromFilesResult = journalsResult.onSuccess((journals) => {
-      const loader = new CollectionLoader<AnyJournalRecord, SourceId, JournalId>({
+      const loader = new CollectionLoader<AnyJournalEntry, SourceId, JournalId>({
         collectionIdConverter: CommonConverters.sourceId,
         itemIdConverter: CommonConverters.journalId,
-        itemConverter: EntityConverters.Journal.anyJournalRecord,
+        itemConverter: EntityConverters.Journal.anyJournalEntry,
         mutable: true,
         logger
       });
@@ -547,34 +547,32 @@ export class ChocolateLibrary {
   // ============================================================================
 
   /**
-   * Gets all {@link Entities.Journal.IFillingRecipeJournalRecord | journal records} for a filling (across all versions)
+   * Gets all {@link Entities.Journal.AnyFillingJournalEntry | journal records} for a filling (across all versions)
    * @param fillingId - The {@link FillingId | filling ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
    */
-  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord> {
+  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry> {
     return this._journals.getJournalsForFilling(fillingId);
   }
 
   /**
-   * Gets all {@link Entities.Journal.IFillingRecipeJournalRecord | journal records} for a specific filling version
+   * Gets all {@link Entities.Journal.AnyFillingJournalEntry | journal records} for a specific filling version
    * @param versionId - The {@link FillingVersionId | filling version ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
    */
-  public getJournalsForFillingVersion(
-    versionId: FillingVersionId
-  ): ReadonlyArray<IFillingRecipeJournalRecord> {
+  public getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry> {
     return this._journals.getJournalsForFillingVersion(versionId);
   }
 
   /**
-   * Adds a {@link Entities.Journal.IFillingRecipeJournalRecord | journal record} to the library
+   * Adds a {@link Entities.Journal.AnyFillingJournalEntry | journal record} to the library
    * @param journal - The journal record to add
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
    * @public
    */
-  public addJournal(journal: IFillingRecipeJournalRecord): Result<JournalId> {
+  public addJournal(journal: AnyFillingJournalEntry): Result<JournalId> {
     return this._journals.addJournal(journal).report(this.logger);
   }
 }

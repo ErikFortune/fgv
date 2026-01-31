@@ -28,7 +28,9 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionType,
+  ConfectionVersionId,
   ConfectionVersionSpec,
+  ICategorizedNote,
   ICategorizedUrl,
   IIdsWithPreferred,
   IngredientId,
@@ -49,7 +51,7 @@ import { IProcedureRef } from '../fillings';
 // ============================================================================
 
 /**
- * Yield specification for a confection
+ * Yield specification for a {@link Entities.Confections.ConfectionData | confection}.
  * @public
  */
 export interface IConfectionYield {
@@ -62,7 +64,7 @@ export interface IConfectionYield {
 }
 
 /**
- * Decoration specification for a confection
+ * Decoration specification for a {@link Entities.Confections.ConfectionData | confection}.
  * @public
  */
 export interface IConfectionDecoration {
@@ -432,4 +434,175 @@ export function isBarTruffleVersion(version: AnyConfectionVersion): version is I
  */
 export function isRolledTruffleVersion(version: AnyConfectionVersion): version is IRolledTruffleVersion {
   return !isMoldedBonBonVersion(version) && !isBarTruffleVersion(version);
+}
+
+// ============================================================================
+// Resolved Filling Slot Types (for Journal/Runtime)
+// ============================================================================
+
+/**
+ * Resolved slot type discriminator.
+ * @public
+ */
+export type ResolvedSlotType = 'recipe' | 'ingredient';
+
+/**
+ * All resolved slot types.
+ * @public
+ */
+export const allResolvedSlotTypes: ResolvedSlotType[] = ['recipe', 'ingredient'];
+
+/**
+ * Resolved slot with recipe filling.
+ * @public
+ */
+export interface IResolvedFillingSlot {
+  /** Slot type discriminator */
+  readonly slotType: 'recipe';
+  /** Slot identifier */
+  readonly slotId: SlotId;
+  /** Resolved filling recipe ID */
+  readonly fillingId: FillingId;
+}
+
+/**
+ * Resolved slot with ingredient filling.
+ * @public
+ */
+export interface IResolvedIngredientSlot {
+  /** Slot type discriminator */
+  readonly slotType: 'ingredient';
+  /** Slot identifier */
+  readonly slotId: SlotId;
+  /** Resolved ingredient ID */
+  readonly ingredientId: IngredientId;
+}
+
+/**
+ * Union of resolved filling slot types.
+ * Discriminated on the `slotType` field.
+ * @public
+ */
+export type AnyResolvedFillingSlot = IResolvedFillingSlot | IResolvedIngredientSlot;
+
+/**
+ * Type guard for IResolvedFillingSlot
+ * @param slot - Resolved slot to check
+ * @returns True if the slot contains a recipe filling
+ * @public
+ */
+export function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedFillingSlot {
+  return slot.slotType === 'recipe';
+}
+
+/**
+ * Type guard for IResolvedIngredientSlot
+ * @param slot - Resolved slot to check
+ * @returns True if the slot contains an ingredient filling
+ * @public
+ */
+export function isResolvedIngredientSlot(slot: AnyResolvedFillingSlot): slot is IResolvedIngredientSlot {
+  return slot.slotType === 'ingredient';
+}
+
+// ============================================================================
+// Produced Confection Types (for Journal/Runtime)
+// ============================================================================
+
+/**
+ * Base interface for all produced confection types.
+ * Contains common fields shared by all confection productions.
+ * @public
+ */
+export interface IProducedConfectionBase {
+  /** Confection type discriminator (matches ConfectionType) */
+  readonly confectionType: ConfectionType;
+  /** Confection version ID that was produced */
+  readonly versionId: ConfectionVersionId;
+  /** Yield specification for this production */
+  readonly yield: IConfectionYield;
+  /** Resolved filling slots with concrete selections */
+  readonly fillings?: ReadonlyArray<AnyResolvedFillingSlot>;
+  /** Resolved procedure ID if one was used */
+  readonly procedureId?: ProcedureId;
+  /** Optional categorized notes about production */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
+}
+
+/**
+ * Produced molded bonbon with concrete choices.
+ * @public
+ */
+export interface IProducedMoldedBonBon extends IProducedConfectionBase {
+  /** Confection type discriminator */
+  readonly confectionType: 'molded-bonbon';
+  /** Resolved mold ID */
+  readonly moldId: MoldId;
+  /** Resolved shell chocolate ingredient ID */
+  readonly shellChocolateId: IngredientId;
+  /** Resolved seal chocolate ingredient ID (if used) */
+  readonly sealChocolateId?: IngredientId;
+  /** Resolved decoration chocolate ingredient ID (if used) */
+  readonly decorationChocolateId?: IngredientId;
+}
+
+/**
+ * Produced bar truffle with concrete choices.
+ * @public
+ */
+export interface IProducedBarTruffle extends IProducedConfectionBase {
+  /** Confection type discriminator */
+  readonly confectionType: 'bar-truffle';
+  /** Resolved enrobing chocolate ingredient ID (if used) */
+  readonly enrobingChocolateId?: IngredientId;
+}
+
+/**
+ * Produced rolled truffle with concrete choices.
+ * @public
+ */
+export interface IProducedRolledTruffle extends IProducedConfectionBase {
+  /** Confection type discriminator */
+  readonly confectionType: 'rolled-truffle';
+  /** Resolved enrobing chocolate ingredient ID (if used) */
+  readonly enrobingChocolateId?: IngredientId;
+  /** Resolved coating ingredient ID (if used) */
+  readonly coatingId?: IngredientId;
+}
+
+/**
+ * Discriminated union of produced confection types.
+ * Discriminated on the `confectionType` field.
+ * @public
+ */
+export type AnyProducedConfection = IProducedMoldedBonBon | IProducedBarTruffle | IProducedRolledTruffle;
+
+/**
+ * Type guard for IProducedMoldedBonBon
+ * @param produced - Produced confection to check
+ * @returns True if this is a produced molded bonbon
+ * @public
+ */
+export function isProducedMoldedBonBon(produced: AnyProducedConfection): produced is IProducedMoldedBonBon {
+  return produced.confectionType === 'molded-bonbon';
+}
+
+/**
+ * Type guard for IProducedBarTruffle
+ * @param produced - Produced confection to check
+ * @returns True if this is a produced bar truffle
+ * @public
+ */
+export function isProducedBarTruffle(produced: AnyProducedConfection): produced is IProducedBarTruffle {
+  return produced.confectionType === 'bar-truffle';
+}
+
+/**
+ * Type guard for IProducedRolledTruffle
+ * @param produced - Produced confection to check
+ * @returns True if this is a produced rolled truffle
+ * @public
+ */
+export function isProducedRolledTruffle(produced: AnyProducedConfection): produced is IProducedRolledTruffle {
+  return produced.confectionType === 'rolled-truffle';
 }

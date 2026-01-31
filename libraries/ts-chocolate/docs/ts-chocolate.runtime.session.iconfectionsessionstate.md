@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;ChocolateRole, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
+ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)<!-- -->, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -137,27 +137,6 @@ boolean
 </td><td>
 
 Whether journaling is enabled
-
-
-</td></tr>
-<tr><td>
-
-[journalEntries](./ts-chocolate.runtime.session.iconfectionsessionstate.journalentries.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;IConfectionJournalEntry&gt;
-
-
-</td><td>
-
-Journal entries recording what happened in this session
 
 
 </td></tr>

@@ -209,7 +209,7 @@ export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 
 /**
- * Unique identifier for a filling slot within a confection
+ * Unique identifier for a filling slot within a confection or recipe
  * Character restrictions: alphanumeric, dashes, underscores only (no dots)
  * Pattern: /^[a-zA-Z0-9_-]+$/
  * Examples: "center", "outer-layer", "layer1"
@@ -558,7 +558,7 @@ export const allConfectionTypes: ConfectionType[] = ['molded-bonbon', 'bar-truff
 
 /**
  * Purpose for additional chocolates in molded bonbons.
- * These values align with {@link Entities.Journal.ChocolateRole | ChocolateRole} for type safety
+ * These values align with {@link ChocolateRole | ChocolateRole} for type safety
  * when converting between confection data and journal entries.
  * @public
  */
@@ -593,6 +593,29 @@ export type ProcedureType = FillingCategory | ConfectionType | 'other';
  * @public
  */
 export const allProcedureTypes: ProcedureType[] = [...allFillingCategories, ...allConfectionTypes, 'other'];
+
+// ============================================================================
+// Notes
+// ============================================================================
+
+/**
+ * Category for notes associated with an entity.
+ * Uses the standard base ID pattern (alphanumeric, dashes, underscores).
+ * Examples: 'general', 'tasting', 'production'
+ * @public
+ */
+export type NoteCategory = Brand<string, 'NoteCategory'>;
+
+/**
+ * A categorized note associated with an entity.
+ * @public
+ */
+export interface ICategorizedNote {
+  /** Category of the note (e.g., 'general', 'tasting', 'production') */
+  readonly category: NoteCategory;
+  /** The note string */
+  readonly note: string;
+}
 
 // ============================================================================
 // URLs
@@ -730,6 +753,8 @@ export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends 
  * @public
  */
 export interface IIdsWithPreferred<TId extends string> {
+  /** Optional slot identifier */
+  readonly slotId?: SlotId;
   /** Available option IDs */
   readonly ids: ReadonlyArray<TId>;
   /** The preferred/recommended ID */

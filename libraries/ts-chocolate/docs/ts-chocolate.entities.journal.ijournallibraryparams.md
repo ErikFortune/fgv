@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;AnyJournalRecord&gt;
+ReadonlyArray&lt;AnyJournalEntry&gt;
 
 
 </td><td>
 
-_(Optional)_ Initial journal records to populate the library with. Accepts both recipe and confection journal records.
+_(Optional)_ Initial journal entries to populate the library with. Accepts filling and confection journal entries (both edit and production types).
 
 
 </td></tr>

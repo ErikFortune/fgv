@@ -25,421 +25,215 @@
 
 import {
   ConfectionVersionId,
-  Measurement,
-  FillingId,
   FillingVersionId,
-  IngredientId,
+  ICategorizedNote,
   JournalId,
-  MoldId,
-  ProcedureId,
-  SlotId
+  Measurement
 } from '../../common';
+import {
+  AnyConfectionVersion,
+  AnyProducedConfection,
+  AnyResolvedFillingSlot,
+  IConfectionYield,
+  IProducedBarTruffle,
+  IProducedMoldedBonBon,
+  IProducedRolledTruffle,
+  IResolvedFillingSlot,
+  IResolvedIngredientSlot,
+  ResolvedSlotType,
+  allResolvedSlotTypes,
+  isProducedBarTruffle,
+  isProducedMoldedBonBon,
+  isProducedRolledTruffle,
+  isResolvedFillingSlot,
+  isResolvedIngredientSlot
+} from '../confections';
+import { AnyFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
 
 // ============================================================================
-// Journal Entry Types
+// Re-export Produced Types from Their Home Modules
 // ============================================================================
 
 /**
- * Types of events that can be recorded in a cooking journal
+ * Re-export produced filling types from the fillings module.
+ * These types capture what was actually used in production.
  * @public
  */
-export type JournalEventType =
-  | 'ingredient-add'
-  | 'ingredient-remove'
-  | 'ingredient-modify'
-  | 'ingredient-substitute'
-  | 'scale-adjust'
-  | 'note';
+export type { IProducedFilling, IProducedFillingIngredient };
 
 /**
- * All possible recipe journal event types
+ * Re-export produced confection types from the confections module.
+ * These types capture what was actually used in production.
  * @public
  */
-export const allJournalEventTypes: JournalEventType[] = [
-  'ingredient-add',
-  'ingredient-remove',
-  'ingredient-modify',
-  'ingredient-substitute',
-  'scale-adjust',
-  'note'
+export type { AnyProducedConfection, IProducedBarTruffle, IProducedMoldedBonBon, IProducedRolledTruffle };
+
+/**
+ * Re-export type guards for produced confections.
+ * @public
+ */
+export { isProducedBarTruffle, isProducedMoldedBonBon, isProducedRolledTruffle };
+
+/**
+ * Re-export resolved slot types from the confections module.
+ * These types represent concrete filling choices for confection slots.
+ * @public
+ */
+export type { AnyResolvedFillingSlot, IResolvedFillingSlot, IResolvedIngredientSlot, ResolvedSlotType };
+
+/**
+ * Re-export resolved slot constants and type guards.
+ * @public
+ */
+export { allResolvedSlotTypes, isResolvedFillingSlot, isResolvedIngredientSlot };
+
+/**
+ * Types of journal entries.
+ * @public
+ */
+export type JournalEntryType =
+  | 'confection-production'
+  | 'filling-production'
+  | 'confection-edit'
+  | 'filling-edit';
+
+/**
+ * All possible {@link Entities.Journal.JournalEntryType | journal entry types}.
+ * @public
+ */
+export const allJournalEntryTypes: JournalEntryType[] = [
+  'confection-production',
+  'filling-production',
+  'confection-edit',
+  'filling-edit'
 ];
 
-// ============================================================================
-// Confection Journal Entry Types
-// ============================================================================
-
 /**
- * Types of events that can be recorded in a confection editing journal
+ * Base interface for journal entries.
  * @public
  */
-export type ConfectionJournalEventType =
-  | 'filling-select'
-  | 'mold-select'
-  | 'chocolate-select'
-  | 'yield-modify'
-  | 'procedure-select'
-  | 'coating-select'
-  | 'note';
-
-/**
- * All possible confection journal event types
- * @public
- */
-export const allConfectionJournalEventTypes: ConfectionJournalEventType[] = [
-  'filling-select',
-  'mold-select',
-  'chocolate-select',
-  'yield-modify',
-  'procedure-select',
-  'coating-select',
-  'note'
-];
-
-/**
- * Role of a chocolate selection in a confection
- * @public
- */
-export type ChocolateRole = 'shell' | 'enrobing' | 'seal' | 'decoration';
-
-/**
- * All possible chocolate roles
- * @public
- */
-export const allChocolateRoles: ChocolateRole[] = ['shell', 'enrobing', 'seal', 'decoration'];
-
-/**
- * A single event entry within a cooking journal.
- * Records what actually happened during a cooking session.
- * @public
- */
-export interface IJournalEntry {
-  /**
-   * Timestamp of the event (ISO 8601 format)
-   */
+export interface IJournalEntryBase<TVersion, TVersionId> {
+  /** Entry type discriminator */
+  readonly type: JournalEntryType;
+  /** Unique identifier for this journal entry */
+  readonly id: JournalId;
+  /** Timestamp when this entry was created (ISO 8601 format) */
   readonly timestamp: string;
-
-  /**
-   * Type of journal event
-   */
-  readonly eventType: JournalEventType;
-
-  /**
-   * The ingredient involved in this event (for ingredient-related events)
-   */
-  readonly ingredientId?: IngredientId;
-
-  /**
-   * Original amount before the change (for modify events)
-   */
-  readonly originalAmount?: Measurement;
-
-  /**
-   * New amount after the change (for add/modify events)
-   */
-  readonly newAmount?: Measurement;
-
-  /**
-   * Substitute ingredient ID (for substitute events)
-   */
-  readonly substituteIngredientId?: IngredientId;
-
-  /**
-   * Text content (for note events or additional context)
-   */
-  readonly text?: string;
+  /** Source version ID for indexing and lookup */
+  readonly versionId: TVersionId;
+  /** Full source recipe/confection at the time of the entry */
+  readonly recipe: TVersion;
+  /** Full updated version if modifications were made */
+  readonly updated?: TVersion;
+  /** ID of the updated version if it was saved */
+  readonly updatedId?: TVersionId;
+  /** Optional categorized notes about this entry */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
- * A single event entry within a confection editing journal.
- * Records what selections and modifications were made during a confection editing session.
+ * Journal entry for filling recipe edits.
  * @public
  */
-export interface IConfectionJournalEntry {
-  /**
-   * Timestamp of the event (ISO 8601 format)
-   */
-  readonly timestamp: string;
-
-  /**
-   * Type of confection journal event
-   */
-  readonly eventType: ConfectionJournalEventType;
-
-  // ---- filling-select event fields ----
-
-  /**
-   * The filling slot ID (for filling-select events)
-   */
-  readonly fillingSlotId?: SlotId;
-
-  /**
-   * The filling recipe ID selected (for filling-select events)
-   */
-  readonly fillingRecipeId?: FillingId;
-
-  /**
-   * The previous filling recipe ID (for filling-select events)
-   */
-  readonly previousFillingRecipeId?: FillingId;
-
-  /**
-   * The filling ingredient ID selected (for filling-select events with ingredient fillings)
-   */
-  readonly fillingIngredientId?: IngredientId;
-
-  /**
-   * The previous filling ingredient ID (for filling-select events)
-   */
-  readonly previousFillingIngredientId?: IngredientId;
-
-  // ---- mold-select event fields ----
-
-  /**
-   * The mold ID selected (for mold-select events)
-   */
-  readonly moldId?: MoldId;
-
-  /**
-   * The previous mold ID (for mold-select events)
-   */
-  readonly previousMoldId?: MoldId;
-
-  // ---- chocolate-select event fields ----
-
-  /**
-   * The role of the chocolate being selected (for chocolate-select events)
-   */
-  readonly chocolateRole?: ChocolateRole;
-
-  /**
-   * The ingredient ID of the selected chocolate (for chocolate-select events)
-   */
-  readonly ingredientId?: IngredientId;
-
-  /**
-   * The previous ingredient ID (for chocolate-select events)
-   */
-  readonly previousIngredientId?: IngredientId;
-
-  // ---- yield-modify event fields ----
-
-  /**
-   * The new yield count (for yield-modify events)
-   */
-  readonly newYieldCount?: number;
-
-  /**
-   * The previous yield count (for yield-modify events)
-   */
-  readonly previousYieldCount?: number;
-
-  /**
-   * The new weight per piece in grams (for yield-modify events)
-   */
-  readonly newWeightPerPiece?: Measurement;
-
-  /**
-   * The previous weight per piece in grams (for yield-modify events)
-   */
-  readonly previousWeightPerPiece?: Measurement;
-
-  // ---- procedure-select event fields ----
-
-  /**
-   * The procedure ID selected (for procedure-select events)
-   */
-  readonly procedureId?: ProcedureId;
-
-  /**
-   * The previous procedure ID (for procedure-select events)
-   */
-  readonly previousProcedureId?: ProcedureId;
-
-  // ---- coating-select event fields ----
-
-  /**
-   * The coating ingredient ID selected (for coating-select events)
-   */
-  readonly coatingIngredientId?: IngredientId;
-
-  /**
-   * The previous coating ingredient ID (for coating-select events)
-   */
-  readonly previousCoatingIngredientId?: IngredientId;
-
-  // ---- note event fields ----
-
-  /**
-   * Text content (for note events or additional context)
-   */
-  readonly text?: string;
-}
-
-// ============================================================================
-// Journal Type Discriminator
-// ============================================================================
-
-/**
- * Discriminator for journal record types
- * @public
- */
-export type JournalType = 'recipe' | 'confection';
-
-/**
- * All possible journal types
- * @public
- */
-export const allJournalTypes: JournalType[] = ['recipe', 'confection'];
-
-// ============================================================================
-// Journal Record
-// ============================================================================
-
-/**
- * A complete journal record for a filling recipe cooking session.
- * Tracks what filling version was used, how it was scaled, and what
- * modifications were made during the session.
- * @public
- */
-export interface IFillingRecipeJournalRecord {
-  /**
-   * Journal type discriminator
-   */
-  readonly journalType: 'recipe';
-
-  /**
-   * Unique identifier for this journal record
-   */
-  readonly journalId: JournalId;
-
-  /**
-   * Filling version ID that was used (format: "sourceId.fillingId\@versionSpec")
-   */
-  readonly fillingVersionId: FillingVersionId;
-
-  /**
-   * Date of the cooking session (ISO 8601 format)
-   */
-  readonly date: string;
-
-  /**
-   * Target weight for this production run
-   */
-  readonly targetWeight: Measurement;
-
-  /**
-   * Scale factor applied (computed from version baseWeight and targetWeight)
-   */
-  readonly scaleFactor: number;
-
-  /**
-   * Optional notes about this cooking session
-   */
-  readonly notes?: string;
-
-  /**
-   * If modifications during this session created a new version,
-   * this references that new version
-   */
-  readonly modifiedVersionId?: FillingVersionId;
-
-  /**
-   * Optional detailed journal entries recording what actually happened.
-   * When present, provides a complete audit trail of the cooking session.
-   */
-  readonly entries?: ReadonlyArray<IJournalEntry>;
+export interface IFillingEditJournalEntry
+  extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> {
+  readonly type: 'filling-edit';
 }
 
 /**
- * A complete journal record for a confection production session.
- * Tracks what confection version was used, what selections were made,
- * and what modifications occurred during the session.
+ * Journal entry for confection edits.
  * @public
  */
-export interface IConfectionJournalRecord {
-  /**
-   * Journal type discriminator
-   */
-  readonly journalType: 'confection';
+export interface IConfectionEditJournalEntry
+  extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> {
+  readonly type: 'confection-edit';
+}
 
-  /**
-   * Unique identifier for this journal record
-   */
-  readonly journalId: JournalId;
+/**
+ * Journal entry for filling production sessions.
+ * @public
+ */
+export interface IFillingProductionJournalEntry
+  extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> {
+  readonly type: 'filling-production';
+  /** Total yield weight of this production run */
+  readonly yield: Measurement;
+  /** Produced filling with resolved concrete choices */
+  readonly produced: IProducedFilling;
+}
 
-  /**
-   * Confection version ID that was used (format: "sourceId.confectionId\@versionSpec")
-   */
-  readonly confectionVersionId: ConfectionVersionId;
-
-  /**
-   * Date of the production session (ISO 8601 format)
-   */
-  readonly date: string;
-
-  /**
-   * Yield count for this production run
-   */
-  readonly yieldCount: number;
-
-  /**
-   * Weight per piece for this production run (optional)
-   */
-  readonly weightPerPiece?: Measurement;
-
-  /**
-   * Optional notes about this production session
-   */
-  readonly notes?: string;
-
-  /**
-   * If modifications during this session created a new version,
-   * this references that new version
-   */
-  readonly modifiedVersionId?: ConfectionVersionId;
-
-  /**
-   * If a filling recipe was edited during this session, this links
-   * to the corresponding recipe journal record
-   */
-  readonly linkedRecipeJournalId?: JournalId;
-
-  /**
-   * Optional detailed journal entries recording what actually happened.
-   * When present, provides a complete audit trail of the production session.
-   */
-  readonly entries?: ReadonlyArray<IConfectionJournalEntry>;
+/**
+ * Journal entry for confection production sessions.
+ * @public
+ */
+export interface IConfectionProductionJournalEntry
+  extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> {
+  readonly type: 'confection-production';
+  /** Yield specification for this production run */
+  readonly yield: IConfectionYield;
+  /** Produced confection with resolved concrete choices */
+  readonly produced: AnyProducedConfection;
 }
 
 // ============================================================================
-// Journal Record Union Type
+// Journal Entry Union Type
 // ============================================================================
 
 /**
- * Discriminated union of all journal record types.
+ * Discriminated union of all journal entry types.
  * Use type guards to narrow to specific types.
  * @public
  */
-export type AnyJournalRecord = IFillingRecipeJournalRecord | IConfectionJournalRecord;
+export type AnyJournalEntry =
+  | IFillingEditJournalEntry
+  | IConfectionEditJournalEntry
+  | IFillingProductionJournalEntry
+  | IConfectionProductionJournalEntry;
+
+// ============================================================================
+// Journal Entry Type Guards
+// ============================================================================
 
 /**
- * Type guard for IFillingRecipeJournalRecord
- * @param record - Journal record to check
- * @returns True if the record is a filling recipe journal record
+ * Type guard for IFillingEditJournalEntry
+ * @param entry - Journal entry to check
+ * @returns True if the entry is a filling edit journal entry
  * @public
  */
-export function isFillingRecipeJournalRecord(
-  record: AnyJournalRecord
-): record is IFillingRecipeJournalRecord {
-  return record.journalType === 'recipe';
+export function isFillingEditJournalEntry(entry: AnyJournalEntry): entry is IFillingEditJournalEntry {
+  return entry.type === 'filling-edit';
 }
 
 /**
- * Type guard for IConfectionJournalRecord
- * @param record - Journal record to check
- * @returns True if the record is a confection journal record
+ * Type guard for IConfectionEditJournalEntry
+ * @param entry - Journal entry to check
+ * @returns True if the entry is a confection edit journal entry
  * @public
  */
-export function isConfectionJournalRecord(record: AnyJournalRecord): record is IConfectionJournalRecord {
-  return record.journalType === 'confection';
+export function isConfectionEditJournalEntry(entry: AnyJournalEntry): entry is IConfectionEditJournalEntry {
+  return entry.type === 'confection-edit';
+}
+
+/**
+ * Type guard for IFillingProductionJournalEntry
+ * @param entry - Journal entry to check
+ * @returns True if the entry is a filling production journal entry
+ * @public
+ */
+export function isFillingProductionJournalEntry(
+  entry: AnyJournalEntry
+): entry is IFillingProductionJournalEntry {
+  return entry.type === 'filling-production';
+}
+
+/**
+ * Type guard for IConfectionProductionJournalEntry
+ * @param entry - Journal entry to check
+ * @returns True if the entry is a confection production journal entry
+ * @public
+ */
+export function isConfectionProductionJournalEntry(
+  entry: AnyJournalEntry
+): entry is IConfectionProductionJournalEntry {
+  return entry.type === 'confection-production';
 }

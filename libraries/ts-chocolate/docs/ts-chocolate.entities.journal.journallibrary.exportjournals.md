@@ -4,16 +4,16 @@
 
 ## Entities.Journal.JournalLibrary.exportJournals() method
 
-Exports all journal records as an array. The returned array can be serialized to JSON for persistence.
+Exports all journal entries as an array. The returned array can be serialized to JSON for persistence.
 
 **Signature:**
 
 ```typescript
-exportJournals(): ReadonlyArray<AnyJournalRecord>;
+exportJournals(): ReadonlyArray<AnyJournalEntry>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;AnyJournalRecord&gt;
+ReadonlyArray&lt;AnyJournalEntry&gt;
 
-Array of all journal records
+Array of all journal entries
 

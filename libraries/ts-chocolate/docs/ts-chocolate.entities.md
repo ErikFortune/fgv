@@ -63,9 +63,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "felchlin.mar
 
 </td><td>
 
-A library for managing cooking [journal records](./ts-chocolate.entities.journal.anyjournalrecord.md)<!-- -->.
+A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
 
-Provides: - Storage for journal records indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by recipe ID (all journals for a recipe) - Lookup by recipe version ID (all journals for a specific recipe version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal records
+Provides: - Storage for journal entries indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by filling ID (all journals for a filling) - Lookup by filling version ID (all journals for a specific filling version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal entries
 
 
 </td></tr>
@@ -169,12 +169,34 @@ Type guard for IChocolateIngredient
 </td></tr>
 <tr><td>
 
-[isConfectionJournalRecord(record)](./ts-chocolate.entities.isconfectionjournalrecord.md)
+[isConfectionEditJournalEntry(entry)](./ts-chocolate.entities.isconfectioneditjournalentry.md)
 
 
 </td><td>
 
-Type guard for IConfectionJournalRecord
+Type guard for IConfectionEditJournalEntry
+
+
+</td></tr>
+<tr><td>
+
+[isConfectionJournalEntry(entry)](./ts-chocolate.entities.isconfectionjournalentry.md)
+
+
+</td><td>
+
+Type guard for confection journal entries
+
+
+</td></tr>
+<tr><td>
+
+[isConfectionProductionJournalEntry(entry)](./ts-chocolate.entities.isconfectionproductionjournalentry.md)
+
+
+</td><td>
+
+Type guard for IConfectionProductionJournalEntry
 
 
 </td></tr>
@@ -202,12 +224,34 @@ Type guard for IFatIngredient
 </td></tr>
 <tr><td>
 
-[isFillingRecipeJournalRecord(record)](./ts-chocolate.entities.isfillingrecipejournalrecord.md)
+[isFillingEditJournalEntry(entry)](./ts-chocolate.entities.isfillingeditjournalentry.md)
 
 
 </td><td>
 
-Type guard for IFillingRecipeJournalRecord
+Type guard for IFillingEditJournalEntry
+
+
+</td></tr>
+<tr><td>
+
+[isFillingJournalEntry(entry)](./ts-chocolate.entities.isfillingjournalentry.md)
+
+
+</td><td>
+
+Type guard for filling journal entries
+
+
+</td></tr>
+<tr><td>
+
+[isFillingProductionJournalEntry(entry)](./ts-chocolate.entities.isfillingproductionjournalentry.md)
+
+
+</td><td>
+
+Type guard for IFillingProductionJournalEntry
 
 
 </td></tr>
@@ -252,6 +296,61 @@ Type guard for IMoldedBonBon
 </td><td>
 
 Type guard for IMoldedBonBonVersion
+
+
+</td></tr>
+<tr><td>
+
+[isProducedBarTruffle(produced)](./ts-chocolate.entities.isproducedbartruffle.md)
+
+
+</td><td>
+
+Type guard for IProducedBarTruffle
+
+
+</td></tr>
+<tr><td>
+
+[isProducedMoldedBonBon(produced)](./ts-chocolate.entities.isproducedmoldedbonbon.md)
+
+
+</td><td>
+
+Type guard for IProducedMoldedBonBon
+
+
+</td></tr>
+<tr><td>
+
+[isProducedRolledTruffle(produced)](./ts-chocolate.entities.isproducedrolledtruffle.md)
+
+
+</td><td>
+
+Type guard for IProducedRolledTruffle
+
+
+</td></tr>
+<tr><td>
+
+[isResolvedFillingSlot(slot)](./ts-chocolate.entities.isresolvedfillingslot.md)
+
+
+</td><td>
+
+Type guard for IResolvedFillingSlot
+
+
+</td></tr>
+<tr><td>
+
+[isResolvedIngredientSlot(slot)](./ts-chocolate.entities.isresolvedingredientslot.md)
+
+
+</td><td>
+
+Type guard for IResolvedIngredientSlot
 
 
 </td></tr>
@@ -442,29 +541,29 @@ Base confection interface - all confection types share these properties. Contain
 
 </td><td>
 
-Decoration specification for a confection
+Decoration specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[IConfectionJournalEntry](./ts-chocolate.entities.iconfectionjournalentry.md)
+[IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)
 
 
 </td><td>
 
-A single event entry within a confection editing journal. Records what selections and modifications were made during a confection editing session.
+Journal entry for confection edits.
 
 
 </td></tr>
 <tr><td>
 
-[IConfectionJournalRecord](./ts-chocolate.entities.iconfectionjournalrecord.md)
+[IConfectionProductionJournalEntry](./ts-chocolate.entities.iconfectionproductionjournalentry.md)
 
 
 </td><td>
 
-A complete journal record for a confection production session. Tracks what confection version was used, what selections were made, and what modifications occurred during the session.
+Journal entry for confection production sessions.
 
 
 </td></tr>
@@ -486,7 +585,7 @@ Base version interface - shared by all confection version types. Contains the co
 
 </td><td>
 
-Yield specification for a confection
+Yield specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
 
 
 </td></tr>
@@ -525,12 +624,34 @@ Reference to a source filling recipe+version from which a filling recipe was der
 </td></tr>
 <tr><td>
 
+[IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)
+
+
+</td><td>
+
+Journal entry for filling recipe edits.
+
+
+</td></tr>
+<tr><td>
+
 [IFillingIngredient](./ts-chocolate.entities.ifillingingredient.md)
 
 
 </td><td>
 
 Reference to an ingredient used in a filling recipe. Uses IIdsWithPreferred pattern - `ids` contains all valid ingredient options, `preferredId` indicates the default/recommended one.
+
+
+</td></tr>
+<tr><td>
+
+[IFillingProductionJournalEntry](./ts-chocolate.entities.ifillingproductionjournalentry.md)
+
+
+</td><td>
+
+Journal entry for filling production sessions.
 
 
 </td></tr>
@@ -553,17 +674,6 @@ Rating for a specific category of a filling recipe version
 </td><td>
 
 Complete filling recipe with version history
-
-
-</td></tr>
-<tr><td>
-
-[IFillingRecipeJournalRecord](./ts-chocolate.entities.ifillingrecipejournalrecord.md)
-
-
-</td><td>
-
-A complete journal record for a filling recipe cooking session. Tracks what filling version was used, how it was scaled, and what modifications were made during the session.
 
 
 </td></tr>
@@ -679,12 +789,12 @@ An inline task defined directly in a procedure step. Contains a full ITaskData d
 </td></tr>
 <tr><td>
 
-[IJournalEntry](./ts-chocolate.entities.ijournalentry.md)
+[IJournalEntryBase](./ts-chocolate.entities.ijournalentrybase.md)
 
 
 </td><td>
 
-A single event entry within a cooking journal. Records what actually happened during a cooking session.
+Base interface for journal entries.
 
 
 </td></tr>
@@ -778,6 +888,72 @@ Runtime validation state for a procedure step. This is computed at render/use ti
 </td></tr>
 <tr><td>
 
+[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)
+
+
+</td><td>
+
+Produced bar truffle with concrete choices.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedConfectionBase](./ts-chocolate.entities.iproducedconfectionbase.md)
+
+
+</td><td>
+
+Base interface for all produced confection types. Contains common fields shared by all confection productions.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+
+
+</td><td>
+
+Produced filling with concrete choices. Captures what was actually made during a filling production session.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedFillingIngredient](./ts-chocolate.entities.iproducedfillingingredient.md)
+
+
+</td><td>
+
+Resolved filling ingredient with concrete choice. Unlike IFillingIngredient which uses IIdsWithPreferred, this stores the single actual ingredient that was used in production.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
+
+
+</td><td>
+
+Produced molded bonbon with concrete choices.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+
+
+</td><td>
+
+Produced rolled truffle with concrete choices.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeFillingOption](./ts-chocolate.entities.irecipefillingoption.md)
 
 
@@ -795,6 +971,28 @@ Recipe filling option - references a recipe (e.g., ganache)
 </td><td>
 
 Options for rendering procedure steps.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedFillingSlot](./ts-chocolate.entities.iresolvedfillingslot.md)
+
+
+</td><td>
+
+Resolved slot with recipe filling.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedIngredientSlot](./ts-chocolate.entities.iresolvedingredientslot.md)
+
+
+</td><td>
+
+Resolved slot with ingredient filling.
 
 
 </td></tr>
@@ -1045,28 +1243,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[allChocolateRoles](./ts-chocolate.entities.allchocolateroles.md)
-
-
-</td><td>
-
-All possible chocolate roles
-
-
-</td></tr>
-<tr><td>
-
-[allConfectionJournalEventTypes](./ts-chocolate.entities.allconfectionjournaleventtypes.md)
-
-
-</td><td>
-
-All possible confection journal event types
-
-
-</td></tr>
-<tr><td>
-
 [allFillingCategories](./ts-chocolate.entities.allfillingcategories.md)
 
 
@@ -1078,23 +1254,12 @@ All possible filling categories
 </td></tr>
 <tr><td>
 
-[allJournalEventTypes](./ts-chocolate.entities.alljournaleventtypes.md)
+[allJournalEntryTypes](./ts-chocolate.entities.alljournalentrytypes.md)
 
 
 </td><td>
 
-All possible recipe journal event types
-
-
-</td></tr>
-<tr><td>
-
-[allJournalTypes](./ts-chocolate.entities.alljournaltypes.md)
-
-
-</td><td>
-
-All possible journal types
+All possible [journal entry types](./ts-chocolate.entities.journal.journalentrytype.md)<!-- -->.
 
 
 </td></tr>
@@ -1106,6 +1271,17 @@ All possible journal types
 </td><td>
 
 All possible rating categories
+
+
+</td></tr>
+<tr><td>
+
+[allResolvedSlotTypes](./ts-chocolate.entities.allresolvedslottypes.md)
+
+
+</td><td>
+
+All resolved slot types.
 
 
 </td></tr>
@@ -1137,12 +1313,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AnyConfectionJournalEntry](./ts-chocolate.entities.anyconfectionjournalentry.md)
+
+
+</td><td>
+
+Union type for confection journal entries (edit or production)
+
+
+</td></tr>
+<tr><td>
+
 [AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>
 
 Union type for all confection version types.
+
+
+</td></tr>
+<tr><td>
+
+[AnyFillingJournalEntry](./ts-chocolate.entities.anyfillingjournalentry.md)
+
+
+</td><td>
+
+Union type for filling journal entries (edit or production)
 
 
 </td></tr>
@@ -1170,23 +1368,34 @@ Union type for consumers who can work with either scaled or unscaled versions
 </td></tr>
 <tr><td>
 
-[AnyJournalRecord](./ts-chocolate.entities.anyjournalrecord.md)
+[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 
 
 </td><td>
 
-Discriminated union of all journal record types. Use type guards to narrow to specific types.
+Discriminated union of all journal entry types. Use type guards to narrow to specific types.
 
 
 </td></tr>
 <tr><td>
 
-[ChocolateRole](./ts-chocolate.entities.chocolaterole.md)
+[AnyProducedConfection](./ts-chocolate.entities.anyproducedconfection.md)
 
 
 </td><td>
 
-Role of a chocolate selection in a confection
+Discriminated union of produced confection types. Discriminated on the `confectionType` field.
+
+
+</td></tr>
+<tr><td>
+
+[AnyResolvedFillingSlot](./ts-chocolate.entities.anyresolvedfillingslot.md)
+
+
+</td><td>
+
+Union of resolved filling slot types. Discriminated on the `slotType` field.
 
 
 </td></tr>
@@ -1242,17 +1451,6 @@ Validator type for ConfectionsLibrary collections.
 </td><td>
 
 Discriminated union of all confection data types. Use this when working with raw confection data.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionJournalEventType](./ts-chocolate.entities.confectionjournaleventtype.md)
-
-
-</td><td>
-
-Types of events that can be recorded in a confection editing journal
 
 
 </td></tr>
@@ -1687,23 +1885,12 @@ Parameters for creating a TasksLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
-[JournalEventType](./ts-chocolate.entities.journaleventtype.md)
+[JournalEntryType](./ts-chocolate.entities.journalentrytype.md)
 
 
 </td><td>
 
-Types of events that can be recorded in a cooking journal
-
-
-</td></tr>
-<tr><td>
-
-[JournalType](./ts-chocolate.entities.journaltype.md)
-
-
-</td><td>
-
-Discriminator for journal record types
+Types of journal entries.
 
 
 </td></tr>
@@ -1825,6 +2012,17 @@ Specifies a procedures library to merge into a new library.
 </td><td>
 
 Categories for rating a filling recipe version
+
+
+</td></tr>
+<tr><td>
+
+[ResolvedSlotType](./ts-chocolate.entities.resolvedslottype.md)
+
+
+</td><td>
+
+Resolved slot type discriminator.
 
 
 </td></tr>

@@ -77,5 +77,26 @@ _(Optional)_ The preferred/recommended ID
 
 
 </td></tr>
+<tr><td>
+
+[slotId?](./ts-chocolate.iidswithpreferred.slotid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[SlotId](./ts-chocolate.slotid.md)
+
+
+</td><td>
+
+_(Optional)_ Optional slot identifier
+
+
+</td></tr>
 </tbody></table>
 

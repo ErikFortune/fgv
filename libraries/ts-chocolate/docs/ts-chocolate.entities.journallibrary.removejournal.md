@@ -4,12 +4,12 @@
 
 ## Entities.JournalLibrary.removeJournal() method
 
-Removes a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) from the library
+Removes a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) from the library
 
 **Signature:**
 
 ```typescript
-removeJournal(journalId: JournalId): Result<AnyJournalRecord>;
+removeJournal(journalId: JournalId): Result<AnyJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The ID of the journal to remove
 
 **Returns:**
 
-Result&lt;AnyJournalRecord&gt;
+Result&lt;AnyJournalEntry&gt;
 
 `Success` with the removed journal, or `Failure` if not found
 

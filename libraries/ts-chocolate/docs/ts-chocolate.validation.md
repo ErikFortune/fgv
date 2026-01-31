@@ -195,6 +195,17 @@ Type guard for [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[isValidNoteCategory(from)](./ts-chocolate.validation.isvalidnotecategory.md)
+
+
+</td><td>
+
+Type guard for [NoteCategory](./ts-chocolate.notecategory.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isValidPercentage(from)](./ts-chocolate.validation.isvalidpercentage.md)
 
 
@@ -432,6 +443,17 @@ Validates unknown value is a [Millimeters](./ts-chocolate.millimeters.md)<!-- --
 </td><td>
 
 Validates unknown value is a [Minutes](./ts-chocolate.minutes.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toNoteCategory(from)](./ts-chocolate.validation.tonotecategory.md)
+
+
+</td><td>
+
+Validates unknown value is a [NoteCategory](./ts-chocolate.notecategory.md)<!-- -->.
 
 
 </td></tr>

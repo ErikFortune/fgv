@@ -4,16 +4,16 @@
 
 ## Entities.Journal.JournalLibrary.getAllJournals() method
 
-Gets all journal records in the library
+Gets all journal entries in the library
 
 **Signature:**
 
 ```typescript
-getAllJournals(): ReadonlyArray<AnyJournalRecord>;
+getAllJournals(): ReadonlyArray<AnyJournalEntry>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;AnyJournalRecord&gt;
+ReadonlyArray&lt;AnyJournalEntry&gt;
 
-Array of all journal records
+Array of all journal entries
 

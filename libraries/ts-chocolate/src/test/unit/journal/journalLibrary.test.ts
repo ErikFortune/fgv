@@ -22,78 +22,220 @@ import '@fgv/ts-utils-jest';
 
 import {
   JournalLibrary,
-  IFillingRecipeJournalRecord,
-  IConfectionJournalRecord,
-  isFillingRecipeJournalRecord,
-  isConfectionJournalRecord
+  IFillingEditJournalEntry,
+  IFillingProductionJournalEntry,
+  IConfectionEditJournalEntry,
+  IConfectionProductionJournalEntry,
+  isFillingJournalEntry,
+  isConfectionJournalEntry,
+  IFillingRecipeVersion,
+  IMoldedBonBonVersion,
+  IProducedFilling,
+  IProducedMoldedBonBon
 } from '../../../packlets/entities';
 import {
   ConfectionId,
   ConfectionVersionId,
   Measurement,
   JournalId,
-  FillingVersionId
+  FillingVersionId,
+  FillingVersionSpec,
+  FillingId,
+  ConfectionVersionSpec,
+  IngredientId,
+  MoldId,
+  SlotId,
+  NoteCategory
 } from '../../../packlets/common';
 
 describe('JournalLibrary', () => {
   // ============================================================================
-  // Test Data
+  // Test Data - Filling Recipes
   // ============================================================================
 
-  const makeJournal = (
-    id: string,
-    versionId: string,
-    date: string,
-    targetWeight: number = 300,
-    scaleFactor: number = 2
-  ): IFillingRecipeJournalRecord => ({
-    journalType: 'recipe',
-    journalId: id as JournalId,
-    fillingVersionId: versionId as FillingVersionId,
-    date,
-    targetWeight: targetWeight as Measurement,
-    scaleFactor
+  const makeFillingRecipe = (versionSpec: string, baseWeight: number = 300): IFillingRecipeVersion => ({
+    versionSpec: versionSpec as FillingVersionSpec,
+    createdDate: '2026-01-01',
+    ingredients: [
+      {
+        ingredient: {
+          ids: ['chocolate.dark' as IngredientId],
+          preferredId: 'chocolate.dark' as IngredientId
+        },
+        amount: 200 as Measurement
+      },
+      {
+        ingredient: {
+          ids: ['cream.heavy' as IngredientId],
+          preferredId: 'cream.heavy' as IngredientId
+        },
+        amount: 100 as Measurement
+      }
+    ],
+    baseWeight: baseWeight as Measurement
   });
 
-  const journal1 = makeJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01', '2026-01-15');
-  const journal2 = makeJournal('2026-01-15-100000-00000002', 'source.recipe-a@2026-01-01-01', '2026-01-16');
-  const journal3 = makeJournal('2026-01-15-100000-00000003', 'source.recipe-a@2026-01-02-01', '2026-01-17');
-  const journal4 = makeJournal('journal-004', 'source.recipe-b@2026-01-01-01', '2026-01-18');
+  const makeProducedFilling = (versionId: string, scaleFactor: number = 2): IProducedFilling => ({
+    versionId: versionId as FillingVersionId,
+    scaleFactor,
+    targetWeight: 600 as Measurement,
+    ingredients: [
+      {
+        ingredientId: 'chocolate.dark' as IngredientId,
+        amount: (200 * scaleFactor) as Measurement
+      },
+      {
+        ingredientId: 'cream.heavy' as IngredientId,
+        amount: (100 * scaleFactor) as Measurement
+      }
+    ]
+  });
 
-  // Helper to create confection journal records
-  const makeConfectionJournal = (
+  const makeFillingEditJournal = (
     id: string,
     versionId: string,
-    date: string,
+    timestamp: string = '2026-01-15T10:00:00Z'
+  ): IFillingEditJournalEntry => ({
+    type: 'filling-edit',
+    id: id as JournalId,
+    timestamp,
+    versionId: versionId as FillingVersionId,
+    recipe: makeFillingRecipe('2026-01-01-01')
+  });
+
+  const makeFillingProductionJournal = (
+    id: string,
+    versionId: string,
+    timestamp: string = '2026-01-15T10:00:00Z',
+    yieldWeight: number = 600
+  ): IFillingProductionJournalEntry => ({
+    type: 'filling-production',
+    id: id as JournalId,
+    timestamp,
+    versionId: versionId as FillingVersionId,
+    recipe: makeFillingRecipe('2026-01-01-01'),
+    yield: yieldWeight as Measurement,
+    produced: makeProducedFilling(versionId, 2)
+  });
+
+  const journal1 = makeFillingProductionJournal(
+    '2026-01-15-100000-00000001',
+    'source.recipe-a@2026-01-01-01',
+    '2026-01-15T10:00:00Z'
+  );
+  const journal2 = makeFillingProductionJournal(
+    '2026-01-15-100000-00000002',
+    'source.recipe-a@2026-01-01-01',
+    '2026-01-16T10:00:00Z'
+  );
+  const journal3 = makeFillingProductionJournal(
+    '2026-01-15-100000-00000003',
+    'source.recipe-a@2026-01-02-01',
+    '2026-01-17T10:00:00Z'
+  );
+  const journal4 = makeFillingProductionJournal(
+    '2026-01-15-100000-00000004',
+    'source.recipe-b@2026-01-01-01',
+    '2026-01-18T10:00:00Z'
+  );
+
+  // ============================================================================
+  // Test Data - Confection Recipes
+  // ============================================================================
+
+  const makeConfectionRecipe = (versionSpec: string): IMoldedBonBonVersion => ({
+    versionSpec: versionSpec as ConfectionVersionSpec,
+    createdDate: '2026-01-01',
+    yield: { count: 24 },
+    molds: {
+      options: [
+        {
+          id: 'mold.standard-24' as MoldId
+        }
+      ],
+      preferredId: 'mold.standard-24' as MoldId
+    },
+    shellChocolate: {
+      ids: ['chocolate.dark' as IngredientId],
+      preferredId: 'chocolate.dark' as IngredientId
+    },
+    fillings: [
+      {
+        slotId: 'slot-1' as SlotId,
+        filling: {
+          options: [
+            {
+              type: 'recipe',
+              id: 'source.recipe-a' as FillingId
+            }
+          ],
+          preferredId: 'source.recipe-a' as FillingId
+        }
+      }
+    ]
+  });
+
+  const makeProducedConfection = (versionId: string, yieldCount: number = 24): IProducedMoldedBonBon => ({
+    confectionType: 'molded-bonbon',
+    versionId: versionId as ConfectionVersionId,
+    yield: { count: yieldCount },
+    moldId: 'mold.standard-24' as MoldId,
+    shellChocolateId: 'chocolate.dark' as IngredientId,
+    fillings: [
+      {
+        slotType: 'recipe',
+        slotId: 'slot-1' as SlotId,
+        fillingId: 'source.recipe-a' as FillingId
+      }
+    ]
+  });
+
+  const makeConfectionEditJournal = (
+    id: string,
+    versionId: string,
+    timestamp: string = '2026-01-20T10:00:00Z'
+  ): IConfectionEditJournalEntry => ({
+    type: 'confection-edit',
+    id: id as JournalId,
+    timestamp,
+    versionId: versionId as ConfectionVersionId,
+    recipe: makeConfectionRecipe('2026-01-01-01')
+  });
+
+  const makeConfectionProductionJournal = (
+    id: string,
+    versionId: string,
+    timestamp: string = '2026-01-20T10:00:00Z',
     yieldCount: number = 24
-  ): IConfectionJournalRecord => ({
-    journalType: 'confection',
-    journalId: id as JournalId,
-    confectionVersionId: versionId as ConfectionVersionId,
-    date,
-    yieldCount
+  ): IConfectionProductionJournalEntry => ({
+    type: 'confection-production',
+    id: id as JournalId,
+    timestamp,
+    versionId: versionId as ConfectionVersionId,
+    recipe: makeConfectionRecipe('2026-01-01-01'),
+    yield: { count: yieldCount },
+    produced: makeProducedConfection(versionId, yieldCount)
   });
 
-  // Use valid JournalId format: YYYY-MM-DD-HHMMSS-xxxxxxxx
-  const confectionJournal1 = makeConfectionJournal(
+  const confectionJournal1 = makeConfectionProductionJournal(
     '2026-01-20-100000-c0000001',
     'source.bonbon-a@2026-01-01-01',
-    '2026-01-20'
+    '2026-01-20T10:00:00Z'
   );
-  const confectionJournal2 = makeConfectionJournal(
+  const confectionJournal2 = makeConfectionProductionJournal(
     '2026-01-21-100000-c0000002',
     'source.bonbon-a@2026-01-01-01',
-    '2026-01-21'
+    '2026-01-21T10:00:00Z'
   );
-  const confectionJournal3 = makeConfectionJournal(
+  const confectionJournal3 = makeConfectionProductionJournal(
     '2026-01-22-100000-c0000003',
     'source.bonbon-a@2026-01-02-01',
-    '2026-01-22'
+    '2026-01-22T10:00:00Z'
   );
-  const confectionJournal4 = makeConfectionJournal(
+  const confectionJournal4 = makeConfectionProductionJournal(
     '2026-01-23-100000-c0000004',
     'source.bonbon-b@2026-01-01-01',
-    '2026-01-23'
+    '2026-01-23T10:00:00Z'
   );
 
   // ============================================================================
@@ -130,10 +272,10 @@ describe('JournalLibrary', () => {
     test('returns journal when found', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       expect(lib.getJournal('2026-01-15-100000-00000001' as JournalId)).toSucceedAndSatisfy((result) => {
-        expect(result.journalId).toBe('2026-01-15-100000-00000001');
-        expect(isFillingRecipeJournalRecord(result)).toBe(true);
-        if (isFillingRecipeJournalRecord(result)) {
-          expect(result.fillingVersionId).toBe('source.recipe-a@2026-01-01-01');
+        expect(result.id).toBe('2026-01-15-100000-00000001');
+        expect(isFillingJournalEntry(result)).toBe(true);
+        if (isFillingJournalEntry(result)) {
+          expect(result.versionId).toBe('source.recipe-a@2026-01-01-01');
         }
       });
     });
@@ -149,16 +291,14 @@ describe('JournalLibrary', () => {
   // ============================================================================
 
   describe('getJournalsForFilling', () => {
-    test('returns all journals for a recipe', () => {
+    test('returns all journals for a filling', () => {
       const lib = JournalLibrary.create({
         journals: [journal1, journal2, journal3, journal4]
       }).orThrow();
 
-      const result = lib.getJournalsForFilling(
-        'source.recipe-a' as import('../../../packlets/common').FillingId
-      );
+      const result = lib.getJournalsForFilling('source.recipe-a' as FillingId);
       expect(result).toHaveLength(3);
-      expect(result.map((j) => j.journalId)).toEqual(
+      expect(result.map((j) => j.id)).toEqual(
         expect.arrayContaining([
           '2026-01-15-100000-00000001',
           '2026-01-15-100000-00000002',
@@ -167,11 +307,9 @@ describe('JournalLibrary', () => {
       );
     });
 
-    test('returns empty array when no journals for recipe', () => {
+    test('returns empty array when no journals for filling', () => {
       const lib = JournalLibrary.create({ journals: [journal1] }).orThrow();
-      const result = lib.getJournalsForFilling(
-        'source.non-existent' as import('../../../packlets/common').FillingId
-      );
+      const result = lib.getJournalsForFilling('source.non-existent' as FillingId);
       expect(result).toHaveLength(0);
     });
   });
@@ -188,7 +326,7 @@ describe('JournalLibrary', () => {
 
       const result = lib.getJournalsForFillingVersion('source.recipe-a@2026-01-01-01' as FillingVersionId);
       expect(result).toHaveLength(2);
-      expect(result.map((j) => j.journalId)).toEqual(
+      expect(result.map((j) => j.id)).toEqual(
         expect.arrayContaining(['2026-01-15-100000-00000001', '2026-01-15-100000-00000002'])
       );
     });
@@ -232,14 +370,12 @@ describe('JournalLibrary', () => {
       expect(lib.getJournal('2026-01-15-100000-00000001' as JournalId)).toSucceed();
     });
 
-    test('indexes journal by recipe ID', () => {
+    test('indexes journal by filling ID', () => {
       const lib = JournalLibrary.create().orThrow();
       lib.addJournal(journal1).orThrow();
       lib.addJournal(journal3).orThrow();
 
-      const result = lib.getJournalsForFilling(
-        'source.recipe-a' as import('../../../packlets/common').FillingId
-      );
+      const result = lib.getJournalsForFilling('source.recipe-a' as FillingId);
       expect(result).toHaveLength(2);
     });
 
@@ -261,7 +397,7 @@ describe('JournalLibrary', () => {
       const lib = JournalLibrary.create().orThrow();
       const invalidJournal = {
         ...journal1,
-        journalId: '' as JournalId
+        id: '' as JournalId
       };
       expect(lib.addJournal(invalidJournal)).toFail();
     });
@@ -270,7 +406,7 @@ describe('JournalLibrary', () => {
       const lib = JournalLibrary.create().orThrow();
       const invalidJournal = {
         ...journal1,
-        fillingVersionId: 'invalid' as FillingVersionId
+        versionId: 'invalid' as FillingVersionId
       };
       expect(lib.addJournal(invalidJournal)).toFail();
     });
@@ -284,21 +420,19 @@ describe('JournalLibrary', () => {
     test('removes existing journal', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       expect(lib.removeJournal('2026-01-15-100000-00000001' as JournalId)).toSucceedAndSatisfy((removed) => {
-        expect(removed.journalId).toBe('2026-01-15-100000-00000001');
+        expect(removed.id).toBe('2026-01-15-100000-00000001');
       });
       expect(lib.size).toBe(1);
       expect(lib.getJournal('2026-01-15-100000-00000001' as JournalId)).toFail();
     });
 
-    test('removes journal from recipe index', () => {
+    test('removes journal from filling index', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       lib.removeJournal('2026-01-15-100000-00000001' as JournalId).orThrow();
 
-      const result = lib.getJournalsForFilling(
-        'source.recipe-a' as import('../../../packlets/common').FillingId
-      );
+      const result = lib.getJournalsForFilling('source.recipe-a' as FillingId);
       expect(result).toHaveLength(1);
-      expect(result[0].journalId).toBe('2026-01-15-100000-00000002');
+      expect(result[0].id).toBe('2026-01-15-100000-00000002');
     });
 
     test('removes journal from version index', () => {
@@ -307,25 +441,21 @@ describe('JournalLibrary', () => {
 
       const result = lib.getJournalsForFillingVersion('source.recipe-a@2026-01-01-01' as FillingVersionId);
       expect(result).toHaveLength(1);
-      expect(result[0].journalId).toBe('2026-01-15-100000-00000002');
+      expect(result[0].id).toBe('2026-01-15-100000-00000002');
     });
 
-    test('cleans up empty recipe index entry', () => {
+    test('cleans up empty filling index entry', () => {
       const lib = JournalLibrary.create({ journals: [journal4] }).orThrow();
-      lib.removeJournal('journal-004' as JournalId).orThrow();
+      lib.removeJournal('2026-01-15-100000-00000004' as JournalId).orThrow();
 
-      // Verify no journals for that recipe
-      const result = lib.getJournalsForFilling(
-        'source.recipe-b' as import('../../../packlets/common').FillingId
-      );
+      const result = lib.getJournalsForFilling('source.recipe-b' as FillingId);
       expect(result).toHaveLength(0);
     });
 
     test('cleans up empty version index entry', () => {
       const lib = JournalLibrary.create({ journals: [journal4] }).orThrow();
-      lib.removeJournal('journal-004' as JournalId).orThrow();
+      lib.removeJournal('2026-01-15-100000-00000004' as JournalId).orThrow();
 
-      // Verify no journals for that version
       const result = lib.getJournalsForFillingVersion('source.recipe-b@2026-01-01-01' as FillingVersionId);
       expect(result).toHaveLength(0);
     });
@@ -356,7 +486,7 @@ describe('JournalLibrary', () => {
       expect(lib.importJournals([journal1, journal2])).toSucceedAndSatisfy((result) => {
         expect(result.imported).toBe(1);
         expect(result.skipped).toBe(1);
-        expect(result.skippedIds).toContain(journal1.journalId);
+        expect(result.skippedIds).toContain(journal1.id);
       });
       expect(lib.size).toBe(2);
     });
@@ -381,9 +511,9 @@ describe('JournalLibrary', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2, journal3] }).orThrow();
       const exported = lib.exportJournals();
       expect(exported).toHaveLength(3);
-      expect(exported.map((j) => j.journalId)).toContain(journal1.journalId);
-      expect(exported.map((j) => j.journalId)).toContain(journal2.journalId);
-      expect(exported.map((j) => j.journalId)).toContain(journal3.journalId);
+      expect(exported.map((j) => j.id)).toContain(journal1.id);
+      expect(exported.map((j) => j.id)).toContain(journal2.id);
+      expect(exported.map((j) => j.id)).toContain(journal3.id);
     });
 
     test('exports empty array for empty library', () => {
@@ -396,7 +526,7 @@ describe('JournalLibrary', () => {
   describe('hasJournal', () => {
     test('returns true for existing journal', () => {
       const lib = JournalLibrary.create({ journals: [journal1] }).orThrow();
-      expect(lib.hasJournal(journal1.journalId)).toBe(true);
+      expect(lib.hasJournal(journal1.id)).toBe(true);
     });
 
     test('returns false for non-existing journal', () => {
@@ -414,12 +544,10 @@ describe('JournalLibrary', () => {
       expect(lib.getAllJournals()).toHaveLength(0);
     });
 
-    test('clears recipe index', () => {
+    test('clears filling index', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       lib.clear();
-      const result = lib.getJournalsForFilling(
-        'source.recipe-a' as import('../../../packlets/common').FillingId
-      );
+      const result = lib.getJournalsForFilling('source.recipe-a' as FillingId);
       expect(result).toHaveLength(0);
     });
 
@@ -443,58 +571,50 @@ describe('JournalLibrary', () => {
   // ============================================================================
 
   describe('edge cases', () => {
-    test('handles journal with notes and entries', () => {
-      const journalWithDetails: IFillingRecipeJournalRecord = {
-        journalType: 'recipe',
-        journalId: '2026-01-15-100000-0000000a' as JournalId,
-        fillingVersionId: 'source.recipe@2026-01-01-01' as FillingVersionId,
-        date: '2026-01-20',
-        targetWeight: 500 as Measurement,
-        scaleFactor: 2.5,
-        notes: 'Test notes',
-        modifiedVersionId: 'source.recipe@2026-01-20-01' as FillingVersionId,
-        entries: [
+    test('handles journal with optional fields', () => {
+      const journalWithDetails: IFillingProductionJournalEntry = {
+        type: 'filling-production',
+        id: '2026-01-15-100000-0000000a' as JournalId,
+        timestamp: '2026-01-20T10:00:00Z',
+        versionId: 'source.recipe@2026-01-01-01' as FillingVersionId,
+        recipe: makeFillingRecipe('2026-01-01-01'),
+        yield: 500 as Measurement,
+        produced: makeProducedFilling('source.recipe@2026-01-01-01', 2.5),
+        notes: [
           {
-            timestamp: '2026-01-20T10:00:00Z',
-            eventType: 'note',
-            text: 'Starting session'
+            category: 'general' as NoteCategory,
+            note: 'Test notes'
           }
-        ]
+        ],
+        updatedId: 'source.recipe@2026-01-20-01' as FillingVersionId,
+        updated: makeFillingRecipe('2026-01-20-01', 350)
       };
 
       const lib = JournalLibrary.create().orThrow();
       expect(lib.addJournal(journalWithDetails)).toSucceed();
       expect(lib.getJournal('2026-01-15-100000-0000000a' as JournalId)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toBe('Test notes');
-        expect(result.modifiedVersionId).toBe('source.recipe@2026-01-20-01');
-        expect(result.entries).toHaveLength(1);
+        expect(result.notes).toHaveLength(1);
+        expect(result.updatedId).toBe('source.recipe@2026-01-20-01');
+        if (result.type === 'filling-production') {
+          expect(result.yield).toBe(500);
+          expect(result.produced.scaleFactor).toBe(2.5);
+        }
       });
     });
 
-    test('handles multiple recipes and versions', () => {
+    test('handles multiple fillings and versions', () => {
       const journals = [
-        makeJournal('j1', 'source.recipe-a@2026-01-01-01', '2026-01-01'),
-        makeJournal('j2', 'source.recipe-a@2026-01-01-02', '2026-01-02'),
-        makeJournal('j3', 'source.recipe-b@2026-01-01-01', '2026-01-03'),
-        makeJournal('j4', 'other.recipe-c@2026-01-01-01', '2026-01-04')
+        makeFillingProductionJournal('j1', 'source.recipe-a@2026-01-01-01', '2026-01-01T10:00:00Z'),
+        makeFillingProductionJournal('j2', 'source.recipe-a@2026-01-01-02', '2026-01-02T10:00:00Z'),
+        makeFillingProductionJournal('j3', 'source.recipe-b@2026-01-01-01', '2026-01-03T10:00:00Z'),
+        makeFillingProductionJournal('j4', 'other.recipe-c@2026-01-01-01', '2026-01-04T10:00:00Z')
       ];
 
       const lib = JournalLibrary.create({ journals }).orThrow();
 
-      // Recipe A has 2 journals
-      expect(
-        lib.getJournalsForFilling('source.recipe-a' as import('../../../packlets/common').FillingId)
-      ).toHaveLength(2);
-
-      // Recipe B has 1 journal
-      expect(
-        lib.getJournalsForFilling('source.recipe-b' as import('../../../packlets/common').FillingId)
-      ).toHaveLength(1);
-
-      // Other source recipe has 1 journal
-      expect(
-        lib.getJournalsForFilling('other.recipe-c' as import('../../../packlets/common').FillingId)
-      ).toHaveLength(1);
+      expect(lib.getJournalsForFilling('source.recipe-a' as FillingId)).toHaveLength(2);
+      expect(lib.getJournalsForFilling('source.recipe-b' as FillingId)).toHaveLength(1);
+      expect(lib.getJournalsForFilling('other.recipe-c' as FillingId)).toHaveLength(1);
     });
   });
 
@@ -526,10 +646,10 @@ describe('JournalLibrary', () => {
       test('returns confection journal when found', () => {
         const lib = JournalLibrary.create({ journals: [confectionJournal1] }).orThrow();
         expect(lib.getJournal('2026-01-20-100000-c0000001' as JournalId)).toSucceedAndSatisfy((result) => {
-          expect(result.journalId).toBe('2026-01-20-100000-c0000001');
-          expect(isConfectionJournalRecord(result)).toBe(true);
-          if (isConfectionJournalRecord(result)) {
-            expect(result.confectionVersionId).toBe('source.bonbon-a@2026-01-01-01');
+          expect(result.id).toBe('2026-01-20-100000-c0000001');
+          expect(isConfectionJournalEntry(result)).toBe(true);
+          if (isConfectionJournalEntry(result)) {
+            expect(result.versionId).toBe('source.bonbon-a@2026-01-01-01');
           }
         });
       });
@@ -543,7 +663,7 @@ describe('JournalLibrary', () => {
 
         const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
         expect(result).toHaveLength(3);
-        expect(result.map((j) => j.journalId)).toEqual(
+        expect(result.map((j) => j.id)).toEqual(
           expect.arrayContaining([
             '2026-01-20-100000-c0000001',
             '2026-01-21-100000-c0000002',
@@ -558,11 +678,11 @@ describe('JournalLibrary', () => {
         expect(result).toHaveLength(0);
       });
 
-      test('does not return recipe journals for confection lookup', () => {
+      test('does not return filling journals for confection lookup', () => {
         const lib = JournalLibrary.create({ journals: [journal1, confectionJournal1] }).orThrow();
         const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
         expect(result).toHaveLength(1);
-        expect(result[0].journalId).toBe('2026-01-20-100000-c0000001');
+        expect(result[0].id).toBe('2026-01-20-100000-c0000001');
       });
     });
 
@@ -576,7 +696,7 @@ describe('JournalLibrary', () => {
           'source.bonbon-a@2026-01-01-01' as ConfectionVersionId
         );
         expect(result).toHaveLength(2);
-        expect(result.map((j) => j.journalId)).toEqual(
+        expect(result.map((j) => j.id)).toEqual(
           expect.arrayContaining(['2026-01-20-100000-c0000001', '2026-01-21-100000-c0000002'])
         );
       });
@@ -631,7 +751,7 @@ describe('JournalLibrary', () => {
         }).orThrow();
         expect(lib.removeJournal('2026-01-20-100000-c0000001' as JournalId)).toSucceedAndSatisfy(
           (removed) => {
-            expect(removed.journalId).toBe('2026-01-20-100000-c0000001');
+            expect(removed.id).toBe('2026-01-20-100000-c0000001');
           }
         );
         expect(lib.size).toBe(1);
@@ -646,7 +766,7 @@ describe('JournalLibrary', () => {
 
         const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
         expect(result).toHaveLength(1);
-        expect(result[0].journalId).toBe('2026-01-21-100000-c0000002');
+        expect(result[0].id).toBe('2026-01-21-100000-c0000002');
       });
 
       test('removes confection journal from version index', () => {
@@ -659,7 +779,7 @@ describe('JournalLibrary', () => {
           'source.bonbon-a@2026-01-01-01' as ConfectionVersionId
         );
         expect(result).toHaveLength(1);
-        expect(result[0].journalId).toBe('2026-01-21-100000-c0000002');
+        expect(result[0].id).toBe('2026-01-21-100000-c0000002');
       });
 
       test('cleans up empty confection index entry', () => {
@@ -704,7 +824,7 @@ describe('JournalLibrary', () => {
         expect(lib.importJournals([confectionJournal1, confectionJournal2])).toSucceedAndSatisfy((result) => {
           expect(result.imported).toBe(1);
           expect(result.skipped).toBe(1);
-          expect(result.skippedIds).toContain(confectionJournal1.journalId);
+          expect(result.skippedIds).toContain(confectionJournal1.id);
         });
       });
     });
@@ -722,47 +842,94 @@ describe('JournalLibrary', () => {
       });
     });
 
-    describe('confection journal with additional fields', () => {
+    describe('confection journal with all optional fields', () => {
       test('handles confection journal with all optional fields', () => {
-        const fullJournal: IConfectionJournalRecord = {
-          journalType: 'confection',
-          journalId: '2026-01-25-100000-cf000001' as JournalId,
-          confectionVersionId: 'source.bonbon-a@2026-01-01-01' as ConfectionVersionId,
-          date: '2026-01-25',
-          yieldCount: 48,
-          weightPerPiece: 15 as Measurement,
-          linkedRecipeJournalId: '2026-01-25-090000-00000001' as JournalId,
-          notes: 'Test notes for confection',
-          entries: [
+        const fullJournal: IConfectionProductionJournalEntry = {
+          type: 'confection-production',
+          id: '2026-01-25-100000-cf000001' as JournalId,
+          timestamp: '2026-01-25T10:00:00Z',
+          versionId: 'source.bonbon-a@2026-01-01-01' as ConfectionVersionId,
+          recipe: makeConfectionRecipe('2026-01-01-01'),
+          yield: { count: 48 },
+          produced: makeProducedConfection('source.bonbon-a@2026-01-01-01', 48),
+          notes: [
             {
-              timestamp: '2026-01-25T10:00:00Z',
-              eventType: 'filling-select',
-              fillingRecipeId: 'test.recipe' as import('../../../packlets/common').FillingId
+              category: 'general' as NoteCategory,
+              note: 'Test notes for confection'
             }
-          ]
+          ],
+          updatedId: 'source.bonbon-a@2026-01-02-01' as ConfectionVersionId,
+          updated: makeConfectionRecipe('2026-01-02-01')
         };
 
         const lib = JournalLibrary.create().orThrow();
         expect(lib.addJournal(fullJournal)).toSucceed();
         expect(lib.getJournal('2026-01-25-100000-cf000001' as JournalId)).toSucceedAndSatisfy((result) => {
-          expect(isConfectionJournalRecord(result)).toBe(true);
-          if (isConfectionJournalRecord(result)) {
-            expect(result.yieldCount).toBe(48);
-            expect(result.weightPerPiece).toBe(15);
-            expect(result.linkedRecipeJournalId).toBe('2026-01-25-090000-00000001');
-            expect(result.notes).toBe('Test notes for confection');
-            expect(result.entries).toHaveLength(1);
+          expect(isConfectionJournalEntry(result)).toBe(true);
+          if (result.type === 'confection-production') {
+            expect(result.yield.count).toBe(48);
+            expect(result.produced.yield.count).toBe(48);
+            expect(result.notes).toHaveLength(1);
+            expect(result.updatedId).toBe('source.bonbon-a@2026-01-02-01');
           }
         });
       });
     });
+  });
 
-    describe('deprecated addFillingJournal', () => {
-      test('addFillingJournal adds recipe journal via addJournal', () => {
-        const lib = JournalLibrary.create().orThrow();
-        expect(lib.addFillingJournal(journal1)).toSucceedWith('2026-01-15-100000-00000001' as JournalId);
-        expect(lib.size).toBe(1);
-      });
+  // ============================================================================
+  // Edit Journal Tests
+  // ============================================================================
+
+  describe('edit journals', () => {
+    test('adds filling edit journal', () => {
+      const editJournal = makeFillingEditJournal(
+        '2026-01-25-100000-e0000001',
+        'source.recipe-a@2026-01-01-01',
+        '2026-01-25T10:00:00Z'
+      );
+      const lib = JournalLibrary.create().orThrow();
+      expect(lib.addJournal(editJournal)).toSucceed();
+      expect(lib.size).toBe(1);
+    });
+
+    test('adds confection edit journal', () => {
+      const editJournal = makeConfectionEditJournal(
+        '2026-01-25-100000-e0000002',
+        'source.bonbon-a@2026-01-01-01',
+        '2026-01-25T10:00:00Z'
+      );
+      const lib = JournalLibrary.create().orThrow();
+      expect(lib.addJournal(editJournal)).toSucceed();
+      expect(lib.size).toBe(1);
+    });
+
+    test('indexes edit journals by filling ID', () => {
+      const editJournal = makeFillingEditJournal(
+        '2026-01-25-100000-e0000003',
+        'source.recipe-a@2026-01-01-01',
+        '2026-01-25T10:00:00Z'
+      );
+      const lib = JournalLibrary.create().orThrow();
+      lib.addJournal(editJournal).orThrow();
+
+      const result = lib.getJournalsForFilling('source.recipe-a' as FillingId);
+      expect(result).toHaveLength(1);
+      expect(result[0].type).toBe('filling-edit');
+    });
+
+    test('indexes edit journals by confection ID', () => {
+      const editJournal = makeConfectionEditJournal(
+        '2026-01-25-100000-e0000004',
+        'source.bonbon-a@2026-01-01-01',
+        '2026-01-25T10:00:00Z'
+      );
+      const lib = JournalLibrary.create().orThrow();
+      lib.addJournal(editJournal).orThrow();
+
+      const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
+      expect(result).toHaveLength(1);
+      expect(result[0].type).toBe('confection-edit');
     });
   });
 });

@@ -9,7 +9,7 @@ Gets all journal records for a specific filling version.
 **Signature:**
 
 ```typescript
-getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
+getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The filling version ID to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IFillingRecipeJournalRecord&gt;
+ReadonlyArray&lt;AnyFillingJournalEntry&gt;
 
 Array of journal records (empty if none found)
 

@@ -4,9 +4,9 @@
 
 ## Entities.Journal.JournalLibrary class
 
-A library for managing cooking [journal records](./ts-chocolate.entities.journal.anyjournalrecord.md)<!-- -->.
+A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
 
-Provides: - Storage for journal records indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by recipe ID (all journals for a recipe) - Lookup by recipe version ID (all journals for a specific recipe version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal records
+Provides: - Storage for journal entries indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by filling ID (all journals for a filling) - Lookup by filling version ID (all journals for a specific filling version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal entries
 
 **Signature:**
 
@@ -80,20 +80,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addFillingJournal(journal)](./ts-chocolate.entities.journal.journallibrary.addfillingjournal.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a filling recipe journal record to the library.
-
-
-</td></tr>
-<tr><td>
-
 [addJournal(journal)](./ts-chocolate.entities.journal.journallibrary.addjournal.md)
 
 
@@ -102,7 +88,7 @@ Adds a filling recipe journal record to the library.
 
 </td><td>
 
-Adds a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) to the library. Accepts both recipe and confection journal records.
+Adds a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) to the library. Accepts filling and confection journal entries (both edit and production types).
 
 
 </td></tr>
@@ -146,7 +132,7 @@ Creates a new [JournalLibrary](./ts-chocolate.entities.journal.journallibrary.md
 
 </td><td>
 
-Exports all journal records as an array. The returned array can be serialized to JSON for persistence.
+Exports all journal entries as an array. The returned array can be serialized to JSON for persistence.
 
 
 </td></tr>
@@ -160,7 +146,7 @@ Exports all journal records as an array. The returned array can be serialized to
 
 </td><td>
 
-Gets all journal records in the library
+Gets all journal entries in the library
 
 
 </td></tr>
@@ -174,7 +160,7 @@ Gets all journal records in the library
 
 </td><td>
 
-Gets a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) by its ID
+Gets a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) by its ID
 
 
 </td></tr>
@@ -188,7 +174,7 @@ Gets a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) by 
 
 </td><td>
 
-Gets all [confection journal records](./ts-chocolate.entities.journal.iconfectionjournalrecord.md) for a confection (across all versions)
+Gets all confection journal entries for a confection (across all versions)
 
 
 </td></tr>
@@ -202,7 +188,7 @@ Gets all [confection journal records](./ts-chocolate.entities.journal.iconfectio
 
 </td><td>
 
-Gets all [confection journal records](./ts-chocolate.entities.journal.iconfectionjournalrecord.md) for a specific confection version
+Gets all confection journal entries for a specific confection version
 
 
 </td></tr>
@@ -216,7 +202,7 @@ Gets all [confection journal records](./ts-chocolate.entities.journal.iconfectio
 
 </td><td>
 
-Gets all [filling recipe journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a filling (across all versions)
+Gets all filling journal entries for a filling (across all versions)
 
 
 </td></tr>
@@ -230,7 +216,7 @@ Gets all [filling recipe journal records](./ts-chocolate.entities.journal.ifilli
 
 </td><td>
 
-Gets all [filling recipe journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a specific filling version
+Gets all filling journal entries for a specific filling version
 
 
 </td></tr>
@@ -258,7 +244,7 @@ Checks if a journal with the given ID exists in the library.
 
 </td><td>
 
-Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts both recipe and confection journal records.
+Imports journal entries from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts filling and confection journal entries (both edit and production types).
 
 
 </td></tr>
@@ -272,7 +258,7 @@ Imports journal records from an array. Validates each journal and adds it to the
 
 </td><td>
 
-Removes a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) from the library
+Removes a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) from the library
 
 
 </td></tr>

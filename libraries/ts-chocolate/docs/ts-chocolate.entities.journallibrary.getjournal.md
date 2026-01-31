@@ -4,12 +4,12 @@
 
 ## Entities.JournalLibrary.getJournal() method
 
-Gets a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) by its ID
+Gets a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) by its ID
 
 **Signature:**
 
 ```typescript
-getJournal(journalId: JournalId): Result<AnyJournalRecord>;
+getJournal(journalId: JournalId): Result<AnyJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The journal ID to look up
 
 **Returns:**
 
-Result&lt;AnyJournalRecord&gt;
+Result&lt;AnyJournalEntry&gt;
 
-`Success` with the journal record, or `Failure` if not found
+`Success` with the journal entry, or `Failure` if not found
 

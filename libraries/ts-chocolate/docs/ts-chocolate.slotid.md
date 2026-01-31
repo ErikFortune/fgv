@@ -4,7 +4,7 @@
 
 ## SlotId type
 
-Unique identifier for a filling slot within a confection Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/ Examples: "center", "outer-layer", "layer1"
+Unique identifier for a filling slot within a confection or recipe Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/ Examples: "center", "outer-layer", "layer1"
 
 **Signature:**
 

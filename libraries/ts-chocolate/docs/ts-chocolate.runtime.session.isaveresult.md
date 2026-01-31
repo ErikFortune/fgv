@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[journalEntry?](./ts-chocolate.runtime.session.isaveresult.journalentry.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+IFillingEditJournalEntry
+
+
+</td><td>
+
+_(Optional)_ The full journal entry if one was created. Callers can use this to persist the journal via `context.journals.addJournal(entry)`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [journalId?](./ts-chocolate.runtime.session.isaveresult.journalid.md)
 
 
@@ -52,28 +73,7 @@ string
 
 </td><td>
 
-_(Optional)_ The journal ID if a journal record was created
-
-
-</td></tr>
-<tr><td>
-
-[journalRecord?](./ts-chocolate.runtime.session.isaveresult.journalrecord.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-IFillingRecipeJournalRecord
-
-
-</td><td>
-
-_(Optional)_ The full journal record if one was created. Callers can use this to persist the journal via `context.journals.addJournal(record)`<!-- -->.
+_(Optional)_ The journal ID if a journal entry was created
 
 
 </td></tr>
@@ -89,7 +89,7 @@ _(Optional)_ The full journal record if one was created. Callers can use this to
 
 </td><td>
 
-string
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
 
 
 </td><td>

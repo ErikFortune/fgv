@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[journalEntry?](./ts-chocolate.runtime.session.iconfectionsaveresult.journalentry.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+IConfectionEditJournalEntry
+
+
+</td><td>
+
+_(Optional)_ The full journal entry if one was created
+
+
+</td></tr>
+<tr><td>
+
 [journalId?](./ts-chocolate.runtime.session.iconfectionsaveresult.journalid.md)
 
 
@@ -52,28 +73,7 @@ string
 
 </td><td>
 
-_(Optional)_ The journal ID if a journal record was created
-
-
-</td></tr>
-<tr><td>
-
-[journalRecord?](./ts-chocolate.runtime.session.iconfectionsaveresult.journalrecord.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-IConfectionJournalRecord
-
-
-</td><td>
-
-_(Optional)_ The full journal record if one was created
+_(Optional)_ The journal ID if a journal entry was created
 
 
 </td></tr>

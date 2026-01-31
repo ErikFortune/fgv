@@ -99,25 +99,6 @@ boolean
 </td></tr>
 <tr><td>
 
-[journalEntries](./ts-chocolate.runtime.session.recipeeditingsession.journalentries.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;IJournalEntry&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [scaleFactor](./ts-chocolate.runtime.session.recipeeditingsession.scalefactor.md)
 
 
@@ -271,7 +252,7 @@ Adds additional amount to an ingredient
 
 </td><td>
 
-Adds a note to the journal
+Adds a note to the journal (deprecated - notes now provided at save time)
 
 
 </td></tr>
@@ -391,7 +372,7 @@ Substitutes one ingredient for another
 </td></tr>
 <tr><td>
 
-[toJournalRecord(notes)](./ts-chocolate.runtime.session.recipeeditingsession.tojournalrecord.md)
+[toEditJournalEntry(updated, updatedVersionSpec, notes)](./ts-chocolate.runtime.session.recipeeditingsession.toeditjournalentry.md)
 
 
 </td><td>
@@ -399,7 +380,7 @@ Substitutes one ingredient for another
 
 </td><td>
 
-Creates a journal record from this session
+Creates an edit journal entry from this session
 
 
 </td></tr>

@@ -37,7 +37,7 @@ role
 
 </td><td>
 
-ChocolateRole
+[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)
 
 
 </td><td>

@@ -28,6 +28,7 @@ import {
   FillingName,
   FillingVersionId,
   FillingVersionSpec,
+  ICategorizedNote,
   ICategorizedUrl,
   IIdsWithPreferred,
   IngredientId,
@@ -239,7 +240,6 @@ export interface IFillingRecipeVersion {
    */
   readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 }
-
 /**
  * Reference to a source filling recipe+version from which a filling recipe was derived.
  * Used to track lineage when a user edits a read-only filling recipe and creates
@@ -508,4 +508,45 @@ export function isScaledFillingRecipeVersion(
  */
 export function isFillingRecipeVersion(version: AnyFillingRecipeVersion): version is IFillingRecipeVersion {
   return 'versionSpec' in version;
+}
+
+// ============================================================================
+// Produced Filling Types (for Journal/Runtime)
+// ============================================================================
+
+/**
+ * Resolved filling ingredient with concrete choice.
+ * Unlike IFillingIngredient which uses IIdsWithPreferred, this stores
+ * the single actual ingredient that was used in production.
+ * @public
+ */
+export interface IProducedFillingIngredient {
+  /** The single selected ingredient ID */
+  readonly ingredientId: IngredientId;
+  /** Actual amount used */
+  readonly amount: Measurement;
+  /** Measurement unit (default: 'g') */
+  readonly unit?: MeasurementUnit;
+  /** Optional notes about this ingredient usage */
+  readonly notes?: string;
+}
+
+/**
+ * Produced filling with concrete choices.
+ * Captures what was actually made during a filling production session.
+ * @public
+ */
+export interface IProducedFilling {
+  /** Filling version ID that was produced */
+  readonly versionId: FillingVersionId;
+  /** Scale factor applied */
+  readonly scaleFactor: number;
+  /** Target weight for this production */
+  readonly targetWeight: Measurement;
+  /** Resolved ingredients with concrete selections */
+  readonly ingredients: ReadonlyArray<IProducedFillingIngredient>;
+  /** Resolved procedure ID if one was used */
+  readonly procedureId?: ProcedureId;
+  /** Optional categorized notes about production */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }

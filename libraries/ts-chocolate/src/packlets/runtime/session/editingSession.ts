@@ -25,8 +25,8 @@
 
 import { captureResult, Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
-import { Measurement, IngredientId, SessionId, FillingVersionSpec } from '../../common';
-import { IJournalEntry, IFillingRecipeJournalRecord, JournalEventType } from '../../entities';
+import { Measurement, IngredientId, SessionId, FillingVersionSpec, Helpers } from '../../common';
+import { IFillingEditJournalEntry, AnyFillingRecipeVersion } from '../../entities';
 import { IFillingIngredient, IFillingRecipeVersion } from '../../entities';
 import { IRuntimeFillingRecipeVersion } from '../model';
 import {
@@ -68,7 +68,6 @@ export class RecipeEditingSession implements ISessionState {
   private _scaleFactor: number;
   private _targetWeight: Measurement;
   private readonly _ingredients: Map<IngredientId, ISessionIngredient>;
-  private readonly _journalEntries: IJournalEntry[];
   private _isDirty: boolean;
 
   private constructor(params: IEditingSessionParams) {
@@ -91,7 +90,6 @@ export class RecipeEditingSession implements ISessionState {
     this._ingredients = new Map();
     this._initializeIngredients();
 
-    this._journalEntries = [];
     this._isDirty = false;
     this._validator = new EditingSessionValidator(this);
   }
@@ -134,10 +132,6 @@ export class RecipeEditingSession implements ISessionState {
     return this._ingredients;
   }
 
-  public get journalEntries(): ReadonlyArray<IJournalEntry> {
-    return this._journalEntries;
-  }
-
   public get isDirty(): boolean {
     return this._isDirty;
   }
@@ -170,7 +164,6 @@ export class RecipeEditingSession implements ISessionState {
       return Failure.with('Scale factor must be positive');
     }
 
-    const oldFactor = this._scaleFactor;
     this._scaleFactor = factor;
     this._targetWeight = (this._sourceVersion.baseWeight * factor) as Measurement;
 
@@ -182,9 +175,6 @@ export class RecipeEditingSession implements ISessionState {
       }
     }
 
-    this._addJournalEntry('scale-adjust', {
-      text: `Scale factor changed from ${oldFactor.toFixed(2)} to ${factor.toFixed(2)}`
-    });
     this._isDirty = true;
 
     this._logger.info(`Session ${this._sessionId}: scale factor set to ${factor.toFixed(2)}`);
@@ -242,7 +232,6 @@ export class RecipeEditingSession implements ISessionState {
       return Failure.with('Amount cannot be negative');
     }
 
-    const originalAmount = ingredient.amount;
     const newStatus: SessionIngredientStatus =
       ingredient.status === 'added'
         ? 'added'
@@ -256,11 +245,6 @@ export class RecipeEditingSession implements ISessionState {
       status: newStatus
     });
 
-    this._addJournalEntry('ingredient-modify', {
-      ingredientId: id,
-      originalAmount,
-      newAmount: amount
-    });
     this._isDirty = true;
 
     this._logger.info(`Session ${this._sessionId}: ingredient ${id} amount set to ${amount}g`);
@@ -308,10 +292,6 @@ export class RecipeEditingSession implements ISessionState {
       status: 'added'
     });
 
-    this._addJournalEntry('ingredient-add', {
-      ingredientId: id,
-      newAmount: amount
-    });
     this._isDirty = true;
 
     this._logger.info(`Session ${this._sessionId}: ingredient ${id} added with amount ${amount}g`);
@@ -343,10 +323,6 @@ export class RecipeEditingSession implements ISessionState {
       });
     }
 
-    this._addJournalEntry('ingredient-remove', {
-      ingredientId: id,
-      originalAmount: ingredient.amount
-    });
     this._isDirty = true;
 
     this._logger.info(`Session ${this._sessionId}: ingredient ${id} removed`);
@@ -394,12 +370,6 @@ export class RecipeEditingSession implements ISessionState {
       substitutedFor: originalId
     });
 
-    this._addJournalEntry('ingredient-substitute', {
-      ingredientId: originalId,
-      substituteIngredientId: substituteId,
-      originalAmount: original.amount,
-      newAmount
-    });
     this._isDirty = true;
 
     this._logger.info(
@@ -409,12 +379,14 @@ export class RecipeEditingSession implements ISessionState {
   }
 
   /**
-   * Adds a note to the journal
+   * Adds a note to the journal (deprecated - notes now provided at save time)
    * @param text - Note text
    * @public
+   * @deprecated Notes are now provided when creating the journal entry
    */
   public addNote(text: string): void {
-    this._addJournalEntry('note', { text });
+    // No-op: notes are now provided at save time
+    this._logger.info(`Session ${this._sessionId}: note added: ${text}`);
   }
 
   // ============================================================================
@@ -422,26 +394,40 @@ export class RecipeEditingSession implements ISessionState {
   // ============================================================================
 
   /**
-   * Creates a journal record from this session
-   * @param notes - Optional notes for the record
-   * @returns Success with journal record, or Failure
+   * Creates an edit journal entry from this session
+   * @param updated - Optional updated version if modifications were saved
+   * @param updatedId - Optional ID if the updated version was saved
+   * @param notes - Optional notes about this session
+   * @returns Success with journal entry, or Failure
    * @public
    */
-  public toJournalRecord(notes?: string): Result<IFillingRecipeJournalRecord> {
-    const date = new Date().toISOString().split('T')[0];
+  public toEditJournalEntry(
+    updated?: AnyFillingRecipeVersion,
+    updatedVersionSpec?: FillingVersionSpec,
+    notes?: string
+  ): Result<IFillingEditJournalEntry> {
+    const timestamp = new Date().toISOString();
+    const categorizedNotes = notes
+      ? [{ category: 'session' as unknown as import('../../common').NoteCategory, note: notes }]
+      : undefined;
 
-    return generateJournalId().onSuccess((journalId) =>
-      Success.with({
-        journalType: 'recipe',
-        journalId,
-        fillingVersionId: this._sourceVersion.versionId,
-        date,
-        targetWeight: this._targetWeight,
-        scaleFactor: this._scaleFactor,
-        notes,
-        entries: this._enableJournal ? [...this._journalEntries] : undefined
-      })
-    );
+    return generateJournalId().onSuccess((id) => {
+      // Convert updatedVersionSpec to full version ID if provided
+      const updatedId = updatedVersionSpec
+        ? Helpers.createFillingVersionId(this._sourceVersion.fillingId, updatedVersionSpec)
+        : undefined;
+
+      return Success.with({
+        type: 'filling-edit' as const,
+        id,
+        timestamp,
+        versionId: this._sourceVersion.versionId,
+        recipe: this._sourceVersion.version,
+        updated,
+        updatedId,
+        notes: categorizedNotes
+      });
+    });
   }
 
   /**
@@ -505,17 +491,10 @@ export class RecipeEditingSession implements ISessionState {
    */
   public save(options: ISaveOptions): Result<ISaveResult> {
     const result: ISaveResult = {};
+    let newVersion: IFillingRecipeVersion | undefined;
+    let newVersionSpec: FillingVersionSpec | undefined;
 
-    if (options.createJournalRecord) {
-      const journalResult = this.toJournalRecord(options.journalNotes).report(this._logger);
-      /* c8 ignore next 3 - toJournalRecord only constructs an object, cannot fail in practice */
-      if (journalResult.isFailure()) {
-        return Failure.with(journalResult.message);
-      }
-      (result as { journalId: string }).journalId = journalResult.value.journalId;
-      (result as { journalRecord: IFillingRecipeJournalRecord }).journalRecord = journalResult.value;
-    }
-
+    // Create new version first if requested
     if (options.createNewVersion) {
       if (!options.versionLabel) {
         return Failure.with('versionLabel is required when createNewVersion is true');
@@ -525,7 +504,22 @@ export class RecipeEditingSession implements ISessionState {
       if (versionResult.isFailure()) {
         return Failure.with(versionResult.message);
       }
-      (result as { newVersionSpec: string }).newVersionSpec = versionResult.value.versionSpec;
+      newVersion = versionResult.value;
+      newVersionSpec = versionResult.value.versionSpec;
+      (result as { newVersionSpec: FillingVersionSpec }).newVersionSpec = newVersionSpec;
+    }
+
+    // Create journal entry if requested, including the new version if it was created
+    if (options.createJournalRecord) {
+      const journalResult = this.toEditJournalEntry(newVersion, newVersionSpec, options.journalNotes).report(
+        this._logger
+      );
+      /* c8 ignore next 3 - toEditJournalEntry only constructs an object, cannot fail in practice */
+      if (journalResult.isFailure()) {
+        return Failure.with(journalResult.message);
+      }
+      (result as { journalId: string }).journalId = journalResult.value.id;
+      (result as { journalEntry: IFillingEditJournalEntry }).journalEntry = journalResult.value;
     }
 
     this._isDirty = false;
@@ -566,20 +560,5 @@ export class RecipeEditingSession implements ISessionState {
         notes: resolved.notes
       });
     }
-  }
-
-  private _addJournalEntry(
-    eventType: JournalEventType,
-    details: Partial<Omit<IJournalEntry, 'timestamp' | 'eventType'>>
-  ): void {
-    if (!this._enableJournal) {
-      return;
-    }
-
-    this._journalEntries.push({
-      timestamp: new Date().toISOString(),
-      eventType,
-      ...details
-    });
   }
 }

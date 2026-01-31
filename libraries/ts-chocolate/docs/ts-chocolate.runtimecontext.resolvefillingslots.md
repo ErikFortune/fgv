@@ -50,7 +50,7 @@ The raw filling slots
 
 **Returns:**
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
 
 Resolved filling slots, or undefined if none
 

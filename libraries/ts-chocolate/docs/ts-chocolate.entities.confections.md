@@ -91,6 +91,61 @@ Type guard for IMoldedBonBonVersion
 </td></tr>
 <tr><td>
 
+[isProducedBarTruffle(produced)](./ts-chocolate.entities.confections.isproducedbartruffle.md)
+
+
+</td><td>
+
+Type guard for IProducedBarTruffle
+
+
+</td></tr>
+<tr><td>
+
+[isProducedMoldedBonBon(produced)](./ts-chocolate.entities.confections.isproducedmoldedbonbon.md)
+
+
+</td><td>
+
+Type guard for IProducedMoldedBonBon
+
+
+</td></tr>
+<tr><td>
+
+[isProducedRolledTruffle(produced)](./ts-chocolate.entities.confections.isproducedrolledtruffle.md)
+
+
+</td><td>
+
+Type guard for IProducedRolledTruffle
+
+
+</td></tr>
+<tr><td>
+
+[isResolvedFillingSlot(slot)](./ts-chocolate.entities.confections.isresolvedfillingslot.md)
+
+
+</td><td>
+
+Type guard for IResolvedFillingSlot
+
+
+</td></tr>
+<tr><td>
+
+[isResolvedIngredientSlot(slot)](./ts-chocolate.entities.confections.isresolvedingredientslot.md)
+
+
+</td><td>
+
+Type guard for IResolvedIngredientSlot
+
+
+</td></tr>
+<tr><td>
+
 [isRolledTruffle(confection)](./ts-chocolate.entities.confections.isrolledtruffle.md)
 
 
@@ -188,7 +243,7 @@ Base confection interface - all confection types share these properties. Contain
 
 </td><td>
 
-Decoration specification for a confection
+Decoration specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
 
 
 </td></tr>
@@ -210,7 +265,7 @@ Base version interface - shared by all confection version types. Contains the co
 
 </td><td>
 
-Yield specification for a confection
+Yield specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
 
 
 </td></tr>
@@ -271,12 +326,78 @@ Version interface for molded bonbon confections. Includes mold and chocolate she
 </td></tr>
 <tr><td>
 
+[IProducedBarTruffle](./ts-chocolate.entities.confections.iproducedbartruffle.md)
+
+
+</td><td>
+
+Produced bar truffle with concrete choices.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedConfectionBase](./ts-chocolate.entities.confections.iproducedconfectionbase.md)
+
+
+</td><td>
+
+Base interface for all produced confection types. Contains common fields shared by all confection productions.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedMoldedBonBon](./ts-chocolate.entities.confections.iproducedmoldedbonbon.md)
+
+
+</td><td>
+
+Produced molded bonbon with concrete choices.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedRolledTruffle](./ts-chocolate.entities.confections.iproducedrolledtruffle.md)
+
+
+</td><td>
+
+Produced rolled truffle with concrete choices.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeFillingOption](./ts-chocolate.entities.confections.irecipefillingoption.md)
 
 
 </td><td>
 
 Recipe filling option - references a recipe (e.g., ganache)
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedFillingSlot](./ts-chocolate.entities.confections.iresolvedfillingslot.md)
+
+
+</td><td>
+
+Resolved slot with recipe filling.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedIngredientSlot](./ts-chocolate.entities.confections.iresolvedingredientslot.md)
+
+
+</td><td>
+
+Resolved slot with ingredient filling.
 
 
 </td></tr>
@@ -328,6 +449,32 @@ Description
 </td></tr>
 </tbody></table>
 
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[allResolvedSlotTypes](./ts-chocolate.entities.confections.allresolvedslottypes.md)
+
+
+</td><td>
+
+All resolved slot types.
+
+
+</td></tr>
+</tbody></table>
+
 ## Type Aliases
 
 <table><thead><tr><th>
@@ -360,6 +507,28 @@ Union type for all confection version types.
 </td><td>
 
 Discriminated union of filling options. Satisfies IHasId<FillingOptionId> for use with IOptionsWithPreferred.
+
+
+</td></tr>
+<tr><td>
+
+[AnyProducedConfection](./ts-chocolate.entities.confections.anyproducedconfection.md)
+
+
+</td><td>
+
+Discriminated union of produced confection types. Discriminated on the `confectionType` field.
+
+
+</td></tr>
+<tr><td>
+
+[AnyResolvedFillingSlot](./ts-chocolate.entities.confections.anyresolvedfillingslot.md)
+
+
+</td><td>
+
+Union of resolved filling slot types. Discriminated on the `slotType` field.
 
 
 </td></tr>
@@ -514,6 +683,17 @@ Parameters for creating a ConfectionsLibrary instance asynchronously with encryp
 </td><td>
 
 Parameters for creating a ConfectionsLibrary instance synchronously.
+
+
+</td></tr>
+<tr><td>
+
+[ResolvedSlotType](./ts-chocolate.entities.confections.resolvedslottype.md)
+
+
+</td><td>
+
+Resolved slot type discriminator.
 
 
 </td></tr>

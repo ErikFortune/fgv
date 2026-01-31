@@ -4,7 +4,7 @@
 
 ## Runtime.Session.IConfectionSaveResult.journalId property
 
-The journal ID if a journal record was created
+The journal ID if a journal entry was created
 
 **Signature:**
 

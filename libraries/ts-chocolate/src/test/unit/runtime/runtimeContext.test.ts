@@ -42,7 +42,7 @@ import {
   SourceId,
   TaskId
 } from '../../../packlets/common';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/entities';
+import { IFillingEditJournalEntry, JournalLibrary } from '../../../packlets/entities';
 
 import {
   IGanacheCharacteristics,
@@ -670,38 +670,43 @@ describe('RuntimeContext', () => {
   // ============================================================================
 
   describe('journals', () => {
-    const testJournalRecord: IFillingRecipeJournalRecord = {
-      journalType: 'recipe',
-      journalId: '2026-03-15-100000-00000001' as JournalId,
-      fillingVersionId: 'test.dark-ganache@2026-01-01-01' as FillingVersionId,
-      date: '2026-03-15',
-      targetWeight: 450 as Measurement,
-      scaleFactor: 1.5,
-      entries: [
-        {
-          eventType: 'scale-adjust',
-          timestamp: '2026-03-15T10:00:00Z',
-          text: 'Scaled from 1.0 to 1.5'
-        }
-      ]
+    const testJournalRecord: IFillingEditJournalEntry = {
+      type: 'filling-edit',
+      id: '2026-03-15-100000-00000001' as JournalId,
+      versionId: 'test.dark-ganache@2026-01-01-01' as FillingVersionId,
+      timestamp: '2026-03-15T10:00:00Z',
+      recipe: {
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [],
+        baseWeight: 300 as Measurement
+      }
     };
 
-    const testJournalRecord2: IFillingRecipeJournalRecord = {
-      journalType: 'recipe',
-      journalId: '2026-03-16-100000-00000002' as JournalId,
-      fillingVersionId: 'test.dark-ganache@2026-02-01-01' as FillingVersionId,
-      date: '2026-03-16',
-      targetWeight: 600 as Measurement,
-      scaleFactor: 2.0
+    const testJournalRecord2: IFillingEditJournalEntry = {
+      type: 'filling-edit',
+      id: '2026-03-16-100000-00000002' as JournalId,
+      versionId: 'test.dark-ganache@2026-02-01-01' as FillingVersionId,
+      timestamp: '2026-03-16T10:00:00Z',
+      recipe: {
+        versionSpec: '2026-02-01-01' as FillingVersionSpec,
+        createdDate: '2026-02-01',
+        ingredients: [],
+        baseWeight: 400 as Measurement
+      }
     };
 
-    const testJournalRecord3: IFillingRecipeJournalRecord = {
-      journalType: 'recipe',
-      journalId: '2026-03-17-100000-00000003' as JournalId,
-      fillingVersionId: 'test.milk-ganache@2026-01-01-01' as FillingVersionId,
-      date: '2026-03-17',
-      targetWeight: 350 as Measurement,
-      scaleFactor: 1.0
+    const testJournalRecord3: IFillingEditJournalEntry = {
+      type: 'filling-edit',
+      id: '2026-03-17-100000-00000003' as JournalId,
+      versionId: 'test.milk-ganache@2026-01-01-01' as FillingVersionId,
+      timestamp: '2026-03-17T10:00:00Z',
+      recipe: {
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [],
+        baseWeight: 350 as Measurement
+      }
     };
 
     test('journals getter returns JournalLibrary', () => {
@@ -730,8 +735,8 @@ describe('RuntimeContext', () => {
       // Get journals for dark-ganache recipe (should have 2)
       const journals = ctx.getJournalsForFilling('test.dark-ganache' as FillingId);
       expect(journals.length).toBe(2);
-      expect(journals.map((j) => j.journalId)).toContain('2026-03-15-100000-00000001');
-      expect(journals.map((j) => j.journalId)).toContain('2026-03-16-100000-00000002');
+      expect(journals.map((j) => j.id)).toContain('2026-03-15-100000-00000001');
+      expect(journals.map((j) => j.id)).toContain('2026-03-16-100000-00000002');
     });
 
     test('getJournalsForFilling returns empty array for recipe with no journals', () => {
@@ -762,7 +767,7 @@ describe('RuntimeContext', () => {
         'test.dark-ganache@2026-01-01-01' as FillingVersionId
       );
       expect(journals.length).toBe(1);
-      expect(journals[0].journalId).toBe('2026-03-15-100000-00000001');
+      expect(journals[0].id).toBe('2026-03-15-100000-00000001');
     });
 
     test('getJournalsForFillingVersion returns empty array for version with no journals', () => {

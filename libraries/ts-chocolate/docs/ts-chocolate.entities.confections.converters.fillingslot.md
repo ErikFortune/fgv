@@ -4,7 +4,7 @@
 
 ## Entities.Confections.Converters.fillingSlot variable
 
-Converter for IFillingSlot
+`Converter` for [IFillingSlot](./ts-chocolate.entities.confections.ifillingslot.md)<!-- -->.
 
 **Signature:**
 

@@ -23,7 +23,7 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result, fail } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
-import { Crypto } from '@fgv/ts-chocolate';
+import { CryptoUtils } from '@fgv/ts-chocolate';
 
 /**
  * Command-line options for the encrypt command
@@ -80,7 +80,7 @@ async function encryptFile(
   secretName: string,
   key: Uint8Array,
   includeMetadata: boolean,
-  keyDerivation?: Crypto.IKeyDerivationParams
+  keyDerivation?: CryptoUtils.IKeyDerivationParams
 ): Promise<Result<void>> {
   // Read and parse input file
   const jsonResult = readJsonFile(inputPath);
@@ -91,7 +91,7 @@ async function encryptFile(
   const content = jsonResult.value;
 
   // Build metadata if requested
-  const metadata: Crypto.IEncryptedCollectionMetadata | undefined = includeMetadata
+  const metadata: CryptoUtils.IEncryptedCollectionMetadata | undefined = includeMetadata
     ? {
         collectionId: path.basename(inputPath, path.extname(inputPath)),
         itemCount: typeof content === 'object' && content !== null ? Object.keys(content).length : undefined
@@ -99,13 +99,13 @@ async function encryptFile(
     : undefined;
 
   // Encrypt the content
-  const encryptResult = await Crypto.createEncryptedCollectionFile({
+  const encryptResult = await CryptoUtils.createEncryptedCollectionFile({
     content,
     secretName,
     key,
     metadata,
     keyDerivation,
-    cryptoProvider: Crypto.nodeCryptoProvider
+    cryptoProvider: CryptoUtils.nodeCryptoProvider
   });
 
   if (encryptResult.isFailure()) {
@@ -145,7 +145,7 @@ export function createEncryptCommand(): Command {
       }
 
       // Build key derivation params if salt is provided
-      let keyDerivation: Crypto.IKeyDerivationParams | undefined;
+      let keyDerivation: CryptoUtils.IKeyDerivationParams | undefined;
       if (options.salt) {
         const iterations = options.iterations ? parseInt(options.iterations, 10) : 100000;
         if (isNaN(iterations) || iterations <= 0) {

@@ -4,12 +4,12 @@
 
 ## Runtime.ChocolateLibrary.getJournalsForFilling() method
 
-Gets all [journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a filling (across all versions)
+Gets all [journal records](./ts-chocolate.entities.journal.anyfillingjournalentry.md) for a filling (across all versions)
 
 **Signature:**
 
 ```typescript
-getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord>;
+getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [filling ID](./ts-chocolate.fillingid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IFillingRecipeJournalRecord&gt;
+ReadonlyArray&lt;AnyFillingJournalEntry&gt;
 
 Array of journal records (empty if none found)
 

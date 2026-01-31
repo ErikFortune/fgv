@@ -28,6 +28,7 @@ import { Logging } from '@fgv/ts-utils';
 import {
   ConfectionVersionSpec,
   FillingId,
+  FillingVersionSpec,
   Measurement,
   IngredientId,
   MoldId,
@@ -35,13 +36,7 @@ import {
   SessionId,
   SlotId
 } from '../../common';
-import {
-  ChocolateRole,
-  IConfectionJournalEntry,
-  IConfectionJournalRecord,
-  IJournalEntry,
-  IFillingRecipeJournalRecord
-} from '../../entities';
+import { IFillingEditJournalEntry, IConfectionEditJournalEntry } from '../../entities';
 import { IRuntimeConfection, IRuntimeFillingRecipeVersion } from '../model';
 
 // ============================================================================
@@ -160,11 +155,6 @@ export interface ISessionState {
   readonly ingredients: ReadonlyMap<IngredientId, ISessionIngredient>;
 
   /**
-   * Journal entries recording what happened in this session
-   */
-  readonly journalEntries: ReadonlyArray<IJournalEntry>;
-
-  /**
    * Whether the session has unsaved modifications
    */
   readonly isDirty: boolean;
@@ -197,7 +187,7 @@ export interface ISaveOptions {
   /**
    * Version label for the new version (required if createNewVersion is true)
    */
-  readonly versionLabel?: string;
+  readonly versionLabel?: FillingVersionSpec;
 
   /**
    * Optional notes for the journal record
@@ -211,20 +201,20 @@ export interface ISaveOptions {
  */
 export interface ISaveResult {
   /**
-   * The journal ID if a journal record was created
+   * The journal ID if a journal entry was created
    */
   readonly journalId?: string;
 
   /**
-   * The full journal record if one was created.
-   * Callers can use this to persist the journal via `context.journals.addJournal(record)`.
+   * The full journal entry if one was created.
+   * Callers can use this to persist the journal via `context.journals.addJournal(entry)`.
    */
-  readonly journalRecord?: IFillingRecipeJournalRecord;
+  readonly journalEntry?: IFillingEditJournalEntry;
 
   /**
    * The new version spec if one was created
    */
-  readonly newVersionSpec?: string;
+  readonly newVersionSpec?: FillingVersionSpec;
 }
 
 // ============================================================================
@@ -293,6 +283,13 @@ export interface ISessionMold {
    */
   readonly status: ConfectionSelectionStatus;
 }
+
+/**
+ * Role that a chocolate plays in a confection.
+ * Used for tracking chocolate selections during editing sessions.
+ * @public
+ */
+export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
 
 /**
  * Tracks a chocolate selection by role for a confection session
@@ -478,11 +475,6 @@ export interface IConfectionSessionState {
   readonly coating?: ISessionCoating;
 
   /**
-   * Journal entries recording what happened in this session
-   */
-  readonly journalEntries: ReadonlyArray<IConfectionJournalEntry>;
-
-  /**
    * Whether the session has unsaved modifications
    */
   readonly isDirty: boolean;
@@ -534,14 +526,14 @@ export interface IConfectionSaveOptions {
  */
 export interface IConfectionSaveResult {
   /**
-   * The journal ID if a journal record was created
+   * The journal ID if a journal entry was created
    */
   readonly journalId?: string;
 
   /**
-   * The full journal record if one was created
+   * The full journal entry if one was created
    */
-  readonly journalRecord?: IConfectionJournalRecord;
+  readonly journalEntry?: IConfectionEditJournalEntry;
 
   /**
    * The new version spec if one was created

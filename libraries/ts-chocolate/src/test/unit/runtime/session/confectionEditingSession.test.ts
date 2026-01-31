@@ -896,25 +896,24 @@ describe('ConfectionEditingSession', () => {
       ).toFailWith(/does not exist/);
     });
 
-    test('adds journal entry when journaling is enabled', () => {
+    test('marks session as dirty when filling is selected', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('filling-select');
-      expect(session.journalEntries[0].fillingSlotId).toBe('center');
+      expect(session.isDirty).toBe(true);
     });
 
-    test('does not add journal entry when journaling is disabled', () => {
+    test('allows filling selection when journaling is disabled', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({
         sourceConfection: confection,
         enableJournal: false
       }).orThrow();
 
-      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId);
-      expect(session.journalEntries.length).toBe(0);
+      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId)).toSucceed();
+      expect(session.fillings.get('center' as SlotId)?.fillingId).toBe('common.milk-ganache');
     });
 
     test('fails for slot with empty options since slot is not initialized', () => {
@@ -1042,13 +1041,13 @@ describe('ConfectionEditingSession', () => {
       expect(session.selectMold('common.dome-25mm' as MoldId)).toFailWith(/does not support mold selection/);
     });
 
-    test('adds journal entry', () => {
+    test('marks session as dirty when mold is selected', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.selectMold('common.square-20mm' as MoldId);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('mold-select');
+      expect(session.isDirty).toBe(true);
     });
 
     test('selects mold when no initial mold is set', () => {
@@ -1127,13 +1126,13 @@ describe('ConfectionEditingSession', () => {
       expect(session.isDirty).toBe(true);
     });
 
-    test('adds journal entry', () => {
+    test('marks session as dirty when chocolate is selected', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.selectChocolate('shell', 'common.chocolate-dark-70' as IngredientId);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('chocolate-select');
+      expect(session.isDirty).toBe(true);
     });
 
     test('adds new chocolate role that was not initialized', () => {
@@ -1174,13 +1173,13 @@ describe('ConfectionEditingSession', () => {
       expect(session.setYieldCount(-1)).toFailWith(/must be positive/);
     });
 
-    test('adds journal entry', () => {
+    test('marks session as dirty when yield count changes', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.setYieldCount(48);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('yield-modify');
+      expect(session.isDirty).toBe(true);
     });
 
     test('status returns to original when count matches original', () => {
@@ -1214,13 +1213,13 @@ describe('ConfectionEditingSession', () => {
       expect(session.setWeightPerPiece(-1 as Measurement)).toFailWith(/must be positive/);
     });
 
-    test('adds journal entry', () => {
+    test('marks session as dirty when weight per piece changes', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.setWeightPerPiece(20 as Measurement);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('yield-modify');
+      expect(session.isDirty).toBe(true);
     });
   });
 
@@ -1256,13 +1255,13 @@ describe('ConfectionEditingSession', () => {
       );
     });
 
-    test('adds journal entry', () => {
+    test('marks session as dirty when procedure is selected', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.selectProcedure('common.molded-bonbon-double-shell' as ProcedureId);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('procedure-select');
+      expect(session.isDirty).toBe(true);
     });
 
     test('selects procedure when no initial procedure is set', () => {
@@ -1349,13 +1348,13 @@ describe('ConfectionEditingSession', () => {
       );
     });
 
-    test('adds journal entry', () => {
+    test('marks session as dirty when coating is selected', () => {
       const confection = createRolledTruffle();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
+      expect(session.isDirty).toBe(false);
       session.selectCoating('common.powdered-sugar' as IngredientId);
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('coating-select');
+      expect(session.isDirty).toBe(true);
     });
 
     test('selects coating when no initial coating is set', () => {
@@ -1448,25 +1447,21 @@ describe('ConfectionEditingSession', () => {
   // ============================================================================
 
   describe('addNote', () => {
-    test('adds a note to the journal', () => {
+    test('adds a note without error', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      session.addNote('This is a test note');
-      expect(session.journalEntries.length).toBe(1);
-      expect(session.journalEntries[0].eventType).toBe('note');
-      expect(session.journalEntries[0].text).toBe('This is a test note');
+      expect(() => session.addNote('This is a test note')).not.toThrow();
     });
 
-    test('does not add note when journaling is disabled', () => {
+    test('accepts note when journaling is disabled', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({
         sourceConfection: confection,
         enableJournal: false
       }).orThrow();
 
-      session.addNote('This note should not be added');
-      expect(session.journalEntries.length).toBe(0);
+      expect(() => session.addNote('This note is accepted')).not.toThrow();
     });
   });
 
@@ -1474,8 +1469,8 @@ describe('ConfectionEditingSession', () => {
   // Journal Record Generation Tests
   // ============================================================================
 
-  describe('toJournalRecord', () => {
-    test('creates a valid journal record', () => {
+  describe('toEditJournalEntry', () => {
+    test('creates a valid journal entry', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
@@ -1483,31 +1478,34 @@ describe('ConfectionEditingSession', () => {
       session.setYieldCount(48);
       session.addNote('Test session');
 
-      expect(session.toJournalRecord('Session notes')).toSucceedAndSatisfy((record) => {
-        expect(record.journalType).toBe('confection');
-        expect(record.journalId).toBeDefined();
-        expect(record.confectionVersionId).toBe('test.test-bonbon@2026-01-01-01');
-        expect(record.yieldCount).toBe(48);
-        expect(record.notes).toBe('Session notes');
-        expect(record.entries).toHaveLength(2);
-      });
+      expect(session.toEditJournalEntry(undefined, undefined, 'Session notes')).toSucceedAndSatisfy(
+        (entry) => {
+          expect(entry.type).toBe('confection-edit');
+          expect(entry.id).toBeDefined();
+          expect(entry.versionId).toBe('test.test-bonbon@2026-01-01-01');
+          expect(entry.recipe).toBeDefined();
+          expect(entry.notes).toBeDefined();
+          expect(entry.notes?.[0]?.note).toBe('Session notes');
+        }
+      );
     });
 
-    test('creates journal record without notes', () => {
+    test('creates journal entry without notes', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.toJournalRecord()).toSucceedAndSatisfy((record) => {
-        expect(record.notes).toBeUndefined();
+      expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
+        expect(entry.notes).toBeUndefined();
       });
     });
 
-    test('includes weight per piece if set', () => {
+    test('includes source recipe in entry', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.toJournalRecord()).toSucceedAndSatisfy((record) => {
-        expect(record.weightPerPiece).toBe(12);
+      expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
+        expect(entry.recipe).toBeDefined();
+        expect(entry.recipe.versionSpec).toBe('2026-01-01-01');
       });
     });
   });
@@ -1517,7 +1515,7 @@ describe('ConfectionEditingSession', () => {
   // ============================================================================
 
   describe('save', () => {
-    test('creates journal record by default', () => {
+    test('creates journal entry by default', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
@@ -1525,12 +1523,12 @@ describe('ConfectionEditingSession', () => {
 
       expect(session.save()).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
-        expect(result.journalRecord).toBeDefined();
-        expect(result.journalRecord?.journalType).toBe('confection');
+        expect(result.journalEntry).toBeDefined();
+        expect(result.journalEntry?.type).toBe('confection-edit');
       });
     });
 
-    test('skips journal record when disabled', () => {
+    test('skips journal entry when disabled', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({
         sourceConfection: confection,
@@ -1539,17 +1537,17 @@ describe('ConfectionEditingSession', () => {
 
       expect(session.save()).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeUndefined();
-        expect(result.journalRecord).toBeUndefined();
+        expect(result.journalEntry).toBeUndefined();
       });
     });
 
-    test('skips journal record when createJournalRecord is false', () => {
+    test('skips journal entry when createJournalRecord is false', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
       expect(session.save({ createJournalRecord: false })).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeUndefined();
-        expect(result.journalRecord).toBeUndefined();
+        expect(result.journalEntry).toBeUndefined();
       });
     });
 
@@ -1585,12 +1583,12 @@ describe('ConfectionEditingSession', () => {
       expect(session.isDirty).toBe(false);
     });
 
-    test('includes journal notes in record', () => {
+    test('includes journal notes in entry', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
       expect(session.save({ journalNotes: 'Custom notes' })).toSucceedAndSatisfy((result) => {
-        expect(result.journalRecord?.notes).toBe('Custom notes');
+        expect(result.journalEntry?.notes).toEqual([{ category: 'session', note: 'Custom notes' }]);
       });
     });
   });

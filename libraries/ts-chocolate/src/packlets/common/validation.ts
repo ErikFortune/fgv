@@ -55,7 +55,8 @@ import {
   SessionId,
   SlotId,
   SourceId,
-  UrlCategory
+  UrlCategory,
+  NoteCategory
 } from './model';
 
 // ============================================================================
@@ -235,6 +236,32 @@ export function toBaseConfectionId(from: unknown): Result<BaseConfectionId> {
   }
   return Failure.with(
     'Invalid BaseConfectionId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
+}
+
+/**
+ * Type guard for {@link NoteCategory | NoteCategory}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link NoteCategory | NoteCategory}.
+ * @public
+ */
+export function isValidNoteCategory(from: unknown): from is NoteCategory {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link NoteCategory | NoteCategory}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link NoteCategory | NoteCategory} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toNoteCategory(from: unknown): Result<NoteCategory> {
+  if (isValidNoteCategory(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid NoteCategory: must be non-empty alphanumeric with dashes/underscores, no dots'
   );
 }
 

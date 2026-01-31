@@ -4,10 +4,10 @@
 
 ## Entities.IJournalLibraryParams.journals property
 
-Initial journal records to populate the library with. Accepts both recipe and confection journal records.
+Initial journal entries to populate the library with. Accepts filling and confection journal entries (both edit and production types).
 
 **Signature:**
 
 ```typescript
-readonly journals?: ReadonlyArray<AnyJournalRecord>;
+readonly journals?: ReadonlyArray<AnyJournalEntry>;
 ```

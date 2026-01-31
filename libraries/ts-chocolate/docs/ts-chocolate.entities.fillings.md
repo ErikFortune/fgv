@@ -183,6 +183,28 @@ Optional ingredient snapshot for archival purposes. Used when the source filling
 </td></tr>
 <tr><td>
 
+[IProducedFilling](./ts-chocolate.entities.fillings.iproducedfilling.md)
+
+
+</td><td>
+
+Produced filling with concrete choices. Captures what was actually made during a filling production session.
+
+
+</td></tr>
+<tr><td>
+
+[IProducedFillingIngredient](./ts-chocolate.entities.fillings.iproducedfillingingredient.md)
+
+
+</td><td>
+
+Resolved filling ingredient with concrete choice. Unlike IFillingIngredient which uses IIdsWithPreferred, this stores the single actual ingredient that was used in production.
+
+
+</td></tr>
+<tr><td>
+
 [IScaledFillingIngredient](./ts-chocolate.entities.fillings.iscaledfillingingredient.md)
 
 

@@ -4,7 +4,7 @@
 
 ## Entities.Confections.Converters.confectionDecoration variable
 
-Converter for IConfectionDecoration
+`Converter` for [IConfectionDecoration](./ts-chocolate.entities.confections.iconfectiondecoration.md)<!-- -->.
 
 **Signature:**
 

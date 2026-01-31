@@ -106,7 +106,7 @@ import {
   IRolledTruffleVersion
 } from '../entities';
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
+import { AnyFillingJournalEntry, JournalLibrary } from '../entities';
 import { IGanacheCalculation } from '../calculations';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
@@ -424,6 +424,12 @@ export interface IRuntimeFillingRecipeVersion {
    * Enables navigation: `version.fillingRecipe.name`
    */
   readonly fillingRecipe: IRuntimeFillingRecipe;
+
+  /**
+   * The underlying filling recipe version.
+   * Use this to get the raw version data for persistence or journaling.
+   */
+  readonly version: IFillingRecipeVersion;
 
   // ---- Version Properties (from IFillingRecipeVersion) ----
 
@@ -1163,14 +1169,14 @@ export interface IRuntimeContext {
    * @param fillingId - The filling ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord>;
+  getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
 
   /**
    * Gets all journal records for a specific filling version.
    * @param versionId - The filling version ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
+  getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
 
   // ---- Reverse Lookups ----
 
@@ -1638,6 +1644,12 @@ export interface IRuntimeConfectionVersionBase {
    * Enables navigation: `version.confection.name`
    */
   readonly confection: IRuntimeConfection;
+
+  /**
+   * The underlying confection version.
+   * Use this to get the raw version data for persistence or journaling.
+   */
+  readonly version: AnyConfectionVersion;
 
   // ---- Version Properties ----
 

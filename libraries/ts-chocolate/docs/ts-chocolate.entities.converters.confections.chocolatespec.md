@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Confections.chocolateSpec variable
 
-Converter for IChocolateSpec (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
+`Converter` for [IChocolateSpec](./ts-chocolate.entities.confections.ichocolatespec.md) (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 **Signature:**
 

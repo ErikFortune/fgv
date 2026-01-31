@@ -110,7 +110,7 @@ _(Optional)_ Optional notes for the journal record
 
 </td><td>
 
-string
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
 
 
 </td><td>

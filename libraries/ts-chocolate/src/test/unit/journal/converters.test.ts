@@ -21,151 +21,78 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { journalEventType, journalEntry } from '../../../packlets/entities/journal/converters';
+import { journalEntryType, anyJournalEntry } from '../../../packlets/entities/journal/converters';
 
 describe('Journal Converters', () => {
   // ============================================================================
-  // journalEventType Converter
+  // journalEntryType Converter
   // ============================================================================
 
-  describe('journalEventType', () => {
-    test('converts valid event types', () => {
-      expect(journalEventType.convert('ingredient-add')).toSucceedWith('ingredient-add');
-      expect(journalEventType.convert('ingredient-remove')).toSucceedWith('ingredient-remove');
-      expect(journalEventType.convert('ingredient-modify')).toSucceedWith('ingredient-modify');
-      expect(journalEventType.convert('ingredient-substitute')).toSucceedWith('ingredient-substitute');
-      expect(journalEventType.convert('scale-adjust')).toSucceedWith('scale-adjust');
-      expect(journalEventType.convert('note')).toSucceedWith('note');
+  describe('journalEntryType', () => {
+    test('converts valid entry types', () => {
+      expect(journalEntryType.convert('filling-edit')).toSucceedWith('filling-edit');
+      expect(journalEntryType.convert('confection-edit')).toSucceedWith('confection-edit');
+      expect(journalEntryType.convert('filling-production')).toSucceedWith('filling-production');
+      expect(journalEntryType.convert('confection-production')).toSucceedWith('confection-production');
     });
 
-    test('fails for invalid event type', () => {
-      expect(journalEventType.convert('invalid-type')).toFail();
-      expect(journalEventType.convert('')).toFail();
-      expect(journalEventType.convert(123)).toFail();
+    test('fails for invalid entry type', () => {
+      expect(journalEntryType.convert('invalid-type')).toFail();
+      expect(journalEntryType.convert('')).toFail();
+      expect(journalEntryType.convert(123)).toFail();
     });
   });
 
   // ============================================================================
-  // journalEntry Converter
+  // anyJournalEntry Converter
   // ============================================================================
 
-  describe('journalEntry', () => {
-    test('converts minimal note entry', () => {
-      const input = {
-        timestamp: '2026-01-15T10:30:00Z',
-        eventType: 'note',
-        text: 'Started cooking session'
+  describe('anyJournalEntry', () => {
+    test('converts filling-edit entry', () => {
+      const entry = {
+        type: 'filling-edit',
+        id: '2024-01-01-100000-00000001',
+        timestamp: '2024-01-01T00:00:00Z',
+        versionId: 'source.filling@2024-01-01-01',
+        recipe: {
+          versionSpec: '2024-01-01-01',
+          createdDate: '2024-01-01',
+          ingredients: [],
+          baseWeight: 100
+        }
       };
-      expect(journalEntry.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.timestamp).toBe('2026-01-15T10:30:00Z');
-        expect(result.eventType).toBe('note');
-        expect(result.text).toBe('Started cooking session');
+
+      expect(anyJournalEntry.convert(entry)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('filling-edit');
+        expect(result.id).toBe('2024-01-01-100000-00000001');
       });
     });
 
-    test('converts ingredient-add entry', () => {
-      const input = {
-        timestamp: '2026-01-15T10:35:00Z',
-        eventType: 'ingredient-add',
-        ingredientId: 'source.chocolate',
-        newAmount: 100
+    test('converts confection-edit entry', () => {
+      const entry = {
+        type: 'confection-edit',
+        id: '2024-01-01-100000-00000002',
+        timestamp: '2024-01-01T00:00:00Z',
+        versionId: 'source.confection@2024-01-01-01',
+        recipe: {
+          versionSpec: '2024-01-01-01',
+          createdDate: '2024-01-01',
+          yield: { count: 10 },
+          molds: { preferredId: 'mold-1', options: [] },
+          shellChocolate: { ids: ['choc-1'] }
+        }
       };
-      expect(journalEntry.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.eventType).toBe('ingredient-add');
-        expect(result.ingredientId).toBe('source.chocolate');
-        expect(result.newAmount).toBe(100);
+
+      expect(anyJournalEntry.convert(entry)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('confection-edit');
+        expect(result.id).toBe('2024-01-01-100000-00000002');
       });
     });
 
-    test('converts ingredient-remove entry', () => {
-      const input = {
-        timestamp: '2026-01-15T10:40:00Z',
-        eventType: 'ingredient-remove',
-        ingredientId: 'source.cream',
-        originalAmount: 50
-      };
-      expect(journalEntry.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.eventType).toBe('ingredient-remove');
-        expect(result.ingredientId).toBe('source.cream');
-        expect(result.originalAmount).toBe(50);
-      });
-    });
-
-    test('converts ingredient-modify entry', () => {
-      const input = {
-        timestamp: '2026-01-15T10:45:00Z',
-        eventType: 'ingredient-modify',
-        ingredientId: 'source.sugar',
-        originalAmount: 20,
-        newAmount: 25,
-        text: 'Added extra for sweetness'
-      };
-      expect(journalEntry.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.eventType).toBe('ingredient-modify');
-        expect(result.ingredientId).toBe('source.sugar');
-        expect(result.originalAmount).toBe(20);
-        expect(result.newAmount).toBe(25);
-        expect(result.text).toBe('Added extra for sweetness');
-      });
-    });
-
-    test('converts ingredient-substitute entry', () => {
-      const input = {
-        timestamp: '2026-01-15T10:50:00Z',
-        eventType: 'ingredient-substitute',
-        ingredientId: 'source.butter',
-        substituteIngredientId: 'source.cocoa-butter',
-        originalAmount: 30,
-        newAmount: 28,
-        text: 'Substituted with cocoa butter'
-      };
-      expect(journalEntry.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.eventType).toBe('ingredient-substitute');
-        expect(result.ingredientId).toBe('source.butter');
-        expect(result.substituteIngredientId).toBe('source.cocoa-butter');
-        expect(result.originalAmount).toBe(30);
-        expect(result.newAmount).toBe(28);
-      });
-    });
-
-    test('converts scale-adjust entry', () => {
-      const input = {
-        timestamp: '2026-01-15T10:30:00Z',
-        eventType: 'scale-adjust',
-        text: 'Scaled up by 1.5x'
-      };
-      expect(journalEntry.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.eventType).toBe('scale-adjust');
-        expect(result.text).toBe('Scaled up by 1.5x');
-      });
-    });
-
-    test('fails for invalid event type', () => {
-      const input = {
-        timestamp: '2026-01-15T10:30:00Z',
-        eventType: 'invalid-type'
-      };
-      expect(journalEntry.convert(input)).toFail();
-    });
-
-    test('fails for invalid ingredient ID', () => {
-      const input = {
-        timestamp: '2026-01-15T10:30:00Z',
-        eventType: 'ingredient-add',
-        ingredientId: 'invalid-no-dot',
-        newAmount: 100
-      };
-      expect(journalEntry.convert(input)).toFail();
-    });
-
-    test('fails for negative amount', () => {
-      const input = {
-        timestamp: '2026-01-15T10:30:00Z',
-        eventType: 'ingredient-add',
-        ingredientId: 'source.chocolate',
-        newAmount: -10
-      };
-      expect(journalEntry.convert(input)).toFail();
+    test('fails for invalid entry', () => {
+      expect(anyJournalEntry.convert({})).toFail();
+      expect(anyJournalEntry.convert({ type: 'invalid' })).toFail();
+      expect(anyJournalEntry.convert(null)).toFail();
     });
   });
 });

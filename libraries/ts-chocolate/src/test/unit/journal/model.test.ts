@@ -21,156 +21,267 @@
 import '@fgv/ts-utils-jest';
 
 import {
-  allJournalEventTypes,
-  JournalEventType,
-  allConfectionJournalEventTypes,
-  ConfectionJournalEventType,
-  allChocolateRoles,
-  ChocolateRole,
-  allJournalTypes,
-  JournalType,
-  isFillingRecipeJournalRecord,
-  isConfectionJournalRecord,
-  AnyJournalRecord,
-  IFillingRecipeJournalRecord,
-  IConfectionJournalRecord
+  allJournalEntryTypes,
+  JournalEntryType,
+  allResolvedSlotTypes,
+  ResolvedSlotType,
+  isFillingEditJournalEntry,
+  isFillingProductionJournalEntry,
+  isConfectionEditJournalEntry,
+  isConfectionProductionJournalEntry,
+  isResolvedFillingSlot,
+  isResolvedIngredientSlot,
+  AnyJournalEntry,
+  IFillingEditJournalEntry,
+  IFillingProductionJournalEntry,
+  IConfectionEditJournalEntry,
+  IConfectionProductionJournalEntry,
+  AnyResolvedFillingSlot,
+  IResolvedFillingSlot,
+  IResolvedIngredientSlot,
+  IFillingRecipeVersion,
+  IMoldedBonBonVersion,
+  IProducedFilling,
+  IProducedMoldedBonBon
 } from '../../../packlets/entities';
 
 describe('Journal Model', () => {
-  describe('allJournalEventTypes', () => {
-    test('contains all expected event types', () => {
-      expect(allJournalEventTypes).toContain('ingredient-add');
-      expect(allJournalEventTypes).toContain('ingredient-remove');
-      expect(allJournalEventTypes).toContain('ingredient-modify');
-      expect(allJournalEventTypes).toContain('ingredient-substitute');
-      expect(allJournalEventTypes).toContain('scale-adjust');
-      expect(allJournalEventTypes).toContain('note');
+  describe('allJournalEntryTypes', () => {
+    test('contains all expected entry types', () => {
+      expect(allJournalEntryTypes).toContain('filling-edit');
+      expect(allJournalEntryTypes).toContain('confection-edit');
+      expect(allJournalEntryTypes).toContain('filling-production');
+      expect(allJournalEntryTypes).toContain('confection-production');
     });
 
-    test('has correct number of event types', () => {
-      expect(allJournalEventTypes.length).toBe(6);
+    test('has correct number of entry types', () => {
+      expect(allJournalEntryTypes.length).toBe(4);
     });
 
-    test('type assertion for JournalEventType', () => {
-      // Verify each element is a valid JournalEventType
-      allJournalEventTypes.forEach((eventType) => {
-        const typed: JournalEventType = eventType;
+    test('type assertion for JournalEntryType', () => {
+      allJournalEntryTypes.forEach((entryType) => {
+        const typed: JournalEntryType = entryType;
         expect(typeof typed).toBe('string');
       });
     });
   });
 
-  describe('allConfectionJournalEventTypes', () => {
-    test('contains all expected event types', () => {
-      expect(allConfectionJournalEventTypes).toContain('filling-select');
-      expect(allConfectionJournalEventTypes).toContain('mold-select');
-      expect(allConfectionJournalEventTypes).toContain('chocolate-select');
-      expect(allConfectionJournalEventTypes).toContain('yield-modify');
-      expect(allConfectionJournalEventTypes).toContain('procedure-select');
-      expect(allConfectionJournalEventTypes).toContain('coating-select');
-      expect(allConfectionJournalEventTypes).toContain('note');
+  describe('allResolvedSlotTypes', () => {
+    test('contains all expected slot types', () => {
+      expect(allResolvedSlotTypes).toContain('recipe');
+      expect(allResolvedSlotTypes).toContain('ingredient');
     });
 
-    test('has correct number of event types', () => {
-      expect(allConfectionJournalEventTypes.length).toBe(7);
+    test('has correct number of slot types', () => {
+      expect(allResolvedSlotTypes.length).toBe(2);
     });
 
-    test('type assertion for ConfectionJournalEventType', () => {
-      allConfectionJournalEventTypes.forEach((eventType) => {
-        const typed: ConfectionJournalEventType = eventType;
+    test('type assertion for ResolvedSlotType', () => {
+      allResolvedSlotTypes.forEach((slotType) => {
+        const typed: ResolvedSlotType = slotType;
         expect(typeof typed).toBe('string');
       });
     });
   });
 
-  describe('allChocolateRoles', () => {
-    test('contains all expected roles', () => {
-      expect(allChocolateRoles).toContain('shell');
-      expect(allChocolateRoles).toContain('enrobing');
-      expect(allChocolateRoles).toContain('seal');
-      expect(allChocolateRoles).toContain('decoration');
-    });
-
-    test('has correct number of roles', () => {
-      expect(allChocolateRoles.length).toBe(4);
-    });
-
-    test('type assertion for ChocolateRole', () => {
-      allChocolateRoles.forEach((role) => {
-        const typed: ChocolateRole = role;
-        expect(typeof typed).toBe('string');
-      });
-    });
-  });
-
-  describe('allJournalTypes', () => {
-    test('contains all expected types', () => {
-      expect(allJournalTypes).toContain('recipe');
-      expect(allJournalTypes).toContain('confection');
-    });
-
-    test('has correct number of types', () => {
-      expect(allJournalTypes.length).toBe(2);
-    });
-
-    test('type assertion for JournalType', () => {
-      allJournalTypes.forEach((journalType) => {
-        const typed: JournalType = journalType;
-        expect(typeof typed).toBe('string');
-      });
-    });
-  });
-
-  describe('type guards', () => {
-    const recipeJournal: IFillingRecipeJournalRecord = {
-      journalType: 'recipe',
-      journalId: '2026-01-15-100000-00000001' as IFillingRecipeJournalRecord['journalId'],
-      fillingVersionId: 'source.recipe@2026-01-01-01' as IFillingRecipeJournalRecord['fillingVersionId'],
-      date: '2026-01-15',
-      targetWeight: 300 as IFillingRecipeJournalRecord['targetWeight'],
-      scaleFactor: 2
+  describe('type guards for journal entries', () => {
+    const fillingRecipe: IFillingRecipeVersion = {
+      versionSpec: 'v1' as IFillingRecipeVersion['versionSpec'],
+      createdDate: '2026-01-15',
+      ingredients: [],
+      baseWeight: 300 as IFillingRecipeVersion['baseWeight']
     };
 
-    const confectionJournal: IConfectionJournalRecord = {
-      journalType: 'confection',
-      journalId: '2026-01-15-100000-00000002' as IConfectionJournalRecord['journalId'],
-      confectionVersionId: 'source.truffle@2026-01-01-01' as IConfectionJournalRecord['confectionVersionId'],
-      date: '2026-01-15',
-      yieldCount: 24
+    const producedFilling: IProducedFilling = {
+      versionId: 'source.recipe@2026-01-01-01' as IProducedFilling['versionId'],
+      scaleFactor: 1.0,
+      targetWeight: 300 as IProducedFilling['targetWeight'],
+      ingredients: []
     };
 
-    describe('isFillingRecipeJournalRecord', () => {
-      test('returns true for recipe journal records', () => {
-        expect(isFillingRecipeJournalRecord(recipeJournal)).toBe(true);
+    const fillingEditEntry: IFillingEditJournalEntry = {
+      type: 'filling-edit',
+      id: '2026-01-15-100000-00000001' as IFillingEditJournalEntry['id'],
+      versionId: 'source.recipe@2026-01-01-01' as IFillingEditJournalEntry['versionId'],
+      timestamp: '2026-01-15T10:00:00Z',
+      recipe: fillingRecipe
+    };
+
+    const fillingProductionEntry: IFillingProductionJournalEntry = {
+      type: 'filling-production',
+      id: '2026-01-15-100000-00000002' as IFillingProductionJournalEntry['id'],
+      versionId: 'source.recipe@2026-01-01-01' as IFillingProductionJournalEntry['versionId'],
+      timestamp: '2026-01-15T10:00:00Z',
+      recipe: fillingRecipe,
+      yield: 300 as IFillingProductionJournalEntry['yield'],
+      produced: producedFilling
+    };
+
+    const confectionRecipe: IMoldedBonBonVersion = {
+      versionSpec: 'v1' as IMoldedBonBonVersion['versionSpec'],
+      createdDate: '2026-01-15',
+      yield: { count: 24 },
+      molds: {
+        preferredId: 'mold-1' as IMoldedBonBonVersion['molds']['preferredId'],
+        options: []
+      },
+      shellChocolate: {
+        ids: ['choc-1' as IMoldedBonBonVersion['shellChocolate']['ids'][number]]
+      }
+    };
+
+    const producedConfection: IProducedMoldedBonBon = {
+      confectionType: 'molded-bonbon',
+      versionId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBon['versionId'],
+      yield: { count: 24 },
+      moldId: 'mold-1' as IProducedMoldedBonBon['moldId'],
+      shellChocolateId: 'choc-1' as IProducedMoldedBonBon['shellChocolateId']
+    };
+
+    const confectionEditEntry: IConfectionEditJournalEntry = {
+      type: 'confection-edit',
+      id: '2026-01-15-100000-00000003' as IConfectionEditJournalEntry['id'],
+      versionId: 'source.truffle@2026-01-01-01' as IConfectionEditJournalEntry['versionId'],
+      timestamp: '2026-01-15T10:00:00Z',
+      recipe: confectionRecipe
+    };
+
+    const confectionProductionEntry: IConfectionProductionJournalEntry = {
+      type: 'confection-production',
+      id: '2026-01-15-100000-00000004' as IConfectionProductionJournalEntry['id'],
+      versionId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntry['versionId'],
+      timestamp: '2026-01-15T10:00:00Z',
+      recipe: confectionRecipe,
+      yield: { count: 24 },
+      produced: producedConfection
+    };
+
+    describe('isFillingEditJournalEntry', () => {
+      test('returns true for filling edit entries', () => {
+        expect(isFillingEditJournalEntry(fillingEditEntry)).toBe(true);
       });
 
-      test('returns false for confection journal records', () => {
-        expect(isFillingRecipeJournalRecord(confectionJournal)).toBe(false);
+      test('returns false for other entry types', () => {
+        expect(isFillingEditJournalEntry(fillingProductionEntry)).toBe(false);
+        expect(isFillingEditJournalEntry(confectionEditEntry)).toBe(false);
+        expect(isFillingEditJournalEntry(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const record: AnyJournalRecord = recipeJournal;
-        if (isFillingRecipeJournalRecord(record)) {
-          // TypeScript should know this is IFillingRecipeJournalRecord
-          expect(record.fillingVersionId).toBe('source.recipe@2026-01-01-01');
+        const entry: AnyJournalEntry = fillingEditEntry;
+        if (isFillingEditJournalEntry(entry)) {
+          expect(entry.type).toBe('filling-edit');
+          expect(entry.versionId).toBe('source.recipe@2026-01-01-01');
         }
       });
     });
 
-    describe('isConfectionJournalRecord', () => {
-      test('returns true for confection journal records', () => {
-        expect(isConfectionJournalRecord(confectionJournal)).toBe(true);
+    describe('isFillingProductionJournalEntry', () => {
+      test('returns true for filling production entries', () => {
+        expect(isFillingProductionJournalEntry(fillingProductionEntry)).toBe(true);
       });
 
-      test('returns false for recipe journal records', () => {
-        expect(isConfectionJournalRecord(recipeJournal)).toBe(false);
+      test('returns false for other entry types', () => {
+        expect(isFillingProductionJournalEntry(fillingEditEntry)).toBe(false);
+        expect(isFillingProductionJournalEntry(confectionEditEntry)).toBe(false);
+        expect(isFillingProductionJournalEntry(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const record: AnyJournalRecord = confectionJournal;
-        if (isConfectionJournalRecord(record)) {
-          // TypeScript should know this is IConfectionJournalRecord
-          expect(record.confectionVersionId).toBe('source.truffle@2026-01-01-01');
+        const entry: AnyJournalEntry = fillingProductionEntry;
+        if (isFillingProductionJournalEntry(entry)) {
+          expect(entry.type).toBe('filling-production');
+          expect(entry.yield).toBe(300);
+        }
+      });
+    });
+
+    describe('isConfectionEditJournalEntry', () => {
+      test('returns true for confection edit entries', () => {
+        expect(isConfectionEditJournalEntry(confectionEditEntry)).toBe(true);
+      });
+
+      test('returns false for other entry types', () => {
+        expect(isConfectionEditJournalEntry(fillingEditEntry)).toBe(false);
+        expect(isConfectionEditJournalEntry(fillingProductionEntry)).toBe(false);
+        expect(isConfectionEditJournalEntry(confectionProductionEntry)).toBe(false);
+      });
+
+      test('narrows type correctly', () => {
+        const entry: AnyJournalEntry = confectionEditEntry;
+        if (isConfectionEditJournalEntry(entry)) {
+          expect(entry.type).toBe('confection-edit');
+          expect(entry.versionId).toBe('source.truffle@2026-01-01-01');
+        }
+      });
+    });
+
+    describe('isConfectionProductionJournalEntry', () => {
+      test('returns true for confection production entries', () => {
+        expect(isConfectionProductionJournalEntry(confectionProductionEntry)).toBe(true);
+      });
+
+      test('returns false for other entry types', () => {
+        expect(isConfectionProductionJournalEntry(fillingEditEntry)).toBe(false);
+        expect(isConfectionProductionJournalEntry(fillingProductionEntry)).toBe(false);
+        expect(isConfectionProductionJournalEntry(confectionEditEntry)).toBe(false);
+      });
+
+      test('narrows type correctly', () => {
+        const entry: AnyJournalEntry = confectionProductionEntry;
+        if (isConfectionProductionJournalEntry(entry)) {
+          expect(entry.type).toBe('confection-production');
+          expect(entry.yield.count).toBe(24);
+        }
+      });
+    });
+  });
+
+  describe('type guards for resolved slots', () => {
+    const fillingSlot: IResolvedFillingSlot = {
+      slotType: 'recipe',
+      slotId: 'slot-1' as IResolvedFillingSlot['slotId'],
+      fillingId: 'filling-1' as IResolvedFillingSlot['fillingId']
+    };
+
+    const ingredientSlot: IResolvedIngredientSlot = {
+      slotType: 'ingredient',
+      slotId: 'slot-2' as IResolvedIngredientSlot['slotId'],
+      ingredientId: 'ingredient-1' as IResolvedIngredientSlot['ingredientId']
+    };
+
+    describe('isResolvedFillingSlot', () => {
+      test('returns true for recipe slots', () => {
+        expect(isResolvedFillingSlot(fillingSlot)).toBe(true);
+      });
+
+      test('returns false for ingredient slots', () => {
+        expect(isResolvedFillingSlot(ingredientSlot)).toBe(false);
+      });
+
+      test('narrows type correctly', () => {
+        const slot: AnyResolvedFillingSlot = fillingSlot;
+        if (isResolvedFillingSlot(slot)) {
+          expect(slot.slotType).toBe('recipe');
+          expect(slot.fillingId).toBe('filling-1');
+        }
+      });
+    });
+
+    describe('isResolvedIngredientSlot', () => {
+      test('returns true for ingredient slots', () => {
+        expect(isResolvedIngredientSlot(ingredientSlot)).toBe(true);
+      });
+
+      test('returns false for recipe slots', () => {
+        expect(isResolvedIngredientSlot(fillingSlot)).toBe(false);
+      });
+
+      test('narrows type correctly', () => {
+        const slot: AnyResolvedFillingSlot = ingredientSlot;
+        if (isResolvedIngredientSlot(slot)) {
+          expect(slot.slotType).toBe('ingredient');
+          expect(slot.ingredientId).toBe('ingredient-1');
         }
       });
     });

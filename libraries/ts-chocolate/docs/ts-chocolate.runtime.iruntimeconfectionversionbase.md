@@ -175,7 +175,7 @@ Effective URLs for this version (base confection URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt;
+ReadonlyArray&lt;IResolvedFillingSlot&gt;
 
 
 </td><td>
@@ -244,6 +244,27 @@ AnyConfectionVersion
 </td><td>
 
 Gets the underlying raw version data.
+
+
+</td></tr>
+<tr><td>
+
+[version](./ts-chocolate.runtime.iruntimeconfectionversionbase.version.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+AnyConfectionVersion
+
+
+</td><td>
+
+The underlying confection version. Use this to get the raw version data for persistence or journaling.
 
 
 </td></tr>

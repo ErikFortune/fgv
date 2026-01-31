@@ -362,6 +362,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)
+
+
+</td><td>
+
+Role that a chocolate plays in a confection. Used for tracking chocolate selections during editing sessions.
+
+
+</td></tr>
+<tr><td>
+
 [ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
 
 

@@ -4,12 +4,12 @@
 
 ## Entities.Journal.JournalLibrary.getJournalsForConfectionVersion() method
 
-Gets all [confection journal records](./ts-chocolate.entities.journal.iconfectionjournalrecord.md) for a specific confection version
+Gets all confection journal entries for a specific confection version
 
 **Signature:**
 
 ```typescript
-getJournalsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<IConfectionJournalRecord>;
+getJournalsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<AnyConfectionJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [confection version ID](./ts-chocolate.confectionversionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IConfectionJournalRecord&gt;
+ReadonlyArray&lt;AnyConfectionJournalEntry&gt;
 
-Array of confection journal records (empty if none found)
+Array of confection journal entries (empty if none found)
 

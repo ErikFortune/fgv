@@ -4,7 +4,7 @@
 
 ## Entities.Journal.JournalLibrary.importJournals() method
 
-Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts both recipe and confection journal records.
+Imports journal entries from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts filling and confection journal entries (both edit and production types).
 
 **Signature:**
 
@@ -42,7 +42,7 @@ ReadonlyArray&lt;unknown&gt;
 
 </td><td>
 
-Array of journal records to import
+Array of journal entries to import
 
 
 </td></tr>

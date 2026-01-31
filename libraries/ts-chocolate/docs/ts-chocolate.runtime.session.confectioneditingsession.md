@@ -52,7 +52,7 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;ChocolateRole, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
+ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)<!-- -->, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -129,25 +129,6 @@ boolean
 </td><td>
 
 boolean
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[journalEntries](./ts-chocolate.runtime.session.confectioneditingsession.journalentries.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;IConfectionJournalEntry&gt;
 
 
 </td><td>
@@ -279,7 +260,7 @@ Description
 
 </td><td>
 
-Adds a note to the session journal.
+Adds a note to the session journal (deprecated - notes now provided at save time)
 
 
 </td></tr>
@@ -427,7 +408,7 @@ Sets the yield count.
 </td></tr>
 <tr><td>
 
-[toJournalRecord(notes)](./ts-chocolate.runtime.session.confectioneditingsession.tojournalrecord.md)
+[toEditJournalEntry(updated, updatedVersionSpec, notes)](./ts-chocolate.runtime.session.confectioneditingsession.toeditjournalentry.md)
 
 
 </td><td>
@@ -435,7 +416,7 @@ Sets the yield count.
 
 </td><td>
 
-Creates a journal record documenting this session.
+Creates an edit journal entry documenting this session.
 
 
 </td></tr>

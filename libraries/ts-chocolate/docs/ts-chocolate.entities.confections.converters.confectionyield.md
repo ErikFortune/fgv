@@ -4,7 +4,7 @@
 
 ## Entities.Confections.Converters.confectionYield variable
 
-Converter for IConfectionYield
+`Converter` for [IConfectionYield](./ts-chocolate.entities.confections.iconfectionyield.md)<!-- -->.
 
 **Signature:**
 

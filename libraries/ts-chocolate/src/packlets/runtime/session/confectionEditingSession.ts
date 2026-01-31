@@ -33,16 +33,13 @@ import {
   FillingId,
   SessionId,
   SlotId,
+  ConfectionVersionSpec,
   Converters as CommonConverters
 } from '../../common';
-import {
-  ChocolateRole,
-  ConfectionJournalEventType,
-  IConfectionJournalEntry,
-  IConfectionJournalRecord
-} from '../../entities';
+import { IConfectionEditJournalEntry, AnyConfectionVersion } from '../../entities';
 import { IRuntimeConfection } from '../model';
 import {
+  ChocolateRole,
   ConfectionSelectionStatus,
   IConfectionEditingSessionParams,
   IConfectionSaveOptions,
@@ -92,7 +89,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   private _yield: ISessionYield;
   private _procedure?: ISessionProcedure;
   private _coating?: ISessionCoating;
-  private _journalEntries: IConfectionJournalEntry[];
   private _isDirty: boolean;
 
   // ============================================================================
@@ -104,7 +100,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     this._sourceConfection = params.sourceConfection;
     this._enableJournal = params.enableJournal ?? true;
     this._logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
-    this._journalEntries = [];
     this._isDirty = false;
     this._chocolates = new Map();
     this._fillings = new Map();
@@ -188,10 +183,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     return this._coating;
   }
 
-  public get journalEntries(): ReadonlyArray<IConfectionJournalEntry> {
-    return this._journalEntries;
-  }
-
   public get isDirty(): boolean {
     return this._isDirty;
   }
@@ -217,9 +208,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail(`Filling slot '${slotId}' does not exist`);
     }
 
-    const previousFillingId = existingSlot.fillingId;
-    const previousIngredientId = existingSlot.ingredientId;
-
     this._fillings.set(slotId, {
       slotId,
       fillingId,
@@ -230,12 +218,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     });
 
     this._isDirty = true;
-    this._addJournalEntry('filling-select', {
-      fillingSlotId: slotId,
-      fillingRecipeId: fillingId,
-      previousFillingRecipeId: previousFillingId,
-      previousFillingIngredientId: previousIngredientId
-    });
 
     this._logger.info(`Selected filling recipe for slot '${slotId}': ${fillingId}`);
     return succeed(true);
@@ -254,9 +236,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail(`Filling slot '${slotId}' does not exist`);
     }
 
-    const previousFillingId = existingSlot.fillingId;
-    const previousIngredientId = existingSlot.ingredientId;
-
     this._fillings.set(slotId, {
       slotId,
       fillingId: undefined,
@@ -267,12 +246,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     });
 
     this._isDirty = true;
-    this._addJournalEntry('filling-select', {
-      fillingSlotId: slotId,
-      fillingIngredientId: ingredientId,
-      previousFillingRecipeId: previousFillingId,
-      previousFillingIngredientId: previousIngredientId
-    });
 
     this._logger.info(`Selected filling ingredient for slot '${slotId}': ${ingredientId}`);
     return succeed(true);
@@ -293,8 +266,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail('This confection does not support mold selection');
     }
 
-    const previousMoldId = this._mold?.moldId;
-
     this._mold = {
       moldId,
       originalMoldId: this._mold?.originalMoldId ?? moldId,
@@ -302,11 +273,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     };
 
     this._isDirty = true;
-    this._addJournalEntry('mold-select', {
-      moldId,
-      previousMoldId
-    });
-
     this._logger.info(`Selected mold: ${moldId}`);
     return succeed(true);
   }
@@ -324,7 +290,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
    */
   public selectChocolate(role: ChocolateRole, ingredientId: IngredientId): Result<true> {
     const existing = this._chocolates.get(role);
-    const previousIngredientId = existing?.ingredientId;
 
     this._chocolates.set(role, {
       role,
@@ -334,12 +299,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     });
 
     this._isDirty = true;
-    this._addJournalEntry('chocolate-select', {
-      chocolateRole: role,
-      ingredientId,
-      previousIngredientId
-    });
-
     this._logger.info(`Selected ${role} chocolate: ${ingredientId}`);
     return succeed(true);
   }
@@ -359,8 +318,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail('Yield count must be positive');
     }
 
-    const previousCount = this._yield.count;
-
     this._yield = {
       ...this._yield,
       count,
@@ -368,11 +325,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     };
 
     this._isDirty = true;
-    this._addJournalEntry('yield-modify', {
-      newYieldCount: count,
-      previousYieldCount: previousCount
-    });
-
     this._logger.info(`Set yield count: ${count}`);
     return succeed(true);
   }
@@ -388,8 +340,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail('Weight per piece must be positive');
     }
 
-    const previousWeight = this._yield.weightPerPiece;
-
     this._yield = {
       ...this._yield,
       weightPerPiece: weight,
@@ -397,11 +347,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     };
 
     this._isDirty = true;
-    this._addJournalEntry('yield-modify', {
-      newWeightPerPiece: weight,
-      previousWeightPerPiece: previousWeight
-    });
-
     this._logger.info(`Set weight per piece: ${weight}g`);
     return succeed(true);
   }
@@ -427,8 +372,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail('This confection does not support procedure selection');
     }
 
-    const previousProcedureId = this._procedure?.procedureId;
-
     this._procedure = {
       procedureId,
       originalProcedureId: this._procedure?.originalProcedureId,
@@ -436,11 +379,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     };
 
     this._isDirty = true;
-    this._addJournalEntry('procedure-select', {
-      procedureId,
-      previousProcedureId
-    });
-
     this._logger.info(`Selected procedure: ${procedureId}`);
     return succeed(true);
   }
@@ -460,8 +398,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail('This confection does not support coating selection');
     }
 
-    const previousIngredientId = this._coating?.ingredientId;
-
     this._coating = {
       ingredientId,
       originalIngredientId: this._coating?.originalIngredientId,
@@ -469,10 +405,6 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     };
 
     this._isDirty = true;
-    this._addJournalEntry('coating-select', {
-      coatingIngredientId: ingredientId,
-      previousCoatingIngredientId: previousIngredientId
-    });
 
     this._logger.info(`Selected coating: ${ingredientId}`);
     return succeed(true);
@@ -483,13 +415,14 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   // ============================================================================
 
   /**
-   * Adds a note to the session journal.
+   * Adds a note to the session journal (deprecated - notes now provided at save time)
    * @param text - The note text
    * @public
+   * @deprecated Notes are now provided when creating the journal entry
    */
   public addNote(text: string): void {
-    this._addJournalEntry('note', { text });
-    this._logger.info(`Added note: ${text}`);
+    // No-op: notes are now provided at save time
+    this._logger.info(`Session ${this._sessionId}: note added: ${text}`);
   }
 
   // ============================================================================
@@ -497,28 +430,44 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   // ============================================================================
 
   /**
-   * Creates a journal record documenting this session.
-   * @param notes - Optional notes to include in the journal record
-   * @returns Success with journal record, or Failure with error message
+   * Creates an edit journal entry documenting this session.
+   * @param updated - Optional updated version if modifications were saved
+   * @param updatedId - Optional ID if the updated version was saved
+   * @param notes - Optional notes about this session
+   * @returns Success with journal entry, or Failure with error message
    * @public
    */
-  public toJournalRecord(notes?: string): Result<IConfectionJournalRecord> {
-    const date = new Date().toISOString().split('T')[0];
+  public toEditJournalEntry(
+    updated?: AnyConfectionVersion,
+    updatedVersionSpec?: ConfectionVersionSpec,
+    notes?: string
+  ): Result<IConfectionEditJournalEntry> {
+    const timestamp = new Date().toISOString();
     const versionIdString = `${this._sourceConfection.id}@${this._sourceConfection.goldenVersionSpec}`;
+    const categorizedNotes = notes
+      ? [{ category: 'session' as unknown as import('../../common').NoteCategory, note: notes }]
+      : undefined;
 
     return CommonConverters.confectionVersionId.convert(versionIdString).onSuccess((confectionVersionId) =>
-      generateJournalId().onSuccess((journalId) =>
-        succeed({
-          journalType: 'confection',
-          journalId,
-          confectionVersionId,
-          date,
-          yieldCount: this._yield.count,
-          weightPerPiece: this._yield.weightPerPiece,
-          notes,
-          entries: this._journalEntries.length > 0 ? [...this._journalEntries] : undefined
-        })
-      )
+      generateJournalId().onSuccess((id) => {
+        // Convert updatedVersionSpec to full version ID if provided
+        const updatedIdResult = updatedVersionSpec
+          ? CommonConverters.confectionVersionId.convert(`${this._sourceConfection.id}@${updatedVersionSpec}`)
+          : succeed(undefined);
+
+        return updatedIdResult.onSuccess((updatedId) =>
+          succeed({
+            type: 'confection-edit' as const,
+            id,
+            timestamp,
+            versionId: confectionVersionId,
+            recipe: this._sourceConfection.goldenVersion.version,
+            updated,
+            updatedId,
+            notes: categorizedNotes
+          })
+        );
+      })
     );
   }
 
@@ -535,21 +484,24 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   public save(options: IConfectionSaveOptions = {}): Result<IConfectionSaveResult> {
     const errors = new MessageAggregator();
     let saveResult: IConfectionSaveResult = {};
-
-    if (options.createJournalRecord !== false && this._enableJournal) {
-      saveResult = this.toJournalRecord(options.journalNotes)
-        .aggregateError(errors)
-        .onSuccess((record) =>
-          Success.with<IConfectionSaveResult>({ journalRecord: record, journalId: record.journalId })
-        )
-        .orDefault({});
-    }
+    let newVersionSpec: ConfectionVersionSpec | undefined;
 
     if (options.createNewVersion) {
       if (!options.versionLabel) {
         return fail('versionLabel is required when createNewVersion is true');
       }
-      saveResult = { ...saveResult, newVersionSpec: options.versionLabel };
+      newVersionSpec = options.versionLabel;
+      saveResult = { ...saveResult, newVersionSpec };
+    }
+
+    if (options.createJournalRecord !== false && this._enableJournal) {
+      const journalResult = this.toEditJournalEntry(undefined, newVersionSpec, options.journalNotes)
+        .aggregateError(errors)
+        .onSuccess((entry) =>
+          Success.with<IConfectionSaveResult>({ journalEntry: entry, journalId: entry.id })
+        )
+        .orDefault({});
+      saveResult = { ...saveResult, ...journalResult };
     }
 
     this._isDirty = false;
@@ -723,20 +675,5 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     const countChanged = count !== this._yield.originalCount;
     const weightChanged = weightPerPiece !== this._yield.originalWeightPerPiece;
     return countChanged || weightChanged ? 'modified' : 'original';
-  }
-
-  private _addJournalEntry(
-    eventType: ConfectionJournalEventType,
-    details: Omit<IConfectionJournalEntry, 'timestamp' | 'eventType'>
-  ): void {
-    if (!this._enableJournal) {
-      return;
-    }
-
-    this._journalEntries.push({
-      timestamp: new Date().toISOString(),
-      eventType,
-      ...details
-    });
   }
 }

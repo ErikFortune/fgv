@@ -4,12 +4,12 @@
 
 ## Entities.Journal.JournalLibrary.addJournal() method
 
-Adds a [journal record](./ts-chocolate.entities.journal.anyjournalrecord.md) to the library. Accepts both recipe and confection journal records.
+Adds a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) to the library. Accepts filling and confection journal entries (both edit and production types).
 
 **Signature:**
 
 ```typescript
-addJournal(journal: AnyJournalRecord): Result<JournalId>;
+addJournal(journal: AnyJournalEntry): Result<JournalId>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ journal
 
 </td><td>
 
-AnyJournalRecord
+AnyJournalEntry
 
 
 </td><td>
 
-The journal record to add (validated)
+The journal entry to add (validated)
 
 
 </td></tr>

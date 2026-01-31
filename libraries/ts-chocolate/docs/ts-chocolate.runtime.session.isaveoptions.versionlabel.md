@@ -9,5 +9,5 @@ Version label for the new version (required if createNewVersion is true)
 **Signature:**
 
 ```typescript
-readonly versionLabel?: string;
+readonly versionLabel?: FillingVersionSpec;
 ```

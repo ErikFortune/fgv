@@ -190,6 +190,14 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
     return this._recipe!;
   }
 
+  /**
+   * The underlying filling recipe version.
+   * Use this to get the raw version data for persistence or journaling.
+   */
+  public get version(): IFillingRecipeVersion {
+    return this._version;
+  }
+
   // ============================================================================
   // Computed Properties
   // ============================================================================

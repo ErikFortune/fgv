@@ -127,6 +127,14 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
     return this._confection!;
   }
 
+  /**
+   * The underlying confection version.
+   * Use this to get the raw version data for persistence or journaling.
+   */
+  public get version(): AnyConfectionVersion {
+    return this._version;
+  }
+
   // ============================================================================
   // Version Properties
   // ============================================================================

@@ -19,100 +19,188 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[anyJournalRecord](./ts-chocolate.entities.converters.journal.anyjournalrecord.md)
+[anyFillingRecipeVersion](./ts-chocolate.entities.converters.journal.anyfillingrecipeversion.md)
 
 
 </td><td>
 
-Converter for [AnyJournalRecord](./ts-chocolate.entities.journal.anyjournalrecord.md)<!-- -->. Uses the `journalType` discriminator to select the appropriate converter.
+Converter for [AnyFillingRecipeVersion](./ts-chocolate.entities.fillings.anyfillingrecipeversion.md)<!-- -->. Uses presence of `scalingRef` to distinguish scaled from unscaled versions.
 
 
 </td></tr>
 <tr><td>
 
-[chocolateRole](./ts-chocolate.entities.converters.journal.chocolaterole.md)
+[anyJournalEntry](./ts-chocolate.entities.converters.journal.anyjournalentry.md)
 
 
 </td><td>
 
-Converter for [ChocolateRole](./ts-chocolate.entities.journal.chocolaterole.md)<!-- -->.
+Converter for [AnyJournalEntry](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->. Uses discriminated object pattern on `type` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 
 </td></tr>
 <tr><td>
 
-[confectionJournalEntry](./ts-chocolate.entities.converters.journal.confectionjournalentry.md)
+[anyProducedConfection](./ts-chocolate.entities.converters.journal.anyproducedconfection.md)
 
 
 </td><td>
 
-Converter for [IConfectionJournalEntry](./ts-chocolate.entities.journal.iconfectionjournalentry.md)<!-- -->.
+Converter for [AnyProducedConfection](./ts-chocolate.entities.journal.anyproducedconfection.md)<!-- -->. Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 
 </td></tr>
 <tr><td>
 
-[confectionJournalEventType](./ts-chocolate.entities.converters.journal.confectionjournaleventtype.md)
+[anyResolvedFillingSlot](./ts-chocolate.entities.converters.journal.anyresolvedfillingslot.md)
 
 
 </td><td>
 
-Converter for [ConfectionJournalEventType](./ts-chocolate.entities.journal.confectionjournaleventtype.md)<!-- -->.
+Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.journal.anyresolvedfillingslot.md)<!-- -->. Uses discriminated object pattern on `slotType` field.
 
 
 </td></tr>
 <tr><td>
 
-[confectionJournalRecord](./ts-chocolate.entities.converters.journal.confectionjournalrecord.md)
+[confectionEditJournalEntry](./ts-chocolate.entities.converters.journal.confectioneditjournalentry.md)
 
 
 </td><td>
 
-Converter for [IConfectionJournalRecord](./ts-chocolate.entities.journal.iconfectionjournalrecord.md)<!-- -->.
+Converter for [IConfectionEditJournalEntry](./ts-chocolate.entities.journal.iconfectioneditjournalentry.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[fillingRecipeJournalRecord](./ts-chocolate.entities.converters.journal.fillingrecipejournalrecord.md)
+[confectionProductionJournalEntry](./ts-chocolate.entities.converters.journal.confectionproductionjournalentry.md)
 
 
 </td><td>
 
-Converter for [IFillingRecipeJournalRecord](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md)<!-- -->.
+Converter for [IConfectionProductionJournalEntry](./ts-chocolate.entities.journal.iconfectionproductionjournalentry.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[journalEntry](./ts-chocolate.entities.converters.journal.journalentry.md)
+[fillingEditJournalEntry](./ts-chocolate.entities.converters.journal.fillingeditjournalentry.md)
 
 
 </td><td>
 
-Converter for [IJournalEntry](./ts-chocolate.entities.journal.ijournalentry.md)<!-- -->.
+Converter for [IFillingEditJournalEntry](./ts-chocolate.entities.journal.ifillingeditjournalentry.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[journalEventType](./ts-chocolate.entities.converters.journal.journaleventtype.md)
+[fillingProductionJournalEntry](./ts-chocolate.entities.converters.journal.fillingproductionjournalentry.md)
 
 
 </td><td>
 
-Converter for [JournalEventType](./ts-chocolate.entities.journal.journaleventtype.md)<!-- -->.
+Converter for [IFillingProductionJournalEntry](./ts-chocolate.entities.journal.ifillingproductionjournalentry.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[journalType](./ts-chocolate.entities.converters.journal.journaltype.md)
+[journalEntryType](./ts-chocolate.entities.converters.journal.journalentrytype.md)
 
 
 </td><td>
 
-Converter for [JournalType](./ts-chocolate.entities.journal.journaltype.md)<!-- -->.
+Converter for [JournalEntryType](./ts-chocolate.entities.journal.journalentrytype.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[producedBarTruffle](./ts-chocolate.entities.converters.journal.producedbartruffle.md)
+
+
+</td><td>
+
+Converter for [IProducedBarTruffle](./ts-chocolate.entities.journal.iproducedbartruffle.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[producedFilling](./ts-chocolate.entities.converters.journal.producedfilling.md)
+
+
+</td><td>
+
+Converter for [IProducedFilling](./ts-chocolate.entities.journal.iproducedfilling.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[producedFillingIngredient](./ts-chocolate.entities.converters.journal.producedfillingingredient.md)
+
+
+</td><td>
+
+Converter for [IProducedFillingIngredient](./ts-chocolate.entities.journal.iproducedfillingingredient.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[producedMoldedBonBon](./ts-chocolate.entities.converters.journal.producedmoldedbonbon.md)
+
+
+</td><td>
+
+Converter for [IProducedMoldedBonBon](./ts-chocolate.entities.journal.iproducedmoldedbonbon.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[producedRolledTruffle](./ts-chocolate.entities.converters.journal.producedrolledtruffle.md)
+
+
+</td><td>
+
+Converter for [IProducedRolledTruffle](./ts-chocolate.entities.journal.iproducedrolledtruffle.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[resolvedFillingSlot](./ts-chocolate.entities.converters.journal.resolvedfillingslot.md)
+
+
+</td><td>
+
+Converter for [IResolvedFillingSlot](./ts-chocolate.entities.journal.iresolvedfillingslot.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[resolvedIngredientSlot](./ts-chocolate.entities.converters.journal.resolvedingredientslot.md)
+
+
+</td><td>
+
+Converter for [IResolvedIngredientSlot](./ts-chocolate.entities.journal.iresolvedingredientslot.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[resolvedSlotType](./ts-chocolate.entities.converters.journal.resolvedslottype.md)
+
+
+</td><td>
+
+Converter for [ResolvedSlotType](./ts-chocolate.entities.journal.resolvedslottype.md)<!-- -->.
 
 
 </td></tr>

@@ -23,7 +23,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result, fail, succeed } from '@fgv/ts-utils';
-import { Crypto } from '@fgv/ts-chocolate';
+import { CryptoUtils } from '@fgv/ts-chocolate';
 import * as yaml from 'yaml';
 
 /**
@@ -48,7 +48,7 @@ interface ISecretEntry {
   /** Base64-encoded 32-byte key */
   key: string;
   /** Optional key derivation parameters (for password-based decryption) */
-  keyDerivation?: Crypto.IKeyDerivationParams;
+  keyDerivation?: CryptoUtils.IKeyDerivationParams;
 }
 
 /**
@@ -92,7 +92,7 @@ async function deriveKeyFromPassword(
   }
 
   const salt = new Uint8Array(saltResult.value);
-  return Crypto.nodeCryptoProvider.deriveKey(password, salt, iterations);
+  return CryptoUtils.nodeCryptoProvider.deriveKey(password, salt, iterations);
 }
 
 /**
@@ -194,7 +194,7 @@ export function createKeygenCommand(): Command {
         }
       } else {
         // Generate random key
-        const keyResult = await Crypto.nodeCryptoProvider.generateKey();
+        const keyResult = await CryptoUtils.nodeCryptoProvider.generateKey();
         if (keyResult.isFailure()) {
           console.error(`Error: ${keyResult.message}`);
           process.exit(1);

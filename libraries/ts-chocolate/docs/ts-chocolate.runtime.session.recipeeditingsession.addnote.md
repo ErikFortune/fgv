@@ -4,7 +4,12 @@
 
 ## Runtime.Session.RecipeEditingSession.addNote() method
 
-Adds a note to the journal
+> Warning: This API is now obsolete.
+> 
+> Notes are now provided when creating the journal entry
+> 
+
+Adds a note to the journal (deprecated - notes now provided at save time)
 
 **Signature:**
 

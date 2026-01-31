@@ -166,6 +166,17 @@ Converter for [CacaoVariety](./ts-chocolate.cacaovariety.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[categorizedNote](./ts-chocolate.converters.categorizednote.md)
+
+
+</td><td>
+
+Converter for [ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [categorizedUrl](./ts-chocolate.converters.categorizedurl.md)
 
 
@@ -469,6 +480,17 @@ Converter for [MoldFormat](./ts-chocolate.moldformat.md)<!-- -->.
 </td><td>
 
 Converter for [MoldId](./ts-chocolate.moldid.md) (composite string). Accepts either an [MoldId](./ts-chocolate.moldid.md) string or a `CompositeId` object representation.
+
+
+</td></tr>
+<tr><td>
+
+[noteCategory](./ts-chocolate.converters.notecategory.md)
+
+
+</td><td>
+
+Converter for [NoteCategory](./ts-chocolate.notecategory.md)<!-- -->.
 
 
 </td></tr>

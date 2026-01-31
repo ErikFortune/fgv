@@ -4,7 +4,7 @@
 
 ## AdditionalChocolatePurpose type
 
-Purpose for additional chocolates in molded bonbons. These values align with [ChocolateRole](./ts-chocolate.entities.journal.chocolaterole.md) for type safety when converting between confection data and journal entries.
+Purpose for additional chocolates in molded bonbons. These values align with  for type safety when converting between confection data and journal entries.
 
 **Signature:**
 

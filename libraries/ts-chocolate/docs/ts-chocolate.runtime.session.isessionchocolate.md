@@ -89,7 +89,7 @@ The original chocolate ingredient ID when the session started
 
 </td><td>
 
-ChocolateRole
+[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)
 
 
 </td><td>

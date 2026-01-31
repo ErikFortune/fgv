@@ -84,6 +84,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ICategorizedNote](./ts-chocolate.icategorizednote.md)
+
+
+</td><td>
+
+A categorized note associated with an entity.
+
+
+</td></tr>
+<tr><td>
+
 [ICategorizedUrl](./ts-chocolate.icategorizedurl.md)
 
 
@@ -616,7 +627,7 @@ Description
 
 </td><td>
 
-Purpose for additional chocolates in molded bonbons. These values align with [ChocolateRole](./ts-chocolate.entities.journal.chocolaterole.md) for type safety when converting between confection data and journal entries.
+Purpose for additional chocolates in molded bonbons. These values align with  for type safety when converting between confection data and journal entries.
 
 
 </td></tr>
@@ -1018,6 +1029,17 @@ Globally unique mold identifier (composite) Format: "sourceId.baseMoldId" Must c
 </td></tr>
 <tr><td>
 
+[NoteCategory](./ts-chocolate.notecategory.md)
+
+
+</td><td>
+
+Category for notes associated with an entity. Uses the standard base ID pattern (alphanumeric, dashes, underscores). Examples: 'general', 'tasting', 'production'
+
+
+</td></tr>
+<tr><td>
+
 [Percentage](./ts-chocolate.percentage.md)
 
 
@@ -1078,7 +1100,7 @@ Unique identifier for an editing session Format: UUID
 
 </td><td>
 
-Unique identifier for a filling slot within a confection Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/ Examples: "center", "outer-layer", "layer1"
+Unique identifier for a filling slot within a confection or recipe Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/ Examples: "center", "outer-layer", "layer1"
 
 
 </td></tr>

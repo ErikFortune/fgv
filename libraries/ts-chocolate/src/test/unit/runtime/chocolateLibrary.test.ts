@@ -43,7 +43,7 @@ import {
   TaskId
 } from '../../../packlets/common';
 
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/entities';
+import { IFillingEditJournalEntry, JournalLibrary } from '../../../packlets/entities';
 
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/entities';
 
@@ -708,22 +708,30 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('journals', () => {
-    const testJournal: IFillingRecipeJournalRecord = {
-      journalType: 'recipe',
-      journalId: '2026-01-01-120000-abcd1234' as JournalId,
-      fillingVersionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
-      date: '2026-01-01',
-      targetWeight: 200 as Measurement,
-      scaleFactor: 2.0
+    const testJournal: IFillingEditJournalEntry = {
+      type: 'filling-edit',
+      id: '2026-01-01-120000-abcd1234' as JournalId,
+      versionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
+      timestamp: '2026-01-01T12:00:00Z',
+      recipe: {
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [],
+        baseWeight: 100 as Measurement
+      }
     };
 
-    const testJournal2: IFillingRecipeJournalRecord = {
-      journalType: 'recipe',
-      journalId: '2026-01-02-120000-efgh5678' as JournalId,
-      fillingVersionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
-      date: '2026-01-02',
-      targetWeight: 300 as Measurement,
-      scaleFactor: 3.0
+    const testJournal2: IFillingEditJournalEntry = {
+      type: 'filling-edit',
+      id: '2026-01-02-120000-efgh5678' as JournalId,
+      versionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
+      timestamp: '2026-01-02T12:00:00Z',
+      recipe: {
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [],
+        baseWeight: 100 as Measurement
+      }
     };
 
     test('journals accessor returns JournalLibrary', () => {
@@ -750,7 +758,7 @@ describe('ChocolateLibrary', () => {
 
     test('addJournal adds a journal record', () => {
       expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        expect(lib.addJournal(testJournal)).toSucceedWith(testJournal.journalId);
+        expect(lib.addJournal(testJournal)).toSucceedWith(testJournal.id);
         expect(lib.journals.size).toBe(1);
       });
     });

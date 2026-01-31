@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Confections.anyFillingOption variable
 
-Converter for AnyFillingOption (discriminated union)
+`Converter` for [AnyFillingOption](./ts-chocolate.entities.confections.anyfillingoption.md) (discriminated union)
 
 **Signature:**
 

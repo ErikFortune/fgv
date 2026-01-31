@@ -9,7 +9,7 @@ Gets all journal records for a filling (across all versions).
 **Signature:**
 
 ```typescript
-getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord>;
+getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The filling ID to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IFillingRecipeJournalRecord&gt;
+ReadonlyArray&lt;AnyFillingJournalEntry&gt;
 
 Array of journal records (empty if none found)
 

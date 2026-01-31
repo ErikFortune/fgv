@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Confections.ingredientFillingOption variable
 
-Converter for IIngredientFillingOption
+`Converter` for [IIngredientFillingOption](./ts-chocolate.entities.confections.iingredientfillingoption.md)<!-- -->.
 
 **Signature:**
 

@@ -46,7 +46,7 @@ Converter for AnyConfectionVersion (discriminated by presence of type-specific f
 
 </td><td>
 
-Converter for AnyFillingOption (discriminated union)
+`Converter` for [AnyFillingOption](./ts-chocolate.entities.confections.anyfillingoption.md) (discriminated union)
 
 
 </td></tr>
@@ -101,7 +101,7 @@ Converter for IBonBonDimensions
 
 </td><td>
 
-Converter for IChocolateSpec (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
+`Converter` for [IChocolateSpec](./ts-chocolate.entities.confections.ichocolatespec.md) (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Converter for ConfectionData (discriminated union) Dispatches to the appropriate
 
 </td><td>
 
-Converter for IConfectionDecoration
+`Converter` for [IConfectionDecoration](./ts-chocolate.entities.confections.iconfectiondecoration.md)<!-- -->.
 
 
 </td></tr>
@@ -178,7 +178,7 @@ Converter for confection molds with preferred selection. Validates that preferre
 
 </td><td>
 
-Converter for IConfectionYield
+`Converter` for [IConfectionYield](./ts-chocolate.entities.confections.iconfectionyield.md)<!-- -->.
 
 
 </td></tr>
@@ -200,7 +200,7 @@ Converter for filling options with preferred selection. Validates that preferred
 
 </td><td>
 
-Converter for IFillingSlot
+`Converter` for [IFillingSlot](./ts-chocolate.entities.confections.ifillingslot.md)<!-- -->.
 
 
 </td></tr>
@@ -222,7 +222,7 @@ Converter for IFrameDimensions
 
 </td><td>
 
-Converter for IIngredientFillingOption
+`Converter` for [IIngredientFillingOption](./ts-chocolate.entities.confections.iingredientfillingoption.md)<!-- -->.
 
 
 </td></tr>
@@ -255,7 +255,7 @@ Converter for IMoldedBonBonVersion
 
 </td><td>
 
-Converter for IRecipeFillingOption
+`Converter` for [IRecipeFillingOption](./ts-chocolate.entities.confections.irecipefillingoption.md)<!-- -->.
 
 
 </td></tr>

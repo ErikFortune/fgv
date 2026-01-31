@@ -58,7 +58,7 @@ import { Converters as RecipeConverters } from '../fillings';
 // ============================================================================
 
 /**
- * Converter for IConfectionYield
+ * `Converter` for {@link Entities.Confections.IConfectionYield | IConfectionYield}.
  * @public
  */
 export const confectionYield: Converter<IConfectionYield> = Converters.object<IConfectionYield>({
@@ -68,7 +68,7 @@ export const confectionYield: Converter<IConfectionYield> = Converters.object<IC
 });
 
 /**
- * Converter for IConfectionDecoration
+ * `Converter` for {@link Entities.Confections.IConfectionDecoration | IConfectionDecoration}.
  * @public
  */
 export const confectionDecoration: Converter<IConfectionDecoration> =
@@ -82,7 +82,8 @@ export const confectionDecoration: Converter<IConfectionDecoration> =
 // ============================================================================
 
 /**
- * Converter for filling option ID (can be recipe or ingredient)
+ * `Converter` for {@link Entities.Confections.FillingOptionId | filling option ID}
+ * (can be recipe or ingredient)
  * Both are composite IDs with the same format
  * @internal
  */
@@ -92,7 +93,7 @@ const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOpti
 ]);
 
 /**
- * Converter for IRecipeFillingOption
+ * `Converter` for {@link Entities.Confections.IRecipeFillingOption | IRecipeFillingOption}.
  * @public
  */
 export const recipeFillingOption: Converter<IRecipeFillingOption> = Converters.object<IRecipeFillingOption>({
@@ -102,7 +103,7 @@ export const recipeFillingOption: Converter<IRecipeFillingOption> = Converters.o
 });
 
 /**
- * Converter for IIngredientFillingOption
+ * `Converter` for {@link Entities.Confections.IIngredientFillingOption | IIngredientFillingOption}.
  * @public
  */
 export const ingredientFillingOption: Converter<IIngredientFillingOption> =
@@ -113,7 +114,7 @@ export const ingredientFillingOption: Converter<IIngredientFillingOption> =
   });
 
 /**
- * Converter for AnyFillingOption (discriminated union)
+ * `Converter` for {@link Entities.Confections.AnyFillingOption | AnyFillingOption} (discriminated union)
  * @public
  */
 export const anyFillingOption: Converter<AnyFillingOption> = Converters.oneOf<AnyFillingOption>([
@@ -130,7 +131,7 @@ export const fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, F
   CommonConverters.optionsWithPreferred(anyFillingOption, fillingOptionId, 'fillingOptions');
 
 /**
- * Converter for IFillingSlot
+ * `Converter` for {@link Entities.Confections.IFillingSlot | IFillingSlot}.
  * @public
  */
 export const fillingSlot: Converter<IFillingSlot> = Converters.object<IFillingSlot>({
@@ -144,7 +145,7 @@ export const fillingSlot: Converter<IFillingSlot> = Converters.object<IFillingSl
 // ============================================================================
 
 /**
- * Converter for IChocolateSpec (IIdsWithPreferred<IngredientId>).
+ * `Converter` for {@link Entities.Confections.IChocolateSpec | IChocolateSpec} (IIdsWithPreferred<IngredientId>).
  * Validates that preferredId (if specified) exists in ids.
  * @public
  */

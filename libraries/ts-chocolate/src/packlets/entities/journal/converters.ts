@@ -27,141 +27,284 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
 import {
-  allChocolateRoles,
-  allConfectionJournalEventTypes,
-  allJournalEventTypes,
-  allJournalTypes,
-  AnyJournalRecord,
-  ChocolateRole,
-  ConfectionJournalEventType,
-  IConfectionJournalEntry,
-  IConfectionJournalRecord,
-  IFillingRecipeJournalRecord,
-  IJournalEntry,
-  JournalEventType,
-  JournalType
+  anyConfectionVersion as anyConfectionVersionConverter,
+  confectionYield as confectionYieldConverter
+} from '../confections/converters';
+import {
+  AnyProducedConfection,
+  AnyResolvedFillingSlot,
+  IProducedBarTruffle,
+  IProducedMoldedBonBon,
+  IProducedRolledTruffle,
+  IResolvedFillingSlot,
+  IResolvedIngredientSlot,
+  ResolvedSlotType,
+  allResolvedSlotTypes
+} from '../confections';
+import {
+  fillingRecipeVersion as fillingRecipeVersionConverter,
+  scaledFillingRecipeVersion as scaledFillingRecipeVersionConverter
+} from '../fillings/converters';
+import { AnyFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
+import {
+  allJournalEntryTypes,
+  AnyJournalEntry,
+  IConfectionEditJournalEntry,
+  IConfectionProductionJournalEntry,
+  IFillingEditJournalEntry,
+  IFillingProductionJournalEntry,
+  JournalEntryType
 } from './model';
 
-/**
- * Converter for {@link Entities.Journal.JournalEventType | JournalEventType}.
- * @public
- */
-export const journalEventType: Converter<JournalEventType> = Converters.enumeratedValue(allJournalEventTypes);
+// ============================================================================
+// Filling Recipe Version Converter
+// ============================================================================
 
 /**
- * Converter for {@link Entities.Journal.IJournalEntry | IJournalEntry}.
+ * Converter for {@link Entities.Fillings.AnyFillingRecipeVersion | AnyFillingRecipeVersion}.
+ * Uses presence of `scalingRef` to distinguish scaled from unscaled versions.
  * @public
  */
-export const journalEntry: Converter<IJournalEntry> = Converters.object<IJournalEntry>({
-  timestamp: Converters.string, // ISO 8601 timestamp
-  eventType: journalEventType,
-  ingredientId: CommonConverters.ingredientId.optional(),
-  originalAmount: CommonConverters.measurement.optional(),
-  newAmount: CommonConverters.measurement.optional(),
-  substituteIngredientId: CommonConverters.ingredientId.optional(),
-  text: Converters.string.optional()
+export const anyFillingRecipeVersion: Converter<AnyFillingRecipeVersion> =
+  Converters.oneOf<AnyFillingRecipeVersion>([
+    scaledFillingRecipeVersionConverter,
+    fillingRecipeVersionConverter
+  ]);
+
+// ============================================================================
+// Journal Entry Type Converters
+// ============================================================================
+
+/**
+ * Converter for {@link Entities.Journal.JournalEntryType | JournalEntryType}.
+ * @public
+ */
+export const journalEntryType: Converter<JournalEntryType> = Converters.enumeratedValue(allJournalEntryTypes);
+
+// ============================================================================
+// Resolved Slot Converters
+// ============================================================================
+
+/**
+ * Converter for {@link Entities.Journal.ResolvedSlotType | ResolvedSlotType}.
+ * @public
+ */
+export const resolvedSlotType: Converter<ResolvedSlotType> = Converters.enumeratedValue(allResolvedSlotTypes);
+
+/**
+ * Converter for {@link Entities.Journal.IResolvedFillingSlot | IResolvedFillingSlot}.
+ * @public
+ */
+export const resolvedFillingSlot: Converter<IResolvedFillingSlot> = Converters.object<IResolvedFillingSlot>({
+  slotType: Converters.literal('recipe'),
+  slotId: CommonConverters.slotId,
+  fillingId: CommonConverters.fillingId
 });
 
 /**
- * Converter for {@link Entities.Journal.JournalType | JournalType}.
+ * Converter for {@link Entities.Journal.IResolvedIngredientSlot | IResolvedIngredientSlot}.
  * @public
  */
-export const journalType: Converter<JournalType> = Converters.enumeratedValue(allJournalTypes);
-
-/**
- * Converter for {@link Entities.Journal.IFillingRecipeJournalRecord | IFillingRecipeJournalRecord}.
- * @public
- */
-export const fillingRecipeJournalRecord: Converter<IFillingRecipeJournalRecord> =
-  Converters.object<IFillingRecipeJournalRecord>({
-    journalType: Converters.literal('recipe'),
-    journalId: CommonConverters.journalId,
-    fillingVersionId: CommonConverters.fillingVersionId,
-    date: Converters.string, // ISO 8601 date string
-    targetWeight: CommonConverters.measurement,
-    scaleFactor: Converters.number,
-    notes: Converters.string.optional(),
-    modifiedVersionId: CommonConverters.fillingVersionId.optional(),
-    entries: Converters.arrayOf(journalEntry).optional()
+export const resolvedIngredientSlot: Converter<IResolvedIngredientSlot> =
+  Converters.object<IResolvedIngredientSlot>({
+    slotType: Converters.literal('ingredient'),
+    slotId: CommonConverters.slotId,
+    ingredientId: CommonConverters.ingredientId
   });
 
 /**
- * Converter for {@link Entities.Journal.ConfectionJournalEventType | ConfectionJournalEventType}.
+ * Converter for {@link Entities.Journal.AnyResolvedFillingSlot | AnyResolvedFillingSlot}.
+ * Uses discriminated object pattern on `slotType` field.
  * @public
  */
-export const confectionJournalEventType: Converter<ConfectionJournalEventType> = Converters.enumeratedValue(
-  allConfectionJournalEventTypes
-);
+export const anyResolvedFillingSlot: Converter<AnyResolvedFillingSlot> =
+  Converters.discriminatedObject<AnyResolvedFillingSlot>('slotType', {
+    recipe: resolvedFillingSlot,
+    ingredient: resolvedIngredientSlot
+  });
+
+// ============================================================================
+// Produced Filling Converters
+// ============================================================================
 
 /**
- * Converter for {@link Entities.Journal.ChocolateRole | ChocolateRole}.
+ * Converter for {@link Entities.Journal.IProducedFillingIngredient | IProducedFillingIngredient}.
  * @public
  */
-export const chocolateRole: Converter<ChocolateRole> = Converters.enumeratedValue(allChocolateRoles);
+export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
+  Converters.object<IProducedFillingIngredient>({
+    ingredientId: CommonConverters.ingredientId,
+    amount: CommonConverters.measurement,
+    unit: CommonConverters.measurementUnit.optional(),
+    notes: Converters.string.optional()
+  });
 
 /**
- * Converter for {@link Entities.Journal.IConfectionJournalEntry | IConfectionJournalEntry}.
+ * Converter for {@link Entities.Journal.IProducedFilling | IProducedFilling}.
  * @public
  */
-export const confectionJournalEntry: Converter<IConfectionJournalEntry> =
-  Converters.object<IConfectionJournalEntry>({
-    timestamp: Converters.string, // ISO 8601 timestamp
-    eventType: confectionJournalEventType,
-    // filling-select fields
-    fillingSlotId: CommonConverters.slotId.optional(),
-    fillingRecipeId: CommonConverters.fillingId.optional(),
-    previousFillingRecipeId: CommonConverters.fillingId.optional(),
-    fillingIngredientId: CommonConverters.ingredientId.optional(),
-    previousFillingIngredientId: CommonConverters.ingredientId.optional(),
-    // mold-select fields
-    moldId: CommonConverters.moldId.optional(),
-    previousMoldId: CommonConverters.moldId.optional(),
-    // chocolate-select fields
-    chocolateRole: chocolateRole.optional(),
-    ingredientId: CommonConverters.ingredientId.optional(),
-    previousIngredientId: CommonConverters.ingredientId.optional(),
-    // yield-modify fields
-    newYieldCount: Converters.number.optional(),
-    previousYieldCount: Converters.number.optional(),
-    newWeightPerPiece: CommonConverters.measurement.optional(),
-    previousWeightPerPiece: CommonConverters.measurement.optional(),
-    // procedure-select fields
+export const producedFilling: Converter<IProducedFilling> = Converters.object<IProducedFilling>({
+  versionId: CommonConverters.fillingVersionId,
+  scaleFactor: Converters.number,
+  targetWeight: CommonConverters.measurement,
+  ingredients: Converters.arrayOf(producedFillingIngredient),
+  procedureId: CommonConverters.procedureId.optional(),
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+});
+
+// ============================================================================
+// Produced Confection Converters
+// ============================================================================
+
+/**
+ * Converter for {@link Entities.Journal.IProducedMoldedBonBon | IProducedMoldedBonBon}.
+ * @public
+ */
+export const producedMoldedBonBon: Converter<IProducedMoldedBonBon> =
+  Converters.object<IProducedMoldedBonBon>({
+    confectionType: Converters.literal('molded-bonbon'),
+    versionId: CommonConverters.confectionVersionId,
+    yield: confectionYieldConverter,
+    fillings: Converters.arrayOf(anyResolvedFillingSlot).optional(),
     procedureId: CommonConverters.procedureId.optional(),
-    previousProcedureId: CommonConverters.procedureId.optional(),
-    // coating-select fields
-    coatingIngredientId: CommonConverters.ingredientId.optional(),
-    previousCoatingIngredientId: CommonConverters.ingredientId.optional(),
-    // note fields
-    text: Converters.string.optional()
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    moldId: CommonConverters.moldId,
+    shellChocolateId: CommonConverters.ingredientId,
+    sealChocolateId: CommonConverters.ingredientId.optional(),
+    decorationChocolateId: CommonConverters.ingredientId.optional()
   });
 
 /**
- * Converter for {@link Entities.Journal.IConfectionJournalRecord | IConfectionJournalRecord}.
+ * Converter for {@link Entities.Journal.IProducedBarTruffle | IProducedBarTruffle}.
  * @public
  */
-export const confectionJournalRecord: Converter<IConfectionJournalRecord> =
-  Converters.object<IConfectionJournalRecord>({
-    journalType: Converters.literal('confection'),
-    journalId: CommonConverters.journalId,
-    confectionVersionId: CommonConverters.confectionVersionId,
-    date: Converters.string, // ISO 8601 date string
-    yieldCount: Converters.number,
-    weightPerPiece: CommonConverters.measurement.optional(),
-    notes: Converters.string.optional(),
-    modifiedVersionId: CommonConverters.confectionVersionId.optional(),
-    linkedRecipeJournalId: CommonConverters.journalId.optional(),
-    entries: Converters.arrayOf(confectionJournalEntry).optional()
+export const producedBarTruffle: Converter<IProducedBarTruffle> = Converters.object<IProducedBarTruffle>({
+  confectionType: Converters.literal('bar-truffle'),
+  versionId: CommonConverters.confectionVersionId,
+  yield: confectionYieldConverter,
+  fillings: Converters.arrayOf(anyResolvedFillingSlot).optional(),
+  procedureId: CommonConverters.procedureId.optional(),
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+  enrobingChocolateId: CommonConverters.ingredientId.optional()
+});
+
+/**
+ * Converter for {@link Entities.Journal.IProducedRolledTruffle | IProducedRolledTruffle}.
+ * @public
+ */
+export const producedRolledTruffle: Converter<IProducedRolledTruffle> =
+  Converters.object<IProducedRolledTruffle>({
+    confectionType: Converters.literal('rolled-truffle'),
+    versionId: CommonConverters.confectionVersionId,
+    yield: confectionYieldConverter,
+    fillings: Converters.arrayOf(anyResolvedFillingSlot).optional(),
+    procedureId: CommonConverters.procedureId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    enrobingChocolateId: CommonConverters.ingredientId.optional(),
+    coatingId: CommonConverters.ingredientId.optional()
   });
 
 /**
- * Converter for {@link Entities.Journal.AnyJournalRecord | AnyJournalRecord}.
- * Uses the `journalType` discriminator to select the appropriate converter.
+ * Converter for {@link Entities.Journal.AnyProducedConfection | AnyProducedConfection}.
+ * Uses discriminated object pattern on `confectionType` field.
+ * Note: Kebab-case keys are intentional - they match the type discriminator values.
  * @public
  */
-export const anyJournalRecord: Converter<AnyJournalRecord> = Converters.discriminatedObject<AnyJournalRecord>(
-  'journalType',
+export const anyProducedConfection: Converter<AnyProducedConfection> =
+  Converters.discriminatedObject<AnyProducedConfection>('confectionType', {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    'molded-bonbon': producedMoldedBonBon,
+    'bar-truffle': producedBarTruffle,
+    'rolled-truffle': producedRolledTruffle
+    /* eslint-enable @typescript-eslint/naming-convention */
+  });
+
+// ============================================================================
+// Journal Entry Converters
+// ============================================================================
+
+/**
+ * Converter for {@link Entities.Journal.IFillingEditJournalEntry | IFillingEditJournalEntry}.
+ * @public
+ */
+export const fillingEditJournalEntry: Converter<IFillingEditJournalEntry> =
+  Converters.object<IFillingEditJournalEntry>({
+    type: Converters.literal('filling-edit'),
+    id: CommonConverters.journalId,
+    timestamp: Converters.string,
+    versionId: CommonConverters.fillingVersionId,
+    recipe: anyFillingRecipeVersion,
+    updated: anyFillingRecipeVersion.optional(),
+    updatedId: CommonConverters.fillingVersionId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+/**
+ * Converter for {@link Entities.Journal.IConfectionEditJournalEntry | IConfectionEditJournalEntry}.
+ * @public
+ */
+export const confectionEditJournalEntry: Converter<IConfectionEditJournalEntry> =
+  Converters.object<IConfectionEditJournalEntry>({
+    type: Converters.literal('confection-edit'),
+    id: CommonConverters.journalId,
+    timestamp: Converters.string,
+    versionId: CommonConverters.confectionVersionId,
+    recipe: anyConfectionVersionConverter,
+    updated: anyConfectionVersionConverter.optional(),
+    updatedId: CommonConverters.confectionVersionId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+/**
+ * Converter for {@link Entities.Journal.IFillingProductionJournalEntry | IFillingProductionJournalEntry}.
+ * @public
+ */
+export const fillingProductionJournalEntry: Converter<IFillingProductionJournalEntry> =
+  Converters.object<IFillingProductionJournalEntry>({
+    type: Converters.literal('filling-production'),
+    id: CommonConverters.journalId,
+    timestamp: Converters.string,
+    versionId: CommonConverters.fillingVersionId,
+    recipe: anyFillingRecipeVersion,
+    updated: anyFillingRecipeVersion.optional(),
+    updatedId: CommonConverters.fillingVersionId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    yield: CommonConverters.measurement,
+    produced: producedFilling
+  });
+
+/**
+ * Converter for {@link Entities.Journal.IConfectionProductionJournalEntry | IConfectionProductionJournalEntry}.
+ * @public
+ */
+export const confectionProductionJournalEntry: Converter<IConfectionProductionJournalEntry> =
+  Converters.object<IConfectionProductionJournalEntry>({
+    type: Converters.literal('confection-production'),
+    id: CommonConverters.journalId,
+    timestamp: Converters.string,
+    versionId: CommonConverters.confectionVersionId,
+    recipe: anyConfectionVersionConverter,
+    updated: anyConfectionVersionConverter.optional(),
+    updatedId: CommonConverters.confectionVersionId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    yield: confectionYieldConverter,
+    produced: anyProducedConfection
+  });
+
+/**
+ * Converter for {@link Entities.Journal.AnyJournalEntry | AnyJournalEntry}.
+ * Uses discriminated object pattern on `type` field.
+ * Note: Kebab-case keys are intentional - they match the type discriminator values.
+ * @public
+ */
+export const anyJournalEntry: Converter<AnyJournalEntry> = Converters.discriminatedObject<AnyJournalEntry>(
+  'type',
   {
-    recipe: fillingRecipeJournalRecord,
-    confection: confectionJournalRecord
+    /* eslint-disable @typescript-eslint/naming-convention */
+    'filling-edit': fillingEditJournalEntry,
+    'confection-edit': confectionEditJournalEntry,
+    'filling-production': fillingProductionJournalEntry,
+    'confection-production': confectionProductionJournalEntry
+    /* eslint-enable @typescript-eslint/naming-convention */
   }
 );
