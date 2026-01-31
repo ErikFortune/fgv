@@ -226,7 +226,7 @@ Converter for ChocolateVariety
 
 </td><td>
 
-Converter for ConfectionId (composite)
+Converter for ConfectionId (composite string). Accepts either a ConfectionId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -259,7 +259,7 @@ Converter for ConfectionType
 
 </td><td>
 
-Converter for ConfectionVersionId (composite)
+Converter for ConfectionVersionId (composite string). Accepts either a ConfectionVersionId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -303,7 +303,7 @@ Converter for FillingCategory
 
 </td><td>
 
-Converter for FillingId (composite)
+Converter for FillingId (composite string). Accepts either a FillingId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -325,7 +325,7 @@ Converter for FillingName
 
 </td><td>
 
-Converter for FillingVersionId (composite)
+Converter for FillingVersionId (composite string). Accepts either a FillingVersionId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -369,7 +369,7 @@ Converter for IngredientCategory
 
 </td><td>
 
-Converter for IngredientId (composite)
+Converter for IngredientId (composite string). Accepts either an IngredientId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -468,7 +468,7 @@ Converter for MoldFormat
 
 </td><td>
 
-Converter for MoldId (composite)
+Converter for MoldId (composite string). Accepts either a MoldId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -578,7 +578,7 @@ Converter for Percentage
 
 </td><td>
 
-Converter for ProcedureId (composite)
+Converter for ProcedureId (composite string). Accepts either a ProcedureId string or a CompositeId object representation.
 
 
 </td></tr>
@@ -655,7 +655,7 @@ Converter for SpoonLevel
 
 </td><td>
 
-Converter for TaskId (composite)
+Converter for TaskId (composite string). Accepts either a TaskId string or a CompositeId object representation.
 
 
 </td></tr>

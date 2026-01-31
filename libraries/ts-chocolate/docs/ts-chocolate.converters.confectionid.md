@@ -4,7 +4,7 @@
 
 ## Converters.confectionId variable
 
-Converter for ConfectionId (composite)
+Converter for ConfectionId (composite string). Accepts either a ConfectionId string or a CompositeId object representation.
 
 **Signature:**
 

@@ -18,7 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Failure, Result, Success, captureResult } from '@fgv/ts-utils';
+import { Converters, Failure, Result, Success, captureResult } from '@fgv/ts-utils';
+import type { Converter } from '@fgv/ts-utils';
+import { Converters as CommonConverters, SourceId } from '../common';
 import { IEditorContext, IValidationReport } from './model';
 import { EditableCollection } from './editableCollection';
 import { ValidationReportBuilder } from './validation';
@@ -53,12 +55,14 @@ export interface IEditorContextParams<T, TBaseId extends string = string, TId ex
   readonly semanticValidator?: (entity: T) => Result<T>;
 
   /**
-   * Function to create a composite ID from collection ID and base ID.
-   * @param collectionId - Collection ID
-   * @param baseId - Base ID
-   * @returns Composite entity ID
+   * Converter used to create a composite ID from a `{ collectionId, itemId }` object.
+   *
+   * @remarks
+   * Callers can typically pass the canonical ID converter for the entity type (e.g.
+   * `CommonConverters.ingredientId`). The editor context will construct a composite-id
+   * object and call this converter.
    */
-  readonly createId: (collectionId: string, baseId: TBaseId) => TId;
+  readonly createId: Converter<TId>;
 
   /**
    * Function to extract base ID from entity.
@@ -94,9 +98,12 @@ export interface IEditorContextParams<T, TBaseId extends string = string, TId ex
 export class EditorContext<T, TBaseId extends string = string, TId extends string = string>
   implements IEditorContext<T, TBaseId, TId>
 {
+  private static readonly _parsedEntityId: Converter<{ collectionId: SourceId; itemId: string }> =
+    Converters.compositeId(CommonConverters.sourceId, '.', Converters.string);
+
   private readonly _collection: EditableCollection<T, TBaseId>;
   private readonly _semanticValidator?: (entity: T) => Result<T>;
-  private readonly _createId: (collectionId: string, baseId: TBaseId) => TId;
+  private readonly _createId: Converter<TId>;
   private readonly _getName: (entity: T) => string;
   private _hasUnsavedChanges: boolean = false;
 
@@ -123,6 +130,10 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
       return Failure.with('Collection is required');
     }
 
+    if (!params.createId) {
+      return Failure.with('createId converter is required');
+    }
+
     if (!params.collection.isMutable) {
       return Failure.with(`Collection "${params.collection.collectionId}" is immutable and cannot be edited`);
     }
@@ -136,8 +147,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @returns Result containing the entity or failure
    */
   public get(id: TId): Result<T> {
-    const baseId = this._extractBaseId(id);
-    return this._collection.get(baseId);
+    return this._extractBaseId(id).onSuccess((baseId) => this._collection.get(baseId));
   }
 
   /**
@@ -146,7 +156,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    */
   public getAll(): ReadonlyArray<[TId, T]> {
     const entries = Array.from(this._collection.entries());
-    return entries.map(([baseId, entity]) => [this._createId(this._collection.collectionId, baseId), entity]);
+    return entries.map(([baseId, entity]) => [this._createIdFromBaseId(baseId).orThrow(), entity]);
   }
 
   /**
@@ -180,7 +190,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
         // Add to collection
         return this._collection.set(finalBaseId, entity).asResult.onSuccess(() => {
           this._hasUnsavedChanges = true;
-          return Success.with(this._createId(this._collection.collectionId, finalBaseId));
+          return this._createIdFromBaseId(finalBaseId);
         });
       });
   }
@@ -192,23 +202,23 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @returns Result indicating success or failure
    */
   public update(id: TId, entity: T): Result<T> {
-    const baseId = this._extractBaseId(id);
+    return this._extractBaseId(id).onSuccess((baseId) => {
+      // Check entity exists
+      if (!this._collection.has(baseId)) {
+        return Failure.with(`Entity "${id}" not found in collection "${this._collection.collectionId}"`);
+      }
 
-    // Check entity exists
-    if (!this._collection.has(baseId)) {
-      return Failure.with(`Entity "${id}" not found in collection "${this._collection.collectionId}"`);
-    }
+      // Run semantic validation if configured
+      const semanticResult = this._runSemanticValidation(entity);
+      if (semanticResult.isFailure()) {
+        return Failure.with(semanticResult.message);
+      }
 
-    // Run semantic validation if configured
-    const semanticResult = this._runSemanticValidation(entity);
-    if (semanticResult.isFailure()) {
-      return Failure.with(semanticResult.message);
-    }
-
-    // Update in collection
-    return this._collection.set(baseId, entity).asResult.onSuccess((updatedEntity) => {
-      this._hasUnsavedChanges = true;
-      return Success.with(updatedEntity);
+      // Update in collection
+      return this._collection.set(baseId, entity).asResult.onSuccess((updatedEntity) => {
+        this._hasUnsavedChanges = true;
+        return Success.with(updatedEntity);
+      });
     });
   }
 
@@ -218,12 +228,12 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @returns Result indicating success or failure
    */
   public delete(id: TId): Result<T> {
-    const baseId = this._extractBaseId(id);
-
-    return this._collection.delete(baseId).asResult.onSuccess((entity) => {
-      this._hasUnsavedChanges = true;
-      return Success.with(entity);
-    });
+    return this._extractBaseId(id).onSuccess((baseId) =>
+      this._collection.delete(baseId).asResult.onSuccess((entity) => {
+        this._hasUnsavedChanges = true;
+        return Success.with(entity);
+      })
+    );
   }
 
   /**
@@ -233,7 +243,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @param targetCollectionId - Target collection ID
    * @returns Result containing the new entity ID in target collection or failure
    */
-  public copyTo(id: TId, targetCollectionId: string): Result<TId> {
+  public copyTo(id: TId, targetCollectionId: SourceId): Result<TId> {
     return Failure.with('Copy operation not implemented for this entity type');
   }
 
@@ -244,7 +254,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    */
   public exists(id: TId): boolean {
     const baseId = this._extractBaseId(id);
-    return this._collection.has(baseId);
+    return baseId.isSuccess() && this._collection.has(baseId.value);
   }
 
   /**
@@ -298,9 +308,16 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @param id - Composite entity ID
    * @returns Base ID
    */
-  private _extractBaseId(id: TId): TBaseId {
-    const parts = id.split('.');
-    return parts[parts.length - 1] as TBaseId;
+  private _extractBaseId(id: TId): Result<TBaseId> {
+    return EditorContext._parsedEntityId.convert(id).onSuccess((parsed) => {
+      return Success.with(parsed.itemId as TBaseId);
+    });
+  }
+
+  private _createIdFromBaseId(baseId: TBaseId): Result<TId> {
+    return this._createId
+      .convert({ collectionId: this._collection.collectionId, itemId: baseId })
+      .withErrorFormat((msg) => `Failed to create entity id: ${msg}`);
   }
 
   /**

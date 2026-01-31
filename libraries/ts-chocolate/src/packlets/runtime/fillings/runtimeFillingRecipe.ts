@@ -27,8 +27,8 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BaseFillingId,
+  Converters,
   Helpers,
-  ID_SEPARATOR,
   IngredientId,
   FillingId,
   FillingName,
@@ -76,10 +76,9 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
     this._id = id;
     this._recipe = recipe;
 
-    // Parse the composite ID
-    const parts = (id as string).split(ID_SEPARATOR);
-    this._sourceId = parts[0] as SourceId;
-    this._baseId = parts[1] as BaseFillingId;
+    const parsed = Converters.parsedFillingId.convert(id).orThrow();
+    this._sourceId = parsed.collectionId;
+    this._baseId = parsed.itemId;
   }
 
   /**

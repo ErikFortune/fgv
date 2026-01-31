@@ -28,6 +28,7 @@ import {
   ConfectionName,
   ConfectionVersionId,
   ConfectionVersionSpec,
+  Converters as CommonConverters,
   Measurement,
   Helpers,
   IngredientId,
@@ -50,13 +51,8 @@ const {
   isValidBaseMoldId,
   isValidBaseProcedureId,
   isValidBaseFillingId,
-  isValidIngredientId,
-  isValidMoldId,
-  isValidProcedureId,
-  isValidFillingId,
   isValidFillingName,
   isValidFillingVersionSpec,
-  isValidFillingVersionId,
   isValidSessionId,
   isValidJournalId,
   isValidRatingScore,
@@ -70,14 +66,8 @@ const {
   toBaseProcedureId,
   toBaseTaskId,
   toBaseFillingId,
-  toIngredientId,
-  toMoldId,
-  toProcedureId,
-  toTaskId,
-  toFillingId,
   toFillingName,
   toFillingVersionSpec,
-  toFillingVersionId,
   toSessionId,
   toJournalId,
   isValidSlotId,
@@ -88,14 +78,22 @@ const {
   toCelsius,
   toDegreesMacMichael,
   toBaseConfectionId,
-  toConfectionId,
   toConfectionName,
   toConfectionVersionSpec,
-  isValidConfectionVersionId,
-  toConfectionVersionId,
   isValidUrlCategory,
   toUrlCategory
 } = Validation;
+
+const {
+  ingredientId: ingredientIdConverter,
+  moldId: moldIdConverter,
+  procedureId: procedureIdConverter,
+  taskId: taskIdConverter,
+  fillingId: fillingIdConverter,
+  fillingVersionId: fillingVersionIdConverter,
+  confectionId: confectionIdConverter,
+  confectionVersionId: confectionVersionIdConverter
+} = CommonConverters;
 
 const {
   createIngredientId,
@@ -152,41 +150,6 @@ describe('Common validation', () => {
   });
 
   // ============================================================================
-  // Composite ID Type Guards
-  // ============================================================================
-
-  describe('Composite ID type guards', () => {
-    const validCompositeIds: [string, unknown][] = [
-      ['simple', 'source.ingredient'],
-      ['with dashes', 'felchlin.maracaibo-65'],
-      ['with underscores', 'common.butter_82']
-    ];
-
-    const invalidCompositeIds: [string, unknown][] = [
-      ['no dot', 'maracaibo-65'],
-      ['multiple dots', 'source.ingredient.extra'],
-      ['empty string', ''],
-      ['trailing dot', 'source.'],
-      ['leading dot', '.ingredient'],
-      ['number', 123]
-    ];
-
-    describe.each([
-      ['isValidIngredientId', isValidIngredientId],
-      ['isValidMoldId', isValidMoldId],
-      ['isValidProcedureId', isValidProcedureId],
-      ['isValidFillingId', isValidFillingId]
-    ])('%s', (_name, fn) => {
-      test.each(validCompositeIds)('returns true for %s', (_desc, input) => {
-        expect(fn(input)).toBe(true);
-      });
-
-      test.each(invalidCompositeIds)('returns false for %s', (_desc, input) => {
-        expect(fn(input)).toBe(false);
-      });
-    });
-  });
-
   describe('isValidFillingName', () => {
     test.each([
       ['valid name', 'Classic Dark Chocolate Ganache', true],
@@ -333,24 +296,34 @@ describe('Common validation', () => {
 
   describe('Composite ID converters', () => {
     describe.each([
-      ['toIngredientId', toIngredientId, 'felchlin.maracaibo-65', 'maracaibo-65', /Invalid IngredientId/],
-      ['toMoldId', toMoldId, 'common.cw-2227', 'cw-2227', /Invalid MoldId/],
-      ['toProcedureId', toProcedureId, 'common.ganache-cold', 'ganache-cold', /Invalid ProcedureId/],
-      ['toTaskId', toTaskId, 'common.melt-chocolate', 'melt-chocolate', /Invalid TaskId/],
-      ['toFillingId', toFillingId, 'user.classic-ganache', 'classic-ganache', /Invalid FillingId/]
-    ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
-      test(`succeeds with valid input "${validInput}"`, () => {
-        expect(fn(validInput)).toSucceedAndSatisfy((result) => {
+      ['ingredientId', ingredientIdConverter, toBaseIngredientId, 'felchlin', 'maracaibo-65'],
+      ['moldId', moldIdConverter, toBaseMoldId, 'common', 'cw-2227'],
+      ['procedureId', procedureIdConverter, toBaseProcedureId, 'common', 'ganache-cold'],
+      ['taskId', taskIdConverter, toBaseTaskId, 'common', 'melt-chocolate'],
+      ['fillingId', fillingIdConverter, toBaseFillingId, 'user', 'classic-ganache']
+    ])('%s', (_name, converter, toBase, collectionIdText, baseIdText) => {
+      const validInput = `${collectionIdText}.${baseIdText}`;
+
+      test(`accepts a valid string: "${validInput}"`, () => {
+        expect(converter.convert(validInput)).toSucceedAndSatisfy((result) => {
           expect(result).toBe(validInput);
         });
       });
 
-      test(`fails with base ID only "${invalidInput}"`, () => {
-        expect(fn(invalidInput)).toFailWith(errorPattern);
+      test('accepts a CompositeId object and returns the string form', () => {
+        const collectionId = toSourceId(collectionIdText).orThrow();
+        const baseId = toBase(baseIdText).orThrow();
+        expect(converter.convert({ collectionId, itemId: baseId })).toSucceedAndSatisfy((result) => {
+          expect(result).toBe(validInput);
+        });
+      });
+
+      test(`fails with base ID only: "${baseIdText}"`, () => {
+        expect(converter.convert(baseIdText)).toFail();
       });
 
       test('fails with too many dots', () => {
-        expect(fn('source.item.extra')).toFail();
+        expect(converter.convert('source.item.extra')).toFail();
       });
     });
   });
@@ -701,23 +674,21 @@ describe('Common validation', () => {
       ['null', null]
     ];
 
-    describe('isValidFillingVersionId', () => {
-      test.each(validVersionIds)('%s: returns true for valid FillingVersionId', (_name, value) => {
-        expect(isValidFillingVersionId(value)).toBe(true);
-      });
-
-      test.each(invalidVersionIds)('%s: returns false for invalid FillingVersionId', (_name, value) => {
-        expect(isValidFillingVersionId(value)).toBe(false);
-      });
-    });
-
-    describe('toFillingVersionId', () => {
+    describe('fillingVersionId converter', () => {
       test.each(validVersionIds)('%s: succeeds for valid FillingVersionId', (_name, value) => {
-        expect(toFillingVersionId(value)).toSucceedWith(value as FillingVersionId);
+        expect(fillingVersionIdConverter.convert(value)).toSucceedWith(value as FillingVersionId);
       });
 
       test.each(invalidVersionIds)('%s: fails for invalid FillingVersionId', (_name, value) => {
-        expect(toFillingVersionId(value)).toFailWith(/Invalid FillingVersionId/i);
+        expect(fillingVersionIdConverter.convert(value)).toFail();
+      });
+
+      test('accepts a CompositeId object (collectionId + itemId)', () => {
+        const fillingId = fillingIdConverter.convert('user.ganache').orThrow();
+        const versionSpec = toFillingVersionSpec('2026-01-03-01').orThrow();
+        expect(
+          fillingVersionIdConverter.convert({ collectionId: fillingId, itemId: versionSpec })
+        ).toSucceedWith('user.ganache@2026-01-03-01' as FillingVersionId);
       });
     });
   });
@@ -725,14 +696,14 @@ describe('Common validation', () => {
   describe('FillingVersionId helpers', () => {
     describe('createFillingVersionId', () => {
       test('creates composite ID', () => {
-        const recipeId = 'user.ganache' as FillingId;
-        const versionSpec = '2026-01-03-01' as FillingVersionSpec;
+        const recipeId = fillingIdConverter.convert('user.ganache').orThrow();
+        const versionSpec = toFillingVersionSpec('2026-01-03-01').orThrow();
         expect(createFillingVersionId(recipeId, versionSpec)).toBe('user.ganache@2026-01-03-01');
       });
 
       test('creates composite ID with label', () => {
-        const recipeId = 'felchlin.truffle' as FillingId;
-        const versionSpec = '2026-01-03-02-less-sugar' as FillingVersionSpec;
+        const recipeId = fillingIdConverter.convert('felchlin.truffle').orThrow();
+        const versionSpec = toFillingVersionSpec('2026-01-03-02-less-sugar').orThrow();
         expect(createFillingVersionId(recipeId, versionSpec)).toBe(
           'felchlin.truffle@2026-01-03-02-less-sugar'
         );
@@ -802,13 +773,13 @@ describe('Common validation', () => {
 
     describe('toConfectionId', () => {
       test('succeeds with valid composite ID', () => {
-        expect(toConfectionId('common.dark-dome-bonbon')).toSucceedWith(
+        expect(confectionIdConverter.convert('common.dark-dome-bonbon')).toSucceedWith(
           'common.dark-dome-bonbon' as ConfectionId
         );
       });
 
       test('fails with missing dot', () => {
-        expect(toConfectionId('nobonbondot')).toFailWith(/Invalid ConfectionId/);
+        expect(confectionIdConverter.convert('nobonbondot')).toFail();
       });
     });
 
@@ -836,33 +807,23 @@ describe('Common validation', () => {
       });
     });
 
-    describe('isValidConfectionVersionId', () => {
-      test('returns true for valid ID', () => {
-        expect(isValidConfectionVersionId('common.bonbon@2026-01-01-01')).toBe(true);
-      });
-
-      test('returns false for non-string', () => {
-        expect(isValidConfectionVersionId(123)).toBe(false);
-      });
-
-      test('returns false for missing separator', () => {
-        expect(isValidConfectionVersionId('common.bonbon')).toBe(false);
-      });
-
-      test('returns false for invalid confection ID part', () => {
-        expect(isValidConfectionVersionId('nobonbondot@2026-01-01-01')).toBe(false);
-      });
-    });
-
-    describe('toConfectionVersionId', () => {
+    describe('confectionVersionId converter', () => {
       test('succeeds with valid ID', () => {
-        expect(toConfectionVersionId('common.bonbon@2026-01-01-01')).toSucceedWith(
+        expect(confectionVersionIdConverter.convert('common.bonbon@2026-01-01-01')).toSucceedWith(
           'common.bonbon@2026-01-01-01' as ConfectionVersionId
         );
       });
 
       test('fails with invalid format', () => {
-        expect(toConfectionVersionId('invalid')).toFailWith(/Invalid ConfectionVersionId/);
+        expect(confectionVersionIdConverter.convert('invalid')).toFail();
+      });
+
+      test('accepts a CompositeId object (collectionId + itemId)', () => {
+        const confectionId = confectionIdConverter.convert('common.bonbon').orThrow();
+        const versionSpec = toConfectionVersionSpec('2026-01-01-01').orThrow();
+        expect(
+          confectionVersionIdConverter.convert({ collectionId: confectionId, itemId: versionSpec })
+        ).toSucceedWith('common.bonbon@2026-01-01-01' as ConfectionVersionId);
       });
     });
   });

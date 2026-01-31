@@ -4,10 +4,15 @@
 
 ## Editing.IEditorContextParams.createId property
 
-Function to create a composite ID from collection ID and base ID.
+Converter used to create a composite ID from a `{ collectionId, itemId }` object.
 
 **Signature:**
 
 ```typescript
-readonly createId: (collectionId: string, baseId: TBaseId) => TId;
+readonly createId: Converter<TId>;
 ```
+
+## Remarks
+
+Callers can typically pass the canonical ID converter for the entity type (e.g. `CommonConverters.ingredientId`<!-- -->). The editor context will construct a composite-id object and call this converter.
+

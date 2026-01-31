@@ -79,7 +79,7 @@ export interface IEditorContext<T, TBaseId extends string = string, TId extends 
    * @param targetCollectionId - Target collection ID
    * @returns Result containing the new entity ID in target collection or failure
    */
-  readonly copyTo: (id: TId, targetCollectionId: string) => Result<TId>;
+  readonly copyTo: (id: TId, targetCollectionId: SourceId) => Result<TId>;
 
   /**
    * Check if entity exists in collection.

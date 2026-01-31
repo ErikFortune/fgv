@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { fail, isKeyOf, mapResults, succeed } from '../base';
+import { fail, isKeyOf, mapResults, succeed, Success } from '../base';
 import { Validator } from '../validation';
 import { BaseConverter, ConverterResultTypes } from './baseConverter';
 import { Converter } from './converter';
@@ -39,6 +39,16 @@ export interface ICompositeId<TCOLLECTIONID extends string, TITEMID extends stri
 }
 
 /**
+ * Represents a partial composite ID, where separator is optional.
+ * @public
+ */
+export interface IPartialCompositeId<TCOLLECTIONID extends string, TITEMID extends string> {
+  readonly collectionId: TCOLLECTIONID;
+  readonly separator?: string;
+  readonly itemId: TITEMID;
+}
+
+/**
  * Creates an {@link ObjectConverter | ObjectConverter} for a strongly-typed {@link Converters.ICompositeId | CompositeId}.
  * @param collectionIdValidator - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
  * @param separator - The separator string.
@@ -50,12 +60,18 @@ export function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID exte
   collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
   separator: string,
   itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>
-): ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
-  return new ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>({
+): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
+  return new ObjectConverter<IPartialCompositeId<TCOLLECTIONID, TITEMID>, TC>({
     collectionId: collectionIdValidator,
-    separator: literal(separator),
+    separator: literal(separator).optional(),
     itemId: itemIdValidator
-  });
+  }).map<ICompositeId<TCOLLECTIONID, TITEMID>>((obj) =>
+    Success.with({
+      collectionId: obj.collectionId,
+      separator: obj.separator ?? separator,
+      itemId: obj.itemId
+    })
+  );
 }
 
 /**

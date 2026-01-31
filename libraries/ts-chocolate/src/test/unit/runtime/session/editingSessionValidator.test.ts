@@ -197,7 +197,7 @@ describe('EditingSessionValidator', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.validating.getIngredient('invalid-no-dot')).toFailWith(/Invalid IngredientId/);
+      expect(session.validating.getIngredient('invalid-no-dot')).toFailWith(/invalid composite id/i);
     });
 
     test('fails for non-existent ingredient', () => {
@@ -252,7 +252,7 @@ describe('EditingSessionValidator', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setIngredientAmount('invalid-no-dot', 100)).toFailWith(
-        /Invalid IngredientId/
+        /invalid composite id/i
       );
     });
 
@@ -286,7 +286,9 @@ describe('EditingSessionValidator', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.validating.addIngredientAmount('invalid-no-dot', 50)).toFailWith(/Invalid IngredientId/);
+      expect(session.validating.addIngredientAmount('invalid-no-dot', 50)).toFailWith(
+        /invalid composite id/i
+      );
     });
 
     test('fails for negative additional amount', () => {
@@ -325,7 +327,7 @@ describe('EditingSessionValidator', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.validating.addIngredient('invalid-no-dot', 30)).toFailWith(/Invalid IngredientId/);
+      expect(session.validating.addIngredient('invalid-no-dot', 30)).toFailWith(/invalid composite id/i);
     });
 
     test('fails for negative amount', () => {
@@ -358,7 +360,7 @@ describe('EditingSessionValidator', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.validating.removeIngredient('invalid-no-dot')).toFailWith(/Invalid IngredientId/);
+      expect(session.validating.removeIngredient('invalid-no-dot')).toFailWith(/invalid composite id/i);
     });
 
     test('fails for non-existent ingredient', () => {
@@ -405,7 +407,7 @@ describe('EditingSessionValidator', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('invalid-no-dot', 'test.butter')).toFailWith(
-        /Invalid IngredientId/
+        /invalid composite id/i
       );
     });
 
@@ -414,7 +416,7 @@ describe('EditingSessionValidator', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.cream', 'invalid-no-dot')).toFailWith(
-        /Invalid IngredientId/
+        /invalid composite id/i
       );
     });
 

@@ -27,7 +27,7 @@ import {
   Allergen,
   BaseIngredientId,
   Certification,
-  ID_SEPARATOR,
+  Converters,
   IngredientCategory,
   IngredientId,
   SourceId
@@ -78,10 +78,9 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
     this._id = id;
     this._ingredient = ingredient;
 
-    // Parse the composite ID
-    const parts = (id as string).split(ID_SEPARATOR);
-    this._sourceId = parts[0] as SourceId;
-    this._baseId = parts[1] as BaseIngredientId;
+    const parsed = Converters.parsedIngredientId.convert(id).orThrow();
+    this._sourceId = parsed.collectionId;
+    this._baseId = parsed.itemId;
   }
 
   // ============================================================================

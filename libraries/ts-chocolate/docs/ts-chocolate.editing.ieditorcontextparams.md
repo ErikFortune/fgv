@@ -68,12 +68,12 @@ The mutable collection to edit.
 
 </td><td>
 
-(collectionId: string, baseId: TBaseId) =&gt; TId
+Converter&lt;TId&gt;
 
 
 </td><td>
 
-Function to create a composite ID from collection ID and base ID.
+Converter used to create a composite ID from a `{ collectionId, itemId }` object.
 
 
 </td></tr>

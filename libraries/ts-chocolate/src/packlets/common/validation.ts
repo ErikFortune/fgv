@@ -34,38 +34,28 @@ import {
   BaseProcedureId,
   BaseTaskId,
   Celsius,
-  COMPOSITE_ID_PATTERN,
   CONFECTION_VERSION_SPEC_PATTERN,
-  ConfectionId,
   ConfectionName,
-  ConfectionVersionId,
   ConfectionVersionSpec,
   DegreesMacMichael,
-  FillingId,
   FillingName,
-  FillingVersionId,
   FillingVersionSpec,
   FILLING_VERSION_SPEC_PATTERN,
   IHasId,
   IIdsWithPreferred,
-  IngredientId,
   IOptionsWithPreferred,
   JOURNAL_ID_PATTERN,
   JournalId,
   Measurement,
   Millimeters,
   Minutes,
-  MoldId,
   Percentage,
-  ProcedureId,
   RatingScore,
   SESSION_ID_PATTERN,
   SessionId,
   SlotId,
   SourceId,
-  TaskId,
-  UrlCategory,
-  VERSION_ID_SEPARATOR
+  UrlCategory
 } from './model';
 
 // ============================================================================
@@ -265,160 +255,6 @@ export function toUrlCategory(from: unknown): Result<UrlCategory> {
 }
 
 // ============================================================================
-// Composite ID Validators (exactly one dot)
-// ============================================================================
-
-/**
- * Type guard for IngredientId
- * @param from - Value to check
- * @returns True if the value is a valid composite IngredientId
- * @public
- */
-export function isValidIngredientId(from: unknown): from is IngredientId {
-  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
-}
-
-/**
- * Converts unknown value to IngredientId
- * @param from - Value to convert
- * @returns Result with IngredientId or error
- * @public
- */
-export function toIngredientId(from: unknown): Result<IngredientId> {
-  if (isValidIngredientId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid IngredientId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
-  );
-}
-
-/**
- * Type guard for FillingId
- * @param from - Value to check
- * @returns True if the value is a valid composite FillingId
- * @public
- */
-export function isValidFillingId(from: unknown): from is FillingId {
-  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
-}
-
-/**
- * Converts unknown value to FillingId
- * @param from - Value to convert
- * @returns Result with FillingId or error
- * @public
- */
-export function toFillingId(from: unknown): Result<FillingId> {
-  if (isValidFillingId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid FillingId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
-  );
-}
-
-/**
- * Type guard for MoldId
- * @param from - Value to check
- * @returns True if the value is a valid composite MoldId
- * @public
- */
-export function isValidMoldId(from: unknown): from is MoldId {
-  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
-}
-
-/**
- * Converts unknown value to MoldId
- * @param from - Value to convert
- * @returns Result with MoldId or error
- * @public
- */
-export function toMoldId(from: unknown): Result<MoldId> {
-  if (isValidMoldId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid MoldId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
-  );
-}
-
-/**
- * Type guard for ProcedureId
- * @param from - Value to check
- * @returns True if the value is a valid composite ProcedureId
- * @public
- */
-export function isValidProcedureId(from: unknown): from is ProcedureId {
-  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
-}
-
-/**
- * Converts unknown value to ProcedureId
- * @param from - Value to convert
- * @returns Result with ProcedureId or error
- * @public
- */
-export function toProcedureId(from: unknown): Result<ProcedureId> {
-  if (isValidProcedureId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid ProcedureId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
-  );
-}
-
-/**
- * Type guard for TaskId
- * @param from - Value to check
- * @returns True if the value is a valid composite TaskId
- * @public
- */
-export function isValidTaskId(from: unknown): from is TaskId {
-  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
-}
-
-/**
- * Converts unknown value to TaskId
- * @param from - Value to convert
- * @returns Result with TaskId or error
- * @public
- */
-export function toTaskId(from: unknown): Result<TaskId> {
-  if (isValidTaskId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid TaskId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
-  );
-}
-
-/**
- * Type guard for ConfectionId
- * @param from - Value to check
- * @returns True if the value is a valid composite ConfectionId
- * @public
- */
-export function isValidConfectionId(from: unknown): from is ConfectionId {
-  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
-}
-
-/**
- * Converts unknown value to ConfectionId
- * @param from - Value to convert
- * @returns Result with ConfectionId or error
- * @public
- */
-export function toConfectionId(from: unknown): Result<ConfectionId> {
-  if (isValidConfectionId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid ConfectionId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
-  );
-}
-
-// ============================================================================
 // Other String Validators
 // ============================================================================
 
@@ -494,38 +330,6 @@ export function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec> 
 }
 
 /**
- * Type guard for FillingVersionId
- * @param from - Value to check
- * @returns True if the value is a valid FillingVersionId
- * @public
- */
-export function isValidFillingVersionId(from: unknown): from is FillingVersionId {
-  if (typeof from !== 'string') {
-    return false;
-  }
-  const parts = from.split(VERSION_ID_SEPARATOR);
-  if (parts.length !== 2) {
-    return false;
-  }
-  return isValidFillingId(parts[0]) && isValidFillingVersionSpec(parts[1]);
-}
-
-/**
- * Converts unknown value to FillingVersionId
- * @param from - Value to convert
- * @returns Result with {@link FillingVersionId | FillingVersionId} or error
- * @public
- */
-export function toFillingVersionId(from: unknown): Result<FillingVersionId> {
-  if (isValidFillingVersionId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid FillingVersionId: must be in format "fillingId@versionSpec" (e.g., "user.ganache@2026-01-03-01")'
-  );
-}
-
-/**
  * Type guard for ConfectionVersionSpec
  * @param from - Value to check
  * @returns True if the value is a valid ConfectionVersionSpec
@@ -547,38 +351,6 @@ export function toConfectionVersionSpec(from: unknown): Result<ConfectionVersion
   }
   return Failure.with(
     'Invalid ConfectionVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
-  );
-}
-
-/**
- * Type guard for ConfectionVersionId
- * @param from - Value to check
- * @returns True if the value is a valid ConfectionVersionId
- * @public
- */
-export function isValidConfectionVersionId(from: unknown): from is ConfectionVersionId {
-  if (typeof from !== 'string') {
-    return false;
-  }
-  const parts = from.split(VERSION_ID_SEPARATOR);
-  if (parts.length !== 2) {
-    return false;
-  }
-  return isValidConfectionId(parts[0]) && isValidConfectionVersionSpec(parts[1]);
-}
-
-/**
- * Converts unknown value to ConfectionVersionId
- * @param from - Value to convert
- * @returns Result with {@link ConfectionVersionId | ConfectionVersionId} or error
- * @public
- */
-export function toConfectionVersionId(from: unknown): Result<ConfectionVersionId> {
-  if (isValidConfectionVersionId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    'Invalid ConfectionVersionId: must be in format "confectionId@versionSpec" (e.g., "user.dark-dome-bonbon@2026-01-03-01")'
   );
 }
 

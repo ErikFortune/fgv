@@ -1072,7 +1072,7 @@ class EditorContext<T, TBaseId extends string = string, TId extends string = str
     protected constructor(params: IEditorContextParams<T, TBaseId, TId>);
     clearUnsavedChanges(): void;
     protected get collection(): EditableCollection<T, TBaseId>;
-    copyTo(id: TId, targetCollectionId: string): Result<TId>;
+    copyTo(id: TId, targetCollectionId: SourceId): Result<TId>;
     static create<T, TBaseId extends string = string, TId extends string = string>(params: IEditorContextParams<T, TBaseId, TId>): Result<EditorContext<T, TBaseId, TId>>;
     create(baseId: TBaseId | undefined, entity: T): Result<TId>;
     delete(id: TId): Result<T>;
@@ -2219,7 +2219,7 @@ interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
 // @public
 interface IEditorContext<T, TBaseId extends string = string, TId extends string = string> {
     readonly clearUnsavedChanges: () => void;
-    readonly copyTo: (id: TId, targetCollectionId: string) => Result<TId>;
+    readonly copyTo: (id: TId, targetCollectionId: SourceId) => Result<TId>;
     readonly create: (baseId: TBaseId | undefined, entity: T) => Result<TId>;
     readonly delete: (id: TId) => Result<T>;
     readonly exists: (id: TId) => boolean;
@@ -2233,7 +2233,7 @@ interface IEditorContext<T, TBaseId extends string = string, TId extends string 
 // @public
 interface IEditorContextParams<T, TBaseId extends string = string, TId extends string = string> {
     readonly collection: EditableCollection<T, TBaseId>;
-    readonly createId: (collectionId: string, baseId: TBaseId) => TId;
+    readonly createId: Converter<TId>;
     readonly getBaseId: (entity: T) => TBaseId | undefined;
     readonly getName: (entity: T) => string;
     readonly semanticValidator?: (entity: T) => Result<T>;
@@ -4060,13 +4060,7 @@ function isValidBaseTaskId(from: unknown): from is BaseTaskId;
 function isValidCelsius(from: unknown): from is Celsius;
 
 // @public
-function isValidConfectionId(from: unknown): from is ConfectionId;
-
-// @public
 function isValidConfectionName(from: unknown): from is ConfectionName;
-
-// @public
-function isValidConfectionVersionId(from: unknown): from is ConfectionVersionId;
 
 // @public
 function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionSpec;
@@ -4075,19 +4069,10 @@ function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionS
 function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael;
 
 // @public
-function isValidFillingId(from: unknown): from is FillingId;
-
-// @public
 function isValidFillingName(from: unknown): from is FillingName;
 
 // @public
-function isValidFillingVersionId(from: unknown): from is FillingVersionId;
-
-// @public
 function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec;
-
-// @public
-function isValidIngredientId(from: unknown): from is IngredientId;
 
 // @public
 function isValidJournalId(from: unknown): from is JournalId;
@@ -4102,13 +4087,7 @@ function isValidMillimeters(from: unknown): from is Millimeters;
 function isValidMinutes(from: unknown): from is Minutes;
 
 // @public
-function isValidMoldId(from: unknown): from is MoldId;
-
-// @public
 function isValidPercentage(from: unknown): from is Percentage;
-
-// @public
-function isValidProcedureId(from: unknown): from is ProcedureId;
 
 // @public
 function isValidRatingScore(from: unknown): from is RatingScore;
@@ -4121,9 +4100,6 @@ function isValidSlotId(from: unknown): from is SlotId;
 
 // @public
 function isValidSourceId(from: unknown): from is SourceId;
-
-// @public
-function isValidTaskId(from: unknown): from is TaskId;
 
 // @public
 function isValidUrlCategory(from: unknown): from is UrlCategory;
@@ -5890,13 +5866,7 @@ function toBaseTaskId(from: unknown): Result<BaseTaskId>;
 function toCelsius(from: unknown): Result<Celsius>;
 
 // @public
-function toConfectionId(from: unknown): Result<ConfectionId>;
-
-// @public
 function toConfectionName(from: unknown): Result<ConfectionName>;
-
-// @public
-function toConfectionVersionId(from: unknown): Result<ConfectionVersionId>;
 
 // @public
 function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec>;
@@ -5905,19 +5875,10 @@ function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec>;
 function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael>;
 
 // @public
-function toFillingId(from: unknown): Result<FillingId>;
-
-// @public
 function toFillingName(from: unknown): Result<FillingName>;
 
 // @public
-function toFillingVersionId(from: unknown): Result<FillingVersionId>;
-
-// @public
 function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec>;
-
-// @public
-function toIngredientId(from: unknown): Result<IngredientId>;
 
 // @public
 function toJournalId(from: unknown): Result<JournalId>;
@@ -5935,13 +5896,7 @@ function toMillimeters(from: unknown): Result<Millimeters>;
 function toMinutes(from: unknown): Result<Minutes>;
 
 // @public
-function toMoldId(from: unknown): Result<MoldId>;
-
-// @public
 function toPercentage(from: unknown): Result<Percentage>;
-
-// @public
-function toProcedureId(from: unknown): Result<ProcedureId>;
 
 // @public
 function toRatingScore(from: unknown): Result<RatingScore>;
@@ -5954,9 +5909,6 @@ function toSlotId(from: unknown): Result<SlotId>;
 
 // @public
 function toSourceId(from: unknown): Result<SourceId>;
-
-// @public
-function toTaskId(from: unknown): Result<TaskId>;
 
 // @public
 function toUrlCategory(from: unknown): Result<UrlCategory>;
@@ -6074,30 +6026,14 @@ declare namespace Validation {
         toBaseConfectionId,
         isValidUrlCategory,
         toUrlCategory,
-        isValidIngredientId,
-        toIngredientId,
-        isValidFillingId,
-        toFillingId,
-        isValidMoldId,
-        toMoldId,
-        isValidProcedureId,
-        toProcedureId,
-        isValidTaskId,
-        toTaskId,
-        isValidConfectionId,
-        toConfectionId,
         isValidFillingName,
         toFillingName,
         isValidConfectionName,
         toConfectionName,
         isValidFillingVersionSpec,
         toFillingVersionSpec,
-        isValidFillingVersionId,
-        toFillingVersionId,
         isValidConfectionVersionSpec,
         toConfectionVersionSpec,
-        isValidConfectionVersionId,
-        toConfectionVersionId,
         isValidSessionId,
         toSessionId,
         isValidMeasurement,

@@ -27,6 +27,7 @@ import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@
 
 import {
   ConfectionId,
+  Converters,
   Helpers,
   IngredientId,
   IOptionsWithPreferred,
@@ -34,8 +35,7 @@ import {
   ProcedureId,
   FillingId,
   FillingVersionId,
-  TaskId,
-  Validation
+  TaskId
 } from '../common';
 import {
   AnyFillingOption,
@@ -615,7 +615,7 @@ export class RuntimeContext
     if (this._ingredients === undefined) {
       this._ingredients = new ValidatingLibrary({
         converters: new Collections.KeyValueConverters<IngredientId, AnyRuntimeIngredient>({
-          key: Validation.toIngredientId,
+          key: (from: unknown) => Converters.ingredientId.convert(from),
           /* c8 ignore next 4 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
             from instanceof RuntimeIngredient
@@ -648,7 +648,7 @@ export class RuntimeContext
     if (this._recipes === undefined) {
       this._recipes = new ValidatingLibrary({
         converters: new Collections.KeyValueConverters<FillingId, RuntimeFillingRecipe>({
-          key: Validation.toFillingId,
+          key: (from: unknown) => Converters.fillingId.convert(from),
           /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
             from instanceof RuntimeFillingRecipe ? succeed(from) : fail('not a runtime recipe')

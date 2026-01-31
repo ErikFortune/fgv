@@ -33,6 +33,25 @@ interface TestEntity {
 type TestBaseId = string & { readonly __brand: 'TestBaseId' };
 type TestEntityId = string & { readonly __brand: 'TestEntityId' };
 
+const toTestEntityId = (from: unknown): Result<TestEntityId> => {
+  if (typeof from === 'string') {
+    return succeed(from as TestEntityId);
+  }
+  if (typeof from !== 'object' || from === null || Array.isArray(from)) {
+    return fail('invalid composite id');
+  }
+  const raw = from as Record<string, unknown>;
+  if (typeof raw.collectionId !== 'string') {
+    return fail('invalid collectionId');
+  }
+  if (typeof raw.itemId !== 'string') {
+    return fail('invalid itemId');
+  }
+  return succeed(`${raw.collectionId}.${raw.itemId}` as TestEntityId);
+};
+
+const testEntityIdConverter: Converter<TestEntityId> = Converters.generic(toTestEntityId);
+
 // Test converter for TestEntity with constraints
 const testEntityConverter: Converter<TestEntity> = Converters.object<TestEntity>({
   name: Converters.string.withConstraint((s) => s.length > 0, { description: 'cannot be empty' }),
@@ -73,7 +92,7 @@ describe('EditorContext', () => {
     return EditorContext.create<TestEntity, TestBaseId, TestEntityId>({
       collection,
       semanticValidator,
-      createId: (collectionId, baseId) => `${collectionId}.${baseId}` as TestEntityId,
+      createId: testEntityIdConverter,
       getBaseId: (entity) => entity.name.toLowerCase().replace(/\s+/g, '-') as TestBaseId,
       getName: (entity) => entity.name
     });
@@ -91,7 +110,7 @@ describe('EditorContext', () => {
       expect(
         EditorContext.create({
           collection: null as unknown as EditableCollection<TestEntity, TestBaseId>,
-          createId: (c, b) => `${c}.${b}` as TestEntityId,
+          createId: testEntityIdConverter,
           getBaseId: () => 'test' as TestBaseId,
           getName: (e: TestEntity) => e.name
         })
@@ -207,7 +226,7 @@ describe('EditorContext', () => {
       const collection = createTestCollection();
       const context = EditorContext.create<TestEntity, TestBaseId, TestEntityId>({
         collection,
-        createId: (c, b) => `${c}.${b}` as TestEntityId,
+        createId: testEntityIdConverter,
         getBaseId: () => 'test' as TestBaseId,
         getName: (e: TestEntity) => e.name
       }).orThrow();
@@ -232,7 +251,7 @@ describe('EditorContext', () => {
       expect(
         EditorContext.create<TestEntity, TestBaseId, TestEntityId>({
           collection: immutableCollection,
-          createId: (c, b) => `${c}.${b}` as TestEntityId,
+          createId: testEntityIdConverter,
           getBaseId: () => 'test' as TestBaseId,
           getName: (e: TestEntity) => e.name
         })
@@ -303,9 +322,9 @@ describe('EditorContext', () => {
       );
       const context = createTestContext(collection).orThrow();
 
-      expect(context.copyTo('test-collection.item1' as TestEntityId, 'target-collection')).toFailWith(
-        /not implemented/i
-      );
+      expect(
+        context.copyTo('test-collection.item1' as TestEntityId, 'target-collection' as SourceId)
+      ).toFailWith(/not implemented/i);
     });
   });
 

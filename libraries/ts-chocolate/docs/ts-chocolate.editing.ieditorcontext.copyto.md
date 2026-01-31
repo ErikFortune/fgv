@@ -9,5 +9,5 @@ Copy entity to another collection.
 **Signature:**
 
 ```typescript
-readonly copyTo: (id: TId, targetCollectionId: string) => Result<TId>;
+readonly copyTo: (id: TId, targetCollectionId: SourceId) => Result<TId>;
 ```

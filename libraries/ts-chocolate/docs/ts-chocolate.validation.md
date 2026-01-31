@@ -96,34 +96,12 @@ Type guard for Celsius
 </td></tr>
 <tr><td>
 
-[isValidConfectionId(from)](./ts-chocolate.validation.isvalidconfectionid.md)
-
-
-</td><td>
-
-Type guard for ConfectionId
-
-
-</td></tr>
-<tr><td>
-
 [isValidConfectionName(from)](./ts-chocolate.validation.isvalidconfectionname.md)
 
 
 </td><td>
 
 Type guard for ConfectionName
-
-
-</td></tr>
-<tr><td>
-
-[isValidConfectionVersionId(from)](./ts-chocolate.validation.isvalidconfectionversionid.md)
-
-
-</td><td>
-
-Type guard for ConfectionVersionId
 
 
 </td></tr>
@@ -151,17 +129,6 @@ Type guard for DegreesMacMichael
 </td></tr>
 <tr><td>
 
-[isValidFillingId(from)](./ts-chocolate.validation.isvalidfillingid.md)
-
-
-</td><td>
-
-Type guard for FillingId
-
-
-</td></tr>
-<tr><td>
-
 [isValidFillingName(from)](./ts-chocolate.validation.isvalidfillingname.md)
 
 
@@ -173,34 +140,12 @@ Type guard for FillingName
 </td></tr>
 <tr><td>
 
-[isValidFillingVersionId(from)](./ts-chocolate.validation.isvalidfillingversionid.md)
-
-
-</td><td>
-
-Type guard for FillingVersionId
-
-
-</td></tr>
-<tr><td>
-
 [isValidFillingVersionSpec(from)](./ts-chocolate.validation.isvalidfillingversionspec.md)
 
 
 </td><td>
 
 Type guard for FillingVersionSpec
-
-
-</td></tr>
-<tr><td>
-
-[isValidIngredientId(from)](./ts-chocolate.validation.isvalidingredientid.md)
-
-
-</td><td>
-
-Type guard for IngredientId
 
 
 </td></tr>
@@ -250,34 +195,12 @@ Type guard for Minutes
 </td></tr>
 <tr><td>
 
-[isValidMoldId(from)](./ts-chocolate.validation.isvalidmoldid.md)
-
-
-</td><td>
-
-Type guard for MoldId
-
-
-</td></tr>
-<tr><td>
-
 [isValidPercentage(from)](./ts-chocolate.validation.isvalidpercentage.md)
 
 
 </td><td>
 
 Type guard for Percentage
-
-
-</td></tr>
-<tr><td>
-
-[isValidProcedureId(from)](./ts-chocolate.validation.isvalidprocedureid.md)
-
-
-</td><td>
-
-Type guard for ProcedureId
 
 
 </td></tr>
@@ -322,17 +245,6 @@ Type guard for SlotId
 </td><td>
 
 Type guard for SourceId
-
-
-</td></tr>
-<tr><td>
-
-[isValidTaskId(from)](./ts-chocolate.validation.isvalidtaskid.md)
-
-
-</td><td>
-
-Type guard for TaskId
 
 
 </td></tr>
@@ -426,34 +338,12 @@ Converts unknown value to Celsius
 </td></tr>
 <tr><td>
 
-[toConfectionId(from)](./ts-chocolate.validation.toconfectionid.md)
-
-
-</td><td>
-
-Converts unknown value to ConfectionId
-
-
-</td></tr>
-<tr><td>
-
 [toConfectionName(from)](./ts-chocolate.validation.toconfectionname.md)
 
 
 </td><td>
 
 Converts unknown value to ConfectionName
-
-
-</td></tr>
-<tr><td>
-
-[toConfectionVersionId(from)](./ts-chocolate.validation.toconfectionversionid.md)
-
-
-</td><td>
-
-Converts unknown value to ConfectionVersionId
 
 
 </td></tr>
@@ -481,17 +371,6 @@ Converts unknown value to DegreesMacMichael
 </td></tr>
 <tr><td>
 
-[toFillingId(from)](./ts-chocolate.validation.tofillingid.md)
-
-
-</td><td>
-
-Converts unknown value to FillingId
-
-
-</td></tr>
-<tr><td>
-
 [toFillingName(from)](./ts-chocolate.validation.tofillingname.md)
 
 
@@ -503,34 +382,12 @@ Converts unknown value to FillingName
 </td></tr>
 <tr><td>
 
-[toFillingVersionId(from)](./ts-chocolate.validation.tofillingversionid.md)
-
-
-</td><td>
-
-Converts unknown value to FillingVersionId
-
-
-</td></tr>
-<tr><td>
-
 [toFillingVersionSpec(from)](./ts-chocolate.validation.tofillingversionspec.md)
 
 
 </td><td>
 
 Converts unknown value to FillingVersionSpec
-
-
-</td></tr>
-<tr><td>
-
-[toIngredientId(from)](./ts-chocolate.validation.toingredientid.md)
-
-
-</td><td>
-
-Converts unknown value to IngredientId
 
 
 </td></tr>
@@ -580,34 +437,12 @@ Converts unknown value to Minutes
 </td></tr>
 <tr><td>
 
-[toMoldId(from)](./ts-chocolate.validation.tomoldid.md)
-
-
-</td><td>
-
-Converts unknown value to MoldId
-
-
-</td></tr>
-<tr><td>
-
 [toPercentage(from)](./ts-chocolate.validation.topercentage.md)
 
 
 </td><td>
 
 Converts unknown value to Percentage
-
-
-</td></tr>
-<tr><td>
-
-[toProcedureId(from)](./ts-chocolate.validation.toprocedureid.md)
-
-
-</td><td>
-
-Converts unknown value to ProcedureId
 
 
 </td></tr>
@@ -652,17 +487,6 @@ Converts unknown value to SlotId
 </td><td>
 
 Converts unknown value to SourceId
-
-
-</td></tr>
-<tr><td>
-
-[toTaskId(from)](./ts-chocolate.validation.totaskid.md)
-
-
-</td><td>
-
-Converts unknown value to TaskId
 
 
 </td></tr>

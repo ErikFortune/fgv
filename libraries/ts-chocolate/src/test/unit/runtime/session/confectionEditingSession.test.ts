@@ -22,11 +22,9 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseConfectionId,
-  BaseFillingId,
   BaseIngredientId,
-  BaseMoldId,
-  BaseProcedureId,
   ConfectionId,
+  Converters as CommonConverters,
   ConfectionName,
   ConfectionVersionSpec,
   FillingName,
@@ -142,9 +140,14 @@ describe('ConfectionEditingSession', () => {
   };
 
   const mockIngredient = (id: IngredientId, name: string): IRuntimeIngredient => ({
-    id,
-    sourceId: 'common' as unknown as SourceId,
-    baseId: id.split('.')[1] as unknown as BaseIngredientId,
+    ...(() => {
+      const parsed = CommonConverters.parsedIngredientId.convert(id).orThrow();
+      return {
+        id,
+        sourceId: parsed.collectionId,
+        baseId: parsed.itemId
+      };
+    })(),
     name,
     category: 'other',
     ganacheCharacteristics: mockGanacheCharacteristics,
@@ -170,9 +173,14 @@ describe('ConfectionEditingSession', () => {
   });
 
   const mockFilling = (id: FillingId, name: string): IRuntimeFillingRecipe => ({
-    id,
-    sourceId: 'common' as unknown as SourceId,
-    baseId: id.split('.')[1] as unknown as BaseFillingId,
+    ...(() => {
+      const parsed = CommonConverters.parsedFillingId.convert(id).orThrow();
+      return {
+        id,
+        sourceId: parsed.collectionId,
+        baseId: parsed.itemId
+      };
+    })(),
     name: name as unknown as FillingName,
     goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
     goldenVersion: {} as unknown as IRuntimeFillingRecipeVersion,
@@ -186,9 +194,14 @@ describe('ConfectionEditingSession', () => {
   });
 
   const mockMold = (id: MoldId, name: string): IRuntimeMold => ({
-    id,
-    sourceId: 'common' as unknown as SourceId,
-    baseId: id.split('.')[1] as unknown as BaseMoldId,
+    ...(() => {
+      const parsed = CommonConverters.parsedMoldId.convert(id).orThrow();
+      return {
+        id,
+        sourceId: parsed.collectionId,
+        baseId: parsed.itemId
+      };
+    })(),
     manufacturer: 'Mock Manufacturer',
     productNumber: 'MOCK-001',
     description: name,
@@ -205,8 +218,13 @@ describe('ConfectionEditingSession', () => {
   });
 
   const mockProcedure = (id: ProcedureId, name: string): IRuntimeProcedure => ({
-    id,
-    baseId: id.split('.')[1] as unknown as BaseProcedureId,
+    ...(() => {
+      const parsed = CommonConverters.parsedProcedureId.convert(id).orThrow();
+      return {
+        id,
+        baseId: parsed.itemId
+      };
+    })(),
     name,
     steps: [],
     totalActiveTime: undefined,

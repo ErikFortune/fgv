@@ -419,6 +419,17 @@ Represents a composite ID constructed of two strongly-typed string IDs separated
 </td></tr>
 <tr><td>
 
+[IPartialCompositeId](./ts-utils.conversion.converters.ipartialcompositeid.md)
+
+
+</td><td>
+
+Represents a partial composite ID, where separator is optional.
+
+
+</td></tr>
+<tr><td>
+
 [KeyedConverterOptions](./ts-utils.conversion.converters.keyedconverteroptions.md)
 
 

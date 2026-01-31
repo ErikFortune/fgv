@@ -523,7 +523,7 @@ function compositeId_2<T extends string = string, TCOLLECTIONID extends string =
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>): ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -702,6 +702,7 @@ declare namespace Converters {
         transformObject,
         tuple,
         ICompositeId,
+        IPartialCompositeId,
         FieldTransformers,
         TransformObjectOptions
     }
@@ -1376,6 +1377,16 @@ class InMemoryLogger extends LoggerBase {
     //
     // @internal (undocumented)
     protected _suppressLog(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<undefined>;
+}
+
+// @public
+interface IPartialCompositeId<TCOLLECTIONID extends string, TITEMID extends string> {
+    // (undocumented)
+    readonly collectionId: TCOLLECTIONID;
+    // (undocumented)
+    readonly itemId: TITEMID;
+    // (undocumented)
+    readonly separator?: string;
 }
 
 // @public

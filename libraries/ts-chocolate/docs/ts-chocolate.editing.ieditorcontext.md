@@ -68,7 +68,7 @@ Clear the unsaved changes flag. Typically called after successful export or when
 
 </td><td>
 
-(id: TId, targetCollectionId: string) =&gt; Result&lt;TId&gt;
+(id: TId, targetCollectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; Result&lt;TId&gt;
 
 
 </td><td>

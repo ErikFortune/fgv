@@ -23,7 +23,8 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result } from '@fgv/ts-utils';
+import { Converter, Converters, Result, Validators } from '@fgv/ts-utils';
+import type { Validator } from '@fgv/ts-utils';
 
 import {
   AdditionalChocolatePurpose,
@@ -106,29 +107,30 @@ import {
   toBaseProcedureId,
   toBaseTaskId,
   toCelsius,
-  toConfectionId,
   toConfectionName,
-  toConfectionVersionId,
   toConfectionVersionSpec,
   toDegreesMacMichael,
-  toFillingId,
   toFillingName,
-  toFillingVersionId,
   toFillingVersionSpec,
-  toIngredientId,
   toJournalId,
   toMeasurement,
   toMillimeters,
   toMinutes,
-  toMoldId,
   toPercentage,
-  toProcedureId,
   toRatingScore,
   toSessionId,
   toSlotId,
   toSourceId,
-  toTaskId,
-  toUrlCategory
+  toUrlCategory,
+  isValidBaseConfectionId,
+  isValidBaseFillingId,
+  isValidBaseIngredientId,
+  isValidBaseMoldId,
+  isValidBaseProcedureId,
+  isValidBaseTaskId,
+  isValidConfectionVersionSpec,
+  isValidFillingVersionSpec,
+  isValidSourceId
 } from './validation';
 
 // ============================================================================
@@ -178,41 +180,151 @@ export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId
  */
 export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
 
-/**
- * Converter for IngredientId (composite)
- * @public
- */
-export const ingredientId: Converter<IngredientId> = Converters.generic(toIngredientId);
+const sourceIdValidator: Validator<SourceId> = Validators.isA<SourceId>('SourceId', isValidSourceId);
+const baseIngredientIdValidator: Validator<BaseIngredientId> = Validators.isA<BaseIngredientId>(
+  'BaseIngredientId',
+  isValidBaseIngredientId
+);
+const baseFillingIdValidator: Validator<BaseFillingId> = Validators.isA<BaseFillingId>(
+  'BaseFillingId',
+  isValidBaseFillingId
+);
+const baseMoldIdValidator: Validator<BaseMoldId> = Validators.isA<BaseMoldId>(
+  'BaseMoldId',
+  isValidBaseMoldId
+);
+const baseProcedureIdValidator: Validator<BaseProcedureId> = Validators.isA<BaseProcedureId>(
+  'BaseProcedureId',
+  isValidBaseProcedureId
+);
+const baseTaskIdValidator: Validator<BaseTaskId> = Validators.isA<BaseTaskId>(
+  'BaseTaskId',
+  isValidBaseTaskId
+);
+const baseConfectionIdValidator: Validator<BaseConfectionId> = Validators.isA<BaseConfectionId>(
+  'BaseConfectionId',
+  isValidBaseConfectionId
+);
+
+const ingredientIdValidator: Validator<IngredientId> = Validators.compositeId<
+  IngredientId,
+  SourceId,
+  BaseIngredientId
+>({
+  collectionId: sourceIdValidator,
+  separator: ID_SEPARATOR,
+  itemId: baseIngredientIdValidator
+});
+
+const fillingIdValidator: Validator<FillingId> = Validators.compositeId<FillingId, SourceId, BaseFillingId>({
+  collectionId: sourceIdValidator,
+  separator: ID_SEPARATOR,
+  itemId: baseFillingIdValidator
+});
+
+const moldIdValidator: Validator<MoldId> = Validators.compositeId<MoldId, SourceId, BaseMoldId>({
+  collectionId: sourceIdValidator,
+  separator: ID_SEPARATOR,
+  itemId: baseMoldIdValidator
+});
+
+const procedureIdValidator: Validator<ProcedureId> = Validators.compositeId<
+  ProcedureId,
+  SourceId,
+  BaseProcedureId
+>({
+  collectionId: sourceIdValidator,
+  separator: ID_SEPARATOR,
+  itemId: baseProcedureIdValidator
+});
+
+const taskIdValidator: Validator<TaskId> = Validators.compositeId<TaskId, SourceId, BaseTaskId>({
+  collectionId: sourceIdValidator,
+  separator: ID_SEPARATOR,
+  itemId: baseTaskIdValidator
+});
+
+const confectionIdValidator: Validator<ConfectionId> = Validators.compositeId<
+  ConfectionId,
+  SourceId,
+  BaseConfectionId
+>({
+  collectionId: sourceIdValidator,
+  separator: ID_SEPARATOR,
+  itemId: baseConfectionIdValidator
+});
 
 /**
- * Converter for FillingId (composite)
+ * Converter for IngredientId (composite string).
+ * Accepts either an IngredientId string or a CompositeId object representation.
  * @public
  */
-export const fillingId: Converter<FillingId> = Converters.generic(toFillingId);
+export const ingredientId: Converter<IngredientId> = Converters.compositeIdString(
+  ingredientIdValidator,
+  sourceId,
+  ID_SEPARATOR,
+  baseIngredientId
+);
 
 /**
- * Converter for MoldId (composite)
+ * Converter for FillingId (composite string).
+ * Accepts either a FillingId string or a CompositeId object representation.
  * @public
  */
-export const moldId: Converter<MoldId> = Converters.generic(toMoldId);
+export const fillingId: Converter<FillingId> = Converters.compositeIdString(
+  fillingIdValidator,
+  sourceId,
+  ID_SEPARATOR,
+  baseFillingId
+);
 
 /**
- * Converter for ProcedureId (composite)
+ * Converter for MoldId (composite string).
+ * Accepts either a MoldId string or a CompositeId object representation.
  * @public
  */
-export const procedureId: Converter<ProcedureId> = Converters.generic(toProcedureId);
+export const moldId: Converter<MoldId> = Converters.compositeIdString(
+  moldIdValidator,
+  sourceId,
+  ID_SEPARATOR,
+  baseMoldId
+);
 
 /**
- * Converter for TaskId (composite)
+ * Converter for ProcedureId (composite string).
+ * Accepts either a ProcedureId string or a CompositeId object representation.
  * @public
  */
-export const taskId: Converter<TaskId> = Converters.generic(toTaskId);
+export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
+  procedureIdValidator,
+  sourceId,
+  ID_SEPARATOR,
+  baseProcedureId
+);
 
 /**
- * Converter for ConfectionId (composite)
+ * Converter for TaskId (composite string).
+ * Accepts either a TaskId string or a CompositeId object representation.
  * @public
  */
-export const confectionId: Converter<ConfectionId> = Converters.generic(toConfectionId);
+export const taskId: Converter<TaskId> = Converters.compositeIdString(
+  taskIdValidator,
+  sourceId,
+  ID_SEPARATOR,
+  baseTaskId
+);
+
+/**
+ * Converter for ConfectionId (composite string).
+ * Accepts either a ConfectionId string or a CompositeId object representation.
+ * @public
+ */
+export const confectionId: Converter<ConfectionId> = Converters.compositeIdString(
+  confectionIdValidator,
+  sourceId,
+  ID_SEPARATOR,
+  baseConfectionId
+);
 
 /**
  * Converter for JournalId
@@ -316,11 +428,31 @@ export const fillingName: Converter<FillingName> = Converters.generic(toFillingN
  */
 export const fillingVersionSpec: Converter<FillingVersionSpec> = Converters.generic(toFillingVersionSpec);
 
+const fillingVersionSpecValidator: Validator<FillingVersionSpec> = Validators.isA<FillingVersionSpec>(
+  'FillingVersionSpec',
+  isValidFillingVersionSpec
+);
+const fillingVersionIdValidator: Validator<FillingVersionId> = Validators.compositeId<
+  FillingVersionId,
+  FillingId,
+  FillingVersionSpec
+>({
+  collectionId: fillingIdValidator,
+  separator: VERSION_ID_SEPARATOR,
+  itemId: fillingVersionSpecValidator
+});
+
 /**
- * Converter for FillingVersionId (composite)
+ * Converter for FillingVersionId (composite string).
+ * Accepts either a FillingVersionId string or a CompositeId object representation.
  * @public
  */
-export const fillingVersionId: Converter<FillingVersionId> = Converters.generic(toFillingVersionId);
+export const fillingVersionId: Converter<FillingVersionId> = Converters.compositeIdString(
+  fillingVersionIdValidator,
+  fillingId,
+  VERSION_ID_SEPARATOR,
+  fillingVersionSpec
+);
 
 /**
  * Type alias for parsed FillingVersionId components
@@ -379,11 +511,29 @@ export const confectionName: Converter<ConfectionName> = Converters.generic(toCo
 export const confectionVersionSpec: Converter<ConfectionVersionSpec> =
   Converters.generic(toConfectionVersionSpec);
 
+const confectionVersionSpecValidator: Validator<ConfectionVersionSpec> =
+  Validators.isA<ConfectionVersionSpec>('ConfectionVersionSpec', isValidConfectionVersionSpec);
+const confectionVersionIdValidator: Validator<ConfectionVersionId> = Validators.compositeId<
+  ConfectionVersionId,
+  ConfectionId,
+  ConfectionVersionSpec
+>({
+  collectionId: confectionIdValidator,
+  separator: VERSION_ID_SEPARATOR,
+  itemId: confectionVersionSpecValidator
+});
+
 /**
- * Converter for ConfectionVersionId (composite)
+ * Converter for ConfectionVersionId (composite string).
+ * Accepts either a ConfectionVersionId string or a CompositeId object representation.
  * @public
  */
-export const confectionVersionId: Converter<ConfectionVersionId> = Converters.generic(toConfectionVersionId);
+export const confectionVersionId: Converter<ConfectionVersionId> = Converters.compositeIdString(
+  confectionVersionIdValidator,
+  confectionId,
+  VERSION_ID_SEPARATOR,
+  confectionVersionSpec
+);
 
 /**
  * Type alias for parsed ConfectionVersionId components

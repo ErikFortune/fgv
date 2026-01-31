@@ -9,7 +9,7 @@ Creates an [ObjectConverter](./ts-utils.objectconverter.md) for a strongly-typed
 **Signature:**
 
 ```typescript
-export declare function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>): ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+export declare function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
 ```
 
 ## Parameters
@@ -82,7 +82,7 @@ itemIdValidator
 
 **Returns:**
 
-[ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;[ICompositeId](./ts-utils.converters.icompositeid.md)<!-- -->&lt;TCOLLECTIONID, TITEMID&gt;, TC&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;[ICompositeId](./ts-utils.converters.icompositeid.md)<!-- -->&lt;TCOLLECTIONID, TITEMID&gt;, TC&gt;
 
 An [ObjectConverter](./ts-utils.objectconverter.md) for the strongly-typed composite ICompositeId.
 

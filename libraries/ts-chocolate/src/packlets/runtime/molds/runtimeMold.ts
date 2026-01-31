@@ -27,8 +27,8 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import {
   BaseMoldId,
+  Converters,
   ICategorizedUrl,
-  ID_SEPARATOR,
   Measurement,
   MoldFormat,
   MoldId,
@@ -62,9 +62,7 @@ export class RuntimeMold implements IRuntimeMold {
     this._id = id;
     this._mold = mold;
 
-    // Parse the composite ID
-    const parts = (id as string).split(ID_SEPARATOR);
-    this._sourceId = parts[0] as SourceId;
+    this._sourceId = Converters.parsedMoldId.convert(id).orThrow().collectionId;
   }
 
   /**

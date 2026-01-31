@@ -31,8 +31,8 @@ import {
   ConfectionName,
   ConfectionType,
   ConfectionVersionSpec,
+  Converters,
   ICategorizedUrl,
-  ID_SEPARATOR,
   IOptionsWithPreferred,
   ProcedureId,
   SourceId
@@ -93,10 +93,9 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
     this._id = id;
     this._confection = confection;
 
-    // Parse the composite ID
-    const parts = (id as string).split(ID_SEPARATOR);
-    this._sourceId = parts[0] as SourceId;
-    this._baseId = parts[1] as BaseConfectionId;
+    const parsed = Converters.parsedConfectionId.convert(id).orThrow();
+    this._sourceId = parsed.collectionId;
+    this._baseId = parsed.itemId;
 
     // Find and cache the raw golden version
     const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);

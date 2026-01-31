@@ -59,8 +59,7 @@ export class IngredientEditorContext extends ValidatingEditorContext<
       entityConverter: EntityConverters.Ingredients.ingredient,
       keyConverter: CommonConverters.baseIngredientId,
       semanticValidator: validateIngredientEntity,
-      createId: (collectionId: string, baseId: BaseIngredientId) =>
-        `${collectionId}.${baseId}` as IngredientId,
+      createId: CommonConverters.ingredientId,
       /* c8 ignore next 1 - getBaseId reserved for future use by EditorContext but not yet called */
       getBaseId: (ingredient: Ingredient) => ingredient.baseId,
       getName: (ingredient: Ingredient) => ingredient.name

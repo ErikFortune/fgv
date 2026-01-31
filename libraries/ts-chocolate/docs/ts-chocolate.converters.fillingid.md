@@ -4,7 +4,7 @@
 
 ## Converters.fillingId variable
 
-Converter for FillingId (composite)
+Converter for FillingId (composite string). Accepts either a FillingId string or a CompositeId object representation.
 
 **Signature:**
 
