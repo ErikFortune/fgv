@@ -62,10 +62,10 @@ export { Calculations };
 // SUPPORTING NAMESPACES
 // ============================================================================
 
-import * as Crypto from './packlets/crypto';
+import * as CryptoUtils from './packlets/crypto';
 import * as LibraryData from './packlets/library-data';
 import * as LibraryPersistence from './packlets/library-persistence';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
 
-export { Crypto, LibraryData, LibraryPersistence, BuiltIn, Editing };
+export { CryptoUtils, LibraryData, LibraryPersistence, BuiltIn, Editing };

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
-import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Failure, Result, Success } from '@fgv/ts-utils';
 import {
   AES_256_KEY_SIZE,
   GCM_AUTH_TAG_SIZE,
@@ -29,9 +29,9 @@ import {
 } from './model';
 
 /**
- * Extracts an ArrayBuffer from a Uint8Array, handling the potential SharedArrayBuffer case.
+ * Extracts an `ArrayBuffer` from a Uint8Array, handling the potential SharedArrayBuffer case.
  * @param arr - The Uint8Array to extract from
- * @returns An ArrayBuffer containing a copy of the data
+ * @returns An `ArrayBuffer` containing a copy of the data.
  */
 function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
   // Create a new ArrayBuffer and copy the data - this handles both ArrayBuffer and SharedArrayBuffer
@@ -41,7 +41,7 @@ function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
 }
 
 /**
- * Browser implementation of ICryptoProvider using the Web Crypto API.
+ * Browser implementation of {@link CryptoUtils.ICryptoProvider | ICryptoProvider} using the Web Crypto API.
  * Uses AES-256-GCM for authenticated encryption.
  *
  * Note: This provider requires a browser environment with Web Crypto API support.
@@ -72,11 +72,11 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    * Encrypts plaintext using AES-256-GCM.
    * @param plaintext - UTF-8 string to encrypt
    * @param key - 32-byte encryption key
-   * @returns Success with encryption result, or Failure with error
+   * @returns `Success` with encryption result, or `Failure` with an error.
    */
   public async encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>> {
     if (key.length !== AES_256_KEY_SIZE) {
-      return fail(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+      return Failure.with(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
 
     try {
@@ -112,14 +112,14 @@ export class BrowserCryptoProvider implements ICryptoProvider {
       const encryptedData = encryptedArray.slice(0, encryptedArray.length - GCM_AUTH_TAG_SIZE);
       const authTag = encryptedArray.slice(encryptedArray.length - GCM_AUTH_TAG_SIZE);
 
-      return succeed({
+      return Success.with({
         iv,
         authTag,
         encryptedData
       });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
-      return fail(`Encryption failed: ${message}`);
+      return Failure.with(`Encryption failed: ${message}`);
     }
   }
 
@@ -129,7 +129,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    * @param key - 32-byte decryption key
    * @param iv - Initialization vector (12 bytes)
    * @param authTag - GCM authentication tag (16 bytes)
-   * @returns Success with decrypted UTF-8 string, or Failure with error
+   * @returns `Success` with decrypted UTF-8 string, or `Failure` with an error.
    */
   public async decrypt(
     encryptedData: Uint8Array,
@@ -138,13 +138,13 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     authTag: Uint8Array
   ): Promise<Result<string>> {
     if (key.length !== AES_256_KEY_SIZE) {
-      return fail(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+      return Failure.with(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
     if (iv.length !== GCM_IV_SIZE) {
-      return fail(`IV must be ${GCM_IV_SIZE} bytes, got ${iv.length}`);
+      return Failure.with(`IV must be ${GCM_IV_SIZE} bytes, got ${iv.length}`);
     }
     if (authTag.length !== GCM_AUTH_TAG_SIZE) {
-      return fail(`Auth tag must be ${GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`);
+      return Failure.with(`Auth tag must be ${GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`);
     }
 
     try {
@@ -175,10 +175,10 @@ export class BrowserCryptoProvider implements ICryptoProvider {
 
       // Decode to string
       const decoder = new TextDecoder();
-      return succeed(decoder.decode(decrypted));
+      return Success.with(decoder.decode(decrypted));
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
-      return fail(`Decryption failed: ${message}`);
+      return Failure.with(`Decryption failed: ${message}`);
     }
   }
 
@@ -188,10 +188,10 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    */
   public async generateKey(): Promise<Result<Uint8Array>> {
     try {
-      return succeed(this._crypto.getRandomValues(new Uint8Array(AES_256_KEY_SIZE)));
+      return Success.with(this._crypto.getRandomValues(new Uint8Array(AES_256_KEY_SIZE)));
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
-      return fail(`Key generation failed: ${message}`);
+      return Failure.with(`Key generation failed: ${message}`);
     }
   }
 
@@ -208,10 +208,10 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     iterations: number
   ): Promise<Result<Uint8Array>> {
     if (iterations < 1) {
-      return fail('Iterations must be at least 1');
+      return Failure.with('Iterations must be at least 1');
     }
     if (salt.length < 8) {
-      return fail('Salt should be at least 8 bytes');
+      return Failure.with('Salt should be at least 8 bytes');
     }
 
     try {
@@ -236,17 +236,17 @@ export class BrowserCryptoProvider implements ICryptoProvider {
         AES_256_KEY_SIZE * 8 // bits
       );
 
-      return succeed(new Uint8Array(derivedBits));
+      return Success.with(new Uint8Array(derivedBits));
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
-      return fail(`Key derivation failed: ${message}`);
+      return Failure.with(`Key derivation failed: ${message}`);
     }
   }
 }
 
 /**
- * Creates a BrowserCryptoProvider if Web Crypto API is available.
- * @returns Success with provider, or Failure if not available
+ * Creates a {@link CryptoUtils.BrowserCryptoProvider | BrowserCryptoProvider} if Web Crypto API is available.
+ * @returns `Success` with provider, or `Failure` if not available
  * @public
  */
 export function createBrowserCryptoProvider(): Result<BrowserCryptoProvider> {

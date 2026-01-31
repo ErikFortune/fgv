@@ -192,7 +192,7 @@ Description
 </td></tr>
 <tr><td>
 
-[Crypto\_2](./ts-chocolate.crypto_2.md)
+[CryptoUtils](./ts-chocolate.cryptoutils.md)
 
 
 </td><td>

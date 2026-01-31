@@ -37,14 +37,14 @@ import {
 // ============================================================================
 
 /**
- * Converter for encryption algorithm values.
+ * Converter for {@link CryptoUtils.EncryptionAlgorithm | encryption algorithm} values.
  * @public
  */
 export const encryptionAlgorithm: Converter<EncryptionAlgorithm> =
   Converters.enumeratedValue<EncryptionAlgorithm>([DEFAULT_ALGORITHM]);
 
 /**
- * Converter for encrypted collection format version.
+ * Converter for {@link CryptoUtils.EncryptedCollectionFormat | encrypted collection format} version.
  * @public
  */
 export const encryptedCollectionFormat: Converter<EncryptedCollectionFormat> = Converters.enumeratedValue([
@@ -52,21 +52,21 @@ export const encryptedCollectionFormat: Converter<EncryptedCollectionFormat> = C
 ]);
 
 /**
- * Converter for encrypted collection error mode.
+ * Converter for {@link CryptoUtils.EncryptedCollectionErrorMode | encrypted collection error mode}.
  * @public
  */
 export const encryptedCollectionErrorMode: Converter<EncryptedCollectionErrorMode> =
   Converters.enumeratedValue<EncryptedCollectionErrorMode>(['fail', 'skip', 'warn']);
 
 /**
- * Converter for key derivation function type.
+ * Converter for {@link CryptoUtils.KeyDerivationFunction | key derivation function} type.
  * @public
  */
 export const keyDerivationFunction: Converter<KeyDerivationFunction> =
   Converters.enumeratedValue<KeyDerivationFunction>(['pbkdf2']);
 
 /**
- * Converter for key derivation parameters.
+ * Converter for {@link CryptoUtils.IKeyDerivationParams | key derivation parameters}.
  * @public
  */
 export const keyDerivationParams: Converter<IKeyDerivationParams> = Converters.object<IKeyDerivationParams>({
@@ -76,7 +76,7 @@ export const keyDerivationParams: Converter<IKeyDerivationParams> = Converters.o
 });
 
 /**
- * Converter for base64-encoded strings (validates format).
+ * Converter for base64 strings (validates format).
  * @public
  */
 export const base64String: Converter<string> = Converters.string.withConstraint((value) => {
@@ -93,7 +93,7 @@ export const base64String: Converter<string> = Converters.string.withConstraint(
 // ============================================================================
 
 /**
- * Converter for encrypted collection metadata.
+ * Converter for {@link CryptoUtils.IEncryptedCollectionMetadata | encrypted collection metadata}.
  * @public
  */
 export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata> =
@@ -113,7 +113,7 @@ export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata
 // ============================================================================
 
 /**
- * Converter for encrypted collection tombstone files.
+ * Converter for {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection tombstone files}.
  * Validates the complete structure of an encrypted collection file.
  * @public
  */
@@ -139,7 +139,7 @@ export const encryptedCollectionFile: Converter<IEncryptedCollectionFile> =
 // ============================================================================
 
 /**
- * Converter for Uint8Array from base64 string.
+ * Converter which converts a base64 string to a Uint8Array.
  * @public
  */
 export const uint8ArrayFromBase64: Converter<Uint8Array> = Converters.string.map((base64) => {
@@ -165,7 +165,7 @@ export const uint8ArrayFromBase64: Converter<Uint8Array> = Converters.string.map
 });
 
 /**
- * Converter for named secret from JSON representation.
+ * Converter for {@link CryptoUtils.INamedSecret | named secret} from JSON representation.
  * Expects key as base64 string in JSON, converts to Uint8Array.
  * @public
  */

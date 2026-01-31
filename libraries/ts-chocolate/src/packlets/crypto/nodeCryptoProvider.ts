@@ -29,7 +29,7 @@ import {
 } from './model';
 
 /**
- * Node.js implementation of ICryptoProvider using the built-in crypto module.
+ * Node.js implementation of {@link CryptoUtils.ICryptoProvider | ICryptoProvider} using the built-in crypto module.
  * Uses AES-256-GCM for authenticated encryption.
  * @public
  */
@@ -38,7 +38,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
    * Encrypts plaintext using AES-256-GCM.
    * @param plaintext - UTF-8 string to encrypt
    * @param key - 32-byte encryption key
-   * @returns Success with encryption result, or Failure with error
+   * @returns `Success` with encryption result, or `Failure` with an error.
    */
   public async encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>> {
     return captureResult(() => {
@@ -72,7 +72,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
    * @param key - 32-byte decryption key
    * @param iv - Initialization vector (12 bytes)
    * @param authTag - GCM authentication tag (16 bytes)
-   * @returns Success with decrypted UTF-8 string, or Failure with error
+   * @returns `Success` with decrypted UTF-8 string, or `Failure` with an error.
    */
   public async decrypt(
     encryptedData: Uint8Array,
@@ -106,7 +106,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
 
   /**
    * Generates a random 32-byte key suitable for AES-256.
-   * @returns Success with generated key, or Failure with error
+   * @returns `Success` with generated key, or `Failure` with an error.
    */
   public async generateKey(): Promise<Result<Uint8Array>> {
     return captureResult(() => {
@@ -120,7 +120,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
    * @param password - Password string
    * @param salt - Salt bytes (should be at least 16 bytes)
    * @param iterations - Number of iterations (recommend 100000+)
-   * @returns Success with derived 32-byte key, or Failure with error
+   * @returns `Success` with derived 32-byte key, or `Failure` with an error.
    */
   public async deriveKey(
     password: string,
@@ -155,7 +155,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
 }
 
 /**
- * Singleton instance of NodeCryptoProvider.
+ * Singleton instance of {@link CryptoUtils.NodeCryptoProvider | NodeCryptoProvider}.
  * @public
  */
 export const nodeCryptoProvider: NodeCryptoProvider = new NodeCryptoProvider();

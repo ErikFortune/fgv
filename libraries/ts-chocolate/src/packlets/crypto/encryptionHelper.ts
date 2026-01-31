@@ -35,7 +35,7 @@ import * as Convert from './converters';
 // ============================================================================
 
 /**
- * Encodes a Uint8Array to a base64 string.
+ * Encodes a `Uint8Array` to a base64 string.
  * @param bytes - Bytes to encode
  * @returns Base64 string
  */
@@ -54,7 +54,7 @@ function toBase64(bytes: Uint8Array): string {
 /* c8 ignore stop */
 
 /**
- * Decodes a base64 string to a Uint8Array.
+ * Decodes a base64 string to a `Uint8Array`.
  * @param base64 - Base64 string to decode
  * @returns Decoded bytes
  */
@@ -78,7 +78,7 @@ function fromBase64(base64: string): Uint8Array {
 // ============================================================================
 
 /**
- * Parameters for creating an encrypted collection file.
+ * Parameters for creating an {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection file}.
  * @public
  */
 export interface ICreateEncryptedFileParams {
@@ -98,27 +98,27 @@ export interface ICreateEncryptedFileParams {
   readonly key: Uint8Array;
 
   /**
-   * Optional metadata to include in the tombstone (unencrypted).
+   * Optional {@link CryptoUtils.IEncryptedCollectionMetadata | metadata} to include in the tombstone (unencrypted).
    */
   readonly metadata?: IEncryptedCollectionMetadata;
 
   /**
-   * Optional key derivation parameters.
+   * Optional {@link CryptoUtils.IKeyDerivationParams | key derivation parameters}.
    * If provided, stores the salt and iterations used to derive the key from a password.
    * This allows decryption using only a password (the salt/iterations are read from the file).
    */
   readonly keyDerivation?: IKeyDerivationParams;
 
   /**
-   * Crypto provider to use for encryption.
+   * {@link CryptoUtils.ICryptoProvider | Crypto provider} to use for encryption.
    */
   readonly cryptoProvider: ICryptoProvider;
 }
 
 /**
- * Creates an encrypted collection tombstone file from JSON content.
+ * Creates an {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection tombstone file} from JSON content.
  * @param params - Encryption parameters
- * @returns Success with encrypted file structure, or Failure with error
+ * @returns `Success` with encrypted file structure, or `Failure` with an error.
  * @public
  */
 export async function createEncryptedCollectionFile(
@@ -156,11 +156,11 @@ export async function createEncryptedCollectionFile(
 }
 
 /**
- * Decrypts an encrypted collection file and returns the JSON content.
+ * Decrypts an {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection file} and returns the JSON content.
  * @param tombstone - The encrypted collection file structure
  * @param key - The decryption key (32 bytes for AES-256)
- * @param cryptoProvider - Crypto provider to use for decryption
- * @returns Success with decrypted JSON content, or Failure with error
+ * @param cryptoProvider - {@link CryptoUtils.ICryptoProvider | Crypto provider} to use for decryption
+ * @returns `Success` with decrypted JSON content, or `Failure` with an error.
  * @public
  */
 export async function decryptCollectionFile(
@@ -186,11 +186,11 @@ export async function decryptCollectionFile(
 }
 
 /**
- * Attempts to parse and decrypt a JSON object if it's an encrypted collection file.
+ * Attempts to parse and decrypt a JSON object as an {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection file}.
  * @param json - JSON object that may be an encrypted collection file
  * @param key - The decryption key (32 bytes for AES-256)
- * @param cryptoProvider - Crypto provider to use for decryption
- * @returns Success with decrypted JSON content, or Failure with error (including if not encrypted)
+ * @param cryptoProvider - {@link CryptoUtils.ICryptoProvider | Crypto provider} to use for decryption
+ * @returns `Success` with decrypted JSON content, or `Failure` with an error (including if not encrypted)
  * @public
  */
 export async function tryDecryptCollectionFile(
@@ -220,7 +220,7 @@ export class EncryptionHelper {
   private readonly _cryptoProvider: ICryptoProvider;
 
   /**
-   * Creates a new EncryptionHelper.
+   * Creates a new {@link CryptoUtils.EncryptionHelper | EncryptionHelper}.
    * @param cryptoProvider - The crypto provider to use
    */
   public constructor(cryptoProvider: ICryptoProvider) {
@@ -228,20 +228,20 @@ export class EncryptionHelper {
   }
 
   /**
-   * Gets the crypto provider.
+   * Gets the {@link CryptoUtils.ICryptoProvider | crypto provider}.
    */
   public get cryptoProvider(): ICryptoProvider {
     return this._cryptoProvider;
   }
 
   /**
-   * Creates an encrypted collection file from JSON content.
+   * Creates an {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection file} from JSON content.
    * @param content - JSON content to encrypt
    * @param secretName - Name of the secret used for encryption
    * @param key - Encryption key (32 bytes)
    * @param metadata - Optional metadata to include unencrypted
    * @param keyDerivation - Optional key derivation parameters (for password-based encryption)
-   * @returns Success with encrypted file structure, or Failure with error
+   * @returns `Success` with encrypted file structure, or `Failure` with an error.
    */
   public async encrypt(
     content: JsonValue,
@@ -261,10 +261,10 @@ export class EncryptionHelper {
   }
 
   /**
-   * Decrypts an encrypted collection file.
+   * Decrypts an {@link CryptoUtils.IEncryptedCollectionFile | encrypted collection file}.
    * @param tombstone - The encrypted file structure
    * @param key - Decryption key (32 bytes)
-   * @returns Success with decrypted JSON content, or Failure with error
+   * @returns `Success` with decrypted JSON content, or `Failure` with an error.
    */
   public async decrypt(tombstone: IEncryptedCollectionFile, key: Uint8Array): Promise<Result<JsonObject>> {
     return decryptCollectionFile(tombstone, key, this._cryptoProvider);
@@ -272,7 +272,7 @@ export class EncryptionHelper {
 
   /**
    * Generates a new encryption key.
-   * @returns Success with 32-byte key, or Failure with error
+   * @returns `Success` with 32-byte key, or `Failure` with an error.
    */
   public async generateKey(): Promise<Result<Uint8Array>> {
     return this._cryptoProvider.generateKey();

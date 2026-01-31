@@ -289,6 +289,8 @@ const baseTaskId_2: Validator<BaseTaskId>;
 // @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 class BrowserCryptoProvider implements ICryptoProvider {
     constructor(cryptoApi?: Crypto);
@@ -951,9 +953,13 @@ declare namespace Converters_5 {
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function createEncryptedCollectionFile(params: ICreateEncryptedFileParams): Promise<Result<IEncryptedCollectionFile>>;
 
@@ -969,7 +975,7 @@ function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryL
 // @public
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
 
-declare namespace Crypto_2 {
+declare namespace CryptoUtils {
     export {
         Converters_4 as Converters,
         isEncryptedCollectionFile,
@@ -1001,11 +1007,14 @@ declare namespace Crypto_2 {
         GCM_AUTH_TAG_SIZE
     }
 }
-export { Crypto_2 as Crypto }
+export { CryptoUtils }
 
 // @public
 const dairyIngredient: Converter<IDairyIngredient>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
 
@@ -1125,18 +1134,26 @@ const ENCRYPTED_COLLECTION_FORMAT: EncryptedCollectionFormat;
 // @public
 type EncryptedCollectionErrorMode = 'fail' | 'skip' | 'warn';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const encryptedCollectionErrorMode: Converter<EncryptedCollectionErrorMode>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const encryptedCollectionFile: Converter<IEncryptedCollectionFile>;
 
 // @public
 type EncryptedCollectionFormat = 'encrypted-collection-v1';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const encryptedCollectionFormat: Converter<EncryptedCollectionFormat>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
 
@@ -1146,15 +1163,21 @@ type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 // @public
 type EncryptionAlgorithm = 'AES-256-GCM';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
 
 // @public
 class EncryptionHelper {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(cryptoProvider: ICryptoProvider);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get cryptoProvider(): ICryptoProvider;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     decrypt(tombstone: IEncryptedCollectionFile, key: Uint8Array): Promise<Result<JsonObject>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata, keyDerivation?: IKeyDerivationParams): Promise<Result<IEncryptedCollectionFile>>;
     generateKey(): Promise<Result<Uint8Array>>;
     isEncrypted(json: unknown): boolean;
@@ -2172,12 +2195,17 @@ interface IConfectionYield {
     readonly weightPerPiece?: Measurement;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 interface ICreateEncryptedFileParams {
     readonly content: JsonValue;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly cryptoProvider: ICryptoProvider;
     readonly key: Uint8Array;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly keyDerivation?: IKeyDerivationParams;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly metadata?: IEncryptedCollectionMetadata;
     readonly secretName: string;
 }
@@ -4368,9 +4396,13 @@ const journalType: Converter<JournalType>;
 // @public
 type KeyDerivationFunction = 'pbkdf2';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const keyDerivationFunction: Converter<KeyDerivationFunction>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const keyDerivationParams: Converter<IKeyDerivationParams>;
 
@@ -4608,6 +4640,8 @@ type MutabilitySpec = boolean | ReadonlyArray<string> | {
     readonly immutable: ReadonlyArray<string>;
 };
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const namedSecret: Converter<INamedSecret>;
 
@@ -4620,6 +4654,8 @@ function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<
 // @public
 function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 class NodeCryptoProvider implements ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
@@ -4628,6 +4664,8 @@ class NodeCryptoProvider implements ICryptoProvider {
     generateKey(): Promise<Result<Uint8Array>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const nodeCryptoProvider: NodeCryptoProvider;
 
@@ -5964,6 +6002,9 @@ function toSourceId(from: unknown): Result<SourceId>;
 // @public
 function toUrlCategory(from: unknown): Result<UrlCategory>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
 
