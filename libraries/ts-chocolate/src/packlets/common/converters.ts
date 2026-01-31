@@ -23,8 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result, Validators } from '@fgv/ts-utils';
-import type { Validator } from '@fgv/ts-utils';
+import { Converter, Converters, Result } from '@fgv/ts-utils';
 
 import {
   AdditionalChocolatePurpose,
@@ -98,7 +97,6 @@ import {
   allProcedureTypes,
   ProcedureType
 } from './model';
-import { validateIdsWithPreferred, validateOptionsWithPreferred } from './validation';
 import {
   toBaseConfectionId,
   toBaseFillingId,
@@ -122,19 +120,23 @@ import {
   toSlotId,
   toSourceId,
   toUrlCategory,
-  isValidBaseConfectionId,
-  isValidBaseFillingId,
-  isValidBaseIngredientId,
-  isValidBaseMoldId,
-  isValidBaseProcedureId,
-  isValidBaseTaskId,
-  isValidConfectionVersionSpec,
-  isValidFillingVersionSpec,
-  isValidSourceId
+  validateIdsWithPreferred,
+  validateOptionsWithPreferred
 } from './validation';
+
+import * as CommonValidators from './validators';
 
 // ============================================================================
 // ID Converters
+// ============================================================================
+//
+// These converters handle CONVERSION between representations:
+// - String input -> branded string output
+// - Object input (e.g., { collectionId, itemId }) -> branded string output
+//
+// Converters may return a different value than the input. For in-place
+// validation (where the output must be the same identity as input), use
+// the validators in validation.ts instead.
 // ============================================================================
 
 /**
@@ -180,87 +182,13 @@ export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId
  */
 export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
 
-const sourceIdValidator: Validator<SourceId> = Validators.isA<SourceId>('SourceId', isValidSourceId);
-const baseIngredientIdValidator: Validator<BaseIngredientId> = Validators.isA<BaseIngredientId>(
-  'BaseIngredientId',
-  isValidBaseIngredientId
-);
-const baseFillingIdValidator: Validator<BaseFillingId> = Validators.isA<BaseFillingId>(
-  'BaseFillingId',
-  isValidBaseFillingId
-);
-const baseMoldIdValidator: Validator<BaseMoldId> = Validators.isA<BaseMoldId>(
-  'BaseMoldId',
-  isValidBaseMoldId
-);
-const baseProcedureIdValidator: Validator<BaseProcedureId> = Validators.isA<BaseProcedureId>(
-  'BaseProcedureId',
-  isValidBaseProcedureId
-);
-const baseTaskIdValidator: Validator<BaseTaskId> = Validators.isA<BaseTaskId>(
-  'BaseTaskId',
-  isValidBaseTaskId
-);
-const baseConfectionIdValidator: Validator<BaseConfectionId> = Validators.isA<BaseConfectionId>(
-  'BaseConfectionId',
-  isValidBaseConfectionId
-);
-
-const ingredientIdValidator: Validator<IngredientId> = Validators.compositeId<
-  IngredientId,
-  SourceId,
-  BaseIngredientId
->({
-  collectionId: sourceIdValidator,
-  separator: ID_SEPARATOR,
-  itemId: baseIngredientIdValidator
-});
-
-const fillingIdValidator: Validator<FillingId> = Validators.compositeId<FillingId, SourceId, BaseFillingId>({
-  collectionId: sourceIdValidator,
-  separator: ID_SEPARATOR,
-  itemId: baseFillingIdValidator
-});
-
-const moldIdValidator: Validator<MoldId> = Validators.compositeId<MoldId, SourceId, BaseMoldId>({
-  collectionId: sourceIdValidator,
-  separator: ID_SEPARATOR,
-  itemId: baseMoldIdValidator
-});
-
-const procedureIdValidator: Validator<ProcedureId> = Validators.compositeId<
-  ProcedureId,
-  SourceId,
-  BaseProcedureId
->({
-  collectionId: sourceIdValidator,
-  separator: ID_SEPARATOR,
-  itemId: baseProcedureIdValidator
-});
-
-const taskIdValidator: Validator<TaskId> = Validators.compositeId<TaskId, SourceId, BaseTaskId>({
-  collectionId: sourceIdValidator,
-  separator: ID_SEPARATOR,
-  itemId: baseTaskIdValidator
-});
-
-const confectionIdValidator: Validator<ConfectionId> = Validators.compositeId<
-  ConfectionId,
-  SourceId,
-  BaseConfectionId
->({
-  collectionId: sourceIdValidator,
-  separator: ID_SEPARATOR,
-  itemId: baseConfectionIdValidator
-});
-
 /**
  * Converter for IngredientId (composite string).
  * Accepts either an IngredientId string or a CompositeId object representation.
  * @public
  */
 export const ingredientId: Converter<IngredientId> = Converters.compositeIdString(
-  ingredientIdValidator,
+  CommonValidators.ingredientId,
   sourceId,
   ID_SEPARATOR,
   baseIngredientId
@@ -272,7 +200,7 @@ export const ingredientId: Converter<IngredientId> = Converters.compositeIdStrin
  * @public
  */
 export const fillingId: Converter<FillingId> = Converters.compositeIdString(
-  fillingIdValidator,
+  CommonValidators.fillingId,
   sourceId,
   ID_SEPARATOR,
   baseFillingId
@@ -284,7 +212,7 @@ export const fillingId: Converter<FillingId> = Converters.compositeIdString(
  * @public
  */
 export const moldId: Converter<MoldId> = Converters.compositeIdString(
-  moldIdValidator,
+  CommonValidators.moldId,
   sourceId,
   ID_SEPARATOR,
   baseMoldId
@@ -296,7 +224,7 @@ export const moldId: Converter<MoldId> = Converters.compositeIdString(
  * @public
  */
 export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
-  procedureIdValidator,
+  CommonValidators.procedureId,
   sourceId,
   ID_SEPARATOR,
   baseProcedureId
@@ -308,7 +236,7 @@ export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
  * @public
  */
 export const taskId: Converter<TaskId> = Converters.compositeIdString(
-  taskIdValidator,
+  CommonValidators.taskId,
   sourceId,
   ID_SEPARATOR,
   baseTaskId
@@ -320,7 +248,7 @@ export const taskId: Converter<TaskId> = Converters.compositeIdString(
  * @public
  */
 export const confectionId: Converter<ConfectionId> = Converters.compositeIdString(
-  confectionIdValidator,
+  CommonValidators.confectionId,
   sourceId,
   ID_SEPARATOR,
   baseConfectionId
@@ -428,27 +356,13 @@ export const fillingName: Converter<FillingName> = Converters.generic(toFillingN
  */
 export const fillingVersionSpec: Converter<FillingVersionSpec> = Converters.generic(toFillingVersionSpec);
 
-const fillingVersionSpecValidator: Validator<FillingVersionSpec> = Validators.isA<FillingVersionSpec>(
-  'FillingVersionSpec',
-  isValidFillingVersionSpec
-);
-const fillingVersionIdValidator: Validator<FillingVersionId> = Validators.compositeId<
-  FillingVersionId,
-  FillingId,
-  FillingVersionSpec
->({
-  collectionId: fillingIdValidator,
-  separator: VERSION_ID_SEPARATOR,
-  itemId: fillingVersionSpecValidator
-});
-
 /**
  * Converter for FillingVersionId (composite string).
  * Accepts either a FillingVersionId string or a CompositeId object representation.
  * @public
  */
 export const fillingVersionId: Converter<FillingVersionId> = Converters.compositeIdString(
-  fillingVersionIdValidator,
+  CommonValidators.fillingVersionId,
   fillingId,
   VERSION_ID_SEPARATOR,
   fillingVersionSpec
@@ -511,25 +425,13 @@ export const confectionName: Converter<ConfectionName> = Converters.generic(toCo
 export const confectionVersionSpec: Converter<ConfectionVersionSpec> =
   Converters.generic(toConfectionVersionSpec);
 
-const confectionVersionSpecValidator: Validator<ConfectionVersionSpec> =
-  Validators.isA<ConfectionVersionSpec>('ConfectionVersionSpec', isValidConfectionVersionSpec);
-const confectionVersionIdValidator: Validator<ConfectionVersionId> = Validators.compositeId<
-  ConfectionVersionId,
-  ConfectionId,
-  ConfectionVersionSpec
->({
-  collectionId: confectionIdValidator,
-  separator: VERSION_ID_SEPARATOR,
-  itemId: confectionVersionSpecValidator
-});
-
 /**
  * Converter for ConfectionVersionId (composite string).
  * Accepts either a ConfectionVersionId string or a CompositeId object representation.
  * @public
  */
 export const confectionVersionId: Converter<ConfectionVersionId> = Converters.compositeIdString(
-  confectionVersionIdValidator,
+  CommonValidators.confectionVersionId,
   confectionId,
   VERSION_ID_SEPARATOR,
   confectionVersionSpec

@@ -532,10 +532,9 @@ function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends str
 function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeIdString<T extends string, TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(compositeIdValidator: Validator<T, TC>, collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<T, TC>;
+function compositeIdString<T extends string, TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(compositeIdConverter: Validator<T, TC> | Converter<T, TC>, collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

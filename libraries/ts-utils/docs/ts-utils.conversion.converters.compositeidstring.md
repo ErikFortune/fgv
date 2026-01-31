@@ -9,7 +9,7 @@ Converts a strongly-typed [CompositeId](./ts-utils.converters.icompositeid.md) i
 **Signature:**
 
 ```typescript
-export declare function compositeIdString<T extends string, TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(compositeIdValidator: Validator<T, TC>, collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<T, TC>;
+export declare function compositeIdString<T extends string, TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(compositeIdConverter: Validator<T, TC> | Converter<T, TC>, collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-compositeIdValidator
+compositeIdConverter
 
 
 </td><td>
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>
 
-[Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) for the strongly-typed [CompositeId](./ts-utils.converters.icompositeid.md)<!-- -->.
+[Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) that validates/converts the composite ID string.
 
 
 </td></tr>

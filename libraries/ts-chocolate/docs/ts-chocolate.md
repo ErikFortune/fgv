@@ -262,6 +262,15 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[Validators](./ts-chocolate.validators.md)
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 
 ## Variables

@@ -26,9 +26,10 @@
 // Types and Enums
 export * from './model';
 
-// Converters, Validation, and Helpers namespaces for organized access
+// Converters, Validators, Validation, and Helpers namespaces for organized access
 import * as Converters from './converters';
 import * as Helpers from './helpers';
 import * as Validation from './validation';
+import * as Validators from './validators';
 
-export { Converters, Helpers, Validation };
+export { Converters, Helpers, Validation, Validators };

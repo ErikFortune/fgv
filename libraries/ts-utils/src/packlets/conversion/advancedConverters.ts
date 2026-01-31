@@ -132,7 +132,7 @@ export function compositeId<TCOLLECTIONID extends string, TITEMID extends string
 
 /**
  * Converts a strongly-typed {@link Converters.ICompositeId | CompositeId} into a string.
- * @param compositeIdValidator - {@link Converter | Converter} or {@link Validator | Validator} for the strongly-typed {@link Converters.ICompositeId | CompositeId}.
+ * @param compositeIdConverter - {@link Converter | Converter} or {@link Validator | Validator} that validates/converts the composite ID string.
  * @param collectionIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
  * @param separator - The separator string.
  * @param itemIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
@@ -145,7 +145,7 @@ export function compositeIdString<
   TITEMID extends string,
   TC = unknown
 >(
-  compositeIdValidator: Validator<T, TC>,
+  compositeIdConverter: Validator<T, TC> | Converter<T, TC>,
   collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
   separator: string,
   itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
@@ -153,10 +153,10 @@ export function compositeIdString<
   const objectConverter = compositeIdFromObject(collectionIdConverter, separator, itemIdConverter);
   return new BaseConverter<T, TC>((from: unknown, __self?: Converter<T, TC>, context?: TC) => {
     if (typeof from === 'string') {
-      return compositeIdValidator.validate(from, context);
+      return compositeIdConverter.convert(from, context);
     }
     return objectConverter.convert(from, context).onSuccess((compositeId) => {
-      return compositeIdValidator.validate(`${compositeId.collectionId}${separator}${compositeId.itemId}`);
+      return compositeIdConverter.convert(`${compositeId.collectionId}${separator}${compositeId.itemId}`);
     });
   });
 }

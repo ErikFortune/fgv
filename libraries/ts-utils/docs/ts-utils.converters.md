@@ -74,7 +74,7 @@ Converts a composite ID string into a strongly-typed [CompositeId](./ts-utils.co
 </td></tr>
 <tr><td>
 
-[compositeIdString(compositeIdValidator, collectionIdConverter, separator, itemIdConverter)](./ts-utils.converters.compositeidstring.md)
+[compositeIdString(compositeIdConverter, collectionIdConverter, separator, itemIdConverter)](./ts-utils.converters.compositeidstring.md)
 
 
 </td><td>

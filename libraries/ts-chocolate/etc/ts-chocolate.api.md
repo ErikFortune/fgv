@@ -197,10 +197,16 @@ export type BaseConfectionId = Brand<string, 'BaseConfectionId'>;
 const baseConfectionId: Converter<BaseConfectionId>;
 
 // @public
+const baseConfectionId_2: Validator<BaseConfectionId>;
+
+// @public
 export type BaseFillingId = Brand<string, 'BaseFillingId'>;
 
 // @public
 const baseFillingId: Converter<BaseFillingId>;
+
+// @public
+const baseFillingId_2: Validator<BaseFillingId>;
 
 // @public
 function baseIdExists(baseId: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>): boolean;
@@ -251,10 +257,16 @@ export type BaseIngredientId = Brand<string, 'BaseIngredientId'>;
 const baseIngredientId: Converter<BaseIngredientId>;
 
 // @public
+const baseIngredientId_2: Validator<BaseIngredientId>;
+
+// @public
 export type BaseMoldId = Brand<string, 'BaseMoldId'>;
 
 // @public
 const baseMoldId: Converter<BaseMoldId>;
+
+// @public
+const baseMoldId_2: Validator<BaseMoldId>;
 
 // @public
 export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
@@ -263,10 +275,16 @@ export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
 const baseProcedureId: Converter<BaseProcedureId>;
 
 // @public
+const baseProcedureId_2: Validator<BaseProcedureId>;
+
+// @public
 export type BaseTaskId = Brand<string, 'BaseTaskId'>;
 
 // @public
 const baseTaskId: Converter<BaseTaskId>;
+
+// @public
+const baseTaskId_2: Validator<BaseTaskId>;
 
 // @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
@@ -653,6 +671,9 @@ export type ConfectionId = Brand<string, 'ConfectionId'>;
 // @public
 const confectionId: Converter<ConfectionId>;
 
+// @public
+const confectionId_2: Validator<ConfectionId>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -782,10 +803,16 @@ export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
 const confectionVersionId: Converter<ConfectionVersionId>;
 
 // @public
+const confectionVersionId_2: Validator<ConfectionVersionId>;
+
+// @public
 export type ConfectionVersionSpec = Brand<string, 'ConfectionVersionSpec'>;
 
 // @public
 const confectionVersionSpec: Converter<ConfectionVersionSpec>;
+
+// @public
+const confectionVersionSpec_2: Validator<ConfectionVersionSpec>;
 
 // @public
 const confectionYield: Converter<IConfectionYield>;
@@ -1353,6 +1380,9 @@ export type FillingId = Brand<string, 'FillingId'>;
 // @public
 const fillingId: Converter<FillingId>;
 
+// @public
+const fillingId_2: Validator<FillingId>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1622,10 +1652,16 @@ export type FillingVersionId = Brand<string, 'FillingVersionId'>;
 const fillingVersionId: Converter<FillingVersionId>;
 
 // @public
+const fillingVersionId_2: Validator<FillingVersionId>;
+
+// @public
 export type FillingVersionSpec = Brand<string, 'FillingVersionSpec'>;
 
 // @public
 const fillingVersionSpec: Converter<FillingVersionSpec>;
+
+// @public
+const fillingVersionSpec_2: Validator<FillingVersionSpec>;
 
 // @public
 type FilterPattern = string | RegExp;
@@ -2889,6 +2925,9 @@ export type IngredientId = Brand<string, 'IngredientId'>;
 const ingredientId: Converter<IngredientId>;
 
 // @public
+const ingredientId_2: Validator<IngredientId>;
+
+// @public
 type IngredientIndexerName = keyof IIngredientQuerySpec;
 
 // @public
@@ -3005,7 +3044,7 @@ declare namespace Ingredients_2 {
 
 declare namespace Ingredients_3 {
     export {
-        Validators,
+        Validators_2 as Validators,
         IngredientEditorContext
     }
 }
@@ -4524,6 +4563,9 @@ export type MoldId = Brand<string, 'MoldId'>;
 // @public
 const moldId: Converter<MoldId>;
 
+// @public
+const moldId_2: Validator<MoldId>;
+
 declare namespace Molds {
     export {
         cavityDimensions,
@@ -4761,6 +4803,9 @@ export type ProcedureId = Brand<string, 'ProcedureId'>;
 
 // @public
 const procedureId: Converter<ProcedureId>;
+
+// @public
+const procedureId_2: Validator<ProcedureId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5675,6 +5720,9 @@ export type SourceId = Brand<string, 'SourceId'>;
 const sourceId: Converter<SourceId>;
 
 // @public
+const sourceId_2: Validator<SourceId>;
+
+// @public
 function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
 
 // @public
@@ -5780,6 +5828,9 @@ export type TaskId = Brand<string, 'TaskId'>;
 
 // @public
 const taskId: Converter<TaskId>;
+
+// @public
+const taskId_2: Validator<TaskId>;
 
 // @public
 const taskInvocation: Converter<ITaskInvocation>;
@@ -6089,6 +6140,29 @@ class ValidationReportBuilder {
 }
 
 declare namespace Validators {
+    export {
+        sourceId_2 as sourceId,
+        baseIngredientId_2 as baseIngredientId,
+        baseFillingId_2 as baseFillingId,
+        baseMoldId_2 as baseMoldId,
+        baseProcedureId_2 as baseProcedureId,
+        baseTaskId_2 as baseTaskId,
+        baseConfectionId_2 as baseConfectionId,
+        ingredientId_2 as ingredientId,
+        fillingId_2 as fillingId,
+        moldId_2 as moldId,
+        procedureId_2 as procedureId,
+        taskId_2 as taskId,
+        confectionId_2 as confectionId,
+        fillingVersionSpec_2 as fillingVersionSpec,
+        confectionVersionSpec_2 as confectionVersionSpec,
+        fillingVersionId_2 as fillingVersionId,
+        confectionVersionId_2 as confectionVersionId
+    }
+}
+export { Validators }
+
+declare namespace Validators_2 {
     export {
         validateGanacheCharacteristics,
         validateTemperatureCurve,
