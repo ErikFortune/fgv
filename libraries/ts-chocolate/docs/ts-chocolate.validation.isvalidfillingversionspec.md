@@ -4,7 +4,7 @@
 
 ## Validation.isValidFillingVersionSpec() function
 
-Type guard for FillingVersionSpec
+Type guard for [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
 
-True if the value is a valid FillingVersionSpec
+`true` if the value is a valid [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 

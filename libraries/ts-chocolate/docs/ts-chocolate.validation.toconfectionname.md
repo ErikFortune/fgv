@@ -4,7 +4,7 @@
 
 ## Validation.toConfectionName() function
 
-Converts unknown value to ConfectionName
+Validates unknown value is a [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[ConfectionName](./ts-chocolate.confectionname.md)<!-- -->&gt;
 
-Result with ConfectionName or error
+`Success` with [ConfectionName](./ts-chocolate.confectionname.md) or `Failure` with an error message if validation fails.
 

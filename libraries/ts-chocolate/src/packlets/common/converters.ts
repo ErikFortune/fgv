@@ -140,51 +140,51 @@ import * as CommonValidators from './validators';
 // ============================================================================
 
 /**
- * Converter for SourceId
+ * Converter for {@link SourceId | SourceId}.
  * @public
  */
 export const sourceId: Converter<SourceId> = Converters.generic(toSourceId);
 
 /**
- * Converter for BaseIngredientId
+ * Converter for {@link BaseIngredientId | BaseIngredientId}.
  * @public
  */
 export const baseIngredientId: Converter<BaseIngredientId> = Converters.generic(toBaseIngredientId);
 
 /**
- * Converter for BaseFillingId
+ * Converter for {@link BaseFillingId | BaseFillingId}.
  * @public
  */
 
 export const baseFillingId: Converter<BaseFillingId> = Converters.generic(toBaseFillingId);
 
 /**
- * Converter for BaseMoldId
+ * Converter for {@link BaseMoldId | BaseMoldId}.
  * @public
  */
 export const baseMoldId: Converter<BaseMoldId> = Converters.generic(toBaseMoldId);
 
 /**
- * Converter for BaseProcedureId
+ * Converter for {@link BaseProcedureId | BaseProcedureId}.
  * @public
  */
 export const baseProcedureId: Converter<BaseProcedureId> = Converters.generic(toBaseProcedureId);
 
 /**
- * Converter for BaseTaskId
+ * Converter for {@link BaseTaskId | BaseTaskId}.
  * @public
  */
 export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId);
 
 /**
- * Converter for BaseConfectionId
+ * Converter for {@link BaseConfectionId | BaseConfectionId}.
  * @public
  */
 export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
 
 /**
- * Converter for IngredientId (composite string).
- * Accepts either an IngredientId string or a CompositeId object representation.
+ * Converter for {@link IngredientId | IngredientId} (composite string).
+ * Accepts either an {@link IngredientId | IngredientId} string or a `CompositeId` object representation.
  * @public
  */
 export const ingredientId: Converter<IngredientId> = Converters.compositeIdString(
@@ -195,8 +195,8 @@ export const ingredientId: Converter<IngredientId> = Converters.compositeIdStrin
 );
 
 /**
- * Converter for FillingId (composite string).
- * Accepts either a FillingId string or a CompositeId object representation.
+ * Converter for {@link FillingId | FillingId} (composite string).
+ * Accepts either an {@link FillingId | FillingId} string or a `CompositeId` object representation.
  * @public
  */
 export const fillingId: Converter<FillingId> = Converters.compositeIdString(
@@ -207,8 +207,8 @@ export const fillingId: Converter<FillingId> = Converters.compositeIdString(
 );
 
 /**
- * Converter for MoldId (composite string).
- * Accepts either a MoldId string or a CompositeId object representation.
+ * Converter for {@link MoldId | MoldId} (composite string).
+ * Accepts either an {@link MoldId | MoldId} string or a `CompositeId` object representation.
  * @public
  */
 export const moldId: Converter<MoldId> = Converters.compositeIdString(
@@ -219,8 +219,8 @@ export const moldId: Converter<MoldId> = Converters.compositeIdString(
 );
 
 /**
- * Converter for ProcedureId (composite string).
- * Accepts either a ProcedureId string or a CompositeId object representation.
+ * Converter for {@link ProcedureId | ProcedureId} (composite string).
+ * Accepts either an {@link ProcedureId | ProcedureId} string or a `CompositeId` object representation.
  * @public
  */
 export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
@@ -231,8 +231,8 @@ export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
 );
 
 /**
- * Converter for TaskId (composite string).
- * Accepts either a TaskId string or a CompositeId object representation.
+ * Converter for {@link TaskId | TaskId} (composite string).
+ * Accepts either an {@link TaskId | TaskId} string or a `CompositeId` object representation.
  * @public
  */
 export const taskId: Converter<TaskId> = Converters.compositeIdString(
@@ -243,8 +243,8 @@ export const taskId: Converter<TaskId> = Converters.compositeIdString(
 );
 
 /**
- * Converter for ConfectionId (composite string).
- * Accepts either a ConfectionId string or a CompositeId object representation.
+ * Converter for {@link ConfectionId | ConfectionId} (composite string).
+ * Accepts either an {@link ConfectionId | ConfectionId} string or a `CompositeId` object representation.
  * @public
  */
 export const confectionId: Converter<ConfectionId> = Converters.compositeIdString(
@@ -255,7 +255,7 @@ export const confectionId: Converter<ConfectionId> = Converters.compositeIdStrin
 );
 
 /**
- * Converter for JournalId
+ * Converter for {@link JournalId | JournalId}.
  * @public
  */
 export const journalId: Converter<JournalId> = Converters.generic(toJournalId);
@@ -265,13 +265,14 @@ export const journalId: Converter<JournalId> = Converters.generic(toJournalId);
 // ============================================================================
 
 /**
- * Type alias for parsed IngredientId components
+ * Type alias for parsed {@link IngredientId | IngredientId}' components
  * @public
  */
 export type ParsedIngredientId = Converters.ICompositeId<SourceId, BaseIngredientId>;
 
 /**
- * Converter that parses an IngredientId string into its component parts
+ * Converter that parses an {@link IngredientId | IngredientId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedIngredientId: Converter<ParsedIngredientId> = Converters.compositeId(
@@ -281,13 +282,14 @@ export const parsedIngredientId: Converter<ParsedIngredientId> = Converters.comp
 );
 
 /**
- * Type alias for parsed FillingId components
+ * Type alias for parsed {@link FillingId | FillingId} components.
  * @public
  */
 export type ParsedFillingId = Converters.ICompositeId<SourceId, BaseFillingId>;
 
 /**
- * Converter that parses a FillingId string into its component parts
+ * Converter that parses a {@link FillingId | FillingId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedFillingId: Converter<ParsedFillingId> = Converters.compositeId(
@@ -297,13 +299,14 @@ export const parsedFillingId: Converter<ParsedFillingId> = Converters.compositeI
 );
 
 /**
- * Type alias for parsed MoldId components
+ * Type alias for parsed {@link MoldId | MoldId} components.
  * @public
  */
 export type ParsedMoldId = Converters.ICompositeId<SourceId, BaseMoldId>;
 
 /**
- * Converter that parses a MoldId string into its component parts
+ * Converter that parses a {@link MoldId | MoldId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedMoldId: Converter<ParsedMoldId> = Converters.compositeId(
@@ -313,13 +316,14 @@ export const parsedMoldId: Converter<ParsedMoldId> = Converters.compositeId(
 );
 
 /**
- * Type alias for parsed ProcedureId components
+ * Type alias for parsed {@link ProcedureId | ProcedureId} components.
  * @public
  */
 export type ParsedProcedureId = Converters.ICompositeId<SourceId, BaseProcedureId>;
 
 /**
- * Converter that parses a ProcedureId string into its component parts
+ * Converter that parses a {@link ProcedureId | ProcedureId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compositeId(
@@ -329,13 +333,14 @@ export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compos
 );
 
 /**
- * Type alias for parsed TaskId components
+ * Type alias for parsed {@link TaskId | TaskId} components.
  * @public
  */
 export type ParsedTaskId = Converters.ICompositeId<SourceId, BaseTaskId>;
 
 /**
- * Converter that parses a TaskId string into its component parts
+ * Converter that parses a {@link TaskId | TaskId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedTaskId: Converter<ParsedTaskId> = Converters.compositeId(
@@ -345,20 +350,20 @@ export const parsedTaskId: Converter<ParsedTaskId> = Converters.compositeId(
 );
 
 /**
- * Converter for FillingName
+ * Converter for {@link FillingName | FillingName}.
  * @public
  */
 export const fillingName: Converter<FillingName> = Converters.generic(toFillingName);
 
 /**
- * Converter for FillingVersionSpec
+ * Converter for {@link FillingVersionSpec | FillingVersionSpec}.
  * @public
  */
 export const fillingVersionSpec: Converter<FillingVersionSpec> = Converters.generic(toFillingVersionSpec);
 
 /**
- * Converter for FillingVersionId (composite string).
- * Accepts either a FillingVersionId string or a CompositeId object representation.
+ * Converter for {@link FillingVersionId | FillingVersionId} (composite string).
+ * Accepts either a {@link FillingVersionId | FillingVersionId} string or a `CompositeId` object representation.
  * @public
  */
 export const fillingVersionId: Converter<FillingVersionId> = Converters.compositeIdString(
@@ -369,13 +374,14 @@ export const fillingVersionId: Converter<FillingVersionId> = Converters.composit
 );
 
 /**
- * Type alias for parsed FillingVersionId components
+ * Type alias for parsed {@link FillingVersionId | FillingVersionId} components.
  * @public
  */
 export type ParsedFillingVersionId = Converters.ICompositeId<FillingId, FillingVersionSpec>;
 
 /**
- * Converter that parses a FillingVersionId string into its component parts
+ * Converter that parses a {@link FillingVersionId | FillingVersionId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedFillingVersionId: Converter<ParsedFillingVersionId> = Converters.compositeId(
@@ -397,13 +403,14 @@ export const sessionId: Converter<SessionId> = Converters.generic(toSessionId);
 export const slotId: Converter<SlotId> = Converters.generic(toSlotId);
 
 /**
- * Type alias for parsed ConfectionId components
+ * Type alias for parsed {@link ConfectionId | ConfectionId} components.
  * @public
  */
 export type ParsedConfectionId = Converters.ICompositeId<SourceId, BaseConfectionId>;
 
 /**
- * Converter that parses a ConfectionId string into its component parts
+ * Converter that parses a {@link ConfectionId | ConfectionId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedConfectionId: Converter<ParsedConfectionId> = Converters.compositeId(
@@ -413,21 +420,21 @@ export const parsedConfectionId: Converter<ParsedConfectionId> = Converters.comp
 );
 
 /**
- * Converter for ConfectionName
+ * Converter for {@link ConfectionName | ConfectionName}.
  * @public
  */
 export const confectionName: Converter<ConfectionName> = Converters.generic(toConfectionName);
 
 /**
- * Converter for ConfectionVersionSpec
+ * Converter for {@link ConfectionVersionSpec | ConfectionVersionSpec}.
  * @public
  */
 export const confectionVersionSpec: Converter<ConfectionVersionSpec> =
   Converters.generic(toConfectionVersionSpec);
 
 /**
- * Converter for ConfectionVersionId (composite string).
- * Accepts either a ConfectionVersionId string or a CompositeId object representation.
+ * Converter for {@link ConfectionVersionId | ConfectionVersionId} (composite string).
+ * Accepts either a {@link ConfectionVersionId | ConfectionVersionId} string or a `CompositeId` object representation.
  * @public
  */
 export const confectionVersionId: Converter<ConfectionVersionId> = Converters.compositeIdString(
@@ -438,13 +445,14 @@ export const confectionVersionId: Converter<ConfectionVersionId> = Converters.co
 );
 
 /**
- * Type alias for parsed ConfectionVersionId components
+ * Type alias for parsed {@link ConfectionVersionId | ConfectionVersionId} components.
  * @public
  */
 export type ParsedConfectionVersionId = Converters.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 /**
- * Converter that parses a ConfectionVersionId string into its component parts
+ * Converter that parses a {@link ConfectionVersionId | ConfectionVersionId} string into its component parts
+ * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedConfectionVersionId: Converter<ParsedConfectionVersionId> = Converters.compositeId(
@@ -458,43 +466,43 @@ export const parsedConfectionVersionId: Converter<ParsedConfectionVersionId> = C
 // ============================================================================
 
 /**
- * Converter for Measurement (non-negative number for ingredient amounts)
+ * Converter for {@link Measurement | Measurement} (non-negative number for ingredient amounts)
  * @public
  */
 export const measurement: Converter<Measurement> = Converters.generic(toMeasurement);
 
 /**
- * Converter for Percentage
+ * Converter for {@link Percentage | Percentage}.
  * @public
  */
 export const percentage: Converter<Percentage> = Converters.generic(toPercentage);
 
 /**
- * Converter for Celsius
+ * Converter for {@link Celsius | Celsius}.
  * @public
  */
 export const celsius: Converter<Celsius> = Converters.generic(toCelsius);
 
 /**
- * Converter for DegreesMacMichael
+ * Converter for {@link DegreesMacMichael | DegreesMacMichael}.
  * @public
  */
 export const degreesMacMichael: Converter<DegreesMacMichael> = Converters.generic(toDegreesMacMichael);
 
 /**
- * Converter for RatingScore (1-5)
+ * Converter for {@link RatingScore | RatingScore} (1-5)
  * @public
  */
 export const ratingScore: Converter<RatingScore> = Converters.generic(toRatingScore);
 
 /**
- * Converter for Minutes
+ * Converter for {@link Minutes | Minutes}.
  * @public
  */
 export const minutes: Converter<Minutes> = Converters.generic(toMinutes);
 
 /**
- * Converter for Millimeters
+ * Converter for {@link Millimeters | Millimeters}.
  * @public
  */
 export const millimeters: Converter<Millimeters> = Converters.generic(toMillimeters);
@@ -504,69 +512,69 @@ export const millimeters: Converter<Millimeters> = Converters.generic(toMillimet
 // ============================================================================
 
 /**
- * Converter for IngredientCategory
+ * Converter for {@link IngredientCategory | IngredientCategory}.
  * @public
  */
 export const ingredientCategory: Converter<IngredientCategory> =
   Converters.enumeratedValue(allIngredientCategories);
 
 /**
- * Converter for ChocolateType
+ * Converter for {@link ChocolateType | ChocolateType}.
  * @public
  */
 export const chocolateType: Converter<ChocolateType> = Converters.enumeratedValue(allChocolateTypes);
 
 /**
- * Converter for ChocolateVariety
+ * Converter for {@link CacaoVariety | CacaoVariety}.
  * @public
  */
-export const chocolateVariety: Converter<CacaoVariety> = Converters.enumeratedValue(allCacaoVarieties);
+export const cacaoVariety: Converter<CacaoVariety> = Converters.enumeratedValue(allCacaoVarieties);
 
 /**
- * Converter for FluidityStars
+ * Converter for {@link FluidityStars | FluidityStars}.
  * @public
  */
 export const fluidityStars: Converter<FluidityStars> = Converters.enumeratedValue(allFluidityStars);
 
 /**
- * Converter for WeightUnit
+ * Converter for {@link WeightUnit | WeightUnit}.
  * @public
  */
 export const weightUnit: Converter<WeightUnit> = Converters.enumeratedValue(allWeightUnits);
 
 /**
- * Converter for Allergen
+ * Converter for {@link Allergen | Allergen}.
  * @public
  */
 export const allergen: Converter<Allergen> = Converters.enumeratedValue(allAllergens);
 
 /**
- * Converter for Certification
+ * Converter for {@link Certification | Certification}.
  * @public
  */
 export const certification: Converter<Certification> = Converters.enumeratedValue(allCertifications);
 
 /**
- * Converter for ChocolateApplication
+ * Converter for {@link ChocolateApplication | ChocolateApplication}.
  * @public
  */
 export const chocolateApplication: Converter<ChocolateApplication> =
   Converters.enumeratedValue(allChocolateApplications);
 
 /**
- * Converter for MoldFormat
+ * Converter for {@link MoldFormat | MoldFormat}.
  * @public
  */
 export const moldFormat: Converter<MoldFormat> = Converters.enumeratedValue(allMoldFormats);
 
 /**
- * Converter for ConfectionType
+ * Converter for {@link ConfectionType | ConfectionType}.
  * @public
  */
 export const confectionType: Converter<ConfectionType> = Converters.enumeratedValue(allConfectionTypes);
 
 /**
- * Converter for AdditionalChocolatePurpose
+ * Converter for {@link AdditionalChocolatePurpose | AdditionalChocolatePurpose}.
  * @public
  */
 export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> = Converters.enumeratedValue(
@@ -574,25 +582,25 @@ export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> =
 );
 
 /**
- * Converter for FillingCategory
+ * Converter for {@link FillingCategory | FillingCategory}.
  * @public
  */
 export const fillingCategory: Converter<FillingCategory> = Converters.enumeratedValue(allFillingCategories);
 
 /**
- * Converter for ProcedureType
+ * Converter for {@link ProcedureType | ProcedureType}.
  * @public
  */
 export const procedureType: Converter<ProcedureType> = Converters.enumeratedValue(allProcedureTypes);
 
 /**
- * Converter for MeasurementUnit
+ * Converter for {@link MeasurementUnit | MeasurementUnit}.
  * @public
  */
 export const measurementUnit: Converter<MeasurementUnit> = Converters.enumeratedValue(allMeasurementUnits);
 
 /**
- * Converter for SpoonLevel
+ * Converter for {@link SpoonLevel | SpoonLevel}.
  * @public
  */
 export const spoonLevel: Converter<SpoonLevel> = Converters.enumeratedValue(allSpoonLevels);
@@ -604,7 +612,7 @@ export const spoonLevel: Converter<SpoonLevel> = Converters.enumeratedValue(allS
 export const ingredientPhase: Converter<IngredientPhase> = Converters.enumeratedValue(allIngredientPhases);
 
 /**
- * Converter for IMeasurementUnitOption
+ * Converter for {@link IMeasurementUnitOption | IMeasurementUnitOption}.
  * @public
  */
 export const measurementUnitOption: Converter<IMeasurementUnitOption> =
@@ -617,7 +625,7 @@ export const measurementUnitOption: Converter<IMeasurementUnitOption> =
 // ============================================================================
 
 /**
- * Creates a converter for {@link IOptionsWithPreferred} collections.
+ * Creates a converter for {@link IOptionsWithPreferred | IOptionsWithPreferred\<TOption, TId\>} collections.
  * Validates that preferredId (if specified) exists in the options array.
  *
  * @typeParam TOption - The option object type (must have an `id` property)
@@ -648,7 +656,7 @@ export function optionsWithPreferred<TOption extends IHasId<TId>, TId extends st
 }
 
 /**
- * Creates a converter for {@link IIdsWithPreferred} collections.
+ * Creates a converter for {@link IIdsWithPreferred | IIdsWithPreferred\<TId\>} collections.
  * Validates that preferredId (if specified) exists in the ids array.
  *
  * @typeParam TId - The ID type
@@ -674,7 +682,7 @@ export function idsWithPreferred<TId extends string>(
 }
 
 /**
- * Creates a converter for {@link IRefWithNotes} objects.
+ * Creates a converter for {@link IRefWithNotes | IRefWithNotes\<TId\>} objects.
  * A simple reference with an ID and optional notes.
  *
  * @typeParam TId - The ID type
@@ -694,13 +702,13 @@ export function refWithNotes<TId extends string>(idConverter: Converter<TId>): C
 // ============================================================================
 
 /**
- * Converter for UrlCategory
+ * Converter for {@link UrlCategory | UrlCategory}.
  * @public
  */
 export const urlCategory: Converter<UrlCategory> = Converters.generic(toUrlCategory);
 
 /**
- * Converter for ICategorizedUrl
+ * Converter for {@link ICategorizedUrl | ICategorizedUrl}.
  * @public
  */
 export const categorizedUrl: Converter<ICategorizedUrl> = Converters.object<ICategorizedUrl>({

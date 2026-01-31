@@ -4,7 +4,7 @@
 
 ## Validation.toMillimeters() function
 
-Converts unknown value to Millimeters
+Validates unknown value is a [Millimeters](./ts-chocolate.millimeters.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[Millimeters](./ts-chocolate.millimeters.md)<!-- -->&gt;
 
-Result with Millimeters or error
+`Success` with [Millimeters](./ts-chocolate.millimeters.md) or `Failure` with an error message if validation fails.
 

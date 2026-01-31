@@ -4,7 +4,7 @@
 
 ## Converters.moldFormat variable
 
-Converter for MoldFormat
+Converter for [MoldFormat](./ts-chocolate.moldformat.md)<!-- -->.
 
 **Signature:**
 

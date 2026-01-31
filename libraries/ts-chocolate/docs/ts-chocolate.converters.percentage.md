@@ -4,7 +4,7 @@
 
 ## Converters.percentage variable
 
-Converter for Percentage
+Converter for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 **Signature:**
 

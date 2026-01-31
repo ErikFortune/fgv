@@ -4,7 +4,7 @@
 
 ## Validators.baseProcedureId variable
 
-In-place validator for BaseProcedureId
+In-place `Validator` for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Converters.weightUnit variable
 
-Converter for WeightUnit
+Converter for [WeightUnit](./ts-chocolate.weightunit.md)<!-- -->.
 
 **Signature:**
 

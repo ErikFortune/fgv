@@ -329,6 +329,9 @@ export type BuiltInSource = 'built-in';
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
 
 // @public
+const cacaoVariety: Converter<CacaoVariety>;
+
+// @public
 function calculateBaseWeight(version: IFillingRecipeVersion): Measurement;
 
 // @public
@@ -518,9 +521,6 @@ export type ChocolateType = 'dark' | 'milk' | 'white' | 'caramelized' | 'ruby' |
 
 // @public
 const chocolateType: Converter<ChocolateType>;
-
-// @public
-const chocolateVariety: Converter<CacaoVariety>;
 
 // @public
 const coatings: Converter<ICoatings>;
@@ -877,7 +877,7 @@ declare namespace Converters {
         millimeters,
         ingredientCategory,
         chocolateType,
-        chocolateVariety,
+        cacaoVariety,
         fluidityStars,
         weightUnit,
         allergen,
@@ -1344,7 +1344,7 @@ export const FILLING_VERSION_ID_PATTERN: RegExp;
 export const FILLING_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
-export type FillingCategory = 'ganache' | 'caramel' | 'gianduja';
+export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

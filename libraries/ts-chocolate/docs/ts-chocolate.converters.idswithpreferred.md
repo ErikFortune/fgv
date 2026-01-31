@@ -4,7 +4,7 @@
 
 ## Converters.idsWithPreferred() function
 
-Creates a converter for [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
+Creates a converter for [IIdsWithPreferred\\&lt;TId\\&gt;](./ts-chocolate.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
 
 **Signature:**
 

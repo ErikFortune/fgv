@@ -4,7 +4,7 @@
 
 ## Converters.taskId variable
 
-Converter for TaskId (composite string). Accepts either a TaskId string or a CompositeId object representation.
+Converter for [TaskId](./ts-chocolate.taskid.md) (composite string). Accepts either an [TaskId](./ts-chocolate.taskid.md) string or a `CompositeId` object representation.
 
 **Signature:**
 

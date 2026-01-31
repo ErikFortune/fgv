@@ -4,7 +4,7 @@
 
 ## Validation.isValidBaseMoldId() function
 
-Type guard for BaseMoldId
+Type guard for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [BaseMoldId](./ts-chocolate.basemoldid.md)
 
-True if the value is a valid BaseMoldId
+`true` if the value is a valid [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 

@@ -4,7 +4,7 @@
 
 ## Validation.toBaseProcedureId() function
 
-Converts unknown value to BaseProcedureId
+Validates unknown value is a [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->&gt;
 
-Result with BaseProcedureId or error
+`Success` with [BaseProcedureId](./ts-chocolate.baseprocedureid.md) or `Failure` with an error message if validation fails.
 

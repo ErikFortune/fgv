@@ -129,7 +129,7 @@ export const chocolateIngredient: Converter<IChocolateIngredient> = Converters.o
   viscosityMcM: IngredientConverters.degreesMacMichael.optional(),
   temperatureCurve: temperatureCurve.optional(),
   origins: Converters.arrayOf(Converters.string).optional(),
-  beanVarieties: Converters.arrayOf(IngredientConverters.chocolateVariety).optional(),
+  beanVarieties: Converters.arrayOf(IngredientConverters.cacaoVariety).optional(),
   applications: Converters.arrayOf(IngredientConverters.chocolateApplication).optional()
 });
 

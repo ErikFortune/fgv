@@ -4,7 +4,7 @@
 
 ## Validation.toRatingScore() function
 
-Converts unknown value to RatingScore
+Validates unknown value is a [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[RatingScore](./ts-chocolate.ratingscore.md)<!-- -->&gt;
 
-Result with RatingScore or error
+`Success` with [RatingScore](./ts-chocolate.ratingscore.md) or `Failure` with an error message if validation fails.
 

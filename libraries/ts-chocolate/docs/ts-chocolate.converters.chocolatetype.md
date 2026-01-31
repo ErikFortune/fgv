@@ -4,7 +4,7 @@
 
 ## Converters.chocolateType variable
 
-Converter for ChocolateType
+Converter for [ChocolateType](./ts-chocolate.chocolatetype.md)<!-- -->.
 
 **Signature:**
 

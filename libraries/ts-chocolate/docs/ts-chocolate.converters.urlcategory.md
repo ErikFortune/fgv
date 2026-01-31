@@ -4,7 +4,7 @@
 
 ## Converters.urlCategory variable
 
-Converter for UrlCategory
+Converter for [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 
 **Signature:**
 

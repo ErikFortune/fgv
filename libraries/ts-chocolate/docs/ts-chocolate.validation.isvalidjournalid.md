@@ -4,7 +4,7 @@
 
 ## Validation.isValidJournalId() function
 
-Type guard for JournalId
+Type guard for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [JournalId](./ts-chocolate.journalid.md)
 
-True if the value is a valid JournalId
+`true` if the value is a valid [JournalId](./ts-chocolate.journalid.md)
 

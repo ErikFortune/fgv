@@ -4,7 +4,7 @@
 
 ## Converters.celsius variable
 
-Converter for Celsius
+Converter for [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 
 **Signature:**
 

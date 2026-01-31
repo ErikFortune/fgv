@@ -4,7 +4,7 @@
 
 ## Validation.isValidCelsius() function
 
-Type guard for Celsius
+Type guard for [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [Celsius](./ts-chocolate.celsius.md)
 
-True if the value is a valid Celsius temperature
+`true` if the value is a valid [Celsius](./ts-chocolate.celsius.md) temperature.
 

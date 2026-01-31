@@ -4,7 +4,7 @@
 
 ## Converters.minutes variable
 
-Converter for Minutes
+Converter for [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 
 **Signature:**
 

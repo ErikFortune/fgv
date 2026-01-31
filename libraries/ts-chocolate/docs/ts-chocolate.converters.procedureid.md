@@ -4,7 +4,7 @@
 
 ## Converters.procedureId variable
 
-Converter for ProcedureId (composite string). Accepts either a ProcedureId string or a CompositeId object representation.
+Converter for [ProcedureId](./ts-chocolate.procedureid.md) (composite string). Accepts either an [ProcedureId](./ts-chocolate.procedureid.md) string or a `CompositeId` object representation.
 
 **Signature:**
 

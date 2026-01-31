@@ -4,7 +4,7 @@
 
 ## Converters.parsedProcedureId variable
 
-Converter that parses a ProcedureId string into its component parts
+Converter that parses a [ProcedureId](./ts-chocolate.procedureid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

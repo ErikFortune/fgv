@@ -4,7 +4,7 @@
 
 ## Validation.isValidMillimeters() function
 
-Type guard for Millimeters
+Type guard for [Millimeters](./ts-chocolate.millimeters.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [Millimeters](./ts-chocolate.millimeters.md)
 
-True if the value is a valid Millimeters value
+`true` if the value is a valid [Millimeters](./ts-chocolate.millimeters.md) value
 

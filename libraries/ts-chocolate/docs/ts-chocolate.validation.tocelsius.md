@@ -4,7 +4,7 @@
 
 ## Validation.toCelsius() function
 
-Converts unknown value to Celsius
+Validates unknown value is a [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[Celsius](./ts-chocolate.celsius.md)<!-- -->&gt;
 
-Result with Celsius or error
+`Success` with [Celsius](./ts-chocolate.celsius.md) or `Failure` with an error message if validation fails.
 

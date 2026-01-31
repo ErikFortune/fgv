@@ -4,7 +4,7 @@
 
 ## Converters.moldId variable
 
-Converter for MoldId (composite string). Accepts either a MoldId string or a CompositeId object representation.
+Converter for [MoldId](./ts-chocolate.moldid.md) (composite string). Accepts either an [MoldId](./ts-chocolate.moldid.md) string or a `CompositeId` object representation.
 
 **Signature:**
 

@@ -74,13 +74,13 @@ import {
 // ============================================================================
 
 /**
- * In-place validator for SourceId
+ * In-place `Validator` for {@link SourceId | SourceId}.
  * @public
  */
 export const sourceId: Validator<SourceId> = Validators.isA<SourceId>('SourceId', isValidSourceId);
 
 /**
- * In-place validator for BaseIngredientId
+ * In-place `Validator` for {@link BaseIngredientId | BaseIngredientId}.
  * @public
  */
 export const baseIngredientId: Validator<BaseIngredientId> = Validators.isA<BaseIngredientId>(
@@ -89,7 +89,7 @@ export const baseIngredientId: Validator<BaseIngredientId> = Validators.isA<Base
 );
 
 /**
- * In-place validator for BaseFillingId
+ * In-place `Validator` for {@link BaseFillingId | BaseFillingId}.
  * @public
  */
 export const baseFillingId: Validator<BaseFillingId> = Validators.isA<BaseFillingId>(
@@ -98,13 +98,13 @@ export const baseFillingId: Validator<BaseFillingId> = Validators.isA<BaseFillin
 );
 
 /**
- * In-place validator for BaseMoldId
+ * In-place `Validator` for {@link BaseMoldId | BaseMoldId}.
  * @public
  */
 export const baseMoldId: Validator<BaseMoldId> = Validators.isA<BaseMoldId>('BaseMoldId', isValidBaseMoldId);
 
 /**
- * In-place validator for BaseProcedureId
+ * In-place `Validator` for {@link BaseProcedureId | BaseProcedureId}.
  * @public
  */
 export const baseProcedureId: Validator<BaseProcedureId> = Validators.isA<BaseProcedureId>(
@@ -113,13 +113,13 @@ export const baseProcedureId: Validator<BaseProcedureId> = Validators.isA<BasePr
 );
 
 /**
- * In-place validator for BaseTaskId
+ * In-place `Validator` for {@link BaseTaskId | BaseTaskId}.
  * @public
  */
 export const baseTaskId: Validator<BaseTaskId> = Validators.isA<BaseTaskId>('BaseTaskId', isValidBaseTaskId);
 
 /**
- * In-place validator for BaseConfectionId
+ * In-place `Validator` for {@link BaseConfectionId | BaseConfectionId}.
  * @public
  */
 export const baseConfectionId: Validator<BaseConfectionId> = Validators.isA<BaseConfectionId>(
@@ -132,7 +132,7 @@ export const baseConfectionId: Validator<BaseConfectionId> = Validators.isA<Base
 // ============================================================================
 
 /**
- * In-place validator for IngredientId (composite)
+ * In-place `Validator` for {@link IngredientId | IngredientId} (composite string).
  * @public
  */
 export const ingredientId: Validator<IngredientId> = Validators.compositeId<
@@ -146,7 +146,7 @@ export const ingredientId: Validator<IngredientId> = Validators.compositeId<
 });
 
 /**
- * In-place validator for FillingId (composite)
+ * In-place `Validator` for {@link FillingId | FillingId} (composite string).
  * @public
  */
 export const fillingId: Validator<FillingId> = Validators.compositeId<FillingId, SourceId, BaseFillingId>({
@@ -156,7 +156,7 @@ export const fillingId: Validator<FillingId> = Validators.compositeId<FillingId,
 });
 
 /**
- * In-place validator for MoldId (composite)
+ * In-place `Validator` for {@link MoldId | MoldId} (composite string).
  * @public
  */
 export const moldId: Validator<MoldId> = Validators.compositeId<MoldId, SourceId, BaseMoldId>({
@@ -166,7 +166,7 @@ export const moldId: Validator<MoldId> = Validators.compositeId<MoldId, SourceId
 });
 
 /**
- * In-place validator for ProcedureId (composite)
+ * In-place `Validator` for {@link ProcedureId | ProcedureId} (composite string).
  * @public
  */
 export const procedureId: Validator<ProcedureId> = Validators.compositeId<
@@ -180,7 +180,7 @@ export const procedureId: Validator<ProcedureId> = Validators.compositeId<
 });
 
 /**
- * In-place validator for TaskId (composite)
+ * In-place `Validator` for {@link TaskId | TaskId} (composite string).
  * @public
  */
 export const taskId: Validator<TaskId> = Validators.compositeId<TaskId, SourceId, BaseTaskId>({
@@ -190,7 +190,7 @@ export const taskId: Validator<TaskId> = Validators.compositeId<TaskId, SourceId
 });
 
 /**
- * In-place validator for ConfectionId (composite)
+ * In-place `Validator` for {@link ConfectionId | ConfectionId} (composite string).
  * @public
  */
 export const confectionId: Validator<ConfectionId> = Validators.compositeId<
@@ -208,7 +208,7 @@ export const confectionId: Validator<ConfectionId> = Validators.compositeId<
 // ============================================================================
 
 /**
- * In-place validator for FillingVersionSpec
+ * In-place `Validator` for {@link FillingVersionSpec | FillingVersionSpec}.
  * @public
  */
 export const fillingVersionSpec: Validator<FillingVersionSpec> = Validators.isA<FillingVersionSpec>(
@@ -217,7 +217,7 @@ export const fillingVersionSpec: Validator<FillingVersionSpec> = Validators.isA<
 );
 
 /**
- * In-place validator for ConfectionVersionSpec
+ * In-place `Validator` for {@link ConfectionVersionSpec | ConfectionVersionSpec}.
  * @public
  */
 export const confectionVersionSpec: Validator<ConfectionVersionSpec> = Validators.isA<ConfectionVersionSpec>(
@@ -230,7 +230,7 @@ export const confectionVersionSpec: Validator<ConfectionVersionSpec> = Validator
 // ============================================================================
 
 /**
- * In-place validator for FillingVersionId (composite)
+ * In-place `Validator` for {@link FillingVersionId | FillingVersionId} (composite string).
  * @public
  */
 export const fillingVersionId: Validator<FillingVersionId> = Validators.compositeId<
@@ -244,7 +244,7 @@ export const fillingVersionId: Validator<FillingVersionId> = Validators.composit
 });
 
 /**
- * In-place validator for ConfectionVersionId (composite)
+ * In-place `Validator` for {@link ConfectionVersionId | ConfectionVersionId} (composite string).
  * @public
  */
 export const confectionVersionId: Validator<ConfectionVersionId> = Validators.compositeId<

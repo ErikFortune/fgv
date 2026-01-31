@@ -4,7 +4,7 @@
 
 ## Validation.isValidUrlCategory() function
 
-Type guard for UrlCategory
+Type guard for [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [UrlCategory](./ts-chocolate.urlcategory.md)
 
-True if the value is a valid UrlCategory
+`true` if the value is a valid [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 

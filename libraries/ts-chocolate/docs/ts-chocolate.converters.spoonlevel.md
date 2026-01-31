@@ -4,7 +4,7 @@
 
 ## Converters.spoonLevel variable
 
-Converter for SpoonLevel
+Converter for [SpoonLevel](./ts-chocolate.spoonlevel.md)<!-- -->.
 
 **Signature:**
 

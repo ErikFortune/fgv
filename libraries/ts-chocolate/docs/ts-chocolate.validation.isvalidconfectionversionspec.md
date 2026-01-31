@@ -4,7 +4,7 @@
 
 ## Validation.isValidConfectionVersionSpec() function
 
-Type guard for ConfectionVersionSpec
+Type guard for [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)
 
-True if the value is a valid ConfectionVersionSpec
+`true` if the value is a valid [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 

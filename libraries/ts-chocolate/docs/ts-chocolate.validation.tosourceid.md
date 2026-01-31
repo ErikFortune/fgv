@@ -4,7 +4,7 @@
 
 ## Validation.toSourceId() function
 
-Converts unknown value to SourceId
+Validates unknown value is a [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
 
-Result with SourceId or error
+`Success` with [SourceId](./ts-chocolate.sourceid.md) or `Failure` with an error message if validation fails.
 

@@ -4,7 +4,7 @@
 
 ## Validation.isValidSlotId() function
 
-Type guard for SlotId
+Type guard for [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [SlotId](./ts-chocolate.slotid.md)
 
-True if the value is a valid SlotId
+`true` if the value is a valid [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 

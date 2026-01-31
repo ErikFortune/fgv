@@ -4,7 +4,7 @@
 
 ## Validation.toFillingName() function
 
-Converts unknown value to FillingName
+Validates unknown value is a [FillingName](./ts-chocolate.fillingname.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[FillingName](./ts-chocolate.fillingname.md)<!-- -->&gt;
 
-Result with FillingName or error
+`Success` with [FillingName](./ts-chocolate.fillingname.md) or `Failure` with an error message if validation fails.
 

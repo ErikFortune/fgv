@@ -4,7 +4,7 @@
 
 ## Converters.baseConfectionId variable
 
-Converter for BaseConfectionId
+Converter for [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 **Signature:**
 

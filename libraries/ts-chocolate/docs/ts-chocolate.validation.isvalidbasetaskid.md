@@ -4,7 +4,7 @@
 
 ## Validation.isValidBaseTaskId() function
 
-Type guard for BaseTaskId
+Type guard for [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [BaseTaskId](./ts-chocolate.basetaskid.md)
 
-True if the value is a valid BaseTaskId
+`true` if the value is a valid [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 

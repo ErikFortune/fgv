@@ -4,7 +4,7 @@
 
 ## Validators.fillingVersionSpec variable
 
-In-place validator for FillingVersionSpec
+In-place `Validator` for [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 
 **Signature:**
 

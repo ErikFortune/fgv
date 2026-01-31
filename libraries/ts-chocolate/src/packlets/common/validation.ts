@@ -63,9 +63,9 @@ import {
 // ============================================================================
 
 /**
- * Type guard for SourceId
+ * Type guard for {@link SourceId | SourceId}.
  * @param from - Value to check
- * @returns True if the value is a valid SourceId
+ * @returns `true` if the value is a valid {@link SourceId | SourceId}.
  * @public
  */
 export function isValidSourceId(from: unknown): from is SourceId {
@@ -73,9 +73,10 @@ export function isValidSourceId(from: unknown): from is SourceId {
 }
 
 /**
- * Converts unknown value to SourceId
- * @param from - Value to convert
- * @returns Result with SourceId or error
+ * Validates unknown value is a {@link SourceId | SourceId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link SourceId | SourceId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toSourceId(from: unknown): Result<SourceId> {
@@ -86,9 +87,9 @@ export function toSourceId(from: unknown): Result<SourceId> {
 }
 
 /**
- * Type guard for BaseIngredientId
+ * Type guard for {@link BaseIngredientId | BaseIngredientId}.
  * @param from - Value to check
- * @returns True if the value is a valid BaseIngredientId
+ * @returns `true` if the value is a valid {@link BaseIngredientId | BaseIngredientId}.
  * @public
  */
 export function isValidBaseIngredientId(from: unknown): from is BaseIngredientId {
@@ -96,9 +97,10 @@ export function isValidBaseIngredientId(from: unknown): from is BaseIngredientId
 }
 
 /**
- * Converts unknown value to BaseIngredientId
- * @param from - Value to convert
- * @returns Result with BaseIngredientId or error
+ * Validates unknown value is a {@link BaseIngredientId | BaseIngredientId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseIngredientId | BaseIngredientId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toBaseIngredientId(from: unknown): Result<BaseIngredientId> {
@@ -111,9 +113,9 @@ export function toBaseIngredientId(from: unknown): Result<BaseIngredientId> {
 }
 
 /**
- * Type guard for BaseFillingId
+ * Type guard for {@link BaseFillingId | BaseFillingId}.
  * @param from - Value to check
- * @returns True if the value is a valid BaseFillingId
+ * @returns `true` if the value is a valid {@link BaseFillingId | BaseFillingId}.
  * @public
  */
 export function isValidBaseFillingId(from: unknown): from is BaseFillingId {
@@ -121,9 +123,10 @@ export function isValidBaseFillingId(from: unknown): from is BaseFillingId {
 }
 
 /**
- * Converts unknown value to BaseFillingId
- * @param from - Value to convert
- * @returns Result with BaseFillingId or error
+ * Validates unknown value is a {@link BaseFillingId | BaseFillingId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseFillingId | BaseFillingId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toBaseFillingId(from: unknown): Result<BaseFillingId> {
@@ -136,9 +139,9 @@ export function toBaseFillingId(from: unknown): Result<BaseFillingId> {
 }
 
 /**
- * Type guard for BaseMoldId
+ * Type guard for {@link BaseMoldId | BaseMoldId}.
  * @param from - Value to check
- * @returns True if the value is a valid BaseMoldId
+ * @returns `true` if the value is a valid {@link BaseMoldId | BaseMoldId}.
  * @public
  */
 export function isValidBaseMoldId(from: unknown): from is BaseMoldId {
@@ -146,9 +149,10 @@ export function isValidBaseMoldId(from: unknown): from is BaseMoldId {
 }
 
 /**
- * Converts unknown value to BaseMoldId
- * @param from - Value to convert
- * @returns Result with BaseMoldId or error
+ * Validates unknown value is a {@link BaseMoldId | BaseMoldId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseMoldId | BaseMoldId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toBaseMoldId(from: unknown): Result<BaseMoldId> {
@@ -159,9 +163,9 @@ export function toBaseMoldId(from: unknown): Result<BaseMoldId> {
 }
 
 /**
- * Type guard for BaseProcedureId
+ * Type guard for {@link BaseProcedureId | BaseProcedureId}.
  * @param from - Value to check
- * @returns True if the value is a valid BaseProcedureId
+ * @returns `true` if the value is a valid {@link BaseProcedureId | BaseProcedureId}.
  * @public
  */
 export function isValidBaseProcedureId(from: unknown): from is BaseProcedureId {
@@ -169,9 +173,10 @@ export function isValidBaseProcedureId(from: unknown): from is BaseProcedureId {
 }
 
 /**
- * Converts unknown value to BaseProcedureId
- * @param from - Value to convert
- * @returns Result with BaseProcedureId or error
+ * Validates unknown value is a {@link BaseProcedureId | BaseProcedureId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseProcedureId | BaseProcedureId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toBaseProcedureId(from: unknown): Result<BaseProcedureId> {
@@ -184,9 +189,9 @@ export function toBaseProcedureId(from: unknown): Result<BaseProcedureId> {
 }
 
 /**
- * Type guard for BaseTaskId
+ * Type guard for {@link BaseTaskId | BaseTaskId}.
  * @param from - Value to check
- * @returns True if the value is a valid BaseTaskId
+ * @returns `true` if the value is a valid {@link BaseTaskId | BaseTaskId}.
  * @public
  */
 export function isValidBaseTaskId(from: unknown): from is BaseTaskId {
@@ -194,9 +199,10 @@ export function isValidBaseTaskId(from: unknown): from is BaseTaskId {
 }
 
 /**
- * Converts unknown value to BaseTaskId
- * @param from - Value to convert
- * @returns Result with BaseTaskId or error
+ * Validates unknown value is a {@link BaseTaskId | BaseTaskId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseTaskId | BaseTaskId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toBaseTaskId(from: unknown): Result<BaseTaskId> {
@@ -207,9 +213,9 @@ export function toBaseTaskId(from: unknown): Result<BaseTaskId> {
 }
 
 /**
- * Type guard for BaseConfectionId
+ * Type guard for {@link BaseConfectionId | BaseConfectionId}.
  * @param from - Value to check
- * @returns True if the value is a valid BaseConfectionId
+ * @returns `true` if the value is a valid {@link BaseConfectionId | BaseConfectionId}.
  * @public
  */
 export function isValidBaseConfectionId(from: unknown): from is BaseConfectionId {
@@ -217,9 +223,10 @@ export function isValidBaseConfectionId(from: unknown): from is BaseConfectionId
 }
 
 /**
- * Converts unknown value to BaseConfectionId
- * @param from - Value to convert
- * @returns Result with BaseConfectionId or error
+ * Validates unknown value is a {@link BaseConfectionId | BaseConfectionId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseConfectionId | BaseConfectionId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toBaseConfectionId(from: unknown): Result<BaseConfectionId> {
@@ -232,9 +239,9 @@ export function toBaseConfectionId(from: unknown): Result<BaseConfectionId> {
 }
 
 /**
- * Type guard for UrlCategory
+ * Type guard for {@link UrlCategory | UrlCategory}.
  * @param from - Value to check
- * @returns True if the value is a valid UrlCategory
+ * @returns `true` if the value is a valid {@link UrlCategory | UrlCategory}.
  * @public
  */
 export function isValidUrlCategory(from: unknown): from is UrlCategory {
@@ -242,9 +249,10 @@ export function isValidUrlCategory(from: unknown): from is UrlCategory {
 }
 
 /**
- * Converts unknown value to UrlCategory
- * @param from - Value to convert
- * @returns Result with UrlCategory or error
+ * Validates unknown value is a {@link UrlCategory | UrlCategory}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link UrlCategory | UrlCategory} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toUrlCategory(from: unknown): Result<UrlCategory> {
@@ -259,9 +267,9 @@ export function toUrlCategory(from: unknown): Result<UrlCategory> {
 // ============================================================================
 
 /**
- * Type guard for FillingName
+ * Type guard for {@link FillingName | FillingName}.
  * @param from - Value to check
- * @returns True if the value is a valid FillingName
+ * @returns `true` if the value is a valid {@link FillingName | FillingName}.
  * @public
  */
 export function isValidFillingName(from: unknown): from is FillingName {
@@ -269,9 +277,10 @@ export function isValidFillingName(from: unknown): from is FillingName {
 }
 
 /**
- * Converts unknown value to FillingName
- * @param from - Value to convert
- * @returns Result with FillingName or error
+ * Validates unknown value is a {@link FillingName | FillingName}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link FillingName | FillingName} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toFillingName(from: unknown): Result<FillingName> {
@@ -282,9 +291,9 @@ export function toFillingName(from: unknown): Result<FillingName> {
 }
 
 /**
- * Type guard for ConfectionName
+ * Type guard for {@link ConfectionName | ConfectionName}.
  * @param from - Value to check
- * @returns True if the value is a valid ConfectionName
+ * @returns `true` if the value is a valid {@link ConfectionName | ConfectionName}.
  * @public
  */
 export function isValidConfectionName(from: unknown): from is ConfectionName {
@@ -292,9 +301,10 @@ export function isValidConfectionName(from: unknown): from is ConfectionName {
 }
 
 /**
- * Converts unknown value to ConfectionName
- * @param from - Value to convert
- * @returns Result with ConfectionName or error
+ * Validates unknown value is a {@link ConfectionName | ConfectionName}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link ConfectionName | ConfectionName} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toConfectionName(from: unknown): Result<ConfectionName> {
@@ -305,9 +315,9 @@ export function toConfectionName(from: unknown): Result<ConfectionName> {
 }
 
 /**
- * Type guard for FillingVersionSpec
+ * Type guard for {@link FillingVersionSpec | FillingVersionSpec}.
  * @param from - Value to check
- * @returns True if the value is a valid FillingVersionSpec
+ * @returns `true` if the value is a valid {@link FillingVersionSpec | FillingVersionSpec}.
  * @public
  */
 export function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec {
@@ -315,9 +325,10 @@ export function isValidFillingVersionSpec(from: unknown): from is FillingVersion
 }
 
 /**
- * Converts unknown value to FillingVersionSpec
- * @param from - Value to convert
- * @returns Result with {@link FillingVersionSpec | FillingVersionSpec} or error
+ * Validates unknown value is a {@link FillingVersionSpec | FillingVersionSpec}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link FillingVersionSpec | FillingVersionSpec} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec> {
@@ -330,9 +341,9 @@ export function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec> 
 }
 
 /**
- * Type guard for ConfectionVersionSpec
+ * Type guard for {@link ConfectionVersionSpec | ConfectionVersionSpec}.
  * @param from - Value to check
- * @returns True if the value is a valid ConfectionVersionSpec
+ * @returns `true` if the value is a valid {@link ConfectionVersionSpec | ConfectionVersionSpec}.
  * @public
  */
 export function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionSpec {
@@ -340,9 +351,10 @@ export function isValidConfectionVersionSpec(from: unknown): from is ConfectionV
 }
 
 /**
- * Converts unknown value to ConfectionVersionSpec
- * @param from - Value to convert
- * @returns Result with {@link ConfectionVersionSpec | ConfectionVersionSpec} or error
+ * Validates unknown value is a {@link ConfectionVersionSpec | ConfectionVersionSpec}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link ConfectionVersionSpec | ConfectionVersionSpec} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec> {
@@ -357,7 +369,7 @@ export function toConfectionVersionSpec(from: unknown): Result<ConfectionVersion
 /**
  * Type guard for {@link SessionId | SessionId}.
  * @param from - Value to check
- * @returns True if the value is a valid SessionId
+ * @returns `true` if the value is a valid {@link SessionId | SessionId}.
  * @public
  */
 export function isValidSessionId(from: unknown): from is SessionId {
@@ -365,9 +377,10 @@ export function isValidSessionId(from: unknown): from is SessionId {
 }
 
 /**
- * Converts unknown value to {@link SessionId | SessionId}.
- * @param from - Value to convert
- * @returns Result with SessionId or error
+ * Validates unknown value is a {@link SessionId | SessionId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link SessionId | SessionId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toSessionId(from: unknown): Result<SessionId> {
@@ -384,9 +397,9 @@ export function toSessionId(from: unknown): Result<SessionId> {
 // ============================================================================
 
 /**
- * Type guard for Measurement
+ * Type guard for {@link Measurement | Measurement}.
  * @param from - Value to check
- * @returns True if the value is a valid Measurement value
+ * @returns `true` if the value is a valid {@link Measurement | Measurement} value.
  * @public
  */
 export function isValidMeasurement(from: unknown): from is Measurement {
@@ -394,9 +407,10 @@ export function isValidMeasurement(from: unknown): from is Measurement {
 }
 
 /**
- * Converts unknown value to Measurement
- * @param from - Value to convert
- * @returns Result with Measurement or error
+ * Validates unknown value is a {@link Measurement | Measurement}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link Measurement | Measurement} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toMeasurement(from: unknown): Result<Measurement> {
@@ -407,9 +421,9 @@ export function toMeasurement(from: unknown): Result<Measurement> {
 }
 
 /**
- * Type guard for Percentage
+ * Type guard for {@link Percentage | Percentage}.
  * @param from - Value to check
- * @returns True if the value is a valid Percentage (0-100)
+ * @returns `true` if the value is a valid {@link Percentage | Percentage} (0-100).
  * @public
  */
 export function isValidPercentage(from: unknown): from is Percentage {
@@ -417,9 +431,10 @@ export function isValidPercentage(from: unknown): from is Percentage {
 }
 
 /**
- * Converts unknown value to Percentage
- * @param from - Value to convert
- * @returns Result with Percentage or error
+ * Validates unknown value is a {@link Percentage | Percentage}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link Percentage | Percentage} or `Failure` with an
+ * error message if validation fails.
  * @public
  */
 export function toPercentage(from: unknown): Result<Percentage> {
@@ -430,9 +445,9 @@ export function toPercentage(from: unknown): Result<Percentage> {
 }
 
 /**
- * Type guard for Celsius
+ * Type guard for {@link Celsius | Celsius}.
  * @param from - Value to check
- * @returns True if the value is a valid Celsius temperature
+ * @returns `true` if the value is a valid {@link Celsius | Celsius} temperature.
  * @public
  */
 export function isValidCelsius(from: unknown): from is Celsius {
@@ -440,9 +455,10 @@ export function isValidCelsius(from: unknown): from is Celsius {
 }
 
 /**
- * Converts unknown value to Celsius
- * @param from - Value to convert
- * @returns Result with Celsius or error
+ * Validates unknown value is a {@link Celsius | Celsius}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link Celsius | Celsius} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toCelsius(from: unknown): Result<Celsius> {
@@ -453,9 +469,9 @@ export function toCelsius(from: unknown): Result<Celsius> {
 }
 
 /**
- * Type guard for DegreesMacMichael
+ * Type guard for {@link DegreesMacMichael | DegreesMacMichael}.
  * @param from - Value to check
- * @returns True if the value is a valid DegreesMacMichael
+ * @returns `true` if the value is a valid {@link DegreesMacMichael | DegreesMacMichael}.
  * @public
  */
 export function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael {
@@ -463,9 +479,10 @@ export function isValidDegreesMacMichael(from: unknown): from is DegreesMacMicha
 }
 
 /**
- * Converts unknown value to DegreesMacMichael
- * @param from - Value to convert
- * @returns Result with DegreesMacMichael or error
+ * Validates unknown value is a {@link DegreesMacMichael | DegreesMacMichael}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link DegreesMacMichael | DegreesMacMichael} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael> {
@@ -476,9 +493,9 @@ export function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael> {
 }
 
 /**
- * Type guard for RatingScore
+ * Type guard for {@link RatingScore | RatingScore}.
  * @param from - Value to check
- * @returns True if the value is a valid RatingScore (1-5)
+ * @returns `true` if the value is a valid {@link RatingScore | RatingScore} (1-5)
  * @public
  */
 export function isValidRatingScore(from: unknown): from is RatingScore {
@@ -486,9 +503,10 @@ export function isValidRatingScore(from: unknown): from is RatingScore {
 }
 
 /**
- * Converts unknown value to RatingScore
- * @param from - Value to convert
- * @returns Result with RatingScore or error
+ * Validates unknown value is a {@link RatingScore | RatingScore}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link RatingScore | RatingScore} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toRatingScore(from: unknown): Result<RatingScore> {
@@ -499,9 +517,9 @@ export function toRatingScore(from: unknown): Result<RatingScore> {
 }
 
 /**
- * Type guard for Minutes
+ * Type guard for {@link Minutes | Minutes}.
  * @param from - Value to check
- * @returns True if the value is a valid Minutes value
+ * @returns `true` if the value is a valid {@link Minutes | Minutes} value
  * @public
  */
 export function isValidMinutes(from: unknown): from is Minutes {
@@ -509,9 +527,10 @@ export function isValidMinutes(from: unknown): from is Minutes {
 }
 
 /**
- * Converts unknown value to Minutes
- * @param from - Value to convert
- * @returns Result with Minutes or error
+ * Validates unknown value is a {@link Minutes | Minutes}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link Minutes | Minutes} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toMinutes(from: unknown): Result<Minutes> {
@@ -522,9 +541,9 @@ export function toMinutes(from: unknown): Result<Minutes> {
 }
 
 /**
- * Type guard for Millimeters
+ * Type guard for {@link Millimeters | Millimeters}.
  * @param from - Value to check
- * @returns True if the value is a valid Millimeters value
+ * @returns `true` if the value is a valid {@link Millimeters | Millimeters} value
  * @public
  */
 export function isValidMillimeters(from: unknown): from is Millimeters {
@@ -532,9 +551,10 @@ export function isValidMillimeters(from: unknown): from is Millimeters {
 }
 
 /**
- * Converts unknown value to Millimeters
- * @param from - Value to convert
- * @returns Result with Millimeters or error
+ * Validates unknown value is a {@link Millimeters | Millimeters}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link Millimeters | Millimeters} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toMillimeters(from: unknown): Result<Millimeters> {
@@ -549,9 +569,9 @@ export function toMillimeters(from: unknown): Result<Millimeters> {
 // ============================================================================
 
 /**
- * Type guard for JournalId
+ * Type guard for {@link JournalId | JournalId}.
  * @param from - Value to check
- * @returns True if the value is a valid JournalId
+ * @returns `true` if the value is a valid {@link JournalId | JournalId}
  * @public
  */
 export function isValidJournalId(from: unknown): from is JournalId {
@@ -559,9 +579,10 @@ export function isValidJournalId(from: unknown): from is JournalId {
 }
 
 /**
- * Converts unknown value to JournalId
- * @param from - Value to convert
- * @returns Result with JournalId or error
+ * Validates unknown value is a {@link JournalId | JournalId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link JournalId | JournalId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toJournalId(from: unknown): Result<JournalId> {
@@ -578,9 +599,9 @@ export function toJournalId(from: unknown): Result<JournalId> {
 // ============================================================================
 
 /**
- * Type guard for SlotId
+ * Type guard for {@link SlotId | SlotId}.
  * @param from - Value to check
- * @returns True if the value is a valid SlotId
+ * @returns `true` if the value is a valid {@link SlotId | SlotId}.
  * @public
  */
 export function isValidSlotId(from: unknown): from is SlotId {
@@ -588,9 +609,10 @@ export function isValidSlotId(from: unknown): from is SlotId {
 }
 
 /**
- * Converts unknown value to SlotId
- * @param from - Value to convert
- * @returns Result with SlotId or error
+ * Validates unknown value is a {@link SlotId | SlotId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link SlotId | SlotId} or `Failure` with an error
+ * message if validation fails.
  * @public
  */
 export function toSlotId(from: unknown): Result<SlotId> {

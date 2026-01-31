@@ -4,7 +4,7 @@
 
 ## Validators.baseTaskId variable
 
-In-place validator for BaseTaskId
+In-place `Validator` for [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 
 **Signature:**
 

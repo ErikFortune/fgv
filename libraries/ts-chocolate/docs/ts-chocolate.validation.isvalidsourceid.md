@@ -4,7 +4,7 @@
 
 ## Validation.isValidSourceId() function
 
-Type guard for SourceId
+Type guard for [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [SourceId](./ts-chocolate.sourceid.md)
 
-True if the value is a valid SourceId
+`true` if the value is a valid [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 

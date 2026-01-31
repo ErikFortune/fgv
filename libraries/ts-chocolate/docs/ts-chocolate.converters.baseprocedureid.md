@@ -4,7 +4,7 @@
 
 ## Converters.baseProcedureId variable
 
-Converter for BaseProcedureId
+Converter for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Converters.fillingCategory variable
 
-Converter for FillingCategory
+Converter for [FillingCategory](./ts-chocolate.fillingcategory.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Converters.procedureType variable
 
-Converter for ProcedureType
+Converter for [ProcedureType](./ts-chocolate.proceduretype.md)<!-- -->.
 
 **Signature:**
 

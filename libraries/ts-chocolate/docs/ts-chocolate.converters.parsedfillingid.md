@@ -4,7 +4,7 @@
 
 ## Converters.parsedFillingId variable
 
-Converter that parses a FillingId string into its component parts
+Converter that parses a [FillingId](./ts-chocolate.fillingid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

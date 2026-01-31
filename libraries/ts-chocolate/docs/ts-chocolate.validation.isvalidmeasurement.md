@@ -4,7 +4,7 @@
 
 ## Validation.isValidMeasurement() function
 
-Type guard for Measurement
+Type guard for [Measurement](./ts-chocolate.measurement.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [Measurement](./ts-chocolate.measurement.md)
 
-True if the value is a valid Measurement value
+`true` if the value is a valid [Measurement](./ts-chocolate.measurement.md) value.
 

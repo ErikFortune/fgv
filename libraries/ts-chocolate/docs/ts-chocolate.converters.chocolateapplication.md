@@ -4,7 +4,7 @@
 
 ## Converters.chocolateApplication variable
 
-Converter for ChocolateApplication
+Converter for [ChocolateApplication](./ts-chocolate.chocolateapplication.md)<!-- -->.
 
 **Signature:**
 

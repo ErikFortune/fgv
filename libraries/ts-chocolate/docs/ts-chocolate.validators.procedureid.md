@@ -4,7 +4,7 @@
 
 ## Validators.procedureId variable
 
-In-place validator for ProcedureId (composite)
+In-place `Validator` for [ProcedureId](./ts-chocolate.procedureid.md) (composite string).
 
 **Signature:**
 

@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Type guard for BaseConfectionId
+Type guard for [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Type guard for BaseConfectionId
 
 </td><td>
 
-Type guard for BaseFillingId
+Type guard for [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Type guard for BaseFillingId
 
 </td><td>
 
-Type guard for BaseIngredientId
+Type guard for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 
 </td></tr>
@@ -57,7 +57,7 @@ Type guard for BaseIngredientId
 
 </td><td>
 
-Type guard for BaseMoldId
+Type guard for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 
 </td></tr>
@@ -68,7 +68,7 @@ Type guard for BaseMoldId
 
 </td><td>
 
-Type guard for BaseProcedureId
+Type guard for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 
 </td></tr>
@@ -79,7 +79,7 @@ Type guard for BaseProcedureId
 
 </td><td>
 
-Type guard for BaseTaskId
+Type guard for [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 
 
 </td></tr>
@@ -90,7 +90,7 @@ Type guard for BaseTaskId
 
 </td><td>
 
-Type guard for Celsius
+Type guard for [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 
 
 </td></tr>
@@ -101,7 +101,7 @@ Type guard for Celsius
 
 </td><td>
 
-Type guard for ConfectionName
+Type guard for [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ Type guard for ConfectionName
 
 </td><td>
 
-Type guard for ConfectionVersionSpec
+Type guard for [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -123,7 +123,7 @@ Type guard for ConfectionVersionSpec
 
 </td><td>
 
-Type guard for DegreesMacMichael
+Type guard for [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 
 
 </td></tr>
@@ -134,7 +134,7 @@ Type guard for DegreesMacMichael
 
 </td><td>
 
-Type guard for FillingName
+Type guard for [FillingName](./ts-chocolate.fillingname.md)<!-- -->.
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Type guard for FillingName
 
 </td><td>
 
-Type guard for FillingVersionSpec
+Type guard for [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -156,7 +156,7 @@ Type guard for FillingVersionSpec
 
 </td><td>
 
-Type guard for JournalId
+Type guard for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Type guard for JournalId
 
 </td><td>
 
-Type guard for Measurement
+Type guard for [Measurement](./ts-chocolate.measurement.md)<!-- -->.
 
 
 </td></tr>
@@ -178,7 +178,7 @@ Type guard for Measurement
 
 </td><td>
 
-Type guard for Millimeters
+Type guard for [Millimeters](./ts-chocolate.millimeters.md)<!-- -->.
 
 
 </td></tr>
@@ -189,7 +189,7 @@ Type guard for Millimeters
 
 </td><td>
 
-Type guard for Minutes
+Type guard for [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 
 
 </td></tr>
@@ -200,7 +200,7 @@ Type guard for Minutes
 
 </td><td>
 
-Type guard for Percentage
+Type guard for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 
 </td></tr>
@@ -211,7 +211,7 @@ Type guard for Percentage
 
 </td><td>
 
-Type guard for RatingScore
+Type guard for [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
 
 
 </td></tr>
@@ -233,7 +233,7 @@ Type guard for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 </td><td>
 
-Type guard for SlotId
+Type guard for [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 
 
 </td></tr>
@@ -244,7 +244,7 @@ Type guard for SlotId
 
 </td><td>
 
-Type guard for SourceId
+Type guard for [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 
 </td></tr>
@@ -255,7 +255,7 @@ Type guard for SourceId
 
 </td><td>
 
-Type guard for UrlCategory
+Type guard for [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 
 
 </td></tr>
@@ -266,7 +266,7 @@ Type guard for UrlCategory
 
 </td><td>
 
-Converts unknown value to BaseConfectionId
+Validates unknown value is a [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 
 </td></tr>
@@ -277,7 +277,7 @@ Converts unknown value to BaseConfectionId
 
 </td><td>
 
-Converts unknown value to BaseFillingId
+Validates unknown value is a [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->.
 
 
 </td></tr>
@@ -288,7 +288,7 @@ Converts unknown value to BaseFillingId
 
 </td><td>
 
-Converts unknown value to BaseIngredientId
+Validates unknown value is a [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 
 </td></tr>
@@ -299,7 +299,7 @@ Converts unknown value to BaseIngredientId
 
 </td><td>
 
-Converts unknown value to BaseMoldId
+Validates unknown value is a [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 
 </td></tr>
@@ -310,7 +310,7 @@ Converts unknown value to BaseMoldId
 
 </td><td>
 
-Converts unknown value to BaseProcedureId
+Validates unknown value is a [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 
 </td></tr>
@@ -321,7 +321,7 @@ Converts unknown value to BaseProcedureId
 
 </td><td>
 
-Converts unknown value to BaseTaskId
+Validates unknown value is a [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 
 
 </td></tr>
@@ -332,7 +332,7 @@ Converts unknown value to BaseTaskId
 
 </td><td>
 
-Converts unknown value to Celsius
+Validates unknown value is a [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 
 
 </td></tr>
@@ -343,7 +343,7 @@ Converts unknown value to Celsius
 
 </td><td>
 
-Converts unknown value to ConfectionName
+Validates unknown value is a [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 
 
 </td></tr>
@@ -354,7 +354,7 @@ Converts unknown value to ConfectionName
 
 </td><td>
 
-Converts unknown value to ConfectionVersionSpec
+Validates unknown value is a [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -365,7 +365,7 @@ Converts unknown value to ConfectionVersionSpec
 
 </td><td>
 
-Converts unknown value to DegreesMacMichael
+Validates unknown value is a [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 
 
 </td></tr>
@@ -376,7 +376,7 @@ Converts unknown value to DegreesMacMichael
 
 </td><td>
 
-Converts unknown value to FillingName
+Validates unknown value is a [FillingName](./ts-chocolate.fillingname.md)<!-- -->.
 
 
 </td></tr>
@@ -387,7 +387,7 @@ Converts unknown value to FillingName
 
 </td><td>
 
-Converts unknown value to FillingVersionSpec
+Validates unknown value is a [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -398,7 +398,7 @@ Converts unknown value to FillingVersionSpec
 
 </td><td>
 
-Converts unknown value to JournalId
+Validates unknown value is a [JournalId](./ts-chocolate.journalid.md)<!-- -->.
 
 
 </td></tr>
@@ -409,7 +409,7 @@ Converts unknown value to JournalId
 
 </td><td>
 
-Converts unknown value to Measurement
+Validates unknown value is a [Measurement](./ts-chocolate.measurement.md)<!-- -->.
 
 
 </td></tr>
@@ -420,7 +420,7 @@ Converts unknown value to Measurement
 
 </td><td>
 
-Converts unknown value to Millimeters
+Validates unknown value is a [Millimeters](./ts-chocolate.millimeters.md)<!-- -->.
 
 
 </td></tr>
@@ -431,7 +431,7 @@ Converts unknown value to Millimeters
 
 </td><td>
 
-Converts unknown value to Minutes
+Validates unknown value is a [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 
 
 </td></tr>
@@ -442,7 +442,7 @@ Converts unknown value to Minutes
 
 </td><td>
 
-Converts unknown value to Percentage
+Validates unknown value is a [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 
 </td></tr>
@@ -453,7 +453,7 @@ Converts unknown value to Percentage
 
 </td><td>
 
-Converts unknown value to RatingScore
+Validates unknown value is a [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
 
 
 </td></tr>
@@ -464,7 +464,7 @@ Converts unknown value to RatingScore
 
 </td><td>
 
-Converts unknown value to [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Validates unknown value is a [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -475,7 +475,7 @@ Converts unknown value to [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 </td><td>
 
-Converts unknown value to SlotId
+Validates unknown value is a [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 
 
 </td></tr>
@@ -486,7 +486,7 @@ Converts unknown value to SlotId
 
 </td><td>
 
-Converts unknown value to SourceId
+Validates unknown value is a [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 
 </td></tr>
@@ -497,7 +497,7 @@ Converts unknown value to SourceId
 
 </td><td>
 
-Converts unknown value to UrlCategory
+Validates unknown value is a [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 
 
 </td></tr>

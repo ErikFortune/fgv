@@ -4,7 +4,7 @@
 
 ## Validation.toSlotId() function
 
-Converts unknown value to SlotId
+Validates unknown value is a [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->&gt;
 
-Result with SlotId or error
+`Success` with [SlotId](./ts-chocolate.slotid.md) or `Failure` with an error message if validation fails.
 

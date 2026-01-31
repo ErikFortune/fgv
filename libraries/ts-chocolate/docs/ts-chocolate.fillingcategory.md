@@ -9,5 +9,5 @@ Filling recipe category for classification
 **Signature:**
 
 ```typescript
-export type FillingCategory = 'ganache' | 'caramel' | 'gianduja';
+export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
 ```

@@ -4,7 +4,7 @@
 
 ## Validation.toMinutes() function
 
-Converts unknown value to Minutes
+Validates unknown value is a [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[Minutes](./ts-chocolate.minutes.md)<!-- -->&gt;
 
-Result with Minutes or error
+`Success` with [Minutes](./ts-chocolate.minutes.md) or `Failure` with an error message if validation fails.
 

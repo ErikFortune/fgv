@@ -4,7 +4,7 @@
 
 ## Validation.toBaseIngredientId() function
 
-Converts unknown value to BaseIngredientId
+Validates unknown value is a [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->&gt;
 
-Result with BaseIngredientId or error
+`Success` with [BaseIngredientId](./ts-chocolate.baseingredientid.md) or `Failure` with an error message if validation fails.
 

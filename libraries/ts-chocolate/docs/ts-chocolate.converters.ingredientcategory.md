@@ -4,7 +4,7 @@
 
 ## Converters.ingredientCategory variable
 
-Converter for IngredientCategory
+Converter for [IngredientCategory](./ts-chocolate.ingredientcategory.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Validation.toUrlCategory() function
 
-Converts unknown value to UrlCategory
+Validates unknown value is a [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->&gt;
 
-Result with UrlCategory or error
+`Success` with [UrlCategory](./ts-chocolate.urlcategory.md) or `Failure` with an error message if validation fails.
 

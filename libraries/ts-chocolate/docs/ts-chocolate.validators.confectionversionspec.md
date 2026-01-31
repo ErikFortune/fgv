@@ -4,7 +4,7 @@
 
 ## Validators.confectionVersionSpec variable
 
-In-place validator for ConfectionVersionSpec
+In-place `Validator` for [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 **Signature:**
 

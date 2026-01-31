@@ -4,7 +4,7 @@
 
 ## Converters.parsedMoldId variable
 
-Converter that parses a MoldId string into its component parts
+Converter that parses a [MoldId](./ts-chocolate.moldid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Validation.isValidBaseIngredientId() function
 
-Type guard for BaseIngredientId
+Type guard for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [BaseIngredientId](./ts-chocolate.baseingredientid.md)
 
-True if the value is a valid BaseIngredientId
+`true` if the value is a valid [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 

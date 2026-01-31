@@ -4,7 +4,7 @@
 
 ## Converters.confectionName variable
 
-Converter for ConfectionName
+Converter for [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 
 **Signature:**
 

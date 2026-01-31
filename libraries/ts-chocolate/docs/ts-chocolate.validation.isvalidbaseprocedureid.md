@@ -4,7 +4,7 @@
 
 ## Validation.isValidBaseProcedureId() function
 
-Type guard for BaseProcedureId
+Type guard for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [BaseProcedureId](./ts-chocolate.baseprocedureid.md)
 
-True if the value is a valid BaseProcedureId
+`true` if the value is a valid [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 

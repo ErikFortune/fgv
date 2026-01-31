@@ -4,7 +4,7 @@
 
 ## Validation.toBaseConfectionId() function
 
-Converts unknown value to BaseConfectionId
+Validates unknown value is a [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->&gt;
 
-Result with BaseConfectionId or error
+`Success` with [BaseConfectionId](./ts-chocolate.baseconfectionid.md) or `Failure` with an error message if validation fails.
 

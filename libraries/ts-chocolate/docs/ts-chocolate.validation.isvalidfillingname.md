@@ -4,7 +4,7 @@
 
 ## Validation.isValidFillingName() function
 
-Type guard for FillingName
+Type guard for [FillingName](./ts-chocolate.fillingname.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [FillingName](./ts-chocolate.fillingname.md)
 
-True if the value is a valid FillingName
+`true` if the value is a valid [FillingName](./ts-chocolate.fillingname.md)<!-- -->.
 

@@ -4,7 +4,7 @@
 
 ## Converters.ingredientId variable
 
-Converter for IngredientId (composite string). Accepts either an IngredientId string or a CompositeId object representation.
+Converter for [IngredientId](./ts-chocolate.ingredientid.md) (composite string). Accepts either an [IngredientId](./ts-chocolate.ingredientid.md) string or a `CompositeId` object representation.
 
 **Signature:**
 

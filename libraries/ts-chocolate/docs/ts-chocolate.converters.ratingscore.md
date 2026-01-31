@@ -4,7 +4,7 @@
 
 ## Converters.ratingScore variable
 
-Converter for RatingScore (1-5)
+Converter for [RatingScore](./ts-chocolate.ratingscore.md) (1-5)
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Validators.ingredientId variable
 
-In-place validator for IngredientId (composite)
+In-place `Validator` for [IngredientId](./ts-chocolate.ingredientid.md) (composite string).
 
 **Signature:**
 

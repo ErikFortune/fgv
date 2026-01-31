@@ -4,7 +4,7 @@
 
 ## Validation.toBaseFillingId() function
 
-Converts unknown value to BaseFillingId
+Validates unknown value is a [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->&gt;
 
-Result with BaseFillingId or error
+`Success` with [BaseFillingId](./ts-chocolate.basefillingid.md) or `Failure` with an error message if validation fails.
 

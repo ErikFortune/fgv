@@ -4,7 +4,7 @@
 
 ## Validation.toBaseMoldId() function
 
-Converts unknown value to BaseMoldId
+Validates unknown value is a [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->&gt;
 
-Result with BaseMoldId or error
+`Success` with [BaseMoldId](./ts-chocolate.basemoldid.md) or `Failure` with an error message if validation fails.
 

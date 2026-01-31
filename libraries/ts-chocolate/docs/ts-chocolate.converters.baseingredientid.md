@@ -4,7 +4,7 @@
 
 ## Converters.baseIngredientId variable
 
-Converter for BaseIngredientId
+Converter for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 **Signature:**
 

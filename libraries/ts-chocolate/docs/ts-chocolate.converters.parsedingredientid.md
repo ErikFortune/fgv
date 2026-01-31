@@ -4,7 +4,7 @@
 
 ## Converters.parsedIngredientId variable
 
-Converter that parses an IngredientId string into its component parts
+Converter that parses an [IngredientId](./ts-chocolate.ingredientid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

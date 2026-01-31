@@ -4,7 +4,7 @@
 
 ## Converters.confectionVersionSpec variable
 
-Converter for ConfectionVersionSpec
+Converter for [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 **Signature:**
 

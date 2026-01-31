@@ -4,7 +4,7 @@
 
 ## Converters.fluidityStars variable
 
-Converter for FluidityStars
+Converter for [FluidityStars](./ts-chocolate.fluiditystars.md)<!-- -->.
 
 **Signature:**
 

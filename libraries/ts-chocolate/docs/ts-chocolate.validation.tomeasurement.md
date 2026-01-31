@@ -4,7 +4,7 @@
 
 ## Validation.toMeasurement() function
 
-Converts unknown value to Measurement
+Validates unknown value is a [Measurement](./ts-chocolate.measurement.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[Measurement](./ts-chocolate.measurement.md)<!-- -->&gt;
 
-Result with Measurement or error
+`Success` with [Measurement](./ts-chocolate.measurement.md) or `Failure` with an error message if validation fails.
 

@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Creates a converter for [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
+Creates a converter for [IIdsWithPreferred\\&lt;TId\\&gt;](./ts-chocolate.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Creates a converter for [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)
 
 </td><td>
 
-Creates a converter for [IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
+Creates a converter for [IOptionsWithPreferred\\&lt;TOption, TId\\&gt;](./ts-chocolate.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Creates a converter for [IOptionsWithPreferred](./ts-chocolate.ioptionswithprefe
 
 </td><td>
 
-Creates a converter for [IRefWithNotes](./ts-chocolate.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
+Creates a converter for [IRefWithNotes\\&lt;TId\\&gt;](./ts-chocolate.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
 
 
 </td></tr>
@@ -72,7 +72,7 @@ Description
 
 </td><td>
 
-Converter for AdditionalChocolatePurpose
+Converter for [AdditionalChocolatePurpose](./ts-chocolate.additionalchocolatepurpose.md)<!-- -->.
 
 
 </td></tr>
@@ -83,7 +83,7 @@ Converter for AdditionalChocolatePurpose
 
 </td><td>
 
-Converter for Allergen
+Converter for [Allergen](./ts-chocolate.allergen.md)<!-- -->.
 
 
 </td></tr>
@@ -94,7 +94,7 @@ Converter for Allergen
 
 </td><td>
 
-Converter for BaseConfectionId
+Converter for [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 
 </td></tr>
@@ -105,7 +105,7 @@ Converter for BaseConfectionId
 
 </td><td>
 
-Converter for BaseFillingId
+Converter for [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->.
 
 
 </td></tr>
@@ -116,7 +116,7 @@ Converter for BaseFillingId
 
 </td><td>
 
-Converter for BaseIngredientId
+Converter for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 
 </td></tr>
@@ -127,7 +127,7 @@ Converter for BaseIngredientId
 
 </td><td>
 
-Converter for BaseMoldId
+Converter for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 
 </td></tr>
@@ -138,7 +138,7 @@ Converter for BaseMoldId
 
 </td><td>
 
-Converter for BaseProcedureId
+Converter for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
 
 
 </td></tr>
@@ -149,7 +149,18 @@ Converter for BaseProcedureId
 
 </td><td>
 
-Converter for BaseTaskId
+Converter for [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[cacaoVariety](./ts-chocolate.converters.cacaovariety.md)
+
+
+</td><td>
+
+Converter for [CacaoVariety](./ts-chocolate.cacaovariety.md)<!-- -->.
 
 
 </td></tr>
@@ -160,7 +171,7 @@ Converter for BaseTaskId
 
 </td><td>
 
-Converter for ICategorizedUrl
+Converter for [ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->.
 
 
 </td></tr>
@@ -171,7 +182,7 @@ Converter for ICategorizedUrl
 
 </td><td>
 
-Converter for Celsius
+Converter for [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 
 
 </td></tr>
@@ -182,7 +193,7 @@ Converter for Celsius
 
 </td><td>
 
-Converter for Certification
+Converter for [Certification](./ts-chocolate.certification.md)<!-- -->.
 
 
 </td></tr>
@@ -193,7 +204,7 @@ Converter for Certification
 
 </td><td>
 
-Converter for ChocolateApplication
+Converter for [ChocolateApplication](./ts-chocolate.chocolateapplication.md)<!-- -->.
 
 
 </td></tr>
@@ -204,18 +215,7 @@ Converter for ChocolateApplication
 
 </td><td>
 
-Converter for ChocolateType
-
-
-</td></tr>
-<tr><td>
-
-[chocolateVariety](./ts-chocolate.converters.chocolatevariety.md)
-
-
-</td><td>
-
-Converter for ChocolateVariety
+Converter for [ChocolateType](./ts-chocolate.chocolatetype.md)<!-- -->.
 
 
 </td></tr>
@@ -226,7 +226,7 @@ Converter for ChocolateVariety
 
 </td><td>
 
-Converter for ConfectionId (composite string). Accepts either a ConfectionId string or a CompositeId object representation.
+Converter for [ConfectionId](./ts-chocolate.confectionid.md) (composite string). Accepts either an [ConfectionId](./ts-chocolate.confectionid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -237,7 +237,7 @@ Converter for ConfectionId (composite string). Accepts either a ConfectionId str
 
 </td><td>
 
-Converter for ConfectionName
+Converter for [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 
 
 </td></tr>
@@ -248,7 +248,7 @@ Converter for ConfectionName
 
 </td><td>
 
-Converter for ConfectionType
+Converter for [ConfectionType](./ts-chocolate.confectiontype.md)<!-- -->.
 
 
 </td></tr>
@@ -259,7 +259,7 @@ Converter for ConfectionType
 
 </td><td>
 
-Converter for ConfectionVersionId (composite string). Accepts either a ConfectionVersionId string or a CompositeId object representation.
+Converter for [ConfectionVersionId](./ts-chocolate.confectionversionid.md) (composite string). Accepts either a [ConfectionVersionId](./ts-chocolate.confectionversionid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -270,7 +270,7 @@ Converter for ConfectionVersionId (composite string). Accepts either a Confectio
 
 </td><td>
 
-Converter for ConfectionVersionSpec
+Converter for [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -281,7 +281,7 @@ Converter for ConfectionVersionSpec
 
 </td><td>
 
-Converter for DegreesMacMichael
+Converter for [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 
 
 </td></tr>
@@ -292,7 +292,7 @@ Converter for DegreesMacMichael
 
 </td><td>
 
-Converter for FillingCategory
+Converter for [FillingCategory](./ts-chocolate.fillingcategory.md)<!-- -->.
 
 
 </td></tr>
@@ -303,7 +303,7 @@ Converter for FillingCategory
 
 </td><td>
 
-Converter for FillingId (composite string). Accepts either a FillingId string or a CompositeId object representation.
+Converter for [FillingId](./ts-chocolate.fillingid.md) (composite string). Accepts either an [FillingId](./ts-chocolate.fillingid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -314,7 +314,7 @@ Converter for FillingId (composite string). Accepts either a FillingId string or
 
 </td><td>
 
-Converter for FillingName
+Converter for [FillingName](./ts-chocolate.fillingname.md)<!-- -->.
 
 
 </td></tr>
@@ -325,7 +325,7 @@ Converter for FillingName
 
 </td><td>
 
-Converter for FillingVersionId (composite string). Accepts either a FillingVersionId string or a CompositeId object representation.
+Converter for [FillingVersionId](./ts-chocolate.fillingversionid.md) (composite string). Accepts either a [FillingVersionId](./ts-chocolate.fillingversionid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -336,7 +336,7 @@ Converter for FillingVersionId (composite string). Accepts either a FillingVersi
 
 </td><td>
 
-Converter for FillingVersionSpec
+Converter for [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -347,7 +347,7 @@ Converter for FillingVersionSpec
 
 </td><td>
 
-Converter for FluidityStars
+Converter for [FluidityStars](./ts-chocolate.fluiditystars.md)<!-- -->.
 
 
 </td></tr>
@@ -358,7 +358,7 @@ Converter for FluidityStars
 
 </td><td>
 
-Converter for IngredientCategory
+Converter for [IngredientCategory](./ts-chocolate.ingredientcategory.md)<!-- -->.
 
 
 </td></tr>
@@ -369,7 +369,7 @@ Converter for IngredientCategory
 
 </td><td>
 
-Converter for IngredientId (composite string). Accepts either an IngredientId string or a CompositeId object representation.
+Converter for [IngredientId](./ts-chocolate.ingredientid.md) (composite string). Accepts either an [IngredientId](./ts-chocolate.ingredientid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -391,7 +391,7 @@ Converter for IngredientPhase
 
 </td><td>
 
-Converter for JournalId
+Converter for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
 
 
 </td></tr>
@@ -402,7 +402,7 @@ Converter for JournalId
 
 </td><td>
 
-Converter for Measurement (non-negative number for ingredient amounts)
+Converter for [Measurement](./ts-chocolate.measurement.md) (non-negative number for ingredient amounts)
 
 
 </td></tr>
@@ -413,7 +413,7 @@ Converter for Measurement (non-negative number for ingredient amounts)
 
 </td><td>
 
-Converter for MeasurementUnit
+Converter for [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->.
 
 
 </td></tr>
@@ -424,7 +424,7 @@ Converter for MeasurementUnit
 
 </td><td>
 
-Converter for IMeasurementUnitOption
+Converter for [IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->.
 
 
 </td></tr>
@@ -435,7 +435,7 @@ Converter for IMeasurementUnitOption
 
 </td><td>
 
-Converter for Millimeters
+Converter for [Millimeters](./ts-chocolate.millimeters.md)<!-- -->.
 
 
 </td></tr>
@@ -446,7 +446,7 @@ Converter for Millimeters
 
 </td><td>
 
-Converter for Minutes
+Converter for [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 
 
 </td></tr>
@@ -457,7 +457,7 @@ Converter for Minutes
 
 </td><td>
 
-Converter for MoldFormat
+Converter for [MoldFormat](./ts-chocolate.moldformat.md)<!-- -->.
 
 
 </td></tr>
@@ -468,7 +468,7 @@ Converter for MoldFormat
 
 </td><td>
 
-Converter for MoldId (composite string). Accepts either a MoldId string or a CompositeId object representation.
+Converter for [MoldId](./ts-chocolate.moldid.md) (composite string). Accepts either an [MoldId](./ts-chocolate.moldid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -479,7 +479,7 @@ Converter for MoldId (composite string). Accepts either a MoldId string or a Com
 
 </td><td>
 
-Converter that parses a ConfectionId string into its component parts
+Converter that parses a [ConfectionId](./ts-chocolate.confectionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -490,7 +490,7 @@ Converter that parses a ConfectionId string into its component parts
 
 </td><td>
 
-Converter that parses a ConfectionVersionId string into its component parts
+Converter that parses a [ConfectionVersionId](./ts-chocolate.confectionversionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -501,7 +501,7 @@ Converter that parses a ConfectionVersionId string into its component parts
 
 </td><td>
 
-Converter that parses a FillingId string into its component parts
+Converter that parses a [FillingId](./ts-chocolate.fillingid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -512,7 +512,7 @@ Converter that parses a FillingId string into its component parts
 
 </td><td>
 
-Converter that parses a FillingVersionId string into its component parts
+Converter that parses a [FillingVersionId](./ts-chocolate.fillingversionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -523,7 +523,7 @@ Converter that parses a FillingVersionId string into its component parts
 
 </td><td>
 
-Converter that parses an IngredientId string into its component parts
+Converter that parses an [IngredientId](./ts-chocolate.ingredientid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -534,7 +534,7 @@ Converter that parses an IngredientId string into its component parts
 
 </td><td>
 
-Converter that parses a MoldId string into its component parts
+Converter that parses a [MoldId](./ts-chocolate.moldid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -545,7 +545,7 @@ Converter that parses a MoldId string into its component parts
 
 </td><td>
 
-Converter that parses a ProcedureId string into its component parts
+Converter that parses a [ProcedureId](./ts-chocolate.procedureid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -556,7 +556,7 @@ Converter that parses a ProcedureId string into its component parts
 
 </td><td>
 
-Converter that parses a TaskId string into its component parts
+Converter that parses a [TaskId](./ts-chocolate.taskid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -567,7 +567,7 @@ Converter that parses a TaskId string into its component parts
 
 </td><td>
 
-Converter for Percentage
+Converter for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 
 </td></tr>
@@ -578,7 +578,7 @@ Converter for Percentage
 
 </td><td>
 
-Converter for ProcedureId (composite string). Accepts either a ProcedureId string or a CompositeId object representation.
+Converter for [ProcedureId](./ts-chocolate.procedureid.md) (composite string). Accepts either an [ProcedureId](./ts-chocolate.procedureid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -589,7 +589,7 @@ Converter for ProcedureId (composite string). Accepts either a ProcedureId strin
 
 </td><td>
 
-Converter for ProcedureType
+Converter for [ProcedureType](./ts-chocolate.proceduretype.md)<!-- -->.
 
 
 </td></tr>
@@ -600,7 +600,7 @@ Converter for ProcedureType
 
 </td><td>
 
-Converter for RatingScore (1-5)
+Converter for [RatingScore](./ts-chocolate.ratingscore.md) (1-5)
 
 
 </td></tr>
@@ -633,7 +633,7 @@ Converter for [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 
 </td><td>
 
-Converter for SourceId
+Converter for [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 
 </td></tr>
@@ -644,7 +644,7 @@ Converter for SourceId
 
 </td><td>
 
-Converter for SpoonLevel
+Converter for [SpoonLevel](./ts-chocolate.spoonlevel.md)<!-- -->.
 
 
 </td></tr>
@@ -655,7 +655,7 @@ Converter for SpoonLevel
 
 </td><td>
 
-Converter for TaskId (composite string). Accepts either a TaskId string or a CompositeId object representation.
+Converter for [TaskId](./ts-chocolate.taskid.md) (composite string). Accepts either an [TaskId](./ts-chocolate.taskid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -666,7 +666,7 @@ Converter for TaskId (composite string). Accepts either a TaskId string or a Com
 
 </td><td>
 
-Converter for UrlCategory
+Converter for [UrlCategory](./ts-chocolate.urlcategory.md)<!-- -->.
 
 
 </td></tr>
@@ -677,7 +677,7 @@ Converter for UrlCategory
 
 </td><td>
 
-Converter for WeightUnit
+Converter for [WeightUnit](./ts-chocolate.weightunit.md)<!-- -->.
 
 
 </td></tr>
@@ -703,7 +703,7 @@ Description
 
 </td><td>
 
-Type alias for parsed ConfectionId components
+Type alias for parsed [ConfectionId](./ts-chocolate.confectionid.md) components.
 
 
 </td></tr>
@@ -714,7 +714,7 @@ Type alias for parsed ConfectionId components
 
 </td><td>
 
-Type alias for parsed ConfectionVersionId components
+Type alias for parsed [ConfectionVersionId](./ts-chocolate.confectionversionid.md) components.
 
 
 </td></tr>
@@ -725,7 +725,7 @@ Type alias for parsed ConfectionVersionId components
 
 </td><td>
 
-Type alias for parsed FillingId components
+Type alias for parsed [FillingId](./ts-chocolate.fillingid.md) components.
 
 
 </td></tr>
@@ -736,7 +736,7 @@ Type alias for parsed FillingId components
 
 </td><td>
 
-Type alias for parsed FillingVersionId components
+Type alias for parsed [FillingVersionId](./ts-chocolate.fillingversionid.md) components.
 
 
 </td></tr>
@@ -747,7 +747,7 @@ Type alias for parsed FillingVersionId components
 
 </td><td>
 
-Type alias for parsed IngredientId components
+Type alias for parsed [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->' components
 
 
 </td></tr>
@@ -758,7 +758,7 @@ Type alias for parsed IngredientId components
 
 </td><td>
 
-Type alias for parsed MoldId components
+Type alias for parsed [MoldId](./ts-chocolate.moldid.md) components.
 
 
 </td></tr>
@@ -769,7 +769,7 @@ Type alias for parsed MoldId components
 
 </td><td>
 
-Type alias for parsed ProcedureId components
+Type alias for parsed [ProcedureId](./ts-chocolate.procedureid.md) components.
 
 
 </td></tr>
@@ -780,7 +780,7 @@ Type alias for parsed ProcedureId components
 
 </td><td>
 
-Type alias for parsed TaskId components
+Type alias for parsed [TaskId](./ts-chocolate.taskid.md) components.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## Validation.toDegreesMacMichael() function
 
-Converts unknown value to DegreesMacMichael
+Validates unknown value is a [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->&gt;
 
-Result with DegreesMacMichael or error
+`Success` with [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md) or `Failure` with an error message if validation fails.
 

@@ -4,7 +4,7 @@
 
 ## Validators.baseIngredientId variable
 
-In-place validator for BaseIngredientId
+In-place `Validator` for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 
 **Signature:**
 

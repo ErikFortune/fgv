@@ -4,7 +4,7 @@
 
 ## Validation.toSessionId() function
 
-Converts unknown value to [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Validates unknown value is a [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->&gt;
 
-Result with SessionId or error
+`Success` with [SessionId](./ts-chocolate.sessionid.md) or `Failure` with an error message if validation fails.
 

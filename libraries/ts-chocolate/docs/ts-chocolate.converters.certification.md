@@ -4,7 +4,7 @@
 
 ## Converters.certification variable
 
-Converter for Certification
+Converter for [Certification](./ts-chocolate.certification.md)<!-- -->.
 
 **Signature:**
 

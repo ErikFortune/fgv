@@ -4,7 +4,7 @@
 
 ## Validation.isValidRatingScore() function
 
-Type guard for RatingScore
+Type guard for [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [RatingScore](./ts-chocolate.ratingscore.md)
 
-True if the value is a valid RatingScore (1-5)
+`true` if the value is a valid [RatingScore](./ts-chocolate.ratingscore.md) (1-5)
 

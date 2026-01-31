@@ -4,7 +4,7 @@
 
 ## Converters.baseTaskId variable
 
-Converter for BaseTaskId
+Converter for [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 
 **Signature:**
 

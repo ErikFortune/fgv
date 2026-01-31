@@ -4,7 +4,7 @@
 
 ## Validators.baseConfectionId variable
 
-In-place validator for BaseConfectionId
+In-place `Validator` for [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 **Signature:**
 

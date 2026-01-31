@@ -4,7 +4,7 @@
 
 ## Validation.isValidDegreesMacMichael() function
 
-Type guard for DegreesMacMichael
+Type guard for [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)
 
-True if the value is a valid DegreesMacMichael
+`true` if the value is a valid [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 

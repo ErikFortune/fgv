@@ -4,7 +4,7 @@
 
 ## Validation.toConfectionVersionSpec() function
 
-Converts unknown value to ConfectionVersionSpec
+Validates unknown value is a [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)<!-- -->&gt;
 
-Result with [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md) or error
+`Success` with [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md) or `Failure` with an error message if validation fails.
 

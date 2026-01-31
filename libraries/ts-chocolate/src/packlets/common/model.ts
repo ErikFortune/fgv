@@ -574,13 +574,13 @@ export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[] = ['se
  * Filling recipe category for classification
  * @public
  */
-export type FillingCategory = 'ganache' | 'caramel' | 'gianduja';
+export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
 
 /**
  * All possible filling recipe categories
  * @public
  */
-export const allFillingCategories: FillingCategory[] = ['ganache', 'caramel', 'gianduja'];
+export const allFillingCategories: FillingCategory[] = ['ganache', 'caramel', 'gianduja', 'other'];
 
 /**
  * Procedure type - can be a filling category, confection type, or other

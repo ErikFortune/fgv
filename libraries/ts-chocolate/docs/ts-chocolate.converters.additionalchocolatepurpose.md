@@ -4,7 +4,7 @@
 
 ## Converters.additionalChocolatePurpose variable
 
-Converter for AdditionalChocolatePurpose
+Converter for [AdditionalChocolatePurpose](./ts-chocolate.additionalchocolatepurpose.md)<!-- -->.
 
 **Signature:**
 

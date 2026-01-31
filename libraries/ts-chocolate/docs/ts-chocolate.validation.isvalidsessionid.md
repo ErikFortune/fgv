@@ -52,5 +52,5 @@ Value to check
 
 from is [SessionId](./ts-chocolate.sessionid.md)
 
-True if the value is a valid SessionId
+`true` if the value is a valid [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 

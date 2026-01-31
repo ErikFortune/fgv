@@ -4,7 +4,7 @@
 
 ## Converters.parsedFillingVersionId variable
 
-Converter that parses a FillingVersionId string into its component parts
+Converter that parses a [FillingVersionId](./ts-chocolate.fillingversionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

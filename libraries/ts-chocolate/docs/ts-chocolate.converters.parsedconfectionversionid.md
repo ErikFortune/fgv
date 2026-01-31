@@ -4,7 +4,7 @@
 
 ## Converters.parsedConfectionVersionId variable
 
-Converter that parses a ConfectionVersionId string into its component parts
+Converter that parses a [ConfectionVersionId](./ts-chocolate.confectionversionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

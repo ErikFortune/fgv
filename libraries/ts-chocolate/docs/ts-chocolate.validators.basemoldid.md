@@ -4,7 +4,7 @@
 
 ## Validators.baseMoldId variable
 
-In-place validator for BaseMoldId
+In-place `Validator` for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 **Signature:**
 

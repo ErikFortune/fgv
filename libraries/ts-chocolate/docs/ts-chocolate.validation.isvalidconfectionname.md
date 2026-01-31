@@ -4,7 +4,7 @@
 
 ## Validation.isValidConfectionName() function
 
-Type guard for ConfectionName
+Type guard for [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [ConfectionName](./ts-chocolate.confectionname.md)
 
-True if the value is a valid ConfectionName
+`true` if the value is a valid [ConfectionName](./ts-chocolate.confectionname.md)<!-- -->.
 

@@ -4,7 +4,7 @@
 
 ## Validation.toBaseTaskId() function
 
-Converts unknown value to BaseTaskId
+Validates unknown value is a [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->&gt;
 
-Result with BaseTaskId or error
+`Success` with [BaseTaskId](./ts-chocolate.basetaskid.md) or `Failure` with an error message if validation fails.
 

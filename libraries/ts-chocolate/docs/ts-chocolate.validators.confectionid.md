@@ -4,7 +4,7 @@
 
 ## Validators.confectionId variable
 
-In-place validator for ConfectionId (composite)
+In-place `Validator` for [ConfectionId](./ts-chocolate.confectionid.md) (composite string).
 
 **Signature:**
 

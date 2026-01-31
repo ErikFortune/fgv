@@ -4,7 +4,7 @@
 
 ## Validation.isValidMinutes() function
 
-Type guard for Minutes
+Type guard for [Minutes](./ts-chocolate.minutes.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [Minutes](./ts-chocolate.minutes.md)
 
-True if the value is a valid Minutes value
+`true` if the value is a valid [Minutes](./ts-chocolate.minutes.md) value
 

@@ -4,7 +4,7 @@
 
 ## Converters.parsedTaskId variable
 
-Converter that parses a TaskId string into its component parts
+Converter that parses a [TaskId](./ts-chocolate.taskid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

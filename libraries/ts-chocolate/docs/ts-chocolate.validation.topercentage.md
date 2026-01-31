@@ -4,7 +4,7 @@
 
 ## Validation.toPercentage() function
 
-Converts unknown value to Percentage
+Validates unknown value is a [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[Percentage](./ts-chocolate.percentage.md)<!-- -->&gt;
 
-Result with Percentage or error
+`Success` with [Percentage](./ts-chocolate.percentage.md) or `Failure` with an error message if validation fails.
 

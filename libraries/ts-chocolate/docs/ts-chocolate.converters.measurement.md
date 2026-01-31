@@ -4,7 +4,7 @@
 
 ## Converters.measurement variable
 
-Converter for Measurement (non-negative number for ingredient amounts)
+Converter for [Measurement](./ts-chocolate.measurement.md) (non-negative number for ingredient amounts)
 
 **Signature:**
 

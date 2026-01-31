@@ -4,7 +4,7 @@
 
 ## Validation.toJournalId() function
 
-Converts unknown value to JournalId
+Validates unknown value is a [JournalId](./ts-chocolate.journalid.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->&gt;
 
-Result with JournalId or error
+`Success` with [JournalId](./ts-chocolate.journalid.md) or `Failure` with an error message if validation fails.
 

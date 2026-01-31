@@ -4,7 +4,7 @@
 
 ## Validation.isValidBaseConfectionId() function
 
-Type guard for BaseConfectionId
+Type guard for [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [BaseConfectionId](./ts-chocolate.baseconfectionid.md)
 
-True if the value is a valid BaseConfectionId
+`true` if the value is a valid [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->.
 

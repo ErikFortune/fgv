@@ -4,7 +4,7 @@
 
 ## Validators.taskId variable
 
-In-place validator for TaskId (composite)
+In-place `Validator` for [TaskId](./ts-chocolate.taskid.md) (composite string).
 
 **Signature:**
 

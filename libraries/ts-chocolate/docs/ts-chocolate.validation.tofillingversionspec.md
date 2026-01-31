@@ -4,7 +4,7 @@
 
 ## Validation.toFillingVersionSpec() function
 
-Converts unknown value to FillingVersionSpec
+Validates unknown value is a [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-Value to convert
+Value to validate
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- -->&gt;
 
-Result with [FillingVersionSpec](./ts-chocolate.fillingversionspec.md) or error
+`Success` with [FillingVersionSpec](./ts-chocolate.fillingversionspec.md) or `Failure` with an error message if validation fails.
 

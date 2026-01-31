@@ -4,7 +4,7 @@
 
 ## Validators.fillingId variable
 
-In-place validator for FillingId (composite)
+In-place `Validator` for [FillingId](./ts-chocolate.fillingid.md) (composite string).
 
 **Signature:**
 

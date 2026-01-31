@@ -4,7 +4,7 @@
 
 ## Converters.allergen variable
 
-Converter for Allergen
+Converter for [Allergen](./ts-chocolate.allergen.md)<!-- -->.
 
 **Signature:**
 

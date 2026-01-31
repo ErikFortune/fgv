@@ -4,7 +4,7 @@
 
 ## Validation.isValidBaseFillingId() function
 
-Type guard for BaseFillingId
+Type guard for [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [BaseFillingId](./ts-chocolate.basefillingid.md)
 
-True if the value is a valid BaseFillingId
+`true` if the value is a valid [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->.
 

@@ -4,7 +4,7 @@
 
 ## Validation.isValidPercentage() function
 
-Type guard for Percentage
+Type guard for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [Percentage](./ts-chocolate.percentage.md)
 
-True if the value is a valid Percentage (0-100)
+`true` if the value is a valid [Percentage](./ts-chocolate.percentage.md) (0-100).
 

@@ -4,7 +4,7 @@
 
 ## Converters.degreesMacMichael variable
 
-Converter for DegreesMacMichael
+Converter for [DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)<!-- -->.
 
 **Signature:**
 

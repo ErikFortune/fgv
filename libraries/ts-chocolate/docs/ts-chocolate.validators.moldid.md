@@ -4,7 +4,7 @@
 
 ## Validators.moldId variable
 
-In-place validator for MoldId (composite)
+In-place `Validator` for [MoldId](./ts-chocolate.moldid.md) (composite string).
 
 **Signature:**
 

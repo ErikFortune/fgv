@@ -4,7 +4,7 @@
 
 ## Converters.baseMoldId variable
 
-Converter for BaseMoldId
+Converter for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 
 **Signature:**
 

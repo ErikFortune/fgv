@@ -4,7 +4,7 @@
 
 ## Converters.optionsWithPreferred() function
 
-Creates a converter for [IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
+Creates a converter for [IOptionsWithPreferred\\&lt;TOption, TId\\&gt;](./ts-chocolate.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
 
 **Signature:**
 
