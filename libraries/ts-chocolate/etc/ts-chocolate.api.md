@@ -153,7 +153,7 @@ const anyJournalRecord: Converter<AnyJournalRecord>;
 // @public
 type AnyPersistedSession = IPersistedConfectionSession | IPersistedFillingSession;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "AnyPersistedSession"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const anyPersistedSession: Converter<AnyPersistedSession>;
@@ -267,12 +267,6 @@ export type BaseTaskId = Brand<string, 'BaseTaskId'>;
 
 // @public
 const baseTaskId: Converter<BaseTaskId>;
-
-// @public
-class BatchExecutor {
-    static execute<T>(operations: ReadonlyArray<IBatchOperation<T>>): Result<IBatchResult<T>>;
-    static executeOrFail<T>(operations: ReadonlyArray<IBatchOperation<T>>): Result<void>;
-}
 
 // @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
@@ -934,9 +928,6 @@ declare namespace Converters_5 {
 function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
 // @public
-function createCommand(description: string, execute: () => Result<void>, undo: () => Result<void>, redo?: () => Result<void>): ICommand;
-
-// @public
 function createEncryptedCollectionFile(params: ICreateEncryptedFileParams): Promise<Result<IEncryptedCollectionFile>>;
 
 // @public
@@ -950,9 +941,6 @@ function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryL
 
 // @public
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
-
-// @public
-function createOperation<T>(description: string, execute: () => Result<T>, rollback: () => Result<void>): IBatchOperation<T>;
 
 declare namespace Crypto_2 {
     export {
@@ -1059,15 +1047,7 @@ declare namespace Editing {
         IEditorContextValidatorParams,
         EditorContextValidator,
         IValidatingEditorContextParams,
-        ValidatingEditorContext,
-        createCommand,
-        ICommand,
-        UndoManager,
-        createOperation,
-        noOpRollback,
-        IBatchOperation,
-        IBatchResult,
-        BatchExecutor
+        ValidatingEditorContext
     }
 }
 export { Editing }
@@ -1824,24 +1804,6 @@ interface IBarTruffleVersion extends IConfectionVersionBase {
 }
 
 // @public
-interface IBatchOperation<T = void> {
-    readonly description: string;
-    readonly execute: () => Result<T>;
-    readonly rollback: () => Result<void>;
-}
-
-// @public
-interface IBatchResult<T = void> {
-    readonly errors: ReadonlyArray<string>;
-    readonly failureCount: number;
-    readonly results: ReadonlyArray<T>;
-    readonly rollbackErrors: ReadonlyArray<string>;
-    readonly rolledBack: boolean;
-    readonly success: boolean;
-    readonly successCount: number;
-}
-
-// @public
 interface IBonBonDimensions {
     readonly height: Millimeters;
     readonly width: Millimeters;
@@ -2011,14 +1973,6 @@ interface ICollectionSourceMetadata {
 // @public
 interface ICollectionStorageConfig {
     readonly dataPath: string;
-}
-
-// @public
-interface ICommand {
-    readonly description: string;
-    readonly execute: () => Result<void>;
-    readonly redo?: () => Result<void>;
-    readonly undo: () => Result<void>;
 }
 
 // @public
@@ -4660,9 +4614,6 @@ class NodeCryptoProvider implements ICryptoProvider {
 const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
-function noOpRollback(): () => Result<void>;
-
-// @public
 function normalizeFileSources<T extends {
     readonly directory: FileTree.IFileTreeDirectoryItem;
 }>(sources: T | ReadonlyArray<T> | undefined): ReadonlyArray<T>;
@@ -4763,27 +4714,27 @@ export type Percentage = Brand<number, 'Percentage'>;
 // @public
 const percentage: Converter<Percentage>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedConfectionSession"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedConfectionSession: Converter<IPersistedConfectionSession>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedConfectionSessionDraft"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedConfectionSessionDraft: Converter<IPersistedConfectionSessionDraft>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedConfectionSessionProduction"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedConfectionSessionProduction: Converter<IPersistedConfectionSessionProduction>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedFillingSession"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedFillingSession: Converter<IPersistedFillingSession>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPersistedSessionDestination"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedSessionDestination: Converter<IPersistedSessionDestination>;
@@ -4791,7 +4742,7 @@ const persistedSessionDestination: Converter<IPersistedSessionDestination>;
 // @public
 type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedSessionStatus"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedSessionStatus: Converter<PersistedSessionStatus>;
@@ -4799,7 +4750,7 @@ const persistedSessionStatus: Converter<PersistedSessionStatus>;
 // @public
 type PersistedSessionType = 'confection' | 'filling';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedSessionType"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const persistedSessionType: Converter<PersistedSessionType>;
@@ -5727,7 +5678,7 @@ const sessionId: Converter<SessionId>;
 // @public
 type SessionIngredientStatus = 'original' | 'modified' | 'added' | 'removed' | 'substituted';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISessionScratchpad"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const sessionScratchpad: Converter<ISessionScratchpad>;
@@ -6017,24 +5968,6 @@ function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvi
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 // @public
-class UndoManager {
-    get canRedo(): boolean;
-    get canUndo(): boolean;
-    clear(): void;
-    static create(maxHistorySize?: number): Result<UndoManager>;
-    execute(command: ICommand): Result<void>;
-    getRedoHistory(): ReadonlyArray<string>;
-    getUndoHistory(): ReadonlyArray<string>;
-    get maxHistorySize(): number;
-    peekRedo(): string | undefined;
-    peekUndo(): string | undefined;
-    redo(): Result<void>;
-    get redoCount(): number;
-    undo(): Result<void>;
-    get undoCount(): number;
-}
-
-// @public
 class UnitScalerRegistry {
     constructor();
     getScaler(unit: MeasurementUnit): IUnitScaler;
@@ -6241,7 +6174,6 @@ const weightUnit: Converter<WeightUnit>;
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/editing/undoRedo.ts:83:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "UndoManager"
 // src/packlets/entities/journal/library.ts:98:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

@@ -532,24 +532,11 @@
       "tags": ["libraries"]
     },
     {
-      "packageName": "@fgv/ts-chocolate-ui",
-      "projectFolder": "libraries/ts-chocolate-ui",
-      "shouldPublish": true,
-      "versionPolicyName": "base-utils",
-      "tags": ["libraries", "ui", "react"]
-    },
-    {
       "packageName": "@fgv/chocolate-cli",
       "projectFolder": "tools/chocolate-cli",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["tools", "cli"]
-    },
-    {
-      "packageName": "@fgv/chocolate-lab-web",
-      "projectFolder": "apps/chocolate-lab-web",
-      "shouldPublish": false,
-      "tags": ["apps", "chocolate", "react", "ui"]
     }
   ]
 }

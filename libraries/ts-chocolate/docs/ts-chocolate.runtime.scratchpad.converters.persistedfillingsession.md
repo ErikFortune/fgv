@@ -4,7 +4,7 @@
 
 ## Runtime.Scratchpad.Converters.persistedFillingSession variable
 
-Converter for .
+Converter for [IPersistedFillingSession](./ts-chocolate.runtime.scratchpad.ipersistedfillingsession.md)<!-- -->.
 
 **Signature:**
 

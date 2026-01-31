@@ -4,7 +4,7 @@
 
 ## Runtime.SessionScratchpad.Converters.sessionScratchpad variable
 
-Converter for .
+Converter for [ISessionScratchpad](./ts-chocolate.runtime.scratchpad.isessionscratchpad.md)<!-- -->.
 
 **Signature:**
 

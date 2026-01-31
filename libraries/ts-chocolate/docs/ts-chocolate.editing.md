@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[BatchExecutor](./ts-chocolate.editing.batchexecutor.md)
-
-
-</td><td>
-
-Executes a batch of operations with automatic rollback on failure. Operations execute in order. If any operation fails, all successfully executed operations are rolled back in reverse order.
-
-
-</td></tr>
-<tr><td>
-
 [CollectionManager](./ts-chocolate.editing.collectionmanager.md)
 
 
@@ -71,17 +60,6 @@ Base implementation of IEditorContext. Provides CRUD operations and semantic val
 </td><td>
 
 Validating wrapper for EditorContext. Provides methods that accept raw (unknown) input, validate using converters, and delegate to the base editor context. Follows the ResultMapValidator pattern from ts-utils.
-
-
-</td></tr>
-<tr><td>
-
-[UndoManager](./ts-chocolate.editing.undomanager.md)
-
-
-</td><td>
-
-Manages command history for undo/redo operations. Maintains separate stacks for undo and redo operations.
 
 
 </td></tr>
@@ -135,45 +113,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[createCommand(description, execute, undo, redo)](./ts-chocolate.editing.createcommand.md)
-
-
-</td><td>
-
-Create a command from execute and undo functions.
-
-
-</td></tr>
-<tr><td>
-
-[createOperation(description, execute, rollback)](./ts-chocolate.editing.createoperation.md)
-
-
-</td><td>
-
-Create a batch operation from execute and rollback functions.
-
-
-</td></tr>
-<tr><td>
-
 [isValidationSuccess(report)](./ts-chocolate.editing.isvalidationsuccess.md)
 
 
 </td><td>
 
 Check if validation report indicates success. Convenience function for checking validation results.
-
-
-</td></tr>
-<tr><td>
-
-[noOpRollback()](./ts-chocolate.editing.nooprollback.md)
-
-
-</td><td>
-
-Create a no-op rollback function for operations that cannot be rolled back.
 
 
 </td></tr>
@@ -293,45 +238,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IBatchOperation](./ts-chocolate.editing.ibatchoperation.md)
-
-
-</td><td>
-
-A single operation in a batch. Operations execute in order and can be rolled back if any operation fails.
-
-
-</td></tr>
-<tr><td>
-
-[IBatchResult](./ts-chocolate.editing.ibatchresult.md)
-
-
-</td><td>
-
-Result of executing a batch of operations.
-
-
-</td></tr>
-<tr><td>
-
 [ICollectionManager](./ts-chocolate.editing.icollectionmanager.md)
 
 
 </td><td>
 
 Manager for collection-level CRUD operations. Provides operations to create, delete, and rename collections within a sub-library.
-
-
-</td></tr>
-<tr><td>
-
-[ICommand](./ts-chocolate.editing.icommand.md)
-
-
-</td><td>
-
-A reversible command that can be executed and undone. Commands follow the Command pattern for undo/redo functionality.
 
 
 </td></tr>

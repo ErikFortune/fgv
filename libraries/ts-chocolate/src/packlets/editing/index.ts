@@ -51,12 +51,6 @@ export * from './editorContextValidator';
 // Validating editor context (convenience class combining base + validator)
 export * from './validatingEditorContext';
 
-// Undo/redo functionality (command pattern)
-export * from './undoRedo';
-
-// Batch operations with rollback
-export * from './batchOperations';
-
 // Ingredient editing (specialized)
 import * as Ingredients from './ingredients';
 

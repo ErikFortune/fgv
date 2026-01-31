@@ -18,18 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { FileTree, type JsonObject } from '@fgv/ts-json-base';
+import { FileTree, isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import * as Crypto from '../crypto';
 import { LocalStorageKeys, SubLibraryDataPaths, type SubLibraryStorageKey } from './model';
-
-/**
- * Check if a value is a plain JSON object
- * @internal
- */
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * Validate that a collection object has the required structure for a non-encrypted collection.

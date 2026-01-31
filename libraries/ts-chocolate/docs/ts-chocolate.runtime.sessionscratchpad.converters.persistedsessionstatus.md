@@ -4,7 +4,7 @@
 
 ## Runtime.SessionScratchpad.Converters.persistedSessionStatus variable
 
-Converter for .
+Converter for [Runtime.Scratchpad.PersistedSessionStatus](./ts-chocolate.runtime.scratchpad.persistedsessionstatus.md)<!-- -->.
 
 **Signature:**
 

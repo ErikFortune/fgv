@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Converter for .
+Converter for [AnyPersistedSession](./ts-chocolate.runtime.scratchpad.anypersistedsession.md)<!-- -->.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IPersistedConfectionSession](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsession.md)<!-- -->.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IPersistedConfectionSessionDraft](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessiondraft.md)<!-- -->.
 
 
 </td></tr>
@@ -57,7 +57,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IPersistedConfectionSessionProduction](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessionproduction.md)<!-- -->.
 
 
 </td></tr>
@@ -68,7 +68,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IPersistedFillingSession](./ts-chocolate.runtime.scratchpad.ipersistedfillingsession.md)<!-- -->.
 
 
 </td></tr>
@@ -79,7 +79,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IPersistedConfectionSession](./ts-chocolate.runtime.scratchpad.ipersistedsessiondestination.md)<!-- -->.
 
 
 </td></tr>
@@ -90,7 +90,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [Runtime.Scratchpad.PersistedSessionStatus](./ts-chocolate.runtime.scratchpad.persistedsessionstatus.md)<!-- -->.
 
 
 </td></tr>
@@ -101,7 +101,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [Runtime.Scratchpad.PersistedSessionType](./ts-chocolate.runtime.scratchpad.persistedsessiontype.md)<!-- -->.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [ISessionScratchpad](./ts-chocolate.runtime.scratchpad.isessionscratchpad.md)<!-- -->.
 
 
 </td></tr>

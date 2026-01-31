@@ -4,7 +4,7 @@
 
 ## Runtime.Scratchpad.Converters.persistedConfectionSession variable
 
-Converter for .
+Converter for [IPersistedConfectionSession](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsession.md)<!-- -->.
 
 **Signature:**
 

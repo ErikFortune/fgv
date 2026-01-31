@@ -48,21 +48,21 @@ import {
 // ============================================================================
 
 /**
- * Converter for {@link PersistedSessionType}.
+ * Converter for {@link Runtime.Scratchpad.PersistedSessionType}.
  * @public
  */
 export const persistedSessionType: Converter<PersistedSessionType> =
   Converters.enumeratedValue(allPersistedSessionTypes);
 
 /**
- * Converter for {@link PersistedSessionStatus}.
+ * Converter for {@link Runtime.Scratchpad.PersistedSessionStatus}.
  * @public
  */
 export const persistedSessionStatus: Converter<PersistedSessionStatus> =
   Converters.enumeratedValue(allPersistedSessionStatuses);
 
 /**
- * Converter for {@link IPersistedSessionDestination}.
+ * Converter for {@link Runtime.Scratchpad.IPersistedSessionDestination | IPersistedConfectionSession}.
  * @public
  */
 export const persistedSessionDestination: Converter<IPersistedSessionDestination> =
@@ -72,7 +72,7 @@ export const persistedSessionDestination: Converter<IPersistedSessionDestination
   });
 
 /**
- * Converter for {@link IPersistedConfectionSessionProduction}.
+ * Converter for {@link Runtime.Scratchpad.IPersistedConfectionSessionProduction | IPersistedConfectionSessionProduction}.
  * @public
  */
 export const persistedConfectionSessionProduction: Converter<IPersistedConfectionSessionProduction> =
@@ -84,7 +84,7 @@ export const persistedConfectionSessionProduction: Converter<IPersistedConfectio
   });
 
 /**
- * Converter for {@link IPersistedConfectionSessionDraft}.
+ * Converter for {@link Runtime.Scratchpad.IPersistedConfectionSessionDraft | IPersistedConfectionSessionDraft}.
  * @public
  */
 export const persistedConfectionSessionDraft: Converter<IPersistedConfectionSessionDraft> =
@@ -99,7 +99,7 @@ export const persistedConfectionSessionDraft: Converter<IPersistedConfectionSess
 // ============================================================================
 
 /**
- * Converter for {@link IPersistedConfectionSession}.
+ * Converter for {@link Runtime.Scratchpad.IPersistedConfectionSession | IPersistedConfectionSession}.
  * @public
  */
 export const persistedConfectionSession: Converter<IPersistedConfectionSession> =
@@ -120,7 +120,7 @@ export const persistedConfectionSession: Converter<IPersistedConfectionSession> 
   });
 
 /**
- * Converter for {@link IPersistedFillingSession}.
+ * Converter for {@link Runtime.Scratchpad.IPersistedFillingSession | IPersistedFillingSession}.
  * @public
  */
 export const persistedFillingSession: Converter<IPersistedFillingSession> =
@@ -139,7 +139,7 @@ export const persistedFillingSession: Converter<IPersistedFillingSession> =
   });
 
 /**
- * Converter for {@link AnyPersistedSession}.
+ * Converter for {@link Runtime.Scratchpad.AnyPersistedSession | AnyPersistedSession}.
  * @public
  */
 export const anyPersistedSession: Converter<AnyPersistedSession> =
@@ -153,7 +153,7 @@ export const anyPersistedSession: Converter<AnyPersistedSession> =
 // ============================================================================
 
 /**
- * Converter for {@link ISessionScratchpad}.
+ * Converter for {@link Runtime.Scratchpad.ISessionScratchpad | ISessionScratchpad}.
  * @public
  */
 export const sessionScratchpad: Converter<ISessionScratchpad> = Converters.object<ISessionScratchpad>({
