@@ -301,6 +301,17 @@ Type guard for IMoldedBonBonVersion
 </td></tr>
 <tr><td>
 
+[isMoldedBonBonYield(yieldSpec)](./ts-chocolate.entities.ismoldedbonbonyield.md)
+
+
+</td><td>
+
+Type guard to check if a yield is frame-based (for molded bonbons).
+
+
+</td></tr>
+<tr><td>
+
 [isProducedBarTruffle(produced)](./ts-chocolate.entities.isproducedbartruffle.md)
 
 
@@ -855,6 +866,17 @@ Version interface for molded bonbon confections. Includes mold and chocolate she
 </td></tr>
 <tr><td>
 
+[IMoldedBonBonYield](./ts-chocolate.entities.imoldedbonbonyield.md)
+
+
+</td><td>
+
+Frame-based yield specification for molded bonbons. Stores frames + buffer percentage as primary values; count is computed from mold.
+
+
+</td></tr>
+<tr><td>
+
 [IProcedure](./ts-chocolate.entities.iprocedure.md)
 
 
@@ -1330,6 +1352,17 @@ Union type for confection journal entries (edit or production)
 </td><td>
 
 Union type for all confection version types.
+
+
+</td></tr>
+<tr><td>
+
+[AnyConfectionYield](./ts-chocolate.entities.anyconfectionyield.md)
+
+
+</td><td>
+
+Discriminated union of all yield types.
 
 
 </td></tr>

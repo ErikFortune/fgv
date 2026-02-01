@@ -9,5 +9,5 @@ The base recipe version being edited.
 **Signature:**
 
 ```typescript
-get baseRecipe(): RuntimeFillingRecipeVersion;
+get baseRecipe(): IRuntimeFillingRecipeVersion;
 ```

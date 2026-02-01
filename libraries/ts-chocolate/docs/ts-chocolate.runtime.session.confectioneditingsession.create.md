@@ -4,12 +4,12 @@
 
 ## Runtime.Session.ConfectionEditingSession.create() method
 
-Creates a new ConfectionEditingSession from a base confection. Uses the golden version of the confection for editing.
+Creates a confection editing session for the appropriate confection type. Dispatches to type-specific session classes: - MoldedBonBonEditingSession for molded bonbons (frame-based yield) - BarTruffleEditingSession for bar truffles (linear scaling) - RolledTruffleEditingSession for rolled truffles (linear scaling)
 
 **Signature:**
 
 ```typescript
-static create(baseConfection: IRuntimeConfection): Result<ConfectionEditingSession>;
+static create(baseConfection: IRuntimeConfection, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
 ```
 
 ## Parameters
@@ -42,7 +42,39 @@ baseConfection
 
 </td><td>
 
-Source confection to edit
+The source confection to edit
+
+
+</td></tr>
+<tr><td>
+
+context
+
+
+</td><td>
+
+IConfectionContext
+
+
+</td><td>
+
+The runtime context for resource access
+
+
+</td></tr>
+<tr><td>
+
+params
+
+
+</td><td>
+
+[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional session parameters (sessionId, initialYield)
 
 
 </td></tr>
@@ -50,7 +82,7 @@ Source confection to edit
 
 **Returns:**
 
-Result&lt;[ConfectionEditingSession](./ts-chocolate.runtime.session.confectioneditingsession.md)<!-- -->&gt;
+Result&lt;[AnyConfectionEditingSession](./ts-chocolate.runtime.session.anyconfectioneditingsession.md)<!-- -->&gt;
 
-Result with new ConfectionEditingSession or error
+Success with type-specific session, or Failure
 

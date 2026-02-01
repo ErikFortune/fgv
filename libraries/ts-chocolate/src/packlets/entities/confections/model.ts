@@ -64,6 +64,42 @@ export interface IConfectionYield {
 }
 
 /**
+ * Frame-based yield specification for molded bonbons.
+ * Stores frames + buffer percentage as primary values; count is computed from mold.
+ * @public
+ */
+export interface IMoldedBonBonYield {
+  /** Discriminator for yield type */
+  readonly yieldType: 'frames';
+  /** Number of frames to produce (primary storage) */
+  readonly frames: number;
+  /** Buffer percentage (e.g., 0.1 for 10% overfill) */
+  readonly bufferPercentage: number;
+  /** Computed count: frames × cavitiesPerFrame */
+  readonly count: number;
+  /** Unit description (usually 'pieces') */
+  readonly unit?: string;
+  /** Weight per piece in grams (from mold.cavityWeight) */
+  readonly weightPerPiece?: Measurement;
+}
+
+/**
+ * Discriminated union of all yield types.
+ * @public
+ */
+export type AnyConfectionYield = IConfectionYield | IMoldedBonBonYield;
+
+/**
+ * Type guard to check if a yield is frame-based (for molded bonbons).
+ * @param yieldSpec - The yield specification to check
+ * @returns True if the yield is a {@link Entities.Confections.IMoldedBonBonYield | frame-based yield}
+ * @public
+ */
+export function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMoldedBonBonYield {
+  return 'yieldType' in yieldSpec && yieldSpec.yieldType === 'frames';
+}
+
+/**
  * Decoration specification for a {@link Entities.Confections.ConfectionData | confection}.
  * @public
  */

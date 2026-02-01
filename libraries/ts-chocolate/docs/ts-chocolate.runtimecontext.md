@@ -299,6 +299,20 @@ Creates a RuntimeContext with a new or default ChocolateLibrary. This is the pri
 </td></tr>
 <tr><td>
 
+[createFillingSession(filling, targetWeight)](./ts-chocolate.runtimecontext.createfillingsession.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates an editing session for a filling recipe at a target weight. Used by confection sessions to manage filling scaling.
+
+
+</td></tr>
+<tr><td>
+
 [createWeightContext()](./ts-chocolate.runtimecontext.createweightcontext.md)
 
 

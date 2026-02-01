@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[enableJournal?](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.enablejournal.md)
+[initialYield?](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.initialyield.md)
 
 
 </td><td>
@@ -47,18 +47,18 @@ Description
 
 </td><td>
 
-boolean
+AnyConfectionYield
 
 
 </td><td>
 
-_(Optional)_ Whether to track detailed journal entries (default: true)
+_(Optional)_ Initial yield specification (defaults to golden version yield)
 
 
 </td></tr>
 <tr><td>
 
-[logger?](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.logger.md)
+[sessionId?](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.sessionid.md)
 
 
 </td><td>
@@ -68,75 +68,12 @@ _(Optional)_ Whether to track detailed journal entries (default: true)
 
 </td><td>
 
-Logging.LogReporter&lt;unknown&gt;
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>
 
-_(Optional)_ Optional logger for reporting operations
-
-
-</td></tr>
-<tr><td>
-
-[sourceConfection](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.sourceconfection.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRuntimeConfection](./ts-chocolate.runtime.iruntimeconfection.md)
-
-
-</td><td>
-
-The source confection to edit from
-
-
-</td></tr>
-<tr><td>
-
-[weightPerPiece?](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.weightperpiece.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Measurement](./ts-chocolate.measurement.md)
-
-
-</td><td>
-
-_(Optional)_ Initial weight per piece (defaults to confection's default)
-
-
-</td></tr>
-<tr><td>
-
-[yieldCount?](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.yieldcount.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-_(Optional)_ Initial yield count (defaults to confection's default yield)
+_(Optional)_ Optional session ID (generated if not provided)
 
 
 </td></tr>

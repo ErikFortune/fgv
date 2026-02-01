@@ -6,7 +6,7 @@
 
 A mutable editing session for modifying filling recipe versions.
 
-Core architecture: - Wraps a RuntimeFillingRecipeVersion (immutable source) - Uses RuntimeProducedFilling for mutable editing with undo/redo - Tracks original snapshot for change detection - Provides save operations that integrate with library
+Core architecture: - Wraps an IRuntimeFillingRecipeVersion (immutable source) - Uses RuntimeProducedFilling for mutable editing with undo/redo - Tracks original snapshot for change detection - Provides save operations that integrate with library
 
 **Signature:**
 
@@ -53,7 +53,7 @@ Description
 
 </td><td>
 
-[RuntimeFillingRecipeVersion](./ts-chocolate.runtime.runtimefillingrecipeversion.md)
+[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
 
 
 </td><td>
@@ -122,6 +122,27 @@ The produced filling wrapper with undo/redo support.
 </td><td>
 
 Unique session identifier.
+
+
+</td></tr>
+<tr><td>
+
+[targetWeight](./ts-chocolate.runtime.session.editingsession.targetweight.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Measurement](./ts-chocolate.measurement.md)
+
+
+</td><td>
+
+Current target weight for this filling.
 
 
 </td></tr>

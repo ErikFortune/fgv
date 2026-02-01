@@ -34,6 +34,7 @@ import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import { IReadOnlyValidatingLibrary } from './validatingLibrary';
 import type { IRuntimeMold } from './molds/model';
 import type { IRuntimeProcedure } from './procedures/model';
+import type { EditingSession } from './session/editingSession';
 
 import {
   AdditionalChocolatePurpose,
@@ -1849,6 +1850,15 @@ export interface IConfectionContext {
    * Used for parent navigation from versions.
    */
   getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
+
+  /**
+   * Creates an editing session for a filling recipe at a target weight.
+   * Used by confection sessions to manage filling scaling.
+   * @param filling - The runtime filling recipe to create a session for
+   * @param targetWeight - Target weight for the filling in grams
+   * @returns Success with EditingSession, or Failure if creation fails
+   */
+  createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
 
   // ============================================================================
   // Resolution Helpers

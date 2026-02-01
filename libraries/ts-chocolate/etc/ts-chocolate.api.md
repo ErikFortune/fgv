@@ -20,8 +20,6 @@ import { Validator } from '@fgv/ts-utils';
 // @public
 const additionalChocolate: Converter<IAdditionalChocolate>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateRole"
-//
 // @public
 export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 
@@ -124,6 +122,9 @@ export const allWeightUnits: WeightUnit[];
 function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
+type AnyConfectionEditingSession = MoldedBonBonEditingSession | BarTruffleEditingSession | RolledTruffleEditingSession;
+
+// @public
 type AnyConfectionJournalEntry = IConfectionEditJournalEntry | IConfectionProductionJournalEntry;
 
 // @public
@@ -131,6 +132,14 @@ type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledT
 
 // @public
 const anyConfectionVersion: Converter<AnyConfectionVersion>;
+
+// @public
+type AnyConfectionYield = IConfectionYield | IMoldedBonBonYield;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const anyConfectionYield: Converter<AnyConfectionYield>;
 
 // @public
 type AnyFillingJournalEntry = IFillingEditJournalEntry | IFillingProductionJournalEntry;
@@ -202,6 +211,16 @@ function atMost<T>(max: number, getter: (item: T) => number | undefined): Filter
 
 // @public
 const barTruffle: Converter<IBarTruffle>;
+
+// @public
+class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle> {
+    // @internal
+    protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(baseConfection: IRuntimeBarTruffle, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+    scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+}
 
 // @public
 const barTruffleVersion: Converter<IBarTruffleVersion>;
@@ -536,7 +555,7 @@ export class ChocolateLibrary {
 }
 
 // @public
-type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
+export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -658,41 +677,60 @@ const confectionDecoration: Converter<IConfectionDecoration>;
 
 // @public
 class ConfectionEditingSession {
-    analyzeSaveOptions(): ISaveAnalysis;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(baseConfection: IRuntimeConfection, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
+}
+
+// @public
+abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection> {
+    // @internal
+    protected constructor(baseConfection: IRuntimeConfection, produced: RuntimeProducedConfectionBase<T>, context: IConfectionContext, params?: IConfectionEditingSessionParams);
     get baseConfection(): IRuntimeConfection;
-    canRedo(): boolean;
-    canUndo(): boolean;
-    get confectionType(): 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
-    static create(baseConfection: IRuntimeConfection): Result<ConfectionEditingSession>;
-    get hasChanges(): boolean;
-    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedMoldedBonBon" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedBarTruffle" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedRolledTruffle" needs to be exported by the entry point index.d.ts
-    get produced(): RuntimeProducedMoldedBonBon | RuntimeProducedBarTruffle | RuntimeProducedRolledTruffle;
-    redo(): Result<boolean>;
-    removeFillingSlot(slotId: SlotId): Result<void>;
-    saveAsNewConfection(options: ISaveNewConfectionOptions): Result<ISaveResult>;
-    saveAsNewVersion(options: ISaveConfectionVersionOptions): Result<ISaveResult>;
-    scaleToYield(spec: IConfectionYield): Result<IConfectionYield>;
+    // (undocumented)
+    protected readonly _baseConfection: IRuntimeConfection;
+    protected abstract _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    get context(): IConfectionContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    //
+    // (undocumented)
+    protected readonly _context: IConfectionContext;
+    // @internal
+    protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession>;
+    get fillingSessions(): IFillingSessionMap;
+    // (undocumented)
+    protected readonly _fillingSessions: Map<SlotId, EditingSession>;
+    getFillingSession(slotId: SlotId): EditingSession | undefined;
+    // @internal
+    protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined>;
+    // (undocumented)
+    protected readonly _originalSnapshot: T;
+    get produced(): RuntimeProducedConfectionBase<T>;
+    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedConfectionBase" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    protected readonly _produced: RuntimeProducedConfectionBase<T>;
+    // @internal
+    protected _removeFillingSession(slotId: SlotId): Result<EditingSession | undefined>;
+    removeFillingSlot(slotId: SlotId): Result<EditingSession | undefined>;
+    // @internal
+    protected _scaleAllFillingsByFactor(scaleFactor: number): Result<IFillingSessionMap>;
+    // @internal
+    protected _scaleFillingToWeight(slotId: SlotId, targetWeight: Measurement): Result<Measurement | undefined>;
+    abstract scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
     get sessionId(): SessionId;
-    setCoating(id: IngredientId | undefined): Result<void>;
-    setDecorationChocolate(id: IngredientId | undefined): Result<void>;
-    setEnrobingChocolate(id: IngredientId | undefined): Result<void>;
+    // (undocumented)
+    protected readonly _sessionId: SessionId;
     setFillingSlot(slotId: SlotId, choice: {
         type: 'recipe';
         fillingId: FillingId;
     } | {
         type: 'ingredient';
         ingredientId: IngredientId;
-    }): Result<void>;
-    setMold(moldId: MoldId): Result<void>;
-    setNotes(notes: ICategorizedNote[]): Result<void>;
-    setProcedure(id: ProcedureId | undefined): Result<void>;
-    setSealChocolate(id: IngredientId | undefined): Result<void>;
-    setShellChocolate(id: IngredientId): Result<void>;
-    toEditJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionEditJournalEntry>;
-    toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionProductionJournalEntry>;
-    undo(): Result<boolean>;
+    }): Result<EditingSession | undefined>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -729,6 +767,8 @@ const confectionProductionJournalEntry: Converter<IConfectionProductionJournalEn
 declare namespace Confections {
     export {
         confectionYield,
+        moldedBonBonYield,
+        anyConfectionYield,
         confectionDecoration,
         recipeFillingOption,
         ingredientFillingOption,
@@ -758,6 +798,7 @@ declare namespace Confections {
 declare namespace Confections_2 {
     export {
         Confections as Converters,
+        isMoldedBonBonYield,
         isMoldedBonBon,
         isBarTruffle,
         isRolledTruffle,
@@ -770,6 +811,8 @@ declare namespace Confections_2 {
         isProducedBarTruffle,
         isProducedRolledTruffle,
         IConfectionYield,
+        IMoldedBonBonYield,
+        AnyConfectionYield,
         IConfectionDecoration,
         FillingOptionType,
         FillingOptionId,
@@ -1145,10 +1188,10 @@ export { Editing }
 // @public
 class EditingSession {
     analyzeSaveOptions(): ISaveAnalysis;
-    get baseRecipe(): RuntimeFillingRecipeVersion;
+    get baseRecipe(): IRuntimeFillingRecipeVersion;
     canRedo(): boolean;
     canUndo(): boolean;
-    static create(baseRecipe: RuntimeFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
+    static create(baseRecipe: IRuntimeFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
     get hasChanges(): boolean;
     // Warning: (ae-forgotten-export) The symbol "RuntimeProducedFilling" needs to be exported by the entry point index.d.ts
     get produced(): RuntimeProducedFilling;
@@ -1162,6 +1205,7 @@ class EditingSession {
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
     setNotes(notes: ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
+    get targetWeight(): Measurement;
     toEditJournalEntry(notes?: ICategorizedNote[]): Result<IFillingEditJournalEntry>;
     toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
     undo(): Result<boolean>;
@@ -1268,6 +1312,7 @@ declare namespace Entities {
         Molds_2 as Molds,
         Procedures_2 as Procedures,
         Tasks_2 as Tasks,
+        isMoldedBonBonYield,
         isMoldedBonBon,
         isBarTruffle,
         isRolledTruffle,
@@ -1280,6 +1325,8 @@ declare namespace Entities {
         isProducedBarTruffle,
         isProducedRolledTruffle,
         IConfectionYield,
+        IMoldedBonBonYield,
+        AnyConfectionYield,
         IConfectionDecoration,
         FillingOptionType,
         FillingOptionId,
@@ -2170,6 +2217,7 @@ interface IConfectionBase {
 
 // @internal
 interface IConfectionContext {
+    createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
     getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
@@ -2193,11 +2241,8 @@ interface IConfectionDecoration {
 
 // @public
 interface IConfectionEditingSessionParams {
-    readonly enableJournal?: boolean;
-    readonly logger?: Logging.LogReporter<unknown>;
-    readonly sourceConfection: IRuntimeConfection;
-    readonly weightPerPiece?: Measurement;
-    readonly yieldCount?: number;
+    readonly initialYield?: AnyConfectionYield;
+    readonly sessionId?: SessionId;
 }
 
 // @public
@@ -2567,6 +2612,9 @@ interface IFillingRecipeVersion {
 }
 
 // @public
+type IFillingSessionMap = Map<SlotId, EditingSession>;
+
+// @public
 type IFillingsLibraryAsyncParams = ISubLibraryAsyncParams<FillingsLibrary, FillingCollectionEntryInit>;
 
 // @public
@@ -2906,6 +2954,17 @@ interface IMold {
     readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }
 
+// @public
+interface IMoldChangeAnalysis {
+    readonly fillingSessionsAffected: ReadonlyArray<SlotId>;
+    readonly newMoldId: MoldId;
+    readonly newTotalWeight: Measurement;
+    readonly oldMoldId: MoldId;
+    readonly oldTotalWeight: Measurement;
+    readonly requiresRescaling: boolean;
+    readonly weightDelta: Measurement;
+}
+
 // @internal
 interface IMoldContext {
 }
@@ -2921,6 +2980,16 @@ interface IMoldedBonBonVersion extends IConfectionVersionBase {
     readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
     readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     readonly shellChocolate: IChocolateSpec;
+}
+
+// @public
+interface IMoldedBonBonYield {
+    readonly bufferPercentage: number;
+    readonly count: number;
+    readonly frames: number;
+    readonly unit?: string;
+    readonly weightPerPiece?: Measurement;
+    readonly yieldType: 'frames';
 }
 
 // @public
@@ -4220,6 +4289,11 @@ function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon
 // @public
 function isMoldedBonBonVersion(version: AnyConfectionVersion): version is IMoldedBonBonVersion;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMoldedBonBonYield;
+
 // @public
 interface ISpoonScalerOptions {
     readonly maxTeaspoons?: number;
@@ -4788,7 +4862,28 @@ const moldData: Converter<IMold>;
 const moldedBonBon: Converter<IMoldedBonBon>;
 
 // @public
+class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBon> {
+    analyzeMoldChange(moldId: MoldId): Result<IMoldChangeAnalysis>;
+    cancelMoldChange(): void;
+    // @internal
+    protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
+    confirmMoldChange(): Result<undefined>;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(baseConfection: IRuntimeMoldedBonBon, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    get currentMold(): RuntimeMold;
+    get pendingMoldChange(): IMoldChangeAnalysis | undefined;
+    scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+    setFrames(frames: number, bufferPercentage?: number): Result<IMoldedBonBonYield>;
+}
+
+// @public
 const moldedBonBonVersion: Converter<IMoldedBonBonVersion>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldedBonBonYield: Converter<IMoldedBonBonYield>;
 
 // @public
 export type MoldFormat = 'series-1000' | 'series-2000' | 'other';
@@ -5223,6 +5318,16 @@ function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubL
 const rolledTruffle: Converter<IRolledTruffle>;
 
 // @public
+class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle> {
+    // @internal
+    protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(baseConfection: IRuntimeRolledTruffle, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+    scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+}
+
+// @public
 const rolledTruffleVersion: Converter<IRolledTruffleVersion>;
 
 declare namespace Runtime {
@@ -5471,6 +5576,7 @@ export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     clearCache(): void;
     get confections(): ConfectionsLibrary;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
+    createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     createWeightContext(): IWeightCalculationContext;
     get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
@@ -5922,6 +6028,11 @@ declare namespace Session {
     export {
         EditingSession,
         ConfectionEditingSession,
+        AnyConfectionEditingSession,
+        ConfectionEditingSessionBase,
+        MoldedBonBonEditingSession,
+        BarTruffleEditingSession,
+        RolledTruffleEditingSession,
         EditingSessionValidator,
         IEditingSessionValidator,
         IReadOnlyEditingSessionValidator,
@@ -5940,7 +6051,6 @@ declare namespace Session {
         ISaveResult,
         ConfectionSelectionStatus,
         ISessionMold,
-        ChocolateRole,
         ISessionChocolate,
         ISessionYield,
         ISessionProcedure,
@@ -5948,7 +6058,9 @@ declare namespace Session {
         IConfectionEditingSessionParams,
         IConfectionSessionState,
         IConfectionSaveOptions,
-        IConfectionSaveResult
+        IConfectionSaveResult,
+        IFillingSessionMap,
+        IMoldChangeAnalysis
     }
 }
 

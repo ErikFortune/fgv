@@ -23,9 +23,8 @@
  * @packageDocumentation
  */
 
-import { Logging } from '@fgv/ts-utils';
-
 import {
+  ChocolateRole,
   ConfectionId,
   ConfectionVersionSpec,
   FillingId,
@@ -34,9 +33,10 @@ import {
   IngredientId,
   MoldId,
   ProcedureId,
-  SessionId
+  SessionId,
+  SlotId
 } from '../../common';
-import { IFillingEditJournalEntry, IConfectionEditJournalEntry } from '../../entities';
+import { IFillingEditJournalEntry, IConfectionEditJournalEntry, AnyConfectionYield } from '../../entities';
 import { IRuntimeConfection } from '../model';
 
 // ============================================================================
@@ -264,13 +264,6 @@ export interface ISessionMold {
 }
 
 /**
- * Role that a chocolate plays in a confection.
- * Used for tracking chocolate selections during editing sessions.
- * @public
- */
-export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
-
-/**
  * Tracks a chocolate selection by role for a confection session
  * @public
  */
@@ -379,29 +372,14 @@ export interface ISessionCoating {
  */
 export interface IConfectionEditingSessionParams {
   /**
-   * The source confection to edit from
+   * Optional session ID (generated if not provided)
    */
-  readonly sourceConfection: IRuntimeConfection;
+  readonly sessionId?: SessionId;
 
   /**
-   * Initial yield count (defaults to confection's default yield)
+   * Initial yield specification (defaults to golden version yield)
    */
-  readonly yieldCount?: number;
-
-  /**
-   * Initial weight per piece (defaults to confection's default)
-   */
-  readonly weightPerPiece?: Measurement;
-
-  /**
-   * Whether to track detailed journal entries (default: true)
-   */
-  readonly enableJournal?: boolean;
-
-  /**
-   * Optional logger for reporting operations
-   */
-  readonly logger?: Logging.LogReporter<unknown>;
+  readonly initialYield?: AnyConfectionYield;
 }
 
 // ============================================================================
@@ -518,4 +496,57 @@ export interface IConfectionSaveResult {
    * Journal IDs of linked recipe sessions that were saved
    */
   readonly linkedRecipeJournalIds?: ReadonlyArray<string>;
+}
+
+// ============================================================================
+// Filling Session Management
+// ============================================================================
+
+/**
+ * Map of filling editing sessions keyed by slot ID.
+ * Used by confection editing sessions to manage filling scaling.
+ * @public
+ */
+export type IFillingSessionMap = Map<SlotId, import('./editingSession').EditingSession>;
+
+/**
+ * Analysis of mold change impact on a molded bonbon confection.
+ * Returned by setMold() to show weight changes before confirmation.
+ * @public
+ */
+export interface IMoldChangeAnalysis {
+  /**
+   * ID of the current mold
+   */
+  readonly oldMoldId: MoldId;
+
+  /**
+   * ID of the proposed new mold
+   */
+  readonly newMoldId: MoldId;
+
+  /**
+   * Total cavity weight with current mold
+   */
+  readonly oldTotalWeight: Measurement;
+
+  /**
+   * Total cavity weight with new mold
+   */
+  readonly newTotalWeight: Measurement;
+
+  /**
+   * Weight difference (positive = more filling needed)
+   */
+  readonly weightDelta: Measurement;
+
+  /**
+   * Slot IDs of filling sessions that will be affected
+   */
+  readonly fillingSessionsAffected: ReadonlyArray<SlotId>;
+
+  /**
+   * Whether the weight change requires rescaling fillings
+   */
+  readonly requiresRescaling: boolean;
 }

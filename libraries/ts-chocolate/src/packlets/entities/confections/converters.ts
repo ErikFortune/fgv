@@ -42,6 +42,8 @@ import {
   IConfectionMoldRef,
   IConfectionVersionBase,
   IConfectionYield,
+  IMoldedBonBonYield,
+  AnyConfectionYield,
   IFillingSlot,
   IFrameDimensions,
   IIngredientFillingOption,
@@ -66,6 +68,29 @@ export const confectionYield: Converter<IConfectionYield> = Converters.object<IC
   unit: Converters.string.optional(),
   weightPerPiece: CommonConverters.measurement.optional()
 });
+
+/**
+ * `Converter` for {@link Entities.Confections.IMoldedBonBonYield | IMoldedBonBonYield}.
+ * @public
+ */
+export const moldedBonBonYield: Converter<IMoldedBonBonYield> = Converters.object<IMoldedBonBonYield>({
+  yieldType: Converters.literal('frames'),
+  frames: Converters.number,
+  bufferPercentage: Converters.number,
+  count: Converters.number,
+  unit: Converters.string.optional(),
+  weightPerPiece: CommonConverters.measurement.optional()
+});
+
+/**
+ * `Converter` for {@link Entities.Confections.AnyConfectionYield | AnyConfectionYield}.
+ * Handles both regular and frame-based yield specifications.
+ * @public
+ */
+export const anyConfectionYield: Converter<AnyConfectionYield> = Converters.oneOf([
+  moldedBonBonYield,
+  confectionYield
+]);
 
 /**
  * `Converter` for {@link Entities.Confections.IConfectionDecoration | IConfectionDecoration}.

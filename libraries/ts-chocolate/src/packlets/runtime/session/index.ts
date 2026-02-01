@@ -20,7 +20,11 @@
 
 export * from './model';
 export { EditingSession } from './editingSession';
-export { ConfectionEditingSession } from './confectionEditingSession';
+export { ConfectionEditingSession, type AnyConfectionEditingSession } from './confectionEditingSession';
+export { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
+export { MoldedBonBonEditingSession } from './moldedBonBonEditingSession';
+export { BarTruffleEditingSession } from './barTruffleEditingSession';
+export { RolledTruffleEditingSession } from './rolledTruffleEditingSession';
 export {
   EditingSessionValidator,
   IEditingSessionValidator,

@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)<!-- -->, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
+ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.chocolaterole.md)<!-- -->, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
 
 
 </td><td>

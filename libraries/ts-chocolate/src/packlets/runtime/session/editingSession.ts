@@ -41,7 +41,7 @@ import {
   IIngredientModifiers,
   IProducedFilling
 } from '../../entities';
-import { RuntimeFillingRecipeVersion } from '../fillings';
+import type { IRuntimeFillingRecipeVersion } from '../model';
 import { RuntimeProducedFilling } from '../produced';
 import {
   ISaveAnalysis,
@@ -56,7 +56,7 @@ import { generateJournalId, generateSessionId, getCurrentTimestamp } from './ses
  * A mutable editing session for modifying filling recipe versions.
  *
  * Core architecture:
- * - Wraps a RuntimeFillingRecipeVersion (immutable source)
+ * - Wraps an IRuntimeFillingRecipeVersion (immutable source)
  * - Uses RuntimeProducedFilling for mutable editing with undo/redo
  * - Tracks original snapshot for change detection
  * - Provides save operations that integrate with library
@@ -64,7 +64,7 @@ import { generateJournalId, generateSessionId, getCurrentTimestamp } from './ses
  * @public
  */
 export class EditingSession {
-  private readonly _baseRecipe: RuntimeFillingRecipeVersion;
+  private readonly _baseRecipe: IRuntimeFillingRecipeVersion;
   private readonly _produced: RuntimeProducedFilling;
   private readonly _originalSnapshot: IProducedFilling;
   private readonly _sessionId: SessionId;
@@ -75,7 +75,7 @@ export class EditingSession {
    * @internal
    */
   private constructor(
-    baseRecipe: RuntimeFillingRecipeVersion,
+    baseRecipe: IRuntimeFillingRecipeVersion,
     produced: RuntimeProducedFilling,
     sessionId?: SessionId
   ) {
@@ -93,7 +93,7 @@ export class EditingSession {
    * @public
    */
   public static create(
-    baseRecipe: RuntimeFillingRecipeVersion,
+    baseRecipe: IRuntimeFillingRecipeVersion,
     initialScale?: number
   ): Result<EditingSession> {
     const scaleFactor = initialScale ?? 1.0;
@@ -370,7 +370,7 @@ export class EditingSession {
    * The base recipe version being edited.
    * @public
    */
-  public get baseRecipe(): RuntimeFillingRecipeVersion {
+  public get baseRecipe(): IRuntimeFillingRecipeVersion {
     return this._baseRecipe;
   }
 
@@ -380,6 +380,14 @@ export class EditingSession {
    */
   public get produced(): RuntimeProducedFilling {
     return this._produced;
+  }
+
+  /**
+   * Current target weight for this filling.
+   * @public
+   */
+  public get targetWeight(): Measurement {
+    return this._produced.targetWeight;
   }
 
   /**

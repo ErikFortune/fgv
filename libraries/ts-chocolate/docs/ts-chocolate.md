@@ -638,7 +638,7 @@ Description
 
 </td><td>
 
-Purpose for additional chocolates in molded bonbons. These values align with  for type safety when converting between confection data and journal entries.
+Purpose for additional chocolates in molded bonbons. These values align with [ChocolateRole](./ts-chocolate.chocolaterole.md) for type safety when converting between confection data and journal entries.
 
 
 </td></tr>
@@ -771,6 +771,17 @@ Certifications that an ingredient may have.
 </td><td>
 
 Recommended applications for chocolate
+
+
+</td></tr>
+<tr><td>
+
+[ChocolateRole](./ts-chocolate.chocolaterole.md)
+
+
+</td><td>
+
+Role that a chocolate plays in a confection. Used for tracking chocolate selections during editing sessions.
 
 
 </td></tr>

@@ -1,0 +1,144 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Bar truffle editing session with linear count-based scaling
+ * @packageDocumentation
+ */
+
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
+
+import { Measurement, SlotId } from '../../common';
+import { AnyConfectionYield, IConfectionYield, IProducedBarTruffle } from '../../entities';
+import { IConfectionContext, IRuntimeBarTruffle } from '../model';
+import { RuntimeProducedBarTruffle } from '../produced';
+
+import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
+import { IConfectionEditingSessionParams } from './model';
+
+// ============================================================================
+// Bar Truffle Editing Session
+// ============================================================================
+
+/**
+ * Editing session for bar truffle confections.
+ * Supports linear count-based scaling with proportional filling adjustment.
+ *
+ * @public
+ */
+export class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle> {
+  /**
+   * Creates a BarTruffleEditingSession.
+   * Use BarTruffleEditingSession.create() instead.
+   * @internal
+   */
+  private constructor(
+    baseConfection: IRuntimeBarTruffle,
+    produced: RuntimeProducedBarTruffle,
+    context: IConfectionContext,
+    params?: IConfectionEditingSessionParams
+  ) {
+    super(baseConfection, produced, context, params);
+
+    // Apply initial yield if provided
+    if (params?.initialYield) {
+      this.scaleToYield(params.initialYield).orThrow();
+    }
+
+    // Load filling sessions after initialization
+    this._loadFillingSessions().orThrow();
+  }
+
+  /**
+   * Factory method for creating a BarTruffleEditingSession.
+   * @param baseConfection - The source bar truffle confection
+   * @param context - The runtime context
+   * @param params - Optional session parameters
+   * @returns Success with BarTruffleEditingSession, or Failure
+   * @public
+   */
+  public static create(
+    baseConfection: IRuntimeBarTruffle,
+    context: IConfectionContext,
+    params?: IConfectionEditingSessionParams
+  ): Result<BarTruffleEditingSession> {
+    return RuntimeProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+      captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
+    );
+  }
+
+  // ============================================================================
+  // Linear Scaling
+  // ============================================================================
+
+  /**
+   * Scales to new yield specification using linear count-based scaling.
+   * All filling sessions scale proportionally by the count ratio.
+   *
+   * @param yieldSpec - The new yield specification
+   * @returns Success with updated yield, or Failure
+   * @public
+   */
+  public override scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield> {
+    const currentYield = this._produced.yield;
+    const scaleFactor = yieldSpec.count / currentYield.count;
+
+    // Update produced confection yield
+    const updateResult = this._produced.scaleToYield(yieldSpec);
+    if (updateResult.isFailure()) {
+      return updateResult;
+    }
+
+    // Scale all fillings by scale factor
+    return this._scaleAllFillingsByFactor(scaleFactor).onSuccess(() => succeed(yieldSpec));
+  }
+
+  // ============================================================================
+  // Weight Computation (Protected)
+  // ============================================================================
+
+  /**
+   * Computes target weight for a specific filling slot.
+   * For linear scaling, preserves the current session weight
+   * (scaling is handled by scaleToYield via factor-based scaling).
+   * For initial creation, finds the filling from the produced confection and uses its base weight.
+   *
+   * @param slotId - The slot identifier
+   * @returns Success with current target weight
+   * @internal
+   */
+  protected override _computeSlotTargetWeight(slotId: SlotId): Result<Measurement> {
+    const session = this._fillingSessions.get(slotId);
+    if (session) {
+      return succeed(session.targetWeight);
+    }
+
+    // For initial creation, find the filling in the produced confection and use its base weight
+    const fillingSlot = this._produced.fillings?.find((f) => f.slotId === slotId);
+    if (!fillingSlot || fillingSlot.slotType !== 'recipe') {
+      // TODO: create a constant for Measurement zero in common module
+      return succeed(0 as Measurement);
+    }
+
+    return this._context.getRuntimeFilling(fillingSlot.fillingId).onSuccess((filling) => {
+      return succeed(filling.goldenVersion.raw.baseWeight);
+    });
+  }
+}

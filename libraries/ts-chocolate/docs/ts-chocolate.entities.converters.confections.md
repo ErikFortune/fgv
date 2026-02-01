@@ -41,6 +41,17 @@ Converter for AnyConfectionVersion (discriminated by presence of type-specific f
 </td></tr>
 <tr><td>
 
+[anyConfectionYield](./ts-chocolate.entities.converters.confections.anyconfectionyield.md)
+
+
+</td><td>
+
+`Converter` for [AnyConfectionYield](./ts-chocolate.entities.confections.anyconfectionyield.md)<!-- -->. Handles both regular and frame-based yield specifications.
+
+
+</td></tr>
+<tr><td>
+
 [anyFillingOption](./ts-chocolate.entities.converters.confections.anyfillingoption.md)
 
 
@@ -245,6 +256,17 @@ Converter for IMoldedBonBon
 </td><td>
 
 Converter for IMoldedBonBonVersion
+
+
+</td></tr>
+<tr><td>
+
+[moldedBonBonYield](./ts-chocolate.entities.converters.confections.moldedbonbonyield.md)
+
+
+</td><td>
+
+`Converter` for [IMoldedBonBonYield](./ts-chocolate.entities.confections.imoldedbonbonyield.md)<!-- -->.
 
 
 </td></tr>

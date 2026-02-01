@@ -229,10 +229,28 @@ export type SlotId = Brand<string, 'SlotId'>;
 export type Measurement = Brand<number, 'Measurement'>;
 
 /**
+ * Zero measurement constant
+ * @public
+ */
+export const ZeroMeasurement: Measurement = 0 as Measurement;
+
+/**
  * Percentage value (0-100)
  * @public
  */
 export type Percentage = Brand<number, 'Percentage'>;
+
+/**
+ * Zero percent constant
+ * @public
+ */
+export const ZeroPercent: Percentage = 0 as Percentage;
+
+/**
+ * One hundred percent constant
+ * @public
+ */
+export const HundredPercent: Percentage = 100 as Percentage;
 
 /**
  * Temperature in Celsius
@@ -555,6 +573,13 @@ export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
  * @public
  */
 export const allConfectionTypes: ConfectionType[] = ['molded-bonbon', 'bar-truffle', 'rolled-truffle'];
+
+/**
+ * Role that a chocolate plays in a confection.
+ * Used for tracking chocolate selections during editing sessions.
+ * @public
+ */
+export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
 
 /**
  * Purpose for additional chocolates in molded bonbons.

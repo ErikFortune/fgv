@@ -19,14 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[BarTruffleEditingSession](./ts-chocolate.runtime.session.bartruffleeditingsession.md)
+
+
+</td><td>
+
+Editing session for bar truffle confections. Supports linear count-based scaling with proportional filling adjustment.
+
+
+</td></tr>
+<tr><td>
+
 [ConfectionEditingSession](./ts-chocolate.runtime.session.confectioneditingsession.md)
 
 
 </td><td>
 
-A mutable editing session for modifying confection versions.
-
-Core architecture: - Wraps an IRuntimeConfection (immutable source) - Uses RuntimeProducedConfection variants for mutable editing with undo/redo - Tracks original snapshot for change detection - Provides save operations that integrate with library - Supports type-specific methods based on confection type
+Factory for creating type-specific confection editing sessions. Dispatches to specialized session classes based on confection type.
 
 
 </td></tr>
@@ -39,7 +48,7 @@ Core architecture: - Wraps an IRuntimeConfection (immutable source) - Uses Runti
 
 A mutable editing session for modifying filling recipe versions.
 
-Core architecture: - Wraps a RuntimeFillingRecipeVersion (immutable source) - Uses RuntimeProducedFilling for mutable editing with undo/redo - Tracks original snapshot for change detection - Provides save operations that integrate with library
+Core architecture: - Wraps an IRuntimeFillingRecipeVersion (immutable source) - Uses RuntimeProducedFilling for mutable editing with undo/redo - Tracks original snapshot for change detection - Provides save operations that integrate with library
 
 
 </td></tr>
@@ -53,6 +62,56 @@ Core architecture: - Wraps a RuntimeFillingRecipeVersion (immutable source) - Us
 A wrapper for EditingSession that validates and converts weakly-typed inputs to strongly-typed branded types before delegating to the underlying session.
 
 This allows consumers to use plain strings and numbers instead of IngredientId and Measurement branded types while still benefiting from runtime validation.
+
+
+</td></tr>
+<tr><td>
+
+[MoldedBonBonEditingSession](./ts-chocolate.runtime.session.moldedbonboneditingsession.md)
+
+
+</td><td>
+
+Editing session for molded bonbon confections. Supports frame-based yield specification and mold change workflow.
+
+
+</td></tr>
+<tr><td>
+
+[RolledTruffleEditingSession](./ts-chocolate.runtime.session.rolledtruffleeditingsession.md)
+
+
+</td><td>
+
+Editing session for rolled truffle confections. Supports linear count-based scaling with proportional filling adjustment.
+
+
+</td></tr>
+</tbody></table>
+
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ConfectionEditingSessionBase](./ts-chocolate.runtime.session.confectioneditingsessionbase.md)
+
+
+</td><td>
+
+Abstract base class for confection editing sessions. Manages filling sessions and provides common editing operations.
+
+Subclasses implement type-specific scaling logic: - MoldedBonBonEditingSession: Frame-based yield with mold change workflow - BarTruffleEditingSession: Linear scaling by count - RolledTruffleEditingSession: Linear scaling by count
 
 
 </td></tr>
@@ -182,6 +241,17 @@ Read-only view of confection session state
 </td><td>
 
 Full interface for EditingSessionValidator. Provides validated mutating operations using weakly-typed inputs.
+
+
+</td></tr>
+<tr><td>
+
+[IMoldChangeAnalysis](./ts-chocolate.runtime.session.imoldchangeanalysis.md)
+
+
+</td><td>
+
+Analysis of mold change impact on a molded bonbon confection. Returned by setMold() to show weight changes before confirmation.
 
 
 </td></tr>
@@ -380,12 +450,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)
+[AnyConfectionEditingSession](./ts-chocolate.runtime.session.anyconfectioneditingsession.md)
 
 
 </td><td>
 
-Role that a chocolate plays in a confection. Used for tracking chocolate selections during editing sessions.
+Union type of all confection editing session types. Use this for type-safe handling of different session types.
 
 
 </td></tr>
@@ -397,6 +467,17 @@ Role that a chocolate plays in a confection. Used for tracking chocolate selecti
 </td><td>
 
 Status of a confection session selection
+
+
+</td></tr>
+<tr><td>
+
+[IFillingSessionMap](./ts-chocolate.runtime.session.ifillingsessionmap.md)
+
+
+</td><td>
+
+Map of filling editing sessions keyed by slot ID. Used by confection editing sessions to manage filling scaling.
 
 
 </td></tr>

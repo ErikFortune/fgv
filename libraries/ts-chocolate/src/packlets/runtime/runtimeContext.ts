@@ -31,6 +31,7 @@ import {
   Helpers,
   IngredientId,
   IOptionsWithPreferred,
+  Measurement,
   MoldId,
   ProcedureId,
   FillingId,
@@ -88,6 +89,7 @@ import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibra
 import { ITaskContext, RuntimeTask } from './tasks';
 import { IProcedureContext, RuntimeProcedure } from './procedures';
 import { IMoldContext, RuntimeMold } from './molds';
+import { EditingSession } from './session/editingSession';
 import { ITaskData } from '../entities';
 
 // ============================================================================
@@ -734,6 +736,32 @@ export class RuntimeContext
    */
   public getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe> {
     return this._getFillingRecipe(id);
+  }
+
+  /**
+   * Creates an editing session for a filling recipe at a target weight.
+   * Used by confection sessions to manage filling scaling.
+   * @param filling - The runtime filling recipe
+   * @param targetWeight - Target weight for the filling in grams
+   * @returns Success with EditingSession, or Failure if creation fails
+   */
+  public createFillingSession(
+    filling: IRuntimeFillingRecipe,
+    targetWeight: Measurement
+  ): Result<EditingSession> {
+    // Get the golden version (now safe - no cast needed)
+    const version = filling.goldenVersion;
+
+    // Calculate scale factor to achieve target weight
+    const baseWeight = version.raw.baseWeight;
+    if (baseWeight <= 0) {
+      return fail(`Cannot create session: base weight must be positive (got ${baseWeight})`);
+    }
+
+    const scaleFactor = targetWeight / baseWeight;
+
+    // Create editing session with scale factor
+    return EditingSession.create(version, scaleFactor);
   }
 
   // ============================================================================

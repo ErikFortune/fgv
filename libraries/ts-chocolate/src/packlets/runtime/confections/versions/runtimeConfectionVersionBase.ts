@@ -128,6 +128,14 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   }
 
   /**
+   * The runtime context for navigation and resource resolution.
+   * Used by editing sessions to access library resources.
+   */
+  public get context(): IConfectionContext {
+    return this._context;
+  }
+
+  /**
    * The underlying confection version.
    * Use this to get the raw version data for persistence or journaling.
    */

@@ -42,7 +42,7 @@ import {
   IIngredientModifiers,
   IFillingIngredient
 } from '../../entities';
-import type { RuntimeFillingRecipeVersion } from '../fillings';
+import type { IRuntimeFillingRecipeVersion } from '../model';
 
 /**
  * Maximum number of undo snapshots to retain
@@ -105,7 +105,7 @@ export class RuntimeProducedFilling {
    * @public
    */
   public static fromSource(
-    source: RuntimeFillingRecipeVersion,
+    source: IRuntimeFillingRecipeVersion,
     scaleFactor: number = 1.0
   ): Result<RuntimeProducedFilling> {
     return RuntimeProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) =>
@@ -119,7 +119,7 @@ export class RuntimeProducedFilling {
    * @internal
    */
   private static _convertFromSource(
-    source: RuntimeFillingRecipeVersion,
+    source: IRuntimeFillingRecipeVersion,
     scaleFactor: number
   ): Result<IProducedFilling> {
     // Convert ingredients using mapResults pattern

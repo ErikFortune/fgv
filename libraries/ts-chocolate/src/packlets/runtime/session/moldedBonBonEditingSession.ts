@@ -1,0 +1,366 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Molded bonbon editing session with frame-based yield
+ * @packageDocumentation
+ */
+
+import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+
+import { Measurement, MoldId, SlotId } from '../../common';
+import {
+  AnyConfectionYield,
+  IConfectionYield,
+  IMoldedBonBonYield,
+  isMoldedBonBonYield,
+  IProducedMoldedBonBon
+} from '../../entities';
+import { IConfectionContext, IRuntimeMoldedBonBon } from '../model';
+import { RuntimeProducedMoldedBonBon } from '../produced';
+import { RuntimeMold } from '../molds';
+
+import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
+import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
+
+// ============================================================================
+// Molded Bonbon Editing Session
+// ============================================================================
+
+/**
+ * Editing session for molded bonbon confections.
+ * Supports frame-based yield specification and mold change workflow.
+ *
+ * @public
+ */
+export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBon> {
+  private _currentMold: RuntimeMold;
+  private _pendingMoldChange?: IMoldChangeAnalysis;
+
+  /**
+   * Creates a MoldedBonBonEditingSession.
+   * Use MoldedBonBonEditingSession.create() instead.
+   * @internal
+   */
+  private constructor(
+    baseConfection: IRuntimeMoldedBonBon,
+    produced: RuntimeProducedMoldedBonBon,
+    context: IConfectionContext,
+    params?: IConfectionEditingSessionParams
+  ) {
+    super(baseConfection, produced, context, params);
+
+    // Load current mold
+    this._currentMold = this._loadCurrentMold().orThrow();
+
+    // Apply initial yield if provided
+    if (params?.initialYield) {
+      this.scaleToYield(params.initialYield).orThrow();
+    }
+
+    // Load filling sessions after mold is initialized
+    this._loadFillingSessions().orThrow();
+  }
+
+  /**
+   * Factory method for creating a MoldedBonBonEditingSession.
+   * @param baseConfection - The source molded bonbon confection
+   * @param context - The runtime context
+   * @param params - Optional session parameters
+   * @returns Success with MoldedBonBonEditingSession, or Failure
+   * @public
+   */
+  public static create(
+    baseConfection: IRuntimeMoldedBonBon,
+    context: IConfectionContext,
+    params?: IConfectionEditingSessionParams
+  ): Result<MoldedBonBonEditingSession> {
+    return RuntimeProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+      captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
+    );
+  }
+
+  // ============================================================================
+  // Frame-Based Yield
+  // ============================================================================
+
+  /**
+   * Sets frames and buffer percentage for yield calculation.
+   * Count is computed as: frames × cavitiesPerFrame
+   *
+   * @param frames - Number of frames to produce
+   * @param bufferPercentage - Buffer overfill (e.g., 0.1 for 10%)
+   * @returns Success with computed yield, or Failure if invalid
+   * @public
+   */
+  public setFrames(frames: number, bufferPercentage: number = 0.1): Result<IMoldedBonBonYield> {
+    if (frames <= 0) {
+      return fail(`Frames must be positive: ${frames}`);
+    }
+    if (bufferPercentage < 0 || bufferPercentage > 1) {
+      return fail(`Buffer percentage must be between 0 and 1: ${bufferPercentage}`);
+    }
+
+    // Compute count from frames and mold
+    const count = frames * this._currentMold.cavityCount;
+
+    const yieldSpec: IMoldedBonBonYield = {
+      yieldType: 'frames',
+      frames,
+      bufferPercentage,
+      count,
+      unit: 'pieces',
+      weightPerPiece: this._currentMold.cavityWeight
+    };
+
+    return this.scaleToYield(yieldSpec).onSuccess(() => succeed(yieldSpec));
+  }
+
+  /**
+   * Scales to new yield specification.
+   * Handles both frame-based and legacy count-based yield.
+   *
+   * @param yieldSpec - The new yield specification
+   * @returns Success with updated yield, or Failure
+   * @public
+   */
+  public override scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield> {
+    // Extract frame-based parameters
+    let frames: number;
+    let bufferPercentage: number;
+
+    if (isMoldedBonBonYield(yieldSpec)) {
+      frames = yieldSpec.frames;
+      bufferPercentage = yieldSpec.bufferPercentage;
+    } else {
+      // Legacy yield - compute frames from count
+      frames = Math.ceil(yieldSpec.count / this._currentMold.cavityCount);
+      bufferPercentage = 0.1; // Default 10%
+    }
+
+    // Update produced confection yield
+    const computedYield: IMoldedBonBonYield = {
+      yieldType: 'frames',
+      frames,
+      bufferPercentage,
+      count: frames * this._currentMold.cavityCount,
+      unit: 'pieces',
+      weightPerPiece: this._currentMold.cavityWeight
+    };
+
+    const updateResult = this._produced.scaleToYield(computedYield);
+    if (updateResult.isFailure()) {
+      return updateResult;
+    }
+
+    // Scale all filling sessions to new target weights
+    return this._scaleAllFillingsToYield().onSuccess(() => succeed(computedYield));
+  }
+
+  // ============================================================================
+  // Mold Change Workflow
+  // ============================================================================
+
+  /**
+   * Analyzes impact of changing to a new mold.
+   * Returns analysis for user review before confirmation.
+   *
+   * @param moldId - The new mold ID
+   * @returns Success with analysis, or Failure if mold not found
+   * @public
+   */
+  public analyzeMoldChange(moldId: MoldId): Result<IMoldChangeAnalysis> {
+    return this._context.getRuntimeMold(moldId).onSuccess((newMold) => {
+      const oldTotal = this._computeTotalCavityWeight(this._currentMold);
+      // Cast to RuntimeMold for weight computation
+      const newTotal = this._computeTotalCavityWeight(newMold as unknown as RuntimeMold);
+
+      const analysis: IMoldChangeAnalysis = {
+        oldMoldId: this._currentMold.id,
+        newMoldId: moldId,
+        oldTotalWeight: oldTotal,
+        newTotalWeight: newTotal,
+        weightDelta: (newTotal - oldTotal) as Measurement,
+        fillingSessionsAffected: Array.from(this._fillingSessions.keys()),
+        requiresRescaling: Math.abs(newTotal - oldTotal) > 0.01 // Tolerance
+      };
+
+      this._pendingMoldChange = analysis;
+      return succeed(analysis);
+    });
+  }
+
+  /**
+   * Confirms pending mold change and rescales fillings.
+   * Call analyzeMoldChange() first to set up the pending change.
+   *
+   * @returns Success with undefined, or Failure if no pending change or update fails
+   * @public
+   */
+  public confirmMoldChange(): Result<undefined> {
+    if (!this._pendingMoldChange) {
+      return fail('No pending mold change');
+    }
+
+    // Update mold in produced confection (convert Result<void> to Result<undefined>)
+    return (this._produced as RuntimeProducedMoldedBonBon)
+      .setMold(this._pendingMoldChange.newMoldId)
+      .onSuccess(() => {
+        // Reload mold
+        return this._loadMold(this._pendingMoldChange!.newMoldId).onSuccess((newMold) => {
+          this._currentMold = newMold;
+
+          // Rescale fillings if needed
+          if (this._pendingMoldChange!.requiresRescaling) {
+            return this._scaleAllFillingsToYield().onSuccess(() => {
+              this._pendingMoldChange = undefined;
+              return succeed(undefined);
+            });
+          }
+
+          this._pendingMoldChange = undefined;
+          return succeed(undefined);
+        });
+      });
+  }
+
+  /**
+   * Cancels pending mold change.
+   * @public
+   */
+  public cancelMoldChange(): void {
+    this._pendingMoldChange = undefined;
+  }
+
+  /**
+   * Gets pending mold change analysis, if any.
+   * @public
+   */
+  public get pendingMoldChange(): IMoldChangeAnalysis | undefined {
+    return this._pendingMoldChange;
+  }
+
+  // ============================================================================
+  // Weight Computation (Protected)
+  // ============================================================================
+
+  /**
+   * Computes target weight for a specific filling slot.
+   * Divides total cavity weight equally among all slots.
+   *
+   * @param slotId - The slot identifier
+   * @returns Success with target weight
+   * @internal
+   */
+  protected override _computeSlotTargetWeight(slotId: SlotId): Result<Measurement> {
+    const totalWeight = this._computeTotalCavityWeight(this._currentMold);
+    const slotCount = this._produced.fillings?.length ?? 1;
+
+    // Equal division
+    const targetWeight = (totalWeight / slotCount) as Measurement;
+    return succeed(targetWeight);
+  }
+
+  /**
+   * Computes total cavity weight including buffer.
+   * Formula: frames × cavitiesPerFrame × cavityWeight × (1 + bufferPercentage)
+   *
+   * @param mold - The mold to compute weight for
+   * @returns Total weight in grams
+   * @internal
+   */
+  private _computeTotalCavityWeight(mold: RuntimeMold): Measurement {
+    const currentYield = this._produced.yield;
+
+    let frames: number;
+    let bufferPercentage: number;
+
+    if (isMoldedBonBonYield(currentYield)) {
+      frames = currentYield.frames;
+      bufferPercentage = currentYield.bufferPercentage;
+    } else {
+      frames = Math.ceil(currentYield.count / mold.cavityCount);
+      bufferPercentage = 0.1;
+    }
+
+    const cavityWeight = mold.cavityWeight ?? (0 as Measurement);
+    const baseWeight = frames * mold.cavityCount * cavityWeight;
+    const totalWeight = baseWeight * (1 + bufferPercentage);
+
+    return totalWeight as Measurement;
+  }
+
+  /**
+   * Scales all filling sessions to match current yield.
+   * Computes new target weight for each slot and scales accordingly.
+   *
+   * @returns `Success` with total weight of all scaled fillings, or `Failure` with aggregated errors.
+   * @internal
+   */
+  private _scaleAllFillingsToYield(): Result<number> {
+    const errors: MessageAggregator = new MessageAggregator();
+    let totalWeight = 0;
+
+    for (const [slotId] of this._fillingSessions.entries()) {
+      this._computeSlotTargetWeight(slotId)
+        .onSuccess((targetWeight) => this._scaleFillingToWeight(slotId, targetWeight))
+        .onSuccess((scaledWeight) => succeed((totalWeight += scaledWeight ?? 0)))
+        .aggregateError(errors, (msg) => `${slotId}: ${msg}`);
+    }
+
+    return errors.returnOrReport(succeed(totalWeight));
+  }
+
+  /**
+   * Loads the current mold from the produced confection.
+   * @internal
+   */
+  private _loadCurrentMold(): Result<RuntimeMold> {
+    // TODO: figure out how to get this._produced to be strongly typed
+    const moldId = (this._produced as RuntimeProducedMoldedBonBon).moldId;
+    return this._loadMold(moldId);
+  }
+
+  /**
+   * Loads a mold by ID from the context.
+   * @param moldId - The mold ID
+   * @returns Success with mold, or Failure
+   * @internal
+   */
+  private _loadMold(moldId: MoldId): Result<RuntimeMold> {
+    // Cast from interface type to class type - the implementation returns RuntimeMold
+    return this._context.getRuntimeMold(moldId).onSuccess((mold) =>
+      // TODO: remove unsafe cast
+      succeed(mold as unknown as RuntimeMold)
+    );
+  }
+
+  // ============================================================================
+  // Accessors
+  // ============================================================================
+
+  /**
+   * Gets the current mold.
+   * @public
+   */
+  public get currentMold(): RuntimeMold {
+    return this._currentMold;
+  }
+}
