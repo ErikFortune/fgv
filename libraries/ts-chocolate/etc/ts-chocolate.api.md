@@ -673,6 +673,7 @@ class ConfectionEditingSession {
     removeFillingSlot(slotId: SlotId): Result<void>;
     saveAsNewConfection(options: ISaveNewConfectionOptions): Result<ISaveResult>;
     saveAsNewVersion(options: ISaveConfectionVersionOptions): Result<ISaveResult>;
+    scaleToYield(spec: IConfectionYield): Result<IConfectionYield>;
     get sessionId(): SessionId;
     setCoating(id: IngredientId | undefined): Result<void>;
     setDecorationChocolate(id: IngredientId | undefined): Result<void>;
@@ -689,7 +690,6 @@ class ConfectionEditingSession {
     setProcedure(id: ProcedureId | undefined): Result<void>;
     setSealChocolate(id: IngredientId | undefined): Result<void>;
     setShellChocolate(id: IngredientId): Result<void>;
-    setYield(spec: IConfectionYield): Result<void>;
     toEditJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionEditJournalEntry>;
     toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionProductionJournalEntry>;
     undo(): Result<boolean>;
@@ -1157,11 +1157,11 @@ class EditingSession {
     saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult>;
     saveAsNewRecipe(options: ISaveNewRecipeOptions): Result<ISaveResult>;
     saveAsNewVersion(options: ISaveVersionOptions): Result<ISaveResult>;
+    scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     get sessionId(): SessionId;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
     setNotes(notes: ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
-    setTargetWeight(weight: Measurement): Result<void>;
     toEditJournalEntry(notes?: ICategorizedNote[]): Result<IFillingEditJournalEntry>;
     toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
     undo(): Result<boolean>;
@@ -1171,10 +1171,10 @@ class EditingSession {
 class EditingSessionValidator implements IEditingSessionValidator {
     constructor(session: EditingSession);
     removeIngredient(id: string): Result<void>;
+    scaleToTargetWeight(targetWeight: number): Result<Measurement>;
     get session(): EditingSession;
     setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
     setProcedure(id: string | undefined): Result<void>;
-    setTargetWeight(weight: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
 }
 
@@ -2349,9 +2349,9 @@ interface IEditableCollectionParams<T, TBaseId extends string = string> {
 // @public
 interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
     removeIngredient(id: string): Result<void>;
+    scaleToTargetWeight(targetWeight: number): Result<Measurement>;
     setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
     setProcedure(id: string | undefined): Result<void>;
-    setTargetWeight(weight: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
 }
 
@@ -3390,6 +3390,7 @@ interface IProducedFillingIngredient {
 
 // @public
 interface IProducedMoldedBonBon extends IProducedConfectionBase {
+    readonly bufferPercentage?: number;
     readonly confectionType: 'molded-bonbon';
     readonly decorationChocolateId?: IngredientId;
     readonly moldId: MoldId;

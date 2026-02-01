@@ -230,12 +230,12 @@ describe('EditingSession', () => {
     });
   });
 
-  describe('setTargetWeight', () => {
+  describe('scaleToTargetWeight', () => {
     test('delegates to produced wrapper', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      expect(session.setTargetWeight(600 as Measurement)).toSucceed();
+      expect(session.scaleToTargetWeight(600 as Measurement)).toSucceed();
       expect(session.hasChanges).toBe(true);
       expect(session.produced.targetWeight).toBe(600);
     });
@@ -334,11 +334,12 @@ describe('EditingSession', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      session.setTargetWeight(600 as Measurement).orThrow();
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
       const analysis = session.analyzeSaveOptions();
 
       expect(analysis.canCreateVersion).toBe(true);
-      expect(analysis.recommendedOption).toBe('version');
+      // Scaling changes ingredients proportionally, so it's an "alternatives" scenario
+      expect(analysis.recommendedOption).toBe('alternatives');
       expect(analysis.changes.weightChanged).toBe(true);
     });
 
@@ -364,7 +365,7 @@ describe('EditingSession', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      session.setTargetWeight(600 as Measurement).orThrow();
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
 
       expect(
         session.saveAsNewVersion({
@@ -402,7 +403,7 @@ describe('EditingSession', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      session.setTargetWeight(600 as Measurement).orThrow();
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
 
       expect(
         session.saveAsNewRecipe({
@@ -426,7 +427,7 @@ describe('EditingSession', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      session.setTargetWeight(600 as Measurement).orThrow();
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
 
       expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
         expect(entry.type).toBe('filling-edit');
@@ -488,7 +489,7 @@ describe('EditingSession', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      session.setTargetWeight(600 as Measurement).orThrow();
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
       expect(session.hasChanges).toBe(true);
     });
 
@@ -496,7 +497,7 @@ describe('EditingSession', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
 
-      session.setTargetWeight(600 as Measurement).orThrow();
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
       session.undo().orThrow();
       expect(session.hasChanges).toBe(false);
     });

@@ -127,13 +127,15 @@ export class ConfectionEditingSession {
   // ============================================================================
 
   /**
-   * Sets the yield specification.
-   * @param spec - Yield specification
-   * @returns Success or failure
+   * Scales to a new yield specification.
+   * Note: This updates the confection yield. Filling scaling must be done separately
+   * by loading fillings from the library and scaling them as needed.
+   * @param spec - Target yield specification
+   * @returns Success with actual achieved yield, or failure
    * @public
    */
-  public setYield(spec: IConfectionYield): Result<void> {
-    return this._produced.setYield(spec);
+  public scaleToYield(spec: IConfectionYield): Result<IConfectionYield> {
+    return this._produced.scaleToYield(spec);
   }
 
   /**

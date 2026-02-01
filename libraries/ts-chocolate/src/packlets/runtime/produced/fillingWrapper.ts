@@ -333,26 +333,54 @@ export class RuntimeProducedFilling {
   }
 
   /**
-   * Sets the target weight.
+   * Scales all weight-contributing ingredients to achieve a target weight.
+   * Non-weight-contributing ingredients (tsp, Tbsp, pinch, seeds, pods) remain unchanged.
    * Pushes current state to undo before change, clears redo.
-   * @param weight - Target weight
-   * @returns Success or failure
+   * @param targetWeight - Desired total weight
+   * @returns Success with actual achieved weight, or failure
    * @public
    */
-  public setTargetWeight(weight: Measurement): Result<void> {
-    if (weight <= 0) {
-      return fail(`Target weight must be positive: ${weight}`);
+  public scaleToTargetWeight(targetWeight: Measurement): Result<Measurement> {
+    if (targetWeight <= 0) {
+      return fail(`Target weight must be positive: ${targetWeight}`);
     }
+
+    // Calculate current total weight (only weight-contributing ingredients)
+    const currentWeight = this._calculateTotalWeight();
+    if (currentWeight <= 0) {
+      return fail('Cannot scale: no weight-contributing ingredients');
+    }
+
+    // Calculate scale factor
+    const scaleFactor = targetWeight / currentWeight;
 
     this._pushUndo();
 
+    // Scale each ingredient
+    const scaledIngredients = this._current.ingredients.map((ing) => {
+      const unit = ing.unit ?? 'g';
+
+      // Only scale weight-contributing units (g, mL)
+      if (unit === 'g' || unit === 'mL') {
+        const scaledAmount = (ing.amount * scaleFactor) as Measurement;
+        return { ...ing, amount: scaledAmount };
+      }
+
+      // Keep non-weight ingredients unchanged
+      return ing;
+    });
+
+    // Recalculate actual achieved weight
+    const actualWeight = this._calculateWeightFromIngredients(scaledIngredients);
+
     this._current = {
       ...this._current,
-      targetWeight: weight
+      ingredients: scaledIngredients,
+      targetWeight: actualWeight
     };
     this._redoStack = [];
 
-    return succeed(undefined);
+    return succeed(actualWeight);
   }
 
   /**
@@ -478,6 +506,31 @@ export class RuntimeProducedFilling {
     if (this._undoStack.length > MAX_HISTORY_SIZE) {
       this._undoStack.shift();
     }
+  }
+
+  /**
+   * Calculates total weight from current weight-contributing ingredients.
+   */
+  private _calculateTotalWeight(): Measurement {
+    return this._calculateWeightFromIngredients(this._current.ingredients);
+  }
+
+  /**
+   * Calculates total weight from a list of ingredients.
+   * Only includes weight-contributing units (g, mL).
+   */
+  private _calculateWeightFromIngredients(
+    ingredients: ReadonlyArray<IProducedFillingIngredient>
+  ): Measurement {
+    const total = ingredients.reduce((sum, ing) => {
+      const unit = ing.unit ?? 'g';
+      // Only count weight-contributing units
+      if (unit === 'g' || unit === 'mL') {
+        return sum + ing.amount;
+      }
+      return sum;
+    }, 0);
+    return total as Measurement;
   }
 
   /**

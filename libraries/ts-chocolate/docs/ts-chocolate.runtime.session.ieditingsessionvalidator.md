@@ -39,6 +39,17 @@ Removes an ingredient using a weakly-typed string
 </td></tr>
 <tr><td>
 
+[scaleToTargetWeight(targetWeight)](./ts-chocolate.runtime.session.ieditingsessionvalidator.scaletotargetweight.md)
+
+
+</td><td>
+
+Scales the filling to achieve a target weight using a weakly-typed number. Weight-contributing ingredients are scaled proportionally.
+
+
+</td></tr>
+<tr><td>
+
 [setIngredient(id, amount, unit, modifiers)](./ts-chocolate.runtime.session.ieditingsessionvalidator.setingredient.md)
 
 
@@ -56,17 +67,6 @@ Sets or updates an ingredient using weakly-typed inputs
 </td><td>
 
 Sets the procedure using a weakly-typed string
-
-
-</td></tr>
-<tr><td>
-
-[setTargetWeight(weight)](./ts-chocolate.runtime.session.ieditingsessionvalidator.settargetweight.md)
-
-
-</td><td>
-
-Sets the target weight using a weakly-typed number
 
 
 </td></tr>

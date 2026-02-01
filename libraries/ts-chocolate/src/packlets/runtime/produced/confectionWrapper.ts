@@ -234,13 +234,17 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
   }
 
   /**
-   * Sets the yield specification.
+   * Scales to a new yield specification.
    * Pushes current state to undo before change, clears redo.
-   * @param yieldSpec - Yield specification
-   * @returns Success or failure
+   *
+   * Note: This method updates the yield in the confection data. Actual filling scaling
+   * must be handled at a higher level (e.g., in sessions) where the filling library is accessible.
+   *
+   * @param yieldSpec - Target yield specification
+   * @returns Success with actual achieved yield, or failure
    * @public
    */
-  public setYield(yieldSpec: IConfectionYield): Result<void> {
+  public scaleToYield(yieldSpec: IConfectionYield): Result<IConfectionYield> {
     if (yieldSpec.count <= 0) {
       return fail(`Yield count must be positive: ${yieldSpec.count}`);
     }
@@ -256,7 +260,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
     } as T;
     this._redoStack = [];
 
-    return succeed(undefined);
+    return succeed(yieldSpec);
   }
 
   /**
@@ -801,6 +805,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
       shellChocolateId: confection.shellChocolateId,
       sealChocolateId: confection.sealChocolateId,
       decorationChocolateId: confection.decorationChocolateId,
+      bufferPercentage: confection.bufferPercentage,
       fillings: confection.fillings ? confection.fillings.map((slot) => ({ ...slot })) : undefined,
       procedureId: confection.procedureId,
       notes: confection.notes ? confection.notes.map((note) => ({ ...note })) : undefined

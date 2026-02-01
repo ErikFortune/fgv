@@ -139,13 +139,15 @@ export class EditingSession {
   }
 
   /**
-   * Sets the target weight for the filling.
-   * @param weight - Target weight
-   * @returns Success or failure
+   * Scales the filling to achieve a target weight.
+   * Weight-contributing ingredients (g, mL) are scaled proportionally.
+   * Non-weight ingredients (tsp, Tbsp, pinch, etc.) remain unchanged.
+   * @param targetWeight - Desired total weight
+   * @returns Success with actual achieved weight, or failure
    * @public
    */
-  public setTargetWeight(weight: Measurement): Result<void> {
-    return this._produced.setTargetWeight(weight);
+  public scaleToTargetWeight(targetWeight: Measurement): Result<Measurement> {
+    return this._produced.scaleToTargetWeight(targetWeight);
   }
 
   /**

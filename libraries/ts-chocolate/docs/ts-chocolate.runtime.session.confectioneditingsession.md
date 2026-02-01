@@ -282,6 +282,20 @@ Saves as a new version of the original confection. Requires that the collection 
 </td></tr>
 <tr><td>
 
+[scaleToYield(spec)](./ts-chocolate.runtime.session.confectioneditingsession.scaletoyield.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Scales to a new yield specification. Note: This updates the confection yield. Filling scaling must be done separately by loading fillings from the library and scaling them as needed.
+
+
+</td></tr>
+<tr><td>
+
 [setCoating(id)](./ts-chocolate.runtime.session.confectioneditingsession.setcoating.md)
 
 
@@ -403,20 +417,6 @@ Sets the seal chocolate (molded bonbon only).
 </td><td>
 
 Sets the shell chocolate (molded bonbon only).
-
-
-</td></tr>
-<tr><td>
-
-[setYield(spec)](./ts-chocolate.runtime.session.confectioneditingsession.setyield.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Sets the yield specification.
 
 
 </td></tr>

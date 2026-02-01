@@ -425,7 +425,9 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      expect(session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement })).toSucceed();
+      expect(
+        session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement })
+      ).toSucceed();
       expect(session.hasChanges).toBe(true);
       expect(session.produced.snapshot.yield.count).toBe(48);
     });
@@ -627,7 +629,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       expect(session.hasChanges).toBe(true);
 
       expect(session.undo()).toSucceedWith(true);
@@ -638,7 +640,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       session.undo().orThrow();
 
       expect(session.redo()).toSucceedWith(true);
@@ -650,7 +652,7 @@ describe('ConfectionEditingSession', () => {
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
       expect(session.canUndo()).toBe(false);
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       expect(session.canUndo()).toBe(true);
     });
 
@@ -659,7 +661,7 @@ describe('ConfectionEditingSession', () => {
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
       expect(session.canRedo()).toBe(false);
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       session.undo().orThrow();
       expect(session.canRedo()).toBe(true);
     });
@@ -674,7 +676,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       const analysis = session.analyzeSaveOptions();
 
       expect(analysis.canCreateVersion).toBe(true);
@@ -692,7 +694,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
 
       expect(
         session.saveAsNewVersion({
@@ -711,7 +713,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
 
       expect(
         session.saveAsNewConfection({
@@ -734,7 +736,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
 
       expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
         expect(entry.type).toBe('confection-edit');
@@ -796,7 +798,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       expect(session.hasChanges).toBe(true);
     });
 
@@ -804,7 +806,7 @@ describe('ConfectionEditingSession', () => {
       const confection = ctx.getRuntimeConfection('test.test-bonbon' as ConfectionId).orThrow();
       const session = Session.ConfectionEditingSession.create(confection).orThrow();
 
-      session.setYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
+      session.scaleToYield({ count: 48, unit: 'pieces', weightPerPiece: 12 as Measurement }).orThrow();
       session.undo().orThrow();
       expect(session.hasChanges).toBe(false);
     });

@@ -84,11 +84,12 @@ export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidat
   removeIngredient(id: string): Result<void>;
 
   /**
-   * Sets the target weight using a weakly-typed number
-   * @param weight - Target weight (will be converted)
-   * @returns Success or Failure
+   * Scales the filling to achieve a target weight using a weakly-typed number.
+   * Weight-contributing ingredients are scaled proportionally.
+   * @param targetWeight - Desired total weight (will be converted)
+   * @returns Success with actual achieved weight, or Failure
    */
-  setTargetWeight(weight: number): Result<void>;
+  scaleToTargetWeight(targetWeight: number): Result<Measurement>;
 
   /**
    * Sets the procedure using a weakly-typed string
@@ -178,13 +179,13 @@ export class EditingSessionValidator implements IEditingSessionValidator {
   }
 
   /**
-   * Sets the target weight using a weakly-typed number
-   * @param weight - Target weight (will be converted)
-   * @returns Success or Failure
+   * Scales the filling to achieve a target weight using a weakly-typed number.
+   * @param targetWeight - Desired total weight (will be converted)
+   * @returns Success with actual achieved weight, or Failure
    */
-  public setTargetWeight(weight: number): Result<void> {
-    return CommonConverters.measurement.convert(weight).onSuccess((validWeight: Measurement) => {
-      return this._session.setTargetWeight(validWeight);
+  public scaleToTargetWeight(targetWeight: number): Result<Measurement> {
+    return CommonConverters.measurement.convert(targetWeight).onSuccess((validWeight: Measurement) => {
+      return this._session.scaleToTargetWeight(validWeight);
     });
   }
 

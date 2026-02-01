@@ -38,6 +38,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[bufferPercentage?](./ts-chocolate.entities.iproducedmoldedbonbon.bufferpercentage.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ Buffer percentage for yield calculations (e.g., 0.1 for 10% buffer). Used to account for waste and overfill when calculating frames needed.
+
+
+</td></tr>
+<tr><td>
+
 [confectionType](./ts-chocolate.entities.iproducedmoldedbonbon.confectiontype.md)
 
 

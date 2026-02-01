@@ -275,6 +275,20 @@ Saves as a new version of the original recipe. Requires that the collection is m
 </td></tr>
 <tr><td>
 
+[scaleToTargetWeight(targetWeight)](./ts-chocolate.runtime.session.editingsession.scaletotargetweight.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Scales the filling to achieve a target weight. Weight-contributing ingredients (g, mL) are scaled proportionally. Non-weight ingredients (tsp, Tbsp, pinch, etc.) remain unchanged.
+
+
+</td></tr>
+<tr><td>
+
 [setIngredient(id, amount, unit, modifiers)](./ts-chocolate.runtime.session.editingsession.setingredient.md)
 
 
@@ -312,20 +326,6 @@ Sets the notes for the filling.
 </td><td>
 
 Sets the procedure for the filling.
-
-
-</td></tr>
-<tr><td>
-
-[setTargetWeight(weight)](./ts-chocolate.runtime.session.editingsession.settargetweight.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Sets the target weight for the filling.
 
 
 </td></tr>

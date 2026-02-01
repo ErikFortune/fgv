@@ -118,6 +118,31 @@ function processData(input: string): Result<Output> {
 
 **Exception**: Complex conditional logic may be clearer with intermediate variables. Prioritize readability.
 
+### Avoid Result<void>
+
+**Never use `Result<void>`** - it's an anti-pattern. Operations should return meaningful values:
+
+```typescript
+// ❌ ANTI-PATTERN - Result<void>
+function updateUser(id: string, data: UserData): Result<void> {
+  // ...
+  return succeed(undefined);
+}
+
+// ✅ CORRECT - Return something meaningful
+function updateUser(id: string, data: UserData): Result<User> {
+  // ...
+  return succeed(updatedUser);
+}
+
+// ✅ CORRECT - Return computed/achieved value
+function scaleToTargetWeight(target: Measurement): Result<Measurement> {
+  // Scale ingredients...
+  const actualWeight = calculateActualWeight();
+  return succeed(actualWeight); // Actual achieved weight may differ from target
+}
+```
+
 ### Error Context
 
 Add context as errors propagate:
