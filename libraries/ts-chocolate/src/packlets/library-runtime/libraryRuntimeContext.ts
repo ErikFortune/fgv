@@ -55,7 +55,7 @@ import {
   ITaskData
 } from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
-import { IWeightCalculationContext } from '../calculations';
+import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IConfectionContext,

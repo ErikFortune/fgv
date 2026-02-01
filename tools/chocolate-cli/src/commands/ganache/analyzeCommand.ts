@@ -20,7 +20,7 @@
 
 import { Command } from 'commander';
 import * as yaml from 'yaml';
-import { Calculations, Converters, FillingId, FillingVersionSpec } from '@fgv/ts-chocolate';
+import { Converters, FillingId, FillingVersionSpec, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
 
 import {
   IEntityBaseOptions,
@@ -42,7 +42,7 @@ interface IGanacheAnalyzeOptions extends IEntityBaseOptions {
  * Formats ganache analysis for human-readable output
  */
 function formatGanacheHuman(
-  calculation: Calculations.IGanacheCalculation,
+  calculation: LibraryRuntime.IGanacheCalculation,
   fillingId: FillingId,
   versionSpec: FillingVersionSpec
 ): string {
@@ -175,9 +175,9 @@ export function createAnalyzeSubcommand(): Command {
       }
 
       // Calculate ganache characteristics
-      const calculationResult = Calculations.calculateGanache(
+      const calculationResult = LibraryRuntime.calculateGanache(
         filling,
-        (ingredientId) => ingredientsLibrary.get(ingredientId),
+        (ingredientId: IngredientId) => ingredientsLibrary.get(ingredientId),
         versionSpec
       );
 

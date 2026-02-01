@@ -50,7 +50,7 @@ import {
 import { IMold, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
-import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
+import { IGanacheCalculation, IngredientResolver, calculateGanache } from './internal';
 import {
   CollectionLoader,
   FullLibraryLoadSpec,

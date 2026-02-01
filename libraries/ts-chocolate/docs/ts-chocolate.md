@@ -185,15 +185,6 @@ Description
 </td></tr>
 <tr><td>
 
-[Calculations](./ts-chocolate.calculations.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [Converters](./ts-chocolate.converters.md)
 
 

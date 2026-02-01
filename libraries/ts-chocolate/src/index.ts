@@ -55,10 +55,6 @@ export { LibraryRuntime };
 import * as Runtime from './packlets/runtime';
 export { Runtime };
 
-// Business logic - scaling, calculations
-import * as Calculations from './packlets/calculations';
-export { Calculations };
-
 // Note: Converters is exported via 'export * from ./packlets/common'
 // Entity-specific converters are accessible via Entities.Fillings.Converters, etc.
 

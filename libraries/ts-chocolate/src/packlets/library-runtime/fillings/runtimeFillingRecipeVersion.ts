@@ -41,7 +41,7 @@ import {
   validateGanache,
   scaleVersion,
   IVersionScaleOptions
-} from '../../calculations';
+} from '../internal';
 import {
   ICategoryFilter,
   IResolvedFillingIngredient,

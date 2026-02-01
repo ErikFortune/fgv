@@ -30,7 +30,7 @@ import {
   defaultScalerRegistry,
   supportsScaling,
   scaleAmount
-} from '../../../packlets/calculations';
+} from '../../../packlets/library-runtime';
 
 describe('UnitScaler', () => {
   // ============================================================================

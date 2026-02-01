@@ -13,7 +13,7 @@ createIngredientResolver(): IngredientResolver;
 ```
 **Returns:**
 
-[IngredientResolver](./ts-chocolate.calculations.ingredientresolver.md)
+[IngredientResolver](./ts-chocolate.libraryruntime.ingredientresolver.md)
 
 Ingredient resolver function
 

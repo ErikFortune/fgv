@@ -32,7 +32,7 @@ import {
   calculateFromIngredients,
   IResolvedIngredient,
   validateGanache
-} from '../../calculations';
+} from '../internal';
 import {
   ICategoryFilter,
   IResolvedScaledIngredient,

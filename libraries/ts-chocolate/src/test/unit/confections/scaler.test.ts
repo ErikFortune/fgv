@@ -33,7 +33,7 @@ import {
   scaleConfectionToCount,
   scaleMoldedBonBonByFrames,
   canScaleByFrames
-} from '../../../packlets/calculations';
+} from '../../../packlets/library-runtime';
 import {
   BaseConfectionId,
   ConfectionName,

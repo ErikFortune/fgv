@@ -66,7 +66,7 @@ _(Optional)_ Optional version ID (default: golden version)
 
 **Returns:**
 
-Result&lt;[IGanacheCalculation](./ts-chocolate.calculations.iganachecalculation.md)<!-- -->&gt;
+Result&lt;[IGanacheCalculation](./ts-chocolate.libraryruntime.iganachecalculation.md)<!-- -->&gt;
 
 Success with ganache calculation, or Failure if ingredients missing
 

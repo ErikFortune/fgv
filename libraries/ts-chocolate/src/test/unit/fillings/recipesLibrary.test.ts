@@ -44,7 +44,7 @@ import {
   scaleFillingRecipeByFactor,
   calculateBaseWeight,
   recalculateFillingRecipeVersion
-} from '../../../packlets/calculations';
+} from '../../../packlets/library-runtime';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 

@@ -13,7 +13,7 @@ calculateGanache(): Result<IGanacheCalculation>;
 ```
 **Returns:**
 
-Result&lt;[IGanacheCalculation](./ts-chocolate.calculations.iganachecalculation.md)<!-- -->&gt;
+Result&lt;[IGanacheCalculation](./ts-chocolate.libraryruntime.iganachecalculation.md)<!-- -->&gt;
 
 Success with ganache calculation, or Failure if calculation fails
 

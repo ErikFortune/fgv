@@ -82,7 +82,7 @@ import {
   IProcedureRef,
   IScaledFillingIngredient
 } from '../entities';
-import { IVersionScaleOptions } from '../calculations';
+import { IVersionScaleOptions } from './internal';
 import {
   AnyConfectionVersion,
   ConfectionData,
@@ -107,7 +107,7 @@ import {
 } from '../entities';
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { AnyFillingJournalEntry, JournalLibrary } from '../entities';
-import { IGanacheCalculation } from '../calculations';
+import { IGanacheCalculation } from './internal';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 

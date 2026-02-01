@@ -70,7 +70,7 @@ export {
   RuntimeScaledFillingRecipeVersion
 } from './fillings';
 
-// Runtime confection classes
+// Runtime confection classes and scaling
 export {
   RuntimeConfectionBase,
   RuntimeMoldedBonBon,
@@ -81,7 +81,16 @@ export {
   RuntimeConfectionVersionBase,
   RuntimeMoldedBonBonVersion,
   RuntimeBarTruffleVersion,
-  RuntimeRolledTruffleVersion
+  RuntimeRolledTruffleVersion,
+  // Confection scaling
+  scaleConfection,
+  scaleConfectionByFactor,
+  scaleConfectionToCount,
+  scaleConfectionVersionByFactor,
+  scaleConfectionVersionToCount,
+  scaleMoldedBonBonByFrames,
+  scaleMoldedBonBonVersionByFrames,
+  canScaleByFrames
 } from './confections';
 
 // Query builders
@@ -109,3 +118,6 @@ export { IMoldContext, IRuntimeMold, RuntimeMold } from './molds';
 
 // Produced wrappers (mutable editing containers)
 export * from './produced';
+
+// Calculation utilities (re-exported from internal for public API)
+export * from './internal';

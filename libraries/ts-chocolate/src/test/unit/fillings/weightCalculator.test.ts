@@ -31,7 +31,7 @@ import {
   contributesToWeight,
   defaultWeightContext,
   isWeightExcluded
-} from '../../../packlets/calculations';
+} from '../../../packlets/library-runtime';
 
 describe('WeightCalculator', () => {
   // ============================================================================

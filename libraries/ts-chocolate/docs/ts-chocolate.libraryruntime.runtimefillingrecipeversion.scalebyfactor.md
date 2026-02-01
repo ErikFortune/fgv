@@ -53,7 +53,7 @@ options
 
 </td><td>
 
-[IVersionScaleOptions](./ts-chocolate.calculations.iversionscaleoptions.md)
+[IVersionScaleOptions](./ts-chocolate.libraryruntime.iversionscaleoptions.md)
 
 
 </td><td>

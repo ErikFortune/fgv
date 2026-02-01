@@ -45,3 +45,6 @@ export {
   RuntimeBarTruffleVersion,
   RuntimeRolledTruffleVersion
 } from './versions';
+
+// Confection scaling utilities
+export * from './confectionScaler';

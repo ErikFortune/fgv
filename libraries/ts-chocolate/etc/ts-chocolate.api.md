@@ -399,62 +399,6 @@ function calculateTotalWeight(ingredients: ReadonlyArray<IFillingIngredient>, co
 // @public
 function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
 
-declare namespace Calculations {
-    export {
-        calculateFromIngredients,
-        calculateFromFillingRecipeIngredients,
-        calculateForFillingRecipe,
-        validateGanache,
-        calculateGanache,
-        IGanacheAnalysis,
-        IGanacheValidation,
-        IGanacheCalculation,
-        IResolvedIngredient,
-        IngredientResolver,
-        scaleVersion,
-        scaleFillingRecipe,
-        scaleFillingRecipeByFactor,
-        calculateBaseWeight,
-        recalculateFillingRecipeVersion,
-        IVersionScaleOptions,
-        IFillingRecipeScaleOptions,
-        supportsScaling,
-        scaleAmount,
-        IFraction,
-        STANDARD_FRACTIONS,
-        IScaledAmount,
-        IUnitScaler,
-        ILinearScalerOptions,
-        LinearScaler,
-        PinchScaler,
-        ISpoonScalerOptions,
-        SpoonScaler,
-        UnitScalerRegistry,
-        defaultScalerRegistry,
-        contributesToWeight,
-        isWeightExcluded,
-        calculateIngredientWeight,
-        calculateTotalWeight,
-        calculateWeightContributions,
-        IWeightCalculationContext,
-        IWeightContribution,
-        defaultWeightContext,
-        scaleConfectionVersionByFactor,
-        scaleConfectionByFactor,
-        scaleConfectionVersionToCount,
-        scaleConfectionToCount,
-        scaleMoldedBonBonVersionByFrames,
-        scaleMoldedBonBonByFrames,
-        scaleConfection,
-        canScaleByFrames,
-        IScaledConfectionYield,
-        IScaledConfection,
-        IConfectionScaleOptions,
-        IFrameScaleOptions
-    }
-}
-export { Calculations }
-
 // @public
 function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon;
 
@@ -2288,11 +2232,6 @@ interface IConfectionSaveResult {
 }
 
 // @public
-interface IConfectionScaleOptions {
-    readonly roundingMode?: 'round' | 'floor' | 'ceil';
-}
-
-// @public
 interface IConfectionSessionState {
     readonly chocolates: ReadonlyMap<ChocolateRole, ISessionChocolate>;
     readonly coating?: ISessionCoating;
@@ -2695,11 +2634,6 @@ interface IFrameDimensions {
     readonly depth: Millimeters;
     readonly height: Millimeters;
     readonly width: Millimeters;
-}
-
-// @public
-interface IFrameScaleOptions extends IConfectionScaleOptions {
-    readonly overagePercent?: number;
 }
 
 // @public
@@ -4171,24 +4105,6 @@ interface IScaledAmount {
 }
 
 // @public
-interface IScaledConfection<T extends ConfectionData = ConfectionData> {
-    readonly confection: T;
-    readonly createdDate: string;
-    readonly scaledYield: IScaledConfectionYield;
-    readonly versionSpec: ConfectionVersionSpec;
-}
-
-// @public
-interface IScaledConfectionYield {
-    readonly originalCount: number;
-    readonly scaledCount: number;
-    readonly scaleFactor: number;
-    readonly totalWeight?: Measurement;
-    readonly unit?: string;
-    readonly weightPerPiece?: Measurement;
-}
-
-// @public
 interface IScaledFillingIngredient extends IFillingIngredient {
     readonly originalAmount: Measurement;
     readonly scaleFactor: number;
@@ -4860,6 +4776,14 @@ declare namespace LibraryRuntime {
         RuntimeMoldedBonBonVersion,
         RuntimeBarTruffleVersion,
         RuntimeRolledTruffleVersion,
+        scaleConfection,
+        scaleConfectionByFactor,
+        scaleConfectionToCount,
+        scaleConfectionVersionByFactor,
+        scaleConfectionVersionToCount,
+        scaleMoldedBonBonByFrames,
+        scaleMoldedBonBonVersionByFrames,
+        canScaleByFrames,
         Indexers,
         ITaskContext,
         IRuntimeTask,
@@ -4949,7 +4873,45 @@ declare namespace LibraryRuntime {
         RuntimeProducedConfectionBase,
         RuntimeProducedMoldedBonBon,
         RuntimeProducedBarTruffle,
-        RuntimeProducedRolledTruffle
+        RuntimeProducedRolledTruffle,
+        contributesToWeight,
+        isWeightExcluded,
+        calculateIngredientWeight,
+        calculateTotalWeight,
+        calculateWeightContributions,
+        IWeightCalculationContext,
+        IWeightContribution,
+        defaultWeightContext,
+        scaleVersion,
+        scaleFillingRecipe,
+        scaleFillingRecipeByFactor,
+        calculateBaseWeight,
+        recalculateFillingRecipeVersion,
+        IVersionScaleOptions,
+        IFillingRecipeScaleOptions,
+        supportsScaling,
+        scaleAmount,
+        IFraction,
+        STANDARD_FRACTIONS,
+        IScaledAmount,
+        IUnitScaler,
+        ILinearScalerOptions,
+        LinearScaler,
+        PinchScaler,
+        ISpoonScalerOptions,
+        SpoonScaler,
+        UnitScalerRegistry,
+        defaultScalerRegistry,
+        calculateFromIngredients,
+        calculateFromFillingRecipeIngredients,
+        calculateForFillingRecipe,
+        validateGanache,
+        calculateGanache,
+        IGanacheAnalysis,
+        IGanacheValidation,
+        IGanacheCalculation,
+        IResolvedIngredient,
+        IngredientResolver
     }
 }
 export { LibraryRuntime }
@@ -6172,6 +6134,9 @@ class RuntimeTask implements IRuntimeTask {
 // @public
 function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
 
+// Warning: (ae-forgotten-export) The symbol "IConfectionScaleOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IScaledConfection" needs to be exported by the entry point index.d.ts
+//
 // @public
 function scaleConfection<T extends ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
@@ -6197,20 +6162,22 @@ const scaledFillingIngredient: Converter<IScaledFillingIngredient>;
 // @public
 const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
 //
 // @public
 function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
 //
 // @public
 function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
 
+// Warning: (ae-forgotten-export) The symbol "IFrameScaleOptions" needs to be exported by the entry point index.d.ts
+//
 // @public
 function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
 
@@ -6218,7 +6185,7 @@ function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number
 function scaleMoldedBonBonVersionByFrames(confection: IMoldedBonBon, version: IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
 //
 // @public
 function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<IComputedScaledFillingRecipe>;

@@ -43,7 +43,7 @@ import {
   validateGanache,
   IResolvedIngredient,
   IngredientResolver
-} from '../../../packlets/calculations';
+} from '../../../packlets/library-runtime';
 
 describe('Ganache Calculator', () => {
   // ============================================================================
