@@ -4,12 +4,12 @@
 
 ## Runtime.Session.ConfectionEditingSession.toEditJournalEntry() method
 
-Creates an edit journal entry documenting this session.
+Creates an edit journal entry from this session. Records the original version and any modifications made.
 
 **Signature:**
 
 ```typescript
-toEditJournalEntry(updated?: AnyConfectionVersion, updatedVersionSpec?: ConfectionVersionSpec, notes?: string): Result<IConfectionEditJournalEntry>;
+toEditJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionEditJournalEntry>;
 ```
 
 ## Parameters
@@ -32,49 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-updated
-
-
-</td><td>
-
-AnyConfectionVersion
-
-
-</td><td>
-
-_(Optional)_ Optional updated version if modifications were saved
-
-
-</td></tr>
-<tr><td>
-
-updatedVersionSpec
-
-
-</td><td>
-
-[ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
 notes
 
 
 </td><td>
 
-string
+[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->\[\]
 
 
 </td><td>
 
-_(Optional)_ Optional notes about this session
+_(Optional)_ Optional notes to include in the journal entry
 
 
 </td></tr>
@@ -84,5 +52,5 @@ _(Optional)_ Optional notes about this session
 
 Result&lt;IConfectionEditJournalEntry&gt;
 
-Success with journal entry, or Failure with error message
+Result with journal entry
 

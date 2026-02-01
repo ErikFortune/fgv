@@ -536,6 +536,11 @@ export interface IRuntimeFillingRecipeVersion {
    */
   readonly procedures?: IResolvedProcedures;
 
+  /**
+   * Gets the preferred procedure, falling back to first available.
+   */
+  readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
+
   // ---- Raw access ----
 
   /**
@@ -691,6 +696,11 @@ export interface IRuntimeScaledFillingRecipeVersion {
  * @public
  */
 export interface IResolvedFillingRecipeProcedure {
+  /**
+   * The procedure ID (for consistency with IResolvedConfectionProcedure).
+   */
+  readonly id: ProcedureId;
+
   /**
    * The fully resolved procedure object.
    */
@@ -1736,6 +1746,12 @@ export interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBa
   /** Resolved additional chocolates (optional) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 
+  /** Gets the preferred mold, falling back to first available */
+  readonly preferredMold: IResolvedConfectionMoldRef | undefined;
+
+  /** Gets the preferred procedure, falling back to first available */
+  readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
+
   /** Raw version typed to IMoldedBonBonVersion */
   readonly raw: IMoldedBonBonVersion;
 }
@@ -1757,6 +1773,9 @@ export interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
+  /** Gets the preferred procedure, falling back to first available */
+  readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
+
   /** Raw version typed to IBarTruffleVersion */
   readonly raw: IBarTruffleVersion;
 }
@@ -1774,6 +1793,9 @@ export interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionB
 
   /** Resolved coatings (optional) */
   readonly coatings?: IResolvedCoatings;
+
+  /** Gets the preferred procedure, falling back to first available */
+  readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IRolledTruffleVersion */
   readonly raw: IRolledTruffleVersion;

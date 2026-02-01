@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[createConfectionVersionId(parts)](./ts-chocolate.helpers.createconfectionversionid.md)
+
+
+</td><td>
+
+Creates and validates a confection version ID from component parts. Uses converter to ensure the formatted ID is valid.
+
+
+</td></tr>
+<tr><td>
+
 [createFillingId(sourceId, baseId)](./ts-chocolate.helpers.createfillingid.md)
 
 
@@ -36,6 +47,17 @@ Creates a composite FillingId from source ID and base ID
 </td><td>
 
 Creates a composite FillingVersionId from filling ID and version spec
+
+
+</td></tr>
+<tr><td>
+
+[createFillingVersionIdValidated(parts)](./ts-chocolate.helpers.createfillingversionidvalidated.md)
+
+
+</td><td>
+
+Creates and validates a filling version ID from component parts. Uses converter to ensure the formatted ID is valid.
 
 
 </td></tr>
@@ -157,6 +179,17 @@ Gets the preferred ID from a simple ID collection, falling back to the first ID.
 </td><td>
 
 Gets the preferred option from a collection, falling back to the first option.
+
+
+</td></tr>
+<tr><td>
+
+[parseConfectionVersionId(id)](./ts-chocolate.helpers.parseconfectionversionid.md)
+
+
+</td><td>
+
+Parses a composite ConfectionVersionId into its component parts
 
 
 </td></tr>

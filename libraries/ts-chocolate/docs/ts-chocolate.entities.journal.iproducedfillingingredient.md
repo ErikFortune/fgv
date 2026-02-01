@@ -79,6 +79,27 @@ The single selected ingredient ID
 </td></tr>
 <tr><td>
 
+[modifiers?](./ts-chocolate.entities.journal.iproducedfillingingredient.modifiers.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+IIngredientModifiers
+
+
+</td><td>
+
+_(Optional)_ Measurement modifiers (spoonLevel, toTaste) - production metadata
+
+
+</td></tr>
+<tr><td>
+
 [notes?](./ts-chocolate.entities.journal.iproducedfillingingredient.notes.md)
 
 

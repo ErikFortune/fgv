@@ -28,6 +28,9 @@ import { Result } from '@fgv/ts-utils';
 import {
   BaseFillingId,
   BaseIngredientId,
+  ConfectionId,
+  ConfectionVersionId,
+  ConfectionVersionSpec,
   FillingId,
   FillingVersionId,
   FillingVersionSpec,
@@ -40,9 +43,13 @@ import {
   VERSION_ID_SEPARATOR
 } from './model';
 import {
+  confectionVersionId as confectionVersionIdConverter,
+  fillingVersionId as fillingVersionIdConverter,
+  ParsedConfectionVersionId,
   ParsedFillingId,
   ParsedFillingVersionId,
   ParsedIngredientId,
+  parsedConfectionVersionId,
   parsedFillingId,
   parsedFillingVersionId,
   parsedIngredientId
@@ -180,6 +187,46 @@ export function getFillingVersionFillingId(id: FillingVersionId): FillingId {
  */
 export function getFillingVersionSpec(id: FillingVersionId): FillingVersionSpec {
   return parsedFillingVersionId.convert(id).orThrow().itemId;
+}
+
+/**
+ * Creates and validates a confection version ID from component parts.
+ * Uses converter to ensure the formatted ID is valid.
+ * @param parts - Object with collectionId (ConfectionId) and itemId (ConfectionVersionSpec)
+ * @returns Result with validated confection version ID or error
+ * @public
+ */
+export function createConfectionVersionId(parts: {
+  collectionId: ConfectionId;
+  itemId: ConfectionVersionSpec;
+}): Result<ConfectionVersionId> {
+  const formatted = `${parts.collectionId}${VERSION_ID_SEPARATOR}${parts.itemId}`;
+  return confectionVersionIdConverter.convert(formatted);
+}
+
+/**
+ * Parses a composite ConfectionVersionId into its component parts
+ * @param id - The composite confection version ID to parse
+ * @returns Result with parsed composite ID or error
+ * @public
+ */
+export function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId> {
+  return parsedConfectionVersionId.convert(id);
+}
+
+/**
+ * Creates and validates a filling version ID from component parts.
+ * Uses converter to ensure the formatted ID is valid.
+ * @param parts - Object with collectionId (FillingId) and itemId (FillingVersionSpec)
+ * @returns Result with validated filling version ID or error
+ * @public
+ */
+export function createFillingVersionIdValidated(parts: {
+  collectionId: FillingId;
+  itemId: FillingVersionSpec;
+}): Result<FillingVersionId> {
+  const formatted = `${parts.collectionId}${VERSION_ID_SEPARATOR}${parts.itemId}`;
+  return fillingVersionIdConverter.convert(formatted);
 }
 
 // ============================================================================

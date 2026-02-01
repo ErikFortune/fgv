@@ -29,7 +29,9 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  SourceId,
+  NoteCategory,
+  ProcedureId
 } from '../../../../packlets/common';
 import {
   IGanacheCharacteristics,
@@ -93,20 +95,6 @@ describe('EditingSession', () => {
     }
   };
 
-  const sugar: IIngredient = {
-    baseId: 'sugar' as BaseIngredientId,
-    name: 'Sugar',
-    category: 'sugar',
-    ganacheCharacteristics: {
-      cacaoFat: 0 as Percentage,
-      sugar: 100 as Percentage,
-      milkFat: 0 as Percentage,
-      water: 0 as Percentage,
-      solids: 0 as Percentage,
-      otherFats: 0 as Percentage
-    }
-  };
-
   const testRecipe: IFillingRecipe = {
     baseId: 'test-ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
@@ -141,8 +129,7 @@ describe('EditingSession', () => {
             'dark-chocolate': darkChocolate,
             /* eslint-enable @typescript-eslint/naming-convention */
             cream,
-            butter,
-            sugar
+            butter
           }
         }
       ]
@@ -176,610 +163,371 @@ describe('EditingSession', () => {
   // ============================================================================
 
   describe('create', () => {
-    test('creates session with default scale factor', () => {
+    test('creates session from base recipe', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      expect(Session.RecipeEditingSession.create({ sourceVersion: version })).toSucceedAndSatisfy(
-        (session) => {
-          expect(session.scaleFactor).toBe(1.0);
-          expect(session.targetWeight).toBe(300);
-          expect(session.isDirty).toBe(false);
-          expect(session.isJournalingEnabled).toBe(true);
-          expect(session.sessionId).toBeDefined();
-          expect(session.sourceVersion).toBe(version);
-        }
-      );
-    });
-
-    test('creates session with specified scale factor', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      expect(
-        Session.RecipeEditingSession.create({
-          sourceVersion: version,
-          scaleFactor: 2.0
-        })
-      ).toSucceedAndSatisfy((session) => {
-        expect(session.scaleFactor).toBe(2.0);
-        expect(session.targetWeight).toBe(600);
+      expect(Session.EditingSession.create(version)).toSucceedAndSatisfy((session) => {
+        expect(session.sessionId).toBeDefined();
+        expect(session.baseRecipe).toBe(version);
+        expect(session.hasChanges).toBe(false);
       });
     });
 
-    test('creates session with specified target weight', () => {
+    test('creates session with initial scale factor', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      expect(
-        Session.RecipeEditingSession.create({
-          sourceVersion: version,
-          targetWeight: 450 as Measurement
-        })
-      ).toSucceedAndSatisfy((session) => {
-        expect(session.targetWeight).toBe(450);
-        expect(session.scaleFactor).toBe(1.5);
+      expect(Session.EditingSession.create(version, 2.0)).toSucceedAndSatisfy((session) => {
+        expect(session.produced.targetWeight).toBe(600);
       });
-    });
-
-    test('creates session with journaling disabled', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      expect(
-        Session.RecipeEditingSession.create({
-          sourceVersion: version,
-          enableJournal: false
-        })
-      ).toSucceedAndSatisfy((session) => {
-        expect(session.isJournalingEnabled).toBe(false);
-      });
-    });
-
-    test('initializes ingredients from source version', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      expect(Session.RecipeEditingSession.create({ sourceVersion: version })).toSucceedAndSatisfy(
-        (session) => {
-          expect(session.ingredients.size).toBe(2);
-          expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-            expect(ing.amount).toBe(200);
-            expect(ing.originalAmount).toBe(200);
-            expect(ing.status).toBe('original');
-          });
-        }
-      );
-    });
-  });
-
-  // ============================================================================
-  // Scale Operations Tests
-  // ============================================================================
-
-  describe('setScaleFactor', () => {
-    test('scales all ingredients proportionally', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.setScaleFactor(2.0)).toSucceed();
-      expect(session.scaleFactor).toBe(2.0);
-      expect(session.targetWeight).toBe(600);
-      expect(session.isDirty).toBe(true);
-
-      expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(400);
-      });
-      expect(session.getIngredient('test.cream' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(200);
-      });
-    });
-
-    test('marks session as dirty after scale change', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.isDirty).toBe(false);
-      session.setScaleFactor(1.5).orThrow();
-      expect(session.isDirty).toBe(true);
     });
 
     test('fails for non-positive scale factor', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.setScaleFactor(0)).toFailWith(/positive/);
-      expect(session.setScaleFactor(-1)).toFailWith(/positive/);
-    });
-
-    test('does not rescale added ingredients', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      // Add a new ingredient
-      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-
-      // Scale the recipe
-      session.setScaleFactor(2.0).orThrow();
-
-      // Original ingredients should be scaled
-      expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(400); // 200 * 2
-      });
-
-      // Added ingredient should NOT be scaled (it was added at a specific amount)
-      expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(30); // Still 30, not 60
-        expect(ing.status).toBe('added');
-      });
-    });
-  });
-
-  describe('setTargetWeight', () => {
-    test('calculates scale factor from target weight', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.setTargetWeight(600 as Measurement)).toSucceed();
-      expect(session.scaleFactor).toBe(2.0);
-      expect(session.targetWeight).toBe(600);
-    });
-
-    test('fails for non-positive target weight', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.setTargetWeight(0 as Measurement)).toFailWith(/positive/);
-      expect(session.setTargetWeight(-100 as Measurement)).toFailWith(/positive/);
+      expect(Session.EditingSession.create(version, 0)).toFailWith(/positive/i);
+      expect(Session.EditingSession.create(version, -1)).toFailWith(/positive/i);
     });
   });
 
   // ============================================================================
-  // Ingredient Operations Tests
+  // Editing Methods Tests (delegation to produced wrapper)
   // ============================================================================
 
-  describe('getIngredient', () => {
-    test('returns existing ingredient', () => {
+  describe('setIngredient', () => {
+    test('delegates to produced wrapper', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.ingredientId).toBe('test.dark-chocolate');
-      });
-    });
+      expect(session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement)).toSucceed();
+      expect(session.hasChanges).toBe(true);
 
-    test('fails for non-existent ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.getIngredient('test.non-existent' as IngredientId)).toFailWith(/not found/);
-    });
-  });
-
-  describe('setIngredientAmount', () => {
-    test('updates ingredient amount', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement)
-      ).toSucceed();
-      expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(250);
-        expect(ing.status).toBe('modified');
-      });
-      expect(session.isDirty).toBe(true);
-    });
-
-    test('reverts to original status if amount matches original', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 200 as Measurement).orThrow();
-
-      expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.status).toBe('original');
-      });
-    });
-
-    test('marks session as dirty after amount change', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.isDirty).toBe(false);
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
-      expect(session.isDirty).toBe(true);
-    });
-
-    test('fails for non-existent ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.setIngredientAmount('test.non-existent' as IngredientId, 100 as Measurement)).toFailWith(
-        /not found/
+      const ingredient = session.produced.snapshot.ingredients.find(
+        (i) => i.ingredientId === 'test.dark-chocolate'
       );
+      expect(ingredient?.amount).toBe(250);
     });
 
-    test('fails for negative amount', () => {
+    test('allows adding new ingredient', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(
-        session.setIngredientAmount('test.dark-chocolate' as IngredientId, -10 as Measurement)
-      ).toFailWith(/negative/);
-    });
+      expect(session.setIngredient('test.butter' as IngredientId, 30 as Measurement)).toSucceed();
+      expect(session.hasChanges).toBe(true);
 
-    test('maintains added status when modifying added ingredient amount', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      // Add a new ingredient
-      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-
-      // Modify its amount
-      session.setIngredientAmount('test.butter' as IngredientId, 50 as Measurement).orThrow();
-
-      // Status should still be 'added', not 'modified'
-      expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(50);
-        expect(ing.status).toBe('added');
-      });
-    });
-  });
-
-  describe('addIngredientAmount', () => {
-    test('adds to existing ingredient amount', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.addIngredientAmount('test.dark-chocolate' as IngredientId, 50 as Measurement)
-      ).toSucceed();
-      expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(250);
-      });
-    });
-
-    test('fails for non-existent ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.addIngredientAmount('test.non-existent' as IngredientId, 50 as Measurement)).toFailWith(
-        /not found/
-      );
-    });
-  });
-
-  describe('addIngredient', () => {
-    test('adds new ingredient to session', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.addIngredient('test.butter' as IngredientId, 30 as Measurement)).toSucceed();
-      expect(session.ingredients.size).toBe(3);
-      expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(30);
-        expect(ing.originalAmount).toBe(0);
-        expect(ing.status).toBe('added');
-      });
-    });
-
-    test('marks session as dirty after adding ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.isDirty).toBe(false);
-      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-      expect(session.isDirty).toBe(true);
-    });
-
-    test('fails if ingredient already exists', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.addIngredient('test.dark-chocolate' as IngredientId, 100 as Measurement)).toFailWith(
-        /already exists/
-      );
-    });
-
-    test('fails for negative amount', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.addIngredient('test.butter' as IngredientId, -10 as Measurement)).toFailWith(/negative/);
+      const ingredient = session.produced.snapshot.ingredients.find((i) => i.ingredientId === 'test.butter');
+      expect(ingredient).toBeDefined();
+      expect(ingredient?.amount).toBe(30);
     });
   });
 
   describe('removeIngredient', () => {
-    test('marks original ingredient as removed', () => {
+    test('delegates to produced wrapper', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.removeIngredient('test.cream' as IngredientId)).toSucceed();
-      expect(session.getIngredient('test.cream' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(0);
-        expect(ing.status).toBe('removed');
-      });
-    });
+      expect(session.hasChanges).toBe(true);
 
-    test('completely removes added ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-      expect(session.removeIngredient('test.butter' as IngredientId)).toSucceed();
-      expect(session.ingredients.has('test.butter' as IngredientId)).toBe(false);
-    });
-
-    test('marks session as dirty after removing ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.isDirty).toBe(false);
-      session.removeIngredient('test.cream' as IngredientId).orThrow();
-      expect(session.isDirty).toBe(true);
-    });
-
-    test('fails for non-existent ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.removeIngredient('test.non-existent' as IngredientId)).toFailWith(/not found/);
+      const ingredient = session.produced.snapshot.ingredients.find((i) => i.ingredientId === 'test.cream');
+      expect(ingredient).toBeUndefined();
     });
   });
 
-  describe('substituteIngredient', () => {
-    test('substitutes one ingredient for another', () => {
+  describe('setTargetWeight', () => {
+    test('delegates to produced wrapper', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(
-        session.substituteIngredient('test.cream' as IngredientId, 'test.butter' as IngredientId)
-      ).toSucceed();
-
-      // Original is marked as removed
-      expect(session.getIngredient('test.cream' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.status).toBe('removed');
-        expect(ing.amount).toBe(0);
-      });
-
-      // Substitute is added with original amount
-      expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.status).toBe('substituted');
-        expect(ing.amount).toBe(100); // Same as original cream amount
-        expect(ing.substitutedFor).toBe('test.cream');
-      });
-    });
-
-    test('allows specifying different amount for substitute', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.substituteIngredient(
-          'test.cream' as IngredientId,
-          'test.butter' as IngredientId,
-          80 as Measurement
-        )
-      ).toSucceed();
-
-      expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
-        expect(ing.amount).toBe(80);
-      });
-    });
-
-    test('marks session as dirty after substitution', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(session.isDirty).toBe(false);
-      session.substituteIngredient('test.cream' as IngredientId, 'test.butter' as IngredientId).orThrow();
-      expect(session.isDirty).toBe(true);
-    });
-
-    test('fails if original not found', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.substituteIngredient('test.non-existent' as IngredientId, 'test.butter' as IngredientId)
-      ).toFailWith(/not found/);
-    });
-
-    test('fails if substitute already exists', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.substituteIngredient('test.cream' as IngredientId, 'test.dark-chocolate' as IngredientId)
-      ).toFailWith(/already exists/);
+      expect(session.setTargetWeight(600 as Measurement)).toSucceed();
+      expect(session.hasChanges).toBe(true);
+      expect(session.produced.targetWeight).toBe(600);
     });
   });
 
-  describe('addNote', () => {
-    test('adds note without error', () => {
+  describe('setNotes', () => {
+    test('delegates to produced wrapper', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(() => session.addNote('Starting cooking session')).not.toThrow();
+      const notes = [{ category: 'session' as NoteCategory, note: 'Test note' }];
+      expect(session.setNotes(notes)).toSucceed();
+      expect(session.hasChanges).toBe(true);
+      expect(session.produced.snapshot.notes).toEqual(notes);
     });
+  });
 
-    test('accepts note when journaling is disabled', () => {
+  describe('setProcedure', () => {
+    test('delegates to produced wrapper', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({
-        sourceVersion: version,
-        enableJournal: false
-      }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(() => session.addNote('This note is accepted')).not.toThrow();
+      // Setting procedure to a value when it was undefined should register as a change
+      expect(session.setProcedure('test.procedure' as ProcedureId)).toSucceed();
+      expect(session.hasChanges).toBe(true);
     });
   });
 
   // ============================================================================
-  // Output Methods Tests
+  // Undo/Redo Tests
+  // ============================================================================
+
+  describe('undo/redo', () => {
+    test('can undo changes', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      expect(session.hasChanges).toBe(true);
+
+      expect(session.undo()).toSucceedWith(true);
+      expect(session.hasChanges).toBe(false);
+    });
+
+    test('can redo changes', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      session.undo().orThrow();
+
+      expect(session.redo()).toSucceedWith(true);
+      expect(session.hasChanges).toBe(true);
+    });
+
+    test('returns false when no undo available', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.undo()).toSucceedWith(false);
+    });
+
+    test('returns false when no redo available', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.redo()).toSucceedWith(false);
+    });
+
+    test('canUndo reflects undo availability', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.canUndo()).toBe(false);
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      expect(session.canUndo()).toBe(true);
+    });
+
+    test('canRedo reflects redo availability', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.canRedo()).toBe(false);
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      session.undo().orThrow();
+      expect(session.canRedo()).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // Save Analysis Tests
+  // ============================================================================
+
+  describe('analyzeSaveOptions', () => {
+    test('recommends version for weight changes', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setTargetWeight(600 as Measurement).orThrow();
+      const analysis = session.analyzeSaveOptions();
+
+      expect(analysis.canCreateVersion).toBe(true);
+      expect(analysis.recommendedOption).toBe('version');
+      expect(analysis.changes.weightChanged).toBe(true);
+    });
+
+    test('recommends alternatives for ingredient changes', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
+      const analysis = session.analyzeSaveOptions();
+
+      expect(analysis.canAddAlternatives).toBe(true);
+      expect(analysis.recommendedOption).toBe('alternatives');
+      expect(analysis.changes.ingredientsChanged).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // Save Operations Tests
+  // ============================================================================
+
+  describe('saveAsNewVersion', () => {
+    test('creates journal entry with new version spec', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setTargetWeight(600 as Measurement).orThrow();
+
+      expect(
+        session.saveAsNewVersion({
+          versionSpec: '2026-01-02-01' as FillingVersionSpec,
+          baseWeight: 600 as Measurement
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.journalId).toBeDefined();
+        expect(result.journalEntry).toBeDefined();
+        expect(result.newVersionSpec).toBe('2026-01-02-01');
+      });
+    });
+  });
+
+  describe('saveAsAlternatives', () => {
+    test('creates journal entry', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
+
+      expect(
+        session.saveAsAlternatives({
+          versionSpec: '2026-01-01-01' as FillingVersionSpec
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.journalId).toBeDefined();
+        expect(result.journalEntry).toBeDefined();
+      });
+    });
+  });
+
+  describe('saveAsNewRecipe', () => {
+    test('creates journal entry with new recipe info', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setTargetWeight(600 as Measurement).orThrow();
+
+      expect(
+        session.saveAsNewRecipe({
+          newId: 'test.new-ganache' as FillingId,
+          versionSpec: '2026-01-01-01' as FillingVersionSpec,
+          baseWeight: 600 as Measurement
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.journalId).toBeDefined();
+        expect(result.journalEntry).toBeDefined();
+      });
+    });
+  });
+
+  // ============================================================================
+  // Journal Creation Tests
   // ============================================================================
 
   describe('toEditJournalEntry', () => {
-    test('creates journal entry from session', () => {
+    test('creates edit journal entry', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      session.setScaleFactor(1.5).orThrow();
-      session.addNote('Test note');
-
-      expect(session.toEditJournalEntry(undefined, undefined, 'Session notes')).toSucceedAndSatisfy(
-        (entry) => {
-          expect(entry.type).toBe('filling-edit');
-          expect(entry.id).toBeDefined();
-          expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
-          expect(entry.recipe).toBeDefined();
-          expect(entry.notes).toBeDefined();
-          expect(entry.notes?.[0]?.note).toBe('Session notes');
-        }
-      );
-    });
-
-    test('includes source recipe in entry', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({
-        sourceVersion: version,
-        enableJournal: true
-      }).orThrow();
+      session.setTargetWeight(600 as Measurement).orThrow();
 
       expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
-        expect(entry.recipe).toBeDefined();
+        expect(entry.type).toBe('filling-edit');
+        expect(entry.id).toBeDefined();
         expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(entry.recipe).toBeDefined();
+      });
+    });
+
+    test('includes notes when provided', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      const notes = [{ category: 'session' as NoteCategory, note: 'Test session' }];
+      expect(session.toEditJournalEntry(notes)).toSucceedAndSatisfy((entry) => {
+        expect(entry.notes).toEqual(notes);
       });
     });
   });
 
-  describe('toRecipeIngredients', () => {
-    test('returns non-removed ingredients', () => {
+  describe('toProductionJournalEntry', () => {
+    test('creates production journal entry', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      session.removeIngredient('test.cream' as IngredientId).orThrow();
-      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-
-      const ingredients = session.toRecipeIngredients();
-      expect(ingredients.length).toBe(2);
-      expect(ingredients.find((i) => i.ingredient.ids[0] === 'test.dark-chocolate')).toBeDefined();
-      expect(ingredients.find((i) => i.ingredient.ids[0] === 'test.butter')).toBeDefined();
-      expect(ingredients.find((i) => i.ingredient.ids[0] === 'test.cream')).toBeUndefined();
-    });
-
-    test('excludes zero-amount ingredients', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      session.setIngredientAmount('test.cream' as IngredientId, 0 as Measurement).orThrow();
-
-      const ingredients = session.toRecipeIngredients();
-      expect(ingredients.length).toBe(1);
-      expect(ingredients[0].ingredient.ids[0]).toBe('test.dark-chocolate');
-    });
-  });
-
-  describe('toRecipeVersion', () => {
-    test('creates recipe version from session state', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      session.setScaleFactor(2).orThrow();
-
-      expect(session.toRecipeVersion('2026-02-01-01' as FillingVersionSpec)).toSucceedAndSatisfy(
-        (newVersion) => {
-          expect(newVersion.versionSpec).toBe('2026-02-01-01');
-          expect(newVersion.ingredients.length).toBe(2);
-          expect(newVersion.baseWeight).toBe(600); // 200*2 + 100*2
-        }
-      );
-    });
-
-    test('fails if no ingredients remain', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      session.removeIngredient('test.dark-chocolate' as IngredientId).orThrow();
-      session.removeIngredient('test.cream' as IngredientId).orThrow();
-
-      expect(session.toRecipeVersion('2026-02-01-01' as FillingVersionSpec)).toFailWith(/no ingredients/);
-    });
-  });
-
-  describe('save', () => {
-    test('creates journal entry when requested', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.save({
-          createJournalRecord: true,
-          journalNotes: 'Test session'
-        })
-      ).toSucceedAndSatisfy((result) => {
-        expect(result.journalId).toBeDefined();
-        expect(result.journalEntry).toBeDefined();
-      });
-      expect(session.isDirty).toBe(false);
-    });
-
-    test('creates new version when requested', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.save({
-          createNewVersion: true,
-          versionLabel: '2026-02-01-01' as FillingVersionSpec
-        })
-      ).toSucceedAndSatisfy((result) => {
-        expect(result.newVersionSpec).toBe('2026-02-01-01');
+      expect(session.toProductionJournalEntry()).toSucceedAndSatisfy((entry) => {
+        expect(entry.type).toBe('filling-production');
+        expect(entry.id).toBeDefined();
+        expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(entry.yield).toBe(300);
+        expect(entry.produced).toBeDefined();
       });
     });
 
-    test('fails if versionLabel missing when creating new version', () => {
+    test('includes notes when provided', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(
-        session.save({
-          createNewVersion: true
-        })
-      ).toFailWith(/versionLabel.*required/);
-    });
-
-    test('creates both journal entry and version', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
-
-      expect(
-        session.save({
-          createJournalRecord: true,
-          createNewVersion: true,
-          versionLabel: '2026-02-01-01' as FillingVersionSpec,
-          journalNotes: 'Created new version'
-        })
-      ).toSucceedAndSatisfy((result) => {
-        expect(result.journalId).toBeDefined();
-        expect(result.journalEntry).toBeDefined();
-        expect(result.newVersionSpec).toBe('2026-02-01-01');
+      const notes = [{ category: 'production' as NoteCategory, note: 'Production run' }];
+      expect(session.toProductionJournalEntry(notes)).toSucceedAndSatisfy((entry) => {
+        expect(entry.notes).toEqual(notes);
       });
     });
   });
 
   // ============================================================================
-  // Journaling Disabled Tests
+  // Change Detection Tests
   // ============================================================================
 
-  describe('journaling disabled', () => {
-    test('tracks dirty state even when journaling is disabled', () => {
+  describe('hasChanges', () => {
+    test('returns false for new session', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
-      const session = Session.RecipeEditingSession.create({
-        sourceVersion: version,
-        enableJournal: false
-      }).orThrow();
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(session.isDirty).toBe(false);
-      session.setScaleFactor(2).orThrow();
-      expect(session.isDirty).toBe(true);
+      expect(session.hasChanges).toBe(false);
+    });
 
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
-      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
-      session.removeIngredient('test.cream' as IngredientId).orThrow();
+    test('returns true after modifications', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
 
-      expect(session.isDirty).toBe(true);
+      session.setTargetWeight(600 as Measurement).orThrow();
+      expect(session.hasChanges).toBe(true);
+    });
+
+    test('returns false after undo to original state', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      session.setTargetWeight(600 as Measurement).orThrow();
+      session.undo().orThrow();
+      expect(session.hasChanges).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // Accessor Tests
+  // ============================================================================
+
+  describe('accessors', () => {
+    test('provides sessionId', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.sessionId).toBeDefined();
+      expect(typeof session.sessionId).toBe('string');
+    });
+
+    test('provides baseRecipe', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.baseRecipe).toBe(version);
+    });
+
+    test('provides produced wrapper', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(session.produced).toBeDefined();
+      expect(session.produced.snapshot).toBeDefined();
     });
   });
 });

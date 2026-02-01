@@ -25,11 +25,12 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId } from '../../../common';
+import { ConfectionId, Helpers } from '../../../common';
 import { IBarTruffleVersion, IBonBonDimensions, IFrameDimensions } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
+  IResolvedConfectionProcedure,
   IRuntimeBarTruffle,
   IRuntimeBarTruffleVersion
 } from '../../model';
@@ -121,6 +122,18 @@ export class RuntimeBarTruffleVersion
         : null;
     }
     return this._resolvedEnrobingChocolate ?? undefined;
+  }
+
+  // ============================================================================
+  // Convenience Getters for Preferred Selections
+  // ============================================================================
+
+  /**
+   * Gets the preferred procedure, falling back to first available.
+   * @public
+   */
+  public get preferredProcedure(): IResolvedConfectionProcedure | undefined {
+    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
   // ============================================================================

@@ -43,6 +43,7 @@ import {
 } from '../confections';
 import {
   fillingRecipeVersion as fillingRecipeVersionConverter,
+  ingredientModifiers as ingredientModifiersConverter,
   scaledFillingRecipeVersion as scaledFillingRecipeVersionConverter
 } from '../fillings/converters';
 import { AnyFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
@@ -136,6 +137,7 @@ export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
     ingredientId: CommonConverters.ingredientId,
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
+    modifiers: ingredientModifiersConverter.optional(),
     notes: Converters.string.optional()
   });
 

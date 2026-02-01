@@ -4,18 +4,19 @@
 
 ## Runtime.Session.ConfectionEditingSession class
 
-A mutable editing session for modifying confection selections.
+A mutable editing session for modifying confection versions.
 
-Tracks: - Source confection and version - Filling selection (recipe or ingredient) - Mold selection (for molded bonbons) - Chocolate selections by role (shell, enrobing, seal, decoration) - Yield modifications (count, weight per piece) - Procedure selection - Coating selection (for rolled truffles) - Journal entries recording what happened
-
-Can produce: - Journal records documenting the session - New confection versions incorporating modifications
+Core architecture: - Wraps an IRuntimeConfection (immutable source) - Uses RuntimeProducedConfection variants for mutable editing with undo/redo - Tracks original snapshot for change detection - Provides save operations that integrate with library - Supports type-specific methods based on confection type
 
 **Signature:**
 
 ```typescript
-export declare class ConfectionEditingSession implements IConfectionSessionState 
+export declare class ConfectionEditingSession 
 ```
-**Implements:** [IConfectionSessionState](./ts-chocolate.runtime.session.iconfectionsessionstate.md)
+
+## Remarks
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `ConfectionEditingSession` class.
 
 ## Properties
 
@@ -42,7 +43,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[chocolates](./ts-chocolate.runtime.session.confectioneditingsession.chocolates.md)
+[baseConfection](./ts-chocolate.runtime.session.confectioneditingsession.baseconfection.md)
 
 
 </td><td>
@@ -52,16 +53,18 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)<!-- -->, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
+[IRuntimeConfection](./ts-chocolate.runtime.iruntimeconfection.md)
 
 
 </td><td>
+
+The base confection being edited.
 
 
 </td></tr>
 <tr><td>
 
-[coating](./ts-chocolate.runtime.session.confectioneditingsession.coating.md)
+[confectionType](./ts-chocolate.runtime.session.confectioneditingsession.confectiontype.md)
 
 
 </td><td>
@@ -71,35 +74,18 @@ ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.runtime.session.chocolaterole.md)<
 
 </td><td>
 
-[ISessionCoating](./ts-chocolate.runtime.session.isessioncoating.md) \| undefined
+'molded-bonbon' \| 'bar-truffle' \| 'rolled-truffle'
 
 
 </td><td>
+
+The confection type.
 
 
 </td></tr>
 <tr><td>
 
-[fillings](./ts-chocolate.runtime.session.confectioneditingsession.fillings.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyMap&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->, [ISessionFillingSlot](./ts-chocolate.runtime.session.isessionfillingslot.md)<!-- -->&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[isDirty](./ts-chocolate.runtime.session.confectioneditingsession.isdirty.md)
+[hasChanges](./ts-chocolate.runtime.session.confectioneditingsession.haschanges.md)
 
 
 </td><td>
@@ -114,11 +100,13 @@ boolean
 
 </td><td>
 
+Whether the session has unsaved changes.
+
 
 </td></tr>
 <tr><td>
 
-[isJournalingEnabled](./ts-chocolate.runtime.session.confectioneditingsession.isjournalingenabled.md)
+[produced](./ts-chocolate.runtime.session.confectioneditingsession.produced.md)
 
 
 </td><td>
@@ -128,48 +116,12 @@ boolean
 
 </td><td>
 
-boolean
+RuntimeProducedMoldedBonBon \| RuntimeProducedBarTruffle \| RuntimeProducedRolledTruffle
 
 
 </td><td>
 
-
-</td></tr>
-<tr><td>
-
-[mold](./ts-chocolate.runtime.session.confectioneditingsession.mold.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ISessionMold](./ts-chocolate.runtime.session.isessionmold.md) \| undefined
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[procedure](./ts-chocolate.runtime.session.confectioneditingsession.procedure.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ISessionProcedure](./ts-chocolate.runtime.session.isessionprocedure.md) \| undefined
-
-
-</td><td>
+The produced confection wrapper with undo/redo support.
 
 
 </td></tr>
@@ -190,43 +142,7 @@ boolean
 
 </td><td>
 
-
-</td></tr>
-<tr><td>
-
-[sourceConfection](./ts-chocolate.runtime.session.confectioneditingsession.sourceconfection.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRuntimeConfection](./ts-chocolate.runtime.iruntimeconfection.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[yield](./ts-chocolate.runtime.session.confectioneditingsession.yield.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ISessionYield](./ts-chocolate.runtime.session.isessionyield.md)
-
-
-</td><td>
+Unique session identifier.
 
 
 </td></tr>
@@ -252,7 +168,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addNote(text)](./ts-chocolate.runtime.session.confectioneditingsession.addnote.md)
+[analyzeSaveOptions()](./ts-chocolate.runtime.session.confectioneditingsession.analyzesaveoptions.md)
 
 
 </td><td>
@@ -260,13 +176,41 @@ Description
 
 </td><td>
 
-Adds a note to the session journal (deprecated - notes now provided at save time)
+Analyzes current changes and recommends save options.
 
 
 </td></tr>
 <tr><td>
 
-[create(params)](./ts-chocolate.runtime.session.confectioneditingsession.create.md)
+[canRedo()](./ts-chocolate.runtime.session.confectioneditingsession.canredo.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if redo is available.
+
+
+</td></tr>
+<tr><td>
+
+[canUndo()](./ts-chocolate.runtime.session.confectioneditingsession.canundo.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if undo is available.
+
+
+</td></tr>
+<tr><td>
+
+[create(baseConfection)](./ts-chocolate.runtime.session.confectioneditingsession.create.md)
 
 
 </td><td>
@@ -276,13 +220,13 @@ Adds a note to the session journal (deprecated - notes now provided at save time
 
 </td><td>
 
-Creates a new ConfectionEditingSession
+Creates a new ConfectionEditingSession from a base confection. Uses the golden version of the confection for editing.
 
 
 </td></tr>
 <tr><td>
 
-[save(options)](./ts-chocolate.runtime.session.confectioneditingsession.save.md)
+[redo()](./ts-chocolate.runtime.session.confectioneditingsession.redo.md)
 
 
 </td><td>
@@ -290,13 +234,13 @@ Creates a new ConfectionEditingSession
 
 </td><td>
 
-Saves the session, optionally creating a journal record and/or new version.
+Redoes the last undone change.
 
 
 </td></tr>
 <tr><td>
 
-[selectChocolate(role, ingredientId)](./ts-chocolate.runtime.session.confectioneditingsession.selectchocolate.md)
+[removeFillingSlot(slotId)](./ts-chocolate.runtime.session.confectioneditingsession.removefillingslot.md)
 
 
 </td><td>
@@ -304,13 +248,13 @@ Saves the session, optionally creating a journal record and/or new version.
 
 </td><td>
 
-Selects a chocolate for a specific role.
+Removes a filling slot.
 
 
 </td></tr>
 <tr><td>
 
-[selectCoating(ingredientId)](./ts-chocolate.runtime.session.confectioneditingsession.selectcoating.md)
+[saveAsNewConfection(options)](./ts-chocolate.runtime.session.confectioneditingsession.saveasnewconfection.md)
 
 
 </td><td>
@@ -318,13 +262,13 @@ Selects a chocolate for a specific role.
 
 </td><td>
 
-Selects a coating ingredient for rolled truffles.
+Saves as an entirely new confection with new ID. Use when collection is immutable or creating a derivative confection.
 
 
 </td></tr>
 <tr><td>
 
-[selectFillingIngredient(slotId, ingredientId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingingredient.md)
+[saveAsNewVersion(options)](./ts-chocolate.runtime.session.confectioneditingsession.saveasnewversion.md)
 
 
 </td><td>
@@ -332,13 +276,13 @@ Selects a coating ingredient for rolled truffles.
 
 </td><td>
 
-Selects a filling ingredient for a specific slot.
+Saves as a new version of the original confection. Requires that the collection is mutable.
 
 
 </td></tr>
 <tr><td>
 
-[selectFillingRecipe(slotId, fillingId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingrecipe.md)
+[setCoating(id)](./ts-chocolate.runtime.session.confectioneditingsession.setcoating.md)
 
 
 </td><td>
@@ -346,13 +290,13 @@ Selects a filling ingredient for a specific slot.
 
 </td><td>
 
-Selects a filling recipe for a specific slot.
+Sets the coating (rolled truffle only).
 
 
 </td></tr>
 <tr><td>
 
-[selectMold(moldId)](./ts-chocolate.runtime.session.confectioneditingsession.selectmold.md)
+[setDecorationChocolate(id)](./ts-chocolate.runtime.session.confectioneditingsession.setdecorationchocolate.md)
 
 
 </td><td>
@@ -360,13 +304,13 @@ Selects a filling recipe for a specific slot.
 
 </td><td>
 
-Selects a mold for the confection.
+Sets the decoration chocolate (molded bonbon only).
 
 
 </td></tr>
 <tr><td>
 
-[selectProcedure(procedureId)](./ts-chocolate.runtime.session.confectioneditingsession.selectprocedure.md)
+[setEnrobingChocolate(id)](./ts-chocolate.runtime.session.confectioneditingsession.setenrobingchocolate.md)
 
 
 </td><td>
@@ -374,13 +318,13 @@ Selects a mold for the confection.
 
 </td><td>
 
-Selects a procedure for the confection.
+Sets the enrobing chocolate (bar truffle or rolled truffle only).
 
 
 </td></tr>
 <tr><td>
 
-[setWeightPerPiece(weight)](./ts-chocolate.runtime.session.confectioneditingsession.setweightperpiece.md)
+[setFillingSlot(slotId, choice)](./ts-chocolate.runtime.session.confectioneditingsession.setfillingslot.md)
 
 
 </td><td>
@@ -388,13 +332,13 @@ Selects a procedure for the confection.
 
 </td><td>
 
-Sets the weight per piece.
+Sets or updates a filling slot.
 
 
 </td></tr>
 <tr><td>
 
-[setYieldCount(count)](./ts-chocolate.runtime.session.confectioneditingsession.setyieldcount.md)
+[setMold(moldId)](./ts-chocolate.runtime.session.confectioneditingsession.setmold.md)
 
 
 </td><td>
@@ -402,13 +346,13 @@ Sets the weight per piece.
 
 </td><td>
 
-Sets the yield count.
+Sets the mold (molded bonbon only).
 
 
 </td></tr>
 <tr><td>
 
-[toEditJournalEntry(updated, updatedVersionSpec, notes)](./ts-chocolate.runtime.session.confectioneditingsession.toeditjournalentry.md)
+[setNotes(notes)](./ts-chocolate.runtime.session.confectioneditingsession.setnotes.md)
 
 
 </td><td>
@@ -416,7 +360,105 @@ Sets the yield count.
 
 </td><td>
 
-Creates an edit journal entry documenting this session.
+Sets the notes.
+
+
+</td></tr>
+<tr><td>
+
+[setProcedure(id)](./ts-chocolate.runtime.session.confectioneditingsession.setprocedure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the procedure.
+
+
+</td></tr>
+<tr><td>
+
+[setSealChocolate(id)](./ts-chocolate.runtime.session.confectioneditingsession.setsealchocolate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the seal chocolate (molded bonbon only).
+
+
+</td></tr>
+<tr><td>
+
+[setShellChocolate(id)](./ts-chocolate.runtime.session.confectioneditingsession.setshellchocolate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the shell chocolate (molded bonbon only).
+
+
+</td></tr>
+<tr><td>
+
+[setYield(spec)](./ts-chocolate.runtime.session.confectioneditingsession.setyield.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the yield specification.
+
+
+</td></tr>
+<tr><td>
+
+[toEditJournalEntry(notes)](./ts-chocolate.runtime.session.confectioneditingsession.toeditjournalentry.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates an edit journal entry from this session. Records the original version and any modifications made.
+
+
+</td></tr>
+<tr><td>
+
+[toProductionJournalEntry(notes)](./ts-chocolate.runtime.session.confectioneditingsession.toproductionjournalentry.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a production journal entry from this session. Records the produced confection with resolved concrete choices.
+
+
+</td></tr>
+<tr><td>
+
+[undo()](./ts-chocolate.runtime.session.confectioneditingsession.undo.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Undoes the last change.
 
 
 </td></tr>

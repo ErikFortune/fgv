@@ -9,5 +9,5 @@ The underlying editing session
 **Signature:**
 
 ```typescript
-readonly session: RecipeEditingSession;
+readonly session: EditingSession;
 ```

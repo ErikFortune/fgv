@@ -4,6 +4,8 @@
 
 ## Runtime.Session.ConfectionEditingSession.sessionId property
 
+Unique session identifier.
+
 **Signature:**
 
 ```typescript

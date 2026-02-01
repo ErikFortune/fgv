@@ -101,6 +101,27 @@ Frame dimensions for ganache slab
 </td></tr>
 <tr><td>
 
+[preferredProcedure](./ts-chocolate.runtime.iruntimebartruffleversion.preferredprocedure.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md) \| undefined
+
+
+</td><td>
+
+Gets the preferred procedure, falling back to first available
+
+
+</td></tr>
+<tr><td>
+
 [raw](./ts-chocolate.runtime.iruntimebartruffleversion.raw.md)
 
 

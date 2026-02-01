@@ -25,13 +25,14 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, IOptionsWithPreferred, MoldId } from '../../../common';
+import { ConfectionId, Helpers, IOptionsWithPreferred, MoldId } from '../../../common';
 import { IMoldedBonBonVersion } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedAdditionalChocolate,
   IResolvedChocolateSpec,
   IResolvedConfectionMoldRef,
+  IResolvedConfectionProcedure,
   IRuntimeMoldedBonBon,
   IRuntimeMoldedBonBonVersion
 } from '../../model';
@@ -135,6 +136,26 @@ export class RuntimeMoldedBonBonVersion
         ) ?? null;
     }
     return this._resolvedAdditionalChocolates ?? undefined;
+  }
+
+  // ============================================================================
+  // Convenience Getters for Preferred Selections
+  // ============================================================================
+
+  /**
+   * Gets the preferred mold, falling back to first available.
+   * @public
+   */
+  public get preferredMold(): IResolvedConfectionMoldRef | undefined {
+    return Helpers.getPreferredOrFirst(this.molds);
+  }
+
+  /**
+   * Gets the preferred procedure, falling back to first available.
+   * @public
+   */
+  public get preferredProcedure(): IResolvedConfectionProcedure | undefined {
+    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
   // ============================================================================

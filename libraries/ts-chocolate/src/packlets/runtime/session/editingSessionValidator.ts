@@ -25,9 +25,15 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { Measurement, IngredientId, Converters as CommonConverters } from '../../common';
-import { RecipeEditingSession } from './editingSession';
-import { ISessionIngredient } from './model';
+import {
+  Measurement,
+  IngredientId,
+  Converters as CommonConverters,
+  MeasurementUnit,
+  ProcedureId
+} from '../../common';
+import { IIngredientModifiers } from '../../entities';
+import { EditingSession } from './editingSession';
 
 // ============================================================================
 // Read-Only Interface
@@ -35,28 +41,14 @@ import { ISessionIngredient } from './model';
 
 /**
  * Read-only interface for EditingSessionValidator.
- * Provides validated access to session ingredients using weakly-typed inputs.
+ * Provides validated access to session using weakly-typed inputs.
  * @public
  */
 export interface IReadOnlyEditingSessionValidator {
   /**
    * The underlying editing session
    */
-  readonly session: RecipeEditingSession;
-
-  /**
-   * Gets an ingredient by ID using a weakly-typed string
-   * @param id - Ingredient ID (will be converted)
-   * @returns Success with ingredient, or Failure if invalid ID or not found
-   */
-  getIngredient(id: string): Result<ISessionIngredient>;
-
-  /**
-   * Checks if an ingredient exists using a weakly-typed string
-   * @param id - Ingredient ID (will be converted)
-   * @returns true if ingredient exists, false otherwise
-   */
-  hasIngredient(id: string): boolean;
+  readonly session: EditingSession;
 }
 
 // ============================================================================
@@ -70,28 +62,19 @@ export interface IReadOnlyEditingSessionValidator {
  */
 export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
   /**
-   * Sets the amount of an ingredient using weakly-typed inputs
+   * Sets or updates an ingredient using weakly-typed inputs
    * @param id - Ingredient ID (will be converted)
-   * @param amount - Amount in grams (will be converted)
+   * @param amount - Amount (will be converted)
+   * @param unit - Optional measurement unit
+   * @param modifiers - Optional ingredient modifiers
    * @returns Success or Failure
    */
-  setIngredientAmount(id: string, amount: number): Result<void>;
-
-  /**
-   * Adds additional amount to an ingredient using weakly-typed inputs
-   * @param id - Ingredient ID (will be converted)
-   * @param additional - Additional amount to add (will be converted)
-   * @returns Success or Failure
-   */
-  addIngredientAmount(id: string, additional: number): Result<void>;
-
-  /**
-   * Adds a new ingredient using weakly-typed inputs
-   * @param id - Ingredient ID (will be converted)
-   * @param amount - Amount in grams (will be converted)
-   * @returns Success or Failure
-   */
-  addIngredient(id: string, amount: number): Result<void>;
+  setIngredient(
+    id: string,
+    amount: number,
+    unit?: MeasurementUnit,
+    modifiers?: IIngredientModifiers
+  ): Result<void>;
 
   /**
    * Removes an ingredient using a weakly-typed string
@@ -101,20 +84,18 @@ export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidat
   removeIngredient(id: string): Result<void>;
 
   /**
-   * Substitutes one ingredient for another using weakly-typed inputs
-   * @param originalId - Original ingredient ID (will be converted)
-   * @param substituteId - Substitute ingredient ID (will be converted)
-   * @param amount - Optional amount (will be converted if provided)
-   * @returns Success or Failure
-   */
-  substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
-
-  /**
    * Sets the target weight using a weakly-typed number
-   * @param weight - Target weight in grams (will be converted)
+   * @param weight - Target weight (will be converted)
    * @returns Success or Failure
    */
   setTargetWeight(weight: number): Result<void>;
+
+  /**
+   * Sets the procedure using a weakly-typed string
+   * @param id - Procedure ID (will be converted) or undefined to clear
+   * @returns Success or Failure
+   */
+  setProcedure(id: string | undefined): Result<void>;
 
   /**
    * Gets a read-only version of this validator
@@ -131,101 +112,56 @@ export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidat
  * to strongly-typed branded types before delegating to the underlying session.
  *
  * This allows consumers to use plain strings and numbers instead of
- * IngredientId and Grams branded types while still benefiting from
+ * IngredientId and Measurement branded types while still benefiting from
  * runtime validation.
  *
  * @example
  * ```typescript
- * const session = EditingSession.create(params).orThrow();
- * const validator = session.validating;
+ * const session = EditingSession.create(baseRecipe).orThrow();
+ * const validator = new EditingSessionValidator(session);
  *
  * // Use plain strings and numbers instead of branded types
- * validator.setIngredientAmount('felchlin.maracaibo-65', 100);
- * validator.addIngredient('local.glucose-syrup', 50);
+ * validator.setIngredient('felchlin.maracaibo-65', 100);
+ * validator.removeIngredient('local.glucose-syrup');
  * ```
  *
  * @public
  */
 export class EditingSessionValidator implements IEditingSessionValidator {
-  private readonly _session: RecipeEditingSession;
+  private readonly _session: EditingSession;
 
   /**
    * Creates a new EditingSessionValidator
    * @param session - The EditingSession to wrap
    */
-  public constructor(session: RecipeEditingSession) {
+  public constructor(session: EditingSession) {
     this._session = session;
   }
 
   /**
    * The underlying editing session
    */
-  public get session(): RecipeEditingSession {
+  public get session(): EditingSession {
     return this._session;
   }
 
   /**
-   * Gets an ingredient by ID using a weakly-typed string
+   * Sets or updates an ingredient using weakly-typed inputs
    * @param id - Ingredient ID (will be converted)
-   * @returns Success with ingredient, or Failure if invalid ID or not found
-   */
-  public getIngredient(id: string): Result<ISessionIngredient> {
-    return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
-      return this._session.getIngredient(validId);
-    });
-  }
-
-  /**
-   * Checks if an ingredient exists using a weakly-typed string
-   * @param id - Ingredient ID (will be converted)
-   * @returns true if ingredient exists, false otherwise
-   */
-  public hasIngredient(id: string): boolean {
-    const result = CommonConverters.ingredientId.convert(id);
-    if (result.isFailure()) {
-      return false;
-    }
-    return this._session.ingredients.has(result.value);
-  }
-
-  /**
-   * Sets the amount of an ingredient using weakly-typed inputs
-   * @param id - Ingredient ID (will be converted)
-   * @param amount - Amount in grams (will be converted)
+   * @param amount - Amount (will be converted)
+   * @param unit - Optional measurement unit
+   * @param modifiers - Optional ingredient modifiers
    * @returns Success or Failure
    */
-  public setIngredientAmount(id: string, amount: number): Result<void> {
+  public setIngredient(
+    id: string,
+    amount: number,
+    unit?: MeasurementUnit,
+    modifiers?: IIngredientModifiers
+  ): Result<void> {
     return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
       return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {
-        return this._session.setIngredientAmount(validId, validAmount);
-      });
-    });
-  }
-
-  /**
-   * Adds additional amount to an ingredient using weakly-typed inputs
-   * @param id - Ingredient ID (will be converted)
-   * @param additional - Additional amount to add (will be converted)
-   * @returns Success or Failure
-   */
-  public addIngredientAmount(id: string, additional: number): Result<void> {
-    return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
-      return CommonConverters.measurement.convert(additional).onSuccess((validAmount: Measurement) => {
-        return this._session.addIngredientAmount(validId, validAmount);
-      });
-    });
-  }
-
-  /**
-   * Adds a new ingredient using weakly-typed inputs
-   * @param id - Ingredient ID (will be converted)
-   * @param amount - Amount in grams (will be converted)
-   * @returns Success or Failure
-   */
-  public addIngredient(id: string, amount: number): Result<void> {
-    return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
-      return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {
-        return this._session.addIngredient(validId, validAmount);
+        return this._session.setIngredient(validId, validAmount, unit, modifiers);
       });
     });
   }
@@ -242,35 +178,27 @@ export class EditingSessionValidator implements IEditingSessionValidator {
   }
 
   /**
-   * Substitutes one ingredient for another using weakly-typed inputs
-   * @param originalId - Original ingredient ID (will be converted)
-   * @param substituteId - Substitute ingredient ID (will be converted)
-   * @param amount - Optional amount (will be converted if provided)
-   * @returns Success or Failure
-   */
-  public substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void> {
-    return CommonConverters.ingredientId.convert(originalId).onSuccess((validOriginalId: IngredientId) => {
-      return CommonConverters.ingredientId
-        .convert(substituteId)
-        .onSuccess((validSubstituteId: IngredientId) => {
-          if (amount === undefined) {
-            return this._session.substituteIngredient(validOriginalId, validSubstituteId);
-          }
-          return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {
-            return this._session.substituteIngredient(validOriginalId, validSubstituteId, validAmount);
-          });
-        });
-    });
-  }
-
-  /**
    * Sets the target weight using a weakly-typed number
-   * @param weight - Target weight in grams (will be converted)
+   * @param weight - Target weight (will be converted)
    * @returns Success or Failure
    */
   public setTargetWeight(weight: number): Result<void> {
     return CommonConverters.measurement.convert(weight).onSuccess((validWeight: Measurement) => {
       return this._session.setTargetWeight(validWeight);
+    });
+  }
+
+  /**
+   * Sets the procedure using a weakly-typed string
+   * @param id - Procedure ID (will be converted) or undefined to clear
+   * @returns Success or Failure
+   */
+  public setProcedure(id: string | undefined): Result<void> {
+    if (id === undefined) {
+      return this._session.setProcedure(undefined);
+    }
+    return CommonConverters.procedureId.convert(id).onSuccess((validId: ProcedureId) => {
+      return this._session.setProcedure(validId);
     });
   }
 

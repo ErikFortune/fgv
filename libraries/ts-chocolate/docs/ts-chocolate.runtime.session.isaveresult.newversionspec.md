@@ -9,5 +9,5 @@ The new version spec if one was created
 **Signature:**
 
 ```typescript
-readonly newVersionSpec?: FillingVersionSpec;
+readonly newVersionSpec?: FillingVersionSpec | ConfectionVersionSpec;
 ```

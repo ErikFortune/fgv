@@ -657,40 +657,42 @@ const confectionData: Converter<ConfectionData>;
 const confectionDecoration: Converter<IConfectionDecoration>;
 
 // @public
-class ConfectionEditingSession implements IConfectionSessionState {
-    // @deprecated
-    addNote(text: string): void;
-    // (undocumented)
-    get chocolates(): ReadonlyMap<ChocolateRole, ISessionChocolate>;
-    // (undocumented)
-    get coating(): ISessionCoating | undefined;
-    static create(params: IConfectionEditingSessionParams): Result<ConfectionEditingSession>;
-    // (undocumented)
-    get fillings(): ReadonlyMap<SlotId, ISessionFillingSlot>;
-    // (undocumented)
-    get isDirty(): boolean;
-    // (undocumented)
-    get isJournalingEnabled(): boolean;
-    // (undocumented)
-    get mold(): ISessionMold | undefined;
-    // (undocumented)
-    get procedure(): ISessionProcedure | undefined;
-    save(options?: IConfectionSaveOptions): Result<IConfectionSaveResult>;
-    selectChocolate(role: ChocolateRole, ingredientId: IngredientId): Result<true>;
-    selectCoating(ingredientId: IngredientId): Result<true>;
-    selectFillingIngredient(slotId: SlotId, ingredientId: IngredientId): Result<true>;
-    selectFillingRecipe(slotId: SlotId, fillingId: FillingId): Result<true>;
-    selectMold(moldId: MoldId): Result<true>;
-    selectProcedure(procedureId: ProcedureId): Result<true>;
-    // (undocumented)
+class ConfectionEditingSession {
+    analyzeSaveOptions(): ISaveAnalysis;
+    get baseConfection(): IRuntimeConfection;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    get confectionType(): 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
+    static create(baseConfection: IRuntimeConfection): Result<ConfectionEditingSession>;
+    get hasChanges(): boolean;
+    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedMoldedBonBon" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedBarTruffle" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedRolledTruffle" needs to be exported by the entry point index.d.ts
+    get produced(): RuntimeProducedMoldedBonBon | RuntimeProducedBarTruffle | RuntimeProducedRolledTruffle;
+    redo(): Result<boolean>;
+    removeFillingSlot(slotId: SlotId): Result<void>;
+    saveAsNewConfection(options: ISaveNewConfectionOptions): Result<ISaveResult>;
+    saveAsNewVersion(options: ISaveConfectionVersionOptions): Result<ISaveResult>;
     get sessionId(): SessionId;
-    setWeightPerPiece(weight: Measurement): Result<true>;
-    setYieldCount(count: number): Result<true>;
-    // (undocumented)
-    get sourceConfection(): IRuntimeConfection;
-    toEditJournalEntry(updated?: AnyConfectionVersion, updatedVersionSpec?: ConfectionVersionSpec, notes?: string): Result<IConfectionEditJournalEntry>;
-    // (undocumented)
-    get yield(): ISessionYield;
+    setCoating(id: IngredientId | undefined): Result<void>;
+    setDecorationChocolate(id: IngredientId | undefined): Result<void>;
+    setEnrobingChocolate(id: IngredientId | undefined): Result<void>;
+    setFillingSlot(slotId: SlotId, choice: {
+        type: 'recipe';
+        fillingId: FillingId;
+    } | {
+        type: 'ingredient';
+        ingredientId: IngredientId;
+    }): Result<void>;
+    setMold(moldId: MoldId): Result<void>;
+    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    setSealChocolate(id: IngredientId | undefined): Result<void>;
+    setShellChocolate(id: IngredientId): Result<void>;
+    setYield(spec: IConfectionYield): Result<void>;
+    toEditJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionEditJournalEntry>;
+    toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionProductionJournalEntry>;
+    undo(): Result<boolean>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -995,6 +997,12 @@ declare namespace Converters_5 {
 // @public
 function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
+// @public
+function createConfectionVersionId(parts: {
+    collectionId: ConfectionId;
+    itemId: ConfectionVersionSpec;
+}): Result<ConfectionVersionId>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1005,6 +1013,12 @@ function createFillingId(sourceId: SourceId, baseId: BaseFillingId): FillingId;
 
 // @public
 function createFillingVersionId(fillingId: FillingId, versionSpec: FillingVersionSpec): FillingVersionId;
+
+// @public
+function createFillingVersionIdValidated(parts: {
+    collectionId: FillingId;
+    itemId: FillingVersionSpec;
+}): Result<FillingVersionId>;
 
 // @public
 function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryLoadSpec<TCollectionId>, nameConverter: Converter<TCollectionId> | Validator<TCollectionId>): CollectionFilter<TCollectionId>;
@@ -1057,6 +1071,9 @@ function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Ar
 
 // @public
 const DEFAULT_ALGORITHM: EncryptionAlgorithm;
+
+// @public
+export const DEFAULT_NOTE_CATEGORY: NoteCategory;
 
 // @public
 const defaultRenderOptions: Required<Omit<IRenderOptions, 'additionalContext'>>;
@@ -1126,17 +1143,38 @@ declare namespace Editing {
 export { Editing }
 
 // @public
+class EditingSession {
+    analyzeSaveOptions(): ISaveAnalysis;
+    get baseRecipe(): RuntimeFillingRecipeVersion;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    static create(baseRecipe: RuntimeFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
+    get hasChanges(): boolean;
+    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedFilling" needs to be exported by the entry point index.d.ts
+    get produced(): RuntimeProducedFilling;
+    redo(): Result<boolean>;
+    removeIngredient(id: IngredientId): Result<void>;
+    saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult>;
+    saveAsNewRecipe(options: ISaveNewRecipeOptions): Result<ISaveResult>;
+    saveAsNewVersion(options: ISaveVersionOptions): Result<ISaveResult>;
+    get sessionId(): SessionId;
+    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    setTargetWeight(weight: Measurement): Result<void>;
+    toEditJournalEntry(notes?: ICategorizedNote[]): Result<IFillingEditJournalEntry>;
+    toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
+    undo(): Result<boolean>;
+}
+
+// @public
 class EditingSessionValidator implements IEditingSessionValidator {
-    constructor(session: RecipeEditingSession);
-    addIngredient(id: string, amount: number): Result<void>;
-    addIngredientAmount(id: string, additional: number): Result<void>;
-    getIngredient(id: string): Result<ISessionIngredient>;
-    hasIngredient(id: string): boolean;
+    constructor(session: EditingSession);
     removeIngredient(id: string): Result<void>;
-    get session(): RecipeEditingSession;
-    setIngredientAmount(id: string, amount: number): Result<void>;
+    get session(): EditingSession;
+    setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setProcedure(id: string | undefined): Result<void>;
     setTargetWeight(weight: number): Result<void>;
-    substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
 }
 
@@ -1875,6 +1913,9 @@ declare namespace Helpers {
         parseFillingVersionId,
         getFillingVersionFillingId,
         getFillingVersionSpec,
+        createConfectionVersionId,
+        parseConfectionVersionId,
+        createFillingVersionIdValidated,
         getPreferred,
         getPreferredOrFirst,
         getPreferredId,
@@ -2205,7 +2246,6 @@ interface IConfectionScaleOptions {
 interface IConfectionSessionState {
     readonly chocolates: ReadonlyMap<ChocolateRole, ISessionChocolate>;
     readonly coating?: ISessionCoating;
-    readonly fillings: ReadonlyMap<SlotId, ISessionFillingSlot>;
     readonly isDirty: boolean;
     readonly isJournalingEnabled: boolean;
     readonly mold?: ISessionMold;
@@ -2307,22 +2347,11 @@ interface IEditableCollectionParams<T, TBaseId extends string = string> {
 }
 
 // @public
-interface IEditingSessionParams {
-    readonly enableJournal?: boolean;
-    readonly logger?: Logging.LogReporter<unknown>;
-    readonly scaleFactor?: number;
-    readonly sourceVersion: IRuntimeFillingRecipeVersion;
-    readonly targetWeight?: Measurement;
-}
-
-// @public
 interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
-    addIngredient(id: string, amount: number): Result<void>;
-    addIngredientAmount(id: string, additional: number): Result<void>;
     removeIngredient(id: string): Result<void>;
-    setIngredientAmount(id: string, amount: number): Result<void>;
+    setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setProcedure(id: string | undefined): Result<void>;
     setTargetWeight(weight: number): Result<void>;
-    substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
 }
 
@@ -3354,6 +3383,7 @@ interface IProducedFilling {
 interface IProducedFillingIngredient {
     readonly amount: Measurement;
     readonly ingredientId: IngredientId;
+    readonly modifiers?: IIngredientModifiers;
     readonly notes?: string;
     readonly unit?: MeasurementUnit;
 }
@@ -3400,9 +3430,7 @@ interface IQueryResult<T> {
 
 // @public
 interface IReadOnlyEditingSessionValidator {
-    getIngredient(id: string): Result<ISessionIngredient>;
-    hasIngredient(id: string): boolean;
-    readonly session: RecipeEditingSession;
+    readonly session: EditingSession;
 }
 
 // @public
@@ -3488,6 +3516,7 @@ type IResolvedFillingOption = IResolvedRecipeFillingOption | IResolvedIngredient
 
 // @public
 interface IResolvedFillingRecipeProcedure {
+    readonly id: ProcedureId;
     readonly notes?: string;
     readonly procedure: IProcedure;
     readonly raw: IProcedureRef;
@@ -3618,6 +3647,7 @@ interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase {
     readonly confection: IRuntimeBarTruffle;
     readonly enrobingChocolate?: IResolvedChocolateSpec;
     readonly frameDimensions: IFrameDimensions;
+    readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly raw: IBarTruffleVersion;
     readonly singleBonBonDimensions: IBonBonDimensions;
 }
@@ -3759,6 +3789,7 @@ interface IRuntimeFillingRecipeVersion {
     readonly fillingRecipe: IRuntimeFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
     readonly notes?: string;
+    readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
     readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IFillingRating>;
     readonly raw: IFillingRecipeVersion;
@@ -3836,6 +3867,8 @@ interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBase {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
     readonly confection: IRuntimeMoldedBonBon;
     readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    readonly preferredMold: IResolvedConfectionMoldRef | undefined;
+    readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly raw: IMoldedBonBonVersion;
     readonly shellChocolate: IResolvedChocolateSpec;
 }
@@ -3901,6 +3934,7 @@ interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionBase {
     readonly coatings?: IResolvedCoatings;
     readonly confection: IRuntimeRolledTruffle;
     readonly enrobingChocolate?: IResolvedChocolateSpec;
+    readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly raw: IRolledTruffleVersion;
 }
 
@@ -3961,6 +3995,48 @@ interface IRuntimeTask {
 function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient;
 
 // @public
+interface ISaveAlternativesOptions {
+    readonly includeSessionNotes?: boolean;
+    readonly versionSpec: FillingVersionSpec;
+}
+
+// @public
+interface ISaveAnalysis {
+    readonly canAddAlternatives: boolean;
+    readonly canCreateVersion: boolean;
+    readonly changes: {
+        readonly ingredientsAdded: boolean;
+        readonly ingredientsRemoved: boolean;
+        readonly ingredientsChanged: boolean;
+        readonly weightChanged: boolean;
+        readonly notesChanged: boolean;
+    };
+    readonly mustCreateNew: boolean;
+    readonly recommendedOption: 'version' | 'alternatives' | 'new';
+}
+
+// @public
+interface ISaveConfectionVersionOptions {
+    readonly includeSessionNotes?: boolean;
+    readonly versionSpec: ConfectionVersionSpec;
+}
+
+// @public
+interface ISaveNewConfectionOptions {
+    readonly includeSessionNotes?: boolean;
+    readonly newId: ConfectionId;
+    readonly versionSpec: ConfectionVersionSpec;
+}
+
+// @public
+interface ISaveNewRecipeOptions {
+    readonly baseWeight: Measurement;
+    readonly includeSessionNotes?: boolean;
+    readonly newId: FillingId;
+    readonly versionSpec: FillingVersionSpec;
+}
+
+// @public
 interface ISaveOptions {
     readonly createJournalRecord?: boolean;
     readonly createNewVersion?: boolean;
@@ -3970,9 +4046,16 @@ interface ISaveOptions {
 
 // @public
 interface ISaveResult {
-    readonly journalEntry?: IFillingEditJournalEntry;
+    readonly journalEntry?: IFillingEditJournalEntry | IConfectionEditJournalEntry;
     readonly journalId?: string;
-    readonly newVersionSpec?: FillingVersionSpec;
+    readonly newVersionSpec?: FillingVersionSpec | ConfectionVersionSpec;
+}
+
+// @public
+interface ISaveVersionOptions {
+    readonly baseWeight: Measurement;
+    readonly includeSessionNotes?: boolean;
+    readonly versionSpec: FillingVersionSpec;
 }
 
 // @public
@@ -4075,26 +4158,6 @@ interface ISessionCoating {
 }
 
 // @public
-interface ISessionFillingSlot {
-    readonly fillingId?: FillingId;
-    readonly ingredientId?: IngredientId;
-    readonly originalFillingId?: FillingId;
-    readonly originalIngredientId?: IngredientId;
-    readonly slotId: SlotId;
-    readonly status: ConfectionSelectionStatus;
-}
-
-// @public
-interface ISessionIngredient {
-    amount: Measurement;
-    readonly ingredientId: IngredientId;
-    notes?: string;
-    readonly originalAmount: Measurement;
-    readonly status: SessionIngredientStatus;
-    readonly substitutedFor?: IngredientId;
-}
-
-// @public
 interface ISessionMold {
     readonly moldId: MoldId;
     readonly originalMoldId: MoldId;
@@ -4118,17 +4181,6 @@ interface ISessionScratchpad {
     readonly sessions: Record<SessionId, AnyPersistedSession>;
     // (undocumented)
     readonly updatedAt: string;
-}
-
-// @public
-interface ISessionState {
-    readonly ingredients: ReadonlyMap<IngredientId, ISessionIngredient>;
-    readonly isDirty: boolean;
-    readonly isJournalingEnabled: boolean;
-    readonly scaleFactor: number;
-    readonly sessionId: SessionId;
-    readonly sourceVersion: IRuntimeFillingRecipeVersion;
-    readonly targetWeight: Measurement;
 }
 
 // @public
@@ -4859,6 +4911,9 @@ function parseCollectionStorageData(rawJson: string | undefined, dataPath: strin
 function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
 
 // @public
+function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
+
+// @public
 type ParsedConfectionId = Converters_6.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
@@ -5103,40 +5158,6 @@ function recalculateFillingRecipeVersion(version: IFillingRecipeVersion): IFilli
 
 // @public
 const recipeCollections: Record<string, JsonObject>;
-
-// @public
-class RecipeEditingSession implements ISessionState {
-    addIngredient(id: IngredientId, amount: Measurement): Result<void>;
-    addIngredientAmount(id: IngredientId, additional: Measurement): Result<void>;
-    // @deprecated
-    addNote(text: string): void;
-    static create(params: IEditingSessionParams): Result<RecipeEditingSession>;
-    getIngredient(id: IngredientId): Result<ISessionIngredient>;
-    // (undocumented)
-    get ingredients(): ReadonlyMap<IngredientId, ISessionIngredient>;
-    // (undocumented)
-    get isDirty(): boolean;
-    // (undocumented)
-    get isJournalingEnabled(): boolean;
-    removeIngredient(id: IngredientId): Result<void>;
-    save(options: ISaveOptions): Result<ISaveResult>;
-    // (undocumented)
-    get scaleFactor(): number;
-    // (undocumented)
-    get sessionId(): SessionId;
-    setIngredientAmount(id: IngredientId, amount: Measurement): Result<void>;
-    setScaleFactor(factor: number): Result<void>;
-    setTargetWeight(weight: Measurement): Result<void>;
-    // (undocumented)
-    get sourceVersion(): IRuntimeFillingRecipeVersion;
-    substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Measurement): Result<void>;
-    // (undocumented)
-    get targetWeight(): Measurement;
-    toEditJournalEntry(updated?: AnyFillingRecipeVersion, updatedVersionSpec?: FillingVersionSpec, notes?: string): Result<IFillingEditJournalEntry>;
-    toRecipeIngredients(): IFillingIngredient[];
-    toRecipeVersion(versionSpec: string): Result<IFillingRecipeVersion>;
-    get validating(): IEditingSessionValidator;
-}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5562,6 +5583,7 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     get fillingRecipe(): IRuntimeFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
     get notes(): string | undefined;
+    get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
     get raw(): IFillingRecipeVersion;
@@ -5897,7 +5919,7 @@ function serializeToYaml<T>(collection: ICollectionSourceFile<T>, options?: IExp
 
 declare namespace Session {
     export {
-        RecipeEditingSession,
+        EditingSession,
         ConfectionEditingSession,
         EditingSessionValidator,
         IEditingSessionValidator,
@@ -5907,14 +5929,15 @@ declare namespace Session {
         getCurrentDateString,
         getCurrentTimestamp,
         Scratchpad,
-        SessionIngredientStatus,
-        ISessionIngredient,
-        IEditingSessionParams,
-        ISessionState,
+        ISaveAnalysis,
+        ISaveVersionOptions,
+        ISaveAlternativesOptions,
+        ISaveNewRecipeOptions,
+        ISaveConfectionVersionOptions,
+        ISaveNewConfectionOptions,
         ISaveOptions,
         ISaveResult,
         ConfectionSelectionStatus,
-        ISessionFillingSlot,
         ISessionMold,
         ChocolateRole,
         ISessionChocolate,
@@ -5939,9 +5962,6 @@ export type SessionId = Brand<string, 'SessionId'>;
 
 // @public
 const sessionId: Converter<SessionId>;
-
-// @public
-type SessionIngredientStatus = 'original' | 'modified' | 'added' | 'removed' | 'substituted';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

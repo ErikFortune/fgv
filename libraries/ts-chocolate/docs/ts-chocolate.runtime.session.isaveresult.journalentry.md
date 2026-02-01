@@ -9,5 +9,5 @@ The full journal entry if one was created. Callers can use this to persist the j
 **Signature:**
 
 ```typescript
-readonly journalEntry?: IFillingEditJournalEntry;
+readonly journalEntry?: IFillingEditJournalEntry | IConfectionEditJournalEntry;
 ```

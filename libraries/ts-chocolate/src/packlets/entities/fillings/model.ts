@@ -527,6 +527,8 @@ export interface IProducedFillingIngredient {
   readonly amount: Measurement;
   /** Measurement unit (default: 'g') */
   readonly unit?: MeasurementUnit;
+  /** Measurement modifiers (spoonLevel, toTaste) - production metadata */
+  readonly modifiers?: IIngredientModifiers;
   /** Optional notes about this ingredient usage */
   readonly notes?: string;
 }

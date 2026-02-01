@@ -25,12 +25,13 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId } from '../../../common';
+import { ConfectionId, Helpers } from '../../../common';
 import { IRolledTruffleVersion } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
   IResolvedCoatings,
+  IResolvedConfectionProcedure,
   IRuntimeRolledTruffle,
   IRuntimeRolledTruffleVersion
 } from '../../model';
@@ -120,6 +121,18 @@ export class RuntimeRolledTruffleVersion
       this._resolvedCoatings = raw ? this._context.resolveCoatings(raw) : null;
     }
     return this._resolvedCoatings ?? undefined;
+  }
+
+  // ============================================================================
+  // Convenience Getters for Preferred Selections
+  // ============================================================================
+
+  /**
+   * Gets the preferred procedure, falling back to first available.
+   * @public
+   */
+  public get preferredProcedure(): IResolvedConfectionProcedure | undefined {
+    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
   // ============================================================================

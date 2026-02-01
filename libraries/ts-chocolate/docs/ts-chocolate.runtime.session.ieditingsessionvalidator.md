@@ -28,28 +28,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addIngredient(id, amount)](./ts-chocolate.runtime.session.ieditingsessionvalidator.addingredient.md)
-
-
-</td><td>
-
-Adds a new ingredient using weakly-typed inputs
-
-
-</td></tr>
-<tr><td>
-
-[addIngredientAmount(id, additional)](./ts-chocolate.runtime.session.ieditingsessionvalidator.addingredientamount.md)
-
-
-</td><td>
-
-Adds additional amount to an ingredient using weakly-typed inputs
-
-
-</td></tr>
-<tr><td>
-
 [removeIngredient(id)](./ts-chocolate.runtime.session.ieditingsessionvalidator.removeingredient.md)
 
 
@@ -61,12 +39,23 @@ Removes an ingredient using a weakly-typed string
 </td></tr>
 <tr><td>
 
-[setIngredientAmount(id, amount)](./ts-chocolate.runtime.session.ieditingsessionvalidator.setingredientamount.md)
+[setIngredient(id, amount, unit, modifiers)](./ts-chocolate.runtime.session.ieditingsessionvalidator.setingredient.md)
 
 
 </td><td>
 
-Sets the amount of an ingredient using weakly-typed inputs
+Sets or updates an ingredient using weakly-typed inputs
+
+
+</td></tr>
+<tr><td>
+
+[setProcedure(id)](./ts-chocolate.runtime.session.ieditingsessionvalidator.setprocedure.md)
+
+
+</td><td>
+
+Sets the procedure using a weakly-typed string
 
 
 </td></tr>
@@ -78,17 +67,6 @@ Sets the amount of an ingredient using weakly-typed inputs
 </td><td>
 
 Sets the target weight using a weakly-typed number
-
-
-</td></tr>
-<tr><td>
-
-[substituteIngredient(originalId, substituteId, amount)](./ts-chocolate.runtime.session.ieditingsessionvalidator.substituteingredient.md)
-
-
-</td><td>
-
-Substitutes one ingredient for another using weakly-typed inputs
 
 
 </td></tr>

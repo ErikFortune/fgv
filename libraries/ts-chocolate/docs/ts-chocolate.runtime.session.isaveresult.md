@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-IFillingEditJournalEntry
+IFillingEditJournalEntry \| IConfectionEditJournalEntry
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_ The journal ID if a journal entry was created
 
 </td><td>
 
-[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md) \| [ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)
 
 
 </td><td>

@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[id](./ts-chocolate.runtime.iresolvedfillingrecipeprocedure.id.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ProcedureId](./ts-chocolate.procedureid.md)
+
+
+</td><td>
+
+The procedure ID (for consistency with IResolvedConfectionProcedure).
+
+
+</td></tr>
+<tr><td>
+
 [notes?](./ts-chocolate.runtime.iresolvedfillingrecipeprocedure.notes.md)
 
 

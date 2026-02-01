@@ -373,6 +373,31 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
     return this._procedures ?? undefined;
   }
 
+  // ============================================================================
+  // Convenience Getters for Preferred Selections
+  // ============================================================================
+
+  /**
+   * Gets the preferred procedure, falling back to first available.
+   * @public
+   */
+  public get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined {
+    if (!this.procedures) {
+      return undefined;
+    }
+    // Return recommended procedure if set, otherwise first procedure
+    if (this.procedures.recommendedProcedure) {
+      return this.procedures.procedures.find(
+        (p) => p.procedure.baseId === this.procedures!.recommendedProcedure!.baseId
+      );
+    }
+    return this.procedures.procedures[0];
+  }
+
+  // ============================================================================
+  // Private Resolution
+  // ============================================================================
+
   /**
    * Resolves procedure references to full procedure objects.
    * @returns Resolved procedures, or null if version has no procedures
@@ -388,6 +413,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
       const procedureResult = this._context.getProcedure(ref.id);
       if (procedureResult.isSuccess()) {
         resolvedProcedures.push({
+          id: ref.id,
           procedure: procedureResult.value,
           notes: ref.notes,
           raw: ref

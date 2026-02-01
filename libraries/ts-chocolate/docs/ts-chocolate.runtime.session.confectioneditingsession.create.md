@@ -4,12 +4,12 @@
 
 ## Runtime.Session.ConfectionEditingSession.create() method
 
-Creates a new ConfectionEditingSession
+Creates a new ConfectionEditingSession from a base confection. Uses the golden version of the confection for editing.
 
 **Signature:**
 
 ```typescript
-static create(params: IConfectionEditingSessionParams): Result<ConfectionEditingSession>;
+static create(baseConfection: IRuntimeConfection): Result<ConfectionEditingSession>;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-params
+baseConfection
 
 
 </td><td>
 
-[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+[IRuntimeConfection](./ts-chocolate.runtime.iruntimeconfection.md)
 
 
 </td><td>
 
-Session parameters
+Source confection to edit
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Session parameters
 
 Result&lt;[ConfectionEditingSession](./ts-chocolate.runtime.session.confectioneditingsession.md)<!-- -->&gt;
 
-Success with new session, or Failure with error message
+Result with new ConfectionEditingSession or error
 

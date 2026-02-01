@@ -42,7 +42,7 @@ number
 
 </td><td>
 
-Target weight in grams (will be converted)
+Target weight (will be converted)
 
 
 </td></tr>

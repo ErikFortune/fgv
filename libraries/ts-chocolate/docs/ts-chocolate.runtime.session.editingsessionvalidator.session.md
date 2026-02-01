@@ -9,5 +9,5 @@ The underlying editing session
 **Signature:**
 
 ```typescript
-get session(): RecipeEditingSession;
+get session(): EditingSession;
 ```

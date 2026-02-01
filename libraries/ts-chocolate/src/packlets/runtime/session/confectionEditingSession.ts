@@ -19,661 +19,530 @@
 // SOFTWARE.
 
 /**
- * ConfectionEditingSession - mutable session for editing confection selections
+ * ConfectionEditingSession - simplified session for editing confections
  * @packageDocumentation
  */
 
-import { captureResult, fail, Logging, MessageAggregator, Result, succeed, Success } from '@fgv/ts-utils';
+import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
 import {
-  Measurement,
+  ConfectionVersionSpec,
+  FillingId,
+  ICategorizedNote,
   IngredientId,
   MoldId,
   ProcedureId,
-  FillingId,
   SessionId,
   SlotId,
-  ConfectionVersionSpec,
-  Converters as CommonConverters
+  Helpers
 } from '../../common';
-import { IConfectionEditJournalEntry, AnyConfectionVersion } from '../../entities';
-import { IRuntimeConfection } from '../model';
 import {
-  ChocolateRole,
-  ConfectionSelectionStatus,
-  IConfectionEditingSessionParams,
-  IConfectionSaveOptions,
-  IConfectionSaveResult,
-  IConfectionSessionState,
-  ISessionChocolate,
-  ISessionCoating,
-  ISessionFillingSlot,
-  ISessionMold,
-  ISessionProcedure,
-  ISessionYield
+  IConfectionEditJournalEntry,
+  IConfectionProductionJournalEntry,
+  IConfectionYield,
+  AnyProducedConfection
+} from '../../entities';
+import {
+  IRuntimeConfection,
+  IRuntimeBarTruffleVersion,
+  IRuntimeMoldedBonBonVersion,
+  IRuntimeRolledTruffleVersion
+} from '../model';
+import {
+  RuntimeProducedBarTruffle,
+  RuntimeProducedMoldedBonBon,
+  RuntimeProducedRolledTruffle
+} from '../produced';
+import {
+  ISaveAnalysis,
+  ISaveConfectionVersionOptions,
+  ISaveNewConfectionOptions,
+  ISaveResult
 } from './model';
-import { generateJournalId, generateSessionId } from './sessionUtils';
-
-// ============================================================================
-// ConfectionEditingSession Class
-// ============================================================================
+import { generateJournalId, generateSessionId, getCurrentTimestamp } from './sessionUtils';
 
 /**
- * A mutable editing session for modifying confection selections.
+ * A mutable editing session for modifying confection versions.
  *
- * Tracks:
- * - Source confection and version
- * - Filling selection (recipe or ingredient)
- * - Mold selection (for molded bonbons)
- * - Chocolate selections by role (shell, enrobing, seal, decoration)
- * - Yield modifications (count, weight per piece)
- * - Procedure selection
- * - Coating selection (for rolled truffles)
- * - Journal entries recording what happened
- *
- * Can produce:
- * - Journal records documenting the session
- * - New confection versions incorporating modifications
+ * Core architecture:
+ * - Wraps an IRuntimeConfection (immutable source)
+ * - Uses RuntimeProducedConfection variants for mutable editing with undo/redo
+ * - Tracks original snapshot for change detection
+ * - Provides save operations that integrate with library
+ * - Supports type-specific methods based on confection type
  *
  * @public
  */
-export class ConfectionEditingSession implements IConfectionSessionState {
+export class ConfectionEditingSession {
+  private readonly _baseConfection: IRuntimeConfection;
+  private readonly _produced:
+    | RuntimeProducedMoldedBonBon
+    | RuntimeProducedBarTruffle
+    | RuntimeProducedRolledTruffle;
+  private readonly _originalSnapshot: AnyProducedConfection;
   private readonly _sessionId: SessionId;
-  private readonly _sourceConfection: IRuntimeConfection;
-  private readonly _enableJournal: boolean;
-  private readonly _logger: Logging.LogReporter<unknown>;
 
-  private _fillings: Map<SlotId, ISessionFillingSlot>;
-  private _mold?: ISessionMold;
-  private _chocolates: Map<ChocolateRole, ISessionChocolate>;
-  private _yield: ISessionYield;
-  private _procedure?: ISessionProcedure;
-  private _coating?: ISessionCoating;
-  private _isDirty: boolean;
+  /**
+   * Creates a ConfectionEditingSession.
+   * Use static factory method instead of calling this directly.
+   * @internal
+   */
+  private constructor(
+    baseConfection: IRuntimeConfection,
+    produced: RuntimeProducedMoldedBonBon | RuntimeProducedBarTruffle | RuntimeProducedRolledTruffle,
+    sessionId?: SessionId
+  ) {
+    this._baseConfection = baseConfection;
+    this._produced = produced;
+    this._originalSnapshot = produced.createSnapshot();
+    this._sessionId = sessionId ?? generateSessionId().orThrow();
+  }
+
+  /**
+   * Creates a new ConfectionEditingSession from a base confection.
+   * Uses the golden version of the confection for editing.
+   * @param baseConfection - Source confection to edit
+   * @returns Result with new ConfectionEditingSession or error
+   * @public
+   */
+  public static create(baseConfection: IRuntimeConfection): Result<ConfectionEditingSession> {
+    switch (baseConfection.confectionType) {
+      case 'molded-bonbon':
+        return RuntimeProducedMoldedBonBon.fromSource(
+          baseConfection.goldenVersion as IRuntimeMoldedBonBonVersion
+        ).onSuccess((wrapper) => captureResult(() => new ConfectionEditingSession(baseConfection, wrapper)));
+      case 'bar-truffle':
+        return RuntimeProducedBarTruffle.fromSource(
+          baseConfection.goldenVersion as IRuntimeBarTruffleVersion
+        ).onSuccess((wrapper) => captureResult(() => new ConfectionEditingSession(baseConfection, wrapper)));
+      case 'rolled-truffle':
+        return RuntimeProducedRolledTruffle.fromSource(
+          baseConfection.goldenVersion as IRuntimeRolledTruffleVersion
+        ).onSuccess((wrapper) => captureResult(() => new ConfectionEditingSession(baseConfection, wrapper)));
+    }
+  }
 
   // ============================================================================
-  // Constructor
+  // Common Editing Methods (delegate to _produced)
   // ============================================================================
 
-  private constructor(params: IConfectionEditingSessionParams) {
-    this._sessionId = generateSessionId().orThrow();
-    this._sourceConfection = params.sourceConfection;
-    this._enableJournal = params.enableJournal ?? true;
-    this._logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
-    this._isDirty = false;
-    this._chocolates = new Map();
-    this._fillings = new Map();
+  /**
+   * Sets the yield specification.
+   * @param spec - Yield specification
+   * @returns Success or failure
+   * @public
+   */
+  public setYield(spec: IConfectionYield): Result<void> {
+    return this._produced.setYield(spec);
+  }
 
-    // Initialize yield from confection defaults or params
-    const defaultYield = this._sourceConfection.yield;
-    const yieldCount = params.yieldCount ?? defaultYield.count;
-    const weightPerPiece = params.weightPerPiece ?? defaultYield.weightPerPiece;
+  /**
+   * Sets or updates a filling slot.
+   * @param slotId - Slot ID
+   * @param choice - Filling choice (recipe or ingredient)
+   * @returns Success or failure
+   * @public
+   */
+  public setFillingSlot(
+    slotId: SlotId,
+    choice: { type: 'recipe'; fillingId: FillingId } | { type: 'ingredient'; ingredientId: IngredientId }
+  ): Result<void> {
+    return this._produced.setFillingSlot(slotId, choice);
+  }
 
-    this._yield = {
-      count: yieldCount,
-      originalCount: defaultYield.count,
-      weightPerPiece,
-      originalWeightPerPiece: defaultYield.weightPerPiece,
-      status: 'original'
+  /**
+   * Removes a filling slot.
+   * @param slotId - Slot ID to remove
+   * @returns Success or failure
+   * @public
+   */
+  public removeFillingSlot(slotId: SlotId): Result<void> {
+    return this._produced.removeFillingSlot(slotId);
+  }
+
+  /**
+   * Sets the notes.
+   * @param notes - Categorized notes array
+   * @returns Success or failure
+   * @public
+   */
+  public setNotes(notes: ICategorizedNote[]): Result<void> {
+    return this._produced.setNotes(notes);
+  }
+
+  /**
+   * Sets the procedure.
+   * @param id - Procedure ID or undefined to clear
+   * @returns Success or failure
+   * @public
+   */
+  public setProcedure(id: ProcedureId | undefined): Result<void> {
+    return this._produced.setProcedure(id);
+  }
+
+  // ============================================================================
+  // Type-Specific Methods (molded bonbon)
+  // ============================================================================
+
+  /**
+   * Sets the mold (molded bonbon only).
+   * @param moldId - Mold ID
+   * @returns Success or failure
+   * @public
+   */
+  public setMold(moldId: MoldId): Result<void> {
+    if (this._produced instanceof RuntimeProducedMoldedBonBon) {
+      return this._produced.setMold(moldId);
+    }
+    return fail('setMold() is only available for molded bonbon confections');
+  }
+
+  /**
+   * Sets the shell chocolate (molded bonbon only).
+   * @param id - Shell chocolate ingredient ID
+   * @returns Success or failure
+   * @public
+   */
+  public setShellChocolate(id: IngredientId): Result<void> {
+    if (this._produced instanceof RuntimeProducedMoldedBonBon) {
+      return this._produced.setShellChocolate(id);
+    }
+    return fail('setShellChocolate() is only available for molded bonbon confections');
+  }
+
+  /**
+   * Sets the seal chocolate (molded bonbon only).
+   * @param id - Seal chocolate ingredient ID or undefined to clear
+   * @returns Success or failure
+   * @public
+   */
+  public setSealChocolate(id: IngredientId | undefined): Result<void> {
+    if (this._produced instanceof RuntimeProducedMoldedBonBon) {
+      return this._produced.setSealChocolate(id);
+    }
+    return fail('setSealChocolate() is only available for molded bonbon confections');
+  }
+
+  /**
+   * Sets the decoration chocolate (molded bonbon only).
+   * @param id - Decoration chocolate ingredient ID or undefined to clear
+   * @returns Success or failure
+   * @public
+   */
+  public setDecorationChocolate(id: IngredientId | undefined): Result<void> {
+    if (this._produced instanceof RuntimeProducedMoldedBonBon) {
+      return this._produced.setDecorationChocolate(id);
+    }
+    return fail('setDecorationChocolate() is only available for molded bonbon confections');
+  }
+
+  // ============================================================================
+  // Type-Specific Methods (bar truffle and rolled truffle)
+  // ============================================================================
+
+  /**
+   * Sets the enrobing chocolate (bar truffle or rolled truffle only).
+   * @param id - Enrobing chocolate ingredient ID or undefined to clear
+   * @returns Success or failure
+   * @public
+   */
+  public setEnrobingChocolate(id: IngredientId | undefined): Result<void> {
+    if (
+      this._produced instanceof RuntimeProducedBarTruffle ||
+      this._produced instanceof RuntimeProducedRolledTruffle
+    ) {
+      return this._produced.setEnrobingChocolate(id);
+    }
+    return fail('setEnrobingChocolate() is only available for bar truffle and rolled truffle confections');
+  }
+
+  // ============================================================================
+  // Type-Specific Methods (rolled truffle)
+  // ============================================================================
+
+  /**
+   * Sets the coating (rolled truffle only).
+   * @param id - Coating ingredient ID or undefined to clear
+   * @returns Success or failure
+   * @public
+   */
+  public setCoating(id: IngredientId | undefined): Result<void> {
+    if (this._produced instanceof RuntimeProducedRolledTruffle) {
+      return this._produced.setCoating(id);
+    }
+    return fail('setCoating() is only available for rolled truffle confections');
+  }
+
+  // ============================================================================
+  // History (delegate to _produced)
+  // ============================================================================
+
+  /**
+   * Undoes the last change.
+   * @returns Success with true if undo succeeded, Success with false if no history
+   * @public
+   */
+  public undo(): Result<boolean> {
+    return this._produced.undo();
+  }
+
+  /**
+   * Redoes the last undone change.
+   * @returns Success with true if redo succeeded, Success with false if no future
+   * @public
+   */
+  public redo(): Result<boolean> {
+    return this._produced.redo();
+  }
+
+  /**
+   * Checks if undo is available.
+   * @returns True if undo stack is not empty
+   * @public
+   */
+  public canUndo(): boolean {
+    return this._produced.canUndo();
+  }
+
+  /**
+   * Checks if redo is available.
+   * @returns True if redo stack is not empty
+   * @public
+   */
+  public canRedo(): boolean {
+    return this._produced.canRedo();
+  }
+
+  // ============================================================================
+  // Save Analysis
+  // ============================================================================
+
+  /**
+   * Analyzes current changes and recommends save options.
+   * @returns Analysis of changes and available save options
+   * @public
+   */
+  public analyzeSaveOptions(): ISaveAnalysis {
+    // Type-safe way to get changes based on produced type
+    let changes: import('../produced/confectionWrapper').IConfectionChanges;
+    if (this._produced instanceof RuntimeProducedMoldedBonBon) {
+      changes = this._produced.getChanges(
+        this._originalSnapshot as import('../../entities').IProducedMoldedBonBon
+      );
+    } else if (this._produced instanceof RuntimeProducedBarTruffle) {
+      changes = this._produced.getChanges(
+        this._originalSnapshot as import('../../entities').IProducedBarTruffle
+      );
+    } else {
+      changes = this._produced.getChanges(
+        this._originalSnapshot as import('../../entities').IProducedRolledTruffle
+      );
+    }
+
+    // TODO: Check collection mutability when that property is added to confection
+    // For now, assume all collections are mutable
+    const isMutable = true;
+
+    // Determine what changed
+    const ingredientsChanged = changes.fillingsChanged;
+    const weightChanged = changes.yieldChanged;
+    const notesChanged = changes.notesChanged;
+
+    return {
+      canCreateVersion: isMutable,
+      canAddAlternatives: false, // Confections don't support adding alternatives
+      mustCreateNew: !isMutable,
+      recommendedOption: !isMutable ? 'new' : 'version',
+      changes: {
+        ingredientsAdded: ingredientsChanged,
+        ingredientsRemoved: ingredientsChanged,
+        ingredientsChanged,
+        weightChanged,
+        notesChanged
+      }
     };
-
-    // Initialize filling if confection has fillings
-    this._initializeFilling();
-
-    // Initialize mold for molded bonbons
-    this._initializeMold();
-
-    // Initialize chocolates based on confection type
-    this._initializeChocolates();
-
-    // Initialize procedure if confection has procedures
-    this._initializeProcedure();
-
-    // Initialize coating for rolled truffles
-    this._initializeCoating();
   }
 
   // ============================================================================
-  // Factory Method
+  // Save Operations
   // ============================================================================
 
   /**
-   * Creates a new ConfectionEditingSession
-   * @param params - Session parameters
-   * @returns Success with new session, or Failure with error message
+   * Saves as a new version of the original confection.
+   * Requires that the collection is mutable.
+   * @param options - Save options including version spec
+   * @returns Result with save result containing journal entry and version spec
    * @public
    */
-  public static create(params: IConfectionEditingSessionParams): Result<ConfectionEditingSession> {
-    return captureResult(() => new ConfectionEditingSession(params));
-  }
-
-  // ============================================================================
-  // IConfectionSessionState Implementation
-  // ============================================================================
-
-  public get sessionId(): SessionId {
-    return this._sessionId;
-  }
-
-  public get sourceConfection(): IRuntimeConfection {
-    return this._sourceConfection;
-  }
-
-  public get fillings(): ReadonlyMap<SlotId, ISessionFillingSlot> {
-    return this._fillings;
-  }
-
-  public get mold(): ISessionMold | undefined {
-    return this._mold;
-  }
-
-  public get chocolates(): ReadonlyMap<ChocolateRole, ISessionChocolate> {
-    return this._chocolates;
-  }
-
-  public get yield(): ISessionYield {
-    return this._yield;
-  }
-
-  public get procedure(): ISessionProcedure | undefined {
-    return this._procedure;
-  }
-
-  public get coating(): ISessionCoating | undefined {
-    return this._coating;
-  }
-
-  public get isDirty(): boolean {
-    return this._isDirty;
-  }
-
-  public get isJournalingEnabled(): boolean {
-    return this._enableJournal;
-  }
-
-  // ============================================================================
-  // Filling Selection
-  // ============================================================================
-
-  /**
-   * Selects a filling recipe for a specific slot.
-   * @param slotId - The slot ID to select the filling for
-   * @param fillingId - The recipe ID to select as the filling
-   * @returns Success, or Failure if the slot doesn't exist
-   * @public
-   */
-  public selectFillingRecipe(slotId: SlotId, fillingId: FillingId): Result<true> {
-    const existingSlot = this._fillings.get(slotId);
-    if (!existingSlot) {
-      return fail(`Filling slot '${slotId}' does not exist`);
+  public saveAsNewVersion(options: ISaveConfectionVersionOptions): Result<ISaveResult> {
+    const analysis = this.analyzeSaveOptions();
+    if (!analysis.canCreateVersion) {
+      return fail('Cannot create new version: collection is immutable');
     }
 
-    this._fillings.set(slotId, {
-      slotId,
-      fillingId,
-      ingredientId: undefined,
-      originalFillingId: existingSlot.originalFillingId,
-      originalIngredientId: existingSlot.originalIngredientId,
-      status: 'modified'
-    });
+    const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
 
-    this._isDirty = true;
-
-    this._logger.info(`Selected filling recipe for slot '${slotId}': ${fillingId}`);
-    return succeed(true);
-  }
-
-  /**
-   * Selects a filling ingredient for a specific slot.
-   * @param slotId - The slot ID to select the filling for
-   * @param ingredientId - The ingredient ID to select as the filling
-   * @returns Success, or Failure if the slot doesn't exist
-   * @public
-   */
-  public selectFillingIngredient(slotId: SlotId, ingredientId: IngredientId): Result<true> {
-    const existingSlot = this._fillings.get(slotId);
-    if (!existingSlot) {
-      return fail(`Filling slot '${slotId}' does not exist`);
-    }
-
-    this._fillings.set(slotId, {
-      slotId,
-      fillingId: undefined,
-      ingredientId,
-      originalFillingId: existingSlot.originalFillingId,
-      originalIngredientId: existingSlot.originalIngredientId,
-      status: 'modified'
-    });
-
-    this._isDirty = true;
-
-    this._logger.info(`Selected filling ingredient for slot '${slotId}': ${ingredientId}`);
-    return succeed(true);
-  }
-
-  // ============================================================================
-  // Mold Selection
-  // ============================================================================
-
-  /**
-   * Selects a mold for the confection.
-   * @param moldId - The mold ID to select
-   * @returns Success, or Failure if the confection doesn't support molds
-   * @public
-   */
-  public selectMold(moldId: MoldId): Result<true> {
-    if (!this._sourceConfection.isMoldedBonBon()) {
-      return fail('This confection does not support mold selection');
-    }
-
-    this._mold = {
-      moldId,
-      originalMoldId: this._mold?.originalMoldId ?? moldId,
-      status: 'modified'
-    };
-
-    this._isDirty = true;
-    this._logger.info(`Selected mold: ${moldId}`);
-    return succeed(true);
-  }
-
-  // ============================================================================
-  // Chocolate Selection
-  // ============================================================================
-
-  /**
-   * Selects a chocolate for a specific role.
-   * @param role - The chocolate role (shell, enrobing, seal, decoration)
-   * @param ingredientId - The chocolate ingredient ID to select
-   * @returns Success, or Failure if the role is not supported for this confection
-   * @public
-   */
-  public selectChocolate(role: ChocolateRole, ingredientId: IngredientId): Result<true> {
-    const existing = this._chocolates.get(role);
-
-    this._chocolates.set(role, {
-      role,
-      ingredientId,
-      originalIngredientId: existing?.originalIngredientId ?? ingredientId,
-      status: 'modified'
-    });
-
-    this._isDirty = true;
-    this._logger.info(`Selected ${role} chocolate: ${ingredientId}`);
-    return succeed(true);
-  }
-
-  // ============================================================================
-  // Yield Modification
-  // ============================================================================
-
-  /**
-   * Sets the yield count.
-   * @param count - The new yield count
-   * @returns Success, or Failure if count is invalid
-   * @public
-   */
-  public setYieldCount(count: number): Result<true> {
-    if (count <= 0) {
-      return fail('Yield count must be positive');
-    }
-
-    this._yield = {
-      ...this._yield,
-      count,
-      status: this._computeYieldStatus(count, this._yield.weightPerPiece)
-    };
-
-    this._isDirty = true;
-    this._logger.info(`Set yield count: ${count}`);
-    return succeed(true);
-  }
-
-  /**
-   * Sets the weight per piece.
-   * @param weight - The new weight per piece in grams
-   * @returns Success, or Failure if weight is invalid
-   * @public
-   */
-  public setWeightPerPiece(weight: Measurement): Result<true> {
-    if (weight <= 0) {
-      return fail('Weight per piece must be positive');
-    }
-
-    this._yield = {
-      ...this._yield,
-      weightPerPiece: weight,
-      status: this._computeYieldStatus(this._yield.count, weight)
-    };
-
-    this._isDirty = true;
-    this._logger.info(`Set weight per piece: ${weight}g`);
-    return succeed(true);
-  }
-
-  // ============================================================================
-  // Procedure Selection
-  // ============================================================================
-
-  /**
-   * Selects a procedure for the confection.
-   * @param procedureId - The procedure ID to select
-   * @returns Success, or Failure if the confection doesn't support procedures
-   * @public
-   */
-  public selectProcedure(procedureId: ProcedureId): Result<true> {
-    // Check if procedures are supported by looking at the raw data
-    // (Runtime getter returns undefined for both "not supported" and "empty options")
-    const goldenVersion = this._sourceConfection.raw.versions.find(
-      (v) => v.versionSpec === this._sourceConfection.goldenVersionSpec
+    // TODO: Implement producedToSource conversion when needed
+    // For now, just create the journal entry
+    return this._createEditJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
+      succeed({
+        journalId: journalEntry.id,
+        journalEntry,
+        newVersionSpec: options.versionSpec
+      })
     );
-    /* c8 ignore next 3 - defensive: golden version always exists for valid confection */
-    if (!goldenVersion?.procedures) {
-      return fail('This confection does not support procedure selection');
-    }
-
-    this._procedure = {
-      procedureId,
-      originalProcedureId: this._procedure?.originalProcedureId,
-      status: 'modified'
-    };
-
-    this._isDirty = true;
-    this._logger.info(`Selected procedure: ${procedureId}`);
-    return succeed(true);
   }
 
-  // ============================================================================
-  // Coating Selection
-  // ============================================================================
-
   /**
-   * Selects a coating ingredient for rolled truffles.
-   * @param ingredientId - The coating ingredient ID to select
-   * @returns Success, or Failure if the confection doesn't support coatings
+   * Saves as an entirely new confection with new ID.
+   * Use when collection is immutable or creating a derivative confection.
+   * @param options - Save options including new ID and version spec
+   * @returns Result with save result containing journal entry
    * @public
    */
-  public selectCoating(ingredientId: IngredientId): Result<true> {
-    if (!this._sourceConfection.isRolledTruffle()) {
-      return fail('This confection does not support coating selection');
-    }
+  public saveAsNewConfection(options: ISaveNewConfectionOptions): Result<ISaveResult> {
+    const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
 
-    this._coating = {
-      ingredientId,
-      originalIngredientId: this._coating?.originalIngredientId,
-      status: 'modified'
-    };
-
-    this._isDirty = true;
-
-    this._logger.info(`Selected coating: ${ingredientId}`);
-    return succeed(true);
-  }
-
-  // ============================================================================
-  // Notes
-  // ============================================================================
-
-  /**
-   * Adds a note to the session journal (deprecated - notes now provided at save time)
-   * @param text - The note text
-   * @public
-   * @deprecated Notes are now provided when creating the journal entry
-   */
-  public addNote(text: string): void {
-    // No-op: notes are now provided at save time
-    this._logger.info(`Session ${this._sessionId}: note added: ${text}`);
-  }
-
-  // ============================================================================
-  // Journal Record Generation
-  // ============================================================================
-
-  /**
-   * Creates an edit journal entry documenting this session.
-   * @param updated - Optional updated version if modifications were saved
-   * @param updatedId - Optional ID if the updated version was saved
-   * @param notes - Optional notes about this session
-   * @returns Success with journal entry, or Failure with error message
-   * @public
-   */
-  public toEditJournalEntry(
-    updated?: AnyConfectionVersion,
-    updatedVersionSpec?: ConfectionVersionSpec,
-    notes?: string
-  ): Result<IConfectionEditJournalEntry> {
-    const timestamp = new Date().toISOString();
-    const versionIdString = `${this._sourceConfection.id}@${this._sourceConfection.goldenVersionSpec}`;
-    const categorizedNotes = notes
-      ? [{ category: 'session' as unknown as import('../../common').NoteCategory, note: notes }]
-      : undefined;
-
-    return CommonConverters.confectionVersionId.convert(versionIdString).onSuccess((confectionVersionId) =>
-      generateJournalId().onSuccess((id) => {
-        // Convert updatedVersionSpec to full version ID if provided
-        const updatedIdResult = updatedVersionSpec
-          ? CommonConverters.confectionVersionId.convert(`${this._sourceConfection.id}@${updatedVersionSpec}`)
-          : succeed(undefined);
-
-        return updatedIdResult.onSuccess((updatedId) =>
-          succeed({
-            type: 'confection-edit' as const,
-            id,
-            timestamp,
-            versionId: confectionVersionId,
-            recipe: this._sourceConfection.goldenVersion.version,
-            updated,
-            updatedId,
-            notes: categorizedNotes
-          })
-        );
+    // TODO: Implement producedToSource conversion when needed
+    // For now, just create the journal entry
+    return this._createEditJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
+      succeed({
+        journalId: journalEntry.id,
+        journalEntry,
+        newVersionSpec: options.versionSpec
       })
     );
   }
 
   // ============================================================================
-  // Save Operation
+  // Journal Creation
   // ============================================================================
 
   /**
-   * Saves the session, optionally creating a journal record and/or new version.
-   * @param options - Save options
-   * @returns Success with save result, or Failure with error message
+   * Creates an edit journal entry from this session.
+   * Records the original version and any modifications made.
+   * @param notes - Optional notes to include in the journal entry
+   * @returns Result with journal entry
    * @public
    */
-  public save(options: IConfectionSaveOptions = {}): Result<IConfectionSaveResult> {
-    const errors = new MessageAggregator();
-    let saveResult: IConfectionSaveResult = {};
-    let newVersionSpec: ConfectionVersionSpec | undefined;
+  public toEditJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionEditJournalEntry> {
+    return this._createEditJournalEntry(undefined, notes);
+  }
 
-    if (options.createNewVersion) {
-      if (!options.versionLabel) {
-        return fail('versionLabel is required when createNewVersion is true');
-      }
-      newVersionSpec = options.versionLabel;
-      saveResult = { ...saveResult, newVersionSpec };
-    }
-
-    if (options.createJournalRecord !== false && this._enableJournal) {
-      const journalResult = this.toEditJournalEntry(undefined, newVersionSpec, options.journalNotes)
-        .aggregateError(errors)
-        .onSuccess((entry) =>
-          Success.with<IConfectionSaveResult>({ journalEntry: entry, journalId: entry.id })
-        )
-        .orDefault({});
-      saveResult = { ...saveResult, ...journalResult };
-    }
-
-    this._isDirty = false;
-    return succeed(saveResult);
+  /**
+   * Creates a production journal entry from this session.
+   * Records the produced confection with resolved concrete choices.
+   * @param notes - Optional notes to include in the journal entry
+   * @returns Result with production journal entry
+   * @public
+   */
+  public toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IConfectionProductionJournalEntry> {
+    return generateJournalId().onSuccess((id) =>
+      succeed({
+        type: 'confection-production' as const,
+        id,
+        timestamp: getCurrentTimestamp(),
+        versionId: this._produced.versionId,
+        recipe: this._baseConfection.goldenVersion.version,
+        yield: this._produced.yield,
+        produced: this._produced.snapshot,
+        notes
+      })
+    );
   }
 
   // ============================================================================
-  // Private Initialization Methods
+  // Accessors
   // ============================================================================
 
-  private _initializeFilling(): void {
-    const fillingSlots = this._sourceConfection.fillings;
-    if (!fillingSlots || fillingSlots.length === 0) {
-      return;
-    }
-
-    // Initialize each filling slot
-    for (const slot of fillingSlots) {
-      const { slotId, filling } = slot;
-      const { options, preferredId } = filling;
-
-      if (options.length === 0) {
-        continue;
-      }
-
-      // Find the preferred option or use the first one
-      let selectedOption = options[0];
-      if (preferredId !== undefined) {
-        const preferred = options.find((opt: { id: unknown }) => opt.id === preferredId);
-        if (preferred !== undefined) {
-          selectedOption = preferred;
-        }
-      }
-
-      // Create session filling slot based on type
-      if (selectedOption.type === 'recipe') {
-        this._fillings.set(slotId, {
-          slotId,
-          fillingId: selectedOption.id,
-          originalFillingId: selectedOption.id,
-          status: 'original'
-        });
-      } else {
-        this._fillings.set(slotId, {
-          slotId,
-          ingredientId: selectedOption.id,
-          originalIngredientId: selectedOption.id,
-          status: 'original'
-        });
-      }
-    }
+  /**
+   * Unique session identifier.
+   * @public
+   */
+  public get sessionId(): SessionId {
+    return this._sessionId;
   }
 
-  private _initializeMold(): void {
-    if (!this._sourceConfection.isMoldedBonBon()) {
-      return;
-    }
-
-    const molds = this._sourceConfection.molds;
-    const moldId = molds.preferredId ?? molds.options[0]?.id;
-
-    if (moldId) {
-      this._mold = {
-        moldId,
-        originalMoldId: moldId,
-        status: 'original'
-      };
-    }
+  /**
+   * The base confection being edited.
+   * @public
+   */
+  public get baseConfection(): IRuntimeConfection {
+    return this._baseConfection;
   }
 
-  private _initializeChocolates(): void {
-    if (this._sourceConfection.isMoldedBonBon()) {
-      const shellChocolate = this._sourceConfection.shellChocolate;
-      // shellChocolate is now resolved - use chocolate.id for the primary
-      const shellIngredientId = shellChocolate.chocolate.id;
-      this._chocolates.set('shell', {
-        role: 'shell',
-        ingredientId: shellIngredientId,
-        originalIngredientId: shellIngredientId,
-        status: 'original'
-      });
-
-      // Initialize additional chocolates if present
-      const additionalChocolates = this._sourceConfection.additionalChocolates;
-      if (additionalChocolates) {
-        for (const additional of additionalChocolates) {
-          const role = additional.purpose;
-          // additional.chocolate is now resolved - use chocolate.id
-          const ingredientId = additional.chocolate.chocolate.id;
-          this._chocolates.set(role, {
-            role,
-            ingredientId,
-            originalIngredientId: ingredientId,
-            status: 'original'
-          });
-        }
-      }
-    } else if (this._sourceConfection.isBarTruffle()) {
-      const enrobingChocolate = this._sourceConfection.enrobingChocolate;
-      if (enrobingChocolate) {
-        // enrobingChocolate is now resolved - use chocolate.id
-        const ingredientId = enrobingChocolate.chocolate.id;
-        this._chocolates.set('enrobing', {
-          role: 'enrobing',
-          ingredientId,
-          originalIngredientId: ingredientId,
-          status: 'original'
-        });
-      }
-    } else if (this._sourceConfection.isRolledTruffle()) {
-      const enrobingChocolate = this._sourceConfection.enrobingChocolate;
-      if (enrobingChocolate) {
-        // enrobingChocolate is now resolved - use chocolate.id
-        const ingredientId = enrobingChocolate.chocolate.id;
-        this._chocolates.set('enrobing', {
-          role: 'enrobing',
-          ingredientId,
-          originalIngredientId: ingredientId,
-          status: 'original'
-        });
-      }
-    }
+  /**
+   * The produced confection wrapper with undo/redo support.
+   * @public
+   */
+  public get produced():
+    | RuntimeProducedMoldedBonBon
+    | RuntimeProducedBarTruffle
+    | RuntimeProducedRolledTruffle {
+    return this._produced;
   }
 
-  private _initializeProcedure(): void {
-    const procedures = this._sourceConfection.procedures;
-    if (!procedures) {
-      return;
-    }
-
-    /* c8 ignore next - defensive: procedures always has at least one option when defined */
-    const procedureId = procedures.preferredId ?? procedures.options[0]?.id;
-
-    if (procedureId) {
-      this._procedure = {
-        procedureId,
-        originalProcedureId: procedureId,
-        status: 'original'
-      };
-    }
+  /**
+   * The confection type.
+   * @public
+   */
+  public get confectionType(): 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle' {
+    return this._baseConfection.confectionType;
   }
 
-  private _initializeCoating(): void {
-    if (!this._sourceConfection.isRolledTruffle()) {
-      return;
-    }
-
-    const coatings = this._sourceConfection.coatings;
-    if (!coatings) {
-      return;
-    }
-
-    // coatings is now resolved - use preferred option or first option
-    /* c8 ignore next - branch: fallback to first option if preferred ingredient missing from library */
-    const ingredientId = coatings.preferred?.id ?? coatings.options[0]?.id;
-
-    if (ingredientId) {
-      this._coating = {
-        ingredientId,
-        originalIngredientId: ingredientId,
-        status: 'original'
-      };
+  /**
+   * Whether the session has unsaved changes.
+   * @public
+   */
+  public get hasChanges(): boolean {
+    // Type-safe way to check changes based on produced type
+    if (this._produced instanceof RuntimeProducedMoldedBonBon) {
+      return this._produced.hasChanges(
+        this._originalSnapshot as import('../../entities').IProducedMoldedBonBon
+      );
+    } else if (this._produced instanceof RuntimeProducedBarTruffle) {
+      return this._produced.hasChanges(
+        this._originalSnapshot as import('../../entities').IProducedBarTruffle
+      );
+    } else {
+      return this._produced.hasChanges(
+        this._originalSnapshot as import('../../entities').IProducedRolledTruffle
+      );
     }
   }
 
   // ============================================================================
-  // Private Helper Methods
+  // Private Helpers
   // ============================================================================
 
-  private _computeYieldStatus(count: number, weightPerPiece?: Measurement): ConfectionSelectionStatus {
-    const countChanged = count !== this._yield.originalCount;
-    const weightChanged = weightPerPiece !== this._yield.originalWeightPerPiece;
-    return countChanged || weightChanged ? 'modified' : 'original';
+  /**
+   * Creates an edit journal entry.
+   */
+  private _createEditJournalEntry(
+    updatedVersionSpec: ConfectionVersionSpec | undefined,
+    notes: ICategorizedNote[] | undefined
+  ): Result<IConfectionEditJournalEntry> {
+    return generateJournalId().onSuccess((id) => {
+      // Create updated version ID if needed
+      const updatedIdResult = updatedVersionSpec
+        ? Helpers.createConfectionVersionId({
+            collectionId: this._baseConfection.id,
+            itemId: updatedVersionSpec
+          })
+        : succeed(undefined);
+
+      return updatedIdResult.onSuccess((updatedId) =>
+        succeed({
+          type: 'confection-edit' as const,
+          id,
+          timestamp: getCurrentTimestamp(),
+          versionId: this._produced.versionId,
+          recipe: this._baseConfection.goldenVersion.version,
+          updated: updatedVersionSpec ? this._baseConfection.goldenVersion.version : undefined,
+          updatedId,
+          notes
+        })
+      );
+    });
   }
 }

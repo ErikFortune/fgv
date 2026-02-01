@@ -147,6 +147,27 @@ Optional notes about this version
 </td></tr>
 <tr><td>
 
+[preferredProcedure](./ts-chocolate.runtime.runtimefillingrecipeversion.preferredprocedure.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedFillingRecipeProcedure](./ts-chocolate.runtime.iresolvedfillingrecipeprocedure.md) \| undefined
+
+
+</td><td>
+
+Gets the preferred procedure, falling back to first available.
+
+
+</td></tr>
+<tr><td>
+
 [procedures](./ts-chocolate.runtime.runtimefillingrecipeversion.procedures.md)
 
 

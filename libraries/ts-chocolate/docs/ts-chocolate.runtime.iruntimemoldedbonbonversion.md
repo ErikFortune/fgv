@@ -101,6 +101,48 @@ Resolved molds with preferred selection
 </td></tr>
 <tr><td>
 
+[preferredMold](./ts-chocolate.runtime.iruntimemoldedbonbonversion.preferredmold.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedConfectionMoldRef](./ts-chocolate.runtime.iresolvedconfectionmoldref.md) \| undefined
+
+
+</td><td>
+
+Gets the preferred mold, falling back to first available
+
+
+</td></tr>
+<tr><td>
+
+[preferredProcedure](./ts-chocolate.runtime.iruntimemoldedbonbonversion.preferredprocedure.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md) \| undefined
+
+
+</td><td>
+
+Gets the preferred procedure, falling back to first available
+
+
+</td></tr>
+<tr><td>
+
 [raw](./ts-chocolate.runtime.iruntimemoldedbonbonversion.raw.md)
 
 

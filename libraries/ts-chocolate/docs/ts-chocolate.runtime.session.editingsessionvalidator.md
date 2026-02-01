@@ -6,7 +6,7 @@
 
 A wrapper for EditingSession that validates and converts weakly-typed inputs to strongly-typed branded types before delegating to the underlying session.
 
-This allows consumers to use plain strings and numbers instead of IngredientId and Grams branded types while still benefiting from runtime validation.
+This allows consumers to use plain strings and numbers instead of IngredientId and Measurement branded types while still benefiting from runtime validation.
 
 **Signature:**
 
@@ -19,12 +19,12 @@ export declare class EditingSessionValidator implements IEditingSessionValidator
 
 
 ```typescript
-const session = EditingSession.create(params).orThrow();
-const validator = session.validating;
+const session = EditingSession.create(baseRecipe).orThrow();
+const validator = new EditingSessionValidator(session);
 
 // Use plain strings and numbers instead of branded types
-validator.setIngredientAmount('felchlin.maracaibo-65', 100);
-validator.addIngredient('local.glucose-syrup', 50);
+validator.setIngredient('felchlin.maracaibo-65', 100);
+validator.removeIngredient('local.glucose-syrup');
 ```
 
 ## Constructors
@@ -96,7 +96,7 @@ Description
 
 </td><td>
 
-[RecipeEditingSession](./ts-chocolate.runtime.session.recipeeditingsession.md)
+[EditingSession](./ts-chocolate.runtime.session.editingsession.md)
 
 
 </td><td>
@@ -127,62 +127,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addIngredient(id, amount)](./ts-chocolate.runtime.session.editingsessionvalidator.addingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a new ingredient using weakly-typed inputs
-
-
-</td></tr>
-<tr><td>
-
-[addIngredientAmount(id, additional)](./ts-chocolate.runtime.session.editingsessionvalidator.addingredientamount.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds additional amount to an ingredient using weakly-typed inputs
-
-
-</td></tr>
-<tr><td>
-
-[getIngredient(id)](./ts-chocolate.runtime.session.editingsessionvalidator.getingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets an ingredient by ID using a weakly-typed string
-
-
-</td></tr>
-<tr><td>
-
-[hasIngredient(id)](./ts-chocolate.runtime.session.editingsessionvalidator.hasingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Checks if an ingredient exists using a weakly-typed string
-
-
-</td></tr>
-<tr><td>
-
 [removeIngredient(id)](./ts-chocolate.runtime.session.editingsessionvalidator.removeingredient.md)
 
 
@@ -197,7 +141,7 @@ Removes an ingredient using a weakly-typed string
 </td></tr>
 <tr><td>
 
-[setIngredientAmount(id, amount)](./ts-chocolate.runtime.session.editingsessionvalidator.setingredientamount.md)
+[setIngredient(id, amount, unit, modifiers)](./ts-chocolate.runtime.session.editingsessionvalidator.setingredient.md)
 
 
 </td><td>
@@ -205,7 +149,21 @@ Removes an ingredient using a weakly-typed string
 
 </td><td>
 
-Sets the amount of an ingredient using weakly-typed inputs
+Sets or updates an ingredient using weakly-typed inputs
+
+
+</td></tr>
+<tr><td>
+
+[setProcedure(id)](./ts-chocolate.runtime.session.editingsessionvalidator.setprocedure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the procedure using a weakly-typed string
 
 
 </td></tr>
@@ -220,20 +178,6 @@ Sets the amount of an ingredient using weakly-typed inputs
 </td><td>
 
 Sets the target weight using a weakly-typed number
-
-
-</td></tr>
-<tr><td>
-
-[substituteIngredient(originalId, substituteId, amount)](./ts-chocolate.runtime.session.editingsessionvalidator.substituteingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Substitutes one ingredient for another using weakly-typed inputs
 
 
 </td></tr>

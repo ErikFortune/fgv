@@ -101,6 +101,27 @@ _(Optional)_ Resolved enrobing chocolate specification (optional)
 </td></tr>
 <tr><td>
 
+[preferredProcedure](./ts-chocolate.runtime.iruntimerolledtruffleversion.preferredprocedure.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md) \| undefined
+
+
+</td><td>
+
+Gets the preferred procedure, falling back to first available
+
+
+</td></tr>
+<tr><td>
+
 [raw](./ts-chocolate.runtime.iruntimerolledtruffleversion.raw.md)
 
 

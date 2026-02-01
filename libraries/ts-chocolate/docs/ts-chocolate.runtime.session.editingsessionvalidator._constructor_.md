@@ -9,7 +9,7 @@ Creates a new EditingSessionValidator
 **Signature:**
 
 ```typescript
-constructor(session: RecipeEditingSession);
+constructor(session: EditingSession);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ session
 
 </td><td>
 
-[RecipeEditingSession](./ts-chocolate.runtime.session.recipeeditingsession.md)
+[EditingSession](./ts-chocolate.runtime.session.editingsession.md)
 
 
 </td><td>

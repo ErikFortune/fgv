@@ -617,6 +617,12 @@ export interface ICategorizedNote {
   readonly note: string;
 }
 
+/**
+ * Default note category for general/unspecified notes.
+ * @public
+ */
+export const DEFAULT_NOTE_CATEGORY: NoteCategory = 'general' as NoteCategory;
+
 // ============================================================================
 // URLs
 // ============================================================================

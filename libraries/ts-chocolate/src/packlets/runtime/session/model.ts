@@ -26,6 +26,7 @@
 import { Logging } from '@fgv/ts-utils';
 
 import {
+  ConfectionId,
   ConfectionVersionSpec,
   FillingId,
   FillingVersionSpec,
@@ -33,141 +34,155 @@ import {
   IngredientId,
   MoldId,
   ProcedureId,
-  SessionId,
-  SlotId
+  SessionId
 } from '../../common';
 import { IFillingEditJournalEntry, IConfectionEditJournalEntry } from '../../entities';
-import { IRuntimeConfection, IRuntimeFillingRecipeVersion } from '../model';
+import { IRuntimeConfection } from '../model';
 
 // ============================================================================
-// Session Ingredient State
-// ============================================================================
-
-/**
- * The status of an ingredient in an editing session
- * @public
- */
-export type SessionIngredientStatus = 'original' | 'modified' | 'added' | 'removed' | 'substituted';
-
-/**
- * Represents an ingredient in an editing session with tracking of changes
- * @public
- */
-export interface ISessionIngredient {
-  /**
-   * The ingredient ID
-   */
-  readonly ingredientId: IngredientId;
-
-  /**
-   * Current amount (can be modified during session)
-   */
-  amount: Measurement;
-
-  /**
-   * Original amount from the source version (0 for added ingredients)
-   */
-  readonly originalAmount: Measurement;
-
-  /**
-   * Current status of this ingredient
-   */
-  readonly status: SessionIngredientStatus;
-
-  /**
-   * If this is a substitution, the original ingredient that was replaced
-   */
-  readonly substitutedFor?: IngredientId;
-
-  /**
-   * Optional notes for this ingredient
-   */
-  notes?: string;
-}
-
-// ============================================================================
-// Session Parameters
+// Save Analysis
 // ============================================================================
 
 /**
- * Parameters for creating an editing session
+ * Analysis of save options and recommendations based on session changes.
  * @public
  */
-export interface IEditingSessionParams {
+export interface ISaveAnalysis {
   /**
-   * The source version to edit from
+   * Whether the original collection is mutable (allows creating new version)
    */
-  readonly sourceVersion: IRuntimeFillingRecipeVersion;
+  readonly canCreateVersion: boolean;
 
   /**
-   * Initial scale factor (default: 1.0)
+   * Whether we can add ingredients as alternatives to the original recipe
    */
-  readonly scaleFactor?: number;
+  readonly canAddAlternatives: boolean;
 
   /**
-   * Initial target weight (if specified, scaleFactor is calculated from baseWeight)
+   * Whether we must create a new recipe (collection is immutable)
    */
-  readonly targetWeight?: Measurement;
+  readonly mustCreateNew: boolean;
 
   /**
-   * Whether to track detailed journal entries (default: true)
+   * Recommended save option based on changes
    */
-  readonly enableJournal?: boolean;
+  readonly recommendedOption: 'version' | 'alternatives' | 'new';
 
   /**
-   * Optional logger for reporting operations
+   * Detailed change information
    */
-  readonly logger?: Logging.LogReporter<unknown>;
-}
-
-// ============================================================================
-// Session State
-// ============================================================================
-
-/**
- * Read-only view of session state
- * @public
- */
-export interface ISessionState {
-  /**
-   * Unique session identifier
-   */
-  readonly sessionId: SessionId;
-
-  /**
-   * Source version being edited
-   */
-  readonly sourceVersion: IRuntimeFillingRecipeVersion;
-
-  /**
-   * Current scale factor
-   */
-  readonly scaleFactor: number;
-
-  /**
-   * Current target weight
-   */
-  readonly targetWeight: Measurement;
-
-  /**
-   * Current ingredient states
-   */
-  readonly ingredients: ReadonlyMap<IngredientId, ISessionIngredient>;
-
-  /**
-   * Whether the session has unsaved modifications
-   */
-  readonly isDirty: boolean;
-
-  /**
-   * Whether journaling is enabled
-   */
-  readonly isJournalingEnabled: boolean;
+  readonly changes: {
+    readonly ingredientsAdded: boolean;
+    readonly ingredientsRemoved: boolean;
+    readonly ingredientsChanged: boolean;
+    readonly weightChanged: boolean;
+    readonly notesChanged: boolean;
+  };
 }
 
 // ============================================================================
 // Save Options and Results
 // ============================================================================
+
+/**
+ * Options for saving as a new version of the original recipe.
+ * @public
+ */
+export interface ISaveVersionOptions {
+  /**
+   * Base weight for the new version
+   */
+  readonly baseWeight: Measurement;
+
+  /**
+   * Version spec for the new version
+   */
+  readonly versionSpec: FillingVersionSpec;
+
+  /**
+   * Whether to include session notes in the recipe
+   */
+  readonly includeSessionNotes?: boolean;
+}
+
+/**
+ * Options for saving by adding ingredients as alternatives.
+ * @public
+ */
+export interface ISaveAlternativesOptions {
+  /**
+   * Version spec for the updated version
+   */
+  readonly versionSpec: FillingVersionSpec;
+
+  /**
+   * Whether to include session notes in the recipe
+   */
+  readonly includeSessionNotes?: boolean;
+}
+
+/**
+ * Options for saving as an entirely new recipe.
+ * @public
+ */
+export interface ISaveNewRecipeOptions {
+  /**
+   * ID for the new recipe
+   */
+  readonly newId: FillingId;
+
+  /**
+   * Base weight for the new recipe
+   */
+  readonly baseWeight: Measurement;
+
+  /**
+   * Version spec for the new recipe's first version
+   */
+  readonly versionSpec: FillingVersionSpec;
+
+  /**
+   * Whether to include session notes in the recipe
+   */
+  readonly includeSessionNotes?: boolean;
+}
+
+/**
+ * Options for saving confection as a new version.
+ * @public
+ */
+export interface ISaveConfectionVersionOptions {
+  /**
+   * Version spec for the new version
+   */
+  readonly versionSpec: ConfectionVersionSpec;
+
+  /**
+   * Whether to include session notes in the confection
+   */
+  readonly includeSessionNotes?: boolean;
+}
+
+/**
+ * Options for saving confection as entirely new.
+ * @public
+ */
+export interface ISaveNewConfectionOptions {
+  /**
+   * ID for the new confection
+   */
+  readonly newId: ConfectionId;
+
+  /**
+   * Version spec for the new confection's first version
+   */
+  readonly versionSpec: ConfectionVersionSpec;
+
+  /**
+   * Whether to include session notes in the confection
+   */
+  readonly includeSessionNotes?: boolean;
+}
 
 /**
  * Options for saving an editing session
@@ -209,12 +224,12 @@ export interface ISaveResult {
    * The full journal entry if one was created.
    * Callers can use this to persist the journal via `context.journals.addJournal(entry)`.
    */
-  readonly journalEntry?: IFillingEditJournalEntry;
+  readonly journalEntry?: IFillingEditJournalEntry | IConfectionEditJournalEntry;
 
   /**
    * The new version spec if one was created
    */
-  readonly newVersionSpec?: FillingVersionSpec;
+  readonly newVersionSpec?: FillingVersionSpec | ConfectionVersionSpec;
 }
 
 // ============================================================================
@@ -226,42 +241,6 @@ export interface ISaveResult {
  * @public
  */
 export type ConfectionSelectionStatus = 'original' | 'modified';
-
-/**
- * Tracks the selected filling for a single slot in a confection session
- * @public
- */
-export interface ISessionFillingSlot {
-  /**
-   * The slot ID this selection applies to
-   */
-  readonly slotId: SlotId;
-
-  /**
-   * The currently selected filling ID (mutually exclusive with ingredientId)
-   */
-  readonly fillingId?: FillingId;
-
-  /**
-   * The currently selected filling ingredient ID (mutually exclusive with fillingId)
-   */
-  readonly ingredientId?: IngredientId;
-
-  /**
-   * The original filling recipe ID when the session started
-   */
-  readonly originalFillingId?: FillingId;
-
-  /**
-   * The original filling ingredient ID when the session started
-   */
-  readonly originalIngredientId?: IngredientId;
-
-  /**
-   * Current status of the filling selection
-   */
-  readonly status: ConfectionSelectionStatus;
-}
 
 /**
  * Tracks the selected mold for a confection session
@@ -443,11 +422,6 @@ export interface IConfectionSessionState {
    * Source confection being edited
    */
   readonly sourceConfection: IRuntimeConfection;
-
-  /**
-   * Current filling selections by slot ID (if applicable)
-   */
-  readonly fillings: ReadonlyMap<SlotId, ISessionFillingSlot>;
 
   /**
    * Current mold selection (for molded bonbons)

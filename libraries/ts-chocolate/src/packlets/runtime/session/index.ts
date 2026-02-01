@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 export * from './model';
-export { RecipeEditingSession } from './editingSession';
+export { EditingSession } from './editingSession';
 export { ConfectionEditingSession } from './confectionEditingSession';
 export {
   EditingSessionValidator,

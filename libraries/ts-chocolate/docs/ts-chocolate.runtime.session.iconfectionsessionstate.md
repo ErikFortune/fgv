@@ -79,27 +79,6 @@ _(Optional)_ Current coating selection (for rolled truffles)
 </td></tr>
 <tr><td>
 
-[fillings](./ts-chocolate.runtime.session.iconfectionsessionstate.fillings.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyMap&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->, [ISessionFillingSlot](./ts-chocolate.runtime.session.isessionfillingslot.md)<!-- -->&gt;
-
-
-</td><td>
-
-Current filling selections by slot ID (if applicable)
-
-
-</td></tr>
-<tr><td>
-
 [isDirty](./ts-chocolate.runtime.session.iconfectionsessionstate.isdirty.md)
 
 

@@ -541,6 +541,17 @@ Pattern for valid confection version specs Format: YYYY-MM-DD-NN with optional l
 </td></tr>
 <tr><td>
 
+[DEFAULT\_NOTE\_CATEGORY](./ts-chocolate.default_note_category.md)
+
+
+</td><td>
+
+Default note category for general/unspecified notes.
+
+
+</td></tr>
+<tr><td>
+
 [FILLING\_VERSION\_ID\_PATTERN](./ts-chocolate.filling_version_id_pattern.md)
 
 
