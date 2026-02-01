@@ -56,6 +56,63 @@ export interface IResultMapValidatorCreateParams<TK extends string = string, TV 
 }
 
 /**
+ * A read-only validator for any {@link Collections.IReadOnlyResultMap | IReadOnlyResultMap}
+ * that validates weakly-typed keys before accessing values.
+ * @public
+ */
+export class ReadOnlyResultMapValidator<TK extends string = string, TV = unknown>
+  implements IReadOnlyResultMapValidator<TK, TV>
+{
+  /**
+   * The key-value converters used for validation.
+   */
+  public readonly converters: KeyValueConverters<TK, TV>;
+
+  /**
+   * The underlying map.
+   */
+  public get map(): IReadOnlyResultMap<TK, TV> {
+    return this._map;
+  }
+
+  private readonly _map: IReadOnlyResultMap<TK, TV>;
+
+  /**
+   * Constructs a new {@link Collections.ReadOnlyResultMapValidator | ReadOnlyResultMapValidator}.
+   * @param map - The map to validate access to.
+   * @param converters - The key-value converters for validation.
+   */
+  public constructor(map: IReadOnlyResultMap<TK, TV>, converters: KeyValueConverters<TK, TV>) {
+    this._map = map;
+    this.converters = converters;
+  }
+
+  /**
+   * Gets a value from the map by key, validating the key first.
+   * @param key - The key to retrieve (will be validated).
+   * @returns `Success` with the value if found, `Failure` otherwise.
+   */
+  public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
+    return this.converters.convertKey(key).onSuccess((validKey) => {
+      return this._map.get(validKey);
+    });
+  }
+
+  /**
+   * Checks if the map contains a key, validating the key first.
+   * @param key - The key to check (will be validated).
+   * @returns `true` if the key exists and is valid, `false` otherwise.
+   */
+  public has(key: string): boolean {
+    const result = this.converters.convertKey(key);
+    if (result.isFailure()) {
+      return false;
+    }
+    return this._map.has(result.value);
+  }
+}
+
+/**
  * A {@link Collections.ResultMap | ResultMap} wrapper which validates weakly-typed keys
  * before calling the wrapped result map.
  * @public

@@ -245,6 +245,43 @@ export type Brand<T, B> = T & {
     __brand: B;
 };
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class CacheInvalidatingResultMapWrapper<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>> implements IResultMap<TK, TSRC> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TSRC>>;
+    constructor(inner: TSRCMAP, parent: ConvertingResultMap<TK, TSRC, TTARGET, TSRCMAP>);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    add(key: TK, value: TSRC): DetailedResult<TSRC, ResultMapResultDetail>;
+    clear(): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    delete(key: TK): DetailedResult<TSRC, ResultMapResultDetail>;
+    entries(): IterableIterator<KeyValueEntry<TK, TSRC>>;
+    forEach(cb: ResultMapForEachCb<TK, TSRC>, thisArg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TK): DetailedResult<TSRC, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getOrAdd(key: TK, value: TSRC): DetailedResult<TSRC, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TSRC>): DetailedResult<TSRC, ResultMapResultDetail>;
+    has(key: TK): boolean;
+    keys(): IterableIterator<TK>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    set(key: TK, value: TSRC): DetailedResult<TSRC, ResultMapResultDetail>;
+    get size(): number;
+    toReadOnly(): IReadOnlyResultMap<TK, TSRC>;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    update(key: TK, value: TSRC): DetailedResult<TSRC, ResultMapResultDetail>;
+    values(): IterableIterator<TSRC>;
+}
+
 // @public
 export function captureResult<T>(func: () => T): Result<T>;
 
@@ -345,6 +382,9 @@ declare namespace Collections {
         Collectible,
         IConvertingCollectorConstructorParams,
         ConvertingCollector,
+        IConvertingResultMapConstructorParams,
+        CacheInvalidatingResultMapWrapper,
+        ConvertingResultMap,
         CollectorResultDetail,
         IReadOnlyCollector,
         ICollectorConstructorParams,
@@ -362,16 +402,25 @@ declare namespace Collections {
         ResultMapResultDetail,
         ResultMapForEachCb,
         IReadOnlyResultMap,
+        ConvertingResultMapValueConverter,
+        IReadOnlyConvertingResultMapConstructorParams,
+        ReadOnlyConvertingResultMap,
         IResultMapConstructorParams,
         ResultMapValueFactory,
         IResultMap,
         ResultMap,
         IReadOnlyResultMapValidator,
         IResultMapValidatorCreateParams,
+        ReadOnlyResultMapValidator,
         ResultMapValidator,
         IReadOnlyValidatingCollector,
         IValidatingCollectorConstructorParams,
         ValidatingCollector,
+        ReadOnlyConvertingResultMapValidator,
+        IValidatingReadOnlyConvertingResultMapConstructorParams,
+        ValidatingReadOnlyConvertingResultMap,
+        IValidatingConvertingResultMapConstructorParams,
+        ValidatingConvertingResultMap,
         IReadOnlyValidatingResultMap,
         IValidatingResultMapConstructorParams,
         ValidatingResultMap,
@@ -816,6 +865,26 @@ class ConvertingCollectorValidator<TITEM extends ICollectible<any, any>, TSRC = 
     // (undocumented)
     toReadOnly(): IReadOnlyCollectorValidator<TITEM>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ConvertingResultMap<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>> extends ReadOnlyConvertingResultMap<TK, TSRC, TTARGET> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IConvertingResultMapConstructorParams<TK, TSRC, TTARGET, TSRCMAP>);
+    // @internal
+    _clearCache(): void;
+    // @internal
+    _clearCacheEntry(key: TK): void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>>(params: IConvertingResultMapConstructorParams<TK, TSRC, TTARGET, TSRCMAP>): Result<ConvertingResultMap<TK, TSRC, TTARGET, TSRCMAP>>;
+    readonly source: CacheInvalidatingResultMapWrapper<TK, TSRC, TTARGET, TSRCMAP>;
+    protected readonly _typedInner: TSRCMAP;
+}
+
+// @public
+type ConvertingResultMapValueConverter<TK extends string, TSRC, TTARGET> = (src: TSRC, key: TK) => Result<TTARGET>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1296,6 +1365,14 @@ interface IConvertingCollectorValidatorCreateParams<TITEM extends ICollectible<a
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>> {
+    converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
+    inner: TSRCMAP;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IKeyValueConverterConstructorParams<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>;
@@ -1432,6 +1509,14 @@ interface IReadOnlyCollectorValidator<TITEM extends ICollectible<any, any>> exte
     //
     // (undocumented)
     readonly map: IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET> {
+    converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
+    inner: IReadOnlyResultMap<TK, TSRC>;
 }
 
 // @public
@@ -1684,6 +1769,24 @@ interface IValidatingConvertingCollectorConstructorParams<TITEM extends ICollect
     //
     // (undocumented)
     factory: CollectibleFactory<TITEM, TSRC>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatingConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>> {
+    converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
+    converters: KeyValueConverters<TK, TTARGET>;
+    inner: TSRCMAP;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatingReadOnlyConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET> {
+    converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
+    converters: KeyValueConverters<TK, TTARGET>;
+    inner: IReadOnlyResultMap<TK, TSRC>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2174,6 +2277,55 @@ export interface PopulateObjectOptions<T> {
 // @public
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET> implements IReadOnlyResultMap<TK, TTARGET> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TTARGET>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IReadOnlyConvertingResultMapConstructorParams<TK, TSRC, TTARGET>);
+    protected readonly _cache: Map<TK, TTARGET>;
+    protected _clearCache(): void;
+    protected _clearCacheEntry(key: TK): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "_convertAndCache" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "_convertAndCache" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    protected _convertAndCache(key: TK, src: TSRC): DetailedResult<TTARGET, ResultMapResultDetail>;
+    protected readonly _converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string, TSRC, TTARGET>(params: IReadOnlyConvertingResultMapConstructorParams<TK, TSRC, TTARGET>): Result<ReadOnlyConvertingResultMap<TK, TSRC, TTARGET>>;
+    entries(): IterableIterator<KeyValueEntry<TK, TTARGET>>;
+    forEach(cb: ResultMapForEachCb<TK, TTARGET>, thisArg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TK): DetailedResult<TTARGET, ResultMapResultDetail>;
+    protected _getOrConvert(key: TK, src: TSRC): TTARGET | undefined;
+    has(key: TK): boolean;
+    protected readonly _inner: IReadOnlyResultMap<TK, TSRC>;
+    keys(): IterableIterator<TK>;
+    get size(): number;
+    toReadOnly(): IReadOnlyResultMap<TK, TTARGET>;
+    values(): IterableIterator<TTARGET>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public @deprecated (undocumented)
+type ReadOnlyConvertingResultMapValidator<TK extends string, _TSRC, TTARGET> = ReadOnlyResultMapValidator<TK, TTARGET>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ReadOnlyResultMapValidator<TK extends string = string, TV = unknown> implements IReadOnlyResultMapValidator<TK, TV> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(map: IReadOnlyResultMap<TK, TV>, converters: KeyValueConverters<TK, TV>);
+    readonly converters: KeyValueConverters<TK, TV>;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: string): DetailedResult<TV, ResultMapResultDetail>;
+    has(key: string): boolean;
+    get map(): IReadOnlyResultMap<TK, TV>;
+}
+
 // @public
 export function recordFromEntries<TK extends string, TV>(entries: Iterable<[TK, TV]>): Record<TK, TV>;
 
@@ -2581,6 +2733,33 @@ export class ValidatingConvertingCollector<TITEM extends ICollectible<any, any>,
     toReadOnly(): IReadOnlyValidatingCollector<TITEM>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly validating: ConvertingCollectorValidator<TITEM, TSRC>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ValidatingConvertingResultMap<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>> extends ConvertingResultMap<TK, TSRC, TTARGET, TSRCMAP> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IValidatingConvertingResultMapConstructorParams<TK, TSRC, TTARGET, TSRCMAP>);
+    protected readonly _converters: KeyValueConverters<TK, TTARGET>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string, TSRC, TTARGET, TSRCMAP extends IResultMap<TK, TSRC> = IResultMap<TK, TSRC>>(params: IValidatingConvertingResultMapConstructorParams<TK, TSRC, TTARGET, TSRCMAP>): Result<ValidatingConvertingResultMap<TK, TSRC, TTARGET, TSRCMAP>>;
+    readonly validating: ReadOnlyResultMapValidator<TK, TTARGET>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ValidatingReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET> extends ReadOnlyConvertingResultMap<TK, TSRC, TTARGET> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IValidatingReadOnlyConvertingResultMapConstructorParams<TK, TSRC, TTARGET>);
+    protected readonly _converters: KeyValueConverters<TK, TTARGET>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create<TK extends string, TSRC, TTARGET>(params: IValidatingReadOnlyConvertingResultMapConstructorParams<TK, TSRC, TTARGET>): Result<ValidatingReadOnlyConvertingResultMap<TK, TSRC, TTARGET>>;
+    readonly validating: ReadOnlyResultMapValidator<TK, TTARGET>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
