@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import { BaseMoldId, Measurement, Millimeters, MoldFormat, MoldId } from '../../../packlets/common';
 import { IMold } from '../../../packlets/entities';
-import { RuntimeMold, IMoldContext } from '../../../packlets/runtime';
+import { RuntimeMold, IMoldContext } from '../../../packlets/library-runtime';
 
 describe('RuntimeMold', () => {
   // Mock mold context (currently empty, reserved for future use)

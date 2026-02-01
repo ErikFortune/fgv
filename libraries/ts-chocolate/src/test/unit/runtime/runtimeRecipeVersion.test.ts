@@ -42,10 +42,10 @@ import {
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
 import {
   ChocolateLibrary,
-  RuntimeContext,
   RuntimeFillingRecipe,
   RuntimeFillingRecipeVersion
-} from '../../../packlets/runtime';
+} from '../../../packlets/library-runtime';
+import { RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
   // ============================================================================

@@ -27,14 +27,12 @@ import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { FillingId, IngredientId, Measurement, SessionId, SlotId } from '../../common';
 import { AnyConfectionYield, AnyProducedConfection, IConfectionYield } from '../../entities';
-import { IConfectionContext } from '../model';
-import { RuntimeProducedConfectionBase } from '../produced';
+import { AnyRuntimeConfection, RuntimeProducedConfectionBase } from '../../library-runtime';
+import { ISessionContext } from '../model';
 
 import { EditingSession } from './editingSession';
 import { IConfectionEditingSessionParams, IFillingSessionMap } from './model';
 import { generateSessionId } from './sessionUtils';
-import { AnyRuntimeConfection } from '../confections';
-import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Abstract Base Class
@@ -56,7 +54,7 @@ export abstract class ConfectionEditingSessionBase<
   TRuntime extends AnyRuntimeConfection
 > {
   protected readonly _baseConfection: TRuntime;
-  protected readonly _context: RuntimeContext;
+  protected readonly _context: ISessionContext;
   protected readonly _produced: RuntimeProducedConfectionBase<T>;
   protected readonly _originalSnapshot: T;
   protected readonly _sessionId: SessionId;
@@ -73,7 +71,7 @@ export abstract class ConfectionEditingSessionBase<
   protected constructor(
     baseConfection: TRuntime,
     produced: RuntimeProducedConfectionBase<T>,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
     this._baseConfection = baseConfection;
@@ -281,7 +279,7 @@ export abstract class ConfectionEditingSessionBase<
    * Gets the runtime context.
    * @public
    */
-  public get context(): IConfectionContext {
+  public get context(): ISessionContext {
     return this._context;
   }
 

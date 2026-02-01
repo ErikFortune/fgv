@@ -23,7 +23,7 @@ import { fail } from '@fgv/ts-utils';
 
 import { BaseTaskId, TaskId, Minutes, Celsius } from '../../../packlets/common';
 import { ITaskData } from '../../../packlets/entities';
-import { RuntimeTask, ITaskContext } from '../../../packlets/runtime';
+import { RuntimeTask, ITaskContext } from '../../../packlets/library-runtime';
 
 describe('RuntimeTask', () => {
   // Mock task context

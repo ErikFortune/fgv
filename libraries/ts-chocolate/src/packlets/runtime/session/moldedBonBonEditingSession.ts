@@ -33,13 +33,11 @@ import {
   isMoldedBonBonYield,
   IProducedMoldedBonBon
 } from '../../entities';
-import { RuntimeProducedMoldedBonBon } from '../produced';
-import { RuntimeMold } from '../molds';
+import { RuntimeMoldedBonBon, IRuntimeMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
+import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
-import { RuntimeMoldedBonBon } from '../confections';
-import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Molded Bonbon Editing Session
@@ -55,7 +53,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
   IProducedMoldedBonBon,
   RuntimeMoldedBonBon
 > {
-  private _currentMold: RuntimeMold;
+  private _currentMold: IRuntimeMold;
   private _pendingMoldChange?: IMoldChangeAnalysis;
 
   /**
@@ -66,7 +64,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
   private constructor(
     baseConfection: RuntimeMoldedBonBon,
     produced: RuntimeProducedMoldedBonBon,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
     super(baseConfection, produced, context, params);
@@ -93,7 +91,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    */
   public static create(
     baseConfection: RuntimeMoldedBonBon,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {
     return RuntimeProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
@@ -193,8 +191,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
   public analyzeMoldChange(moldId: MoldId): Result<IMoldChangeAnalysis> {
     return this._context.getRuntimeMold(moldId).onSuccess((newMold) => {
       const oldTotal = this._computeTotalCavityWeight(this._currentMold);
-      // Cast to RuntimeMold for weight computation
-      const newTotal = this._computeTotalCavityWeight(newMold as unknown as RuntimeMold);
+      const newTotal = this._computeTotalCavityWeight(newMold);
 
       const analysis: IMoldChangeAnalysis = {
         oldMoldId: this._currentMold.id,
@@ -290,7 +287,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Total weight in grams
    * @internal
    */
-  private _computeTotalCavityWeight(mold: RuntimeMold): Measurement {
+  private _computeTotalCavityWeight(mold: IRuntimeMold): Measurement {
     const currentYield = this._produced.yield;
 
     let frames: number;
@@ -336,7 +333,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * Loads the current mold from the produced confection.
    * @internal
    */
-  private _loadCurrentMold(): Result<RuntimeMold> {
+  private _loadCurrentMold(): Result<IRuntimeMold> {
     const moldId = this._produced.current.moldId;
     return this._loadMold(moldId);
   }
@@ -347,7 +344,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with mold, or Failure
    * @internal
    */
-  private _loadMold(moldId: MoldId): Result<RuntimeMold> {
+  private _loadMold(moldId: MoldId): Result<IRuntimeMold> {
     return this._context.getRuntimeMold(moldId);
   }
 
@@ -359,7 +356,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * Gets the current mold.
    * @public
    */
-  public get currentMold(): RuntimeMold {
+  public get currentMold(): IRuntimeMold {
     return this._currentMold;
   }
 }

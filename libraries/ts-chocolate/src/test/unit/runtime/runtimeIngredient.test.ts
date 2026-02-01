@@ -44,18 +44,18 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
+import { RuntimeContext } from '../../../packlets/runtime';
 import {
-  ChocolateLibrary,
-  RuntimeContext,
   RuntimeIngredient,
   RuntimeChocolateIngredient,
   RuntimeDairyIngredient,
   RuntimeSugarIngredient,
   RuntimeFatIngredient,
   RuntimeAlcoholIngredient
-} from '../../../packlets/runtime';
+} from '../../../packlets/library-runtime';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { RuntimeGenericIngredient } from '../../../packlets/runtime/ingredients/runtimeGenericIngredient';
+import { RuntimeGenericIngredient } from '../../../packlets/library-runtime/ingredients/runtimeGenericIngredient';
 
 describe('RuntimeIngredient', () => {
   // ============================================================================

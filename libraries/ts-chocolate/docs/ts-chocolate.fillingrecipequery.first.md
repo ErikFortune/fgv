@@ -13,5 +13,5 @@ first(): RuntimeFillingRecipe | undefined;
 ```
 **Returns:**
 
-[RuntimeFillingRecipe](./ts-chocolate.runtime.runtimefillingrecipe.md) \| undefined
+[RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md) \| undefined
 

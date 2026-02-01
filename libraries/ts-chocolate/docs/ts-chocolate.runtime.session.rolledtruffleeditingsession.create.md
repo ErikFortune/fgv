@@ -9,7 +9,7 @@ Factory method for creating a RolledTruffleEditingSession.
 **Signature:**
 
 ```typescript
-static create(baseConfection: RuntimeRolledTruffle, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+static create(baseConfection: RuntimeRolledTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseConfection
 
 </td><td>
 
-[RuntimeRolledTruffle](./ts-chocolate.runtime.runtimerolledtruffle.md)
+[RuntimeRolledTruffle](./ts-chocolate.libraryruntime.runtimerolledtruffle.md)
 
 
 </td><td>
@@ -53,7 +53,7 @@ context
 
 </td><td>
 
-[RuntimeContext](./ts-chocolate.runtimecontext.md)
+[ISessionContext](./ts-chocolate.runtime.isessioncontext.md)
 
 
 </td><td>

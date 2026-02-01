@@ -27,12 +27,11 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId } from '../../common';
 import { AnyConfectionYield, IConfectionYield, IProducedBarTruffle } from '../../entities';
-import { RuntimeProducedBarTruffle } from '../produced';
+import { RuntimeBarTruffle, RuntimeProducedBarTruffle } from '../../library-runtime';
+import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams } from './model';
-import { RuntimeBarTruffle } from '../confections';
-import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Bar Truffle Editing Session
@@ -56,7 +55,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
   private constructor(
     baseConfection: RuntimeBarTruffle,
     produced: RuntimeProducedBarTruffle,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
     super(baseConfection, produced, context, params);
@@ -80,7 +79,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   public static create(
     baseConfection: RuntimeBarTruffle,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
     return RuntimeProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>

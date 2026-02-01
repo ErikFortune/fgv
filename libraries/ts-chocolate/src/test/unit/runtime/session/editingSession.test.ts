@@ -40,7 +40,8 @@ import {
   IngredientsLibrary
 } from '../../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/entities';
-import { ChocolateLibrary, RuntimeContext, Session } from '../../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../../packlets/library-runtime';
+import { RuntimeContext, Session } from '../../../../packlets/runtime';
 
 describe('EditingSession', () => {
   // ============================================================================

@@ -25,12 +25,13 @@
 
 import { Failure, Result } from '@fgv/ts-utils';
 
+import { AnyRuntimeConfection } from '../../library-runtime';
+import { ISessionContext } from '../model';
+
 import { BarTruffleEditingSession } from './barTruffleEditingSession';
 import { MoldedBonBonEditingSession } from './moldedBonBonEditingSession';
 import { RolledTruffleEditingSession } from './rolledTruffleEditingSession';
 import { IConfectionEditingSessionParams } from './model';
-import { AnyRuntimeConfection } from '../confections';
-import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Type-Specific Session Union
@@ -81,7 +82,7 @@ export class ConfectionEditingSession {
    */
   public static create(
     baseConfection: AnyRuntimeConfection,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<AnyConfectionEditingSession> {
     if (baseConfection.isMoldedBonBon()) {

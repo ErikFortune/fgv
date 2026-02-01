@@ -43,7 +43,6 @@ import {
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
 import {
   ChocolateLibrary,
-  RuntimeContext,
   IngredientQuery,
   FillingRecipeQuery,
   andFilters,
@@ -60,7 +59,8 @@ import {
   collectionContainsAny,
   equals,
   oneOf
-} from '../../../packlets/runtime';
+} from '../../../packlets/library-runtime';
+import { RuntimeContext } from '../../../packlets/runtime';
 
 describe('Query Filters and Builders', () => {
   // ============================================================================

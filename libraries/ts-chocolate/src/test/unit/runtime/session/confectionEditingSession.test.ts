@@ -59,7 +59,8 @@ import {
   MoldsLibrary,
   ProceduresLibrary
 } from '../../../../packlets/entities';
-import { ChocolateLibrary, RuntimeContext, Session } from '../../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../../packlets/library-runtime';
+import { RuntimeContext, Session } from '../../../../packlets/runtime';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   MoldedBonBonEditingSession,

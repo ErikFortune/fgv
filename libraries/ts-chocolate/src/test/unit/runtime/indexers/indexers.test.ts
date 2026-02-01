@@ -45,7 +45,7 @@ import {
   Indexers,
   IRuntimeFillingRecipe,
   IRuntimeIngredient
-} from '../../../../packlets/runtime';
+} from '../../../../packlets/library-runtime';
 
 // Destructure the Indexers namespace for convenient access
 const {

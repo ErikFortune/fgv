@@ -27,13 +27,15 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { AnyConfectionYield, IConfectionYield, IProducedRolledTruffle } from '../../entities';
-import { RuntimeProducedRolledTruffle } from '../produced';
-import { RuntimeRolledTruffleVersion } from '../confections/versions';
+import {
+  RuntimeRolledTruffle,
+  RuntimeRolledTruffleVersion,
+  RuntimeProducedRolledTruffle
+} from '../../library-runtime';
+import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams } from './model';
-import { RuntimeContext } from '../runtimeContext';
-import { RuntimeRolledTruffle } from '../confections';
 
 // ============================================================================
 // Rolled Truffle Editing Session
@@ -57,7 +59,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
   private constructor(
     baseConfection: RuntimeRolledTruffle,
     produced: RuntimeProducedRolledTruffle,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
     super(baseConfection, produced, context, params);
@@ -81,7 +83,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   public static create(
     baseConfection: RuntimeRolledTruffle,
-    context: RuntimeContext,
+    context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
     return RuntimeProducedRolledTruffle.fromSource(

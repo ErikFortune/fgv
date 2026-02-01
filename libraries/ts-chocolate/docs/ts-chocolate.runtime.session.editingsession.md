@@ -53,7 +53,7 @@ Description
 
 </td><td>
 
-[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
+[IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
 
 
 </td><td>
@@ -95,7 +95,7 @@ Whether the session has unsaved changes.
 
 </td><td>
 
-RuntimeProducedFilling
+[RuntimeProducedFilling](./ts-chocolate.libraryruntime.runtimeproducedfilling.md)
 
 
 </td><td>

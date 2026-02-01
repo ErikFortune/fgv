@@ -52,7 +52,8 @@ import {
 } from '../../../packlets/entities';
 import { IProcedure, ProceduresLibrary, ConfectionsLibrary } from '../../../packlets/entities';
 import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
-import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
+import { RuntimeContext } from '../../../packlets/runtime';
 import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 

@@ -216,7 +216,7 @@ const barTruffle: Converter<IBarTruffle>;
 class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle, RuntimeBarTruffle> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    static create(baseConfection: RuntimeBarTruffle, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+    static create(baseConfection: RuntimeBarTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
     scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
 }
 
@@ -675,22 +675,20 @@ const confectionDecoration: Converter<IConfectionDecoration>;
 
 // @public
 class ConfectionEditingSession {
-    static create(baseConfection: AnyRuntimeConfection, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
+    static create(baseConfection: AnyRuntimeConfection, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
 }
 
 // @public
 abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection, TRuntime extends AnyRuntimeConfection> {
     // @internal
-    protected constructor(baseConfection: TRuntime, produced: RuntimeProducedConfectionBase<T>, context: RuntimeContext, params?: IConfectionEditingSessionParams);
+    protected constructor(baseConfection: TRuntime, produced: RuntimeProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams);
     get baseConfection(): TRuntime;
     // (undocumented)
     protected readonly _baseConfection: TRuntime;
     protected abstract _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    get context(): IConfectionContext;
+    get context(): ISessionContext;
     // (undocumented)
-    protected readonly _context: RuntimeContext;
+    protected readonly _context: ISessionContext;
     // @internal
     protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession>;
     get fillingSessions(): IFillingSessionMap;
@@ -702,8 +700,6 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection, TRu
     // (undocumented)
     protected readonly _originalSnapshot: T;
     get produced(): RuntimeProducedConfectionBase<T>;
-    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedConfectionBase" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     protected readonly _produced: RuntimeProducedConfectionBase<T>;
     // @internal
@@ -1186,7 +1182,6 @@ class EditingSession {
     canUndo(): boolean;
     static create(baseRecipe: IRuntimeFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
     get hasChanges(): boolean;
-    // Warning: (ae-forgotten-export) The symbol "RuntimeProducedFilling" needs to be exported by the entry point index.d.ts
     get produced(): RuntimeProducedFilling;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
@@ -1604,7 +1599,7 @@ type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
 // @public
 export class FillingRecipeQuery {
-    constructor(context: RuntimeContext);
+    constructor(context: LibraryRuntimeContext);
     count(): number;
     descriptionContains(text: string): FillingRecipeQuery;
     execute(): ReadonlyArray<RuntimeFillingRecipe>;
@@ -2211,9 +2206,23 @@ interface IConfectionBase {
     readonly versions: ReadonlyArray<AnyConfectionVersion>;
 }
 
+// @public
+interface IConfectionChanges {
+    readonly coatingChanged: boolean;
+    readonly decorationChocolateChanged: boolean;
+    readonly enrobingChocolateChanged: boolean;
+    readonly fillingsChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly moldChanged: boolean;
+    readonly notesChanged: boolean;
+    readonly procedureChanged: boolean;
+    readonly sealChocolateChanged: boolean;
+    readonly shellChocolateChanged: boolean;
+    readonly yieldChanged: boolean;
+}
+
 // @internal
 interface IConfectionContext {
-    createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
     getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
@@ -2502,6 +2511,15 @@ interface IFileTreeSource<TCollectionId extends string = string> {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly load?: LibraryLoadSpec<TCollectionId>;
     readonly mutable?: MutabilitySpec;
+}
+
+// @public
+interface IFillingChanges {
+    readonly hasChanges: boolean;
+    readonly ingredientsChanged: boolean;
+    readonly notesChanged: boolean;
+    readonly procedureChanged: boolean;
+    readonly targetWeightChanged: boolean;
 }
 
 // @public
@@ -2907,6 +2925,29 @@ interface ILibraryLoadParams {
 }
 
 // @public
+interface ILibraryRuntimeContext {
+    readonly cachedIngredientCount: number;
+    readonly cachedRecipeCount: number;
+    clearCache(): void;
+    readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
+    getAllFillingTags(): ReadonlyArray<string>;
+    getAllIngredientTags(): ReadonlyArray<string>;
+    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
+    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
+    readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
+    readonly journals: JournalLibrary;
+    readonly library: ChocolateLibrary;
+    warmUp(): void;
+}
+
+// @public
+interface ILibraryRuntimeContextCreateParams {
+    readonly libraryParams?: IChocolateLibraryCreateParams;
+    readonly preWarm?: boolean;
+}
+
+// @public
 interface ILinearScalerOptions {
     readonly decimalPlaces?: number;
     readonly displaySuffix?: string;
@@ -3127,7 +3168,7 @@ const ingredientPhase: Converter<IngredientPhase>;
 
 // @public
 export class IngredientQuery {
-    constructor(context: RuntimeContext);
+    constructor(context: LibraryRuntimeContext);
     alcohol(): IngredientQuery;
     byManufacturer(manufacturer: string): IngredientQuery;
     cacaoRange(min: Percentage, max: Percentage): IngredientQuery;
@@ -3784,20 +3825,11 @@ interface IRuntimeConfectionVersionBase {
 }
 
 // @public
-interface IRuntimeContext {
-    readonly cachedIngredientCount: number;
-    readonly cachedRecipeCount: number;
-    clearCache(): void;
-    readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
-    getAllFillingTags(): ReadonlyArray<string>;
-    getAllIngredientTags(): ReadonlyArray<string>;
-    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
-    readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
-    readonly journals: JournalLibrary;
-    readonly library: ChocolateLibrary;
-    warmUp(): void;
+interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext {
+    readonly cachedConfectionCount: number;
+    getAllConfectionTags(): ReadonlyArray<string>;
+    getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
+    readonly runtimeConfections: ReadonlyMap<ConfectionId, IRuntimeConfection>;
 }
 
 // @public
@@ -4221,6 +4253,14 @@ interface ISessionCoating {
     readonly ingredientId: IngredientId;
     readonly originalIngredientId?: IngredientId;
     readonly status: ConfectionSelectionStatus;
+}
+
+// Warning: (ae-incompatible-release-tags) The symbol "ISessionContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ISessionContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+//
+// @public
+interface ISessionContext extends IConfectionContext {
+    createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
 }
 
 // @public
@@ -4790,6 +4830,203 @@ declare namespace LibraryPersistence {
 }
 export { LibraryPersistence }
 
+declare namespace LibraryRuntime {
+    export {
+        LibraryRuntimeContext,
+        ILibraryRuntimeContextCreateParams,
+        RuntimeReverseIndex,
+        IFindOrchestrator,
+        IReadOnlyValidatingLibrary,
+        IValidatingLibraryParams,
+        ValidatingLibrary,
+        RuntimeIngredientBase,
+        RuntimeChocolateIngredient,
+        RuntimeDairyIngredient,
+        RuntimeSugarIngredient,
+        RuntimeFatIngredient,
+        RuntimeAlcoholIngredient,
+        RuntimeIngredient,
+        AnyRuntimeIngredient,
+        RuntimeFillingRecipe,
+        RuntimeFillingRecipeVersion,
+        RuntimeScaledFillingRecipeVersion,
+        RuntimeConfectionBase,
+        RuntimeMoldedBonBon,
+        RuntimeBarTruffle,
+        RuntimeRolledTruffle,
+        RuntimeConfection,
+        AnyRuntimeConfection,
+        RuntimeConfectionVersionBase,
+        RuntimeMoldedBonBonVersion,
+        RuntimeBarTruffleVersion,
+        RuntimeRolledTruffleVersion,
+        Indexers,
+        ITaskContext,
+        IRuntimeTask,
+        RuntimeTask,
+        IProcedureContext,
+        IRuntimeProcedure,
+        IRuntimeProcedureRenderContext,
+        IRuntimeRenderedProcedure,
+        IRuntimeRenderedStep,
+        RuntimeProcedure,
+        IMoldContext,
+        IRuntimeMold,
+        RuntimeMold,
+        IInstantiatedLibrarySource,
+        IChocolateLibraryCreateParams,
+        ChocolateLibrary,
+        IRuntimeIngredient,
+        IRuntimeChocolateIngredient,
+        IRuntimeDairyIngredient,
+        IRuntimeSugarIngredient,
+        IRuntimeFatIngredient,
+        IRuntimeAlcoholIngredient,
+        ICategoryFilter,
+        FillingRecipeIngredientsFilter,
+        IRuntimeFillingRecipeVersion,
+        IRuntimeScalingSource,
+        IRuntimeScaledFillingRecipeVersion,
+        IResolvedFillingRecipeProcedure,
+        IResolvedProcedures,
+        IRuntimeFillingRecipe,
+        IResolvedFillingIngredient,
+        IResolvedScaledIngredient,
+        ResolutionStatus,
+        IIngredientResolutionResult,
+        IQueryResult,
+        ComparisonOperator,
+        INumericRange,
+        IIterationOptions,
+        IIngredientQueryOptions,
+        IIngredientUsageInfo,
+        IScaledVersionContext,
+        IVersionContext,
+        IIngredientContext,
+        ILibraryRuntimeContext,
+        IRuntimeConfection,
+        IRuntimeMoldedBonBon,
+        IRuntimeBarTruffle,
+        IRuntimeRolledTruffle,
+        IResolvedFillingOption,
+        IResolvedRecipeFillingOption,
+        IResolvedIngredientFillingOption,
+        IResolvedFillingSlot_2 as IResolvedFillingSlot,
+        IResolvedChocolateSpec,
+        IResolvedAdditionalChocolate,
+        IResolvedConfectionMoldRef,
+        IResolvedConfectionProcedure,
+        IResolvedCoatings,
+        IResolvedCoatingOption,
+        IRuntimeConfectionVersionBase,
+        IRuntimeMoldedBonBonVersion,
+        IRuntimeBarTruffleVersion,
+        IRuntimeRolledTruffleVersion,
+        AnyRuntimeConfectionVersion,
+        IConfectionContext,
+        andFilters,
+        orFilters,
+        notFilter,
+        containsIgnoreCase,
+        hasTag,
+        hasAnyTag,
+        hasAllTags,
+        inRange,
+        atLeast,
+        atMost,
+        collectionContains,
+        collectionContainsAny,
+        equals,
+        oneOf,
+        FilterPredicate,
+        IngredientFilter,
+        FillingRecipeFilter,
+        IngredientQuery,
+        FillingRecipeQuery,
+        IFillingChanges,
+        RuntimeProducedFilling,
+        IConfectionChanges,
+        RuntimeProducedConfectionBase,
+        RuntimeProducedMoldedBonBon,
+        RuntimeProducedBarTruffle,
+        RuntimeProducedRolledTruffle
+    }
+}
+export { LibraryRuntime }
+
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+//
+// @public
+class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext {
+    protected constructor(library: ChocolateLibrary, preWarm: boolean);
+    get cachedConfectionCount(): number;
+    get cachedIngredientCount(): number;
+    get cachedRecipeCount(): number;
+    clearCache(): void;
+    get confections(): ConfectionsLibrary;
+    static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
+    createWeightContext(): IWeightCalculationContext;
+    get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec>;
+    static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
+    getAllConfectionTags(): ReadonlyArray<string>;
+    getAllFillingTags(): ReadonlyArray<string>;
+    getAllIngredientTags(): ReadonlyArray<string>;
+    getConfection(id: ConfectionId): Result<ConfectionData>;
+    // @internal
+    _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe>;
+    // @internal
+    getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    // @internal
+    getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    // @internal
+    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    // @internal
+    _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
+    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
+    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
+    getProcedure(id: string): Result<IProcedure>;
+    getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection>;
+    getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
+    getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
+    getRuntimeMold(id: MoldId): Result<RuntimeMold>;
+    getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
+    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
+    // @internal
+    getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
+    getTask(id: TaskId): Result<ITaskData>;
+    hasConfection(id: ConfectionId): boolean;
+    get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
+    invalidateIndexers(): void;
+    get journals(): JournalLibrary;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get library(): ChocolateLibrary;
+    readonly logger: Logging.LogReporter<unknown>;
+    resolveAdditionalChocolates(additional: ReadonlyArray<IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+    resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+    resolveCoatings(coatings: ICoatings): IResolvedCoatings;
+    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    resolveMoldRefs(molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
+    warmUp(): void;
+}
+
 // @public
 class LinearScaler implements IUnitScaler {
     constructor(options: ILinearScalerOptions);
@@ -4864,8 +5101,8 @@ class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedM
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     confirmMoldChange(): Result<undefined>;
-    static create(baseConfection: RuntimeMoldedBonBon, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
-    get currentMold(): RuntimeMold;
+    static create(baseConfection: RuntimeMoldedBonBon, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    get currentMold(): IRuntimeMold;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
     setFrames(frames: number, bufferPercentage?: number): Result<IMoldedBonBonYield>;
@@ -5315,7 +5552,7 @@ const rolledTruffle: Converter<IRolledTruffle>;
 class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle, RuntimeRolledTruffle> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    static create(baseConfection: RuntimeRolledTruffle, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+    static create(baseConfection: RuntimeRolledTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
     scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
 }
 
@@ -5324,116 +5561,14 @@ const rolledTruffleVersion: Converter<IRolledTruffleVersion>;
 
 declare namespace Runtime {
     export {
-        RuntimeReverseIndex,
         RuntimeContext,
         IRuntimeContextCreateParams,
-        IFindOrchestrator,
-        IReadOnlyValidatingLibrary,
-        IValidatingLibraryParams,
-        ValidatingLibrary,
-        RuntimeIngredientBase,
-        RuntimeChocolateIngredient,
-        RuntimeDairyIngredient,
-        RuntimeSugarIngredient,
-        RuntimeFatIngredient,
-        RuntimeAlcoholIngredient,
-        RuntimeIngredient,
-        AnyRuntimeIngredient,
-        RuntimeFillingRecipe,
-        RuntimeFillingRecipeVersion,
-        RuntimeScaledFillingRecipeVersion,
-        RuntimeConfectionBase,
-        RuntimeMoldedBonBon,
-        RuntimeBarTruffle,
-        RuntimeRolledTruffle,
-        RuntimeConfection,
-        AnyRuntimeConfection,
-        Indexers,
         Session,
         Scratchpad,
         Scratchpad as SessionScratchpad,
-        ITaskContext,
-        IRuntimeTask,
-        RuntimeTask,
-        IProcedureContext,
-        IRuntimeProcedure,
-        IRuntimeProcedureRenderContext,
-        IRuntimeRenderedProcedure,
-        IRuntimeRenderedStep,
-        RuntimeProcedure,
-        IMoldContext,
-        IRuntimeMold,
-        RuntimeMold,
-        IInstantiatedLibrarySource,
-        IChocolateLibraryCreateParams,
-        ChocolateLibrary,
-        IRuntimeIngredient,
-        IRuntimeChocolateIngredient,
-        IRuntimeDairyIngredient,
-        IRuntimeSugarIngredient,
-        IRuntimeFatIngredient,
-        IRuntimeAlcoholIngredient,
-        ICategoryFilter,
-        FillingRecipeIngredientsFilter,
-        IRuntimeFillingRecipeVersion,
-        IRuntimeScalingSource,
-        IRuntimeScaledFillingRecipeVersion,
-        IResolvedFillingRecipeProcedure,
-        IResolvedProcedures,
-        IRuntimeFillingRecipe,
-        IResolvedFillingIngredient,
-        IResolvedScaledIngredient,
-        ResolutionStatus,
-        IIngredientResolutionResult,
-        IQueryResult,
-        ComparisonOperator,
-        INumericRange,
-        IIterationOptions,
-        IIngredientQueryOptions,
-        IIngredientUsageInfo,
-        IScaledVersionContext,
-        IVersionContext,
-        IIngredientContext,
+        ISessionContext,
         IRuntimeContext,
-        IRuntimeConfection,
-        IRuntimeMoldedBonBon,
-        IRuntimeBarTruffle,
-        IRuntimeRolledTruffle,
-        IResolvedFillingOption,
-        IResolvedRecipeFillingOption,
-        IResolvedIngredientFillingOption,
-        IResolvedFillingSlot_2 as IResolvedFillingSlot,
-        IResolvedChocolateSpec,
-        IResolvedAdditionalChocolate,
-        IResolvedConfectionMoldRef,
-        IResolvedConfectionProcedure,
-        IResolvedCoatings,
-        IResolvedCoatingOption,
-        IRuntimeConfectionVersionBase,
-        IRuntimeMoldedBonBonVersion,
-        IRuntimeBarTruffleVersion,
-        IRuntimeRolledTruffleVersion,
-        AnyRuntimeConfectionVersion,
-        IConfectionContext,
-        andFilters,
-        orFilters,
-        notFilter,
-        containsIgnoreCase,
-        hasTag,
-        hasAnyTag,
-        hasAllTags,
-        inRange,
-        atLeast,
-        atMost,
-        collectionContains,
-        collectionContainsAny,
-        equals,
-        oneOf,
-        FilterPredicate,
-        IngredientFilter,
-        FillingRecipeFilter,
-        IngredientQuery,
-        FillingRecipeQuery
+        AnyRuntimeConfectionVersion
     }
 }
 export { Runtime }
@@ -5470,6 +5605,21 @@ class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruf
     get raw(): IBarTruffle;
     get singleBonBonDimensions(): IBonBonDimensions;
     get versions(): ReadonlyArray<IRuntimeBarTruffleVersion>;
+}
+
+// @public
+class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements IRuntimeBarTruffleVersion {
+    // @internal
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: IBarTruffleVersion);
+    get confection(): IRuntimeBarTruffle;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, confectionId: ConfectionId, version: IBarTruffleVersion): Result<RuntimeBarTruffleVersion>;
+    get enrobingChocolate(): IResolvedChocolateSpec | undefined;
+    get frameDimensions(): IFrameDimensions;
+    get preferredProcedure(): IResolvedConfectionProcedure | undefined;
+    get raw(): IBarTruffleVersion;
+    get singleBonBonDimensions(): IBonBonDimensions;
 }
 
 // @public
@@ -5545,77 +5695,47 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     get yield(): IConfectionYield;
 }
 
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-//
 // @public
-export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext {
-    get cachedConfectionCount(): number;
-    get cachedIngredientCount(): number;
-    get cachedRecipeCount(): number;
-    clearCache(): void;
-    get confections(): ConfectionsLibrary;
-    static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
-    createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-    createWeightContext(): IWeightCalculationContext;
-    get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec>;
-    static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
-    getAllConfectionTags(): ReadonlyArray<string>;
-    getAllFillingTags(): ReadonlyArray<string>;
-    getAllIngredientTags(): ReadonlyArray<string>;
-    getConfection(id: ConfectionId): Result<ConfectionData>;
+abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersionBase {
     // @internal
-    _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe>;
-    // @internal
-    getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
-    // @internal
-    getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
-    // @internal
-    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
-    // @internal
-    _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
-    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
-    getProcedure(id: string): Result<IProcedure>;
-    getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection>;
-    getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
-    getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
-    getRuntimeMold(id: MoldId): Result<RuntimeMold>;
-    getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
-    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    // @internal
-    getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
-    getTask(id: TaskId): Result<ITaskData>;
-    hasConfection(id: ConfectionId): boolean;
-    get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
-    invalidateIndexers(): void;
-    get journals(): JournalLibrary;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: AnyConfectionVersion);
+    get confection(): IRuntimeConfection;
+    get confectionId(): ConfectionId;
+    // (undocumented)
+    protected readonly _confectionId: ConfectionId;
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    get context(): IConfectionContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     //
     // (undocumented)
-    get library(): ChocolateLibrary;
-    readonly logger: Logging.LogReporter<unknown>;
-    resolveAdditionalChocolates(additional: ReadonlyArray<IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-    resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-    resolveCoatings(coatings: ICoatings): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
-    resolveMoldRefs(molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
-    warmUp(): void;
+    protected readonly _context: IConfectionContext;
+    get createdDate(): string;
+    get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
+    get effectiveTags(): ReadonlyArray<string>;
+    get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    isBarTruffleVersion(): this is RuntimeBarTruffleVersion;
+    isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion;
+    isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion;
+    get notes(): string | undefined;
+    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    abstract get raw(): AnyConfectionVersion;
+    get version(): AnyConfectionVersion;
+    // (undocumented)
+    protected readonly _version: AnyConfectionVersion;
+    get versionSpec(): ConfectionVersionSpec;
+    get yield(): IConfectionYield;
+}
+
+// @public
+export class RuntimeContext extends LibraryRuntimeContext implements ISessionContext, IRuntimeContext {
+    // @internal
+    protected constructor(library: ChocolateLibrary, preWarm: boolean);
+    static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
+    createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
+    static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
 }
 
 // @public
@@ -5793,6 +5913,22 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
 }
 
 // @public
+class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements IRuntimeMoldedBonBonVersion {
+    // @internal
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: IMoldedBonBonVersion);
+    get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+    get confection(): IRuntimeMoldedBonBon;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, confectionId: ConfectionId, version: IMoldedBonBonVersion): Result<RuntimeMoldedBonBonVersion>;
+    get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    get preferredMold(): IResolvedConfectionMoldRef | undefined;
+    get preferredProcedure(): IResolvedConfectionProcedure | undefined;
+    get raw(): IMoldedBonBonVersion;
+    get shellChocolate(): IResolvedChocolateSpec;
+}
+
+// @public
 class RuntimeProcedure implements IRuntimeProcedure {
     get baseId(): BaseProcedureId;
     get category(): ProcedureType | undefined;
@@ -5815,6 +5951,114 @@ class RuntimeProcedure implements IRuntimeProcedure {
     get totalHoldTime(): Minutes | undefined;
     get totalTime(): Minutes | undefined;
     get totalWaitTime(): Minutes | undefined;
+}
+
+// @public
+class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedBarTruffle> {
+    static create(initial: IProducedBarTruffle): Result<RuntimeProducedBarTruffle>;
+    // (undocumented)
+    protected _deepCopy(confection: IProducedBarTruffle): IProducedBarTruffle;
+    get enrobingChocolateId(): IngredientId | undefined;
+    static fromSource(source: IRuntimeBarTruffleVersion): Result<RuntimeProducedBarTruffle>;
+    // (undocumented)
+    getChanges(original: IProducedBarTruffle): IConfectionChanges;
+    setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
+}
+
+// @public
+abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
+    // @internal
+    protected constructor(initial: T);
+    protected _baseChanges(original: T): Partial<IConfectionChanges>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    createSnapshot(): T;
+    get current(): T;
+    // (undocumented)
+    protected _current: T;
+    protected abstract _deepCopy(confection: T): T;
+    get fillings(): ReadonlyArray<AnyResolvedFillingSlot> | undefined;
+    abstract getChanges(original: T): IConfectionChanges;
+    hasChanges(original: T): boolean;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get procedureId(): ProcedureId | undefined;
+    protected _pushUndo(): void;
+    redo(): Result<boolean>;
+    // (undocumented)
+    protected _redoStack: T[];
+    removeFillingSlot(slotId: SlotId): Result<void>;
+    restoreSnapshot(snapshot: T): Result<void>;
+    scaleToYield(yieldSpec: IConfectionYield): Result<IConfectionYield>;
+    setFillingSlot(slotId: SlotId, choice: {
+        type: 'recipe';
+        fillingId: FillingId;
+    } | {
+        type: 'ingredient';
+        ingredientId: IngredientId;
+    }): Result<void>;
+    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    get snapshot(): T;
+    undo(): Result<boolean>;
+    // (undocumented)
+    protected _undoStack: T[];
+    get versionId(): ConfectionVersionId;
+    get yield(): IConfectionYield;
+}
+
+// @public
+class RuntimeProducedFilling {
+    canRedo(): boolean;
+    canUndo(): boolean;
+    static create(initial: IProducedFilling): Result<RuntimeProducedFilling>;
+    createSnapshot(): IProducedFilling;
+    static fromSource(source: IRuntimeFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
+    getChanges(original: IProducedFilling): IFillingChanges;
+    hasChanges(original: IProducedFilling): boolean;
+    get ingredients(): ReadonlyArray<IProducedFillingIngredient>;
+    redo(): Result<boolean>;
+    removeIngredient(id: IngredientId): Result<void>;
+    restoreSnapshot(snapshot: IProducedFilling): Result<void>;
+    scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
+    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    get snapshot(): IProducedFilling;
+    get targetWeight(): Measurement;
+    undo(): Result<boolean>;
+    get versionId(): FillingVersionId;
+}
+
+// @public
+class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBon> {
+    static create(initial: IProducedMoldedBonBon): Result<RuntimeProducedMoldedBonBon>;
+    get decorationChocolateId(): IngredientId | undefined;
+    // (undocumented)
+    protected _deepCopy(confection: IProducedMoldedBonBon): IProducedMoldedBonBon;
+    static fromSource(source: IRuntimeMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon>;
+    // (undocumented)
+    getChanges(original: IProducedMoldedBonBon): IConfectionChanges;
+    get moldId(): MoldId;
+    get sealChocolateId(): IngredientId | undefined;
+    setDecorationChocolate(chocolateId: IngredientId | undefined): Result<void>;
+    setMold(moldId: MoldId): Result<void>;
+    setSealChocolate(chocolateId: IngredientId | undefined): Result<void>;
+    setShellChocolate(chocolateId: IngredientId): Result<void>;
+    get shellChocolateId(): IngredientId;
+}
+
+// @public
+class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffle> {
+    get coatingId(): IngredientId | undefined;
+    static create(initial: IProducedRolledTruffle): Result<RuntimeProducedRolledTruffle>;
+    // (undocumented)
+    protected _deepCopy(confection: IProducedRolledTruffle): IProducedRolledTruffle;
+    get enrobingChocolateId(): IngredientId | undefined;
+    static fromSource(source: IRuntimeRolledTruffleVersion): Result<RuntimeProducedRolledTruffle>;
+    // (undocumented)
+    getChanges(original: IProducedRolledTruffle): IConfectionChanges;
+    setCoating(coatingId: IngredientId | undefined): Result<void>;
+    setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
 }
 
 // @internal
@@ -5851,6 +6095,20 @@ class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRoll
     get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IRolledTruffle;
     get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion>;
+}
+
+// @public
+class RuntimeRolledTruffleVersion extends RuntimeConfectionVersionBase implements IRuntimeRolledTruffleVersion {
+    // @internal
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: IRolledTruffleVersion);
+    get coatings(): IResolvedCoatings | undefined;
+    get confection(): IRuntimeRolledTruffle;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, confectionId: ConfectionId, version: IRolledTruffleVersion): Result<RuntimeRolledTruffleVersion>;
+    get enrobingChocolate(): IResolvedChocolateSpec | undefined;
+    get preferredProcedure(): IResolvedConfectionProcedure | undefined;
+    get raw(): IRolledTruffleVersion;
 }
 
 // @public

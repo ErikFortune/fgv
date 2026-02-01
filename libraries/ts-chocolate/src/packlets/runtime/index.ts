@@ -19,69 +19,22 @@
 // SOFTWARE.
 
 /**
- * Runtime object access layer
+ * Runtime packlet - session infrastructure and editing capabilities
  *
- * Provides resolved views of ingredients and recipes with automatic
- * reference resolution, navigation helpers, and rich query capabilities.
+ * Provides editing sessions for confections and fillings, built on top of
+ * the library-runtime packlet's materialized projections.
+ *
+ * For library entity types (ingredients, fillings, confections, etc.),
+ * import from the library-runtime packlet.
  *
  * @packageDocumentation
  */
 
-// Core library (existing)
-export * from './chocolateLibrary';
-
-// Runtime model types (includes cache statistics)
+// Session-specific model types
 export * from './model';
 
-// Reverse index
-export { RuntimeReverseIndex } from './runtimeReverseIndex';
-
-// Runtime context
+// Runtime context (extends LibraryRuntimeContext with session creation)
 export { RuntimeContext, IRuntimeContextCreateParams } from './runtimeContext';
-
-// ValidatingLibrary - extends ValidatingResultMap with find functionality
-export {
-  IFindOrchestrator,
-  IReadOnlyValidatingLibrary,
-  IValidatingLibraryParams,
-  ValidatingLibrary
-} from './validatingLibrary';
-
-// Runtime ingredient classes
-export {
-  RuntimeIngredientBase,
-  RuntimeChocolateIngredient,
-  RuntimeDairyIngredient,
-  RuntimeSugarIngredient,
-  RuntimeFatIngredient,
-  RuntimeAlcoholIngredient,
-  RuntimeIngredient,
-  AnyRuntimeIngredient
-} from './ingredients';
-
-// Runtime filling recipe classes
-export {
-  RuntimeFillingRecipe,
-  RuntimeFillingRecipeVersion,
-  RuntimeScaledFillingRecipeVersion
-} from './fillings';
-
-// Runtime confection classes
-export {
-  RuntimeConfectionBase,
-  RuntimeMoldedBonBon,
-  RuntimeBarTruffle,
-  RuntimeRolledTruffle,
-  RuntimeConfection,
-  AnyRuntimeConfection
-} from './confections';
-
-// Query builders
-export * from './queries';
-
-// Indexer infrastructure (as namespace to avoid cluttering the main namespace)
-import * as Indexers from './indexers';
-export { Indexers };
 
 // Session infrastructure (as namespace)
 import * as Session from './session';
@@ -94,19 +47,3 @@ export { Scratchpad };
 // Alias to avoid overly-generic "Scratchpad" name
 import * as SessionScratchpad from './scratchpad';
 export { SessionScratchpad };
-
-// Runtime tasks
-export { ITaskContext, IRuntimeTask, RuntimeTask } from './tasks';
-
-// Runtime procedures
-export {
-  IProcedureContext,
-  IRuntimeProcedure,
-  IRuntimeProcedureRenderContext,
-  IRuntimeRenderedProcedure,
-  IRuntimeRenderedStep,
-  RuntimeProcedure
-} from './procedures';
-
-// Runtime molds
-export { IMoldContext, IRuntimeMold, RuntimeMold } from './molds';

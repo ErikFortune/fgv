@@ -11,5 +11,5 @@ Union type for all runtime confection version types.
 ```typescript
 export type AnyRuntimeConfectionVersion = IRuntimeMoldedBonBonVersion | IRuntimeBarTruffleVersion | IRuntimeRolledTruffleVersion;
 ```
-**References:** [IRuntimeMoldedBonBonVersion](./ts-chocolate.runtime.iruntimemoldedbonbonversion.md)<!-- -->, [IRuntimeBarTruffleVersion](./ts-chocolate.runtime.iruntimebartruffleversion.md)<!-- -->, [IRuntimeRolledTruffleVersion](./ts-chocolate.runtime.iruntimerolledtruffleversion.md)
+**References:** [IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)<!-- -->, [IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)<!-- -->, [IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)
 

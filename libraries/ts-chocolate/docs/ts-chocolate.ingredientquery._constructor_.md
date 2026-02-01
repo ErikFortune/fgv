@@ -9,7 +9,7 @@ Creates a new IngredientQuery.
 **Signature:**
 
 ```typescript
-constructor(context: RuntimeContext);
+constructor(context: LibraryRuntimeContext);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ context
 
 </td><td>
 
-[RuntimeContext](./ts-chocolate.runtimecontext.md)
+[LibraryRuntimeContext](./ts-chocolate.libraryruntime.libraryruntimecontext.md)
 
 
 </td><td>

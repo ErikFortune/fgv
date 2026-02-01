@@ -13,5 +13,5 @@ first(): AnyRuntimeIngredient | undefined;
 ```
 **Returns:**
 
-[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md) \| undefined
+[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md) \| undefined
 

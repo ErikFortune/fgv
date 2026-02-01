@@ -39,7 +39,7 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
-import { ChocolateLibrary, RuntimeReverseIndex } from '../../../packlets/runtime';
+import { ChocolateLibrary, RuntimeReverseIndex } from '../../../packlets/library-runtime';
 
 describe('RuntimeReverseIndex', () => {
   // ============================================================================

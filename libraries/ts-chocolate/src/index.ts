@@ -28,13 +28,13 @@
 // ============================================================================
 
 // Main library entry point
-export { ChocolateLibrary } from './packlets/runtime';
+export { ChocolateLibrary } from './packlets/library-runtime';
 
 // Runtime context for queries and resolved operations
 export { RuntimeContext } from './packlets/runtime';
 
 // Query builders
-export { FillingRecipeQuery, IngredientQuery } from './packlets/runtime';
+export { FillingRecipeQuery, IngredientQuery } from './packlets/library-runtime';
 
 // All branded types and common utilities
 export * from './packlets/common';
@@ -47,7 +47,11 @@ export * from './packlets/common';
 import * as Entities from './packlets/entities';
 export { Entities };
 
-// Runtime classes - RuntimeFillingRecipe, RuntimeIngredient, etc.
+// Library runtime - materialized projections of library entities
+import * as LibraryRuntime from './packlets/library-runtime';
+export { LibraryRuntime };
+
+// Runtime - session infrastructure and editing capabilities
 import * as Runtime from './packlets/runtime';
 export { Runtime };
 

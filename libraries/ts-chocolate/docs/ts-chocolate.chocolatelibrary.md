@@ -279,7 +279,7 @@ Calculates ganache characteristics for a recipe object Useful when working with 
 
 </td><td>
 
-Creates a new [ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md) instance.
+Creates a new  instance.
 
 
 </td></tr>

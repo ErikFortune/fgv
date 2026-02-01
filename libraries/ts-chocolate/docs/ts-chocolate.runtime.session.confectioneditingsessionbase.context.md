@@ -9,5 +9,5 @@ Gets the runtime context.
 **Signature:**
 
 ```typescript
-get context(): IConfectionContext;
+get context(): ISessionContext;
 ```

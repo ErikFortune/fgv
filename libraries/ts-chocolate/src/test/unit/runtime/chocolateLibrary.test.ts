@@ -55,7 +55,7 @@ import { IProcedure, ProceduresLibrary } from '../../../packlets/entities';
 
 import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
-import { ChocolateLibrary } from '../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
 
 import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';

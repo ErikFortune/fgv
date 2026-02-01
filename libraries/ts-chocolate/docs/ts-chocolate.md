@@ -61,9 +61,9 @@ Fluent query builder for ingredients. Allows chaining filters to build complex q
 
 </td><td>
 
-Central context for the runtime object access layer. Provides factory methods for runtime objects, caching, and reverse lookups.
+Full runtime context with session creation capabilities.
 
-This is the primary entry point for consumers who want resolved views of recipes and ingredients with automatic reference resolution.
+Extends LibraryRuntimeContext with the ability to create editing sessions for filling recipes. This is the primary entry point for consumers who need both library resolution and session management.
 
 
 </td></tr>
@@ -249,6 +249,15 @@ Description
 <tr><td>
 
 [LibraryPersistence](./ts-chocolate.librarypersistence.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[LibraryRuntime](./ts-chocolate.libraryruntime.md)
 
 
 </td><td>

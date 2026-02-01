@@ -30,7 +30,7 @@ import {
   IProcedureContext,
   IRuntimeProcedureRenderContext,
   RuntimeTask
-} from '../../../packlets/runtime';
+} from '../../../packlets/library-runtime';
 
 describe('RuntimeProcedure', () => {
   // Sample task for testing (now just ITaskData, no Task class)

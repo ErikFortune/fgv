@@ -4,17 +4,18 @@
 
 ## Runtime.IRuntimeContext interface
 
-Central context for the runtime object access layer.
+Full runtime context interface with session capabilities.
 
-Provides: - Primary resolution methods for ingredients and recipes - Reverse lookups (ingredient → recipes, tag → entities) - Recipe operations (scaling, ganache calculation) - Cache management - Iteration over all entities
+Extends ILibraryRuntimeContext with: - Session creation methods - Confection access and caching
 
-This is the main entry point for consumers who want resolved views of recipes and ingredients with automatic reference resolution.
+This is the complete entry point for consumers who need both library resolution and session management.
 
 **Signature:**
 
 ```typescript
-export interface IRuntimeContext 
+export interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext 
 ```
+**Extends:** [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)<!-- -->, [ISessionContext](./ts-chocolate.runtime.isessioncontext.md)
 
 ## Properties
 
@@ -41,7 +42,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[cachedIngredientCount](./ts-chocolate.runtime.iruntimecontext.cachedingredientcount.md)
+[cachedConfectionCount](./ts-chocolate.runtime.iruntimecontext.cachedconfectioncount.md)
 
 
 </td><td>
@@ -56,13 +57,13 @@ number
 
 </td><td>
 
-Gets the number of cached ingredients.
+Gets the number of cached confections.
 
 
 </td></tr>
 <tr><td>
 
-[cachedRecipeCount](./ts-chocolate.runtime.iruntimecontext.cachedrecipecount.md)
+[runtimeConfections](./ts-chocolate.runtime.iruntimecontext.runtimeconfections.md)
 
 
 </td><td>
@@ -72,96 +73,12 @@ Gets the number of cached ingredients.
 
 </td><td>
 
-number
+ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)<!-- -->&gt;
 
 
 </td><td>
 
-Gets the number of cached recipes.
-
-
-</td></tr>
-<tr><td>
-
-[fillings](./ts-chocolate.runtime.iruntimecontext.fillings.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
-
-
-</td><td>
-
-A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
-
-
-</td></tr>
-<tr><td>
-
-[ingredients](./ts-chocolate.runtime.iruntimecontext.ingredients.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.runtime.indexers.iingredientqueryspec.md)<!-- -->&gt;
-
-
-</td><td>
-
-A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
-
-
-</td></tr>
-<tr><td>
-
-[journals](./ts-chocolate.runtime.iruntimecontext.journals.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-JournalLibrary
-
-
-</td><td>
-
-The journals library for managing cooking session records. Provides storage and lookup for journal records indexed by journal ID, recipe ID, or version ID.
-
-
-</td></tr>
-<tr><td>
-
-[library](./ts-chocolate.runtime.iruntimecontext.library.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)
-
-
-</td><td>
-
-The underlying ChocolateLibrary for direct access when needed.
+Gets all runtime confections as an iterable map. Confections are resolved lazily and cached on first access.
 
 
 </td></tr>
@@ -182,78 +99,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[clearCache()](./ts-chocolate.runtime.iruntimecontext.clearcache.md)
+[getAllConfectionTags()](./ts-chocolate.runtime.iruntimecontext.getallconfectiontags.md)
 
 
 </td><td>
 
-Clears all cached runtime objects. Use if underlying library data has changed.
+Gets all unique tags used across confections.
 
 
 </td></tr>
 <tr><td>
 
-[getAllFillingTags()](./ts-chocolate.runtime.iruntimecontext.getallfillingtags.md)
+[getRuntimeConfection(id)](./ts-chocolate.runtime.iruntimecontext.getruntimeconfection.md)
 
 
 </td><td>
 
-Gets all unique tags used across fillings.
-
-
-</td></tr>
-<tr><td>
-
-[getAllIngredientTags()](./ts-chocolate.runtime.iruntimecontext.getallingredienttags.md)
-
-
-</td><td>
-
-Gets all unique tags used across ingredients.
-
-
-</td></tr>
-<tr><td>
-
-[getIngredientUsage(ingredientId)](./ts-chocolate.runtime.iruntimecontext.getingredientusage.md)
-
-
-</td><td>
-
-Gets detailed usage information for an ingredient.
-
-
-</td></tr>
-<tr><td>
-
-[getJournalsForFilling(fillingId)](./ts-chocolate.runtime.iruntimecontext.getjournalsforfilling.md)
-
-
-</td><td>
-
-Gets all journal records for a filling (across all versions).
-
-
-</td></tr>
-<tr><td>
-
-[getJournalsForFillingVersion(versionId)](./ts-chocolate.runtime.iruntimecontext.getjournalsforfillingversion.md)
-
-
-</td><td>
-
-Gets all journal records for a specific filling version.
-
-
-</td></tr>
-<tr><td>
-
-[warmUp()](./ts-chocolate.runtime.iruntimecontext.warmup.md)
-
-
-</td><td>
-
-Pre-warms the reverse indexes for efficient queries.
+Gets a runtime confection by ID (with lazy resolution and caching).
 
 
 </td></tr>

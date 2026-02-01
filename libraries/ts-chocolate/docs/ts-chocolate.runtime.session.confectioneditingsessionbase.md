@@ -76,7 +76,7 @@ TRuntime
 
 </td><td>
 
-[RuntimeContext](./ts-chocolate.runtimecontext.md)
+[ISessionContext](./ts-chocolate.runtime.isessioncontext.md)
 
 
 </td><td>
@@ -139,7 +139,7 @@ T
 
 </td><td>
 
-RuntimeProducedConfectionBase&lt;T&gt;
+[RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;T&gt;
 
 
 </td><td>
@@ -200,7 +200,7 @@ Gets the base confection.
 
 </td><td>
 
-IConfectionContext
+[ISessionContext](./ts-chocolate.runtime.isessioncontext.md)
 
 
 </td><td>
@@ -242,7 +242,7 @@ Gets all filling sessions.
 
 </td><td>
 
-RuntimeProducedConfectionBase&lt;T&gt;
+[RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;T&gt;
 
 
 </td><td>

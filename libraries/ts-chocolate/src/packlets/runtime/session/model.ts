@@ -37,7 +37,7 @@ import {
   SlotId
 } from '../../common';
 import { IFillingEditJournalEntry, IConfectionEditJournalEntry, AnyConfectionYield } from '../../entities';
-import { IRuntimeConfection } from '../model';
+import { IRuntimeConfection } from '../../library-runtime';
 
 // ============================================================================
 // Save Analysis

@@ -37,7 +37,7 @@ baseRecipe
 
 </td><td>
 
-[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
+[IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
 
 
 </td><td>

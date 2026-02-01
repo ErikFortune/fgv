@@ -37,7 +37,7 @@ predicate
 
 </td><td>
 
-[IngredientFilter](./ts-chocolate.runtime.ingredientfilter.md)
+[IngredientFilter](./ts-chocolate.libraryruntime.ingredientfilter.md)
 
 
 </td><td>

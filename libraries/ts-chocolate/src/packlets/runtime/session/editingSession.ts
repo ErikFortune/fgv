@@ -41,8 +41,7 @@ import {
   IIngredientModifiers,
   IProducedFilling
 } from '../../entities';
-import type { IRuntimeFillingRecipeVersion } from '../model';
-import { RuntimeProducedFilling } from '../produced';
+import { IRuntimeFillingRecipeVersion, RuntimeProducedFilling } from '../../library-runtime';
 import {
   ISaveAnalysis,
   ISaveVersionOptions,

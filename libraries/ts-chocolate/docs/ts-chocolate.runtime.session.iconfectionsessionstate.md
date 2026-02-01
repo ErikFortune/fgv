@@ -194,7 +194,7 @@ Unique session identifier
 
 </td><td>
 
-[IRuntimeConfection](./ts-chocolate.runtime.iruntimeconfection.md)
+[IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)
 
 
 </td><td>

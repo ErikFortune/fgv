@@ -67,7 +67,7 @@ import {
   RuntimeMoldedBonBon,
   RuntimeBarTruffle,
   RuntimeRolledTruffle
-} from '../../../packlets/runtime';
+} from '../../../packlets/library-runtime';
 import {
   IAdditionalChocolate,
   IChocolateSpec,
@@ -403,10 +403,6 @@ describe('RuntimeConfection', () => {
         options,
         preferredId: procedures.preferredId
       };
-    },
-    createFillingSession: (filling: IRuntimeFillingRecipe, targetWeight: Measurement) => {
-      // Mock implementation - not used in these tests
-      return fail('createFillingSession not implemented in mock context');
     }
   };
 
