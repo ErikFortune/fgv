@@ -34,6 +34,17 @@ export { ChocolateLibrary } from './packlets/library-runtime';
 // Runtime context for queries and resolved operations
 export { RuntimeContext } from './packlets/runtime';
 
+// Workspace - primary application entry point
+export {
+  Workspace,
+  IWorkspace,
+  IWorkspaceCreateParams,
+  IWorkspaceFactoryParams,
+  WorkspaceState
+} from './packlets/workspace';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific factory
+export { createBrowserWorkspace } from './packlets/workspace/browserFactory';
+
 // Query builders
 export { FillingRecipeQuery, IngredientQuery } from './packlets/library-runtime';
 

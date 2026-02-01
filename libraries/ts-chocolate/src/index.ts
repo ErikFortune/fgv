@@ -33,6 +33,16 @@ export { ChocolateLibrary } from './packlets/library-runtime';
 // Runtime context for queries and resolved operations
 export { RuntimeContext } from './packlets/runtime';
 
+// Workspace - primary application entry point
+export {
+  Workspace,
+  IWorkspace,
+  IWorkspaceCreateParams,
+  IWorkspaceFactoryParams,
+  WorkspaceState,
+  createNodeWorkspace
+} from './packlets/workspace';
+
 // Query builders
 export { FillingRecipeQuery, IngredientQuery } from './packlets/library-runtime';
 

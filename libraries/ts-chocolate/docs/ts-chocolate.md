@@ -67,6 +67,45 @@ Extends LibraryRuntimeContext with the ability to create editing sessions for fi
 
 
 </td></tr>
+<tr><td>
+
+[Workspace](./ts-chocolate.workspace.md)
+
+
+</td><td>
+
+The primary entry point for chocolate applications.
+
+Workspace is a thin coordinator that wraps: - RuntimeContext for library access and session creation - KeyStore for encrypted collection support
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[createNodeWorkspace(params)](./ts-chocolate.createnodeworkspace.md)
+
+
+</td><td>
+
+Creates a workspace with Node.js platform defaults. Uses nodeCryptoProvider for key store and encryption operations.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -156,6 +195,43 @@ Collection of options (objects with IDs) with a preferred selection. Use when op
 </td><td>
 
 Generic reference type with an ID and optional notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
+
+
+</td></tr>
+<tr><td>
+
+[IWorkspace](./ts-chocolate.iworkspace.md)
+
+
+</td><td>
+
+The primary entry point for chocolate applications.
+
+A workspace provides unified access to: - Library content (ingredients, fillings, confections, etc.) - Session creation for editing - Key store for encrypted collection support
+
+
+</td></tr>
+<tr><td>
+
+[IWorkspaceCreateParams](./ts-chocolate.iworkspacecreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a workspace.
+
+Combines library loading parameters with key store configuration.
+
+
+</td></tr>
+<tr><td>
+
+[IWorkspaceFactoryParams](./ts-chocolate.iworkspacefactoryparams.md)
+
+
+</td><td>
+
+Parameters for creating a workspace with platform-specific defaults. Used by platform factory functions.
 
 
 </td></tr>
@@ -1222,6 +1298,17 @@ Category for a URL associated with an entity. Uses the standard base ID pattern 
 </td><td>
 
 Supported weight units for output conversion
+
+
+</td></tr>
+<tr><td>
+
+[WorkspaceState](./ts-chocolate.workspacestate.md)
+
+
+</td><td>
+
+State of the workspace with respect to key store and encryption.
 
 
 </td></tr>

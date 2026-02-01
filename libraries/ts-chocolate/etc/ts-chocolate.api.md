@@ -1005,6 +1005,9 @@ function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryL
 // @public
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
 
+// @public
+export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace>;
+
 declare namespace CryptoUtils {
     export {
         KeyStore,
@@ -4610,6 +4613,36 @@ interface IWeightContribution {
     readonly weightGrams: Measurement;
 }
 
+// @public
+export interface IWorkspace {
+    readonly isReady: boolean;
+    readonly keyStore: KeyStore | undefined;
+    lock(): Result<IWorkspace>;
+    readonly runtime: RuntimeContext;
+    readonly state: WorkspaceState;
+    unlock(password: string): Promise<Result<IWorkspace>>;
+}
+
+// @public
+export interface IWorkspaceCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly builtin?: FullLibraryLoadSpec;
+    readonly encryption?: Partial<Omit<IEncryptionConfig, 'secretProvider'>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+    // Warning: (ae-forgotten-export) The symbol "IWorkspaceKeyStoreConfig" needs to be exported by the entry point index.d.ts
+    readonly keyStore?: IWorkspaceKeyStoreConfig;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly libraries?: IInstantiatedLibrarySource;
+    readonly logger?: Logging.LogReporter<unknown>;
+    readonly preWarm?: boolean;
+}
+
+// @public
+export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'keyStore'> {
+    readonly keyStoreFile?: IKeyStoreFile;
+}
+
 declare namespace Journal {
     export {
         anyFillingRecipeVersion,
@@ -6940,6 +6973,20 @@ export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
 
 // @public
 const weightUnit: Converter<WeightUnit>;
+
+// @public
+export class Workspace implements IWorkspace {
+    static create(params?: IWorkspaceCreateParams): Result<Workspace>;
+    get isReady(): boolean;
+    get keyStore(): KeyStore | undefined;
+    lock(): Result<IWorkspace>;
+    get runtime(): RuntimeContext;
+    get state(): WorkspaceState;
+    unlock(password: string): Promise<Result<IWorkspace>>;
+}
+
+// @public
+export type WorkspaceState = 'locked' | 'unlocked' | 'no-keystore';
 
 // @public
 export const ZeroMeasurement: Measurement;
