@@ -52,6 +52,17 @@ A validator for weakly-typed access to an [aggregated result map](./ts-utils.agg
 </td></tr>
 <tr><td>
 
+[CacheInvalidatingResultMapWrapper](./ts-utils.collections.cacheinvalidatingresultmapwrapper.md)
+
+
+</td><td>
+
+A wrapper around a mutable result map that invalidates cache entries in the parent [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md) when mutations occur.
+
+
+</td></tr>
+<tr><td>
+
 [Collectible](./ts-utils.collections.collectible.md)
 
 
@@ -109,12 +120,45 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper w
 </td></tr>
 <tr><td>
 
+[ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)
+
+
+</td><td>
+
+A result map that wraps an inner [IResultMap](./ts-utils.collections.iresultmap.md) of source type and returns lazily-converted, cached values of a target type. Exposes the inner map via a [source](./ts-utils.collections.cacheinvalidatingresultmapwrapper.md) property that invalidates cache entries when mutations occur.
+
+
+</td></tr>
+<tr><td>
+
 [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)
 
 
 </td><td>
 
 Helper class for converting strongly-typed keys, values, or entries from unknown values.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyConvertingResultMap](./ts-utils.collections.readonlyconvertingresultmap.md)
+
+
+</td><td>
+
+A read-only result map that wraps an inner [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md) of source type and returns lazily-converted, cached values of a target type.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyResultMapValidator](./ts-utils.collections.readonlyresultmapvalidator.md)
+
+
+</td><td>
+
+A read-only validator for any [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md) that validates weakly-typed keys before accessing values.
 
 
 </td></tr>
@@ -159,6 +203,28 @@ A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](.
 </td><td>
 
 A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingConvertingResultMap](./ts-utils.collections.validatingconvertingresultmap.md)
+
+
+</td><td>
+
+A result map that wraps an inner [IResultMap](./ts-utils.collections.iresultmap.md) of source type and returns lazily-converted, cached values of a target type, with a  property for weakly-typed access and a [source](./ts-utils.collections.cacheinvalidatingresultmapwrapper.md) property for mutable access to the underlying source map.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingReadOnlyConvertingResultMap](./ts-utils.collections.validatingreadonlyconvertingresultmap.md)
+
+
+</td><td>
+
+A read-only result map that wraps an inner [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md) of source type and returns lazily-converted, cached values of a target type, with a  property for weakly-typed access.
 
 
 </td></tr>
@@ -311,6 +377,17 @@ Parameters for constructing a [ConvertingCollectorValidator](./ts-utils.collecti
 </td></tr>
 <tr><td>
 
+[IConvertingResultMapConstructorParams](./ts-utils.collections.iconvertingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ConvertingResultMap](./ts-utils.collections.convertingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IKeyValueConverterConstructorParams](./ts-utils.collections.ikeyvalueconverterconstructorparams.md)
 
 
@@ -361,6 +438,17 @@ A read-only interface exposing only the non-mutating methods of a [ICollector](.
 </td><td>
 
 A read-only interface exposing non-mutating methods of a [CollectorValidator](./ts-utils.collections.collectorvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyConvertingResultMapConstructorParams](./ts-utils.collections.ireadonlyconvertingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ReadOnlyConvertingResultMap](./ts-utils.collections.readonlyconvertingresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -460,6 +548,28 @@ Parameters for constructing a [ValidatingCollector](./ts-utils.collections.valid
 </td><td>
 
 Parameters for constructing a [ValidatingConvertingCollector](./ts-utils.collections.validatingconvertingcollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingConvertingResultMapConstructorParams](./ts-utils.collections.ivalidatingconvertingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ValidatingConvertingResultMap](./ts-utils.collections.validatingconvertingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingReadOnlyConvertingResultMapConstructorParams](./ts-utils.collections.ivalidatingreadonlyconvertingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ValidatingReadOnlyConvertingResultMap](./ts-utils.collections.validatingreadonlyconvertingresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -598,6 +708,17 @@ Infer the key type from an [ICollectible](./ts-utils.collections.icollectible.md
 </td><td>
 
 Additional success or failure details for mutating collector calls.
+
+
+</td></tr>
+<tr><td>
+
+[ConvertingResultMapValueConverter](./ts-utils.collections.convertingresultmapvalueconverter.md)
+
+
+</td><td>
+
+A function that converts a source value to a target value.
 
 
 </td></tr>

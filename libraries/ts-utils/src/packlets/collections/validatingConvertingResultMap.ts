@@ -32,17 +32,6 @@ import { IResultMap } from './resultMap';
 import { ReadOnlyResultMapValidator } from './resultMapValidator';
 
 /**
- * @deprecated Use {@link Collections.ReadOnlyResultMapValidator | ReadOnlyResultMapValidator} instead.
- * This is a type alias for backwards compatibility.
- * @public
- */
-export type ReadOnlyConvertingResultMapValidator<
-  TK extends string,
-  _TSRC,
-  TTARGET
-> = ReadOnlyResultMapValidator<TK, TTARGET>;
-
-/**
  * Parameters for constructing a
  * {@link Collections.ValidatingReadOnlyConvertingResultMap | ValidatingReadOnlyConvertingResultMap}.
  * @public

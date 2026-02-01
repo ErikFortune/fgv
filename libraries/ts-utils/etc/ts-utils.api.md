@@ -416,7 +416,6 @@ declare namespace Collections {
         IReadOnlyValidatingCollector,
         IValidatingCollectorConstructorParams,
         ValidatingCollector,
-        ReadOnlyConvertingResultMapValidator,
         IValidatingReadOnlyConvertingResultMapConstructorParams,
         ValidatingReadOnlyConvertingResultMap,
         IValidatingConvertingResultMapConstructorParams,
@@ -2306,11 +2305,6 @@ class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET> implements I
     toReadOnly(): IReadOnlyResultMap<TK, TTARGET>;
     values(): IterableIterator<TTARGET>;
 }
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public @deprecated (undocumented)
-type ReadOnlyConvertingResultMapValidator<TK extends string, _TSRC, TTARGET> = ReadOnlyResultMapValidator<TK, TTARGET>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
