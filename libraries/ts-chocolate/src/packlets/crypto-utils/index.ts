@@ -27,12 +27,18 @@
 // Types and interfaces
 export * from './model';
 
+// Key store types and class
+export * from './keystore/model';
+export { KeyStore } from './keystore/keyStore';
+
 // Converters namespace
 import * as Converters from './converters';
-export { Converters };
+import * as KeyStoreConverters from './keystore/converters';
+export { Converters, KeyStoreConverters };
 
-// Re-export the detection helper directly for convenience
+// Re-export the detection helpers directly for convenience
 export { isEncryptedCollectionFile } from './converters';
+export { isKeyStoreFile } from './keystore/converters';
 
 // Crypto providers
 export { NodeCryptoProvider, nodeCryptoProvider } from './nodeCryptoProvider';

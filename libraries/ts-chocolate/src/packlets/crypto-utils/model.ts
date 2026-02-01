@@ -219,6 +219,31 @@ export interface ICryptoProvider {
    * @returns Success with derived 32-byte key, or Failure with error
    */
   deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+
+  // ============================================================================
+  // Platform Utility Methods
+  // ============================================================================
+
+  /**
+   * Generates cryptographically secure random bytes.
+   * @param length - Number of bytes to generate
+   * @returns Success with random bytes, or Failure with error
+   */
+  generateRandomBytes(length: number): Result<Uint8Array>;
+
+  /**
+   * Encodes binary data to base64 string.
+   * @param data - Binary data to encode
+   * @returns Base64-encoded string
+   */
+  toBase64(data: Uint8Array): string;
+
+  /**
+   * Decodes base64 string to binary data.
+   * @param base64 - Base64-encoded string
+   * @returns Success with decoded bytes, or Failure if invalid base64
+   */
+  fromBase64(base64: string): Result<Uint8Array>;
 }
 
 // ============================================================================

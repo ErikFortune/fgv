@@ -111,6 +111,20 @@ Encrypts plaintext using AES-256-GCM.
 </td></tr>
 <tr><td>
 
+[fromBase64(base64)](./ts-chocolate.cryptoutils.browsercryptoprovider.frombase64.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Decodes base64 string to binary data.
+
+
+</td></tr>
+<tr><td>
+
 [generateKey()](./ts-chocolate.cryptoutils.browsercryptoprovider.generatekey.md)
 
 
@@ -120,6 +134,34 @@ Encrypts plaintext using AES-256-GCM.
 </td><td>
 
 Generates a random 32-byte key suitable for AES-256.
+
+
+</td></tr>
+<tr><td>
+
+[generateRandomBytes(length)](./ts-chocolate.cryptoutils.browsercryptoprovider.generaterandombytes.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Generates cryptographically secure random bytes.
+
+
+</td></tr>
+<tr><td>
+
+[toBase64(data)](./ts-chocolate.cryptoutils.browsercryptoprovider.tobase64.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Encodes binary data to base64 string.
 
 
 </td></tr>

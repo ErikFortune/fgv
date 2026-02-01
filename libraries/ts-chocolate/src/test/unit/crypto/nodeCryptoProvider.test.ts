@@ -278,4 +278,71 @@ describe('NodeCryptoProvider', () => {
       expect(nodeCryptoProvider).toBeInstanceOf(NodeCryptoProvider);
     });
   });
+
+  describe('generateRandomBytes', () => {
+    test('generates random bytes of specified length', () => {
+      const result = provider.generateRandomBytes(16);
+      expect(result).toSucceedAndSatisfy((bytes) => {
+        expect(bytes).toBeInstanceOf(Uint8Array);
+        expect(bytes.length).toBe(16);
+      });
+    });
+
+    test('generates unique bytes on each call', () => {
+      const bytes1 = provider.generateRandomBytes(32).orThrow();
+      const bytes2 = provider.generateRandomBytes(32).orThrow();
+      expect(bytes1).not.toEqual(bytes2);
+    });
+
+    test('fails with length less than 1', () => {
+      expect(provider.generateRandomBytes(0)).toFailWith(/at least 1/i);
+      expect(provider.generateRandomBytes(-1)).toFailWith(/at least 1/i);
+    });
+  });
+
+  describe('toBase64', () => {
+    test('encodes empty array', () => {
+      const result = provider.toBase64(new Uint8Array(0));
+      expect(result).toBe('');
+    });
+
+    test('encodes simple bytes', () => {
+      // "Hello" in bytes
+      const bytes = new Uint8Array([72, 101, 108, 108, 111]);
+      const result = provider.toBase64(bytes);
+      expect(result).toBe('SGVsbG8=');
+    });
+
+    test('encodes binary data correctly', () => {
+      // All possible byte values 0-255 in a pattern
+      const bytes = new Uint8Array([0, 1, 2, 3, 253, 254, 255]);
+      const result = provider.toBase64(bytes);
+      // Verify round-trip
+      expect(provider.fromBase64(result)).toSucceedWith(bytes);
+    });
+  });
+
+  describe('fromBase64', () => {
+    test('decodes empty string', () => {
+      const result = provider.fromBase64('');
+      expect(result).toSucceedWith(new Uint8Array(0));
+    });
+
+    test('decodes simple base64', () => {
+      const result = provider.fromBase64('SGVsbG8=');
+      expect(result).toSucceedWith(new Uint8Array([72, 101, 108, 108, 111]));
+    });
+
+    test('fails with invalid base64 characters', () => {
+      expect(provider.fromBase64('not!valid!base64')).toFailWith(/invalid base64/i);
+      expect(provider.fromBase64('hello@world')).toFailWith(/invalid base64/i);
+    });
+
+    test('round-trips with toBase64', () => {
+      const original = provider.generateRandomBytes(32).orThrow();
+      const encoded = provider.toBase64(original);
+      const decoded = provider.fromBase64(encoded);
+      expect(decoded).toSucceedWith(original);
+    });
+  });
 });

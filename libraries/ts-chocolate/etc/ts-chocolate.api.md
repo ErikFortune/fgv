@@ -339,7 +339,10 @@ class BrowserCryptoProvider implements ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
 }
 
 declare namespace BuiltIn {
@@ -1004,8 +1007,11 @@ function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): Ingre
 
 declare namespace CryptoUtils {
     export {
+        KeyStore,
         Converters_4 as Converters,
+        KeyStoreConverters,
         isEncryptedCollectionFile,
+        isKeyStoreFile,
         NodeCryptoProvider,
         nodeCryptoProvider,
         BrowserCryptoProvider,
@@ -1031,7 +1037,21 @@ declare namespace CryptoUtils {
         DEFAULT_ALGORITHM,
         AES_256_KEY_SIZE,
         GCM_IV_SIZE,
-        GCM_AUTH_TAG_SIZE
+        GCM_AUTH_TAG_SIZE,
+        KeyStoreFormat,
+        KEYSTORE_FORMAT,
+        DEFAULT_KEYSTORE_ITERATIONS,
+        MIN_SALT_LENGTH,
+        IKeyStoreSecretEntry,
+        IKeyStoreSecretEntryJson,
+        IKeyStoreVaultContents,
+        IKeyStoreFile,
+        KeyStoreLockState,
+        IKeyStoreCreateParams,
+        IKeyStoreOpenParams,
+        IAddSecretResult,
+        IAddSecretOptions,
+        IImportSecretOptions
     }
 }
 export { CryptoUtils }
@@ -1047,6 +1067,9 @@ function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Ar
 
 // @public
 const DEFAULT_ALGORITHM: EncryptionAlgorithm;
+
+// @public
+const DEFAULT_KEYSTORE_ITERATIONS: number;
 
 // @public
 export const DEFAULT_NOTE_CATEGORY: NoteCategory;
@@ -1930,6 +1953,17 @@ interface IAdditionalChocolate {
 }
 
 // @public
+interface IAddSecretOptions {
+    readonly description?: string;
+}
+
+// @public
+interface IAddSecretResult {
+    readonly entry: IKeyStoreSecretEntry;
+    readonly replaced: boolean;
+}
+
+// @public
 interface IAlcoholIngredient extends IIngredient {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
@@ -2292,7 +2326,10 @@ interface ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
 }
 
 // @public
@@ -2694,6 +2731,11 @@ interface IImportRootCandidate {
 }
 
 // @public
+interface IImportSecretOptions extends IAddSecretOptions {
+    readonly replace?: boolean;
+}
+
+// @public
 interface IIndexer<TEntity, TId, TConfig> {
     find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
     invalidate(): void;
@@ -2842,6 +2884,50 @@ interface IKeyDerivationParams {
     readonly iterations: number;
     readonly kdf: KeyDerivationFunction;
     readonly salt: string;
+}
+
+// @public
+interface IKeyStoreCreateParams {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly iterations?: number;
+}
+
+// @public
+interface IKeyStoreFile {
+    readonly algorithm: EncryptionAlgorithm;
+    readonly authTag: string;
+    readonly encryptedData: string;
+    readonly format: KeyStoreFormat;
+    readonly iv: string;
+    readonly keyDerivation: IKeyDerivationParams;
+}
+
+// @public
+interface IKeyStoreOpenParams {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly keystoreFile: IKeyStoreFile;
+}
+
+// @public
+interface IKeyStoreSecretEntry {
+    readonly createdAt: string;
+    readonly description?: string;
+    readonly key: Uint8Array;
+    readonly name: string;
+}
+
+// @public
+interface IKeyStoreSecretEntryJson {
+    readonly createdAt: string;
+    readonly description?: string;
+    readonly key: string;
+    readonly name: string;
+}
+
+// @public
+interface IKeyStoreVaultContents {
+    readonly secrets: Record<string, IKeyStoreSecretEntryJson>;
+    readonly version: KeyStoreFormat;
 }
 
 // @public
@@ -4233,6 +4319,9 @@ function isFillingRecipeVersion(version: AnyFillingRecipeVersion): version is IF
 function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
 
 // @public
+function isKeyStoreFile(json: unknown): boolean;
+
+// @public
 function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
 
 // @public
@@ -4639,6 +4728,68 @@ const keyDerivationFunction: Converter<KeyDerivationFunction>;
 // @public
 const keyDerivationParams: Converter<IKeyDerivationParams>;
 
+// @public
+class KeyStore {
+    addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
+    changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore>>;
+    static create(params: IKeyStoreCreateParams): Result<KeyStore>;
+    getEncryptionConfig(): Result<Pick<IEncryptionConfig_2, 'secretProvider' | 'cryptoProvider'>>;
+    getSecret(name: string): Result<IKeyStoreSecretEntry>;
+    getSecretProvider(): Result<SecretProvider_2>;
+    hasSecret(name: string): Result<boolean>;
+    importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
+    initialize(password: string): Promise<Result<KeyStore>>;
+    get isDirty(): boolean;
+    get isUnlocked(): boolean;
+    listSecrets(): Result<readonly string[]>;
+    lock(force?: boolean): Result<KeyStore>;
+    static open(params: IKeyStoreOpenParams): Result<KeyStore>;
+    removeSecret(name: string): Result<IKeyStoreSecretEntry>;
+    renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
+    save(password: string): Promise<Result<IKeyStoreFile>>;
+    get state(): KeyStoreLockState;
+    unlock(password: string): Promise<Result<KeyStore>>;
+}
+
+// @public
+const KEYSTORE_FORMAT: KeyStoreFormat;
+
+declare namespace KeyStoreConverters {
+    export {
+        isKeyStoreFile,
+        keystoreFormat,
+        keystoreSecretEntryJson,
+        keystoreVaultContents,
+        keystoreFile
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IKeyStoreFile"
+//
+// @public
+const keystoreFile: Converter<IKeyStoreFile>;
+
+// @public
+type KeyStoreFormat = 'keystore-v1';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "KeyStoreFormat"
+//
+// @public
+const keystoreFormat: Converter<KeyStoreFormat>;
+
+// @public
+type KeyStoreLockState = 'locked' | 'unlocked';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IKeyStoreSecretEntryJson"
+//
+// @public
+const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IKeyStoreVaultContents"
+//
+// @public
+const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
+
 declare namespace LibraryData {
     export {
         Converters_5 as Converters,
@@ -5031,6 +5182,9 @@ export type Millimeters = Brand<number, 'Millimeters'>;
 const millimeters: Converter<Millimeters>;
 
 // @public
+const MIN_SALT_LENGTH: number;
+
+// @public
 export type Minutes = Brand<number, 'Minutes'>;
 
 // @public
@@ -5156,7 +5310,10 @@ class NodeCryptoProvider implements ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

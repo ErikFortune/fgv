@@ -242,6 +242,59 @@ export class BrowserCryptoProvider implements ICryptoProvider {
       return Failure.with(`Key derivation failed: ${message}`);
     }
   }
+
+  // ============================================================================
+  // Platform Utility Methods
+  // ============================================================================
+
+  /**
+   * Generates cryptographically secure random bytes.
+   * @param length - Number of bytes to generate
+   * @returns Success with random bytes, or Failure with error
+   */
+  public generateRandomBytes(length: number): Result<Uint8Array> {
+    if (length < 1) {
+      return Failure.with('Length must be at least 1');
+    }
+    try {
+      return Success.with(this._crypto.getRandomValues(new Uint8Array(length)));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      return Failure.with(`Random bytes generation failed: ${message}`);
+    }
+  }
+
+  /**
+   * Encodes binary data to base64 string.
+   * @param data - Binary data to encode
+   * @returns Base64-encoded string
+   */
+  public toBase64(data: Uint8Array): string {
+    // Convert Uint8Array to binary string, then to base64
+    let binary = '';
+    for (let i = 0; i < data.length; i++) {
+      binary += String.fromCharCode(data[i]);
+    }
+    return btoa(binary);
+  }
+
+  /**
+   * Decodes base64 string to binary data.
+   * @param base64 - Base64-encoded string
+   * @returns Success with decoded bytes, or Failure if invalid base64
+   */
+  public fromBase64(base64: string): Result<Uint8Array> {
+    try {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return Success.with(bytes);
+    } catch (e) {
+      return Failure.with('Invalid base64 string');
+    }
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Erik Fortune
+// Copyright (c) 2026 Erik Fortune
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,19 @@
 // SOFTWARE.
 
 /**
- * Browser-safe crypto packlet for encrypted collection support.
- * Excludes Node.js-specific crypto provider.
+ * Key store module for password-protected secret management.
  * @packageDocumentation
  */
 
 // Types and interfaces
 export * from './model';
 
-// Key store types and class
-export * from './keystore/model';
-export { KeyStore } from './keystore/keyStore';
-
 // Converters namespace
 import * as Converters from './converters';
-import * as KeyStoreConverters from './keystore/converters';
-export { Converters, KeyStoreConverters };
+export { Converters };
 
-// Re-export the detection helpers directly for convenience
-export { isEncryptedCollectionFile } from './converters';
-export { isKeyStoreFile } from './keystore/converters';
+// Re-export detection helper for convenience
+export { isKeyStoreFile } from './converters';
 
-// Browser crypto provider only (no Node.js provider)
-export { BrowserCryptoProvider, createBrowserCryptoProvider } from './browserCryptoProvider';
-
-// High-level helpers
-export {
-  createEncryptedCollectionFile,
-  decryptCollectionFile,
-  tryDecryptCollectionFile,
-  EncryptionHelper,
-  ICreateEncryptedFileParams
-} from './encryptionHelper';
+// Key store class
+export { KeyStore } from './keyStore';

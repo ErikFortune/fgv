@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import * as crypto from 'crypto';
-import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import {
   AES_256_KEY_SIZE,
   GCM_AUTH_TAG_SIZE,
@@ -151,6 +151,44 @@ export class NodeCryptoProvider implements ICryptoProvider {
         }
       );
     });
+  }
+
+  // ============================================================================
+  // Platform Utility Methods
+  // ============================================================================
+
+  /**
+   * Generates cryptographically secure random bytes.
+   * @param length - Number of bytes to generate
+   * @returns Success with random bytes, or Failure with error
+   */
+  public generateRandomBytes(length: number): Result<Uint8Array> {
+    if (length < 1) {
+      return Failure.with('Length must be at least 1');
+    }
+    return captureResult(() => new Uint8Array(crypto.randomBytes(length)));
+  }
+
+  /**
+   * Encodes binary data to base64 string.
+   * @param data - Binary data to encode
+   * @returns Base64-encoded string
+   */
+  public toBase64(data: Uint8Array): string {
+    return Buffer.from(data).toString('base64');
+  }
+
+  /**
+   * Decodes base64 string to binary data.
+   * @param base64 - Base64-encoded string
+   * @returns Success with decoded bytes, or Failure if invalid base64
+   */
+  public fromBase64(base64: string): Result<Uint8Array> {
+    // Check for obviously invalid characters
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+      return Failure.with('Invalid base64 string');
+    }
+    return Success.with(new Uint8Array(Buffer.from(base64, 'base64')));
   }
 }
 
