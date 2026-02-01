@@ -27,12 +27,13 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { AnyConfectionYield, IConfectionYield, IProducedRolledTruffle } from '../../entities';
-import { IConfectionContext, IRuntimeRolledTruffle } from '../model';
 import { RuntimeProducedRolledTruffle } from '../produced';
 import { RuntimeRolledTruffleVersion } from '../confections/versions';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams } from './model';
+import { RuntimeContext } from '../runtimeContext';
+import { RuntimeRolledTruffle } from '../confections';
 
 // ============================================================================
 // Rolled Truffle Editing Session
@@ -44,16 +45,19 @@ import { IConfectionEditingSessionParams } from './model';
  *
  * @public
  */
-export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle> {
+export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
+  IProducedRolledTruffle,
+  RuntimeRolledTruffle
+> {
   /**
    * Creates a RolledTruffleEditingSession.
    * Use RolledTruffleEditingSession.create() instead.
    * @internal
    */
   private constructor(
-    baseConfection: IRuntimeRolledTruffle,
+    baseConfection: RuntimeRolledTruffle,
     produced: RuntimeProducedRolledTruffle,
-    context: IConfectionContext,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ) {
     super(baseConfection, produced, context, params);
@@ -76,8 +80,8 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IP
    * @public
    */
   public static create(
-    baseConfection: IRuntimeRolledTruffle,
-    context: IConfectionContext,
+    baseConfection: RuntimeRolledTruffle,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
     return RuntimeProducedRolledTruffle.fromSource(

@@ -9,7 +9,7 @@ Factory method for creating a MoldedBonBonEditingSession.
 **Signature:**
 
 ```typescript
-static create(baseConfection: IRuntimeMoldedBonBon, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+static create(baseConfection: RuntimeMoldedBonBon, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseConfection
 
 </td><td>
 
-[IRuntimeMoldedBonBon](./ts-chocolate.runtime.iruntimemoldedbonbon.md)
+[RuntimeMoldedBonBon](./ts-chocolate.runtime.runtimemoldedbonbon.md)
 
 
 </td><td>
@@ -53,7 +53,7 @@ context
 
 </td><td>
 
-IConfectionContext
+[RuntimeContext](./ts-chocolate.runtimecontext.md)
 
 
 </td><td>

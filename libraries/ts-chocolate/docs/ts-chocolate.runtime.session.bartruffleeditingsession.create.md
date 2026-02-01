@@ -9,7 +9,7 @@ Factory method for creating a BarTruffleEditingSession.
 **Signature:**
 
 ```typescript
-static create(baseConfection: IRuntimeBarTruffle, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+static create(baseConfection: RuntimeBarTruffle, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseConfection
 
 </td><td>
 
-[IRuntimeBarTruffle](./ts-chocolate.runtime.iruntimebartruffle.md)
+[RuntimeBarTruffle](./ts-chocolate.runtime.runtimebartruffle.md)
 
 
 </td><td>
@@ -53,7 +53,7 @@ context
 
 </td><td>
 
-IConfectionContext
+[RuntimeContext](./ts-chocolate.runtimecontext.md)
 
 
 </td><td>

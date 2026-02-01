@@ -9,9 +9,9 @@ Editing session for bar truffle confections. Supports linear count-based scaling
 **Signature:**
 
 ```typescript
-export declare class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle> 
+export declare class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle, RuntimeBarTruffle> 
 ```
-**Extends:** [ConfectionEditingSessionBase](./ts-chocolate.runtime.session.confectioneditingsessionbase.md)<!-- -->&lt;IProducedBarTruffle&gt;
+**Extends:** [ConfectionEditingSessionBase](./ts-chocolate.runtime.session.confectioneditingsessionbase.md)<!-- -->&lt;IProducedBarTruffle, [RuntimeBarTruffle](./ts-chocolate.runtime.runtimebartruffle.md)<!-- -->&gt;
 
 ## Remarks
 

@@ -9,9 +9,9 @@ Editing session for rolled truffle confections. Supports linear count-based scal
 **Signature:**
 
 ```typescript
-export declare class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle> 
+export declare class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle, RuntimeRolledTruffle> 
 ```
-**Extends:** [ConfectionEditingSessionBase](./ts-chocolate.runtime.session.confectioneditingsessionbase.md)<!-- -->&lt;IProducedRolledTruffle&gt;
+**Extends:** [ConfectionEditingSessionBase](./ts-chocolate.runtime.session.confectioneditingsessionbase.md)<!-- -->&lt;IProducedRolledTruffle, [RuntimeRolledTruffle](./ts-chocolate.runtime.runtimerolledtruffle.md)<!-- -->&gt;
 
 ## Remarks
 

@@ -574,6 +574,17 @@ Pattern for valid filling version specs Format: YYYY-MM-DD-NN with optional labe
 </td></tr>
 <tr><td>
 
+[HundredPercent](./ts-chocolate.hundredpercent.md)
+
+
+</td><td>
+
+One hundred percent constant
+
+
+</td></tr>
+<tr><td>
+
 [ID\_SEPARATOR](./ts-chocolate.id_separator.md)
 
 
@@ -613,6 +624,28 @@ Pattern for valid session IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- 
 </td><td>
 
 Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
+
+
+</td></tr>
+<tr><td>
+
+[ZeroMeasurement](./ts-chocolate.zeromeasurement.md)
+
+
+</td><td>
+
+Zero measurement constant
+
+
+</td></tr>
+<tr><td>
+
+[ZeroPercent](./ts-chocolate.zeropercent.md)
+
+
+</td><td>
+
+Zero percent constant
 
 
 </td></tr>

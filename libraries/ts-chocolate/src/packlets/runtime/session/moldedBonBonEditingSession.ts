@@ -33,12 +33,13 @@ import {
   isMoldedBonBonYield,
   IProducedMoldedBonBon
 } from '../../entities';
-import { IConfectionContext, IRuntimeMoldedBonBon } from '../model';
 import { RuntimeProducedMoldedBonBon } from '../produced';
 import { RuntimeMold } from '../molds';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
+import { RuntimeMoldedBonBon } from '../confections';
+import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Molded Bonbon Editing Session
@@ -50,7 +51,10 @@ import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
  *
  * @public
  */
-export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBon> {
+export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
+  IProducedMoldedBonBon,
+  RuntimeMoldedBonBon
+> {
   private _currentMold: RuntimeMold;
   private _pendingMoldChange?: IMoldChangeAnalysis;
 
@@ -60,9 +64,9 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IPr
    * @internal
    */
   private constructor(
-    baseConfection: IRuntimeMoldedBonBon,
+    baseConfection: RuntimeMoldedBonBon,
     produced: RuntimeProducedMoldedBonBon,
-    context: IConfectionContext,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ) {
     super(baseConfection, produced, context, params);
@@ -88,8 +92,8 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IPr
    * @public
    */
   public static create(
-    baseConfection: IRuntimeMoldedBonBon,
-    context: IConfectionContext,
+    baseConfection: RuntimeMoldedBonBon,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {
     return RuntimeProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
@@ -333,8 +337,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IPr
    * @internal
    */
   private _loadCurrentMold(): Result<RuntimeMold> {
-    // TODO: figure out how to get this._produced to be strongly typed
-    const moldId = (this._produced as RuntimeProducedMoldedBonBon).moldId;
+    const moldId = this._produced.current.moldId;
     return this._loadMold(moldId);
   }
 
@@ -345,11 +348,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IPr
    * @internal
    */
   private _loadMold(moldId: MoldId): Result<RuntimeMold> {
-    // Cast from interface type to class type - the implementation returns RuntimeMold
-    return this._context.getRuntimeMold(moldId).onSuccess((mold) =>
-      // TODO: remove unsafe cast
-      succeed(mold as unknown as RuntimeMold)
-    );
+    return this._context.getRuntimeMold(moldId);
   }
 
   // ============================================================================

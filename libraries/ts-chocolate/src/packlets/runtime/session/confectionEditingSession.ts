@@ -23,20 +23,14 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
-
-import {
-  IConfectionContext,
-  IRuntimeBarTruffle,
-  IRuntimeConfection,
-  IRuntimeMoldedBonBon,
-  IRuntimeRolledTruffle
-} from '../model';
+import { Failure, Result } from '@fgv/ts-utils';
 
 import { BarTruffleEditingSession } from './barTruffleEditingSession';
 import { MoldedBonBonEditingSession } from './moldedBonBonEditingSession';
 import { RolledTruffleEditingSession } from './rolledTruffleEditingSession';
 import { IConfectionEditingSessionParams } from './model';
+import { AnyRuntimeConfection } from '../confections';
+import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Type-Specific Session Union
@@ -86,18 +80,19 @@ export class ConfectionEditingSession {
    * @public
    */
   public static create(
-    baseConfection: IRuntimeConfection,
-    context: IConfectionContext,
+    baseConfection: AnyRuntimeConfection,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ): Result<AnyConfectionEditingSession> {
-    // TODO: use type guards to eliminate unsafe casts below
-    switch (baseConfection.confectionType) {
-      case 'molded-bonbon':
-        return MoldedBonBonEditingSession.create(baseConfection as IRuntimeMoldedBonBon, context, params);
-      case 'bar-truffle':
-        return BarTruffleEditingSession.create(baseConfection as IRuntimeBarTruffle, context, params);
-      case 'rolled-truffle':
-        return RolledTruffleEditingSession.create(baseConfection as IRuntimeRolledTruffle, context, params);
+    if (baseConfection.isMoldedBonBon()) {
+      return MoldedBonBonEditingSession.create(baseConfection, context, params);
+    } else if (baseConfection.isBarTruffle()) {
+      return BarTruffleEditingSession.create(baseConfection, context, params);
+    } else if (baseConfection.isRolledTruffle()) {
+      return RolledTruffleEditingSession.create(baseConfection, context, params);
     }
+    // c8 ignore next 2 - defensive coding
+    // @ts-expect-error - exhaustive check
+    return Failure.with(`Unknown confection type: ${baseConfection.confectionType}`);
   }
 }

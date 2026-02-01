@@ -384,6 +384,14 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
   }
 
   /**
+   * Gets the current produced confection.
+   * @public
+   */
+  public get current(): T {
+    return this._current;
+  }
+
+  /**
    * Gets the procedure ID.
    * @public
    */

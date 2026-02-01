@@ -213,12 +213,10 @@ function atMost<T>(max: number, getter: (item: T) => number | undefined): Filter
 const barTruffle: Converter<IBarTruffle>;
 
 // @public
-class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle> {
+class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle, RuntimeBarTruffle> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(baseConfection: IRuntimeBarTruffle, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+    static create(baseConfection: RuntimeBarTruffle, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
     scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
 }
 
@@ -677,27 +675,22 @@ const confectionDecoration: Converter<IConfectionDecoration>;
 
 // @public
 class ConfectionEditingSession {
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(baseConfection: IRuntimeConfection, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
+    static create(baseConfection: AnyRuntimeConfection, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
 }
 
 // @public
-abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection> {
+abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection, TRuntime extends AnyRuntimeConfection> {
     // @internal
-    protected constructor(baseConfection: IRuntimeConfection, produced: RuntimeProducedConfectionBase<T>, context: IConfectionContext, params?: IConfectionEditingSessionParams);
-    get baseConfection(): IRuntimeConfection;
+    protected constructor(baseConfection: TRuntime, produced: RuntimeProducedConfectionBase<T>, context: RuntimeContext, params?: IConfectionEditingSessionParams);
+    get baseConfection(): TRuntime;
     // (undocumented)
-    protected readonly _baseConfection: IRuntimeConfection;
+    protected readonly _baseConfection: TRuntime;
     protected abstract _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     get context(): IConfectionContext;
-    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    //
     // (undocumented)
-    protected readonly _context: IConfectionContext;
+    protected readonly _context: RuntimeContext;
     // @internal
     protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession>;
     get fillingSessions(): IFillingSessionMap;
@@ -1987,6 +1980,9 @@ declare namespace Helpers_2 {
         validateUniqueBaseId
     }
 }
+
+// @public
+export const HundredPercent: Percentage;
 
 // @public
 interface IAdditionalChocolate {
@@ -4862,15 +4858,13 @@ const moldData: Converter<IMold>;
 const moldedBonBon: Converter<IMoldedBonBon>;
 
 // @public
-class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBon> {
+class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBon, RuntimeMoldedBonBon> {
     analyzeMoldChange(moldId: MoldId): Result<IMoldChangeAnalysis>;
     cancelMoldChange(): void;
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     confirmMoldChange(): Result<undefined>;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(baseConfection: IRuntimeMoldedBonBon, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    static create(baseConfection: RuntimeMoldedBonBon, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get currentMold(): RuntimeMold;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
@@ -5318,12 +5312,10 @@ function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubL
 const rolledTruffle: Converter<IRolledTruffle>;
 
 // @public
-class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle> {
+class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffle, RuntimeRolledTruffle> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(baseConfection: IRuntimeRolledTruffle, context: IConfectionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+    static create(baseConfection: RuntimeRolledTruffle, context: RuntimeContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
     scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
 }
 
@@ -6566,6 +6558,12 @@ export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
 
 // @public
 const weightUnit: Converter<WeightUnit>;
+
+// @public
+export const ZeroMeasurement: Measurement;
+
+// @public
+export const ZeroPercent: Percentage;
 
 // Warnings were encountered during analysis:
 //

@@ -27,11 +27,12 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId } from '../../common';
 import { AnyConfectionYield, IConfectionYield, IProducedBarTruffle } from '../../entities';
-import { IConfectionContext, IRuntimeBarTruffle } from '../model';
 import { RuntimeProducedBarTruffle } from '../produced';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams } from './model';
+import { RuntimeBarTruffle } from '../confections';
+import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Bar Truffle Editing Session
@@ -43,16 +44,19 @@ import { IConfectionEditingSessionParams } from './model';
  *
  * @public
  */
-export class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffle> {
+export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
+  IProducedBarTruffle,
+  RuntimeBarTruffle
+> {
   /**
    * Creates a BarTruffleEditingSession.
    * Use BarTruffleEditingSession.create() instead.
    * @internal
    */
   private constructor(
-    baseConfection: IRuntimeBarTruffle,
+    baseConfection: RuntimeBarTruffle,
     produced: RuntimeProducedBarTruffle,
-    context: IConfectionContext,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ) {
     super(baseConfection, produced, context, params);
@@ -75,8 +79,8 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProd
    * @public
    */
   public static create(
-    baseConfection: IRuntimeBarTruffle,
-    context: IConfectionContext,
+    baseConfection: RuntimeBarTruffle,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
     return RuntimeProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>

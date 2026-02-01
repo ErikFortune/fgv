@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _baseConfection: IRuntimeConfection;
+protected readonly _baseConfection: TRuntime;
 ```

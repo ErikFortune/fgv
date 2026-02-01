@@ -27,12 +27,14 @@ import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { FillingId, IngredientId, Measurement, SessionId, SlotId } from '../../common';
 import { AnyConfectionYield, AnyProducedConfection, IConfectionYield } from '../../entities';
-import { IConfectionContext, IRuntimeConfection } from '../model';
+import { IConfectionContext } from '../model';
 import { RuntimeProducedConfectionBase } from '../produced';
 
 import { EditingSession } from './editingSession';
 import { IConfectionEditingSessionParams, IFillingSessionMap } from './model';
 import { generateSessionId } from './sessionUtils';
+import { AnyRuntimeConfection } from '../confections';
+import { RuntimeContext } from '../runtimeContext';
 
 // ============================================================================
 // Abstract Base Class
@@ -49,9 +51,12 @@ import { generateSessionId } from './sessionUtils';
  *
  * @public
  */
-export abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection> {
-  protected readonly _baseConfection: IRuntimeConfection;
-  protected readonly _context: IConfectionContext;
+export abstract class ConfectionEditingSessionBase<
+  T extends AnyProducedConfection,
+  TRuntime extends AnyRuntimeConfection
+> {
+  protected readonly _baseConfection: TRuntime;
+  protected readonly _context: RuntimeContext;
   protected readonly _produced: RuntimeProducedConfectionBase<T>;
   protected readonly _originalSnapshot: T;
   protected readonly _sessionId: SessionId;
@@ -66,9 +71,9 @@ export abstract class ConfectionEditingSessionBase<T extends AnyProducedConfecti
    * @internal
    */
   protected constructor(
-    baseConfection: IRuntimeConfection,
+    baseConfection: TRuntime,
     produced: RuntimeProducedConfectionBase<T>,
-    context: IConfectionContext,
+    context: RuntimeContext,
     params?: IConfectionEditingSessionParams
   ) {
     this._baseConfection = baseConfection;
@@ -300,7 +305,7 @@ export abstract class ConfectionEditingSessionBase<T extends AnyProducedConfecti
    * Gets the base confection.
    * @public
    */
-  public get baseConfection(): IRuntimeConfection {
+  public get baseConfection(): TRuntime {
     return this._baseConfection;
   }
 }

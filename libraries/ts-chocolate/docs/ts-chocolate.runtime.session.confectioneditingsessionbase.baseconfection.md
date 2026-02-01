@@ -9,5 +9,5 @@ Gets the base confection.
 **Signature:**
 
 ```typescript
-get baseConfection(): IRuntimeConfection;
+get baseConfection(): TRuntime;
 ```

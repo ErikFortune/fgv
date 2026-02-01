@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _context: IConfectionContext;
+protected readonly _context: RuntimeContext;
 ```
