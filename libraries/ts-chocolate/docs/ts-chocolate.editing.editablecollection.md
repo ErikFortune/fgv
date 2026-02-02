@@ -101,6 +101,27 @@ Collection metadata.
 
 
 </td></tr>
+<tr><td>
+
+[sourceItem?](./ts-chocolate.editing.editablecollection.sourceitem.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+FileTree.FileTreeItem
+
+
+</td><td>
+
+_(Optional)_ Optional reference to the source FileTree item for persistence.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -132,6 +153,20 @@ Description
 </td><td>
 
 Add item only if key doesn't exist. Fails if collection is immutable.
+
+
+</td></tr>
+<tr><td>
+
+[canSave()](./ts-chocolate.editing.editablecollection.cansave.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Check if this collection can be saved to its source file. Returns true if the collection has a sourceItem and the FileTree supports persistence.
 
 
 </td></tr>
@@ -190,6 +225,34 @@ Delete item from collection. Fails if collection is immutable.
 </td><td>
 
 Export collection to ICollectionSourceFile format.
+
+
+</td></tr>
+<tr><td>
+
+[isDirty()](./ts-chocolate.editing.editablecollection.isdirty.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Check if the source file has unsaved changes. Only applicable if the collection has a persistent FileTree source. Note: This method is not currently implementable without access to the FileTree instance. Returns false for now - dirty tracking should be done at a higher level.
+
+
+</td></tr>
+<tr><td>
+
+[save()](./ts-chocolate.editing.editablecollection.save.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Save the collection to its source file using FileTree persistence. Requires a sourceItem with a mutable FileTree.
 
 
 </td></tr>

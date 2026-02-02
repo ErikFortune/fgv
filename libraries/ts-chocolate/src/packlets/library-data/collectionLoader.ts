@@ -38,6 +38,7 @@ import {
   ICollectionSourceFile,
   IEncryptionConfig,
   IProtectedCollectionInternal,
+  IRuntimeCollection,
   MutabilitySpec
 } from './model';
 import * as LibraryConverters from './converters';
@@ -216,7 +217,7 @@ export class CollectionLoader<
         return item.item
           .getRawContents()
           .onSuccess((raw) => parseContents(raw))
-          .onSuccess((json): Result<ICollection<T, TCOLLECTIONID, TITEMID> | undefined> => {
+          .onSuccess((json): Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID> | undefined> => {
             // Check if this is an encrypted collection file
             if (isEncryptedCollectionFile(json)) {
               if (onEncryptedFile === 'fail') {
@@ -250,19 +251,28 @@ export class CollectionLoader<
             }
             // Parse as source file format { metadata?, items }
             return this._sourceFileConverter.convert(json).onSuccess((sourceFile) => {
-              return this._collectionConverter.convert({
-                id: item.name,
-                isMutable: this._isMutable(item.name, mutabilitySpec),
-                items: sourceFile.items,
-                metadata: sourceFile.metadata
-              });
+              // Convert to ICollection (data only)
+              return this._collectionConverter
+                .convert({
+                  id: item.name,
+                  isMutable: this._isMutable(item.name, mutabilitySpec),
+                  items: sourceFile.items,
+                  metadata: sourceFile.metadata
+                })
+                .onSuccess((collection) => {
+                  // Add sourceItem to create IRuntimeCollection
+                  return succeed({
+                    ...collection,
+                    sourceItem: item.item
+                  });
+                });
             });
           });
       });
       return mapResults(results).onSuccess((collections) =>
         succeed({
           collections: collections.filter(
-            (c): c is ICollection<T, TCOLLECTIONID, TITEMID> => c !== undefined
+            (c): c is IRuntimeCollection<T, TCOLLECTIONID, TITEMID> => c !== undefined
           ),
           protectedCollections
         })
@@ -304,7 +314,7 @@ export class CollectionLoader<
     }
 
     const filteredItems = filterResult.value;
-    const results: Result<ICollection<T, TCOLLECTIONID, TITEMID>>[] = [];
+    const results: Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>>[] = [];
     const protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[] = [];
 
     for (const item of filteredItems) {
@@ -347,7 +357,8 @@ export class CollectionLoader<
           encryption,
           onEncryptedFile,
           protectedCollections,
-          isBuiltIn
+          isBuiltIn,
+          item.item
         );
         if (encryptedResult === undefined) {
           // Skipped or captured due to missing key
@@ -364,12 +375,20 @@ export class CollectionLoader<
           return fail(`Collection "${item.name}": ${sourceFileResult.message}`);
         }
         const sourceFile = sourceFileResult.value;
-        const collectionResult = this._collectionConverter.convert({
-          id: item.name,
-          isMutable: this._isMutable(item.name, mutabilitySpec),
-          items: sourceFile.items,
-          metadata: sourceFile.metadata
-        });
+        const collectionResult = this._collectionConverter
+          .convert({
+            id: item.name,
+            isMutable: this._isMutable(item.name, mutabilitySpec),
+            items: sourceFile.items,
+            metadata: sourceFile.metadata
+          })
+          .onSuccess((collection) => {
+            // Add sourceItem to create IRuntimeCollection
+            return succeed({
+              ...collection,
+              sourceItem: item.item
+            });
+          });
         results.push(collectionResult);
       }
     }
@@ -393,8 +412,9 @@ export class CollectionLoader<
     encryption: IEncryptionConfig | undefined,
     onEncryptedFile: EncryptedFileHandling,
     protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
-    isBuiltIn: boolean
-  ): Promise<Result<ICollection<T, TCOLLECTIONID, TITEMID>> | undefined> {
+    isBuiltIn: boolean,
+    sourceItem: FileTree.FileTreeItem
+  ): Promise<Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>> | undefined> {
     // Validate the encrypted file structure first (needed for both decrypt and capture)
     const tombstoneResult = CryptoConverters.encryptedCollectionFile.convert(json);
     if (tombstoneResult.isFailure()) {
@@ -448,16 +468,24 @@ export class CollectionLoader<
     }
 
     // Convert the decrypted JSON to a collection
-    return this._collectionConverter.convert({
-      id: collectionName,
-      isMutable: this._isMutable(collectionName, mutabilitySpec),
-      items: decryptResult.value,
-      metadata: {
-        secretName: encryptedFile.secretName,
-        /* c8 ignore next 1 - defense in depth */
-        ...(encryptedFile.metadata?.description ? { description: encryptedFile.metadata.description } : {})
-      }
-    });
+    return this._collectionConverter
+      .convert({
+        id: collectionName,
+        isMutable: this._isMutable(collectionName, mutabilitySpec),
+        items: decryptResult.value,
+        metadata: {
+          secretName: encryptedFile.secretName,
+          /* c8 ignore next 1 - defense in depth */
+          ...(encryptedFile.metadata?.description ? { description: encryptedFile.metadata.description } : {})
+        }
+      })
+      .onSuccess((collection) => {
+        // Add sourceItem to create IRuntimeCollection
+        return succeed({
+          ...collection,
+          sourceItem
+        });
+      });
   }
 
   /**
@@ -471,7 +499,7 @@ export class CollectionLoader<
     protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
     message: string,
     isBuiltIn: boolean
-  ): Result<ICollection<T, TCOLLECTIONID, TITEMID>> | undefined {
+  ): Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>> | undefined {
     if (onEncryptedFile === 'capture') {
       // Capture for later decryption
       protectedCollections.push({
@@ -481,7 +509,7 @@ export class CollectionLoader<
           /* c8 ignore next 2 - optional metadata fields tested implicitly */
           description: encryptedFile.metadata?.description,
           itemCount: encryptedFile.metadata?.itemCount,
-          isMutable: this._isMutable(collectionName, mutabilitySpec),
+          isMutable: CollectionLoader._calculateMutability(collectionName, mutabilitySpec),
           isBuiltIn
         },
         encryptedFile
@@ -529,7 +557,7 @@ export class CollectionLoader<
   private _handleEncryptionError(
     message: string,
     errorMode?: 'fail' | 'skip' | 'warn'
-  ): Result<ICollection<T, TCOLLECTIONID, TITEMID>> | undefined {
+  ): Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>> | undefined {
     const mode = errorMode ?? 'fail';
     switch (mode) {
       case 'skip':
@@ -566,7 +594,7 @@ export class CollectionLoader<
           /* c8 ignore next 2 - optional metadata fields tested implicitly */
           description: encryptedFile.metadata?.description,
           itemCount: encryptedFile.metadata?.itemCount,
-          isMutable: this._isMutable(collectionName, mutabilitySpec),
+          isMutable: CollectionLoader._calculateMutability(collectionName, mutabilitySpec),
           isBuiltIn
         },
         encryptedFile
@@ -581,6 +609,25 @@ export class CollectionLoader<
    * @returns `true` if the collection is mutable, `false` otherwise.
    */
   private _isMutable(id: TCOLLECTIONID, spec: MutabilitySpec): boolean {
+    if (typeof spec === 'boolean') {
+      return spec;
+    }
+    if ('immutable' in spec) {
+      // Object with 'immutable' property means only those are immutable, rest are mutable
+      return !spec.immutable.includes(id);
+    }
+    // Array means only these are mutable
+    return spec.includes(id);
+  }
+
+  /**
+   * Calculates mutability for protected collections based on mutability spec.
+   * Used only for encrypted collections that don't have a FileTree item reference yet.
+   * @param id - The collection ID.
+   * @param spec - The mutability specification.
+   * @returns `true` if the collection should be mutable, `false` otherwise.
+   */
+  private static _calculateMutability<TId extends string>(id: TId, spec: MutabilitySpec): boolean {
     if (typeof spec === 'boolean') {
       return spec;
     }

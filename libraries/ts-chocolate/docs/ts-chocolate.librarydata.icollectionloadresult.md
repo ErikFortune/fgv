@@ -4,7 +4,7 @@
 
 ## LibraryData.ICollectionLoadResult interface
 
-Result type for collection loading operations that may capture protected collections.
+Result of loading collections from a file tree.
 
 **Signature:**
 
@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[ICollection](./ts-chocolate.librarydata.icollection.md)<!-- -->&lt;T, TCollectionId, TItemId&gt;&gt;
+ReadonlyArray&lt;[IRuntimeCollection](./ts-chocolate.librarydata.iruntimecollection.md)<!-- -->&lt;T, TCollectionId, TItemId&gt;&gt;
 
 
 </td><td>
 
-Successfully loaded collections.
+Successfully loaded collections with runtime FileTree references.
 
 
 </td></tr>

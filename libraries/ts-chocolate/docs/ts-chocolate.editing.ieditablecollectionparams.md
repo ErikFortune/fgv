@@ -142,6 +142,27 @@ Collection metadata (name, description, etc.).
 </td></tr>
 <tr><td>
 
+[sourceItem?](./ts-chocolate.editing.ieditablecollectionparams.sourceitem.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+FileTree.FileTreeItem
+
+
+</td><td>
+
+_(Optional)_ Optional reference to the source FileTree item for persistence. When present, enables direct save() functionality. Collections loaded from FileTree will have this populated.
+
+
+</td></tr>
+<tr><td>
+
 [valueConverter](./ts-chocolate.editing.ieditablecollectionparams.valueconverter.md)
 
 

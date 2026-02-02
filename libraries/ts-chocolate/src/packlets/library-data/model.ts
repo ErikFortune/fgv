@@ -138,7 +138,8 @@ export type LibraryLoadSpec<TCollectionId extends string = string> =
 export type MutabilitySpec = boolean | ReadonlyArray<string> | { readonly immutable: ReadonlyArray<string> };
 
 /**
- * Representation of a collection of items loaded from a file tree.
+ * Representation of a collection of items as serialized data.
+ * This is the base data interface without runtime-only properties.
  * @public
  */
 export interface ICollection<
@@ -147,6 +148,10 @@ export interface ICollection<
   TITEMID extends string = string
 > {
   readonly id: TCOLLECTIONID;
+  /**
+   * Whether this collection is mutable (can be edited in the application).
+   * This is application-level mutability controlled by MutabilitySpec.
+   */
   readonly isMutable: boolean;
   readonly items: Record<TITEMID, T>;
   /**
@@ -154,6 +159,24 @@ export interface ICollection<
    * May be undefined for collections created programmatically.
    */
   readonly metadata?: ICollectionSourceMetadata;
+}
+
+/**
+ * Runtime representation of a collection loaded from a FileTree.
+ * Extends the base collection data with a reference to the source FileTree item.
+ * @public
+ */
+export interface IRuntimeCollection<
+  T = JsonObject,
+  TCOLLECTIONID extends string = string,
+  TITEMID extends string = string
+> extends ICollection<T, TCOLLECTIONID, TITEMID> {
+  /**
+   * Reference to the source FileTree item for persistence.
+   * When present and the FileTree supports persistence, changes can be saved back to the file.
+   * This is file-level mutability separate from application-level mutability.
+   */
+  readonly sourceItem: FileTree.FileTreeItem;
 }
 
 // ============================================================================
@@ -454,8 +477,7 @@ export interface IProtectedCollectionInternal<TCollectionId extends string = str
 }
 
 /**
- * Result type for collection loading operations that may capture protected collections.
- *
+ * Result of loading collections from a file tree.
  * @typeParam T - The item type
  * @typeParam TCollectionId - The collection ID type
  * @typeParam TItemId - The item ID type
@@ -467,9 +489,9 @@ export interface ICollectionLoadResult<
   TItemId extends string = string
 > {
   /**
-   * Successfully loaded collections.
+   * Successfully loaded collections with runtime FileTree references.
    */
-  readonly collections: ReadonlyArray<ICollection<T, TCollectionId, TItemId>>;
+  readonly collections: ReadonlyArray<IRuntimeCollection<T, TCollectionId, TItemId>>;
 
   /**
    * Protected collections that were captured but not decrypted.

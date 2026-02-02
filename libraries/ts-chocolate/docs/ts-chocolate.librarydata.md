@@ -360,7 +360,7 @@ Description
 
 </td><td>
 
-Representation of a collection of items loaded from a file tree.
+Representation of a collection of items as serialized data. This is the base data interface without runtime-only properties.
 
 
 </td></tr>
@@ -393,7 +393,7 @@ Parameters used to initialize a [CollectionLoader](./ts-chocolate.librarydata.co
 
 </td><td>
 
-Result type for collection loading operations that may capture protected collections.
+Result of loading collections from a file tree.
 
 
 </td></tr>
@@ -589,6 +589,17 @@ Result of resolving a file tree source for a specific sub-library.
 </td><td>
 
 Options for importing a directory for a specific sub-library.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeCollection](./ts-chocolate.librarydata.iruntimecollection.md)
+
+
+</td><td>
+
+Runtime representation of a collection loaded from a FileTree. Extends the base collection data with a reference to the source FileTree item.
 
 
 </td></tr>

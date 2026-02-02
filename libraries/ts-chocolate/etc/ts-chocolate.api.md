@@ -1095,14 +1095,18 @@ const degreesMacMichael: Converter<DegreesMacMichael>;
 // @public
 class EditableCollection<T, TBaseId extends string = string> extends ValidatingResultMap<TBaseId, T> {
     add(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
+    canSave(): boolean;
     clear(): Result<boolean>;
     readonly collectionId: SourceId;
     static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
     delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
     export(): Result<ICollectionSourceFile<T>>;
+    isDirty(): boolean;
     readonly isMutable: boolean;
     get metadata(): ICollectionSourceMetadata;
+    save(): Result<void>;
     set(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
+    readonly sourceItem?: FileTree.FileTreeItem;
     update(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     updateMetadata(metadata: Partial<ICollectionSourceMetadata>): Result<void>;
 }
@@ -2072,7 +2076,6 @@ type ICoatings = IIdsWithPreferred<IngredientId>;
 interface ICollection<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
     // (undocumented)
     readonly id: TCOLLECTIONID;
-    // (undocumented)
     readonly isMutable: boolean;
     // (undocumented)
     readonly items: Record<TITEMID, T>;
@@ -2119,7 +2122,7 @@ interface ICollectionLoaderInitParams<T, TCOLLECTIONID extends string = string, 
 
 // @public
 interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = string, TItemId extends string = string> {
-    readonly collections: ReadonlyArray<ICollection<T, TCollectionId, TItemId>>;
+    readonly collections: ReadonlyArray<IRuntimeCollection<T, TCollectionId, TItemId>>;
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
     readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<TCollectionId>>;
@@ -2372,6 +2375,7 @@ interface IEditableCollectionParams<T, TBaseId extends string = string> {
     readonly isMutable: boolean;
     readonly keyConverter: Converter<TBaseId, unknown>;
     readonly metadata: ICollectionSourceMetadata;
+    readonly sourceItem?: FileTree.FileTreeItem;
     readonly valueConverter: Converter<T, unknown>;
 }
 
@@ -3800,6 +3804,11 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
 }
 
 // @public
+interface IRuntimeCollection<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> extends ICollection<T, TCOLLECTIONID, TITEMID> {
+    readonly sourceItem: FileTree.FileTreeItem;
+}
+
+// @public
 interface IRuntimeConfection {
     readonly baseId: BaseConfectionId;
     readonly confectionType: ConfectionType;
@@ -4834,6 +4843,7 @@ declare namespace LibraryData {
         LibraryLoadSpec,
         MutabilitySpec,
         ICollection,
+        IRuntimeCollection,
         SubLibraryId,
         allSubLibraryIds,
         FullLibraryLoadSpec,

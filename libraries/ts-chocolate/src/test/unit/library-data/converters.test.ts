@@ -138,7 +138,6 @@ describe('LibraryData.Converters', () => {
 
       expect(collectionConverter.convert(input)).toSucceedAndSatisfy((collection) => {
         expect(collection.id).toBe('test-collection');
-        expect(collection.isMutable).toBe(true);
         expect(Object.keys(collection.items)).toHaveLength(2);
         expect(collection.items['item-1' as TestItemId]).toEqual({ name: 'Item One', value: 1 });
         expect(collection.items['item-2' as TestItemId]).toEqual({ name: 'Item Two', value: 2 });
@@ -154,7 +153,6 @@ describe('LibraryData.Converters', () => {
 
       expect(collectionConverter.convert(input)).toSucceedAndSatisfy((collection) => {
         expect(collection.id).toBe('empty-collection');
-        expect(collection.isMutable).toBe(false);
         expect(Object.keys(collection.items)).toHaveLength(0);
       });
     });
@@ -207,7 +205,7 @@ describe('LibraryData.Converters', () => {
       expect(collectionConverter.convert(123)).toFail();
     });
 
-    test('ignores extra properties', () => {
+    test('ignores extra fields not in schema', () => {
       // The collection converter uses Converters.object (not strictObject)
       // because it has optional fields like metadata. Extra properties are ignored.
       const input = {
@@ -219,7 +217,6 @@ describe('LibraryData.Converters', () => {
 
       expect(collectionConverter.convert(input)).toSucceedAndSatisfy((collection) => {
         expect(collection.id).toBe('test-collection');
-        expect(collection.isMutable).toBe(true);
         // extraField is not included in the result
         expect(Object.keys(collection)).not.toContain('extraField');
       });

@@ -28,8 +28,10 @@ import {
   Success,
   ValidatingResultMap
 } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { SourceId } from '../common';
 import { ICollectionSourceFile, ICollectionSourceMetadata } from '../library-data';
+import { serializeToYaml } from './exportImport';
 
 // ============================================================================
 // Parameters for Creating Editable Collections
@@ -73,6 +75,13 @@ export interface IEditableCollectionParams<T, TBaseId extends string = string> {
    * Converter for validating values.
    */
   readonly valueConverter: Converter<T, unknown>;
+
+  /**
+   * Optional reference to the source FileTree item for persistence.
+   * When present, enables direct save() functionality.
+   * Collections loaded from FileTree will have this populated.
+   */
+  readonly sourceItem?: FileTree.FileTreeItem;
 }
 
 // ============================================================================
@@ -102,6 +111,11 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    */
   public readonly isMutable: boolean;
 
+  /**
+   * Optional reference to the source FileTree item for persistence.
+   */
+  public readonly sourceItem?: FileTree.FileTreeItem;
+
   private _metadata: ICollectionSourceMetadata;
 
   /**
@@ -112,12 +126,14 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     collectionId: SourceId,
     isMutable: boolean,
     metadata: ICollectionSourceMetadata,
-    params: Collections.IValidatingResultMapConstructorParams<TBaseId, T>
+    params: Collections.IValidatingResultMapConstructorParams<TBaseId, T>,
+    sourceItem?: FileTree.FileTreeItem
   ) {
     super(params);
     this.collectionId = collectionId;
     this.isMutable = isMutable;
     this._metadata = { ...metadata };
+    this.sourceItem = sourceItem;
   }
 
   /**
@@ -142,10 +158,16 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     const entries = Array.from(params.initialItems.entries());
 
     return Success.with(
-      new EditableCollection<T, TBaseId>(params.collectionId, params.isMutable, params.metadata, {
-        entries,
-        converters
-      })
+      new EditableCollection<T, TBaseId>(
+        params.collectionId,
+        params.isMutable,
+        params.metadata,
+        {
+          entries,
+          converters
+        },
+        params.sourceItem
+      )
     );
   }
 
@@ -194,6 +216,80 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     };
 
     return Success.with(sourceFile);
+  }
+
+  // ==========================================================================
+  // Persistence Methods (Phase 2)
+  // ==========================================================================
+
+  /**
+   * Check if this collection can be saved to its source file.
+   * Returns true if the collection has a sourceItem and the FileTree supports persistence.
+   * @returns True if the collection can be saved, false otherwise
+   */
+  public canSave(): boolean {
+    if (!this.sourceItem || !('getIsMutable' in this.sourceItem)) {
+      return false;
+    }
+    const result = this.sourceItem.getIsMutable();
+    return result.isSuccess() && result.value === true;
+  }
+
+  /**
+   * Check if the source file has unsaved changes.
+   * Only applicable if the collection has a persistent FileTree source.
+   * Note: This method is not currently implementable without access to the FileTree instance.
+   * Returns false for now - dirty tracking should be done at a higher level.
+   * @returns False (dirty tracking not available at collection level)
+   */
+  public isDirty(): boolean {
+    // TODO: Implement dirty tracking when FileTree reference is available
+    // For now, dirty tracking should be managed at the FileTree level
+    return false;
+  }
+
+  /**
+   * Save the collection to its source file using FileTree persistence.
+   * Requires a sourceItem with a mutable FileTree.
+   * @returns Result indicating success or failure
+   */
+  public save(): Result<void> {
+    // Check if collection is mutable
+    if (!this.isMutable) {
+      return Failure.with(`Collection "${this.collectionId}" is immutable and cannot be saved`);
+    }
+
+    // Check if we have a source item
+    if (!this.sourceItem) {
+      return Failure.with(
+        `Collection "${this.collectionId}" has no source file - use export() to serialize manually`
+      );
+    }
+
+    // Check if source item is a file (has getIsMutable method)
+    if (!('getIsMutable' in this.sourceItem)) {
+      return Failure.with(`Source item for collection "${this.collectionId}" is not a file`);
+    }
+
+    // Check if the file is mutable
+    const isMutableResult = this.sourceItem.getIsMutable();
+    if (isMutableResult.isFailure() || !isMutableResult.value) {
+      return Failure.with(
+        `Source file for collection "${this.collectionId}" is not mutable: ${
+          isMutableResult.isFailure() ? isMutableResult.message : 'file is immutable'
+        }`
+      );
+    }
+
+    // Export to source file format and serialize to YAML
+    return this.export()
+      .onSuccess((sourceFile) => serializeToYaml(sourceFile))
+      .onSuccess((yaml) => {
+        // Use the file item's setRawContents method to save
+        return (this.sourceItem as FileTree.IFileTreeFileItem)
+          .setRawContents(yaml)
+          .onSuccess(() => Success.with(undefined));
+      });
   }
 
   // ==========================================================================

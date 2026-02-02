@@ -4,7 +4,7 @@
 
 ## LibraryData.ICollection interface
 
-Representation of a collection of items loaded from a file tree.
+Representation of a collection of items as serialized data. This is the base data interface without runtime-only properties.
 
 **Signature:**
 
@@ -70,6 +70,8 @@ boolean
 
 
 </td><td>
+
+Whether this collection is mutable (can be edited in the application). This is application-level mutability controlled by MutabilitySpec.
 
 
 </td></tr>

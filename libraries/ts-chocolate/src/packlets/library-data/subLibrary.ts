@@ -757,8 +757,15 @@ export abstract class SubLibraryBase<
       })
       .then((result) =>
         result.onSuccess((loadResult) => {
+          // Convert ICollection to SubLibraryEntryInit
+          const collections: SubLibraryEntryInit<TBaseId, TItem>[] = loadResult.collections.map((coll) => ({
+            id: coll.id,
+            isMutable: coll.isMutable,
+            items: coll.items,
+            metadata: coll.metadata
+          }));
           return succeed({
-            collections: loadResult.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>,
+            collections,
             protectedCollections: loadResult.protectedCollections
           });
         })

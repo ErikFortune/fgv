@@ -4,10 +4,10 @@
 
 ## LibraryData.ICollectionLoadResult.collections property
 
-Successfully loaded collections.
+Successfully loaded collections with runtime FileTree references.
 
 **Signature:**
 
 ```typescript
-readonly collections: ReadonlyArray<ICollection<T, TCollectionId, TItemId>>;
+readonly collections: ReadonlyArray<IRuntimeCollection<T, TCollectionId, TItemId>>;
 ```
