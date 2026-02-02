@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Helper function to create a  which validates `unknown` to one of a set of supplied enumerated values. Anything else fails.
+Helper function to create a `Validator` which validates `unknown` to one of a set of supplied enumerated values. Anything else fails.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Helper function to create a  which validates `unknown` to one of a set of suppli
 
 </td><td>
 
-Helper to create a validator for a literal value. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+Helper to create a validator for a literal value. Accepts `IJsonValidatorContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 
 </td></tr>
@@ -87,7 +87,7 @@ Description
 
 </td><td>
 
-A  which validates a boolean in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+A `BooleanValidator` which validates a boolean in place. Accepts `IJsonValidatorContext` but ignores it.
 
 
 </td></tr>
@@ -142,7 +142,7 @@ An in-place validator which validates that a supplied `unknown` value is a valid
 
 </td><td>
 
-A  which validates a number in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+A `NumberValidator` which validates a number in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
 
 
 </td></tr>
@@ -153,7 +153,7 @@ A  which validates a number in place. Accepts [IJsonValidatorContext](./ts-json-
 
 </td><td>
 
-A  which validates a string in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+A `StringValidator` which validates a string in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
 
 
 </td></tr>

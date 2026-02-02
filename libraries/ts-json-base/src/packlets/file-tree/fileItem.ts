@@ -108,7 +108,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.canSave}
+   * {@inheritdoc FileTree.IFileTreeFileItem.getIsMutable}
    */
   public getIsMutable(): DetailedResult<boolean, SaveDetail> {
     if (isMutableAccessors(this._hal)) {

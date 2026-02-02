@@ -4,7 +4,7 @@
 
 ## Converters.enumeratedValue() function
 
-Helper function to create a  which converts `unknown` to one of a set of supplied enumerated values. Anything else fails.
+Helper function to create a `Converter` which converts `unknown` to one of a set of supplied enumerated values. Anything else fails.
 
 **Signature:**
 
@@ -68,9 +68,9 @@ _(Optional)_ Optional custom failure message.
 
 Converter&lt;T, [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) \| ReadonlyArray&lt;T&gt;&gt;
 
-A new  returning `<T>`<!-- -->.
+A new `Converter` returning `<T>`<!-- -->.
 
 ## Remarks
 
-This JSON variant accepts an [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) OR a `ReadonlyArray<T>` as its conversion context. If the context is an array, it is used to override the allowed values for that conversion; otherwise, the original `values` supplied at creation time are used.
+This JSON variant accepts an `IJsonConverterContext` OR a `ReadonlyArray<T>` as its conversion context. If the context is an array, it is used to override the allowed values for that conversion; otherwise, the original `values` supplied at creation time are used.
 

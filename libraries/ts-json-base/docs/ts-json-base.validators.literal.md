@@ -4,7 +4,7 @@
 
 ## Validators.literal() function
 
-Helper to create a validator for a literal value. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+Helper to create a validator for a literal value. Accepts `IJsonValidatorContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 **Signature:**
 

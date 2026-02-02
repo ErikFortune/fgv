@@ -379,7 +379,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc IMutableFileTreeAccessors.fileIsMutable}
+   * {@inheritdoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
    */
   public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
     const absolutePath = this.resolveAbsolutePath(path);
@@ -398,12 +398,12 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc IMutableFileTreeAccessors.saveFileContents}
+   * {@inheritdoc FileTree.IMutableFileTreeAccessors.saveFileContents}
    */
   public saveFileContents(path: string, contents: string): Result<string> {
-    const canSave = this.fileIsMutable(path);
-    if (canSave.isFailure()) {
-      return fail(canSave.message);
+    const isMutable = this.fileIsMutable(path);
+    if (isMutable.isFailure()) {
+      return fail(isMutable.message);
     }
 
     const absolutePath = this.resolveAbsolutePath(path);

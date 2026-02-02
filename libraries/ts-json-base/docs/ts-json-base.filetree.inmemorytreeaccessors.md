@@ -109,6 +109,7 @@ Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccess
 
 </td><td>
 
+Checks if a file at the given path can be saved.
 
 
 </td></tr>
@@ -234,6 +235,7 @@ Resolves paths to an absolute path.
 
 </td><td>
 
+Saves the contents to a file at the given path.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## FileTree.SaveDetail type
 
-Detail type for canSave results.
+Detail type for getIsMutable results.
 
 **Signature:**
 

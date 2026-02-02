@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Helper function to create a  which converts `unknown` to one of a set of supplied enumerated values. Anything else fails.
+Helper function to create a `Converter` which converts `unknown` to one of a set of supplied enumerated values. Anything else fails.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Helper function to create a  which converts `unknown` to one of a set of supplie
 
 </td><td>
 
-Helper to create a converter for a literal value. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+Helper to create a converter for a literal value. Accepts `IJsonConverterContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 
 </td></tr>
@@ -87,7 +87,7 @@ Description
 
 </td><td>
 
-A  which converts `unknown` to a `boolean`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+A `Converter` which converts `unknown` to a `boolean`<!-- -->. Accepts `IJsonConverterContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 
 </td></tr>
@@ -98,7 +98,7 @@ A  which converts `unknown` to a `boolean`<!-- -->. Accepts [IJsonConverterConte
 
 </td><td>
 
-An copying converter which converts a supplied `unknown` value to a valid [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+An copying converter which converts a supplied `unknown` value to a valid [JsonArray](./ts-json-base.jsonarray.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate `IJsonConverterContext` at runtime.
 
 Guaranteed to return a new array.
 
@@ -111,7 +111,7 @@ Guaranteed to return a new array.
 
 </td><td>
 
-An copying converter which converts a supplied `unknown` value into a valid [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+An copying converter which converts a supplied `unknown` value into a valid [JsonObject](./ts-json-base.jsonobject.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate `IJsonConverterContext` at runtime.
 
 Guaranteed to return a new object.
 
@@ -135,7 +135,7 @@ An converter which converts a supplied `unknown` value to a valid [JsonPrimitive
 
 </td><td>
 
-An copying converter which converts a supplied `unknown` value to a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+An copying converter which converts a supplied `unknown` value to a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate `IJsonConverterContext` at runtime.
 
 
 </td></tr>
@@ -146,7 +146,7 @@ An copying converter which converts a supplied `unknown` value to a valid [JsonV
 
 </td><td>
 
-A  which converts `unknown` to a `number`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+A `Converter` which converts `unknown` to a `number`<!-- -->. Accepts `IJsonConverterContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 
 </td></tr>
@@ -157,7 +157,7 @@ A  which converts `unknown` to a `number`<!-- -->. Accepts [IJsonConverterContex
 
 </td><td>
 
-A  which converts `unknown` to a `string`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it.
+A `StringConverter` which converts `unknown` to a `string`<!-- -->. Accepts `IJsonConverterContext` but ignores it.
 
 
 </td></tr>

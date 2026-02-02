@@ -4,7 +4,7 @@
 
 ## Converters.literal() function
 
-Helper to create a converter for a literal value. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+Helper to create a converter for a literal value. Accepts `IJsonConverterContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 **Signature:**
 

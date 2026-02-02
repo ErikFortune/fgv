@@ -30,6 +30,7 @@ import {
   FileSystemDirectoryHandle
 } from '../file-api-types';
 import { FileSystemAccessTreeAccessors, IFileSystemAccessTreeParams } from './fileSystemAccessTreeAccessors';
+import { LocalStorageTreeAccessors, ILocalStorageTreeParams } from './localStorageTreeAccessors';
 
 /**
  * Interface for File objects that may have the webkitRelativePath property.
@@ -122,6 +123,44 @@ export class FileApiTreeAccessors<TCT extends string = string> {
     params?: IFileSystemAccessTreeParams<TCT>
   ): Promise<Result<FileTree.FileTree<TCT>>> {
     const accessorsResult = await FileSystemAccessTreeAccessors.fromDirectoryHandle<TCT>(dirHandle, params);
+    if (accessorsResult.isFailure()) {
+      return fail(accessorsResult.message);
+    }
+
+    return FileTree.FileTree.create<TCT>(accessorsResult.value);
+  }
+
+  /**
+   * Create a persistent FileTree from browser localStorage.
+   * Changes to files can be synced back to localStorage.
+   *
+   * @param params - Configuration including path-to-key mappings and optional autoSync
+   * @returns Result containing a FileTree with persistence capability
+   *
+   * @remarks
+   * - Works in all browsers with localStorage support
+   * - Maps directory paths to localStorage keys
+   * - Each key stores multiple collections as JSON
+   * - Files are automatically discovered from storage
+   *
+   * @example
+   * ```typescript
+   * const tree = FileApiTreeAccessors.createFromLocalStorage({
+   *   pathToKeyMap: {
+   *     '/data/ingredients': 'myapp:ingredients:v1',
+   *     '/data/fillings': 'myapp:fillings:v1'
+   *   },
+   *   mutable: true,
+   *   autoSync: false
+   * });
+   * ```
+   *
+   * @public
+   */
+  public static createFromLocalStorage<TCT extends string = string>(
+    params: ILocalStorageTreeParams<TCT>
+  ): Result<FileTree.FileTree<TCT>> {
+    const accessorsResult = LocalStorageTreeAccessors.fromStorage<TCT>(params);
     if (accessorsResult.isFailure()) {
       return fail(accessorsResult.message);
     }

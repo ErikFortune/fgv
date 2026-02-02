@@ -80,7 +80,7 @@ describe('InMemoryTreeAccessors', () => {
     });
   });
 
-  describe('canSaveFile', () => {
+  describe('fileIsMutable', () => {
     it('returns not-mutable when mutable is false', () => {
       const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: false }).orThrow();
       const result = accessors.fileIsMutable('/data/file1.json');
@@ -245,7 +245,7 @@ describe('InMemoryTreeAccessors', () => {
   });
 
   describe('integration with FileItem', () => {
-    it('FileItem.canSave returns transient for mutable in-memory accessors', () => {
+    it('FileItem.getIsMutable returns transient for mutable in-memory accessors', () => {
       const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: true }).orThrow();
       const itemResult = accessors.getItem('/data/file1.json');
       expect(itemResult.isSuccess()).toBe(true);

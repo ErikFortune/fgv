@@ -4,7 +4,7 @@
 
 ## Converters.string variable
 
-A  which converts `unknown` to a `string`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it.
+A `StringConverter` which converts `unknown` to a `string`<!-- -->. Accepts `IJsonConverterContext` but ignores it.
 
 **Signature:**
 

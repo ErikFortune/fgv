@@ -4,6 +4,7 @@
 
 ## FileTree.InMemoryTreeAccessors.fileIsMutable() method
 
+Checks if a file at the given path can be saved.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ string
 
 </td><td>
 
+The path to check.
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ string
 **Returns:**
 
 DetailedResult&lt;boolean, [SaveDetail](./ts-json-base.filetree.savedetail.md)<!-- -->&gt;
+
+`DetailedSuccess` with [FileTree.SaveCapability](./ts-json-base.filetree.savecapability.md) if the file can be saved, or `DetailedFailure` with [FileTree.SaveFailureReason](./ts-json-base.filetree.savefailurereason.md) if it cannot.
 

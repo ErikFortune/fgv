@@ -49,7 +49,7 @@ export type SaveFailureReason =
   | 'permission-denied';
 
 /**
- * Detail type for canSave results.
+ * Detail type for getIsMutable results.
  * @public
  */
 export type SaveDetail = SaveCapability | SaveFailureReason;
@@ -292,8 +292,8 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
   /**
    * Checks if a file at the given path can be saved.
    * @param path - The path to check.
-   * @returns `DetailedSuccess` with {@link SaveCapability} if the file can be saved,
-   * or `DetailedFailure` with {@link SaveFailureReason} if it cannot.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
    */
   fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
 
@@ -334,7 +334,7 @@ export interface IPersistentFileTreeAccessors<TCT extends string = string>
 /**
  * Type guard to check if accessors support mutation.
  * @param accessors - The accessors to check.
- * @returns `true` if the accessors implement {@link IMutableFileTreeAccessors}.
+ * @returns `true` if the accessors implement {@link FileTree.IMutableFileTreeAccessors}.
  * @public
  */
 export function isMutableAccessors<TCT extends string = string>(
@@ -347,7 +347,7 @@ export function isMutableAccessors<TCT extends string = string>(
 /**
  * Type guard to check if accessors support persistence.
  * @param accessors - The accessors to check.
- * @returns `true` if the accessors implement {@link IPersistentFileTreeAccessors}.
+ * @returns `true` if the accessors implement {@link FileTree.IPersistentFileTreeAccessors}.
  * @public
  */
 export function isPersistentAccessors<TCT extends string = string>(

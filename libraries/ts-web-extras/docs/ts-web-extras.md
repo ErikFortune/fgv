@@ -54,6 +54,21 @@ Implementation of  that uses the File System Access API to provide persistent fi
 
 
 </td></tr>
+<tr><td>
+
+[LocalStorageTreeAccessors](./ts-web-extras.localstoragetreeaccessors.md)
+
+
+</td><td>
+
+Browser localStorage-backed file tree accessors with persistence support.
+
+Maps filesystem-like directory paths to localStorage keys, where each key stores multiple collections as a JSON object. This provides a general-purpose implementation for browser-based file tree persistence without requiring File System Access API.
+
+Storage format per key: `{ "collection-id": { ...collectionData }, ... }` File paths map as: `/data/ingredients/collection-id.json` → stored in key for `/data/ingredients`
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -411,6 +426,17 @@ Options for creating persistent file trees.
 </td><td>
 
 File System Access API methods available on Window
+
+
+</td></tr>
+<tr><td>
+
+[ILocalStorageTreeParams](./ts-web-extras.ilocalstoragetreeparams.md)
+
+
+</td><td>
+
+Configuration for LocalStorageTreeAccessors.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## Validators.string variable
 
-A  which validates a string in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+A `StringValidator` which validates a string in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
 
 **Signature:**
 

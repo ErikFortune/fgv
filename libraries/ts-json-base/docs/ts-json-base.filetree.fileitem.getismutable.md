@@ -4,6 +4,7 @@
 
 ## FileTree.FileItem.getIsMutable() method
 
+Indicates whether this file can be saved.
 
 **Signature:**
 
@@ -13,4 +14,10 @@ getIsMutable(): DetailedResult<boolean, SaveDetail>;
 **Returns:**
 
 DetailedResult&lt;boolean, [SaveDetail](./ts-json-base.filetree.savedetail.md)<!-- -->&gt;
+
+`DetailedSuccess` with [FileTree.SaveCapability](./ts-json-base.filetree.savecapability.md) if the file can be saved, or `DetailedFailure` with [FileTree.SaveFailureReason](./ts-json-base.filetree.savefailurereason.md) if it cannot.
+
+## Remarks
+
+This property is optional. If not present, the file is not mutable.
 

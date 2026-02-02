@@ -333,7 +333,7 @@ Indicates the persistence capability of a save operation. - `persistent`<!-- -->
 
 </td><td>
 
-Detail type for canSave results.
+Detail type for getIsMutable results.
 
 
 </td></tr>

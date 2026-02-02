@@ -4,7 +4,7 @@
 
 ## Converters.number variable
 
-A  which converts `unknown` to a `number`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+A `Converter` which converts `unknown` to a `number`<!-- -->. Accepts `IJsonConverterContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 **Signature:**
 

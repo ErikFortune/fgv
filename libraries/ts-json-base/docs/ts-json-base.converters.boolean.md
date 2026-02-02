@@ -4,7 +4,7 @@
 
 ## Converters.boolean variable
 
-A  which converts `unknown` to a `boolean`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+A `Converter` which converts `unknown` to a `boolean`<!-- -->. Accepts `IJsonConverterContext` but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
 
 **Signature:**
 

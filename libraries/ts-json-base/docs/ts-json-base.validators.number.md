@@ -4,10 +4,10 @@
 
 ## Validators.number variable
 
-A  which validates a number in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+A `NumberValidator` which validates a number in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
 
 **Signature:**
 
 ```typescript
-number: Validator<number, IJsonValidatorContext>
+number: Validation.Classes.NumberValidator<number, IJsonValidatorContext>
 ```

@@ -4,6 +4,7 @@
 
 ## FileTree.FsFileTreeAccessors.saveFileContents() method
 
+Saves the contents to a file at the given path.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ string
 
 </td><td>
 
+The path of the file to save.
+
 
 </td></tr>
 <tr><td>
@@ -55,6 +58,8 @@ string
 
 </td><td>
 
+The string contents to save.
+
 
 </td></tr>
 </tbody></table>
@@ -62,4 +67,6 @@ string
 **Returns:**
 
 Result&lt;string&gt;
+
+`Success` if the file was saved, or `Failure` with an error message.
 

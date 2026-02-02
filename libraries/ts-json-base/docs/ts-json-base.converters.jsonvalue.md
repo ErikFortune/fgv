@@ -4,7 +4,7 @@
 
 ## Converters.jsonValue variable
 
-An copying converter which converts a supplied `unknown` value to a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate [context](./ts-json-base.converters.ijsonconvertercontext.md) at runtime.
+An copying converter which converts a supplied `unknown` value to a valid [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->. Fails by default if any properties or array elements are `undefined` - this default behavior can be overridden by supplying an appropriate `IJsonConverterContext` at runtime.
 
 **Signature:**
 

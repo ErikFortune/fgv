@@ -327,6 +327,7 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 </td><td>
 
+Indicates whether this file can be saved.
 
 
 </td></tr>

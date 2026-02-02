@@ -160,7 +160,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc IMutableFileTreeAccessors.fileIsMutable}
+   * {@inheritdoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
    */
   public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
     const absolutePath = this.resolveAbsolutePath(path);
@@ -194,7 +194,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc IMutableFileTreeAccessors.saveFileContents}
+   * {@inheritdoc FileTree.IMutableFileTreeAccessors.saveFileContents}
    */
   public saveFileContents(path: string, contents: string): Result<string> {
     return this.fileIsMutable(path).asResult.onSuccess(() => {

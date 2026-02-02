@@ -35,6 +35,7 @@ function extractFileMetadata(file: File): IFileMetadata;
 // @public
 export class FileApiTreeAccessors<TCT extends string = string> {
     static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createFromLocalStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<FileTree.FileTree<TCT>>;
     static createPersistent<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static extractFileMetadata(file: File): IFileMetadata;
     static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
@@ -247,6 +248,13 @@ export interface IFsAccessApis {
 }
 
 // @public
+export interface ILocalStorageTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    autoSync?: boolean;
+    pathToKeyMap: Record<string, string>;
+    storage?: Storage;
+}
+
+// @public
 export function isDirectoryHandle(handle: FileSystemHandle_2): handle is FileSystemDirectoryHandle_2;
 
 // @public
@@ -270,6 +278,16 @@ export interface IUrlConfigOptions {
     resourceTypes?: string;
     zipFile?: string;
     zipPath?: string;
+}
+
+// @public
+export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    saveFileContents(path: string, contents: string): Result<string>;
+    syncToDisk(): Promise<Result<void>>;
 }
 
 // @public

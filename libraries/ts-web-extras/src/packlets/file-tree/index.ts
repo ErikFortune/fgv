@@ -27,3 +27,4 @@
 
 export * from './fileApiTreeAccessors';
 export * from './fileSystemAccessTreeAccessors';
+export * from './localStorageTreeAccessors';

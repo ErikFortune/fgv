@@ -4,7 +4,7 @@
 
 ## Validators.enumeratedValue() function
 
-Helper function to create a  which validates `unknown` to one of a set of supplied enumerated values. Anything else fails.
+Helper function to create a `Validator` which validates `unknown` to one of a set of supplied enumerated values. Anything else fails.
 
 **Signature:**
 
@@ -68,9 +68,9 @@ _(Optional)_ Optional custom failure message.
 
 Validator&lt;T, [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) \| ReadonlyArray&lt;T&gt;&gt;
 
-A new  returning `<T>`<!-- -->.
+A new `Validator` returning `<T>`<!-- -->.
 
 ## Remarks
 
-This JSON variant accepts an [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) OR a `ReadonlyArray<T>` as its validation context. If the context is an array, it is used to override the allowed values for that validation; otherwise, the original `values` supplied at creation time are used.
+This JSON variant accepts an `IJsonValidatorContext` OR a `ReadonlyArray<T>` as its validation context. If the context is an array, it is used to override the allowed values for that validation; otherwise, the original `values` supplied at creation time are used.
 

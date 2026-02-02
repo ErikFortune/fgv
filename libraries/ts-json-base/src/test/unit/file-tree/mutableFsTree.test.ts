@@ -138,7 +138,7 @@ describe('FsFileTreeAccessors', () => {
   });
 
   describe('integration with FileItem', () => {
-    it('FileItem.canSave returns correct result for mutable accessors', () => {
+    it('FileItem.getIsMutable returns correct result for mutable accessors', () => {
       const filePath = path.join(tempDir, 'test.json');
       fs.writeFileSync(filePath, '{"initial": "data"}');
 

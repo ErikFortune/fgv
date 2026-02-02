@@ -4,7 +4,7 @@
 
 ## Validators.boolean variable
 
-A  which validates a boolean in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+A `BooleanValidator` which validates a boolean in place. Accepts `IJsonValidatorContext` but ignores it.
 
 **Signature:**
 

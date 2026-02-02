@@ -52,5 +52,5 @@ The accessors to check.
 
 accessors is [IPersistentFileTreeAccessors](./ts-json-base.filetree.ipersistentfiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
-`true` if the accessors implement .
+`true` if the accessors implement [FileTree.IPersistentFileTreeAccessors](./ts-json-base.filetree.ipersistentfiletreeaccessors.md)<!-- -->.
 
