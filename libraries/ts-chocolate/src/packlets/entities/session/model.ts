@@ -33,10 +33,7 @@ import {
   ConfectionVersionId,
   FillingVersionId,
   ICategorizedNote,
-  IngredientId,
-  MoldId,
   PersistedSessionId,
-  ProcedureId,
   SessionBaseId,
   SlotId,
   SourceId
@@ -182,27 +179,12 @@ export interface IPersistedFillingSession extends IPersistedSessionBase {
 // ============================================================================
 
 /**
- * Production properties for a confection session.
- * These are production run choices, not recipe modifications.
- * @public
- */
-export interface IPersistedConfectionProduction {
-  /** Selected mold for this production run */
-  readonly moldId?: MoldId;
-  /** Number of frames to produce */
-  readonly frames?: number;
-  /** Selected shell chocolate from available options */
-  readonly shellChocolateId?: IngredientId;
-  /** Selected procedure from available options */
-  readonly procedureId?: ProcedureId;
-}
-
-/**
  * Persisted confection editing session with full editing state.
  *
  * Contains the complete undo/redo history so the session can be
  * restored to its exact editing state. References child filling
  * sessions by their persisted session IDs.
+ *
  * @public
  */
 export interface IPersistedConfectionSession extends IPersistedSessionBase {
@@ -215,8 +197,6 @@ export interface IPersistedConfectionSession extends IPersistedSessionBase {
   readonly history: ISerializedEditingHistory<AnyProducedConfection>;
   /** Map of slot ID to child filling session ID */
   readonly childSessionIds: Readonly<Record<SlotId, PersistedSessionId>>;
-  /** Production properties for this session */
-  readonly production?: IPersistedConfectionProduction;
 }
 
 // ============================================================================

@@ -849,7 +849,6 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
       shellChocolateId: confection.shellChocolateId,
       sealChocolateId: confection.sealChocolateId,
       decorationChocolateId: confection.decorationChocolateId,
-      bufferPercentage: confection.bufferPercentage,
       fillings: confection.fillings ? confection.fillings.map((slot) => ({ ...slot })) : undefined,
       procedureId: confection.procedureId,
       notes: confection.notes ? confection.notes.map((note) => ({ ...note })) : undefined

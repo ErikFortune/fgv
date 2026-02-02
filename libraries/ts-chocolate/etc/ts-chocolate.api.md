@@ -949,7 +949,6 @@ declare namespace Converters_3 {
         persistedSessionDestination,
         serializedFillingHistory,
         serializedConfectionHistory,
-        persistedConfectionProduction,
         childSessionIds,
         persistedFillingSession,
         persistedConfectionSession,
@@ -1452,7 +1451,6 @@ declare namespace Entities {
         ISerializedEditingHistory,
         IPersistedSessionBase,
         IPersistedFillingSession,
-        IPersistedConfectionProduction,
         IPersistedConfectionSession,
         AnyPersistedSession,
         SessionCollectionEntry,
@@ -3484,19 +3482,10 @@ export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends 
 }
 
 // @public
-interface IPersistedConfectionProduction {
-    readonly frames?: number;
-    readonly moldId?: MoldId;
-    readonly procedureId?: ProcedureId;
-    readonly shellChocolateId?: IngredientId;
-}
-
-// @public
 interface IPersistedConfectionSession extends IPersistedSessionBase {
     readonly childSessionIds: Readonly<Record<SlotId, PersistedSessionId>>;
     readonly confectionType: ConfectionType;
     readonly history: ISerializedEditingHistory<AnyProducedConfection>;
-    readonly production?: IPersistedConfectionProduction;
     // (undocumented)
     readonly sessionType: 'confection';
     readonly sourceVersionId: ConfectionVersionId;
@@ -3611,7 +3600,6 @@ interface IProducedFillingIngredient {
 
 // @public
 interface IProducedMoldedBonBon extends IProducedConfectionBase {
-    readonly bufferPercentage?: number;
     readonly confectionType: 'molded-bonbon';
     readonly decorationChocolateId?: IngredientId;
     readonly moldId: MoldId;
@@ -5635,11 +5623,6 @@ const PERSISTED_SESSION_SCHEMA_VERSION: 1;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const persistedConfectionProduction: Converter<IPersistedConfectionProduction>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
 const persistedConfectionSession: Converter<IPersistedConfectionSession>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -6648,7 +6631,6 @@ declare namespace Session_2 {
         ISerializedEditingHistory,
         IPersistedSessionBase,
         IPersistedFillingSession,
-        IPersistedConfectionProduction,
         IPersistedConfectionSession,
         AnyPersistedSession,
         SessionCollectionEntry,

@@ -36,7 +36,6 @@ import {
   allPersistedSessionStatuses,
   allPersistedSessionTypes,
   AnyPersistedSession,
-  IPersistedConfectionProduction,
   IPersistedConfectionSession,
   IPersistedFillingSession,
   IPersistedSessionDestination,
@@ -109,18 +108,6 @@ export const serializedConfectionHistory: Converter<ISerializedEditingHistory<An
 // Confection Production Converter
 // ============================================================================
 
-/**
- * Converter for {@link Entities.Session.IPersistedConfectionProduction | IPersistedConfectionProduction}.
- * @public
- */
-export const persistedConfectionProduction: Converter<IPersistedConfectionProduction> =
-  Converters.object<IPersistedConfectionProduction>({
-    moldId: CommonConverters.moldId.optional(),
-    frames: Converters.number.optional(),
-    shellChocolateId: CommonConverters.ingredientId.optional(),
-    procedureId: CommonConverters.procedureId.optional()
-  });
-
 // ============================================================================
 // Child Session IDs Converter
 // ============================================================================
@@ -173,8 +160,7 @@ export const persistedConfectionSession: Converter<IPersistedConfectionSession> 
     confectionType: CommonConverters.confectionType,
     sourceVersionId: CommonConverters.confectionVersionId,
     history: serializedConfectionHistory,
-    childSessionIds,
-    production: persistedConfectionProduction.optional()
+    childSessionIds
   });
 
 /**

@@ -580,12 +580,6 @@ export interface IProducedMoldedBonBon extends IProducedConfectionBase {
   readonly sealChocolateId?: IngredientId;
   /** Resolved decoration chocolate ingredient ID (if used) */
   readonly decorationChocolateId?: IngredientId;
-  /**
-   * Buffer percentage for yield calculations (e.g., 0.1 for 10% buffer).
-   * Used to account for waste and overfill when calculating frames needed.
-   * @defaultValue 0.1 (10%)
-   */
-  readonly bufferPercentage?: number;
 }
 
 /**

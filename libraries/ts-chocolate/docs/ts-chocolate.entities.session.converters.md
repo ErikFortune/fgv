@@ -41,17 +41,6 @@ Converter for child session IDs mapping (SlotId to PersistedSessionId).
 </td></tr>
 <tr><td>
 
-[persistedConfectionProduction](./ts-chocolate.entities.session.converters.persistedconfectionproduction.md)
-
-
-</td><td>
-
-Converter for [IPersistedConfectionProduction](./ts-chocolate.entities.session.ipersistedconfectionproduction.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [persistedConfectionSession](./ts-chocolate.entities.session.converters.persistedconfectionsession.md)
 
 

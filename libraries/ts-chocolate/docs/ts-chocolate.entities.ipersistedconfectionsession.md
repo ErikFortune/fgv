@@ -8,6 +8,8 @@ Persisted confection editing session with full editing state.
 
 Contains the complete undo/redo history so the session can be restored to its exact editing state. References child filling sessions by their persisted session IDs.
 
+Note: All production choices (mold, chocolates, procedure, yield/frames) are captured in the history's AnyProducedConfection, making a separate production property unnecessary.
+
 **Signature:**
 
 ```typescript
@@ -98,27 +100,6 @@ ISerializedEditingHistory&lt;AnyProducedConfection&gt;
 </td><td>
 
 Full editing history including undo/redo stacks
-
-
-</td></tr>
-<tr><td>
-
-[production?](./ts-chocolate.entities.ipersistedconfectionsession.production.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-IPersistedConfectionProduction
-
-
-</td><td>
-
-_(Optional)_ Production properties for this session
 
 
 </td></tr>

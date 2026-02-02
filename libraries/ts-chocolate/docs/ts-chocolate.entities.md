@@ -894,17 +894,6 @@ Frame-based yield specification for molded bonbons. Stores frames + buffer perce
 </td></tr>
 <tr><td>
 
-[IPersistedConfectionProduction](./ts-chocolate.entities.ipersistedconfectionproduction.md)
-
-
-</td><td>
-
-Production properties for a confection session. These are production run choices, not recipe modifications.
-
-
-</td></tr>
-<tr><td>
-
 [IPersistedConfectionSession](./ts-chocolate.entities.ipersistedconfectionsession.md)
 
 
@@ -913,6 +902,8 @@ Production properties for a confection session. These are production run choices
 Persisted confection editing session with full editing state.
 
 Contains the complete undo/redo history so the session can be restored to its exact editing state. References child filling sessions by their persisted session IDs.
+
+Note: All production choices (mold, chocolates, procedure, yield/frames) are captured in the history's AnyProducedConfection, making a separate production property unnecessary.
 
 
 </td></tr>
