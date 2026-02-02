@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ingredientInventory?](./ts-chocolate.userlibrary.iinstantiateduserlibrarysource.ingredientinventory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built ingredient inventory library
+
+
+</td></tr>
+<tr><td>
+
 [journals?](./ts-chocolate.userlibrary.iinstantiateduserlibrarysource.journals.md)
 
 
@@ -53,6 +74,27 @@ JournalLibrary
 </td><td>
 
 _(Optional)_ Pre-built journals library
+
+
+</td></tr>
+<tr><td>
+
+[moldInventory?](./ts-chocolate.userlibrary.iinstantiateduserlibrarysource.moldinventory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built mold inventory library
 
 
 </td></tr>

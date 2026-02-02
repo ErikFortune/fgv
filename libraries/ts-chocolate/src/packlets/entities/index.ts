@@ -42,6 +42,11 @@ export * from './journal/library';
 export * from './session/model';
 export * from './session/library';
 
+export * from './inventory/model';
+export * from './inventory/collection';
+export * from './inventory/moldInventoryLibrary';
+export * from './inventory/ingredientInventoryLibrary';
+
 export * from './molds/model';
 export * from './molds/collection';
 export * from './molds/library';
@@ -62,10 +67,11 @@ export { Converters };
 import * as Confections from './confections';
 import * as Fillings from './fillings';
 import * as Ingredients from './ingredients';
+import * as Inventory from './inventory';
 import * as Journal from './journal';
 import * as Molds from './molds';
 import * as Procedures from './procedures';
 import * as Session from './session';
 import * as Tasks from './tasks';
 
-export { Confections, Fillings, Ingredients, Journal, Molds, Procedures, Session, Tasks };
+export { Confections, Fillings, Ingredients, Inventory, Journal, Molds, Procedures, Session, Tasks };

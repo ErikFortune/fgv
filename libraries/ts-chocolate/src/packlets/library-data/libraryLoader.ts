@@ -114,6 +114,12 @@ export function getSubLibraryPath(subLibraryId: SubLibraryId): string {
     /* c8 ignore next 2 - sessions used only by user library */
     case 'sessions':
       return LibraryPaths.sessions;
+    /* c8 ignore next 2 - inventory used only by user library */
+    case 'moldInventory':
+      return LibraryPaths.moldInventory;
+    /* c8 ignore next 2 - inventory used only by user library */
+    case 'ingredientInventory':
+      return LibraryPaths.ingredientInventory;
   }
 }
 

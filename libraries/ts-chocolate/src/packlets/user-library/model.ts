@@ -25,7 +25,12 @@
 
 import { Logging } from '@fgv/ts-utils';
 
-import { JournalLibrary, SessionLibrary } from '../entities';
+import {
+  IngredientInventoryLibrary,
+  JournalLibrary,
+  MoldInventoryLibrary,
+  SessionLibrary
+} from '../entities';
 import { ILibraryFileTreeSource } from '../library-data';
 
 // ============================================================================
@@ -33,7 +38,7 @@ import { ILibraryFileTreeSource } from '../library-data';
 // ============================================================================
 
 /**
- * User-specific library data (journals, sessions, future inventory).
+ * User-specific library data (journals, sessions, inventory).
  * Separate from shared library data (ingredients, recipes, etc.).
  * @public
  */
@@ -47,6 +52,16 @@ export interface IUserLibrary {
    * Session library for persisted editing sessions.
    */
   readonly sessions: SessionLibrary;
+
+  /**
+   * Mold inventory library for tracking owned molds.
+   */
+  readonly moldInventory: MoldInventoryLibrary;
+
+  /**
+   * Ingredient inventory library for tracking ingredient stock.
+   */
+  readonly ingredientInventory: IngredientInventoryLibrary;
 }
 
 // ============================================================================
@@ -67,6 +82,16 @@ export interface IInstantiatedUserLibrarySource {
    * Pre-built sessions library
    */
   readonly sessions?: SessionLibrary;
+
+  /**
+   * Pre-built mold inventory library
+   */
+  readonly moldInventory?: MoldInventoryLibrary;
+
+  /**
+   * Pre-built ingredient inventory library
+   */
+  readonly ingredientInventory?: IngredientInventoryLibrary;
 }
 
 // ============================================================================

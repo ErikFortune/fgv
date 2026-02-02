@@ -40,6 +40,26 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ingredientInventory](./ts-chocolate.userlibrary.userlibrary.ingredientinventory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [journals](./ts-chocolate.userlibrary.userlibrary.journals.md)
 
 
@@ -76,6 +96,26 @@ Logging.LogReporter&lt;unknown&gt;
 </td><td>
 
 Logger used by this library and its sub-libraries.
+
+
+</td></tr>
+<tr><td>
+
+[moldInventory](./ts-chocolate.userlibrary.userlibrary.moldinventory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)
+
+
+</td><td>
+
 
 
 </td></tr>

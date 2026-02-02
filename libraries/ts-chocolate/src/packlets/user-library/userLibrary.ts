@@ -26,7 +26,12 @@
 import { Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { SourceId } from '../common';
-import { JournalLibrary, SessionLibrary } from '../entities';
+import {
+  IngredientInventoryLibrary,
+  JournalLibrary,
+  MoldInventoryLibrary,
+  SessionLibrary
+} from '../entities';
 import { IFileTreeSource, ILibraryFileTreeSource, normalizeFileSources, SubLibraryId } from '../library-data';
 import { IUserLibrary, IUserLibraryCreateParams } from './model';
 
@@ -45,6 +50,8 @@ import { IUserLibrary, IUserLibraryCreateParams } from './model';
 export class UserLibrary implements IUserLibrary {
   private readonly _journals: JournalLibrary;
   private readonly _sessions: SessionLibrary;
+  private readonly _moldInventory: MoldInventoryLibrary;
+  private readonly _ingredientInventory: IngredientInventoryLibrary;
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -54,10 +61,14 @@ export class UserLibrary implements IUserLibrary {
   private constructor(
     journals: JournalLibrary,
     sessions: SessionLibrary,
+    moldInventory: MoldInventoryLibrary,
+    ingredientInventory: IngredientInventoryLibrary,
     logger: Logging.LogReporter<unknown>
   ) {
     this._journals = journals;
     this._sessions = sessions;
+    this._moldInventory = moldInventory;
+    this._ingredientInventory = ingredientInventory;
     this.logger = logger;
   }
 
@@ -93,9 +104,33 @@ export class UserLibrary implements IUserLibrary {
       logger: logReporter
     });
 
+    // Create mold inventory library
+    const moldInventorySources = UserLibrary._toFileSources(fileSources, 'moldInventory');
+    const moldInventoryResult = MoldInventoryLibrary.create({
+      builtin: false,
+      fileSources: moldInventorySources.length > 0 ? moldInventorySources : undefined,
+      mergeLibraries: params.libraries?.moldInventory,
+      logger: logReporter
+    });
+
+    // Create ingredient inventory library
+    const ingredientInventorySources = UserLibrary._toFileSources(fileSources, 'ingredientInventory');
+    const ingredientInventoryResult = IngredientInventoryLibrary.create({
+      builtin: false,
+      fileSources: ingredientInventorySources.length > 0 ? ingredientInventorySources : undefined,
+      mergeLibraries: params.libraries?.ingredientInventory,
+      logger: logReporter
+    });
+
     return journalsResult.onSuccess((journals) => {
       return sessionsResult.onSuccess((sessions) => {
-        return succeed(new UserLibrary(journals, sessions, logReporter));
+        return moldInventoryResult.onSuccess((moldInventory) => {
+          return ingredientInventoryResult.onSuccess((ingredientInventory) => {
+            return succeed(
+              new UserLibrary(journals, sessions, moldInventory, ingredientInventory, logReporter)
+            );
+          });
+        });
       });
     });
   }
@@ -137,5 +172,19 @@ export class UserLibrary implements IUserLibrary {
    */
   public get sessions(): SessionLibrary {
     return this._sessions;
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.moldInventory}
+   */
+  public get moldInventory(): MoldInventoryLibrary {
+    return this._moldInventory;
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.ingredientInventory}
+   */
+  public get ingredientInventory(): IngredientInventoryLibrary {
+    return this._ingredientInventory;
   }
 }

@@ -4,7 +4,7 @@
 
 ## UserLibrary.IUserLibrary interface
 
-User-specific library data (journals, sessions, future inventory). Separate from shared library data (ingredients, recipes, etc.).
+User-specific library data (journals, sessions, inventory). Separate from shared library data (ingredients, recipes, etc.).
 
 **Signature:**
 
@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ingredientInventory](./ts-chocolate.userlibrary.iuserlibrary.ingredientinventory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)
+
+
+</td><td>
+
+Ingredient inventory library for tracking ingredient stock.
+
+
+</td></tr>
+<tr><td>
+
 [journals](./ts-chocolate.userlibrary.iuserlibrary.journals.md)
 
 
@@ -53,6 +74,27 @@ JournalLibrary
 </td><td>
 
 Journal library for production records.
+
+
+</td></tr>
+<tr><td>
+
+[moldInventory](./ts-chocolate.userlibrary.iuserlibrary.moldinventory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)
+
+
+</td><td>
+
+Mold inventory library for tracking owned molds.
 
 
 </td></tr>

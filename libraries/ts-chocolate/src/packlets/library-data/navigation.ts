@@ -59,6 +59,14 @@ export const LibraryPaths = {
    */
   sessions: 'data/sessions',
   /**
+   * Path to the mold inventory data directory (user library).
+   */
+  moldInventory: 'data/mold-inventory',
+  /**
+   * Path to the ingredient inventory data directory (user library).
+   */
+  ingredientInventory: 'data/ingredient-inventory',
+  /**
    * Path to the settings directory.
    */
   settings: 'data/settings',
@@ -203,4 +211,28 @@ export function getConfectionsDirectory(
  */
 export function getSessionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
   return navigateToDirectory(tree, LibraryPaths.sessions);
+}
+
+/**
+ * Gets the mold inventory directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the mold inventory directory or `Failure` if not found.
+ * @public
+ */
+export function getMoldInventoryDirectory(
+  tree: FileTree.FileTreeItem
+): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.moldInventory);
+}
+
+/**
+ * Gets the ingredient inventory directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the ingredient inventory directory or `Failure` if not found.
+ * @public
+ */
+export function getIngredientInventoryDirectory(
+  tree: FileTree.FileTreeItem
+): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.ingredientInventory);
 }

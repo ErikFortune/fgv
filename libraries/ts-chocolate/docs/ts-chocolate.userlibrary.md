@@ -63,7 +63,7 @@ Pre-built user library instances to include in a [UserLibrary](./ts-chocolate.us
 
 </td><td>
 
-User-specific library data (journals, sessions, future inventory). Separate from shared library data (ingredients, recipes, etc.).
+User-specific library data (journals, sessions, inventory). Separate from shared library data (ingredients, recipes, etc.).
 
 
 </td></tr>

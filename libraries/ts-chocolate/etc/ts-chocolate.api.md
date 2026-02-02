@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_6 } from '@fgv/ts-utils';
+import { Converters as Converters_4 } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
@@ -79,6 +79,9 @@ export const allIngredientCategories: IngredientCategory[];
 
 // @public
 export const allIngredientPhases: IngredientPhase[];
+
+// @public
+const allInventoryTypes: ReadonlyArray<InventoryType>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -159,6 +162,14 @@ type AnyFillingRecipeVersion = IFillingRecipeVersion | IScaledFillingRecipeVersi
 //
 // @public
 const anyFillingRecipeVersion: Converter<AnyFillingRecipeVersion>;
+
+// @public
+type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const anyInventoryEntry: Converter<AnyInventoryEntry>;
 
 // @public
 type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
@@ -944,6 +955,23 @@ declare namespace Converters_2 {
 
 declare namespace Converters_3 {
     export {
+        moldInventoryEntryBaseId,
+        moldInventoryEntryId,
+        ParsedMoldInventoryEntryId,
+        parsedMoldInventoryEntryId,
+        ingredientInventoryEntryBaseId,
+        ingredientInventoryEntryId,
+        ParsedIngredientInventoryEntryId,
+        parsedIngredientInventoryEntryId,
+        inventoryType,
+        moldInventoryEntry,
+        ingredientInventoryEntry,
+        anyInventoryEntry
+    }
+}
+
+declare namespace Converters_5 {
+    export {
         persistedSessionType,
         persistedSessionStatus,
         persistedSessionDestination,
@@ -956,7 +984,7 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_4 {
+declare namespace Converters_6 {
     export {
         isEncryptedCollectionFile,
         encryptionAlgorithm,
@@ -972,7 +1000,7 @@ declare namespace Converters_4 {
     }
 }
 
-declare namespace Converters_5 {
+declare namespace Converters_7 {
     export {
         removeExtension,
         collectionSourceFile,
@@ -1029,7 +1057,7 @@ function createPersistedSessionId(collectionId: SourceId, baseId: SessionBaseId)
 declare namespace CryptoUtils {
     export {
         KeyStore,
-        Converters_4 as Converters,
+        Converters_6 as Converters,
         KeyStoreConverters,
         isEncryptedCollectionFile,
         isKeyStoreFile,
@@ -1297,6 +1325,7 @@ declare namespace Entities {
         Confections_2 as Confections,
         Fillings_2 as Fillings,
         Ingredients_2 as Ingredients,
+        Inventory,
         Journal_2 as Journal,
         Molds_2 as Molds,
         Procedures_2 as Procedures,
@@ -1462,6 +1491,38 @@ declare namespace Entities {
         ISessionLibraryParams,
         ISessionLibraryAsyncParams,
         SessionLibrary,
+        isMoldInventoryEntry,
+        isIngredientInventoryEntry,
+        MoldInventoryEntryBaseId,
+        MoldInventoryEntryId,
+        IngredientInventoryEntryBaseId,
+        IngredientInventoryEntryId,
+        INVENTORY_SCHEMA_VERSION,
+        InventorySchemaVersion,
+        InventoryType,
+        allInventoryTypes,
+        IInventoryEntryBase,
+        IMoldInventoryEntry,
+        IIngredientInventoryEntry,
+        AnyInventoryEntry,
+        MoldInventoryCollectionEntry,
+        MoldInventoryCollectionEntryInit,
+        MoldInventoryCollectionValidator,
+        MoldInventoryCollection,
+        IngredientInventoryCollectionEntry,
+        IngredientInventoryCollectionEntryInit,
+        IngredientInventoryCollectionValidator,
+        IngredientInventoryCollection,
+        IMoldInventoryFileTreeSource,
+        MoldInventoryMergeSource,
+        IMoldInventoryLibraryParams,
+        IMoldInventoryLibraryAsyncParams,
+        MoldInventoryLibrary,
+        IIngredientInventoryFileTreeSource,
+        IngredientInventoryMergeSource,
+        IIngredientInventoryLibraryParams,
+        IIngredientInventoryLibraryAsyncParams,
+        IngredientInventoryLibrary,
         ICavityDimensions,
         ICavityInfo,
         ICavities,
@@ -1921,6 +1982,9 @@ function getFillingVersionSpec(id: FillingVersionId): FillingVersionSpec;
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
 
 // @public
+function getIngredientInventoryDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
 function getIngredientsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -1934,6 +1998,9 @@ function getJournalCollectionId(id: JournalId): SourceId;
 
 // @public
 function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function getMoldInventoryDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -2873,6 +2940,24 @@ interface IIngredientFillingOption {
 }
 
 // @public
+interface IIngredientInventoryEntry extends IInventoryEntryBase {
+    readonly ingredientId: IngredientId;
+    // (undocumented)
+    readonly inventoryType: 'ingredient';
+    readonly quantity: Measurement;
+    readonly unit?: MeasurementUnit;
+}
+
+// @public
+type IIngredientInventoryFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+type IIngredientInventoryLibraryAsyncParams = ISubLibraryAsyncParams<IngredientInventoryLibrary, IngredientInventoryCollectionEntryInit>;
+
+// @public
+type IIngredientInventoryLibraryParams = ISubLibraryParams<IngredientInventoryLibrary, IngredientInventoryCollectionEntryInit>;
+
+// @public
 interface IIngredientModifiers {
     readonly spoonLevel?: SpoonLevel;
     readonly toTaste?: boolean;
@@ -2943,8 +3028,17 @@ interface IInstantiatedLibrarySource {
 //
 // @public
 interface IInstantiatedUserLibrarySource {
+    readonly ingredientInventory?: IngredientInventoryLibrary;
     readonly journals?: JournalLibrary;
+    readonly moldInventory?: MoldInventoryLibrary;
     readonly sessions?: SessionLibrary;
+}
+
+// @public
+interface IInventoryEntryBase {
+    readonly inventoryType: InventoryType;
+    readonly location?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 // @public
@@ -3146,6 +3240,23 @@ interface IMoldedBonBonYield {
 type IMoldFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
+interface IMoldInventoryEntry extends IInventoryEntryBase {
+    readonly count: number;
+    // (undocumented)
+    readonly inventoryType: 'mold';
+    readonly moldId: MoldId;
+}
+
+// @public
+type IMoldInventoryFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+type IMoldInventoryLibraryAsyncParams = ISubLibraryAsyncParams<MoldInventoryLibrary, MoldInventoryCollectionEntryInit>;
+
+// @public
+type IMoldInventoryLibraryParams = ISubLibraryParams<MoldInventoryLibrary, MoldInventoryCollectionEntryInit>;
+
+// @public
 type IMoldsLibraryAsyncParams = ISubLibraryAsyncParams<MoldsLibrary, MoldCollectionEntryInit>;
 
 // @public
@@ -3267,6 +3378,61 @@ class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngr
     invalidate(): void;
     warmUp(): void;
 }
+
+// @public
+type IngredientInventoryCollection = SubLibraryCollection<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+
+// @public
+type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+
+// @public
+type IngredientInventoryCollectionEntryInit = SubLibraryEntryInit<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+
+// @public
+type IngredientInventoryCollectionValidator = SubLibraryCollectionValidator<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientInventoryEntry: Converter<IIngredientInventoryEntry>;
+
+// @public
+type IngredientInventoryEntryBaseId = Brand<string, 'IngredientInventoryEntryBaseId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientInventoryEntryBaseId: Converter<IngredientInventoryEntryBaseId>;
+
+// @public
+type IngredientInventoryEntryId = Brand<string, 'IngredientInventoryEntryId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientInventoryEntryId: Converter<IngredientInventoryEntryId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntryId, IngredientInventoryEntryBaseId, IIngredientInventoryEntry> {
+    addEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntry): Result<IngredientInventoryEntryId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IIngredientInventoryLibraryParams): Result<IngredientInventoryLibrary>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createAsync(params?: IIngredientInventoryLibraryAsyncParams): Promise<Result<IngredientInventoryLibrary>>;
+    createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
+    getAllEntries(): ReadonlyArray<IIngredientInventoryEntry>;
+    getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry>;
+    hasForIngredient(ingredientId: IngredientId): boolean;
+    removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntry>;
+    removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry>;
+    upsertEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntry): Result<IngredientInventoryEntryId>;
+}
+
+// @public
+type IngredientInventoryMergeSource = SubLibraryMergeSource<IngredientInventoryLibrary>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3474,6 +3640,58 @@ interface INumericRange {
     readonly max?: number;
     readonly min?: number;
 }
+
+declare namespace Inventory {
+    export {
+        Converters_3 as Converters,
+        MoldInventoryLibrary,
+        IMoldInventoryFileTreeSource,
+        MoldInventoryMergeSource,
+        IMoldInventoryLibraryParams,
+        IMoldInventoryLibraryAsyncParams,
+        IngredientInventoryLibrary,
+        IIngredientInventoryFileTreeSource,
+        IngredientInventoryMergeSource,
+        IIngredientInventoryLibraryParams,
+        IIngredientInventoryLibraryAsyncParams,
+        isMoldInventoryEntry,
+        isIngredientInventoryEntry,
+        MoldInventoryEntryBaseId,
+        MoldInventoryEntryId,
+        IngredientInventoryEntryBaseId,
+        IngredientInventoryEntryId,
+        INVENTORY_SCHEMA_VERSION,
+        InventorySchemaVersion,
+        InventoryType,
+        allInventoryTypes,
+        IInventoryEntryBase,
+        IMoldInventoryEntry,
+        IIngredientInventoryEntry,
+        AnyInventoryEntry,
+        MoldInventoryCollectionEntry,
+        MoldInventoryCollectionEntryInit,
+        MoldInventoryCollectionValidator,
+        MoldInventoryCollection,
+        IngredientInventoryCollectionEntry,
+        IngredientInventoryCollectionEntryInit,
+        IngredientInventoryCollectionValidator,
+        IngredientInventoryCollection
+    }
+}
+
+// @public
+const INVENTORY_SCHEMA_VERSION: 1;
+
+// @public
+type InventorySchemaVersion = typeof INVENTORY_SCHEMA_VERSION;
+
+// @public
+type InventoryType = 'mold' | 'ingredient';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const inventoryType: Converter<InventoryType>;
 
 // @public
 export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
@@ -4409,6 +4627,9 @@ function isFillingProductionJournalEntry(entry: AnyJournalEntry): entry is IFill
 function isFillingRecipeVersion(version: AnyFillingRecipeVersion): version is IFillingRecipeVersion;
 
 // @public
+function isIngredientInventoryEntry(entry: AnyInventoryEntry): entry is IIngredientInventoryEntry;
+
+// @public
 function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
 
 // @public
@@ -4427,6 +4648,9 @@ function isMoldedBonBonVersion(version: AnyConfectionVersion): version is IMolde
 //
 // @public
 function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMoldedBonBonYield;
+
+// @public
+function isMoldInventoryEntry(entry: AnyInventoryEntry): entry is IMoldInventoryEntry;
 
 // @public
 function isPersistedConfectionSession(session: AnyPersistedSession): session is IPersistedConfectionSession;
@@ -4666,7 +4890,9 @@ interface IUnitScaler {
 
 // @public
 interface IUserLibrary {
+    readonly ingredientInventory: IngredientInventoryLibrary;
     readonly journals: JournalLibrary;
+    readonly moldInventory: MoldInventoryLibrary;
     readonly sessions: SessionLibrary;
 }
 
@@ -4990,7 +5216,7 @@ const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
 
 declare namespace LibraryData {
     export {
-        Converters_5 as Converters,
+        Converters_7 as Converters,
         resolveSubLibraryLoadSpec,
         ICollectionSourceMetadata,
         ICollectionSourceFile,
@@ -5034,6 +5260,8 @@ declare namespace LibraryData {
         getTasksDirectory,
         getConfectionsDirectory,
         getSessionsDirectory,
+        getMoldInventoryDirectory,
+        getIngredientInventoryDirectory,
         LibraryPaths,
         specToLoadParams,
         getSubLibraryPath,
@@ -5080,6 +5308,8 @@ const LibraryPaths: {
     readonly tasks: "data/tasks";
     readonly confections: "data/confections";
     readonly sessions: "data/sessions";
+    readonly moldInventory: "data/mold-inventory";
+    readonly ingredientInventory: "data/ingredient-inventory";
     readonly settings: "data/settings";
     readonly settingsCommon: "common.json";
     readonly settingsDevicePrefix: "device-";
@@ -5418,6 +5648,61 @@ const moldId: Converter<MoldId>;
 // @public
 const moldId_2: Validator<MoldId>;
 
+// @public
+type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+
+// @public
+type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+
+// @public
+type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+
+// @public
+type MoldInventoryCollectionValidator = SubLibraryCollectionValidator<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldInventoryEntry: Converter<IMoldInventoryEntry>;
+
+// @public
+type MoldInventoryEntryBaseId = Brand<string, 'MoldInventoryEntryBaseId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldInventoryEntryBaseId: Converter<MoldInventoryEntryBaseId>;
+
+// @public
+type MoldInventoryEntryId = Brand<string, 'MoldInventoryEntryId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldInventoryEntryId: Converter<MoldInventoryEntryId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInventoryEntryBaseId, IMoldInventoryEntry> {
+    addEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntry): Result<MoldInventoryEntryId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IMoldInventoryLibraryParams): Result<MoldInventoryLibrary>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createAsync(params?: IMoldInventoryLibraryAsyncParams): Promise<Result<MoldInventoryLibrary>>;
+    createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
+    getAllEntries(): ReadonlyArray<IMoldInventoryEntry>;
+    getForMold(moldId: MoldId): Result<IMoldInventoryEntry>;
+    hasForMold(moldId: MoldId): boolean;
+    removeEntry(entryId: MoldInventoryEntryId): Result<IMoldInventoryEntry>;
+    removeForMold(moldId: MoldId): Result<IMoldInventoryEntry>;
+    upsertEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntry): Result<MoldInventoryEntryId>;
+}
+
+// @public
+type MoldInventoryMergeSource = SubLibraryMergeSource<MoldInventoryLibrary>;
+
 declare namespace Molds {
     export {
         cavityDimensions,
@@ -5531,61 +5816,81 @@ function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'):
 function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
 
 // @public
-type ParsedConfectionId = Converters_6.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_4.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_6.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionVersionId = Converters_4.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 // @public
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_6.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_4.ICompositeId<SourceId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_6.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingVersionId = Converters_4.ICompositeId<FillingId, FillingVersionSpec>;
 
 // @public
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_6.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_4.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-type ParsedJournalId = Converters_6.ICompositeId<SourceId, JournalBaseId>;
+type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, IngredientInventoryEntryBaseId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const parsedIngredientInventoryEntryId: Converter<ParsedIngredientInventoryEntryId>;
+
+// @public
+type ParsedJournalId = Converters_4.ICompositeId<SourceId, JournalBaseId>;
 
 // @public
 const parsedJournalId: Converter<ParsedJournalId>;
 
 // @public
-type ParsedMoldId = Converters_6.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_4.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-type ParsedPersistedSessionId = Converters_6.ICompositeId<SourceId, SessionBaseId>;
+type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId>;
+
+// @public
+type ParsedPersistedSessionId = Converters_4.ICompositeId<SourceId, SessionBaseId>;
 
 // @public
 const parsedPersistedSessionId: Converter<ParsedPersistedSessionId>;
 
 // @public
-type ParsedProcedureId = Converters_6.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_4.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedTaskId = Converters_6.ICompositeId<SourceId, BaseTaskId>;
+type ParsedTaskId = Converters_4.ICompositeId<SourceId, BaseTaskId>;
 
 // @public
 const parsedTaskId: Converter<ParsedTaskId>;
@@ -6624,7 +6929,7 @@ declare namespace Session {
 
 declare namespace Session_2 {
     export {
-        Converters_3 as Converters,
+        Converters_5 as Converters,
         isPersistedFillingSession,
         isPersistedConfectionSession,
         PERSISTED_SESSION_SCHEMA_VERSION,
@@ -6797,7 +7102,7 @@ type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Aggregated
 type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
-type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections' | 'sessions';
+type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections' | 'sessions' | 'moldInventory' | 'ingredientInventory';
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
@@ -7026,8 +7331,16 @@ class UserLibrary_2 implements IUserLibrary {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
+    get ingredientInventory(): IngredientInventoryLibrary;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
     get journals(): JournalLibrary;
     readonly logger: Logging.LogReporter<unknown>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    get moldInventory(): MoldInventoryLibrary;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

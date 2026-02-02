@@ -132,6 +132,17 @@ Gets the fillings directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getIngredientInventoryDirectory(tree)](./ts-chocolate.librarydata.getingredientinventorydirectory.md)
+
+
+</td><td>
+
+Gets the ingredient inventory directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory(tree)](./ts-chocolate.librarydata.getingredientsdirectory.md)
 
 
@@ -149,6 +160,17 @@ Gets the ingredients directory from a library tree.
 </td><td>
 
 Gets the journals directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
+[getMoldInventoryDirectory(tree)](./ts-chocolate.librarydata.getmoldinventorydirectory.md)
+
+
+</td><td>
+
+Gets the mold inventory directory from a library tree.
 
 
 </td></tr>
