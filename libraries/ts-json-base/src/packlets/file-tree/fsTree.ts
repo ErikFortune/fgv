@@ -20,19 +20,33 @@
  * SOFTWARE.
  */
 
-import { FileTreeItem, IFileTreeAccessors, IFileTreeInitParams } from './fileTreeAccessors';
+import {
+  FileTreeItem,
+  IFileTreeInitParams,
+  IFilterSpec,
+  IMutableFileTreeAccessors,
+  SaveDetail
+} from './fileTreeAccessors';
 import path from 'path';
 import fs from 'fs';
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import {
+  captureResult,
+  DetailedResult,
+  failWithDetail,
+  Result,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
+import { isPathMutable } from './filterSpec';
 
 /**
- * Implementation of {@link FileTree.IFileTreeAccessors} that uses the
- * file system to access files and directories.
+ * Implementation of {@link FileTree.IMutableFileTreeAccessors} that uses the
+ * file system to access and modify files and directories.
  * @public
  */
-export class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> {
+export class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> {
   /**
    * Optional path prefix to prepend to all paths.
    */
@@ -45,6 +59,11 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
   protected readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
 
   /**
+   * The mutability configuration.
+   */
+  private readonly _mutable: boolean | IFilterSpec;
+
+  /**
    * Construct a new instance of the {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} class.
    * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters}.
    * @public
@@ -52,6 +71,8 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
   public constructor(params?: IFileTreeInitParams<TCT>) {
     this.prefix = params?.prefix;
     this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
+    /* c8 ignore next 1 - defensive default when params is undefined */
+    this._mutable = params?.mutable ?? false;
   }
 
   /**
@@ -135,6 +156,53 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
         }
       });
       return children;
+    });
+  }
+
+  /**
+   * {@inheritdoc IMutableFileTreeAccessors.fileIsMutable}
+   */
+  public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
+    const absolutePath = this.resolveAbsolutePath(path);
+
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return failWithDetail(`${absolutePath}: mutability is disabled`, 'not-mutable');
+    }
+
+    // Check if path is excluded by filter
+    if (!isPathMutable(absolutePath, this._mutable)) {
+      return failWithDetail(`${absolutePath}: path is excluded by filter`, 'path-excluded');
+    }
+
+    // Check file system permissions
+    try {
+      // Check if file exists
+      if (fs.existsSync(absolutePath)) {
+        fs.accessSync(absolutePath, fs.constants.W_OK);
+      } else {
+        // Check if parent directory is writable
+        const parentDir = absolutePath.substring(0, absolutePath.lastIndexOf('/'));
+        if (parentDir && fs.existsSync(parentDir)) {
+          fs.accessSync(parentDir, fs.constants.W_OK);
+        }
+      }
+      return succeedWithDetail(true, 'persistent');
+    } catch {
+      return failWithDetail(`${absolutePath}: permission denied`, 'permission-denied');
+    }
+  }
+
+  /**
+   * {@inheritdoc IMutableFileTreeAccessors.saveFileContents}
+   */
+  public saveFileContents(path: string, contents: string): Result<string> {
+    return this.fileIsMutable(path).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(path);
+      return captureResult(() => {
+        fs.writeFileSync(absolutePath, contents, 'utf8');
+        return contents;
+      });
     });
   }
 }

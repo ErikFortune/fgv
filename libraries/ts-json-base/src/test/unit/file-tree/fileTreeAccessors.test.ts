@@ -20,20 +20,26 @@
  * SOFTWARE.
  */
 
-// Export core interfaces and classes
-export * from './fileTreeAccessors';
-export * from './fileTree';
-export * from './directoryItem';
-export * from './fileItem';
-export * from './filterSpec';
+import { FsFileTreeAccessors, InMemoryTreeAccessors, isMutableAccessors } from '../../../packlets/file-tree';
 
-// Export tree-shakeable helpers (filesystem ones will be shaken out if not used)
-export * from './fileTreeHelpers';
-export { inMemory } from './fileTreeHelpers.inMemory';
+describe('isMutableAccessors', () => {
+  it('returns true for FsFileTreeAccessors (always implements IMutableFileTreeAccessors)', () => {
+    const accessors = new FsFileTreeAccessors();
+    expect(isMutableAccessors(accessors)).toBe(true);
+  });
 
-// Export in-memory implementations for web compatibility
-export * from './in-memory';
+  it('returns true for InMemoryTreeAccessors (always implements IMutableFileTreeAccessors)', () => {
+    const accessors = InMemoryTreeAccessors.create([]).orThrow();
+    expect(isMutableAccessors(accessors)).toBe(true);
+  });
 
-// Note: FsFileTreeAccessors is now only imported by fileTreeHelpers.ts
-// Web apps that don't use forFilesystem() won't bundle fs/path dependencies
-export * from './fsTree';
+  it('returns true for FsFileTreeAccessors with mutable: true', () => {
+    const accessors = new FsFileTreeAccessors({ mutable: true });
+    expect(isMutableAccessors(accessors)).toBe(true);
+  });
+
+  it('returns true for InMemoryTreeAccessors with mutable: true', () => {
+    const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
+    expect(isMutableAccessors(accessors)).toBe(true);
+  });
+});

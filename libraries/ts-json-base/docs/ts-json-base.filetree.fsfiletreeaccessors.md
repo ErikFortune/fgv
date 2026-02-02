@@ -4,14 +4,14 @@
 
 ## FileTree.FsFileTreeAccessors class
 
-Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses the file system to access files and directories.
+Implementation of [FileTree.IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md) that uses the file system to access and modify files and directories.
 
 **Signature:**
 
 ```typescript
-export declare class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> 
+export declare class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> 
 ```
-**Implements:** [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
+**Implements:** [IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 ## Constructors
 
@@ -136,6 +136,19 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[fileIsMutable(path)](./ts-json-base.filetree.fsfiletreeaccessors.fileismutable.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [getBaseName(itemPath, suffix)](./ts-json-base.filetree.fsfiletreeaccessors.getbasename.md)
 
 
@@ -243,6 +256,19 @@ Joins paths together.
 </td><td>
 
 Resolves paths to an absolute path.
+
+
+</td></tr>
+<tr><td>
+
+[saveFileContents(path, contents)](./ts-json-base.filetree.fsfiletreeaccessors.savefilecontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
 
 
 </td></tr>

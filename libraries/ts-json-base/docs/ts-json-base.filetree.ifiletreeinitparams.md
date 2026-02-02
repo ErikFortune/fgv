@@ -56,6 +56,25 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
+[mutable?](./ts-json-base.filetree.ifiletreeinitparams.mutable.md)
+
+
+</td><td>
+
+
+</td><td>
+
+boolean \| [IFilterSpec](./ts-json-base.filetree.ifilterspec.md)
+
+
+</td><td>
+
+_(Optional)_ Controls mutability of the file tree. - `undefined` or `false`<!-- -->: No files are mutable. - `true`<!-- -->: All files are mutable. - `IFilterSpec`<!-- -->: Only files matching the filter are mutable.
+
+
+</td></tr>
+<tr><td>
+
 [prefix?](./ts-json-base.filetree.ifiletreeinitparams.prefix.md)
 
 

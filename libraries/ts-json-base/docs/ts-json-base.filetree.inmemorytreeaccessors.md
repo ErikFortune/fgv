@@ -4,14 +4,14 @@
 
 ## FileTree.InMemoryTreeAccessors class
 
-Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses an in-memory tree to access files and directories.
+Implementation of [FileTree.IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md) that uses an in-memory tree to access and modify files and directories.
 
 **Signature:**
 
 ```typescript
-export declare class InMemoryTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> 
+export declare class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> 
 ```
-**Implements:** [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
+**Implements:** [IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 ## Constructors
 
@@ -96,6 +96,19 @@ Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccess
 </td><td>
 
 Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccessors.md) instance with the supplied in-memory files.
+
+
+</td></tr>
+<tr><td>
+
+[fileIsMutable(path)](./ts-json-base.filetree.inmemorytreeaccessors.fileismutable.md)
+
+
+</td><td>
+
+
+</td><td>
+
 
 
 </td></tr>
@@ -208,6 +221,19 @@ Joins paths together.
 </td><td>
 
 Resolves paths to an absolute path.
+
+
+</td></tr>
+<tr><td>
+
+[saveFileContents(path, contents)](./ts-json-base.filetree.inmemorytreeaccessors.savefilecontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
 
 
 </td></tr>

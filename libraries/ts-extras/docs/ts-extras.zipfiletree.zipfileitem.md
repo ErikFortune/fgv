@@ -244,6 +244,20 @@ Gets the contents of the file as parsed JSON.
 </td></tr>
 <tr><td>
 
+[getIsMutable()](./ts-extras.zipfiletree.zipfileitem.getismutable.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a boolean indicating whether this file can be saved.
+
+
+</td></tr>
+<tr><td>
+
 [getRawContents()](./ts-extras.zipfiletree.zipfileitem.getrawcontents.md)
 
 
@@ -258,6 +272,20 @@ Gets the raw contents of the file as a string.
 </td></tr>
 <tr><td>
 
+[setContents(json)](./ts-extras.zipfiletree.zipfileitem.setcontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the contents of the file as parsed JSON.
+
+
+</td></tr>
+<tr><td>
+
 [setContentType(contentType)](./ts-extras.zipfiletree.zipfileitem.setcontenttype.md)
 
 
@@ -267,6 +295,20 @@ Gets the raw contents of the file as a string.
 </td><td>
 
 Sets the content type of the file.
+
+
+</td></tr>
+<tr><td>
+
+[setRawContents(contents)](./ts-extras.zipfiletree.zipfileitem.setrawcontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the contents of the file as a string.
 
 
 </td></tr>

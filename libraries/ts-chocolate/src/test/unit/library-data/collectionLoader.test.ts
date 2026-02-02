@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters, fail, Failure, Logging, succeed, Success } from '@fgv/ts-utils';
+import { Converters, fail, Failure, Logging, succeed, succeedWithDetail, Success } from '@fgv/ts-utils';
 import { FileTree, JsonObject, JsonValue } from '@fgv/ts-json-base';
 
 import { CollectionLoader } from '../../../packlets/library-data';
@@ -1595,6 +1595,9 @@ describe('CollectionLoader', () => {
           baseName: 'failing',
           extension: '.json',
           contentType: undefined,
+          getIsMutable: () => succeedWithDetail(false, 'not-supported'),
+          setContents: () => fail('File write error'),
+          setRawContents: () => fail('File write error'),
           getContents: () => fail<JsonValue>('File read error'),
           getRawContents: () => fail<string>('File read error')
         };

@@ -9,9 +9,9 @@ File tree accessors for ZIP archives.
 **Signature:**
 
 ```typescript
-export declare class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> 
+export declare class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IMutableFileTreeAccessors<TCT> 
 ```
-**Implements:** FileTree.IFileTreeAccessors&lt;TCT&gt;
+**Implements:** FileTree.IMutableFileTreeAccessors&lt;TCT&gt;
 
 ## Methods
 
@@ -44,6 +44,20 @@ Description
 </td><td>
 
 Default function to infer the content type of a file.
+
+
+</td></tr>
+<tr><td>
+
+[fileIsMutable(\_\_path)](./ts-extras.zipfiletree.zipfiletreeaccessors.fileismutable.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a boolean indicating whether this file can be saved.
 
 
 </td></tr>
@@ -236,6 +250,20 @@ Joins paths together.
 </td><td>
 
 Resolves paths to an absolute path.
+
+
+</td></tr>
+<tr><td>
+
+[saveFileContents(\_\_path, \_\_contents)](./ts-extras.zipfiletree.zipfiletreeaccessors.savefilecontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Saves the contents of a file.
 
 
 </td></tr>

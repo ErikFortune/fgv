@@ -57,7 +57,7 @@ Represents a file tree.
 
 </td><td>
 
-Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses the file system to access files and directories.
+Implementation of [FileTree.IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md) that uses the file system to access and modify files and directories.
 
 
 </td></tr>
@@ -68,7 +68,7 @@ Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletre
 
 </td><td>
 
-Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses an in-memory tree to access files and directories.
+Implementation of [FileTree.IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md) that uses an in-memory tree to access and modify files and directories.
 
 
 </td></tr>
@@ -128,6 +128,28 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) 
 </td><td>
 
 Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for an in-memory file tree.
+
+
+</td></tr>
+<tr><td>
+
+[isMutableAccessors(accessors)](./ts-json-base.filetree.ismutableaccessors.md)
+
+
+</td><td>
+
+Type guard to check if accessors support mutation.
+
+
+</td></tr>
+<tr><td>
+
+[isPathMutable(path, mutable)](./ts-json-base.filetree.ispathmutable.md)
+
+
+</td><td>
+
+Checks if a path is allowed by a mutability configuration.
 
 
 </td></tr>
@@ -192,12 +214,34 @@ Initialization parameters for a file tree.
 </td></tr>
 <tr><td>
 
+[IFilterSpec](./ts-json-base.filetree.ifilterspec.md)
+
+
+</td><td>
+
+Filter specification for controlling which paths are mutable.
+
+
+</td></tr>
+<tr><td>
+
 [IInMemoryFile](./ts-json-base.filetree.iinmemoryfile.md)
 
 
 </td><td>
 
 Represents a single file in an in-memory [file tree](./ts-json-base.filetree.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IMutableFileTreeAccessors](./ts-json-base.filetree.imutablefiletreeaccessors.md)
+
+
+</td><td>
+
+Extended accessors interface that supports mutation operations.
 
 
 </td></tr>
@@ -246,6 +290,39 @@ Type for an item in a file tree.
 </td><td>
 
 Type of item in a file tree.
+
+
+</td></tr>
+<tr><td>
+
+[SaveCapability](./ts-json-base.filetree.savecapability.md)
+
+
+</td><td>
+
+Indicates the persistence capability of a save operation. - `persistent`<!-- -->: Changes are saved to durable storage (e.g., file system). - `transient`<!-- -->: Changes are saved in memory only and will be lost on reload.
+
+
+</td></tr>
+<tr><td>
+
+[SaveDetail](./ts-json-base.filetree.savedetail.md)
+
+
+</td><td>
+
+Detail type for canSave results.
+
+
+</td></tr>
+<tr><td>
+
+[SaveFailureReason](./ts-json-base.filetree.savefailurereason.md)
+
+
+</td><td>
+
+Indicates the reason a save operation cannot be performed. - `not-supported`<!-- -->: The accessors do not support mutation. - `read-only`<!-- -->: The file or file system is read-only. - `not-mutable`<!-- -->: Mutability is disabled in configuration. - `path-excluded`<!-- -->: The path is excluded by the mutability filter. - `permission-denied`<!-- -->: Insufficient permissions to write.
 
 
 </td></tr>

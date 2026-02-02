@@ -6,6 +6,7 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -347,9 +348,12 @@ class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFile
     getContents(): Result<JsonValue>;
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    getIsMutable(): DetailedResult<boolean, FileTree.SaveDetail>;
     getRawContents(): Result<string>;
     readonly name: string;
+    setContents(json: JsonValue): Result<JsonValue>;
     setContentType(contentType: TCT | undefined): void;
+    setRawContents(contents: string): Result<string>;
     readonly type: 'file';
 }
 
@@ -367,8 +371,9 @@ declare namespace ZipFileTree {
 export { ZipFileTree }
 
 // @public
-class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
+class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IMutableFileTreeAccessors<TCT> {
     static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
+    fileIsMutable(__path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors<TCT>>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Result<ZipFileTreeAccessors<TCT>>;
     static fromBufferAsync<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Promise<Result<ZipFileTreeAccessors<TCT>>>;
@@ -382,6 +387,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     getItem(path: string): Result<FileTree.FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
+    saveFileContents(__path: string, __contents: string): Result<string>;
 }
 
 // (No @packageDocumentation comment for this package)

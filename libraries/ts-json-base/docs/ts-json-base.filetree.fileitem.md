@@ -319,6 +319,19 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 </td></tr>
 <tr><td>
 
+[getIsMutable()](./ts-json-base.filetree.fileitem.getismutable.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [getRawContents()](./ts-json-base.filetree.fileitem.getrawcontents.md)
 
 
@@ -333,6 +346,20 @@ Gets the raw contents of the file as a string.
 </td></tr>
 <tr><td>
 
+[setContents(json)](./ts-json-base.filetree.fileitem.setcontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the contents of the file from a JSON value.
+
+
+</td></tr>
+<tr><td>
+
 [setContentType(contentType)](./ts-json-base.filetree.fileitem.setcontenttype.md)
 
 
@@ -342,6 +369,20 @@ Gets the raw contents of the file as a string.
 </td><td>
 
 Sets the content type of the file.
+
+
+</td></tr>
+<tr><td>
+
+[setRawContents(contents)](./ts-json-base.filetree.fileitem.setrawcontents.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the raw contents of the file.
 
 
 </td></tr>

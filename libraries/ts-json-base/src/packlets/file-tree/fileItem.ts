@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, DetailedResult, fail, failWithDetail, Result, succeed, Success } from '@fgv/ts-utils';
 import { Converter, Validator } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
-import { IFileTreeAccessors, IFileTreeFileItem } from './fileTreeAccessors';
+import { IFileTreeAccessors, IFileTreeFileItem, isMutableAccessors, SaveDetail } from './fileTreeAccessors';
 
 /**
  * Class representing a file in a file tree.
@@ -108,6 +108,16 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
+   * {@inheritdoc FileTree.IFileTreeFileItem.canSave}
+   */
+  public getIsMutable(): DetailedResult<boolean, SaveDetail> {
+    if (isMutableAccessors(this._hal)) {
+      return this._hal.fileIsMutable(this.absolutePath);
+    }
+    return failWithDetail(`${this.absolutePath}: mutation not supported`, 'not-supported');
+  }
+
+  /**
    * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:1)}
    */
   public getContents(): Result<JsonValue>;
@@ -140,6 +150,25 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
    */
   public setContentType(contentType: TCT | undefined): void {
     this._contentType = contentType;
+  }
+
+  /**
+   * {@inheritdoc FileTree.IFileTreeFileItem.setContents}
+   */
+  public setContents(json: JsonValue): Result<JsonValue> {
+    return captureResult(() => JSON.stringify(json, null, 2)).onSuccess((contents) =>
+      this.setRawContents(contents).onSuccess(() => Success.with(json))
+    );
+  }
+
+  /**
+   * {@inheritdoc FileTree.IFileTreeFileItem.setRawContents}
+   */
+  public setRawContents(contents: string): Result<string> {
+    if (isMutableAccessors(this._hal)) {
+      return this._hal.saveFileContents(this.absolutePath, contents);
+    }
+    return fail(`${this.absolutePath}: mutation not supported`);
   }
 
   /**
