@@ -307,6 +307,31 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
 }
 
 /**
+ * Extended accessors interface that supports persistence operations.
+ * @public
+ */
+export interface IPersistentFileTreeAccessors<TCT extends string = string>
+  extends IMutableFileTreeAccessors<TCT> {
+  /**
+   * Synchronize all dirty files to persistent storage.
+   * @returns Promise resolving to success or failure
+   */
+  syncToDisk(): Promise<Result<void>>;
+
+  /**
+   * Check if there are unsaved changes.
+   * @returns True if there are dirty files
+   */
+  isDirty(): boolean;
+
+  /**
+   * Get paths of all files with unsaved changes.
+   * @returns Array of dirty file paths
+   */
+  getDirtyPaths(): string[];
+}
+
+/**
  * Type guard to check if accessors support mutation.
  * @param accessors - The accessors to check.
  * @returns `true` if the accessors implement {@link IMutableFileTreeAccessors}.
@@ -317,4 +342,22 @@ export function isMutableAccessors<TCT extends string = string>(
 ): accessors is IMutableFileTreeAccessors<TCT> {
   const mutable = accessors as IMutableFileTreeAccessors<TCT>;
   return typeof mutable.fileIsMutable === 'function' && typeof mutable.saveFileContents === 'function';
+}
+
+/**
+ * Type guard to check if accessors support persistence.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link IPersistentFileTreeAccessors}.
+ * @public
+ */
+export function isPersistentAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IPersistentFileTreeAccessors<TCT> {
+  const persistent = accessors as IPersistentFileTreeAccessors<TCT>;
+  return (
+    isMutableAccessors(accessors) &&
+    typeof persistent.syncToDisk === 'function' &&
+    typeof persistent.isDirty === 'function' &&
+    typeof persistent.getDirtyPaths === 'function'
+  );
 }

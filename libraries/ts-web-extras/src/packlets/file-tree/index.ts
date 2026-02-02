@@ -26,3 +26,4 @@
  */
 
 export * from './fileApiTreeAccessors';
+export * from './fileSystemAccessTreeAccessors';

@@ -153,6 +153,17 @@ Checks if a path is allowed by a mutability configuration.
 
 
 </td></tr>
+<tr><td>
+
+[isPersistentAccessors(accessors)](./ts-json-base.filetree.ispersistentaccessors.md)
+
+
+</td><td>
+
+Type guard to check if accessors support persistence.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -242,6 +253,17 @@ Represents a single file in an in-memory [file tree](./ts-json-base.filetree.md)
 </td><td>
 
 Extended accessors interface that supports mutation operations.
+
+
+</td></tr>
+<tr><td>
+
+[IPersistentFileTreeAccessors](./ts-json-base.filetree.ipersistentfiletreeaccessors.md)
+
+
+</td><td>
+
+Extended accessors interface that supports persistence operations.
 
 
 </td></tr>

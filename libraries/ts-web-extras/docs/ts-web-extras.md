@@ -43,6 +43,17 @@ Helper class to create FileTree instances from various file sources. Supports Fi
 
 
 </td></tr>
+<tr><td>
+
+[FileSystemAccessTreeAccessors](./ts-web-extras.filesystemaccesstreeaccessors.md)
+
+
+</td><td>
+
+Implementation of  that uses the File System Access API to provide persistent file editing in browsers.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -378,6 +389,17 @@ Tree initializer for FileList objects (from File API).
 </td><td>
 
 Interface for file metadata.
+
+
+</td></tr>
+<tr><td>
+
+[IFileSystemAccessTreeParams](./ts-web-extras.ifilesystemaccesstreeparams.md)
+
+
+</td><td>
+
+Options for creating persistent file trees.
 
 
 </td></tr>

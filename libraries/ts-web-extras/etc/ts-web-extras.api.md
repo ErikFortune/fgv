@@ -4,6 +4,7 @@
 
 ```ts
 
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
@@ -34,6 +35,7 @@ function extractFileMetadata(file: File): IFileMetadata;
 // @public
 export class FileApiTreeAccessors<TCT extends string = string> {
     static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createPersistent<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static extractFileMetadata(file: File): IFileMetadata;
     static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
@@ -46,6 +48,34 @@ export interface FilePickerAcceptType {
     accept: Record<string, string | string[]>;
     // (undocumented)
     description?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+//
+// @public
+export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+    //
+    // (undocumented)
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromDirectoryHandle<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+    //
+    // (undocumented)
+    getDirtyPaths(): string[];
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+    //
+    // (undocumented)
+    isDirty(): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+    //
+    // (undocumented)
+    saveFileContents(path: string, contents: string): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+    //
+    // (undocumented)
+    syncToDisk(): Promise<Result<void>>;
 }
 
 // @public
@@ -198,6 +228,12 @@ export interface IFileMetadata {
     size: number;
     // (undocumented)
     type: string;
+}
+
+// @public
+export interface IFileSystemAccessTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    autoSync?: boolean;
+    requireWritePermission?: boolean;
 }
 
 // @public

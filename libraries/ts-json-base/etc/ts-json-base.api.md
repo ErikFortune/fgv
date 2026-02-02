@@ -223,6 +223,7 @@ declare namespace FileTree {
     export {
         inMemory,
         isMutableAccessors,
+        isPersistentAccessors,
         SaveCapability,
         SaveFailureReason,
         SaveDetail,
@@ -235,6 +236,7 @@ declare namespace FileTree {
         FileTreeItem,
         IFileTreeAccessors,
         IMutableFileTreeAccessors,
+        IPersistentFileTreeAccessors,
         FileTree_2 as FileTree,
         DirectoryItem,
         FileItem,
@@ -519,6 +521,13 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
 }
 
 // @public
+interface IPersistentFileTreeAccessors<TCT extends string = string> extends IMutableFileTreeAccessors<TCT> {
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    syncToDisk(): Promise<Result<void>>;
+}
+
+// @public
 interface IReadDirectoryItem<T> {
     filename: string;
     item: T;
@@ -540,6 +549,11 @@ function isMutableAccessors<TCT extends string = string>(accessors: IFileTreeAcc
 
 // @public
 function isPathMutable(path: string, mutable: boolean | IFilterSpec | undefined): boolean;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IPersistentFileTreeAccessors"
+//
+// @public
+function isPersistentAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IPersistentFileTreeAccessors<TCT>;
 
 // @public
 type ItemNameTransformFunction<T> = (name: string, item: T) => Result<string>;

@@ -29,6 +29,7 @@ import {
   FileSystemFileHandle,
   FileSystemDirectoryHandle
 } from '../file-api-types';
+import { FileSystemAccessTreeAccessors, IFileSystemAccessTreeParams } from './fileSystemAccessTreeAccessors';
 
 /**
  * Interface for File objects that may have the webkitRelativePath property.
@@ -101,6 +102,33 @@ export interface IFileMetadata {
  * @public
  */
 export class FileApiTreeAccessors<TCT extends string = string> {
+  /**
+   * Create a persistent FileTree from a File System Access API directory handle.
+   * Changes to files can be synced back to disk.
+   *
+   * @param dirHandle - FileSystemDirectoryHandle to load files from
+   * @param params - Optional parameters including autoSync and permission settings
+   * @returns Promise resolving to a FileTree with persistence capability
+   *
+   * @remarks
+   * - Only works in browsers supporting File System Access API (Chrome, Edge, Opera)
+   * - Requires 'readwrite' permission on the directory handle
+   * - Falls back to read-only mode if permissions unavailable (unless requireWritePermission is true)
+   *
+   * @public
+   */
+  public static async createPersistent<TCT extends string = string>(
+    dirHandle: FileSystemDirectoryHandle,
+    params?: IFileSystemAccessTreeParams<TCT>
+  ): Promise<Result<FileTree.FileTree<TCT>>> {
+    const accessorsResult = await FileSystemAccessTreeAccessors.fromDirectoryHandle<TCT>(dirHandle, params);
+    if (accessorsResult.isFailure()) {
+      return fail(accessorsResult.message);
+    }
+
+    return FileTree.FileTree.create<TCT>(accessorsResult.value);
+  }
+
   /**
    * Create FileTree from various file sources using TreeInitializer array.
    * @param initializers - Array of TreeInitializer objects specifying file sources

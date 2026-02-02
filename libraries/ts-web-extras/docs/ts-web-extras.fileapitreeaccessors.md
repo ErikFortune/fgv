@@ -48,6 +48,22 @@ Create FileTree from various file sources using TreeInitializer array.
 </td></tr>
 <tr><td>
 
+[createPersistent(dirHandle, params)](./ts-web-extras.fileapitreeaccessors.createpersistent.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Create a persistent FileTree from a File System Access API directory handle. Changes to files can be synced back to disk.
+
+
+</td></tr>
+<tr><td>
+
 [extractFileMetadata(file)](./ts-web-extras.fileapitreeaccessors.extractfilemetadata.md)
 
 
