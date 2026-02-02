@@ -25,7 +25,7 @@
 
 import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
-import { Measurement, MoldId, SlotId } from '../../common';
+import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
 import {
   AnyConfectionYield,
   IConfectionYield,
@@ -324,7 +324,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
       bufferPercentage = 0.1;
     }
 
-    const cavityWeight = mold.cavityWeight ?? (0 as Measurement);
+    const cavityWeight = mold.cavityWeight ?? ZeroMeasurement;
     const baseWeight = frames * mold.cavityCount * cavityWeight;
     const totalWeight = baseWeight * (1 + bufferPercentage);
 

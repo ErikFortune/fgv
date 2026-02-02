@@ -25,7 +25,7 @@
 
 import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
-import { Measurement, SlotId } from '../../common';
+import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import {
   AnyConfectionYield,
   IConfectionYield,
@@ -163,8 +163,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     // For initial creation, find the filling in the produced confection and use its base weight
     const fillingSlot = this._produced.fillings?.find((f) => f.slotId === slotId);
     if (!fillingSlot || fillingSlot.slotType !== 'recipe') {
-      // TODO: create a constant for Measurement zero in common module
-      return succeed(0 as Measurement);
+      return succeed(ZeroMeasurement);
     }
 
     return this._context.getRuntimeFilling(fillingSlot.fillingId).onSuccess((filling) => {
