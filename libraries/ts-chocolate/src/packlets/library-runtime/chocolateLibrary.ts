@@ -36,7 +36,13 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   SourceId,
-  TaskId
+  TaskId,
+  BaseIngredientId,
+  BaseFillingId,
+  BaseMoldId,
+  BaseProcedureId,
+  BaseTaskId,
+  BaseConfectionId
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
@@ -51,6 +57,7 @@ import { IMold, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from './internal';
+import { EditableCollection } from '../editing';
 import {
   CollectionLoader,
   FullLibraryLoadSpec,
@@ -574,5 +581,107 @@ export class ChocolateLibrary {
    */
   public addJournal(journal: AnyFillingJournalEntry): Result<JournalId> {
     return this._journals.addJournal(journal).report(this.logger);
+  }
+
+  // ============================================================================
+  // Editable Collection Convenience Methods
+  // ============================================================================
+
+  /**
+   * Get an editable ingredients collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableIngredients(
+    collectionId: SourceId
+  ): Result<EditableCollection<Ingredient, BaseIngredientId>> {
+    return EditableCollection.fromLibrary(
+      this.ingredients,
+      collectionId,
+      CommonConverters.baseIngredientId,
+      EntityConverters.Ingredients.ingredient
+    );
+  }
+
+  /**
+   * Get an editable fillings collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableFillings(
+    collectionId: SourceId
+  ): Result<EditableCollection<IFillingRecipe, BaseFillingId>> {
+    return EditableCollection.fromLibrary(
+      this.fillings,
+      collectionId,
+      CommonConverters.baseFillingId,
+      EntityConverters.Fillings.fillingRecipe
+    );
+  }
+
+  /**
+   * Get an editable molds collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>> {
+    return EditableCollection.fromLibrary(
+      this.molds,
+      collectionId,
+      CommonConverters.baseMoldId,
+      EntityConverters.Molds.moldData
+    );
+  }
+
+  /**
+   * Get an editable procedures collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableProcedures(
+    collectionId: SourceId
+  ): Result<EditableCollection<IProcedure, BaseProcedureId>> {
+    return EditableCollection.fromLibrary(
+      this.procedures,
+      collectionId,
+      CommonConverters.baseProcedureId,
+      EntityConverters.Procedures.procedureData
+    );
+  }
+
+  /**
+   * Get an editable tasks collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>> {
+    return EditableCollection.fromLibrary(
+      this.tasks,
+      collectionId,
+      CommonConverters.baseTaskId,
+      EntityConverters.Tasks.taskData
+    );
+  }
+
+  /**
+   * Get an editable confections collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableConfections(
+    collectionId: SourceId
+  ): Result<EditableCollection<ConfectionData, BaseConfectionId>> {
+    return EditableCollection.fromLibrary(
+      this.confections,
+      collectionId,
+      CommonConverters.baseConfectionId,
+      EntityConverters.Confections.confectionData
+    );
   }
 }

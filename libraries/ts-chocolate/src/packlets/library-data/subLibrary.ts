@@ -283,6 +283,7 @@ export interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
 interface IFileTreeSourceLoadResult<TBaseId extends string, TItem> {
   readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
   readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+  readonly sourceItems: ReadonlyMap<SourceId, FileTree.FileTreeItem>;
 }
 
 // ============================================================================
@@ -390,6 +391,12 @@ export abstract class SubLibraryBase<
   private readonly _protectedCollections: Map<SourceId, IProtectedCollectionInternal<SourceId>>;
 
   /**
+   * FileTree source items for collections loaded from FileTree.
+   * Maps collection ID to its source FileTree item for persistence.
+   */
+  private readonly _sourceItems: Map<SourceId, FileTree.FileTreeItem>;
+
+  /**
    * Creates a new SubLibraryBase instance with full loading support.
    *
    * This constructor handles all collection loading:
@@ -434,11 +441,15 @@ export abstract class SubLibraryBase<
       )
         .onSuccess((loadResult) =>
           Success.with<
-            ICollectionSet<SourceId> & { protectedCollections: typeof loadResult.protectedCollections }
+            ICollectionSet<SourceId> & {
+              protectedCollections: typeof loadResult.protectedCollections;
+              sourceItems: typeof loadResult.sourceItems;
+            }
           >({
             source: `fileSource[${i}]`,
             collections: loadResult.collections,
-            protectedCollections: loadResult.protectedCollections
+            protectedCollections: loadResult.protectedCollections,
+            sourceItems: loadResult.sourceItems
           })
         )
         .report(logger)
@@ -482,6 +493,21 @@ export abstract class SubLibraryBase<
     this._loaderItemConverter = params.itemConverter;
     this._directoryNavigator = params.directoryNavigator;
     this._logger = logger;
+
+    // Initialize source items map for persistence
+    this._sourceItems = new Map();
+
+    // Populate source items from built-in collections
+    for (const [id, item] of builtInResult.sourceItems) {
+      this._sourceItems.set(id, item);
+    }
+
+    // Populate source items from file sources
+    for (const fileSource of fileSourceData) {
+      for (const [id, item] of fileSource.sourceItems) {
+        this._sourceItems.set(id, item);
+      }
+    }
 
     // Initialize protected collections from all sources
     this._protectedCollections = new Map();
@@ -531,7 +557,7 @@ export abstract class SubLibraryBase<
     logger?: Logging.LogReporter<unknown>
   ): Result<IFileTreeSourceLoadResult<TBaseId, TItem>> {
     if (spec === false) {
-      return Success.with({ collections: [], protectedCollections: [] });
+      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
     }
 
     return builtInTreeProvider().onSuccess((libraryRoot) => {
@@ -577,7 +603,7 @@ export abstract class SubLibraryBase<
     const mutable = source.mutable ?? false;
     const loadParams = specToLoadParams(source.load ?? true, mutable);
     if (loadParams === undefined) {
-      return Success.with({ collections: [], protectedCollections: [] });
+      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
     }
 
     /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
@@ -597,9 +623,17 @@ export abstract class SubLibraryBase<
           ...pc,
           ref: { ...pc.ref, isBuiltIn: isBuiltIn ?? false }
         }));
+
+        // Extract sourceItems from IRuntimeCollection
+        const sourceItems = new Map<SourceId, FileTree.FileTreeItem>();
+        for (const coll of result.collections) {
+          sourceItems.set(coll.id, coll.sourceItem);
+        }
+
         return succeed({
           collections: result.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>,
-          protectedCollections
+          protectedCollections,
+          sourceItems
         });
       });
     });
@@ -679,7 +713,7 @@ export abstract class SubLibraryBase<
     logger?: Logging.LogReporter<unknown>
   ): Promise<Result<IFileTreeSourceLoadResult<TBaseId, TItem>>> {
     if (spec === false) {
-      return Success.with({ collections: [], protectedCollections: [] });
+      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
     }
 
     const libraryRootResult = builtInTreeProvider();
@@ -731,7 +765,7 @@ export abstract class SubLibraryBase<
     const loadParams = specToLoadParams(source.load ?? true, mutable);
     /* c8 ignore next 3 - defensive: only undefined when spec is explicitly false, handled by caller */
     if (loadParams === undefined) {
-      return Success.with({ collections: [], protectedCollections: [] });
+      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
     }
 
     /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
@@ -757,16 +791,24 @@ export abstract class SubLibraryBase<
       })
       .then((result) =>
         result.onSuccess((loadResult) => {
-          // Convert ICollection to SubLibraryEntryInit
+          // Convert IRuntimeCollection to SubLibraryEntryInit
           const collections: SubLibraryEntryInit<TBaseId, TItem>[] = loadResult.collections.map((coll) => ({
             id: coll.id,
             isMutable: coll.isMutable,
             items: coll.items,
             metadata: coll.metadata
           }));
+
+          // Extract sourceItems from IRuntimeCollection
+          const sourceItems = new Map<SourceId, FileTree.FileTreeItem>();
+          for (const coll of loadResult.collections) {
+            sourceItems.set(coll.id, coll.sourceItem);
+          }
+
           return succeed({
             collections,
-            protectedCollections: loadResult.protectedCollections
+            protectedCollections: loadResult.protectedCollections,
+            sourceItems
           });
         })
       );
@@ -1139,6 +1181,25 @@ export abstract class SubLibraryBase<
       `Successfully added collection ${internal.ref.collectionId} with ${convertedCount} items`
     );
     return succeed(true);
+  }
+
+  // ============================================================================
+  // Collection Data Access (for persistence-enabled editing)
+  // ============================================================================
+
+  /**
+   * Get the FileTree source item for a collection, if available.
+   *
+   * Returns the FileTree item that was used to load this collection.
+   * This can be passed to EditableCollection to enable direct save() functionality.
+   * Only available for collections loaded from FileTree sources.
+   *
+   * @param collectionId - ID of the collection
+   * @returns The FileTree source item, or undefined if not available
+   * @public
+   */
+  public getCollectionSourceItem(collectionId: SourceId): FileTree.FileTreeItem | undefined {
+    return this._sourceItems.get(collectionId);
   }
 
   // ============================================================================

@@ -30,7 +30,7 @@ import {
 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { SourceId } from '../common';
-import { ICollectionSourceFile, ICollectionSourceMetadata } from '../library-data';
+import { ICollectionSourceFile, ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
 import { serializeToYaml } from './exportImport';
 
 // ============================================================================
@@ -169,6 +169,54 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
         params.sourceItem
       )
     );
+  }
+
+  /**
+   * Create an editable collection from a SubLibrary collection with persistence enabled.
+   *
+   * This convenience method automatically retrieves the sourceItem from the library
+   * to enable direct save() functionality.
+   *
+   * @param library - The SubLibrary containing the collection
+   * @param collectionId - ID of the collection to make editable
+   * @param keyConverter - Converter for validating item keys
+   * @param valueConverter - Converter for validating item values
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public static fromLibrary<T, TBaseId extends string, TItem>(
+    library: SubLibraryBase<string, TBaseId, TItem>,
+    collectionId: SourceId,
+    keyConverter: Converter<TBaseId, unknown>,
+    valueConverter: Converter<T, unknown>
+  ): Result<EditableCollection<T, TBaseId>> {
+    // Get the collection from the library
+    const collectionResult = library.collections.get(collectionId).asResult;
+    if (collectionResult.isFailure()) {
+      return Failure.with(`Collection "${collectionId}" not found`);
+    }
+
+    const collection = collectionResult.value;
+
+    // Get the sourceItem for persistence
+    const sourceItem = library.getCollectionSourceItem(collectionId);
+
+    // Convert ValidatingResultMap to plain Map
+    const itemsMap = new Map<TBaseId, T>();
+    for (const [key, value] of collection.items.entries()) {
+      itemsMap.set(key, value as unknown as T);
+    }
+
+    // Create editable collection with sourceItem for persistence
+    return EditableCollection.createEditable({
+      collectionId,
+      metadata: collection.metadata ?? {},
+      isMutable: collection.isMutable,
+      initialItems: itemsMap,
+      keyConverter,
+      valueConverter,
+      sourceItem
+    });
   }
 
   // ==========================================================================

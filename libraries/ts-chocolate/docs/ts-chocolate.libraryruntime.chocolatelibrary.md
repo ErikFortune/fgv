@@ -313,6 +313,90 @@ Gets a [confection](./ts-chocolate.entities.confections.confectiondata.md) by it
 </td></tr>
 <tr><td>
 
+[getEditableConfections(collectionId)](./ts-chocolate.libraryruntime.chocolatelibrary.geteditableconfections.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Get an editable confections collection with persistence enabled.
+
+
+</td></tr>
+<tr><td>
+
+[getEditableFillings(collectionId)](./ts-chocolate.libraryruntime.chocolatelibrary.geteditablefillings.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Get an editable fillings collection with persistence enabled.
+
+
+</td></tr>
+<tr><td>
+
+[getEditableIngredients(collectionId)](./ts-chocolate.libraryruntime.chocolatelibrary.geteditableingredients.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Get an editable ingredients collection with persistence enabled.
+
+
+</td></tr>
+<tr><td>
+
+[getEditableMolds(collectionId)](./ts-chocolate.libraryruntime.chocolatelibrary.geteditablemolds.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Get an editable molds collection with persistence enabled.
+
+
+</td></tr>
+<tr><td>
+
+[getEditableProcedures(collectionId)](./ts-chocolate.libraryruntime.chocolatelibrary.geteditableprocedures.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Get an editable procedures collection with persistence enabled.
+
+
+</td></tr>
+<tr><td>
+
+[getEditableTasks(collectionId)](./ts-chocolate.libraryruntime.chocolatelibrary.geteditabletasks.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Get an editable tasks collection with persistence enabled.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredient(id)](./ts-chocolate.libraryruntime.chocolatelibrary.getingredient.md)
 
 

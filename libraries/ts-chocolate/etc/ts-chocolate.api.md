@@ -466,6 +466,12 @@ export class ChocolateLibrary {
     get fillings(): FillingsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getConfection(id: ConfectionId): Result<ConfectionData>;
+    getEditableConfections(collectionId: SourceId): Result<EditableCollection<ConfectionData, BaseConfectionId>>;
+    getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipe, BaseFillingId>>;
+    getEditableIngredients(collectionId: SourceId): Result<EditableCollection<Ingredient, BaseIngredientId>>;
+    getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
+    getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedure, BaseProcedureId>>;
+    getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<Ingredient>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1101,6 +1107,7 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
     delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
     export(): Result<ICollectionSourceFile<T>>;
+    static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: SourceId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
     isDirty(): boolean;
     readonly isMutable: boolean;
     get metadata(): ICollectionSourceMetadata;
@@ -6543,6 +6550,7 @@ const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem, ICollectionSourceMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
+    getCollectionSourceItem(collectionId: SourceId): FileTree.FileTreeItem | undefined;
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
     loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<SourceId>>>;

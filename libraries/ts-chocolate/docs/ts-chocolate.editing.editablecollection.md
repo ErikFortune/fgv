@@ -230,6 +230,24 @@ Export collection to ICollectionSourceFile format.
 </td></tr>
 <tr><td>
 
+[fromLibrary(library, collectionId, keyConverter, valueConverter)](./ts-chocolate.editing.editablecollection.fromlibrary.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Create an editable collection from a SubLibrary collection with persistence enabled.
+
+This convenience method automatically retrieves the sourceItem from the library to enable direct save() functionality.
+
+
+</td></tr>
+<tr><td>
+
 [isDirty()](./ts-chocolate.editing.editablecollection.isdirty.md)
 
 
