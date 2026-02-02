@@ -30,19 +30,16 @@ import {
   ConfectionId,
   Measurement,
   IngredientId,
-  JournalId,
   Minutes,
   MoldId,
   Percentage,
   ProcedureId,
   FillingId,
   FillingName,
-  FillingVersionId,
   FillingVersionSpec,
   SourceId,
   TaskId
 } from '../../../packlets/common';
-import { IFillingEditJournalEntry, JournalLibrary } from '../../../packlets/entities';
 
 import {
   IGanacheCharacteristics,
@@ -663,128 +660,6 @@ describe('RuntimeContext', () => {
       expect(ctx.fillings.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
         expect(recipes.length).toBe(2);
       });
-    });
-  });
-
-  // ============================================================================
-  // Journal Access Tests
-  // ============================================================================
-
-  describe('journals', () => {
-    const testJournalRecord: IFillingEditJournalEntry = {
-      type: 'filling-edit',
-      id: '2026-03-15-100000-00000001' as JournalId,
-      versionId: 'test.dark-ganache@2026-01-01-01' as FillingVersionId,
-      timestamp: '2026-03-15T10:00:00Z',
-      recipe: {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
-        createdDate: '2026-01-01',
-        ingredients: [],
-        baseWeight: 300 as Measurement
-      }
-    };
-
-    const testJournalRecord2: IFillingEditJournalEntry = {
-      type: 'filling-edit',
-      id: '2026-03-16-100000-00000002' as JournalId,
-      versionId: 'test.dark-ganache@2026-02-01-01' as FillingVersionId,
-      timestamp: '2026-03-16T10:00:00Z',
-      recipe: {
-        versionSpec: '2026-02-01-01' as FillingVersionSpec,
-        createdDate: '2026-02-01',
-        ingredients: [],
-        baseWeight: 400 as Measurement
-      }
-    };
-
-    const testJournalRecord3: IFillingEditJournalEntry = {
-      type: 'filling-edit',
-      id: '2026-03-17-100000-00000003' as JournalId,
-      versionId: 'test.milk-ganache@2026-01-01-01' as FillingVersionId,
-      timestamp: '2026-03-17T10:00:00Z',
-      recipe: {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
-        createdDate: '2026-01-01',
-        ingredients: [],
-        baseWeight: 350 as Measurement
-      }
-    };
-
-    test('journals getter returns JournalLibrary', () => {
-      const ctx = RuntimeContext.fromLibrary(library).orThrow();
-      expect(ctx.journals).toBeInstanceOf(JournalLibrary);
-    });
-
-    test('getJournalsForFilling returns journals for a recipe', () => {
-      // Create library with pre-populated journals
-      const items: Record<string, unknown> = {
-        [testJournalRecord.id]: testJournalRecord,
-        [testJournalRecord2.id]: testJournalRecord2,
-        [testJournalRecord3.id]: testJournalRecord3
-      };
-      const journalsLib = JournalLibrary.create({
-        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
-      }).orThrow();
-
-      const libWithJournals = ChocolateLibrary.create({
-        builtin: false,
-        libraries: {
-          ingredients: library.ingredients,
-          fillings: library.fillings,
-          journals: journalsLib
-        }
-      }).orThrow();
-
-      const ctx = RuntimeContext.fromLibrary(libWithJournals).orThrow();
-
-      // Get journals for dark-ganache recipe (should have 2)
-      const journals = ctx.getJournalsForFilling('test.dark-ganache' as FillingId);
-      expect(journals.length).toBe(2);
-      expect(journals.map((j) => j.id)).toContain('2026-03-15-100000-00000001');
-      expect(journals.map((j) => j.id)).toContain('2026-03-16-100000-00000002');
-    });
-
-    test('getJournalsForFilling returns empty array for recipe with no journals', () => {
-      const ctx = RuntimeContext.fromLibrary(library).orThrow();
-      const journals = ctx.getJournalsForFilling('test.dark-ganache' as FillingId);
-      expect(journals).toEqual([]);
-    });
-
-    test('getJournalsForFillingVersion returns journals for a specific version', () => {
-      // Create library with pre-populated journals
-      const items: Record<string, unknown> = {
-        [testJournalRecord.id]: testJournalRecord,
-        [testJournalRecord2.id]: testJournalRecord2
-      };
-      const journalsLib = JournalLibrary.create({
-        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
-      }).orThrow();
-
-      const libWithJournals = ChocolateLibrary.create({
-        builtin: false,
-        libraries: {
-          ingredients: library.ingredients,
-          fillings: library.fillings,
-          journals: journalsLib
-        }
-      }).orThrow();
-
-      const ctx = RuntimeContext.fromLibrary(libWithJournals).orThrow();
-
-      // Get journals for specific version
-      const journals = ctx.getJournalsForFillingVersion(
-        'test.dark-ganache@2026-01-01-01' as FillingVersionId
-      );
-      expect(journals.length).toBe(1);
-      expect(journals[0].id).toBe('2026-03-15-100000-00000001');
-    });
-
-    test('getJournalsForFillingVersion returns empty array for version with no journals', () => {
-      const ctx = RuntimeContext.fromLibrary(library).orThrow();
-      const journals = ctx.getJournalsForFillingVersion(
-        'test.dark-ganache@2026-01-01-01' as FillingVersionId
-      );
-      expect(journals).toEqual([]);
     });
   });
 

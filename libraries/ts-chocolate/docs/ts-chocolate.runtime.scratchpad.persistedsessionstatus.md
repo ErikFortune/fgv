@@ -9,5 +9,5 @@ Persisted session lifecycle state.
 **Signature:**
 
 ```typescript
-export type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
+export type PersistedSessionStatus = 'planning' | 'active' | 'committing' | 'committed' | 'abandoned';
 ```

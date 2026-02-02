@@ -127,27 +127,6 @@ A searchable library of all ingredients, keyed by composite ID. Ingredients are 
 </td></tr>
 <tr><td>
 
-[journals](./ts-chocolate.libraryruntime.ilibraryruntimecontext.journals.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-JournalLibrary
-
-
-</td><td>
-
-The journals library for managing cooking session records. Provides storage and lookup for journal records indexed by journal ID, recipe ID, or version ID.
-
-
-</td></tr>
-<tr><td>
-
 [library](./ts-chocolate.libraryruntime.ilibraryruntimecontext.library.md)
 
 
@@ -223,28 +202,6 @@ Gets all unique tags used across ingredients.
 </td><td>
 
 Gets detailed usage information for an ingredient.
-
-
-</td></tr>
-<tr><td>
-
-[getJournalsForFilling(fillingId)](./ts-chocolate.libraryruntime.ilibraryruntimecontext.getjournalsforfilling.md)
-
-
-</td><td>
-
-Gets all journal records for a filling (across all versions).
-
-
-</td></tr>
-<tr><td>
-
-[getJournalsForFillingVersion(versionId)](./ts-chocolate.libraryruntime.ilibraryruntimecontext.getjournalsforfillingversion.md)
-
-
-</td><td>
-
-Gets all journal records for a specific filling version.
 
 
 </td></tr>

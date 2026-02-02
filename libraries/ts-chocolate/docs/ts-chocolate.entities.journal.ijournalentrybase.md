@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[id](./ts-chocolate.entities.journal.ijournalentrybase.id.md)
+[baseId](./ts-chocolate.entities.journal.ijournalentrybase.baseid.md)
 
 
 </td><td>
@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-[JournalId](./ts-chocolate.journalid.md)
+[JournalBaseId](./ts-chocolate.journalbaseid.md)
 
 
 </td><td>
 
-Unique identifier for this journal entry
+Base identifier within collection (no collection prefix)
 
 
 </td></tr>

@@ -115,9 +115,9 @@ describe('Workspace', () => {
       expect(workspace.runtime.fillings.size).toBeGreaterThan(0);
     });
 
-    test('provides access to journals via runtime', () => {
+    test('provides access to journals via workspace', () => {
       const workspace = Workspace.create().orThrow();
-      expect(workspace.runtime.journals).toBeDefined();
+      expect(workspace.journals).toBeDefined();
     });
 
     test('getRuntimeConfection via runtime returns confection', () => {

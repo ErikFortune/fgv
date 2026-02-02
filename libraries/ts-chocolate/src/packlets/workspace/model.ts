@@ -32,9 +32,11 @@
 import { Logging, Result } from '@fgv/ts-utils';
 
 import { ICryptoProvider, IKeyStoreFile, KeyStore } from '../crypto-utils';
+import { JournalLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
 import { IChocolateLibraryCreateParams, IInstantiatedLibrarySource } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
+import { IUserLibraryCreateParams } from '../user-library';
 
 // ============================================================================
 // Workspace State
@@ -68,6 +70,11 @@ export interface IWorkspace {
    * Access library data via `runtime.library`, queries via `runtime.ingredients`, etc.
    */
   readonly runtime: RuntimeContext;
+
+  /**
+   * Journal library for production records (user-specific data).
+   */
+  readonly journals: JournalLibrary;
 
   /**
    * The key store for encryption key management, if configured.
@@ -157,6 +164,19 @@ export interface IWorkspaceCreateParams {
    */
   readonly libraries?: IInstantiatedLibrarySource;
 
+  // ---- User Library Sources (Journals, Future Inventory) ----
+
+  /**
+   * File tree sources for user-specific data (journals, future inventory).
+   * Separate from shared library sources.
+   */
+  readonly userFileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+
+  /**
+   * Pre-instantiated journal library.
+   */
+  readonly journals?: JournalLibrary;
+
   // ---- Key Store Configuration ----
 
   /**
@@ -219,5 +239,19 @@ export function toLibraryParams(
     libraries: params.libraries,
     logger: params.logger
     // Note: encryption is handled at sub-library level during protected collection loading
+  };
+}
+
+/**
+ * Creates user library parameters from workspace parameters.
+ * @param params - The workspace creation parameters
+ * @returns User library creation parameters
+ * @internal
+ */
+export function toUserLibraryParams(params: IWorkspaceCreateParams): IUserLibraryCreateParams {
+  return {
+    fileSources: params.userFileSources,
+    libraries: params.journals ? { journals: params.journals } : undefined,
+    logger: params.logger
   };
 }

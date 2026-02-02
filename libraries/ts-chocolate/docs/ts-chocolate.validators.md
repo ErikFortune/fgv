@@ -162,6 +162,28 @@ In-place `Validator` for [IngredientId](./ts-chocolate.ingredientid.md) (composi
 </td></tr>
 <tr><td>
 
+[journalBaseId](./ts-chocolate.validators.journalbaseid.md)
+
+
+</td><td>
+
+In-place `Validator` for [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[journalId](./ts-chocolate.validators.journalid.md)
+
+
+</td><td>
+
+In-place `Validator` for [JournalId](./ts-chocolate.journalid.md) (composite string).
+
+
+</td></tr>
+<tr><td>
+
 [moldId](./ts-chocolate.validators.moldid.md)
 
 

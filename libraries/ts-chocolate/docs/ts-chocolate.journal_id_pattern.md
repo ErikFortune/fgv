@@ -4,7 +4,7 @@
 
 ## JOURNAL\_ID\_PATTERN variable
 
-Pattern for valid journal IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+Pattern for valid composite journal IDs Format: collectionId.baseJournalId Example: "user-journals.2026-01-15-143025-a1b2c3d4"
 
 **Signature:**
 

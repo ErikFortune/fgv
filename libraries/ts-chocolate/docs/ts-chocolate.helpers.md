@@ -74,6 +74,17 @@ Creates a composite IngredientId from source ID and base ID
 </td></tr>
 <tr><td>
 
+[createJournalId(collectionId, baseId)](./ts-chocolate.helpers.createjournalid.md)
+
+
+</td><td>
+
+Creates a composite JournalId from collection ID and base journal ID
+
+
+</td></tr>
+<tr><td>
+
 [getFillingBaseId(id)](./ts-chocolate.helpers.getfillingbaseid.md)
 
 
@@ -135,6 +146,28 @@ Gets the base ID from a composite IngredientId
 </td><td>
 
 Gets the source ID from a composite IngredientId
+
+
+</td></tr>
+<tr><td>
+
+[getJournalBaseId(id)](./ts-chocolate.helpers.getjournalbaseid.md)
+
+
+</td><td>
+
+Gets the base ID from a composite JournalId
+
+
+</td></tr>
+<tr><td>
+
+[getJournalCollectionId(id)](./ts-chocolate.helpers.getjournalcollectionid.md)
+
+
+</td><td>
+
+Gets the collection ID from a composite JournalId
 
 
 </td></tr>
@@ -223,6 +256,17 @@ Parses a composite FillingVersionId into its component parts
 </td><td>
 
 Parses a composite IngredientId into its component parts
+
+
+</td></tr>
+<tr><td>
+
+[parseJournalId(id)](./ts-chocolate.helpers.parsejournalid.md)
+
+
+</td><td>
+
+Parses a composite JournalId into its component parts
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## Converters.journalId variable
 
-Converter for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
+Converter for [JournalId](./ts-chocolate.journalid.md) (composite string). Accepts either an [JournalId](./ts-chocolate.journalid.md) string or a `CompositeId` object representation.
 
 **Signature:**
 

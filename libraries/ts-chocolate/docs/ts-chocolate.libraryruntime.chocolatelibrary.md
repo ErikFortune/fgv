@@ -6,7 +6,7 @@
 
 Main entry point for the chocolate library
 
-Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Journal management (cooking session records) - Recipe scaling - Ganache characteristic calculations
+Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Recipe scaling - Ganache characteristic calculations
 
 **Signature:**
 
@@ -97,27 +97,6 @@ IngredientsLibrary
 </td><td>
 
 The [ingredients library](./ts-chocolate.entities.ingredients.ingredientslibrary.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[journals](./ts-chocolate.libraryruntime.chocolatelibrary.journals.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-JournalLibrary
-
-
-</td><td>
-
-The [journals library](./ts-chocolate.entities.journal.journallibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -392,34 +371,6 @@ Get an editable tasks collection with persistence enabled.
 </td><td>
 
 Gets an [ingredient](./ts-chocolate.entities.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
-
-
-</td></tr>
-<tr><td>
-
-[getJournalsForFilling(fillingId)](./ts-chocolate.libraryruntime.chocolatelibrary.getjournalsforfilling.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets all [journal records](./ts-chocolate.entities.journal.anyfillingjournalentry.md) for a filling (across all versions)
-
-
-</td></tr>
-<tr><td>
-
-[getJournalsForFillingVersion(versionId)](./ts-chocolate.libraryruntime.chocolatelibrary.getjournalsforfillingversion.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets all [journal records](./ts-chocolate.entities.journal.anyfillingjournalentry.md) for a specific filling version
 
 
 </td></tr>

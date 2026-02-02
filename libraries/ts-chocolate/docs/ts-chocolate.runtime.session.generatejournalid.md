@@ -4,16 +4,16 @@
 
 ## Runtime.Session.generateJournalId() function
 
-Generates a JournalId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
+Generates a JournalBaseId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
 
 **Signature:**
 
 ```typescript
-export declare function generateJournalId(): Result<JournalId>;
+export declare function generateJournalId(): Result<JournalBaseId>;
 ```
 **Returns:**
 
-Result&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->&gt;
+Result&lt;[JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->&gt;
 
-Result with a valid JournalId
+Result with a valid JournalBaseId
 

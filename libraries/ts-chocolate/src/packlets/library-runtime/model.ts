@@ -106,7 +106,6 @@ import {
   IRolledTruffleVersion
 } from '../entities';
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
-import { AnyFillingJournalEntry, JournalLibrary } from '../entities';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
@@ -1167,27 +1166,6 @@ export interface ILibraryRuntimeContext {
   readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
 
   // ---- Journals ----
-
-  /**
-   * The journals library for managing cooking session records.
-   * Provides storage and lookup for journal records indexed by journal ID,
-   * recipe ID, or version ID.
-   */
-  readonly journals: JournalLibrary;
-
-  /**
-   * Gets all journal records for a filling (across all versions).
-   * @param fillingId - The filling ID to search for
-   * @returns Array of journal records (empty if none found)
-   */
-  getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-
-  /**
-   * Gets all journal records for a specific filling version.
-   * @param versionId - The filling version ID to search for
-   * @returns Array of journal records (empty if none found)
-   */
-  getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
 
   // ---- Reverse Lookups ----
 

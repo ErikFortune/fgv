@@ -49,6 +49,7 @@ import {
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
+  JournalBaseId,
   CacaoVariety,
   Celsius,
   Certification,
@@ -106,13 +107,13 @@ import {
   toBaseMoldId,
   toBaseProcedureId,
   toBaseTaskId,
+  toJournalBaseId,
   toCelsius,
   toConfectionName,
   toConfectionVersionSpec,
   toDegreesMacMichael,
   toFillingName,
   toFillingVersionSpec,
-  toJournalId,
   toMeasurement,
   toMillimeters,
   toMinutes,
@@ -184,6 +185,12 @@ export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId
  * @public
  */
 export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
+
+/**
+ * Converter for {@link JournalBaseId | JournalBaseId}.
+ * @public
+ */
+export const journalBaseId: Converter<JournalBaseId> = Converters.generic(toJournalBaseId);
 
 /**
  * Converter for {@link IngredientId | IngredientId} (composite string).
@@ -258,10 +265,16 @@ export const confectionId: Converter<ConfectionId> = Converters.compositeIdStrin
 );
 
 /**
- * Converter for {@link JournalId | JournalId}.
+ * Converter for {@link JournalId | JournalId} (composite string).
+ * Accepts either an {@link JournalId | JournalId} string or a `CompositeId` object representation.
  * @public
  */
-export const journalId: Converter<JournalId> = Converters.generic(toJournalId);
+export const journalId: Converter<JournalId> = Converters.compositeIdString(
+  CommonValidators.journalId,
+  sourceId,
+  ID_SEPARATOR,
+  journalBaseId
+);
 
 // ============================================================================
 // Composite ID Converters (parsing to structured form)
@@ -350,6 +363,23 @@ export const parsedTaskId: Converter<ParsedTaskId> = Converters.compositeId(
   sourceId,
   ID_SEPARATOR,
   baseTaskId
+);
+
+/**
+ * Type alias for parsed {@link JournalId | JournalId} components.
+ * @public
+ */
+export type ParsedJournalId = Converters.ICompositeId<SourceId, JournalBaseId>;
+
+/**
+ * Converter that parses a {@link JournalId | JournalId} string into its component parts
+ * or validates a `CompositeId` object representation.
+ * @public
+ */
+export const parsedJournalId: Converter<ParsedJournalId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  journalBaseId
 );
 
 /**

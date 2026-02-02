@@ -100,27 +100,6 @@ _(Optional)_ Pre-built ingredients library
 </td></tr>
 <tr><td>
 
-[journals?](./ts-chocolate.libraryruntime.iinstantiatedlibrarysource.journals.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-JournalLibrary
-
-
-</td><td>
-
-_(Optional)_ Pre-built journals library
-
-
-</td></tr>
-<tr><td>
-
 [molds?](./ts-chocolate.libraryruntime.iinstantiatedlibrarysource.molds.md)
 
 

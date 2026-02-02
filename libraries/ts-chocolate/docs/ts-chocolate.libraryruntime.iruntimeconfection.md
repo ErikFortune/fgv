@@ -175,7 +175,7 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 
 </td><td>
 
-ReadonlyArray&lt;IResolvedFillingSlot&gt;
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt;
 
 
 </td><td>

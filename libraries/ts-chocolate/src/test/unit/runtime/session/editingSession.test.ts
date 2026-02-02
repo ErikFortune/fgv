@@ -432,7 +432,7 @@ describe('EditingSession', () => {
 
       expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
         expect(entry.type).toBe('filling-edit');
-        expect(entry.id).toBeDefined();
+        expect(entry.baseId).toBeDefined();
         expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
         expect(entry.recipe).toBeDefined();
       });
@@ -456,7 +456,7 @@ describe('EditingSession', () => {
 
       expect(session.toProductionJournalEntry()).toSucceedAndSatisfy((entry) => {
         expect(entry.type).toBe('filling-production');
-        expect(entry.id).toBeDefined();
+        expect(entry.baseId).toBeDefined();
         expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
         expect(entry.yield).toBe(300);
         expect(entry.produced).toBeDefined();

@@ -397,12 +397,23 @@ Converter for IngredientPhase
 </td></tr>
 <tr><td>
 
+[journalBaseId](./ts-chocolate.converters.journalbaseid.md)
+
+
+</td><td>
+
+Converter for [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [journalId](./ts-chocolate.converters.journalid.md)
 
 
 </td><td>
 
-Converter for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
+Converter for [JournalId](./ts-chocolate.journalid.md) (composite string). Accepts either an [JournalId](./ts-chocolate.journalid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -546,6 +557,17 @@ Converter that parses a [FillingVersionId](./ts-chocolate.fillingversionid.md) s
 </td><td>
 
 Converter that parses an [IngredientId](./ts-chocolate.ingredientid.md) string into its component parts or validates a `CompositeId` object representation.
+
+
+</td></tr>
+<tr><td>
+
+[parsedJournalId](./ts-chocolate.converters.parsedjournalid.md)
+
+
+</td><td>
+
+Converter that parses a [JournalId](./ts-chocolate.journalid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -770,6 +792,17 @@ Type alias for parsed [FillingVersionId](./ts-chocolate.fillingversionid.md) com
 </td><td>
 
 Type alias for parsed [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->' components
+
+
+</td></tr>
+<tr><td>
+
+[ParsedJournalId](./ts-chocolate.converters.parsedjournalid.md)
+
+
+</td><td>
+
+Type alias for parsed [JournalId](./ts-chocolate.journalid.md) components.
 
 
 </td></tr>

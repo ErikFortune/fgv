@@ -31,19 +31,15 @@ import {
   FillingVersionSpec,
   Measurement,
   IngredientId,
-  JournalId,
   Millimeters,
   MoldId,
   Percentage,
   ProcedureId,
   FillingId,
   FillingName,
-  FillingVersionId,
   SourceId,
   TaskId
 } from '../../../packlets/common';
-
-import { IFillingEditJournalEntry, JournalLibrary } from '../../../packlets/entities';
 
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/entities';
 
@@ -699,117 +695,6 @@ describe('ChocolateLibrary', () => {
       ).toSucceedAndSatisfy((lib) => {
         // Should still have builtin collections
         expect(lib.hasIngredient('felchlin.maracaibo-65' as IngredientId)).toBe(true);
-      });
-    });
-  });
-
-  // ============================================================================
-  // Journal Integration Tests
-  // ============================================================================
-
-  describe('journals', () => {
-    const testJournal: IFillingEditJournalEntry = {
-      type: 'filling-edit',
-      id: '2026-01-01-120000-abcd1234' as JournalId,
-      versionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
-      timestamp: '2026-01-01T12:00:00Z',
-      recipe: {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
-        createdDate: '2026-01-01',
-        ingredients: [],
-        baseWeight: 100 as Measurement
-      }
-    };
-
-    const testJournal2: IFillingEditJournalEntry = {
-      type: 'filling-edit',
-      id: '2026-01-02-120000-efgh5678' as JournalId,
-      versionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
-      timestamp: '2026-01-02T12:00:00Z',
-      recipe: {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
-        createdDate: '2026-01-01',
-        ingredients: [],
-        baseWeight: 100 as Measurement
-      }
-    };
-
-    test('journals accessor returns JournalLibrary', () => {
-      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        expect(lib.journals).toBeInstanceOf(JournalLibrary);
-      });
-    });
-
-    test('creates with empty journals by default', () => {
-      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        expect(lib.journals.size).toBe(0);
-      });
-    });
-
-    test('creates with provided journals library', () => {
-      const items: Record<string, unknown> = { [testJournal.id]: testJournal };
-      const journals = JournalLibrary.create({
-        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
-      }).orThrow();
-
-      expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
-        (lib) => {
-          expect(lib.journals.size).toBe(1);
-        }
-      );
-    });
-
-    // Note: addJournal removed - use EditableCollection for mutations
-
-    test('getJournalsForFilling returns journals for a recipe', () => {
-      const items: Record<string, unknown> = {
-        [testJournal.id]: testJournal,
-        [testJournal2.id]: testJournal2
-      };
-      const journals = JournalLibrary.create({
-        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
-      }).orThrow();
-
-      expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
-        (lib) => {
-          const recipeJournals = lib.getJournalsForFilling('test.testRecipe' as FillingId);
-          expect(recipeJournals.length).toBe(2);
-        }
-      );
-    });
-
-    test('getJournalsForFilling returns empty array for non-existent recipe', () => {
-      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        const recipeJournals = lib.getJournalsForFilling('test.nonexistent' as FillingId);
-        expect(recipeJournals.length).toBe(0);
-      });
-    });
-
-    test('getJournalsForFillingVersion returns journals for a specific version', () => {
-      const items: Record<string, unknown> = {
-        [testJournal.id]: testJournal,
-        [testJournal2.id]: testJournal2
-      };
-      const journals = JournalLibrary.create({
-        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
-      }).orThrow();
-
-      expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
-        (lib) => {
-          const versionJournals = lib.getJournalsForFillingVersion(
-            'test.testRecipe@2026-01-01-01' as FillingVersionId
-          );
-          expect(versionJournals.length).toBe(2);
-        }
-      );
-    });
-
-    test('getJournalsForFillingVersion returns empty array for non-existent version', () => {
-      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        const versionJournals = lib.getJournalsForFillingVersion(
-          'test.nonexistent@2026-01-01-01' as FillingVersionId
-        );
-        expect(versionJournals.length).toBe(0);
       });
     });
   });

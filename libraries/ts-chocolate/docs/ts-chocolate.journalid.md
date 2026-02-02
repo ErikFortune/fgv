@@ -4,7 +4,7 @@
 
 ## JournalId type
 
-Unique identifier for a cooking journal record Format: UUID or "fillingId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
+Globally unique journal identifier (composite) Format: "collectionId.baseJournalId" Must contain exactly one dot separator
 
 **Signature:**
 

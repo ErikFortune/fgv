@@ -39,6 +39,8 @@ import {
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
+  JournalBaseId,
+  JournalId,
   SourceId,
   VERSION_ID_SEPARATOR
 } from './model';
@@ -49,10 +51,12 @@ import {
   ParsedFillingId,
   ParsedFillingVersionId,
   ParsedIngredientId,
+  ParsedJournalId,
   parsedConfectionVersionId,
   parsedFillingId,
   parsedFillingVersionId,
-  parsedIngredientId
+  parsedIngredientId,
+  parsedJournalId
 } from './converters';
 
 // ============================================================================
@@ -139,6 +143,51 @@ export function getFillingSourceId(id: FillingId): SourceId {
  */
 export function getFillingBaseId(id: FillingId): BaseFillingId {
   return parsedFillingId.convert(id).orThrow().itemId;
+}
+
+// ============================================================================
+// Journal ID Helpers
+// ============================================================================
+
+/**
+ * Creates a composite JournalId from collection ID and base journal ID
+ * @param collectionId - The collection identifier (e.g., "user-journals")
+ * @param baseId - The base journal identifier
+ * @returns Composite journal ID in format "collectionId.baseJournalId"
+ * @public
+ */
+export function createJournalId(collectionId: SourceId, baseId: JournalBaseId): JournalId {
+  return `${collectionId}${ID_SEPARATOR}${baseId}` as JournalId;
+}
+
+/**
+ * Parses a composite JournalId into its component parts
+ * @param id - The composite journal ID to parse
+ * @returns Result with parsed composite ID or error
+ * @public
+ */
+export function parseJournalId(id: JournalId): Result<ParsedJournalId> {
+  return parsedJournalId.convert(id);
+}
+
+/**
+ * Gets the collection ID from a composite JournalId
+ * @param id - The composite journal ID
+ * @returns The collection ID portion
+ * @public
+ */
+export function getJournalCollectionId(id: JournalId): SourceId {
+  return parsedJournalId.convert(id).orThrow().collectionId;
+}
+
+/**
+ * Gets the base ID from a composite JournalId
+ * @param id - The composite journal ID
+ * @returns The base journal ID portion
+ * @public
+ */
+export function getJournalBaseId(id: JournalId): JournalBaseId {
+  return parsedJournalId.convert(id).orThrow().itemId;
 }
 
 // ============================================================================

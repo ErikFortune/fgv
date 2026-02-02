@@ -22,7 +22,7 @@
 // Type aliases for Journal Collections types
 // ============================================================================
 
-import { JournalId } from '../../common';
+import { JournalBaseId } from '../../common';
 import {
   SubLibraryCollection,
   SubLibraryCollectionEntry,
@@ -35,22 +35,22 @@ import { AnyJournalEntry } from './model';
  * A single entry in a journal collection.
  * @public
  */
-export type JournalCollectionEntry = SubLibraryCollectionEntry<JournalId, AnyJournalEntry>;
+export type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntry>;
 
 /**
  * Initialization type for a JournalLibrary collection entry.
  * @public
  */
-export type JournalCollectionEntryInit = SubLibraryEntryInit<JournalId, AnyJournalEntry>;
+export type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntry>;
 
 /**
  * Validator type for JournalLibrary collections.
  * @public
  */
-export type JournalCollectionValidator = SubLibraryCollectionValidator<JournalId, AnyJournalEntry>;
+export type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntry>;
 
 /**
  * Type for the collections in a JournalLibrary.
  * @public
  */
-export type JournalCollection = SubLibraryCollection<JournalId, AnyJournalEntry>;
+export type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntry>;

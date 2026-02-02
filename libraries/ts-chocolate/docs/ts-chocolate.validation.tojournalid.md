@@ -4,7 +4,7 @@
 
 ## Validation.toJournalId() function
 
-Validates unknown value is a [JournalId](./ts-chocolate.journalid.md)<!-- -->.
+Validates unknown value is a [JournalId](./ts-chocolate.journalid.md) (composite).
 
 **Signature:**
 

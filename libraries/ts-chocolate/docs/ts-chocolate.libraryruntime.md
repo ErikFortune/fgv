@@ -26,7 +26,7 @@ Description
 
 Main entry point for the chocolate library
 
-Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Journal management (cooking session records) - Recipe scaling - Ganache characteristic calculations
+Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Recipe scaling - Ganache characteristic calculations
 
 
 </td></tr>

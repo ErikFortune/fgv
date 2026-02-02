@@ -26,9 +26,17 @@
 import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { ICryptoProvider, KeyStore } from '../crypto-utils';
+import { JournalLibrary } from '../entities';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
-import { IWorkspace, IWorkspaceCreateParams, toLibraryParams, WorkspaceState } from './model';
+import { UserLibrary } from '../user-library';
+import {
+  IWorkspace,
+  IWorkspaceCreateParams,
+  toLibraryParams,
+  toUserLibraryParams,
+  WorkspaceState
+} from './model';
 
 // ============================================================================
 // Workspace Class
@@ -45,6 +53,7 @@ import { IWorkspace, IWorkspaceCreateParams, toLibraryParams, WorkspaceState } f
  */
 export class Workspace implements IWorkspace {
   private readonly _runtime: RuntimeContext;
+  private readonly _userLibrary: UserLibrary;
   private readonly _keyStore: KeyStore | undefined;
   private readonly _cryptoProvider: ICryptoProvider | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
@@ -54,11 +63,13 @@ export class Workspace implements IWorkspace {
    */
   private constructor(
     runtime: RuntimeContext,
+    userLibrary: UserLibrary,
     keyStore: KeyStore | undefined,
     cryptoProvider: ICryptoProvider | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
     this._runtime = runtime;
+    this._userLibrary = userLibrary;
     this._keyStore = keyStore;
     this._cryptoProvider = cryptoProvider;
     this._logger = logger;
@@ -111,7 +122,7 @@ export class Workspace implements IWorkspace {
     // Create library parameters
     const libraryParams = toLibraryParams(params);
 
-    // Create runtime context (this creates the library)
+    // Create runtime context (this creates the shared library)
     const runtimeResult = RuntimeContext.create({
       libraryParams,
       preWarm: params.preWarm
@@ -121,7 +132,23 @@ export class Workspace implements IWorkspace {
       return fail(`Failed to create runtime context: ${runtimeResult.message}`);
     }
 
-    const workspace = new Workspace(runtimeResult.value, keyStore, cryptoProvider, logger);
+    // Create user library parameters
+    const userLibraryParams = toUserLibraryParams(params);
+
+    // Create user library (journals, future inventory)
+    const userLibraryResult = UserLibrary.create(userLibraryParams);
+
+    if (userLibraryResult.isFailure()) {
+      return fail(`Failed to create user library: ${userLibraryResult.message}`);
+    }
+
+    const workspace = new Workspace(
+      runtimeResult.value,
+      userLibraryResult.value,
+      keyStore,
+      cryptoProvider,
+      logger
+    );
 
     logger.info(
       `Workspace created: ${workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'}`
@@ -139,6 +166,13 @@ export class Workspace implements IWorkspace {
    */
   public get runtime(): RuntimeContext {
     return this._runtime;
+  }
+
+  /**
+   * {@inheritDoc IWorkspace.journals}
+   */
+  public get journals(): JournalLibrary {
+    return this._userLibrary.journals;
   }
 
   /**
@@ -277,6 +311,12 @@ export class Workspace implements IWorkspace {
     const confectionsResult = await library.confections.loadProtectedCollectionAsync(encryption);
     if (confectionsResult.isSuccess()) {
       this._logger.info(`Loaded ${confectionsResult.value.length} protected confection collection(s)`);
+    }
+
+    // Load journals (user library)
+    const journalsResult = await this._userLibrary.journals.loadProtectedCollectionAsync(encryption);
+    if (journalsResult.isSuccess()) {
+      this._logger.info(`Loaded ${journalsResult.value.length} protected journal collection(s)`);
     }
 
     // Clear runtime cache so new items are visible

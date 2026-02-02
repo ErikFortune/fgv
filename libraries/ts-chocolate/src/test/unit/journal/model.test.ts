@@ -101,7 +101,7 @@ describe('Journal Model', () => {
 
     const fillingEditEntry: IFillingEditJournalEntry = {
       type: 'filling-edit',
-      id: '2026-01-15-100000-00000001' as IFillingEditJournalEntry['id'],
+      baseId: '2026-01-15-100000-00000001' as IFillingEditJournalEntry['baseId'],
       versionId: 'source.recipe@2026-01-01-01' as IFillingEditJournalEntry['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: fillingRecipe
@@ -109,7 +109,7 @@ describe('Journal Model', () => {
 
     const fillingProductionEntry: IFillingProductionJournalEntry = {
       type: 'filling-production',
-      id: '2026-01-15-100000-00000002' as IFillingProductionJournalEntry['id'],
+      baseId: '2026-01-15-100000-00000002' as IFillingProductionJournalEntry['baseId'],
       versionId: 'source.recipe@2026-01-01-01' as IFillingProductionJournalEntry['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: fillingRecipe,
@@ -140,7 +140,7 @@ describe('Journal Model', () => {
 
     const confectionEditEntry: IConfectionEditJournalEntry = {
       type: 'confection-edit',
-      id: '2026-01-15-100000-00000003' as IConfectionEditJournalEntry['id'],
+      baseId: '2026-01-15-100000-00000003' as IConfectionEditJournalEntry['baseId'],
       versionId: 'source.truffle@2026-01-01-01' as IConfectionEditJournalEntry['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe
@@ -148,7 +148,7 @@ describe('Journal Model', () => {
 
     const confectionProductionEntry: IConfectionProductionJournalEntry = {
       type: 'confection-production',
-      id: '2026-01-15-100000-00000004' as IConfectionProductionJournalEntry['id'],
+      baseId: '2026-01-15-100000-00000004' as IConfectionProductionJournalEntry['baseId'],
       versionId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntry['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe,

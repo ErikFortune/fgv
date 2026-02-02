@@ -51,7 +51,7 @@ describe('Journal Converters', () => {
     test('converts filling-edit entry', () => {
       const entry = {
         type: 'filling-edit',
-        id: '2024-01-01-100000-00000001',
+        baseId: '2024-01-01-100000-00000001',
         timestamp: '2024-01-01T00:00:00Z',
         versionId: 'source.filling@2024-01-01-01',
         recipe: {
@@ -64,14 +64,14 @@ describe('Journal Converters', () => {
 
       expect(anyJournalEntry.convert(entry)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('filling-edit');
-        expect(result.id).toBe('2024-01-01-100000-00000001');
+        expect(result.baseId).toBe('2024-01-01-100000-00000001');
       });
     });
 
     test('converts confection-edit entry', () => {
       const entry = {
         type: 'confection-edit',
-        id: '2024-01-01-100000-00000002',
+        baseId: '2024-01-01-100000-00000002',
         timestamp: '2024-01-01T00:00:00Z',
         versionId: 'source.confection@2024-01-01-01',
         recipe: {
@@ -85,7 +85,7 @@ describe('Journal Converters', () => {
 
       expect(anyJournalEntry.convert(entry)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('confection-edit');
-        expect(result.id).toBe('2024-01-01-100000-00000002');
+        expect(result.baseId).toBe('2024-01-01-100000-00000002');
       });
     });
 

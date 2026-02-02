@@ -32,7 +32,6 @@ import {
   MoldId,
   ProcedureId,
   FillingId,
-  FillingVersionId,
   FillingVersionSpec,
   SourceId,
   TaskId,
@@ -46,7 +45,7 @@ import {
 import { ConfectionData, ConfectionsLibrary } from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
 import { IFillingRecipe, FillingsLibrary } from '../entities';
-import { AnyFillingJournalEntry, JournalLibrary, Converters as EntityConverters } from '../entities';
+import { Converters as EntityConverters } from '../entities';
 import { IMold, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
@@ -81,11 +80,6 @@ export interface IInstantiatedLibrarySource {
    * Pre-built fillings library
    */
   readonly fillings?: FillingsLibrary;
-
-  /**
-   * Pre-built journals library
-   */
-  readonly journals?: JournalLibrary;
 
   /**
    * Pre-built molds library
@@ -161,7 +155,6 @@ export interface IChocolateLibraryCreateParams {
  * Provides unified access to:
  * - Ingredient management (multi-source with built-ins)
  * - Recipe management (multi-source)
- * - Journal management (cooking session records)
  * - Recipe scaling
  * - Ganache characteristic calculations
  *
@@ -170,7 +163,6 @@ export interface IChocolateLibraryCreateParams {
 export class ChocolateLibrary {
   private readonly _ingredients: IngredientsLibrary;
   private readonly _recipes: FillingsLibrary;
-  private readonly _journals: JournalLibrary;
   private readonly _molds: MoldsLibrary;
   private readonly _procedures: ProceduresLibrary;
   private readonly _tasks: TasksLibrary;
@@ -184,7 +176,6 @@ export class ChocolateLibrary {
   private constructor(
     ingredients: IngredientsLibrary,
     recipes: FillingsLibrary,
-    journals: JournalLibrary,
     molds: MoldsLibrary,
     procedures: ProceduresLibrary,
     tasks: TasksLibrary,
@@ -195,7 +186,6 @@ export class ChocolateLibrary {
     logger = logger ?? new Logging.NoOpLogger();
     this._ingredients = ingredients;
     this._recipes = recipes;
-    this._journals = journals;
     this._molds = molds;
     this._procedures = procedures;
     this._tasks = tasks;
@@ -231,13 +221,6 @@ export class ChocolateLibrary {
       logger
     }).report(logger);
 
-    const journalsResult = JournalLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'journals'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'journals'),
-      mergeLibraries: params.libraries?.journals,
-      logger
-    }).report(logger);
-
     const moldsResult = MoldsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'molds'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'molds'),
@@ -268,27 +251,24 @@ export class ChocolateLibrary {
 
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
-        journalsResult.onSuccess((journals) =>
-          moldsResult.onSuccess((molds) =>
-            proceduresResult.onSuccess((procedures) =>
-              tasksResult.onSuccess((tasks) =>
-                confectionsResult.onSuccess((confections) => {
-                  const library = new ChocolateLibrary(
-                    ingredients,
-                    recipes,
-                    journals,
-                    molds,
-                    procedures,
-                    tasks,
-                    confections,
-                    logger.logger
-                  );
-                  logger.info(
-                    `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections`
-                  );
-                  return Success.with(library);
-                })
-              )
+        moldsResult.onSuccess((molds) =>
+          proceduresResult.onSuccess((procedures) =>
+            tasksResult.onSuccess((tasks) =>
+              confectionsResult.onSuccess((confections) => {
+                const library = new ChocolateLibrary(
+                  ingredients,
+                  recipes,
+                  molds,
+                  procedures,
+                  tasks,
+                  confections,
+                  logger.logger
+                );
+                logger.info(
+                  `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections`
+                );
+                return Success.with(library);
+              })
             )
           )
         )
@@ -322,13 +302,6 @@ export class ChocolateLibrary {
    */
   public get fillings(): FillingsLibrary {
     return this._recipes;
-  }
-
-  /**
-   * The {@link Entities.Journal.JournalLibrary | journals library}.
-   */
-  public get journals(): JournalLibrary {
-    return this._journals;
   }
 
   /**
@@ -505,30 +478,6 @@ export class ChocolateLibrary {
     versionSpec?: FillingVersionSpec
   ): Result<IGanacheCalculation> {
     return calculateGanache(recipe, this.createIngredientResolver(), versionSpec);
-  }
-
-  // ============================================================================
-  // Journal convenience methods
-  // ============================================================================
-
-  /**
-   * Gets all {@link Entities.Journal.AnyFillingJournalEntry | journal records} for a filling (across all versions)
-   * @param fillingId - The {@link FillingId | filling ID} to search for
-   * @returns Array of journal records (empty if none found)
-   * @public
-   */
-  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry> {
-    return this._journals.getJournalsForFilling(fillingId);
-  }
-
-  /**
-   * Gets all {@link Entities.Journal.AnyFillingJournalEntry | journal records} for a specific filling version
-   * @param versionId - The {@link FillingVersionId | filling version ID} to search for
-   * @returns Array of journal records (empty if none found)
-   * @public
-   */
-  public getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry> {
-    return this._journals.getJournalsForFillingVersion(versionId);
   }
 
   // ============================================================================

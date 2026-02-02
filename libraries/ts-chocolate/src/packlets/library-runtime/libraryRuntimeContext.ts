@@ -34,7 +34,6 @@ import {
   MoldId,
   ProcedureId,
   FillingId,
-  FillingVersionId,
   TaskId
 } from '../common';
 import {
@@ -47,11 +46,9 @@ import {
   ICoatings,
   IComputedScaledFillingRecipe,
   IConfectionMoldRef,
-  AnyFillingJournalEntry,
   IFillingSlot,
   IProcedure,
   IProcedureRef,
-  JournalLibrary,
   ITaskData
 } from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
@@ -219,35 +216,6 @@ export class LibraryRuntimeContext
    */
   public get library(): ChocolateLibrary {
     return this._library;
-  }
-
-  // ============================================================================
-  // Journals
-  // ============================================================================
-
-  /**
-   * The journals library for managing cooking session records.
-   */
-  public get journals(): JournalLibrary {
-    return this._library.journals;
-  }
-
-  /**
-   * Gets all journal records for a filling (across all versions).
-   * @param fillingId - The filling ID to search for
-   * @returns Array of journal records (empty if none found)
-   */
-  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry> {
-    return this._library.getJournalsForFilling(fillingId);
-  }
-
-  /**
-   * Gets all journal records for a specific filling version.
-   * @param versionId - The filling version ID to search for
-   * @returns Array of journal records (empty if none found)
-   */
-  public getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry> {
-    return this._library.getJournalsForFillingVersion(versionId);
   }
 
   // ============================================================================

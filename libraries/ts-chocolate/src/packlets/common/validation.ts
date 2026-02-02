@@ -44,7 +44,9 @@ import {
   IHasId,
   IIdsWithPreferred,
   IOptionsWithPreferred,
+  JOURNAL_BASE_ID_PATTERN,
   JOURNAL_ID_PATTERN,
+  JournalBaseId,
   JournalId,
   Measurement,
   Millimeters,
@@ -596,7 +598,33 @@ export function toMillimeters(from: unknown): Result<Millimeters> {
 // ============================================================================
 
 /**
- * Type guard for {@link JournalId | JournalId}.
+ * Type guard for {@link JournalBaseId | JournalBaseId}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link JournalBaseId | JournalBaseId}
+ * @public
+ */
+export function isValidJournalBaseId(from: unknown): from is JournalBaseId {
+  return typeof from === 'string' && JOURNAL_BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link JournalBaseId | JournalBaseId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link JournalBaseId | JournalBaseId} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toJournalBaseId(from: unknown): Result<JournalBaseId> {
+  if (isValidJournalBaseId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `Invalid JournalBaseId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
+/**
+ * Type guard for {@link JournalId | JournalId} (composite).
  * @param from - Value to check
  * @returns `true` if the value is a valid {@link JournalId | JournalId}
  * @public
@@ -606,7 +634,7 @@ export function isValidJournalId(from: unknown): from is JournalId {
 }
 
 /**
- * Validates unknown value is a {@link JournalId | JournalId}.
+ * Validates unknown value is a {@link JournalId | JournalId} (composite).
  * @param from - Value to validate
  * @returns `Success` with {@link JournalId | JournalId} or `Failure` with an error
  * message if validation fails.
@@ -617,7 +645,7 @@ export function toJournalId(from: unknown): Result<JournalId> {
     return Success.with(from);
   }
   return Failure.with(
-    `${from}: Invalid JournalId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+    `Invalid JournalId: must be in format collectionId.baseJournalId (e.g., "user-journals.2026-01-15-143025-a1b2c3d4")`
   );
 }
 

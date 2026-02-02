@@ -232,7 +232,7 @@ export const anyProducedConfection: Converter<AnyProducedConfection> =
 export const fillingEditJournalEntry: Converter<IFillingEditJournalEntry> =
   Converters.object<IFillingEditJournalEntry>({
     type: Converters.literal('filling-edit'),
-    id: CommonConverters.journalId,
+    baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
     versionId: CommonConverters.fillingVersionId,
     recipe: anyFillingRecipeVersion,
@@ -248,7 +248,7 @@ export const fillingEditJournalEntry: Converter<IFillingEditJournalEntry> =
 export const confectionEditJournalEntry: Converter<IConfectionEditJournalEntry> =
   Converters.object<IConfectionEditJournalEntry>({
     type: Converters.literal('confection-edit'),
-    id: CommonConverters.journalId,
+    baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
     versionId: CommonConverters.confectionVersionId,
     recipe: anyConfectionVersionConverter,
@@ -264,7 +264,7 @@ export const confectionEditJournalEntry: Converter<IConfectionEditJournalEntry> 
 export const fillingProductionJournalEntry: Converter<IFillingProductionJournalEntry> =
   Converters.object<IFillingProductionJournalEntry>({
     type: Converters.literal('filling-production'),
-    id: CommonConverters.journalId,
+    baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
     versionId: CommonConverters.fillingVersionId,
     recipe: anyFillingRecipeVersion,
@@ -282,7 +282,7 @@ export const fillingProductionJournalEntry: Converter<IFillingProductionJournalE
 export const confectionProductionJournalEntry: Converter<IConfectionProductionJournalEntry> =
   Converters.object<IConfectionProductionJournalEntry>({
     type: Converters.literal('confection-production'),
-    id: CommonConverters.journalId,
+    baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
     versionId: CommonConverters.confectionVersionId,
     recipe: anyConfectionVersionConverter,

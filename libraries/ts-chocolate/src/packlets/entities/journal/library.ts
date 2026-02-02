@@ -30,6 +30,7 @@ import {
   ConfectionVersionId,
   FillingId,
   FillingVersionId,
+  JournalBaseId,
   JournalId,
   Converters as CommonConverters
 } from '../../common';
@@ -152,7 +153,7 @@ export type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, 
  *
  * @public
  */
-export class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJournalEntry> {
+export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntry> {
   /**
    * Index from {@link FillingId | filling ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
@@ -185,7 +186,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJour
 
   private constructor(params?: IJournalLibraryParams) {
     super({
-      itemIdConverter: CommonConverters.journalId,
+      itemIdConverter: CommonConverters.journalBaseId,
       itemConverter: anyJournalEntryConverter,
       directoryNavigator: getJournalsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
@@ -220,8 +221,8 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJour
   public static async createAsync(params?: IJournalLibraryAsyncParams): Promise<Result<JournalLibrary>> {
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<JournalLibrary, JournalId, AnyJournalEntry> = {
-      itemIdConverter: CommonConverters.journalId,
+    const createParams: ISubLibraryCreateParams<JournalLibrary, JournalBaseId, AnyJournalEntry> = {
+      itemIdConverter: CommonConverters.journalBaseId,
       itemConverter: anyJournalEntryConverter,
       directoryNavigator: getJournalsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
@@ -270,28 +271,29 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJour
     this._byConfectionVersionId.clear();
 
     // Rebuild from all items across all collections
-    for (const journal of this.values()) {
-      this._addToIndices(journal);
+    // Iterate over entries to get both composite ID (key) and journal (value)
+    for (const [journalId, journal] of this.entries()) {
+      this._addToIndices(journalId, journal);
     }
 
     this._indicesValid = true;
   }
 
   /**
-   * Adds a journal to the appropriate indices
+   * Adds a journal to the appropriate indices based on its type
    */
-  private _addToIndices(journal: AnyJournalEntry): void {
+  private _addToIndices(journalId: JournalId, journal: AnyJournalEntry): void {
     if (isFillingJournalEntry(journal)) {
-      this._addFillingJournalToIndices(journal);
+      this._addFillingJournalToIndices(journalId, journal);
     } else if (isConfectionJournalEntry(journal)) {
-      this._addConfectionJournalToIndices(journal);
+      this._addConfectionJournalToIndices(journalId, journal);
     }
   }
 
   /**
    * Adds a filling journal to the filling-specific indices
    */
-  private _addFillingJournalToIndices(journal: AnyFillingJournalEntry): void {
+  private _addFillingJournalToIndices(journalId: JournalId, journal: AnyFillingJournalEntry): void {
     const fillingId = this._extractFillingId(journal.versionId);
 
     let fillingJournals = this._byFillingId.get(fillingId);
@@ -299,20 +301,20 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJour
       fillingJournals = new Set();
       this._byFillingId.set(fillingId, fillingJournals);
     }
-    fillingJournals.add(journal.id);
+    fillingJournals.add(journalId);
 
     let versionJournals = this._byFillingVersionId.get(journal.versionId);
     if (!versionJournals) {
       versionJournals = new Set();
       this._byFillingVersionId.set(journal.versionId, versionJournals);
     }
-    versionJournals.add(journal.id);
+    versionJournals.add(journalId);
   }
 
   /**
    * Adds a confection journal to the confection-specific indices
    */
-  private _addConfectionJournalToIndices(journal: AnyConfectionJournalEntry): void {
+  private _addConfectionJournalToIndices(journalId: JournalId, journal: AnyConfectionJournalEntry): void {
     const confectionId = this._extractConfectionId(journal.versionId);
 
     let confectionJournals = this._byConfectionId.get(confectionId);
@@ -320,14 +322,14 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJour
       confectionJournals = new Set();
       this._byConfectionId.set(confectionId, confectionJournals);
     }
-    confectionJournals.add(journal.id);
+    confectionJournals.add(journalId);
 
     let versionJournals = this._byConfectionVersionId.get(journal.versionId);
     if (!versionJournals) {
       versionJournals = new Set();
       this._byConfectionVersionId.set(journal.versionId, versionJournals);
     }
-    versionJournals.add(journal.id);
+    versionJournals.add(journalId);
   }
 
   /**

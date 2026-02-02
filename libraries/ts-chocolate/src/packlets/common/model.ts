@@ -156,8 +156,16 @@ export type IndexerId = Brand<string, 'IndexerId'>;
 export type FillingVersionId = Brand<string, 'FillingVersionId'>;
 
 /**
- * Unique identifier for a cooking journal record
- * Format: UUID or "fillingId\@versionSpec\@date"
+ * Journal identifier within a single collection
+ * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")
+ * @public
+ */
+export type JournalBaseId = Brand<string, 'JournalBaseId'>;
+
+/**
+ * Globally unique journal identifier (composite)
+ * Format: "collectionId.baseJournalId"
+ * Must contain exactly one dot separator
  * @public
  */
 export type JournalId = Brand<string, 'JournalId'>;
@@ -724,12 +732,20 @@ export const FILLING_VERSION_ID_PATTERN: RegExp =
 export const SESSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
 
 /**
- * Pattern for valid journal IDs
+ * Pattern for valid journal base IDs (within a collection)
  * Format: YYYY-MM-DD-HHMMSS-[0-9a-f]\{8\}
  * Example: "2026-01-15-143025-a1b2c3d4"
  * @public
  */
-export const JOURNAL_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+export const JOURNAL_BASE_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+
+/**
+ * Pattern for valid composite journal IDs
+ * Format: collectionId.baseJournalId
+ * Example: "user-journals.2026-01-15-143025-a1b2c3d4"
+ * @public
+ */
+export const JOURNAL_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
 
 /**
  * Pattern for valid confection version specs

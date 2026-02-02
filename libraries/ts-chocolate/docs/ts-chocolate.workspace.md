@@ -61,6 +61,27 @@ Whether the workspace is ready for use (unlocked or no key store configured).
 </td></tr>
 <tr><td>
 
+[journals](./ts-chocolate.workspace.journals.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+JournalLibrary
+
+
+</td><td>
+
+Journal library for production records (user-specific data).
+
+
+</td></tr>
+<tr><td>
+
 [keyStore](./ts-chocolate.workspace.keystore.md)
 
 

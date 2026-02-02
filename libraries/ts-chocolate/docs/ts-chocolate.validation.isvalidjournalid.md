@@ -4,7 +4,7 @@
 
 ## Validation.isValidJournalId() function
 
-Type guard for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
+Type guard for [JournalId](./ts-chocolate.journalid.md) (composite).
 
 **Signature:**
 

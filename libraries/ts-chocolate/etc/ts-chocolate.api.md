@@ -185,7 +185,7 @@ type AnyProducedConfection = IProducedMoldedBonBon | IProducedBarTruffle | IProd
 const anyProducedConfection: Converter<AnyProducedConfection>;
 
 // @public
-type AnyResolvedFillingSlot = IResolvedFillingSlot | IResolvedIngredientSlot;
+type AnyResolvedFillingSlot = IResolvedFillingSlot_2 | IResolvedIngredientSlot;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -473,10 +473,6 @@ export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<Ingredient>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getMold(id: MoldId): Result<IMold>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getProcedure(id: ProcedureId): Result<IProcedure>;
@@ -492,8 +488,6 @@ export class ChocolateLibrary {
     hasTask(id: TaskId): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get journals(): JournalLibrary;
     readonly logger: Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get molds(): MoldsLibrary;
@@ -778,7 +772,7 @@ declare namespace Confections_2 {
         ConfectionData,
         ResolvedSlotType,
         allResolvedSlotTypes,
-        IResolvedFillingSlot,
+        IResolvedFillingSlot_2 as IResolvedFillingSlot,
         IResolvedIngredientSlot,
         AnyResolvedFillingSlot,
         IProducedConfectionBase,
@@ -859,6 +853,7 @@ declare namespace Converters {
         baseProcedureId,
         baseTaskId,
         baseConfectionId,
+        journalBaseId,
         ingredientId,
         fillingId,
         moldId,
@@ -876,6 +871,8 @@ declare namespace Converters {
         parsedProcedureId,
         ParsedTaskId,
         parsedTaskId,
+        ParsedJournalId,
+        parsedJournalId,
         fillingName,
         fillingVersionSpec,
         fillingVersionId,
@@ -1008,6 +1005,9 @@ function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryL
 
 // @public
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
+
+// @public
+function createJournalId(collectionId: SourceId, baseId: JournalBaseId): JournalId;
 
 // @public
 export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace>;
@@ -1319,7 +1319,7 @@ declare namespace Entities {
         ConfectionData,
         ResolvedSlotType,
         allResolvedSlotTypes,
-        IResolvedFillingSlot,
+        IResolvedFillingSlot_2 as IResolvedFillingSlot,
         IResolvedIngredientSlot,
         AnyResolvedFillingSlot,
         IProducedConfectionBase,
@@ -1836,7 +1836,7 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-function generateJournalId(): Result<JournalId>;
+function generateJournalId(): Result<JournalBaseId>;
 
 // @public
 function generateSessionId(): Result<SessionId>;
@@ -1879,6 +1879,12 @@ function getIngredientsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.I
 
 // @public
 function getIngredientSourceId(id: IngredientId): SourceId;
+
+// @public
+function getJournalBaseId(id: JournalId): JournalBaseId;
+
+// @public
+function getJournalCollectionId(id: JournalId): SourceId;
 
 // @public
 function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -1929,6 +1935,10 @@ declare namespace Helpers {
         parseFillingId,
         getFillingSourceId,
         getFillingBaseId,
+        createJournalId,
+        parseJournalId,
+        getJournalCollectionId,
+        getJournalBaseId,
         createFillingVersionId,
         parseFillingVersionId,
         getFillingVersionFillingId,
@@ -2226,7 +2236,7 @@ interface IConfectionContext {
     resolveAdditionalChocolates(additional: ReadonlyArray<IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
     resolveCoatings(coatings: ICoatings): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
     resolveMoldRefs(molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
@@ -2858,7 +2868,6 @@ interface IInstantiatedLibrarySource {
     readonly confections?: ConfectionsLibrary;
     readonly fillings?: FillingsLibrary;
     readonly ingredients?: IngredientsLibrary;
-    readonly journals?: JournalLibrary;
     readonly molds?: MoldsLibrary;
     readonly procedures?: ProceduresLibrary;
     readonly tasks?: TasksLibrary;
@@ -2872,7 +2881,7 @@ interface IIterationOptions {
 
 // @public
 interface IJournalEntryBase<TVersion, TVersionId> {
-    readonly id: JournalId;
+    readonly baseId: JournalBaseId;
     readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly recipe: TVersion;
     readonly timestamp: string;
@@ -2965,10 +2974,7 @@ interface ILibraryRuntimeContext {
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
     readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
-    readonly journals: JournalLibrary;
     readonly library: ChocolateLibrary;
     warmUp(): void;
 }
@@ -3701,16 +3707,16 @@ interface IResolvedFillingRecipeProcedure {
 
 // @public
 interface IResolvedFillingSlot {
-    readonly fillingId: FillingId;
+    readonly filling: IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+    readonly name?: string;
     readonly slotId: SlotId;
-    readonly slotType: 'recipe';
 }
 
 // @public
 interface IResolvedFillingSlot_2 {
-    readonly filling: IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
-    readonly name?: string;
+    readonly fillingId: FillingId;
     readonly slotId: SlotId;
+    readonly slotType: 'recipe';
 }
 
 // @public
@@ -3859,7 +3865,7 @@ interface IRuntimeConfection {
     readonly description?: string;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
-    readonly fillings?: ReadonlyArray<IResolvedFillingSlot_2>;
+    readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
     getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
@@ -3887,7 +3893,7 @@ interface IRuntimeConfectionVersionBase {
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
-    readonly fillings?: ReadonlyArray<IResolvedFillingSlot_2>;
+    readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     isBarTruffleVersion(): this is IRuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is IRuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is IRuntimeRolledTruffleVersion;
@@ -4406,7 +4412,7 @@ function isProducedMoldedBonBon(produced: AnyProducedConfection): produced is IP
 function isProducedRolledTruffle(produced: AnyProducedConfection): produced is IProducedRolledTruffle;
 
 // @public
-function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedFillingSlot;
+function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedFillingSlot_2;
 
 // @public
 function isResolvedIngredientSlot(slot: AnyResolvedFillingSlot): slot is IResolvedIngredientSlot;
@@ -4508,6 +4514,9 @@ function isValidFillingName(from: unknown): from is FillingName;
 
 // @public
 function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec;
+
+// @public
+function isValidJournalBaseId(from: unknown): from is JournalBaseId;
 
 // @public
 function isValidJournalId(from: unknown): from is JournalId;
@@ -4668,6 +4677,7 @@ interface IWeightContribution {
 // @public
 export interface IWorkspace {
     readonly isReady: boolean;
+    readonly journals: JournalLibrary;
     readonly keyStore: KeyStore | undefined;
     lock(): Result<IWorkspace>;
     readonly runtime: RuntimeContext;
@@ -4682,12 +4692,14 @@ export interface IWorkspaceCreateParams {
     readonly encryption?: Partial<Omit<IEncryptionConfig, 'secretProvider'>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+    readonly journals?: JournalLibrary;
     // Warning: (ae-forgotten-export) The symbol "IWorkspaceKeyStoreConfig" needs to be exported by the entry point index.d.ts
     readonly keyStore?: IWorkspaceKeyStoreConfig;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly libraries?: IInstantiatedLibrarySource;
     readonly logger?: Logging.LogReporter<unknown>;
     readonly preWarm?: boolean;
+    readonly userFileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
 }
 
 // @public
@@ -4734,7 +4746,7 @@ declare namespace Journal_2 {
         isProducedMoldedBonBon,
         isProducedRolledTruffle,
         AnyResolvedFillingSlot,
-        IResolvedFillingSlot,
+        IResolvedFillingSlot_2 as IResolvedFillingSlot,
         IResolvedIngredientSlot,
         ResolvedSlotType,
         allResolvedSlotTypes,
@@ -4765,19 +4777,31 @@ declare namespace Journal_2 {
 }
 
 // @public
+export const JOURNAL_BASE_ID_PATTERN: RegExp;
+
+// @public
 export const JOURNAL_ID_PATTERN: RegExp;
 
 // @public
-type JournalCollection = SubLibraryCollection<JournalId, AnyJournalEntry>;
+export type JournalBaseId = Brand<string, 'JournalBaseId'>;
 
 // @public
-type JournalCollectionEntry = SubLibraryCollectionEntry<JournalId, AnyJournalEntry>;
+const journalBaseId: Converter<JournalBaseId>;
 
 // @public
-type JournalCollectionEntryInit = SubLibraryEntryInit<JournalId, AnyJournalEntry>;
+const journalBaseId_2: Validator<JournalBaseId>;
 
 // @public
-type JournalCollectionValidator = SubLibraryCollectionValidator<JournalId, AnyJournalEntry>;
+type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntry>;
+
+// @public
+type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntry>;
+
+// @public
+type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntry>;
+
+// @public
+type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntry>;
 
 // @public
 type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit';
@@ -4793,10 +4817,13 @@ export type JournalId = Brand<string, 'JournalId'>;
 // @public
 const journalId: Converter<JournalId>;
 
+// @public
+const journalId_2: Validator<JournalId>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJournalEntry> {
+class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntry> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
@@ -5087,7 +5114,7 @@ declare namespace LibraryRuntime {
         IResolvedFillingOption,
         IResolvedRecipeFillingOption,
         IResolvedIngredientFillingOption,
-        IResolvedFillingSlot_2 as IResolvedFillingSlot,
+        IResolvedFillingSlot,
         IResolvedChocolateSpec,
         IResolvedAdditionalChocolate,
         IResolvedConfectionMoldRef,
@@ -5177,8 +5204,6 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     // @internal
     _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
     getProcedure(id: string): Result<IProcedure>;
     getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection>;
     getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
@@ -5192,7 +5217,6 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
-    get journals(): JournalLibrary;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -5201,7 +5225,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     resolveAdditionalChocolates(additional: ReadonlyArray<IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
     resolveCoatings(coatings: ICoatings): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
     resolveMoldRefs(molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
@@ -5458,6 +5482,12 @@ type ParsedIngredientId = Converters_6.ICompositeId<SourceId, BaseIngredientId>;
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
+type ParsedJournalId = Converters_6.ICompositeId<SourceId, JournalBaseId>;
+
+// @public
+const parsedJournalId: Converter<ParsedJournalId>;
+
+// @public
 type ParsedMoldId = Converters_6.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
@@ -5483,6 +5513,9 @@ function parseFillingVersionId(id: FillingVersionId): Result<ParsedFillingVersio
 
 // @public
 function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
+
+// @public
+function parseJournalId(id: JournalId): Result<ParsedJournalId>;
 
 // @public
 function parseJson<T>(content: string): Result<ICollectionSourceFile<T>>;
@@ -5525,7 +5558,7 @@ const persistedFillingSession: Converter<IPersistedFillingSession>;
 const persistedSessionDestination: Converter<IPersistedSessionDestination>;
 
 // @public
-type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
+type PersistedSessionStatus = 'planning' | 'active' | 'committing' | 'committed' | 'abandoned';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5702,7 +5735,7 @@ function resolveBuiltInSpec<TCollectionId extends string = string>(spec: FullLib
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resolvedFillingSlot: Converter<IResolvedFillingSlot>;
+const resolvedFillingSlot: Converter<IResolvedFillingSlot_2>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5784,7 +5817,7 @@ class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruf
     // @internal
     protected _createVersion(rawVersion: AnyConfectionVersion): IRuntimeBarTruffleVersion;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     get frameDimensions(): IFrameDimensions;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion>;
     get goldenVersion(): IRuntimeBarTruffleVersion;
@@ -5856,7 +5889,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     get description(): string | undefined;
     get effectiveTags(): ReadonlyArray<string>;
     get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
-    abstract get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
     getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
@@ -5902,7 +5935,7 @@ abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersion
     get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
     get effectiveTags(): ReadonlyArray<string>;
     get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     isBarTruffleVersion(): this is RuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion;
@@ -6089,7 +6122,7 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
     static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon): Result<RuntimeMoldedBonBon>;
     // @internal
     protected _createVersion(rawVersion: AnyConfectionVersion): IRuntimeMoldedBonBonVersion;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
     get goldenVersion(): IRuntimeMoldedBonBonVersion;
     get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
@@ -6276,7 +6309,7 @@ class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRoll
     // @internal
     protected _createVersion(rawVersion: AnyConfectionVersion): IRuntimeRolledTruffleVersion;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion>;
     get goldenVersion(): IRuntimeRolledTruffleVersion;
     get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
@@ -6752,6 +6785,9 @@ function toFillingName(from: unknown): Result<FillingName>;
 function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec>;
 
 // @public
+function toJournalBaseId(from: unknown): Result<JournalBaseId>;
+
+// @public
 function toJournalId(from: unknown): Result<JournalId>;
 
 // @public
@@ -6929,6 +6965,8 @@ declare namespace Validation {
         toMinutes,
         isValidMillimeters,
         toMillimeters,
+        isValidJournalBaseId,
+        toJournalBaseId,
         isValidJournalId,
         toJournalId,
         isValidSlotId,
@@ -6976,12 +7014,14 @@ declare namespace Validators {
         baseProcedureId_2 as baseProcedureId,
         baseTaskId_2 as baseTaskId,
         baseConfectionId_2 as baseConfectionId,
+        journalBaseId_2 as journalBaseId,
         ingredientId_2 as ingredientId,
         fillingId_2 as fillingId,
         moldId_2 as moldId,
         procedureId_2 as procedureId,
         taskId_2 as taskId,
         confectionId_2 as confectionId,
+        journalId_2 as journalId,
         fillingVersionSpec_2 as fillingVersionSpec,
         confectionVersionSpec_2 as confectionVersionSpec,
         fillingVersionId_2 as fillingVersionId,
@@ -7014,6 +7054,7 @@ const weightUnit: Converter<WeightUnit>;
 export class Workspace implements IWorkspace {
     static create(params?: IWorkspaceCreateParams): Result<Workspace>;
     get isReady(): boolean;
+    get journals(): JournalLibrary;
     get keyStore(): KeyStore | undefined;
     lock(): Result<IWorkspace>;
     get runtime(): RuntimeContext;

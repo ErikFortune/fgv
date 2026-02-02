@@ -102,6 +102,27 @@ _(Optional)_ File tree sources to load data from.
 </td></tr>
 <tr><td>
 
+[journals?](./ts-chocolate.iworkspacecreateparams.journals.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+JournalLibrary
+
+
+</td><td>
+
+_(Optional)_ Pre-instantiated journal library.
+
+
+</td></tr>
+<tr><td>
+
 [keyStore?](./ts-chocolate.iworkspacecreateparams.keystore.md)
 
 
@@ -181,6 +202,27 @@ boolean
 </td><td>
 
 _(Optional)_ Whether to pre-warm the runtime caches on creation.
+
+
+</td></tr>
+<tr><td>
+
+[userFileSources?](./ts-chocolate.iworkspacecreateparams.userfilesources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ILibraryFileTreeSource](./ts-chocolate.librarydata.ilibraryfiletreesource.md) \| ReadonlyArray&lt;[ILibraryFileTreeSource](./ts-chocolate.librarydata.ilibraryfiletreesource.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ File tree sources for user-specific data (journals, future inventory). Separate from shared library sources.
 
 
 </td></tr>

@@ -32,7 +32,7 @@ import {
   MeasurementUnit,
   ProcedureId,
   SessionId,
-  Helpers,
+  Helpers as CommonHelpers,
   Converters as CommonConverters
 } from '../../common';
 import {
@@ -262,7 +262,7 @@ export class EditingSession {
     // For now, just create the journal entry
     return this._createJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
-        journalId: journalEntry.id,
+        journalId: journalEntry.baseId,
         journalEntry,
         newVersionSpec: options.versionSpec
       })
@@ -288,7 +288,7 @@ export class EditingSession {
     // For now, return placeholder result
     return this._createJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
-        journalId: journalEntry.id,
+        journalId: journalEntry.baseId,
         journalEntry,
         newVersionSpec: options.versionSpec
       })
@@ -309,7 +309,7 @@ export class EditingSession {
     // For now, just create the journal entry
     return this._createJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
-        journalId: journalEntry.id,
+        journalId: journalEntry.baseId,
         journalEntry,
         newVersionSpec: options.versionSpec
       })
@@ -339,10 +339,10 @@ export class EditingSession {
    * @public
    */
   public toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry> {
-    return generateJournalId().onSuccess((id) =>
+    return generateJournalId().onSuccess((baseId) =>
       succeed({
         type: 'filling-production' as const,
-        id,
+        baseId,
         timestamp: getCurrentTimestamp(),
         versionId: this._baseRecipe.versionId,
         recipe: this._baseRecipe.version,
@@ -408,12 +408,12 @@ export class EditingSession {
     updatedVersionSpec: string | undefined,
     notes: ICategorizedNote[] | undefined
   ): Result<IFillingEditJournalEntry> {
-    return generateJournalId().onSuccess((id) => {
+    return generateJournalId().onSuccess((baseId) => {
       // Create updated version ID if needed
       const updatedIdResult = updatedVersionSpec
         ? CommonConverters.fillingVersionSpec.convert(updatedVersionSpec).onSuccess((versionSpec) =>
-            Helpers.createFillingVersionIdValidated({
-              collectionId: this._baseRecipe.fillingId,
+            CommonHelpers.createFillingVersionIdValidated({
+              collectionId: CommonHelpers.getFillingVersionFillingId(this._baseRecipe.versionId),
               itemId: versionSpec
             })
           )
@@ -422,7 +422,7 @@ export class EditingSession {
       return updatedIdResult.onSuccess((updatedId) =>
         succeed({
           type: 'filling-edit' as const,
-          id,
+          baseId,
           timestamp: getCurrentTimestamp(),
           versionId: this._baseRecipe.versionId,
           recipe: this._baseRecipe.version,

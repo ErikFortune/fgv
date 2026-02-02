@@ -137,7 +137,7 @@ Description
 
 </td><td>
 
-Generates a JournalId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
+Generates a JournalBaseId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
 
 
 </td></tr>

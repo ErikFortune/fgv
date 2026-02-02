@@ -32,7 +32,6 @@ import {
   Measurement,
   Helpers,
   IngredientId,
-  JournalId,
   Percentage,
   RatingScore,
   FillingId,
@@ -42,7 +41,8 @@ import {
   SlotId,
   SourceId,
   UrlCategory,
-  Validation
+  Validation,
+  JournalBaseId
 } from '../../../packlets/common';
 
 const {
@@ -54,7 +54,7 @@ const {
   isValidFillingName,
   isValidFillingVersionSpec,
   isValidSessionId,
-  isValidJournalId,
+  isValidJournalBaseId,
   isValidRatingScore,
   isValidMeasurement,
   isValidPercentage,
@@ -69,7 +69,7 @@ const {
   toFillingName,
   toFillingVersionSpec,
   toSessionId,
-  toJournalId,
+  toJournalBaseId,
   isValidSlotId,
   toSlotId,
   toRatingScore,
@@ -447,23 +447,23 @@ describe('Common validation', () => {
       ['old format', 'journal-l1234567-abc12345']
     ];
 
-    describe('isValidJournalId', () => {
+    describe('isValidJournalBaseId', () => {
       test.each(validJournalIds)('returns true for %s', (_desc, value) => {
-        expect(isValidJournalId(value)).toBe(true);
+        expect(isValidJournalBaseId(value)).toBe(true);
       });
 
       test.each(invalidJournalIds)('returns false for %s', (_desc, value) => {
-        expect(isValidJournalId(value)).toBe(false);
+        expect(isValidJournalBaseId(value)).toBe(false);
       });
     });
 
-    describe('toJournalId', () => {
+    describe('toJournalBaseId', () => {
       test.each(validJournalIds)('succeeds with %s', (_desc, value) => {
-        expect(toJournalId(value)).toSucceedWith(value as JournalId);
+        expect(toJournalBaseId(value)).toSucceedWith(value as JournalBaseId);
       });
 
       test.each(invalidJournalIds)('fails with %s', (_desc, value) => {
-        expect(toJournalId(value)).toFailWith(/Invalid JournalId/);
+        expect(toJournalBaseId(value)).toFailWith(/Invalid JournalBaseId/);
       });
     });
   });

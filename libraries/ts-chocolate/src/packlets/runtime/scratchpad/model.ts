@@ -78,13 +78,14 @@ export const allPersistedSessionTypes: ReadonlyArray<PersistedSessionType> = ['c
  * Persisted session lifecycle state.
  * @public
  */
-export type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
+export type PersistedSessionStatus = 'planning' | 'active' | 'committing' | 'committed' | 'abandoned';
 
 /**
  * All possible persisted session statuses.
  * @public
  */
 export const allPersistedSessionStatuses: ReadonlyArray<PersistedSessionStatus> = [
+  'planning',
   'active',
   'committing',
   'committed',

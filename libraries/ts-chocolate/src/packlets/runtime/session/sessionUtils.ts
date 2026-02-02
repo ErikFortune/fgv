@@ -25,7 +25,7 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { JournalId, SessionId, Converters as CommonConverters } from '../../common';
+import { JournalBaseId, SessionId, Converters as CommonConverters } from '../../common';
 
 // ============================================================================
 // ID Generators
@@ -49,11 +49,11 @@ export function generateSessionId(): Result<SessionId> {
 }
 
 /**
- * Generates a JournalId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
- * @returns Result with a valid JournalId
+ * Generates a JournalBaseId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
+ * @returns Result with a valid JournalBaseId
  * @public
  */
-export function generateJournalId(): Result<JournalId> {
+export function generateJournalId(): Result<JournalBaseId> {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -62,7 +62,9 @@ export function generateJournalId(): Result<JournalId> {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
   const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
-  return CommonConverters.journalId.convert(`${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`);
+  return CommonConverters.journalBaseId.convert(
+    `${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`
+  );
 }
 
 // ============================================================================

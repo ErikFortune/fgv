@@ -27,7 +27,7 @@ import {
   ConfectionVersionId,
   FillingVersionId,
   ICategorizedNote,
-  JournalId,
+  JournalBaseId,
   Measurement
 } from '../../common';
 import {
@@ -115,8 +115,8 @@ export const allJournalEntryTypes: JournalEntryType[] = [
 export interface IJournalEntryBase<TVersion, TVersionId> {
   /** Entry type discriminator */
   readonly type: JournalEntryType;
-  /** Unique identifier for this journal entry */
-  readonly id: JournalId;
+  /** Base identifier within collection (no collection prefix) */
+  readonly baseId: JournalBaseId;
   /** Timestamp when this entry was created (ISO 8601 format) */
   readonly timestamp: string;
   /** Source version ID for indexing and lookup */

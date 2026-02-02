@@ -151,12 +151,23 @@ Type guard for [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- --
 </td></tr>
 <tr><td>
 
+[isValidJournalBaseId(from)](./ts-chocolate.validation.isvalidjournalbaseid.md)
+
+
+</td><td>
+
+Type guard for [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isValidJournalId(from)](./ts-chocolate.validation.isvalidjournalid.md)
 
 
 </td><td>
 
-Type guard for [JournalId](./ts-chocolate.journalid.md)<!-- -->.
+Type guard for [JournalId](./ts-chocolate.journalid.md) (composite).
 
 
 </td></tr>
@@ -404,12 +415,23 @@ Validates unknown value is a [FillingVersionSpec](./ts-chocolate.fillingversions
 </td></tr>
 <tr><td>
 
+[toJournalBaseId(from)](./ts-chocolate.validation.tojournalbaseid.md)
+
+
+</td><td>
+
+Validates unknown value is a [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [toJournalId(from)](./ts-chocolate.validation.tojournalid.md)
 
 
 </td><td>
 
-Validates unknown value is a [JournalId](./ts-chocolate.journalid.md)<!-- -->.
+Validates unknown value is a [JournalId](./ts-chocolate.journalid.md) (composite).
 
 
 </td></tr>

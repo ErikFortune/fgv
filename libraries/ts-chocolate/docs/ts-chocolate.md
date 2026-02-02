@@ -28,7 +28,7 @@ Description
 
 Main entry point for the chocolate library
 
-Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Journal management (cooking session records) - Recipe scaling - Ganache characteristic calculations
+Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Recipe scaling - Ganache characteristic calculations
 
 
 </td></tr>
@@ -672,12 +672,23 @@ Separator character used in composite IDs
 </td></tr>
 <tr><td>
 
+[JOURNAL\_BASE\_ID\_PATTERN](./ts-chocolate.journal_base_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid journal base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
 [JOURNAL\_ID\_PATTERN](./ts-chocolate.journal_id_pattern.md)
 
 
 </td><td>
 
-Pattern for valid journal IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+Pattern for valid composite journal IDs Format: collectionId.baseJournalId Example: "user-journals.2026-01-15-143025-a1b2c3d4"
 
 
 </td></tr>
@@ -1083,12 +1094,23 @@ Physical phase of an ingredient - display hint for UI. Used to determine action 
 </td></tr>
 <tr><td>
 
+[JournalBaseId](./ts-chocolate.journalbaseid.md)
+
+
+</td><td>
+
+Journal identifier within a single collection Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")
+
+
+</td></tr>
+<tr><td>
+
 [JournalId](./ts-chocolate.journalid.md)
 
 
 </td><td>
 
-Unique identifier for a cooking journal record Format: UUID or "fillingId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
+Globally unique journal identifier (composite) Format: "collectionId.baseJournalId" Must contain exactly one dot separator
 
 
 </td></tr>
