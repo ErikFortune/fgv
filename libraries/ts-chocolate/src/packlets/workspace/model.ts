@@ -36,6 +36,7 @@ import { JournalLibrary, SessionLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
 import { IChocolateLibraryCreateParams, IInstantiatedLibrarySource } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
+import { ISettingsManager } from '../settings';
 import { IUserLibraryCreateParams } from '../user-library';
 import { IUserLibraryRuntime } from '../user-runtime';
 
@@ -92,6 +93,12 @@ export interface IWorkspace {
    * The key store for encryption key management, if configured.
    */
   readonly keyStore: KeyStore | undefined;
+
+  /**
+   * The settings manager for workspace configuration.
+   * May be undefined if workspace was created without platform initialization.
+   */
+  readonly settings: ISettingsManager | undefined;
 
   // ---- Workspace State ----
 
@@ -232,6 +239,19 @@ export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'k
    * The crypto provider will be supplied by the platform factory.
    */
   readonly keyStoreFile?: IKeyStoreFile;
+}
+
+/**
+ * Parameters for creating a workspace with pre-created settings manager.
+ * Used by platform initialization flow.
+ * @public
+ */
+export interface IWorkspaceCreateWithSettingsParams extends IWorkspaceCreateParams {
+  /**
+   * Pre-created settings manager from platform initialization.
+   * If provided, the workspace will use this settings manager.
+   */
+  readonly settings: ISettingsManager;
 }
 
 /**

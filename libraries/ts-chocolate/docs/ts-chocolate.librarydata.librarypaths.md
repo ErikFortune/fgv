@@ -18,5 +18,9 @@ LibraryPaths: {
     readonly tasks: "data/tasks";
     readonly confections: "data/confections";
     readonly sessions: "data/sessions";
+    readonly settings: "data/settings";
+    readonly settingsCommon: "common.json";
+    readonly settingsDevicePrefix: "device-";
+    readonly keyStore: "keystore.json";
 }
 ```

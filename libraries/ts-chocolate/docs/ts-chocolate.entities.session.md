@@ -95,8 +95,6 @@ Persisted confection editing session with full editing state.
 
 Contains the complete undo/redo history so the session can be restored to its exact editing state. References child filling sessions by their persisted session IDs.
 
-Note: All production choices (mold, chocolates, procedure, yield/frames) are captured in the history's AnyProducedConfection, making a separate production property unnecessary.
-
 
 </td></tr>
 <tr><td>

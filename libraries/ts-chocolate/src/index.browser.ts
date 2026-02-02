@@ -40,7 +40,16 @@ export {
   IWorkspace,
   IWorkspaceCreateParams,
   IWorkspaceFactoryParams,
-  WorkspaceState
+  WorkspaceState,
+  // Platform init types (for browser implementations in chocolate-ui)
+  type IResolvedExternalLibrary,
+  type IPlatformInitResult,
+  type IPlatformInitOptions,
+  type IPlatformInitializer,
+  type ICommonWorkspaceInitParams,
+  toLibraryFileSources,
+  toUserLibrarySource,
+  createWorkspaceFromPlatform
 } from './packlets/workspace';
 // eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific factory
 export { createBrowserWorkspace } from './packlets/workspace/browserFactory';

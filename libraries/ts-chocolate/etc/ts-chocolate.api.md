@@ -4750,6 +4750,8 @@ export interface IWorkspace {
     lock(): Result<IWorkspace>;
     readonly runtime: RuntimeContext;
     readonly sessions: SessionLibrary;
+    // Warning: (ae-forgotten-export) The symbol "ISettingsManager" needs to be exported by the entry point index.d.ts
+    readonly settings: ISettingsManager | undefined;
     readonly state: WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
     readonly userRuntime: IUserLibraryRuntime;
@@ -5078,6 +5080,10 @@ const LibraryPaths: {
     readonly tasks: "data/tasks";
     readonly confections: "data/confections";
     readonly sessions: "data/sessions";
+    readonly settings: "data/settings";
+    readonly settingsCommon: "common.json";
+    readonly settingsDevicePrefix: "device-";
+    readonly keyStore: "keystore.json";
 };
 
 declare namespace LibraryPersistence {
@@ -7273,12 +7279,15 @@ const weightUnit: Converter<WeightUnit>;
 // @public
 export class Workspace implements IWorkspace {
     static create(params?: IWorkspaceCreateParams): Result<Workspace>;
+    // Warning: (ae-forgotten-export) The symbol "IWorkspaceCreateWithSettingsParams" needs to be exported by the entry point index.d.ts
+    static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
     get isReady(): boolean;
     get journals(): JournalLibrary;
     get keyStore(): KeyStore | undefined;
     lock(): Result<IWorkspace>;
     get runtime(): RuntimeContext;
     get sessions(): SessionLibrary;
+    get settings(): ISettingsManager | undefined;
     get state(): WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
     get userRuntime(): IUserLibraryRuntime;

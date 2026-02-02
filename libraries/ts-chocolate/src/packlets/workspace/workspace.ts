@@ -29,11 +29,13 @@ import { ICryptoProvider, KeyStore } from '../crypto-utils';
 import { JournalLibrary, SessionLibrary } from '../entities';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
+import { ISettingsManager } from '../settings';
 import { UserLibrary } from '../user-library';
 import { IUserLibraryRuntime, UserLibraryRuntime } from '../user-runtime';
 import {
   IWorkspace,
   IWorkspaceCreateParams,
+  IWorkspaceCreateWithSettingsParams,
   toLibraryParams,
   toUserLibraryParams,
   WorkspaceState
@@ -57,6 +59,7 @@ export class Workspace implements IWorkspace {
   private readonly _userLibrary: UserLibrary;
   private readonly _keyStore: KeyStore | undefined;
   private readonly _cryptoProvider: ICryptoProvider | undefined;
+  private readonly _settings: ISettingsManager | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
   private _userRuntime: UserLibraryRuntime | undefined;
 
@@ -68,12 +71,14 @@ export class Workspace implements IWorkspace {
     userLibrary: UserLibrary,
     keyStore: KeyStore | undefined,
     cryptoProvider: ICryptoProvider | undefined,
+    settings: ISettingsManager | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
     this._runtime = runtime;
     this._userLibrary = userLibrary;
     this._keyStore = keyStore;
     this._cryptoProvider = cryptoProvider;
+    this._settings = settings;
     this._logger = logger;
   }
 
@@ -149,11 +154,92 @@ export class Workspace implements IWorkspace {
       userLibraryResult.value,
       keyStore,
       cryptoProvider,
+      undefined, // Settings manager - not available via basic create
       logger
     );
 
     logger.info(
       `Workspace created: ${workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'}`
+    );
+
+    return succeed(workspace);
+  }
+
+  /**
+   * Creates a new workspace with a pre-created settings manager.
+   * Used by platform initialization flow after settings have been loaded.
+   *
+   * @param params - Workspace creation parameters with settings manager
+   * @returns Success with workspace, or Failure if creation fails
+   * @public
+   */
+  public static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace> {
+    // Set up logger
+    const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
+
+    // Create key store if configured
+    let keyStore: KeyStore | undefined;
+    let cryptoProvider: ICryptoProvider | undefined;
+
+    if (params.keyStore) {
+      cryptoProvider = params.keyStore.cryptoProvider;
+
+      if (params.keyStore.file) {
+        // Open existing key store
+        const openResult = KeyStore.open({
+          keystoreFile: params.keyStore.file,
+          cryptoProvider
+        });
+        if (openResult.isFailure()) {
+          return fail(`Failed to open key store: ${openResult.message}`);
+        }
+        keyStore = openResult.value;
+      } else {
+        // Create new key store (caller will need to initialize it)
+        const createResult = KeyStore.create({ cryptoProvider });
+        if (createResult.isFailure()) {
+          return fail(`Failed to create key store: ${createResult.message}`);
+        }
+        keyStore = createResult.value;
+      }
+    }
+
+    // Create library parameters
+    const libraryParams = toLibraryParams(params);
+
+    // Create runtime context (this creates the shared library)
+    const runtimeResult = RuntimeContext.create({
+      libraryParams,
+      preWarm: params.preWarm
+    });
+
+    if (runtimeResult.isFailure()) {
+      return fail(`Failed to create runtime context: ${runtimeResult.message}`);
+    }
+
+    // Create user library parameters
+    const userLibraryParams = toUserLibraryParams(params);
+
+    // Create user library (journals, sessions)
+    const userLibraryResult = UserLibrary.create(userLibraryParams);
+
+    if (userLibraryResult.isFailure()) {
+      return fail(`Failed to create user library: ${userLibraryResult.message}`);
+    }
+
+    const workspace = new Workspace(
+      runtimeResult.value,
+      userLibraryResult.value,
+      keyStore,
+      cryptoProvider,
+      params.settings,
+      logger
+    );
+
+    logger.info(
+      `Workspace created with settings: ${
+        workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'
+      }`
     );
 
     return succeed(workspace);
@@ -200,6 +286,13 @@ export class Workspace implements IWorkspace {
    */
   public get keyStore(): KeyStore | undefined {
     return this._keyStore;
+  }
+
+  /**
+   * {@inheritDoc IWorkspace.settings}
+   */
+  public get settings(): ISettingsManager | undefined {
+    return this._settings;
   }
 
   // ============================================================================

@@ -57,7 +57,24 @@ export const LibraryPaths = {
   /**
    * Path to the sessions data directory (user library).
    */
-  sessions: 'data/sessions'
+  sessions: 'data/sessions',
+  /**
+   * Path to the settings directory.
+   */
+  settings: 'data/settings',
+  /**
+   * Filename for common settings (within settings directory).
+   */
+  settingsCommon: 'common.json',
+  /**
+   * Filename prefix for device-specific settings (within settings directory).
+   * Full filename is `device-{deviceId}.json`.
+   */
+  settingsDevicePrefix: 'device-',
+  /**
+   * Default filename for key store (within user library root).
+   */
+  keyStore: 'keystore.json'
 } as const;
 
 /**

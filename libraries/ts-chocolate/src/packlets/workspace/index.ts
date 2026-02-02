@@ -32,8 +32,27 @@
 // Model types
 export * from './model';
 
+// Platform initialization types and functions
+export {
+  type IResolvedExternalLibrary,
+  type IPlatformInitResult,
+  type IPlatformInitOptions,
+  type IPlatformInitializer,
+  type ICommonWorkspaceInitParams,
+  toLibraryFileSources,
+  toUserLibrarySource,
+  createWorkspaceFromPlatform
+} from './platformInit';
+
 // Workspace class
 export { Workspace } from './workspace';
 
 // Node.js factory (browser factory is exported separately via index.browser.ts)
 export { createNodeWorkspace } from './nodeFactory';
+
+// Node.js platform initializer
+export {
+  NodePlatformInitializer,
+  createNodePlatformInitializer,
+  initializeNodePlatform
+} from './nodePlatformInit';

@@ -144,6 +144,27 @@ Session library for persisted editing sessions (user-specific data).
 </td></tr>
 <tr><td>
 
+[settings](./ts-chocolate.iworkspace.settings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ISettingsManager \| undefined
+
+
+</td><td>
+
+The settings manager for workspace configuration. May be undefined if workspace was created without platform initialization.
+
+
+</td></tr>
+<tr><td>
+
 [state](./ts-chocolate.iworkspace.state.md)
 
 
