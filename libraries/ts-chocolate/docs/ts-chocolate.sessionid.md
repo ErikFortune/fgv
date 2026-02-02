@@ -4,7 +4,7 @@
 
 ## SessionId type
 
-Unique identifier for an editing session Format: UUID
+Unique identifier for an editing session Format: YYYY-MM-DD-HHMMSS-xxxxxxxx
 
 **Signature:**
 

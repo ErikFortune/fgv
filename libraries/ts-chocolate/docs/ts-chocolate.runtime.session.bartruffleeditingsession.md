@@ -53,6 +53,22 @@ Factory method for creating a BarTruffleEditingSession.
 </td></tr>
 <tr><td>
 
+[fromPersistedState(baseConfection, history, context, params)](./ts-chocolate.runtime.session.bartruffleeditingsession.frompersistedstate.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Restores a BarTruffleEditingSession from persisted state. Note: Child filling sessions are persisted separately and should be accessed via their persisted session IDs from IPersistedConfectionSession.childSessionIds.
+
+
+</td></tr>
+<tr><td>
+
 [scaleToYield(yieldSpec)](./ts-chocolate.runtime.session.bartruffleeditingsession.scaletoyield.md)
 
 

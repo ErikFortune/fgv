@@ -52,8 +52,12 @@ import {
   Millimeters,
   Minutes,
   Percentage,
+  PersistedSessionId,
+  PERSISTED_SESSION_ID_PATTERN,
   RatingScore,
+  SESSION_BASE_ID_PATTERN,
   SESSION_ID_PATTERN,
+  SessionBaseId,
   SessionId,
   SlotId,
   SourceId,
@@ -418,6 +422,58 @@ export function toSessionId(from: unknown): Result<SessionId> {
   }
   return Failure.with(
     `${from}: Invalid SessionId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
+/**
+ * Type guard for {@link SessionBaseId | SessionBaseId}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link SessionBaseId | SessionBaseId}.
+ * @public
+ */
+export function isValidSessionBaseId(from: unknown): from is SessionBaseId {
+  return typeof from === 'string' && SESSION_BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link SessionBaseId | SessionBaseId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link SessionBaseId | SessionBaseId} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toSessionBaseId(from: unknown): Result<SessionBaseId> {
+  if (isValidSessionBaseId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `Invalid SessionBaseId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
+/**
+ * Type guard for {@link PersistedSessionId | PersistedSessionId} (composite).
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link PersistedSessionId | PersistedSessionId}
+ * @public
+ */
+export function isValidPersistedSessionId(from: unknown): from is PersistedSessionId {
+  return typeof from === 'string' && PERSISTED_SESSION_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link PersistedSessionId | PersistedSessionId} (composite).
+ * @param from - Value to validate
+ * @returns `Success` with {@link PersistedSessionId | PersistedSessionId} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toPersistedSessionId(from: unknown): Result<PersistedSessionId> {
+  if (isValidPersistedSessionId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `Invalid PersistedSessionId: must be in format collectionId.baseSessionId (e.g., "user-sessions.2026-01-15-143025-a1b2c3d4")`
   );
 }
 

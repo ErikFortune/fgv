@@ -23,6 +23,7 @@ import '@fgv/ts-utils-jest';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   generateJournalId,
+  generateSessionBaseId,
   generateSessionId,
   getCurrentDateString,
   getCurrentTimestamp
@@ -58,6 +59,23 @@ describe('Session Utils', () => {
     test('generates unique journal IDs', () => {
       const id1 = generateJournalId().orThrow();
       const id2 = generateJournalId().orThrow();
+      // Due to random component, IDs should be different
+      expect(id1).not.toBe(id2);
+    });
+  });
+
+  describe('generateSessionBaseId', () => {
+    test('generates a valid session base ID', () => {
+      expect(generateSessionBaseId()).toSucceedAndSatisfy((sessionBaseId) => {
+        // Session base ID format: YYYY-MM-DD-HHMMSS-xxxxxxxx
+        expect(typeof sessionBaseId).toBe('string');
+        expect(sessionBaseId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      });
+    });
+
+    test('generates unique session base IDs', () => {
+      const id1 = generateSessionBaseId().orThrow();
+      const id2 = generateSessionBaseId().orThrow();
       // Due to random component, IDs should be different
       expect(id1).not.toBe(id2);
     });

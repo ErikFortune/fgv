@@ -85,6 +85,27 @@ Gets the number of cached recipes.
 </td></tr>
 <tr><td>
 
+[confections](./ts-chocolate.libraryruntime.ilibraryruntimecontext.confections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ConfectionsLibrary
+
+
+</td><td>
+
+The confections library for accessing confection data. Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks, `.values()` for iteration.
+
+
+</td></tr>
+<tr><td>
+
 [fillings](./ts-chocolate.libraryruntime.ilibraryruntimecontext.fillings.md)
 
 

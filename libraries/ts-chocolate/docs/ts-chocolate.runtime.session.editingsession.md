@@ -226,6 +226,22 @@ Creates a new EditingSession from a base recipe version.
 </td></tr>
 <tr><td>
 
+[fromPersistedState(data, baseRecipe)](./ts-chocolate.runtime.session.editingsession.frompersistedstate.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Restores an editing session from a persisted state. Restores the complete editing state including undo/redo history.
+
+
+</td></tr>
+<tr><td>
+
 [redo()](./ts-chocolate.runtime.session.editingsession.redo.md)
 
 
@@ -361,6 +377,20 @@ Sets the procedure for the filling.
 </td><td>
 
 Creates an edit journal entry from this session. Records the original version and any modifications made.
+
+
+</td></tr>
+<tr><td>
+
+[toPersistedState(options)](./ts-chocolate.runtime.session.editingsession.topersistedstate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a persisted session state from this editing session. Captures the complete editing state including undo/redo history.
 
 
 </td></tr>

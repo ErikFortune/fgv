@@ -77,5 +77,7 @@ import * as LibraryData from './packlets/library-data';
 import * as LibraryPersistence from './packlets/library-persistence';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
+import * as UserLibrary from './packlets/user-library';
+import * as UserRuntime from './packlets/user-runtime';
 
-export { CryptoUtils, LibraryData, LibraryPersistence, BuiltIn, Editing };
+export { CryptoUtils, LibraryData, LibraryPersistence, BuiltIn, Editing, UserLibrary, UserRuntime };

@@ -53,7 +53,9 @@ import {
   JournalBaseId,
   JournalId,
   MoldId,
+  PersistedSessionId,
   ProcedureId,
+  SessionBaseId,
   SourceId,
   TaskId,
   VERSION_ID_SEPARATOR
@@ -69,6 +71,7 @@ import {
   isValidConfectionVersionSpec,
   isValidFillingVersionSpec,
   isValidJournalBaseId,
+  isValidSessionBaseId,
   isValidSourceId
 } from './validation';
 
@@ -137,6 +140,15 @@ export const baseConfectionId: Validator<BaseConfectionId> = Validators.isA<Base
 export const journalBaseId: Validator<JournalBaseId> = Validators.isA<JournalBaseId>(
   'JournalBaseId',
   isValidJournalBaseId
+);
+
+/**
+ * In-place `Validator` for {@link SessionBaseId | SessionBaseId}.
+ * @public
+ */
+export const sessionBaseId: Validator<SessionBaseId> = Validators.isA<SessionBaseId>(
+  'SessionBaseId',
+  isValidSessionBaseId
 );
 
 // ============================================================================
@@ -223,6 +235,20 @@ export const journalId: Validator<JournalId> = Validators.compositeId<JournalId,
   collectionId: sourceId,
   separator: ID_SEPARATOR,
   itemId: journalBaseId
+});
+
+/**
+ * In-place `Validator` for {@link PersistedSessionId | PersistedSessionId} (composite string).
+ * @public
+ */
+export const persistedSessionId: Validator<PersistedSessionId> = Validators.compositeId<
+  PersistedSessionId,
+  SourceId,
+  SessionBaseId
+>({
+  collectionId: sourceId,
+  separator: ID_SEPARATOR,
+  itemId: sessionBaseId
 });
 
 // ============================================================================

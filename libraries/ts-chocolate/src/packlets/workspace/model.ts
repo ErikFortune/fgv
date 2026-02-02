@@ -32,11 +32,12 @@
 import { Logging, Result } from '@fgv/ts-utils';
 
 import { ICryptoProvider, IKeyStoreFile, KeyStore } from '../crypto-utils';
-import { JournalLibrary } from '../entities';
+import { JournalLibrary, SessionLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
 import { IChocolateLibraryCreateParams, IInstantiatedLibrarySource } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
 import { IUserLibraryCreateParams } from '../user-library';
+import { IUserLibraryRuntime } from '../user-runtime';
 
 // ============================================================================
 // Workspace State
@@ -75,6 +76,17 @@ export interface IWorkspace {
    * Journal library for production records (user-specific data).
    */
   readonly journals: JournalLibrary;
+
+  /**
+   * Session library for persisted editing sessions (user-specific data).
+   */
+  readonly sessions: SessionLibrary;
+
+  /**
+   * User library runtime for materializing persisted sessions.
+   * Provides session restoration and caching.
+   */
+  readonly userRuntime: IUserLibraryRuntime;
 
   /**
    * The key store for encryption key management, if configured.

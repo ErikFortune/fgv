@@ -39,6 +39,9 @@ export * from './ingredients/library';
 export * from './journal/model';
 export * from './journal/library';
 
+export * from './session/model';
+export * from './session/library';
+
 export * from './molds/model';
 export * from './molds/collection';
 export * from './molds/library';
@@ -62,6 +65,7 @@ import * as Ingredients from './ingredients';
 import * as Journal from './journal';
 import * as Molds from './molds';
 import * as Procedures from './procedures';
+import * as Session from './session';
 import * as Tasks from './tasks';
 
-export { Confections, Fillings, Ingredients, Journal, Molds, Procedures, Tasks };
+export { Confections, Fillings, Ingredients, Journal, Molds, Procedures, Session, Tasks };

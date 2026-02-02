@@ -44,7 +44,8 @@ import {
   IProducedMoldedBonBon,
   IProducedRolledTruffle,
   IResolvedFillingSlot,
-  IResolvedIngredientSlot
+  IResolvedIngredientSlot,
+  ISerializedEditingHistory
 } from '../../entities';
 import type {
   IRuntimeBarTruffleVersion,
@@ -189,6 +190,26 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    */
   public canRedo(): boolean {
     return this._redoStack.length > 0;
+  }
+
+  // ============================================================================
+  // Serialization
+  // ============================================================================
+
+  /**
+   * Gets the serialized editing history for persistence.
+   * Captures current state, original state, and undo/redo stacks.
+   * @param original - The original state when session started
+   * @returns Serialized editing history
+   * @public
+   */
+  public getSerializedHistory(original: T): ISerializedEditingHistory<T> {
+    return {
+      current: this._deepCopy(this._current),
+      original: this._deepCopy(original),
+      undoStack: this._undoStack.map((state) => this._deepCopy(state)),
+      redoStack: this._redoStack.map((state) => this._deepCopy(state))
+    };
   }
 
   // ============================================================================
@@ -579,6 +600,21 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
   }
 
   /**
+   * Restores a RuntimeProducedMoldedBonBon from serialized editing history.
+   * @param history - Serialized editing history
+   * @returns Result containing RuntimeProducedMoldedBonBon or error
+   * @public
+   */
+  public static restoreFromHistory(
+    history: ISerializedEditingHistory<IProducedMoldedBonBon>
+  ): Result<RuntimeProducedMoldedBonBon> {
+    const instance = new RuntimeProducedMoldedBonBon(history.current);
+    instance._undoStack = [...history.undoStack];
+    instance._redoStack = [...history.redoStack];
+    return succeed(instance);
+  }
+
+  /**
    * Converts source molded bonbon to produced molded bonbon entity.
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
@@ -854,6 +890,21 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
   }
 
   /**
+   * Restores a RuntimeProducedBarTruffle from serialized editing history.
+   * @param history - Serialized editing history
+   * @returns Result containing RuntimeProducedBarTruffle or error
+   * @public
+   */
+  public static restoreFromHistory(
+    history: ISerializedEditingHistory<IProducedBarTruffle>
+  ): Result<RuntimeProducedBarTruffle> {
+    const instance = new RuntimeProducedBarTruffle(history.current);
+    instance._undoStack = [...history.undoStack];
+    instance._redoStack = [...history.redoStack];
+    return succeed(instance);
+  }
+
+  /**
    * Converts source bar truffle to produced bar truffle entity.
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
@@ -1030,6 +1081,21 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
     return RuntimeProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
       RuntimeProducedRolledTruffle.create(produced)
     );
+  }
+
+  /**
+   * Restores a RuntimeProducedRolledTruffle from serialized editing history.
+   * @param history - Serialized editing history
+   * @returns Result containing RuntimeProducedRolledTruffle or error
+   * @public
+   */
+  public static restoreFromHistory(
+    history: ISerializedEditingHistory<IProducedRolledTruffle>
+  ): Result<RuntimeProducedRolledTruffle> {
+    const instance = new RuntimeProducedRolledTruffle(history.current);
+    instance._undoStack = [...history.undoStack];
+    instance._redoStack = [...history.redoStack];
+    return succeed(instance);
   }
 
   /**

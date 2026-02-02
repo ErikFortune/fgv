@@ -99,6 +99,21 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "common.ganac
 </td></tr>
 <tr><td>
 
+[SessionLibrary](./ts-chocolate.entities.sessionlibrary.md)
+
+
+</td><td>
+
+A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->.
+
+Sessions are organized into user-defined collections. The library provides cross-collection indexing for efficient queries by filling/confection and status.
+
+Provides: - Multi-collection storage with FileTree persistence - Cross-collection lookup by filling ID (all sessions for a filling) - Cross-collection lookup by filling version ID (all sessions for a specific version) - Cross-collection lookup by confection ID (all sessions for a confection) - Cross-collection lookup by confection version ID (all sessions for a specific version) - Cross-collection lookup by status (active, planning, etc.) - Lazy index rebuilding for efficient queries
+
+
+</td></tr>
+<tr><td>
+
 [TasksLibrary](./ts-chocolate.entities.taskslibrary.md)
 
 
@@ -309,6 +324,28 @@ Type guard for IMoldedBonBonVersion
 </td><td>
 
 Type guard to check if a yield is frame-based (for molded bonbons).
+
+
+</td></tr>
+<tr><td>
+
+[isPersistedConfectionSession(session)](./ts-chocolate.entities.ispersistedconfectionsession.md)
+
+
+</td><td>
+
+Type guard for IPersistedConfectionSession.
+
+
+</td></tr>
+<tr><td>
+
+[isPersistedFillingSession(session)](./ts-chocolate.entities.ispersistedfillingsession.md)
+
+
+</td><td>
+
+Type guard for IPersistedFillingSession.
 
 
 </td></tr>
@@ -857,6 +894,65 @@ Frame-based yield specification for molded bonbons. Stores frames + buffer perce
 </td></tr>
 <tr><td>
 
+[IPersistedConfectionProduction](./ts-chocolate.entities.ipersistedconfectionproduction.md)
+
+
+</td><td>
+
+Production properties for a confection session. These are production run choices, not recipe modifications.
+
+
+</td></tr>
+<tr><td>
+
+[IPersistedConfectionSession](./ts-chocolate.entities.ipersistedconfectionsession.md)
+
+
+</td><td>
+
+Persisted confection editing session with full editing state.
+
+Contains the complete undo/redo history so the session can be restored to its exact editing state. References child filling sessions by their persisted session IDs.
+
+
+</td></tr>
+<tr><td>
+
+[IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)
+
+
+</td><td>
+
+Persisted filling editing session with full editing state.
+
+Contains the complete undo/redo history so the session can be restored to its exact editing state.
+
+
+</td></tr>
+<tr><td>
+
+[IPersistedSessionBase](./ts-chocolate.entities.ipersistedsessionbase.md)
+
+
+</td><td>
+
+Common properties shared by all persisted session types.
+
+
+</td></tr>
+<tr><td>
+
+[IPersistedSessionDestination](./ts-chocolate.entities.ipersistedsessiondestination.md)
+
+
+</td><td>
+
+Destination collection configuration for persisting derived entities.
+
+
+</td></tr>
+<tr><td>
+
 [IProcedure](./ts-chocolate.entities.iprocedure.md)
 
 
@@ -1066,6 +1162,17 @@ Information about the source of a scaled filling recipe. Used at runtime for com
 </td></tr>
 <tr><td>
 
+[ISerializedEditingHistory](./ts-chocolate.entities.iserializededitinghistory.md)
+
+
+</td><td>
+
+Serialized undo/redo history for any editable entity. Captures the full editing state for restoration.
+
+
+</td></tr>
+<tr><td>
+
 [ISugarIngredient](./ts-chocolate.entities.isugaringredient.md)
 
 
@@ -1221,6 +1328,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Session](./ts-chocolate.entities.session.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Tasks](./ts-chocolate.entities.tasks.md)
 
 
@@ -1267,6 +1383,28 @@ All possible [journal entry types](./ts-chocolate.entities.journal.journalentryt
 </td></tr>
 <tr><td>
 
+[allPersistedSessionStatuses](./ts-chocolate.entities.allpersistedsessionstatuses.md)
+
+
+</td><td>
+
+All possible persisted session statuses.
+
+
+</td></tr>
+<tr><td>
+
+[allPersistedSessionTypes](./ts-chocolate.entities.allpersistedsessiontypes.md)
+
+
+</td><td>
+
+All possible persisted session types.
+
+
+</td></tr>
+<tr><td>
+
 [allRatingCategories](./ts-chocolate.entities.allratingcategories.md)
 
 
@@ -1295,6 +1433,17 @@ All resolved slot types.
 </td><td>
 
 Default render options
+
+
+</td></tr>
+<tr><td>
+
+[PERSISTED\_SESSION\_SCHEMA\_VERSION](./ts-chocolate.entities.persisted_session_schema_version.md)
+
+
+</td><td>
+
+Current schema version for persisted sessions.
 
 
 </td></tr>
@@ -1387,6 +1536,17 @@ Union type for consumers who can work with either scaled or unscaled versions
 </td><td>
 
 Discriminated union of all journal entry types. Use type guards to narrow to specific types.
+
+
+</td></tr>
+<tr><td>
+
+[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
+
+
+</td><td>
+
+Discriminated union of all persisted session types. Use type guards to narrow to specific types.
 
 
 </td></tr>
@@ -1887,6 +2047,39 @@ Parameters for creating a ProceduresLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
+[ISessionFileTreeSource](./ts-chocolate.entities.isessionfiletreesource.md)
+
+
+</td><td>
+
+File tree source for session data.
+
+
+</td></tr>
+<tr><td>
+
+[ISessionLibraryAsyncParams](./ts-chocolate.entities.isessionlibraryasyncparams.md)
+
+
+</td><td>
+
+Parameters for creating a SessionLibrary instance asynchronously with encryption support.
+
+
+</td></tr>
+<tr><td>
+
+[ISessionLibraryParams](./ts-chocolate.entities.isessionlibraryparams.md)
+
+
+</td><td>
+
+Parameters for creating a SessionLibrary instance synchronously.
+
+
+</td></tr>
+<tr><td>
+
 [ITaskFileTreeSource](./ts-chocolate.entities.itaskfiletreesource.md)
 
 
@@ -2052,6 +2245,39 @@ Specifies a molds library to merge into a new library.
 </td></tr>
 <tr><td>
 
+[PersistedSessionSchemaVersion](./ts-chocolate.entities.persistedsessionschemaversion.md)
+
+
+</td><td>
+
+Schema version discriminator type.
+
+
+</td></tr>
+<tr><td>
+
+[PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)
+
+
+</td><td>
+
+Persisted session lifecycle state. - `planning`<!-- -->: Session is being planned but not actively editing - `active`<!-- -->: Session is actively being edited - `committing`<!-- -->: Session is in the process of being committed - `committed`<!-- -->: Session has been committed to a journal entry - `abandoned`<!-- -->: Session was explicitly abandoned
+
+
+</td></tr>
+<tr><td>
+
+[PersistedSessionType](./ts-chocolate.entities.persistedsessiontype.md)
+
+
+</td><td>
+
+Persisted session type discriminator.
+
+
+</td></tr>
+<tr><td>
+
 [ProcedureCollection](./ts-chocolate.entities.procedurecollection.md)
 
 
@@ -2124,6 +2350,61 @@ Categories for rating a filling recipe version
 </td><td>
 
 Resolved slot type discriminator.
+
+
+</td></tr>
+<tr><td>
+
+[SessionCollection](./ts-chocolate.entities.sessioncollection.md)
+
+
+</td><td>
+
+Type for the collections in a SessionLibrary.
+
+
+</td></tr>
+<tr><td>
+
+[SessionCollectionEntry](./ts-chocolate.entities.sessioncollectionentry.md)
+
+
+</td><td>
+
+A single entry in a session collection.
+
+
+</td></tr>
+<tr><td>
+
+[SessionCollectionEntryInit](./ts-chocolate.entities.sessioncollectionentryinit.md)
+
+
+</td><td>
+
+Initialization type for a SessionLibrary collection entry.
+
+
+</td></tr>
+<tr><td>
+
+[SessionCollectionValidator](./ts-chocolate.entities.sessioncollectionvalidator.md)
+
+
+</td><td>
+
+Validator type for SessionLibrary collections.
+
+
+</td></tr>
+<tr><td>
+
+[SessionsMergeSource](./ts-chocolate.entities.sessionsmergesource.md)
+
+
+</td><td>
+
+Specifies a sessions library to merge into a new library.
 
 
 </td></tr>

@@ -111,6 +111,9 @@ export function getSubLibraryPath(subLibraryId: SubLibraryId): string {
     /* c8 ignore next 2 - functional code tested but coverage intermittently missed */
     case 'confections':
       return LibraryPaths.confections;
+    /* c8 ignore next 2 - sessions used only by user library */
+    case 'sessions':
+      return LibraryPaths.sessions;
   }
 }
 

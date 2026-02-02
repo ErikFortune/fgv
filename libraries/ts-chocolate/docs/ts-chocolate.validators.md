@@ -195,12 +195,34 @@ In-place `Validator` for [MoldId](./ts-chocolate.moldid.md) (composite string).
 </td></tr>
 <tr><td>
 
+[persistedSessionId](./ts-chocolate.validators.persistedsessionid.md)
+
+
+</td><td>
+
+In-place `Validator` for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite string).
+
+
+</td></tr>
+<tr><td>
+
 [procedureId](./ts-chocolate.validators.procedureid.md)
 
 
 </td><td>
 
 In-place `Validator` for [ProcedureId](./ts-chocolate.procedureid.md) (composite string).
+
+
+</td></tr>
+<tr><td>
+
+[sessionBaseId](./ts-chocolate.validators.sessionbaseid.md)
+
+
+</td><td>
+
+In-place `Validator` for [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
 
 
 </td></tr>

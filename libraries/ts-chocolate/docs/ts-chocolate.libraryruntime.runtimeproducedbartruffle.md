@@ -137,6 +137,22 @@ Factory method for creating a RuntimeProducedBarTruffle from a source version.
 </td></tr>
 <tr><td>
 
+[restoreFromHistory(history)](./ts-chocolate.libraryruntime.runtimeproducedbartruffle.restorefromhistory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Restores a RuntimeProducedBarTruffle from serialized editing history.
+
+
+</td></tr>
+<tr><td>
+
 [setEnrobingChocolate(chocolateId)](./ts-chocolate.libraryruntime.runtimeproducedbartruffle.setenrobingchocolate.md)
 
 

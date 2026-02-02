@@ -200,6 +200,22 @@ Factory method for creating a RuntimeProducedMoldedBonBon from a source version.
 </td></tr>
 <tr><td>
 
+[restoreFromHistory(history)](./ts-chocolate.libraryruntime.runtimeproducedmoldedbonbon.restorefromhistory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Restores a RuntimeProducedMoldedBonBon from serialized editing history.
+
+
+</td></tr>
+<tr><td>
+
 [setDecorationChocolate(chocolateId)](./ts-chocolate.libraryruntime.runtimeproducedmoldedbonbon.setdecorationchocolate.md)
 
 

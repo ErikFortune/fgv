@@ -31,7 +31,9 @@ import {
   Measurement,
   MeasurementUnit,
   ProcedureId,
+  SessionBaseId,
   SessionId,
+  SourceId,
   Helpers as CommonHelpers,
   Converters as CommonConverters
 } from '../../common';
@@ -39,7 +41,9 @@ import {
   IFillingEditJournalEntry,
   IFillingProductionJournalEntry,
   IIngredientModifiers,
-  IProducedFilling
+  IPersistedFillingSession,
+  IProducedFilling,
+  PersistedSessionStatus
 } from '../../entities';
 import { IRuntimeFillingRecipeVersion, RuntimeProducedFilling } from '../../library-runtime';
 import {
@@ -49,7 +53,12 @@ import {
   ISaveNewRecipeOptions,
   ISaveResult
 } from './model';
-import { generateJournalId, generateSessionId, getCurrentTimestamp } from './sessionUtils';
+import {
+  generateJournalId,
+  generateSessionBaseId,
+  generateSessionId,
+  getCurrentTimestamp
+} from './sessionUtils';
 
 /**
  * A mutable editing session for modifying filling recipe versions.
@@ -71,16 +80,21 @@ export class EditingSession {
   /**
    * Creates an EditingSession.
    * Use static factory method instead of calling this directly.
+   * @param baseRecipe - The base recipe version being edited
+   * @param produced - The RuntimeProducedFilling wrapper
+   * @param sessionId - Optional session ID (generates new if not provided)
+   * @param originalSnapshot - Optional original snapshot for restoration (uses current if not provided)
    * @internal
    */
   private constructor(
     baseRecipe: IRuntimeFillingRecipeVersion,
     produced: RuntimeProducedFilling,
-    sessionId?: SessionId
+    sessionId?: SessionId,
+    originalSnapshot?: IProducedFilling
   ) {
     this._baseRecipe = baseRecipe;
     this._produced = produced;
-    this._originalSnapshot = produced.createSnapshot();
+    this._originalSnapshot = originalSnapshot ?? produced.createSnapshot();
     this._sessionId = sessionId ?? generateSessionId().orThrow();
   }
 
@@ -351,6 +365,73 @@ export class EditingSession {
         notes
       })
     );
+  }
+
+  // ============================================================================
+  // Persistence
+  // ============================================================================
+
+  /**
+   * Creates a persisted session state from this editing session.
+   * Captures the complete editing state including undo/redo history.
+   * @param options - Persistence options including collection ID
+   * @returns Result with persisted filling session
+   * @public
+   */
+  public toPersistedState(options: {
+    readonly collectionId: SourceId;
+    readonly baseId?: SessionBaseId;
+    readonly status?: PersistedSessionStatus;
+    readonly label?: string;
+    readonly notes?: ICategorizedNote[];
+  }): Result<IPersistedFillingSession> {
+    const baseIdResult = options.baseId ? succeed(options.baseId) : generateSessionBaseId();
+
+    return baseIdResult.onSuccess((baseId) => {
+      const now = getCurrentTimestamp();
+      const session: IPersistedFillingSession = {
+        baseId,
+        sessionType: 'filling',
+        status: options.status ?? 'active',
+        createdAt: now,
+        updatedAt: now,
+        label: options.label,
+        notes: options.notes,
+        destination: {
+          defaultCollectionId: options.collectionId
+        },
+        sourceVersionId: this._baseRecipe.versionId,
+        history: this._produced.getSerializedHistory(this._originalSnapshot)
+      };
+      return succeed(session);
+    });
+  }
+
+  /**
+   * Restores an editing session from a persisted state.
+   * Restores the complete editing state including undo/redo history.
+   * @param data - Persisted session data
+   * @param baseRecipe - Runtime recipe version to associate with the session
+   * @returns Result with restored EditingSession
+   * @public
+   */
+  public static fromPersistedState(
+    data: IPersistedFillingSession,
+    baseRecipe: IRuntimeFillingRecipeVersion
+  ): Result<EditingSession> {
+    // Validate that the persisted state matches the base recipe
+    if (data.sourceVersionId !== baseRecipe.versionId) {
+      return fail(
+        `Version mismatch: persisted session is for ${data.sourceVersionId} but base recipe is ${baseRecipe.versionId}`
+      );
+    }
+
+    // Restore the RuntimeProducedFilling from history
+    return RuntimeProducedFilling.restoreFromHistory(data.history).onSuccess((produced) => {
+      // Create the session with restored state, passing the original snapshot
+      const session = new EditingSession(baseRecipe, produced, undefined, data.history.original);
+      return succeed(session);
+    });
   }
 
   // ============================================================================

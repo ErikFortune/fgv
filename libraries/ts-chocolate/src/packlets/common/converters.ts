@@ -85,8 +85,10 @@ import {
   MoldFormat,
   MoldId,
   Percentage,
+  PersistedSessionId,
   ProcedureId,
   RatingScore,
+  SessionBaseId,
   SessionId,
   SlotId,
   SourceId,
@@ -120,6 +122,7 @@ import {
   toNoteCategory,
   toPercentage,
   toRatingScore,
+  toSessionBaseId,
   toSessionId,
   toSlotId,
   toSourceId,
@@ -428,6 +431,41 @@ export const parsedFillingVersionId: Converter<ParsedFillingVersionId> = Convert
  * @public
  */
 export const sessionId: Converter<SessionId> = Converters.generic(toSessionId);
+
+/**
+ * Converter for {@link SessionBaseId | SessionBaseId}.
+ * @public
+ */
+export const sessionBaseId: Converter<SessionBaseId> = Converters.generic(toSessionBaseId);
+
+/**
+ * Converter for {@link PersistedSessionId | PersistedSessionId} (composite string).
+ * Accepts either a {@link PersistedSessionId | PersistedSessionId} string or a `CompositeId` object representation.
+ * @public
+ */
+export const persistedSessionId: Converter<PersistedSessionId> = Converters.compositeIdString(
+  CommonValidators.persistedSessionId,
+  sourceId,
+  ID_SEPARATOR,
+  sessionBaseId
+);
+
+/**
+ * Type alias for parsed {@link PersistedSessionId | PersistedSessionId} components.
+ * @public
+ */
+export type ParsedPersistedSessionId = Converters.ICompositeId<SourceId, SessionBaseId>;
+
+/**
+ * Converter that parses a {@link PersistedSessionId | PersistedSessionId} string into its component parts
+ * or validates a `CompositeId` object representation.
+ * @public
+ */
+export const parsedPersistedSessionId: Converter<ParsedPersistedSessionId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  sessionBaseId
+);
 
 /**
  * Converter for {@link SlotId | SlotId}.

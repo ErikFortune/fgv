@@ -211,10 +211,25 @@ export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
 
 /**
  * Unique identifier for an editing session
- * Format: UUID
+ * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx
  * @public
  */
 export type SessionId = Brand<string, 'SessionId'>;
+
+/**
+ * Session identifier within a single collection (user library session storage).
+ * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (same as SessionId)
+ * @public
+ */
+export type SessionBaseId = Brand<string, 'SessionBaseId'>;
+
+/**
+ * Globally unique persisted session identifier (composite).
+ * Format: "collectionId.baseSessionId"
+ * Must contain exactly one dot separator.
+ * @public
+ */
+export type PersistedSessionId = Brand<string, 'PersistedSessionId'>;
 
 /**
  * Unique identifier for a filling slot within a confection or recipe
@@ -730,6 +745,22 @@ export const FILLING_VERSION_ID_PATTERN: RegExp =
  * @public
  */
 export const SESSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+
+/**
+ * Pattern for valid session base IDs (within a collection)
+ * Format: YYYY-MM-DD-HHMMSS-[0-9a-f]\{8\}
+ * Example: "2026-01-15-143025-a1b2c3d4"
+ * @public
+ */
+export const SESSION_BASE_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+
+/**
+ * Pattern for valid composite persisted session IDs
+ * Format: collectionId.baseSessionId
+ * Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
+ * @public
+ */
+export const PERSISTED_SESSION_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
 
 /**
  * Pattern for valid journal base IDs (within a collection)

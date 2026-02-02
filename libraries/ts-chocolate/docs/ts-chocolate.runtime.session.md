@@ -411,30 +411,6 @@ Tracks yield modifications for a confection session
 </td></tr>
 </tbody></table>
 
-## Namespaces
-
-<table><thead><tr><th>
-
-Namespace
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[Scratchpad](./ts-chocolate.runtime.session.scratchpad.md)
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>
-
 ## Type Aliases
 
 <table><thead><tr><th>

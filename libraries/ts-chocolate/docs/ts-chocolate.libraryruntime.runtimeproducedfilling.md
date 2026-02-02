@@ -233,6 +233,20 @@ Gets detailed changes between current state and original.
 </td></tr>
 <tr><td>
 
+[getSerializedHistory(original)](./ts-chocolate.libraryruntime.runtimeproducedfilling.getserializedhistory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Serializes the complete editing history for persistence. Includes current state, original state, and undo/redo stacks.
+
+
+</td></tr>
+<tr><td>
+
 [hasChanges(original)](./ts-chocolate.libraryruntime.runtimeproducedfilling.haschanges.md)
 
 
@@ -270,6 +284,22 @@ Redoes the last undone change. Pops from redo stack, pushes current to undo, and
 </td><td>
 
 Removes an ingredient. Pushes current state to undo before change, clears redo.
+
+
+</td></tr>
+<tr><td>
+
+[restoreFromHistory(history)](./ts-chocolate.libraryruntime.runtimeproducedfilling.restorefromhistory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Factory method for restoring a RuntimeProducedFilling from serialized history. Restores the complete editing state including undo/redo stacks.
 
 
 </td></tr>

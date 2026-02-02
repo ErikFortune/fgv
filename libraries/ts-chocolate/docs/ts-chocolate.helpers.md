@@ -85,6 +85,17 @@ Creates a composite JournalId from collection ID and base journal ID
 </td></tr>
 <tr><td>
 
+[createPersistedSessionId(collectionId, baseId)](./ts-chocolate.helpers.createpersistedsessionid.md)
+
+
+</td><td>
+
+Creates a composite PersistedSessionId from collection ID and base session ID
+
+
+</td></tr>
+<tr><td>
+
 [getFillingBaseId(id)](./ts-chocolate.helpers.getfillingbaseid.md)
 
 
@@ -168,6 +179,28 @@ Gets the base ID from a composite JournalId
 </td><td>
 
 Gets the collection ID from a composite JournalId
+
+
+</td></tr>
+<tr><td>
+
+[getPersistedSessionBaseId(id)](./ts-chocolate.helpers.getpersistedsessionbaseid.md)
+
+
+</td><td>
+
+Gets the base ID from a composite PersistedSessionId
+
+
+</td></tr>
+<tr><td>
+
+[getPersistedSessionCollectionId(id)](./ts-chocolate.helpers.getpersistedsessioncollectionid.md)
+
+
+</td><td>
+
+Gets the collection ID from a composite PersistedSessionId
 
 
 </td></tr>
@@ -267,6 +300,17 @@ Parses a composite IngredientId into its component parts
 </td><td>
 
 Parses a composite JournalId into its component parts
+
+
+</td></tr>
+<tr><td>
+
+[parsePersistedSessionId(id)](./ts-chocolate.helpers.parsepersistedsessionid.md)
+
+
+</td><td>
+
+Parses a composite PersistedSessionId into its component parts
 
 
 </td></tr>

@@ -26,7 +26,7 @@
 import { Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { SourceId } from '../common';
-import { JournalLibrary } from '../entities';
+import { JournalLibrary, SessionLibrary } from '../entities';
 import { IFileTreeSource, ILibraryFileTreeSource, normalizeFileSources, SubLibraryId } from '../library-data';
 import { IUserLibrary, IUserLibraryCreateParams } from './model';
 
@@ -44,14 +44,20 @@ import { IUserLibrary, IUserLibraryCreateParams } from './model';
  */
 export class UserLibrary implements IUserLibrary {
   private readonly _journals: JournalLibrary;
+  private readonly _sessions: SessionLibrary;
 
   /**
    * Logger used by this library and its sub-libraries.
    */
   public readonly logger: Logging.LogReporter<unknown>;
 
-  private constructor(journals: JournalLibrary, logger: Logging.LogReporter<unknown>) {
+  private constructor(
+    journals: JournalLibrary,
+    sessions: SessionLibrary,
+    logger: Logging.LogReporter<unknown>
+  ) {
     this._journals = journals;
+    this._sessions = sessions;
     this.logger = logger;
   }
 
@@ -78,8 +84,19 @@ export class UserLibrary implements IUserLibrary {
       logger: logReporter
     });
 
+    // Create sessions library
+    const sessionSources = UserLibrary._toFileSources(fileSources, 'sessions');
+    const sessionsResult = SessionLibrary.create({
+      builtin: false,
+      fileSources: sessionSources.length > 0 ? sessionSources : undefined,
+      mergeLibraries: params.libraries?.sessions,
+      logger: logReporter
+    });
+
     return journalsResult.onSuccess((journals) => {
-      return succeed(new UserLibrary(journals, logReporter));
+      return sessionsResult.onSuccess((sessions) => {
+        return succeed(new UserLibrary(journals, sessions, logReporter));
+      });
     });
   }
 
@@ -113,5 +130,12 @@ export class UserLibrary implements IUserLibrary {
    */
   public get journals(): JournalLibrary {
     return this._journals;
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.sessions}
+   */
+  public get sessions(): SessionLibrary {
+    return this._sessions;
   }
 }

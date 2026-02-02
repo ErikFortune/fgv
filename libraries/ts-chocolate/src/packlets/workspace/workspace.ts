@@ -26,10 +26,11 @@
 import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { ICryptoProvider, KeyStore } from '../crypto-utils';
-import { JournalLibrary } from '../entities';
+import { JournalLibrary, SessionLibrary } from '../entities';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
 import { UserLibrary } from '../user-library';
+import { IUserLibraryRuntime, UserLibraryRuntime } from '../user-runtime';
 import {
   IWorkspace,
   IWorkspaceCreateParams,
@@ -57,6 +58,7 @@ export class Workspace implements IWorkspace {
   private readonly _keyStore: KeyStore | undefined;
   private readonly _cryptoProvider: ICryptoProvider | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
+  private _userRuntime: UserLibraryRuntime | undefined;
 
   /**
    * Private constructor - use static factory methods.
@@ -173,6 +175,24 @@ export class Workspace implements IWorkspace {
    */
   public get journals(): JournalLibrary {
     return this._userLibrary.journals;
+  }
+
+  /**
+   * {@inheritDoc IWorkspace.sessions}
+   */
+  public get sessions(): SessionLibrary {
+    return this._userLibrary.sessions;
+  }
+
+  /**
+   * {@inheritDoc IWorkspace.userRuntime}
+   */
+  public get userRuntime(): IUserLibraryRuntime {
+    if (this._userRuntime === undefined) {
+      // Lazily create the user runtime on first access
+      this._userRuntime = UserLibraryRuntime.create(this._userLibrary, this._runtime).orThrow();
+    }
+    return this._userRuntime;
   }
 
   /**

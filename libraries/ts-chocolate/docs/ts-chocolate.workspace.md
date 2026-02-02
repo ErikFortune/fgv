@@ -124,6 +124,27 @@ The runtime context providing library resolution and session capabilities. Acces
 </td></tr>
 <tr><td>
 
+[sessions](./ts-chocolate.workspace.sessions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+SessionLibrary
+
+
+</td><td>
+
+Session library for persisted editing sessions (user-specific data).
+
+
+</td></tr>
+<tr><td>
+
 [state](./ts-chocolate.workspace.state.md)
 
 
@@ -140,6 +161,27 @@ The runtime context providing library resolution and session capabilities. Acces
 </td><td>
 
 Current state of the workspace with respect to key store. - `'locked'`<!-- -->: Key store is present but not unlocked - `'unlocked'`<!-- -->: Key store is present and unlocked - `'no-keystore'`<!-- -->: No key store configured
+
+
+</td></tr>
+<tr><td>
+
+[userRuntime](./ts-chocolate.workspace.userruntime.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IUserLibraryRuntime](./ts-chocolate.userruntime.iuserlibraryruntime.md)
+
+
+</td><td>
+
+User library runtime for materializing persisted sessions. Provides session restoration and caching.
 
 
 </td></tr>

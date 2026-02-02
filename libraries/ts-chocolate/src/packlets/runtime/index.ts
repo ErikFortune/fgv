@@ -39,11 +39,3 @@ export { RuntimeContext, IRuntimeContextCreateParams } from './runtimeContext';
 // Session infrastructure (as namespace)
 import * as Session from './session';
 export { Session };
-
-// Persisted session scratchpad model + converters (as namespace)
-import * as Scratchpad from './scratchpad';
-export { Scratchpad };
-
-// Alias to avoid overly-generic "Scratchpad" name
-import * as SessionScratchpad from './scratchpad';
-export { SessionScratchpad };

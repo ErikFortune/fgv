@@ -31,7 +31,8 @@ import {
   IConfectionYield,
   IMoldedBonBonYield,
   isMoldedBonBonYield,
-  IProducedMoldedBonBon
+  IProducedMoldedBonBon,
+  ISerializedEditingHistory
 } from '../../entities';
 import { RuntimeMoldedBonBon, IRuntimeMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
 import { ISessionContext } from '../model';
@@ -95,6 +96,28 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {
     return RuntimeProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+      captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
+    );
+  }
+
+  /**
+   * Restores a MoldedBonBonEditingSession from persisted state.
+   * Note: Child filling sessions are persisted separately and should be accessed
+   * via their persisted session IDs from IPersistedConfectionSession.childSessionIds.
+   * @param baseConfection - The source molded bonbon confection
+   * @param history - Serialized editing history
+   * @param context - The runtime context
+   * @param params - Optional session parameters
+   * @returns Success with restored session, or Failure
+   * @public
+   */
+  public static fromPersistedState(
+    baseConfection: RuntimeMoldedBonBon,
+    history: ISerializedEditingHistory<IProducedMoldedBonBon>,
+    context: ISessionContext,
+    params?: IConfectionEditingSessionParams
+  ): Result<MoldedBonBonEditingSession> {
+    return RuntimeProducedMoldedBonBon.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
     );
   }

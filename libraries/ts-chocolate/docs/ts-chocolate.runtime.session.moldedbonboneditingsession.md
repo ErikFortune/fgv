@@ -162,6 +162,22 @@ Factory method for creating a MoldedBonBonEditingSession.
 </td></tr>
 <tr><td>
 
+[fromPersistedState(baseConfection, history, context, params)](./ts-chocolate.runtime.session.moldedbonboneditingsession.frompersistedstate.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Restores a MoldedBonBonEditingSession from persisted state. Note: Child filling sessions are persisted separately and should be accessed via their persisted session IDs from IPersistedConfectionSession.childSessionIds.
+
+
+</td></tr>
+<tr><td>
+
 [scaleToYield(yieldSpec)](./ts-chocolate.runtime.session.moldedbonboneditingsession.scaletoyield.md)
 
 

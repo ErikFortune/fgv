@@ -158,6 +158,22 @@ Factory method for creating a RuntimeProducedRolledTruffle from a source version
 </td></tr>
 <tr><td>
 
+[restoreFromHistory(history)](./ts-chocolate.libraryruntime.runtimeproducedrolledtruffle.restorefromhistory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Restores a RuntimeProducedRolledTruffle from serialized editing history.
+
+
+</td></tr>
+<tr><td>
+
 [setCoating(coatingId)](./ts-chocolate.libraryruntime.runtimeproducedrolledtruffle.setcoating.md)
 
 

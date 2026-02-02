@@ -26,7 +26,12 @@
 import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId } from '../../common';
-import { AnyConfectionYield, IConfectionYield, IProducedBarTruffle } from '../../entities';
+import {
+  AnyConfectionYield,
+  IConfectionYield,
+  IProducedBarTruffle,
+  ISerializedEditingHistory
+} from '../../entities';
 import { RuntimeBarTruffle, RuntimeProducedBarTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
@@ -83,6 +88,28 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
     return RuntimeProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+      captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
+    );
+  }
+
+  /**
+   * Restores a BarTruffleEditingSession from persisted state.
+   * Note: Child filling sessions are persisted separately and should be accessed
+   * via their persisted session IDs from IPersistedConfectionSession.childSessionIds.
+   * @param baseConfection - The source bar truffle confection
+   * @param history - Serialized editing history
+   * @param context - The runtime context
+   * @param params - Optional session parameters
+   * @returns Success with restored session, or Failure
+   * @public
+   */
+  public static fromPersistedState(
+    baseConfection: RuntimeBarTruffle,
+    history: ISerializedEditingHistory<IProducedBarTruffle>,
+    context: ISessionContext,
+    params?: IConfectionEditingSessionParams
+  ): Result<BarTruffleEditingSession> {
+    return RuntimeProducedBarTruffle.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
     );
   }

@@ -17,5 +17,6 @@ LibraryPaths: {
     readonly procedures: "data/procedures";
     readonly tasks: "data/tasks";
     readonly confections: "data/confections";
+    readonly sessions: "data/sessions";
 }
 ```

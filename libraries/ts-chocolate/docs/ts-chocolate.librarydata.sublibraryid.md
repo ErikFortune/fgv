@@ -9,5 +9,5 @@ Identifiers for sub-libraries within the chocolate library system.
 **Signature:**
 
 ```typescript
-export type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections';
+export type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections' | 'sessions';
 ```

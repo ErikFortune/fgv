@@ -176,6 +176,17 @@ Gets the procedures directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getSessionsDirectory(tree)](./ts-chocolate.librarydata.getsessionsdirectory.md)
+
+
+</td><td>
+
+Gets the sessions directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getSubLibraryPath(subLibraryId)](./ts-chocolate.librarydata.getsublibrarypath.md)
 
 

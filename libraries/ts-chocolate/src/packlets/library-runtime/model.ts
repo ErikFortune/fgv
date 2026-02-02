@@ -64,6 +64,7 @@ import {
   SourceId
 } from '../common';
 import {
+  ConfectionsLibrary,
   IAlcoholIngredient,
   IChocolateIngredient,
   IDairyIngredient,
@@ -1164,6 +1165,13 @@ export interface ILibraryRuntimeContext {
    * `.has(id)` for existence checks, `.values()` for iteration.
    */
   readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
+
+  /**
+   * The confections library for accessing confection data.
+   * Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
+   * `.values()` for iteration.
+   */
+  readonly confections: ConfectionsLibrary;
 
   // ---- Journals ----
 

@@ -342,6 +342,24 @@ Description
 </td></tr>
 <tr><td>
 
+[UserLibrary](./ts-chocolate.userlibrary.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[UserRuntime](./ts-chocolate.userruntime.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Validation](./ts-chocolate.validation.md)
 
 
@@ -689,6 +707,28 @@ Pattern for valid journal base IDs (within a collection) Format: YYYY-MM-DD-HHMM
 </td><td>
 
 Pattern for valid composite journal IDs Format: collectionId.baseJournalId Example: "user-journals.2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
+[PERSISTED\_SESSION\_ID\_PATTERN](./ts-chocolate.persisted_session_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid composite persisted session IDs Format: collectionId.baseSessionId Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
+[SESSION\_BASE\_ID\_PATTERN](./ts-chocolate.session_base_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid session base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
 
 
 </td></tr>
@@ -1204,6 +1244,17 @@ Percentage value (0-100)
 </td></tr>
 <tr><td>
 
+[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+
+
+</td><td>
+
+Globally unique persisted session identifier (composite). Format: "collectionId.baseSessionId" Must contain exactly one dot separator.
+
+
+</td></tr>
+<tr><td>
+
 [ProcedureId](./ts-chocolate.procedureid.md)
 
 
@@ -1237,12 +1288,23 @@ Rating score (1-5 scale)
 </td></tr>
 <tr><td>
 
+[SessionBaseId](./ts-chocolate.sessionbaseid.md)
+
+
+</td><td>
+
+Session identifier within a single collection (user library session storage). Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (same as SessionId)
+
+
+</td></tr>
+<tr><td>
+
 [SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>
 
-Unique identifier for an editing session Format: UUID
+Unique identifier for an editing session Format: YYYY-MM-DD-HHMMSS-xxxxxxxx
 
 
 </td></tr>

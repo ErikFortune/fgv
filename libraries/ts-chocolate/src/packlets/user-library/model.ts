@@ -25,7 +25,7 @@
 
 import { Logging } from '@fgv/ts-utils';
 
-import { JournalLibrary } from '../entities';
+import { JournalLibrary, SessionLibrary } from '../entities';
 import { ILibraryFileTreeSource } from '../library-data';
 
 // ============================================================================
@@ -33,7 +33,7 @@ import { ILibraryFileTreeSource } from '../library-data';
 // ============================================================================
 
 /**
- * User-specific library data (journals, future inventory).
+ * User-specific library data (journals, sessions, future inventory).
  * Separate from shared library data (ingredients, recipes, etc.).
  * @public
  */
@@ -42,6 +42,11 @@ export interface IUserLibrary {
    * Journal library for production records.
    */
   readonly journals: JournalLibrary;
+
+  /**
+   * Session library for persisted editing sessions.
+   */
+  readonly sessions: SessionLibrary;
 }
 
 // ============================================================================
@@ -57,6 +62,11 @@ export interface IInstantiatedUserLibrarySource {
    * Pre-built journals library
    */
   readonly journals?: JournalLibrary;
+
+  /**
+   * Pre-built sessions library
+   */
+  readonly sessions?: SessionLibrary;
 }
 
 // ============================================================================

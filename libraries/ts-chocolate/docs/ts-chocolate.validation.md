@@ -228,12 +228,34 @@ Type guard for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[isValidPersistedSessionId(from)](./ts-chocolate.validation.isvalidpersistedsessionid.md)
+
+
+</td><td>
+
+Type guard for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite).
+
+
+</td></tr>
+<tr><td>
+
 [isValidRatingScore(from)](./ts-chocolate.validation.isvalidratingscore.md)
 
 
 </td><td>
 
 Type guard for [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isValidSessionBaseId(from)](./ts-chocolate.validation.isvalidsessionbaseid.md)
+
+
+</td><td>
+
+Type guard for [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
 
 
 </td></tr>
@@ -492,12 +514,34 @@ Validates unknown value is a [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[toPersistedSessionId(from)](./ts-chocolate.validation.topersistedsessionid.md)
+
+
+</td><td>
+
+Validates unknown value is a [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite).
+
+
+</td></tr>
+<tr><td>
+
 [toRatingScore(from)](./ts-chocolate.validation.toratingscore.md)
 
 
 </td><td>
 
 Validates unknown value is a [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toSessionBaseId(from)](./ts-chocolate.validation.tosessionbaseid.md)
+
+
+</td><td>
+
+Validates unknown value is a [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
 
 
 </td></tr>

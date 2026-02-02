@@ -373,6 +373,20 @@ Gets detailed changes between current state and original.
 </td></tr>
 <tr><td>
 
+[getSerializedHistory(original)](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.getserializedhistory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the serialized editing history for persistence. Captures current state, original state, and undo/redo stacks.
+
+
+</td></tr>
+<tr><td>
+
 [hasChanges(original)](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.haschanges.md)
 
 

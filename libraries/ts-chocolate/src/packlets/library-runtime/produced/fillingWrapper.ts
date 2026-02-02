@@ -40,7 +40,8 @@ import {
   IProducedFilling,
   IProducedFillingIngredient,
   IIngredientModifiers,
-  IFillingIngredient
+  IFillingIngredient,
+  ISerializedEditingHistory
 } from '../../entities';
 import type { IRuntimeFillingRecipeVersion } from '../model';
 
@@ -111,6 +112,23 @@ export class RuntimeProducedFilling {
     return RuntimeProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) =>
       RuntimeProducedFilling.create(produced)
     );
+  }
+
+  /**
+   * Factory method for restoring a RuntimeProducedFilling from serialized history.
+   * Restores the complete editing state including undo/redo stacks.
+   * @param history - Serialized editing history
+   * @returns Result containing RuntimeProducedFilling or error
+   * @public
+   */
+  public static restoreFromHistory(
+    history: ISerializedEditingHistory<IProducedFilling>
+  ): Result<RuntimeProducedFilling> {
+    const instance = new RuntimeProducedFilling(history.current);
+    // Restore undo/redo stacks
+    instance._undoStack = [...history.undoStack];
+    instance._redoStack = [...history.redoStack];
+    return succeed(instance);
   }
 
   /**
@@ -198,6 +216,22 @@ export class RuntimeProducedFilling {
     this._current = this._deepCopy(snapshot);
     this._redoStack = [];
     return succeed(undefined);
+  }
+
+  /**
+   * Serializes the complete editing history for persistence.
+   * Includes current state, original state, and undo/redo stacks.
+   * @param original - Original state when editing started (for change detection on restore)
+   * @returns Serialized editing history
+   * @public
+   */
+  public getSerializedHistory(original: IProducedFilling): ISerializedEditingHistory<IProducedFilling> {
+    return {
+      current: this._deepCopy(this._current),
+      original: this._deepCopy(original),
+      undoStack: this._undoStack.map((state) => this._deepCopy(state)),
+      redoStack: this._redoStack.map((state) => this._deepCopy(state))
+    };
   }
 
   // ============================================================================

@@ -31,13 +31,15 @@ import {
   FillingVersionSpec,
   SourceId,
   NoteCategory,
-  ProcedureId
+  ProcedureId,
+  SessionBaseId
 } from '../../../../packlets/common';
 import {
   IGanacheCharacteristics,
   IChocolateIngredient,
   IIngredient,
-  IngredientsLibrary
+  IngredientsLibrary,
+  IPersistedFillingSession
 } from '../../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/entities';
 import { ChocolateLibrary } from '../../../../packlets/library-runtime';
@@ -530,6 +532,174 @@ describe('EditingSession', () => {
 
       expect(session.produced).toBeDefined();
       expect(session.produced.snapshot).toBeDefined();
+    });
+  });
+
+  // ============================================================================
+  // Persistence Tests
+  // ============================================================================
+
+  describe('toPersistedState', () => {
+    test('creates persisted state from session', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(
+        session.toPersistedState({
+          collectionId: 'user' as SourceId
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        expect(persisted.sessionType).toBe('filling');
+        expect(persisted.status).toBe('active');
+        expect(persisted.baseId).toBeDefined();
+        expect(persisted.sourceVersionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(persisted.history.current).toBeDefined();
+        expect(persisted.history.original).toBeDefined();
+        expect(persisted.history.undoStack).toHaveLength(0);
+        expect(persisted.history.redoStack).toHaveLength(0);
+        expect(persisted.destination?.defaultCollectionId).toBe('user');
+      });
+    });
+
+    test('preserves undo/redo stacks in persisted state', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      // Make changes to create undo history
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      session.setIngredient('test.dark-chocolate' as IngredientId, 280 as Measurement).orThrow();
+
+      // Undo one change to create redo history
+      session.undo().orThrow();
+
+      expect(
+        session.toPersistedState({
+          collectionId: 'user' as SourceId
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        // Should have one item in undo stack (first edit)
+        expect(persisted.history.undoStack.length).toBeGreaterThan(0);
+        // Should have one item in redo stack (second edit was undone)
+        expect(persisted.history.redoStack.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('uses provided baseId', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(
+        session.toPersistedState({
+          collectionId: 'user' as SourceId,
+          baseId: '2026-01-15-120000-12345678' as SessionBaseId
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        expect(persisted.baseId).toBe('2026-01-15-120000-12345678');
+      });
+    });
+
+    test('respects status option', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      expect(
+        session.toPersistedState({
+          collectionId: 'user' as SourceId,
+          status: 'planning'
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        expect(persisted.status).toBe('planning');
+      });
+    });
+
+    test('includes label and notes when provided', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      const notes = [{ category: 'session' as NoteCategory, note: 'Test session notes' }];
+      expect(
+        session.toPersistedState({
+          collectionId: 'user' as SourceId,
+          label: 'My Session',
+          notes
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        expect(persisted.label).toBe('My Session');
+        expect(persisted.notes).toEqual(notes);
+      });
+    });
+  });
+
+  describe('fromPersistedState', () => {
+    test('restores session from persisted state', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      // Make a change
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+
+      // Persist
+      const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
+
+      // Restore
+      expect(Session.EditingSession.fromPersistedState(persisted, version)).toSucceedAndSatisfy(
+        (restored) => {
+          expect(restored.baseRecipe).toBe(version);
+          expect(restored.hasChanges).toBe(true);
+
+          // Verify current state matches
+          const ingredient = restored.produced.snapshot.ingredients.find(
+            (i) => i.ingredientId === 'test.dark-chocolate'
+          );
+          expect(ingredient?.amount).toBe(250);
+        }
+      );
+    });
+
+    test('restores undo/redo stacks', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+
+      // Make changes
+      session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      session.setIngredient('test.dark-chocolate' as IngredientId, 280 as Measurement).orThrow();
+      session.undo().orThrow();
+
+      // Persist
+      const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
+
+      // Restore
+      expect(Session.EditingSession.fromPersistedState(persisted, version)).toSucceedAndSatisfy(
+        (restored) => {
+          // Verify we can undo (there's history)
+          expect(restored.canUndo()).toBe(true);
+          // Verify we can redo (there's future)
+          expect(restored.canRedo()).toBe(true);
+
+          // Redo should restore the 280 value
+          expect(restored.redo()).toSucceedWith(true);
+          const ingredient = restored.produced.snapshot.ingredients.find(
+            (i) => i.ingredientId === 'test.dark-chocolate'
+          );
+          expect(ingredient?.amount).toBe(280);
+        }
+      );
+    });
+
+    test('fails for version mismatch', () => {
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const session = Session.EditingSession.create(version).orThrow();
+      const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
+
+      // Create a fake persisted state with wrong version ID
+      const wrongPersisted: IPersistedFillingSession = {
+        ...persisted,
+        sourceVersionId: 'wrong.wrong@2026-01-01-01' as unknown as typeof persisted.sourceVersionId
+      };
+
+      expect(Session.EditingSession.fromPersistedState(wrongPersisted, version)).toFailWith(
+        /version mismatch/i
+      );
     });
   });
 });
