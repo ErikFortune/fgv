@@ -6,59 +6,16 @@
 
 A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
 
-Provides: - Storage for journal entries indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by filling ID (all journals for a filling) - Lookup by filling version ID (all journals for a specific filling version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal entries
+Journals are organized into user-defined collections (e.g., by person, location, time period). The library provides cross-collection indexing for efficient queries by filling/confection.
+
+Provides: - Multi-collection storage with FileTree persistence - Cross-collection lookup by filling ID (all journals for a filling) - Cross-collection lookup by filling version ID (all journals for a specific filling version) - Cross-collection lookup by confection ID (all journals for a confection) - Cross-collection lookup by confection version ID (all journals for a specific confection version) - Lazy index rebuilding for efficient queries
 
 **Signature:**
 
 ```typescript
-export declare class JournalLibrary 
+export declare class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJournalEntry> 
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[size](./ts-chocolate.entities.journal.journallibrary.size.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-Gets the number of journals in the library
-
-
-</td></tr>
-</tbody></table>
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->, [JournalId](./ts-chocolate.journalid.md)<!-- -->, AnyJournalEntry&gt;
 
 ## Methods
 
@@ -80,34 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addJournal(journal)](./ts-chocolate.entities.journal.journallibrary.addjournal.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) to the library. Accepts filling and confection journal entries (both edit and production types).
-
-
-</td></tr>
-<tr><td>
-
-[clear()](./ts-chocolate.entities.journal.journallibrary.clear.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Clears all journals from the library.
-
-
-</td></tr>
-<tr><td>
-
 [create(params)](./ts-chocolate.entities.journal.journallibrary.create.md)
 
 
@@ -124,15 +53,17 @@ Creates a new [JournalLibrary](./ts-chocolate.entities.journal.journallibrary.md
 </td></tr>
 <tr><td>
 
-[exportJournals()](./ts-chocolate.entities.journal.journallibrary.exportjournals.md)
+[createAsync(params)](./ts-chocolate.entities.journal.journallibrary.createasync.md)
 
 
 </td><td>
 
+`static`
+
 
 </td><td>
 
-Exports all journal entries as an array. The returned array can be serialized to JSON for persistence.
+Creates a JournalLibrary instance asynchronously with encrypted file support.
 
 
 </td></tr>
@@ -146,7 +77,7 @@ Exports all journal entries as an array. The returned array can be serialized to
 
 </td><td>
 
-Gets all journal entries in the library
+Gets all journal entries across all collections
 
 
 </td></tr>
@@ -160,7 +91,7 @@ Gets all journal entries in the library
 
 </td><td>
 
-Gets a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) by its ID
+Gets a journal entry by ID (searches all collections)
 
 
 </td></tr>
@@ -174,7 +105,7 @@ Gets a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) by it
 
 </td><td>
 
-Gets all confection journal entries for a confection (across all versions)
+Gets all confection journal entries for a confection (across all versions and collections)
 
 
 </td></tr>
@@ -188,7 +119,7 @@ Gets all confection journal entries for a confection (across all versions)
 
 </td><td>
 
-Gets all confection journal entries for a specific confection version
+Gets all confection journal entries for a specific confection version (across all collections)
 
 
 </td></tr>
@@ -202,7 +133,7 @@ Gets all confection journal entries for a specific confection version
 
 </td><td>
 
-Gets all filling journal entries for a filling (across all versions)
+Gets all filling journal entries for a filling (across all versions and collections)
 
 
 </td></tr>
@@ -216,7 +147,7 @@ Gets all filling journal entries for a filling (across all versions)
 
 </td><td>
 
-Gets all filling journal entries for a specific filling version
+Gets all filling journal entries for a specific filling version (across all collections)
 
 
 </td></tr>
@@ -230,35 +161,7 @@ Gets all filling journal entries for a specific filling version
 
 </td><td>
 
-Checks if a journal with the given ID exists in the library.
-
-
-</td></tr>
-<tr><td>
-
-[importJournals(journals)](./ts-chocolate.entities.journal.journallibrary.importjournals.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Imports journal entries from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts filling and confection journal entries (both edit and production types).
-
-
-</td></tr>
-<tr><td>
-
-[removeJournal(journalId)](./ts-chocolate.entities.journal.journallibrary.removejournal.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Removes a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) from the library
+Checks if a journal with the given ID exists (searches all collections)
 
 
 </td></tr>

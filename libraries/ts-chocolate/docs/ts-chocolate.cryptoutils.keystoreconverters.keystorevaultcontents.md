@@ -4,7 +4,7 @@
 
 ## CryptoUtils.KeyStoreConverters.keystoreVaultContents variable
 
-Converter for  (decrypted state).
+Converter for [key store vault contents](./ts-chocolate.cryptoutils.ikeystorevaultcontents.md) (decrypted state).
 
 **Signature:**
 

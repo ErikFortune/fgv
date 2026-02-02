@@ -25,100 +25,16 @@
 
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
-import { Measurement, Helpers, IngredientId, Percentage, FillingVersionSpec } from '../../common';
+import { Measurement, Helpers, Percentage, FillingVersionSpec } from '../../common';
 import { IGanacheCharacteristics, Ingredient } from '../../entities';
 import { IFillingRecipe, IFillingIngredient } from '../../entities';
-
-// ============================================================================
-// Analysis Result Types
-// ============================================================================
-
-/**
- * Blended characteristics for a ganache recipe
- * @public
- */
-export interface IGanacheAnalysis {
-  /**
-   * Weighted average characteristics of all ingredients
-   */
-  readonly characteristics: IGanacheCharacteristics;
-
-  /**
-   * Total fat percentage (cacaoFat + milkFat + otherFats)
-   */
-  readonly totalFat: Percentage;
-
-  /**
-   * Fat to water ratio (important for emulsion stability)
-   */
-  readonly fatToWaterRatio: number;
-
-  /**
-   * Sugar to water ratio (important for texture and preservation)
-   */
-  readonly sugarToWaterRatio: number;
-
-  /**
-   * Total weight of the recipe
-   */
-  readonly totalWeight: Measurement;
-}
-
-/**
- * Validation result for ganache ratios
- * @public
- */
-export interface IGanacheValidation {
-  /**
-   * Overall validity
-   */
-  readonly isValid: boolean;
-
-  /**
-   * Specific validation warnings
-   */
-  readonly warnings: ReadonlyArray<string>;
-
-  /**
-   * Specific validation errors
-   */
-  readonly errors: ReadonlyArray<string>;
-}
-
-/**
- * Complete ganache calculation result
- * @public
- */
-export interface IGanacheCalculation {
-  /**
-   * Blended characteristic analysis
-   */
-  readonly analysis: IGanacheAnalysis;
-
-  /**
-   * Validation against standard guidelines
-   */
-  readonly validation: IGanacheValidation;
-}
-
-// ============================================================================
-// Ingredient Resolution
-// ============================================================================
-
-/**
- * Resolved ingredient with its amount
- * @public
- */
-export interface IResolvedIngredient {
-  readonly ingredient: Ingredient;
-  readonly amount: Measurement;
-}
-
-/**
- * Function type for resolving an ingredient ID to its full ingredient data
- * @public
- */
-export type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
+import {
+  IGanacheAnalysis,
+  IGanacheCalculation,
+  IGanacheValidation,
+  IngredientResolver,
+  IResolvedIngredient
+} from '../model';
 
 // ============================================================================
 // Calculation Functions

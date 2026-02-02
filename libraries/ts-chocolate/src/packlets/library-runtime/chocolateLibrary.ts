@@ -23,13 +23,12 @@
  * @packageDocumentation
  */
 
-import { Logging, Result, Success, fail } from '@fgv/ts-utils';
+import { Logging, Result, Success } from '@fgv/ts-utils';
 
 import {
   ConfectionId,
   Converters as CommonConverters,
   IngredientId,
-  JournalId,
   MoldId,
   ProcedureId,
   FillingId,
@@ -47,24 +46,18 @@ import {
 import { ConfectionData, ConfectionsLibrary } from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
 import { IFillingRecipe, FillingsLibrary } from '../entities';
-import {
-  AnyFillingJournalEntry,
-  AnyJournalEntry,
-  JournalLibrary,
-  Converters as EntityConverters
-} from '../entities';
+import { AnyFillingJournalEntry, JournalLibrary, Converters as EntityConverters } from '../entities';
 import { IMold, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
-import { IGanacheCalculation, IngredientResolver, calculateGanache } from './internal';
+import { IGanacheCalculation, IngredientResolver } from './model';
+import { calculateGanache } from './internal';
 import { EditableCollection } from '../editing';
 import {
-  CollectionLoader,
   FullLibraryLoadSpec,
   IFileTreeSource,
   ILibraryFileTreeSource,
   normalizeFileSources,
-  resolveFileTreeSourceForSubLibrary,
   resolveBuiltInSpec,
   SubLibraryId
 } from '../library-data';
@@ -74,7 +67,7 @@ import {
 // ============================================================================
 
 /**
- * Pre-built library instances to include in a {@link Runtime.ChocolateLibrary | ChocolateLibrary}.
+ * Pre-built library instances to include in a {@link LibraryRuntime.ChocolateLibrary | ChocolateLibrary}.
  * Useful for testing or when libraries are constructed through other means.
  * @public
  */
@@ -116,7 +109,7 @@ export interface IInstantiatedLibrarySource {
 }
 
 /**
- * Parameters for creating a {@link Runtime.ChocolateLibrary | ChocolateLibrary}.
+ * Parameters for creating a {@link LibraryRuntime.ChocolateLibrary | ChocolateLibrary}.
  *
  * Sources are processed in order:
  * 1. Built-in collections (if enabled)
@@ -146,7 +139,7 @@ export interface IChocolateLibraryCreateParams {
   readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
 
   /**
-   * Pre-instantiated {@link Runtime.IInstantiatedLibrarySource | library sources}.
+   * Pre-instantiated {@link LibraryRuntime.IInstantiatedLibrarySource | library sources}.
    * Used for advanced scenarios like testing or custom library construction.
    * If provided along with other sources, collections are combined.
    */
@@ -211,8 +204,8 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Creates a new {@link Runtime.ChocolateLibrary | ChocolateLibrary} instance.
-   * @param params - Optional {@link Runtime.IChocolateLibraryCreateParams | creation parameters}
+   * Creates a new {@link LibraryRuntime.ChocolateLibrary | ChocolateLibrary} instance.
+   * @param params - Optional {@link LibraryRuntime.IChocolateLibraryCreateParams | creation parameters}
    * @returns `Success` with new instance, or `Failure` with error message
    * @public
    */
@@ -238,47 +231,12 @@ export class ChocolateLibrary {
       logger
     }).report(logger);
 
-    // Create journals library - use provided library or create empty one
-    const journalsResult = (
-      params.libraries?.journals !== undefined
-        ? Success.with(params.libraries.journals)
-        : JournalLibrary.create({ logger })
-    ).report(logger);
-
-    // Load journals from file sources (data/journals) and import them into the JournalLibrary.
-    // Journals are stored as collections where items are AnyJournalEntry keyed by journalId.
-    const journalsFromFilesResult = journalsResult.onSuccess((journals) => {
-      const loader = new CollectionLoader<AnyJournalEntry, SourceId, JournalId>({
-        collectionIdConverter: CommonConverters.sourceId,
-        itemIdConverter: CommonConverters.journalId,
-        itemConverter: EntityConverters.Journal.anyJournalEntry,
-        mutable: true,
-        logger
-      });
-
-      /* c8 ignore start - journal file sources not included in test fixtures */
-      for (const source of fileSources) {
-        const resolved = resolveFileTreeSourceForSubLibrary(source, 'journals');
-        if (resolved.isFailure() || resolved.value === undefined) {
-          continue;
-        }
-
-        const loadResult = loader.loadFromFileTree(resolved.value.directory, resolved.value.loadParams);
-        if (loadResult.isFailure()) {
-          return fail<JournalLibrary>(loadResult.message);
-        }
-
-        for (const collection of loadResult.value.collections) {
-          const importResult = journals.importJournals(Object.values(collection.items));
-          if (importResult.isFailure()) {
-            return fail<JournalLibrary>(importResult.message);
-          }
-        }
-      }
-      /* c8 ignore stop */
-
-      return Success.with(journals);
-    });
+    const journalsResult = JournalLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'journals'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'journals'),
+      mergeLibraries: params.libraries?.journals,
+      logger
+    }).report(logger);
 
     const moldsResult = MoldsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'molds'),
@@ -310,7 +268,7 @@ export class ChocolateLibrary {
 
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
-        journalsFromFilesResult.onSuccess((journals) =>
+        journalsResult.onSuccess((journals) =>
           moldsResult.onSuccess((molds) =>
             proceduresResult.onSuccess((procedures) =>
               tasksResult.onSuccess((tasks) =>
@@ -571,16 +529,6 @@ export class ChocolateLibrary {
    */
   public getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry> {
     return this._journals.getJournalsForFillingVersion(versionId);
-  }
-
-  /**
-   * Adds a {@link Entities.Journal.AnyFillingJournalEntry | journal record} to the library
-   * @param journal - The journal record to add
-   * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
-   * @public
-   */
-  public addJournal(journal: AnyFillingJournalEntry): Result<JournalId> {
-    return this._journals.addJournal(journal).report(this.logger);
   }
 
   // ============================================================================

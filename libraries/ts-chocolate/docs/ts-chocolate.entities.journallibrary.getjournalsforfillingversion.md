@@ -4,7 +4,7 @@
 
 ## Entities.JournalLibrary.getJournalsForFillingVersion() method
 
-Gets all filling journal entries for a specific filling version
+Gets all filling journal entries for a specific filling version (across all collections)
 
 **Signature:**
 

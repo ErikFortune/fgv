@@ -107,7 +107,6 @@ import {
 } from '../entities';
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { AnyFillingJournalEntry, JournalLibrary } from '../entities';
-import { IGanacheCalculation } from './internal';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
@@ -271,7 +270,7 @@ export interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
   readonly origins?: ReadonlyArray<string>;
 
   /**
-   * {@inheritdoc Runtime.IRuntimeIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
   readonly raw: IChocolateIngredient;
 }
@@ -291,7 +290,7 @@ export interface IRuntimeDairyIngredient extends IRuntimeIngredient {
   readonly waterContent?: Percentage;
 
   /**
-   * {@inheritdoc Runtime.IRuntimeIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
   readonly raw: IDairyIngredient;
 }
@@ -311,7 +310,7 @@ export interface IRuntimeSugarIngredient extends IRuntimeIngredient {
   readonly sweetnessPotency?: number;
 
   /**
-   * {@inheritdoc Runtime.IRuntimeIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
   readonly raw: ISugarIngredient;
 }
@@ -328,7 +327,7 @@ export interface IRuntimeFatIngredient extends IRuntimeIngredient {
   readonly meltingPoint?: Celsius;
 
   /**
-   * {@inheritdoc Runtime.IRuntimeIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
   readonly raw: IFatIngredient;
 }
@@ -348,7 +347,7 @@ export interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
   readonly flavorProfile?: string;
 
   /**
-   * {@inheritdoc Runtime.IRuntimeIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
   readonly raw: IAlcoholIngredient;
 }
@@ -1909,3 +1908,86 @@ export interface IConfectionContext {
     procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
   ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
+
+/**
+ * Blended characteristics for a ganache recipe
+ * @public
+ */
+export interface IGanacheAnalysis {
+  /**
+   * Weighted average characteristics of all ingredients
+   */
+  readonly characteristics: IGanacheCharacteristics;
+
+  /**
+   * Total fat percentage (cacaoFat + milkFat + otherFats)
+   */
+  readonly totalFat: Percentage;
+
+  /**
+   * Fat to water ratio (important for emulsion stability)
+   */
+  readonly fatToWaterRatio: number;
+
+  /**
+   * Sugar to water ratio (important for texture and preservation)
+   */
+  readonly sugarToWaterRatio: number;
+
+  /**
+   * Total weight of the recipe
+   */
+  readonly totalWeight: Measurement;
+}
+
+/**
+ * Validation result for ganache ratios
+ * @public
+ */
+export interface IGanacheValidation {
+  /**
+   * Overall validity
+   */
+  readonly isValid: boolean;
+
+  /**
+   * Specific validation warnings
+   */
+  readonly warnings: ReadonlyArray<string>;
+
+  /**
+   * Specific validation errors
+   */
+  readonly errors: ReadonlyArray<string>;
+}
+
+/**
+ * Complete ganache calculation result
+ * @public
+ */
+export interface IGanacheCalculation {
+  /**
+   * Blended characteristic analysis
+   */
+  readonly analysis: IGanacheAnalysis;
+
+  /**
+   * Validation against standard guidelines
+   */
+  readonly validation: IGanacheValidation;
+}
+
+/**
+ * Resolved ingredient with its amount
+ * @public
+ */
+export interface IResolvedIngredient {
+  readonly ingredient: Ingredient;
+  readonly amount: Measurement;
+}
+
+/**
+ * Function type for resolving an ingredient ID to its full ingredient data
+ * @public
+ */
+export type IngredientResolver = (id: IngredientId) => Result<Ingredient>;

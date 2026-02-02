@@ -4,7 +4,7 @@
 
 ## ChocolateLibrary.create() method
 
-Creates a new  instance.
+Creates a new [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md) instance.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-_(Optional)_ Optional 
+_(Optional)_ Optional [creation parameters](./ts-chocolate.libraryruntime.ichocolatelibrarycreateparams.md)
 
 
 </td></tr>

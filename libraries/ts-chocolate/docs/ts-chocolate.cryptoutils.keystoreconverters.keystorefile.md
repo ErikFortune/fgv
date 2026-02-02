@@ -4,7 +4,7 @@
 
 ## CryptoUtils.KeyStoreConverters.keystoreFile variable
 
-Converter for .
+Converter for [encrypted key store file](./ts-chocolate.cryptoutils.ikeystorefile.md)<!-- -->.
 
 **Signature:**
 

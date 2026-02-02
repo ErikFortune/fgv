@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.Indexers.FillingRecipesByIngredientIndexer.\_findInternal() method
 
+Executes the query against the built index.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ config
 
 </td><td>
 
+The query configuration
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ config
 **Returns:**
 
 Result&lt;ReadonlyArray&lt;[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md) \| [FillingId](./ts-chocolate.fillingid.md)<!-- -->&gt;&gt;
+
+Array of matching entities or IDs
 

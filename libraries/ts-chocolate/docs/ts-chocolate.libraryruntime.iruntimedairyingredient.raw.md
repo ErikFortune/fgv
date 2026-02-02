@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.IRuntimeDairyIngredient.raw property
 
+Gets the underlying raw ingredient data.
 
 **Signature:**
 

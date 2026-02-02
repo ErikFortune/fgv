@@ -93,7 +93,7 @@ interface IScaleIngredientResult {
  * Uses unit-aware scaling for proper display formatting.
  * @param ingredient - The {@link Entities.Fillings.IFillingIngredient | ingredient} to scale
  * @param scaleFactor - The scaling factor to apply
- * @param options - {@link Calculations.IVersionScaleOptions | Scaling options}
+ * @param options - {@link LibraryRuntime.Internal.IVersionScaleOptions | Scaling options}
  * @returns Scaled ingredient with both original and scaled amounts, plus display info
  * @internal
  */
@@ -156,7 +156,7 @@ function scaleIngredient(
  * @param version - The {@link Entities.Fillings.IFillingRecipeVersion | filling recipe version} to scale.
  * @param sourceVersionId - The full composite {@link FillingVersionId | version ID}
  * @param targetWeight - Target total weight in grams
- * @param options - Optional {@link Calculations.IVersionScaleOptions | scaling options}
+ * @param options - Optional {@link LibraryRuntime.Internal.IVersionScaleOptions | scaling options}
  * @returns `Success` with computed scaled filling recipe, or `Failure` if invalid.
  * @public
  */
@@ -204,13 +204,13 @@ export function scaleVersion(
 /**
  * Scales a filling recipe to a target weight.
  *
- * This function looks up a version by spec and delegates to {@link Calculations.scaleVersion | scaleVersion}.
+ * This function looks up a version by spec and delegates to {@link LibraryRuntime.Internal.scaleVersion | scaleVersion}.
  * Use this when you have a filling recipe and want to scale a specific version by spec.
  *
  * @param fillingRecipe - The {@link Entities.Fillings.IFillingRecipe | filling recipe} to scale.
  * @param fillingId - The full composite {@link FillingId | filling ID}
  * @param targetWeight - Target total weight in grams
- * @param options - Optional {@link Calculations.IFillingRecipeScaleOptions | scaling options}
+ * @param options - Optional {@link LibraryRuntime.Internal.IFillingRecipeScaleOptions | scaling options}
  * @returns `Success` with computed scaled filling recipe, or `Failure` if invalid.
  * @public
  */
@@ -237,7 +237,7 @@ export function scaleFillingRecipe(
  * @param fillingRecipe - The {@link Entities.Fillings.IFillingRecipe | filling recipe} to scale.
  * @param fillingId - The full composite {@link FillingId | filling ID}.
  * @param factor - Multiplicative factor (e.g., 2.0 for double, 0.5 for half).
- * @param options - Optional {@link Calculations.IFillingRecipeScaleOptions | scaling options}.
+ * @param options - Optional {@link LibraryRuntime.Internal.IFillingRecipeScaleOptions | scaling options}.
  * @returns `Success` with computed scaled filling recipe, or `Failure` if invalid.
  * @public
  */

@@ -4,7 +4,7 @@
 
 ## Entities.Journal.JournalLibrary.getJournal() method
 
-Gets a [journal entry](./ts-chocolate.entities.journal.anyjournalentry.md) by its ID
+Gets a journal entry by ID (searches all collections)
 
 **Signature:**
 
@@ -52,5 +52,5 @@ The journal ID to look up
 
 Result&lt;AnyJournalEntry&gt;
 
-`Success` with the journal entry, or `Failure` if not found
+Success with the journal entry, or Failure if not found
 

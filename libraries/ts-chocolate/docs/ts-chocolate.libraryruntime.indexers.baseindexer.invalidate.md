@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.Indexers.BaseIndexer.invalidate() method
 
+Invalidates any cached index data. Called when underlying library data changes.
 
 **Signature:**
 

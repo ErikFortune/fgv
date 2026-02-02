@@ -116,6 +116,7 @@ IAlcoholIngredient
 
 </td><td>
 
+Gets the underlying raw ingredient data.
 
 
 </td></tr>

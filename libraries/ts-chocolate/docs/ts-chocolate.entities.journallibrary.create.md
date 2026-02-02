@@ -42,7 +42,7 @@ IJournalLibraryParams
 
 </td><td>
 
-_(Optional)_ Optional [creation parameters](./ts-chocolate.entities.journal.ijournallibraryparams.md) with initial journals.
+_(Optional)_ Optional [creation parameters](./ts-chocolate.entities.journal.ijournallibraryparams.md)
 
 
 </td></tr>

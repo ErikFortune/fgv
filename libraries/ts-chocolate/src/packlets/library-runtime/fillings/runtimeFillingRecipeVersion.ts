@@ -34,18 +34,13 @@ import {
   FillingVersionSpec
 } from '../../common';
 import { IFillingRecipeVersion, IFillingRating } from '../../entities';
-import {
-  IGanacheCalculation,
-  calculateFromIngredients,
-  IResolvedIngredient,
-  validateGanache,
-  scaleVersion,
-  IVersionScaleOptions
-} from '../internal';
+import { calculateFromIngredients, validateGanache, scaleVersion, IVersionScaleOptions } from '../internal';
 import {
   ICategoryFilter,
+  IGanacheCalculation,
   IResolvedFillingIngredient,
   IResolvedFillingRecipeProcedure,
+  IResolvedIngredient,
   IResolvedProcedures,
   IRuntimeFillingRecipe,
   IRuntimeFillingRecipeVersion,

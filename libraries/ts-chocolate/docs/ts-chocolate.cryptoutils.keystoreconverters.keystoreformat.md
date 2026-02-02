@@ -4,7 +4,7 @@
 
 ## CryptoUtils.KeyStoreConverters.keystoreFormat variable
 
-Converter for  version.
+Converter for [key store format](./ts-chocolate.cryptoutils.keystoreformat.md) version.
 
 **Signature:**
 

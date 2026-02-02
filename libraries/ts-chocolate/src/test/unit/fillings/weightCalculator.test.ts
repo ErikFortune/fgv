@@ -22,23 +22,14 @@ import '@fgv/ts-utils-jest';
 
 import { IngredientId, Measurement } from '../../../packlets/common';
 import { IFillingIngredient } from '../../../packlets/entities';
-import {
-  IWeightCalculationContext,
-  IWeightContribution,
-  calculateIngredientWeight,
-  calculateTotalWeight,
-  calculateWeightContributions,
-  contributesToWeight,
-  defaultWeightContext,
-  isWeightExcluded
-} from '../../../packlets/library-runtime';
+import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
 describe('WeightCalculator', () => {
   // ============================================================================
   // Test Fixtures
   // ============================================================================
 
-  const mockContext: IWeightCalculationContext = {
+  const mockContext: RuntimeInternal.IWeightCalculationContext = {
     getIngredientDensity: (id: IngredientId): number => {
       // Simulate density lookup for known ingredients
       switch (id) {
@@ -75,31 +66,31 @@ describe('WeightCalculator', () => {
 
   describe('contributesToWeight', () => {
     test('returns true for grams', () => {
-      expect(contributesToWeight('g')).toBe(true);
+      expect(RuntimeInternal.contributesToWeight('g')).toBe(true);
     });
 
     test('returns true for milliliters', () => {
-      expect(contributesToWeight('mL')).toBe(true);
+      expect(RuntimeInternal.contributesToWeight('mL')).toBe(true);
     });
 
     test('returns false for teaspoons', () => {
-      expect(contributesToWeight('tsp')).toBe(false);
+      expect(RuntimeInternal.contributesToWeight('tsp')).toBe(false);
     });
 
     test('returns false for tablespoons', () => {
-      expect(contributesToWeight('Tbsp')).toBe(false);
+      expect(RuntimeInternal.contributesToWeight('Tbsp')).toBe(false);
     });
 
     test('returns false for pinch', () => {
-      expect(contributesToWeight('pinch')).toBe(false);
+      expect(RuntimeInternal.contributesToWeight('pinch')).toBe(false);
     });
 
     test('returns false for seeds', () => {
-      expect(contributesToWeight('seeds')).toBe(false);
+      expect(RuntimeInternal.contributesToWeight('seeds')).toBe(false);
     });
 
     test('returns false for pods', () => {
-      expect(contributesToWeight('pods')).toBe(false);
+      expect(RuntimeInternal.contributesToWeight('pods')).toBe(false);
     });
   });
 
@@ -109,31 +100,31 @@ describe('WeightCalculator', () => {
 
   describe('isWeightExcluded', () => {
     test('returns true for teaspoons', () => {
-      expect(isWeightExcluded('tsp')).toBe(true);
+      expect(RuntimeInternal.isWeightExcluded('tsp')).toBe(true);
     });
 
     test('returns true for tablespoons', () => {
-      expect(isWeightExcluded('Tbsp')).toBe(true);
+      expect(RuntimeInternal.isWeightExcluded('Tbsp')).toBe(true);
     });
 
     test('returns true for pinch', () => {
-      expect(isWeightExcluded('pinch')).toBe(true);
+      expect(RuntimeInternal.isWeightExcluded('pinch')).toBe(true);
     });
 
     test('returns true for seeds', () => {
-      expect(isWeightExcluded('seeds')).toBe(true);
+      expect(RuntimeInternal.isWeightExcluded('seeds')).toBe(true);
     });
 
     test('returns true for pods', () => {
-      expect(isWeightExcluded('pods')).toBe(true);
+      expect(RuntimeInternal.isWeightExcluded('pods')).toBe(true);
     });
 
     test('returns false for grams', () => {
-      expect(isWeightExcluded('g')).toBe(false);
+      expect(RuntimeInternal.isWeightExcluded('g')).toBe(false);
     });
 
     test('returns false for milliliters', () => {
-      expect(isWeightExcluded('mL')).toBe(false);
+      expect(RuntimeInternal.isWeightExcluded('mL')).toBe(false);
     });
   });
 
@@ -143,7 +134,9 @@ describe('WeightCalculator', () => {
 
   describe('defaultWeightContext', () => {
     test('returns 1.0 for any ingredient', () => {
-      expect(defaultWeightContext.getIngredientDensity('any.ingredient' as IngredientId)).toBe(1.0);
+      expect(
+        RuntimeInternal.defaultWeightContext.getIngredientDensity('any.ingredient' as IngredientId)
+      ).toBe(1.0);
     });
   });
 
@@ -155,7 +148,7 @@ describe('WeightCalculator', () => {
     describe('with grams', () => {
       test('adds weight directly', () => {
         const ingredient = makeIngredient('chocolate', 100, 'g');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.ingredientId).toBe('common.chocolate');
         expect(result.amount).toBe(100);
@@ -166,7 +159,7 @@ describe('WeightCalculator', () => {
 
       test('uses default unit of grams when not specified', () => {
         const ingredient = makeIngredient('chocolate', 100);
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.unit).toBe('g');
         expect(result.weightGrams).toBe(100);
@@ -177,7 +170,7 @@ describe('WeightCalculator', () => {
     describe('with milliliters', () => {
       test('converts using density from context', () => {
         const ingredient = makeIngredient('heavy-cream', 100, 'mL');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.ingredientId).toBe('common.heavy-cream');
         expect(result.amount).toBe(100);
@@ -188,7 +181,7 @@ describe('WeightCalculator', () => {
 
       test('uses default density of 1.0 for unknown ingredients', () => {
         const ingredient = makeIngredient('unknown', 100, 'mL');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.weightGrams).toBe(100); // 100 * 1.0
         expect(result.contributesToWeight).toBe(true);
@@ -196,7 +189,7 @@ describe('WeightCalculator', () => {
 
       test('uses default context when none provided', () => {
         const ingredient = makeIngredient('heavy-cream', 100, 'mL');
-        const result = calculateIngredientWeight(ingredient);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient);
 
         // Default context returns 1.0 for all ingredients
         expect(result.weightGrams).toBe(100);
@@ -206,7 +199,7 @@ describe('WeightCalculator', () => {
     describe('with excluded units', () => {
       test('teaspoons return zero weight', () => {
         const ingredient = makeIngredient('vanilla', 1, 'tsp');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.amount).toBe(1);
         expect(result.unit).toBe('tsp');
@@ -216,7 +209,7 @@ describe('WeightCalculator', () => {
 
       test('tablespoons return zero weight', () => {
         const ingredient = makeIngredient('vanilla', 2, 'Tbsp');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.weightGrams).toBe(0);
         expect(result.contributesToWeight).toBe(false);
@@ -224,7 +217,7 @@ describe('WeightCalculator', () => {
 
       test('pinch returns zero weight', () => {
         const ingredient = makeIngredient('salt', 1, 'pinch');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.weightGrams).toBe(0);
         expect(result.contributesToWeight).toBe(false);
@@ -232,7 +225,7 @@ describe('WeightCalculator', () => {
 
       test('seeds return zero weight', () => {
         const ingredient = makeIngredient('vanilla-seeds', 10, 'seeds');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.amount).toBe(10);
         expect(result.unit).toBe('seeds');
@@ -242,7 +235,7 @@ describe('WeightCalculator', () => {
 
       test('pods return zero weight', () => {
         const ingredient = makeIngredient('vanilla-pod', 2, 'pods');
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.amount).toBe(2);
         expect(result.unit).toBe('pods');
@@ -261,7 +254,7 @@ describe('WeightCalculator', () => {
           amount: 100 as Measurement,
           unit: 'mL'
         };
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.ingredientId).toBe('common.heavy-cream');
         expect(result.weightGrams).toBeCloseTo(103.2, 1); // Uses cream density
@@ -275,7 +268,7 @@ describe('WeightCalculator', () => {
           amount: 100 as Measurement,
           unit: 'mL'
         };
-        const result = calculateIngredientWeight(ingredient, mockContext);
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
 
         expect(result.ingredientId).toBe('common.water');
         expect(result.weightGrams).toBe(100); // Water density is 1.0
@@ -295,7 +288,7 @@ describe('WeightCalculator', () => {
         makeIngredient('butter', 30, 'g')
       ];
 
-      const total = calculateTotalWeight(ingredients, mockContext);
+      const total = RuntimeInternal.calculateTotalWeight(ingredients, mockContext);
       expect(total).toBe(280);
     });
 
@@ -305,7 +298,7 @@ describe('WeightCalculator', () => {
         makeIngredient('heavy-cream', 100, 'mL') // 103.2g
       ];
 
-      const total = calculateTotalWeight(ingredients, mockContext);
+      const total = RuntimeInternal.calculateTotalWeight(ingredients, mockContext);
       expect(total).toBeCloseTo(303.2, 1);
     });
 
@@ -316,7 +309,7 @@ describe('WeightCalculator', () => {
         makeIngredient('salt', 1, 'pinch') // excluded
       ];
 
-      const total = calculateTotalWeight(ingredients, mockContext);
+      const total = RuntimeInternal.calculateTotalWeight(ingredients, mockContext);
       expect(total).toBe(200);
     });
 
@@ -329,13 +322,13 @@ describe('WeightCalculator', () => {
         makeIngredient('salt', 1, 'pinch') // excluded
       ];
 
-      const total = calculateTotalWeight(ingredients, mockContext);
+      const total = RuntimeInternal.calculateTotalWeight(ingredients, mockContext);
       // 200 + 103.2 + 71 = 374.2
       expect(total).toBeCloseTo(374.2, 1);
     });
 
     test('returns zero for empty array', () => {
-      const total = calculateTotalWeight([], mockContext);
+      const total = RuntimeInternal.calculateTotalWeight([], mockContext);
       expect(total).toBe(0);
     });
 
@@ -345,7 +338,7 @@ describe('WeightCalculator', () => {
         makeIngredient('cream', 100, 'mL') // 100g with default density
       ];
 
-      const total = calculateTotalWeight(ingredients);
+      const total = RuntimeInternal.calculateTotalWeight(ingredients);
       expect(total).toBe(300);
     });
   });
@@ -362,11 +355,11 @@ describe('WeightCalculator', () => {
         makeIngredient('salt', 1, 'pinch')
       ];
 
-      const contributions = calculateWeightContributions(ingredients, mockContext);
+      const contributions = RuntimeInternal.calculateWeightContributions(ingredients, mockContext);
 
       expect(contributions).toHaveLength(3);
 
-      expect(contributions[0]).toEqual<IWeightContribution>({
+      expect(contributions[0]).toEqual<RuntimeInternal.IWeightContribution>({
         ingredientId: 'common.chocolate' as IngredientId,
         amount: 200 as Measurement,
         unit: 'g',
@@ -378,7 +371,7 @@ describe('WeightCalculator', () => {
       expect(contributions[1].weightGrams).toBeCloseTo(103.2, 1);
       expect(contributions[1].contributesToWeight).toBe(true);
 
-      expect(contributions[2]).toEqual<IWeightContribution>({
+      expect(contributions[2]).toEqual<RuntimeInternal.IWeightContribution>({
         ingredientId: 'common.salt' as IngredientId,
         amount: 1 as Measurement,
         unit: 'pinch',
@@ -388,7 +381,7 @@ describe('WeightCalculator', () => {
     });
 
     test('returns empty array for empty ingredients', () => {
-      const contributions = calculateWeightContributions([], mockContext);
+      const contributions = RuntimeInternal.calculateWeightContributions([], mockContext);
       expect(contributions).toEqual([]);
     });
   });

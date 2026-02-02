@@ -452,8 +452,6 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 
 // @public
 export class ChocolateLibrary {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    addJournal(journal: AnyFillingJournalEntry): Result<JournalId>;
     calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
     calculateGanacheForRecipe(recipe: IFillingRecipe, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1407,10 +1405,16 @@ declare namespace Entities {
         AnyJournalEntry,
         isFillingJournalEntry,
         isConfectionJournalEntry,
+        JournalCollectionEntry,
+        JournalCollectionEntryInit,
+        JournalCollectionValidator,
+        JournalCollection,
         AnyFillingJournalEntry,
         AnyConfectionJournalEntry,
-        IJournalImportResult,
+        IJournalFileTreeSource,
+        JournalsMergeSource,
         IJournalLibraryParams,
+        IJournalLibraryAsyncParams,
         JournalLibrary,
         ICavityDimensions,
         ICavityInfo,
@@ -2879,19 +2883,13 @@ interface IJournalEntryBase<TVersion, TVersionId> {
 }
 
 // @public
-interface IJournalImportResult {
-    readonly imported: number;
-    readonly skipped: number;
-    readonly skippedIds: ReadonlyArray<JournalId>;
-}
+type IJournalFileTreeSource = SubLibraryFileTreeSource;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
-interface IJournalLibraryParams {
-    readonly journals?: ReadonlyArray<AnyJournalEntry>;
-    readonly logger?: Logging.LogReporter<unknown>;
-}
+type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, JournalCollectionEntryInit>;
+
+// @public
+type IJournalLibraryParams = ISubLibraryParams<JournalLibrary, JournalCollectionEntryInit>;
 
 // @public
 interface IKeyDerivationParams {
@@ -3351,6 +3349,44 @@ interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
 
 // @public
 function inRange<T>(min: number | undefined, max: number | undefined, getter: (item: T) => number | undefined): FilterPredicate<T>;
+
+declare namespace Internal {
+    export {
+        contributesToWeight,
+        isWeightExcluded,
+        calculateIngredientWeight,
+        calculateTotalWeight,
+        calculateWeightContributions,
+        IWeightCalculationContext,
+        IWeightContribution,
+        defaultWeightContext,
+        scaleVersion,
+        scaleFillingRecipe,
+        scaleFillingRecipeByFactor,
+        calculateBaseWeight,
+        recalculateFillingRecipeVersion,
+        IVersionScaleOptions,
+        IFillingRecipeScaleOptions,
+        supportsScaling,
+        scaleAmount,
+        IFraction,
+        STANDARD_FRACTIONS,
+        IScaledAmount,
+        IUnitScaler,
+        ILinearScalerOptions,
+        LinearScaler,
+        PinchScaler,
+        ISpoonScalerOptions,
+        SpoonScaler,
+        UnitScalerRegistry,
+        defaultScalerRegistry,
+        calculateFromIngredients,
+        calculateFromFillingRecipeIngredients,
+        calculateForFillingRecipe,
+        validateGanache,
+        calculateGanache
+    }
+}
 
 // @public
 interface INumericRange {
@@ -4714,16 +4750,34 @@ declare namespace Journal_2 {
         AnyJournalEntry,
         isFillingJournalEntry,
         isConfectionJournalEntry,
+        JournalCollectionEntry,
+        JournalCollectionEntryInit,
+        JournalCollectionValidator,
+        JournalCollection,
         AnyFillingJournalEntry,
         AnyConfectionJournalEntry,
-        IJournalImportResult,
+        IJournalFileTreeSource,
+        JournalsMergeSource,
         IJournalLibraryParams,
+        IJournalLibraryAsyncParams,
         JournalLibrary
     }
 }
 
 // @public
 export const JOURNAL_ID_PATTERN: RegExp;
+
+// @public
+type JournalCollection = SubLibraryCollection<JournalId, AnyJournalEntry>;
+
+// @public
+type JournalCollectionEntry = SubLibraryCollectionEntry<JournalId, AnyJournalEntry>;
+
+// @public
+type JournalCollectionEntryInit = SubLibraryEntryInit<JournalId, AnyJournalEntry>;
+
+// @public
+type JournalCollectionValidator = SubLibraryCollectionValidator<JournalId, AnyJournalEntry>;
 
 // @public
 type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit';
@@ -4742,27 +4796,23 @@ const journalId: Converter<JournalId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class JournalLibrary {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    addJournal(journal: AnyJournalEntry): Result<JournalId>;
-    clear(): void;
+class JournalLibrary extends SubLibraryBase<JournalId, JournalId, AnyJournalEntry> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
-    exportJournals(): ReadonlyArray<AnyJournalEntry>;
-    getAllJournals(): ReadonlyArray<AnyJournalEntry>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static createAsync(params?: IJournalLibraryAsyncParams): Promise<Result<JournalLibrary>>;
+    getAllJournals(): ReadonlyArray<AnyJournalEntry>;
     getJournal(journalId: JournalId): Result<AnyJournalEntry>;
     getJournalsForConfection(confectionId: ConfectionId): ReadonlyArray<AnyConfectionJournalEntry>;
     getJournalsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<AnyConfectionJournalEntry>;
     getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
     getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
     hasJournal(journalId: JournalId): boolean;
-    importJournals(journals: ReadonlyArray<unknown>): Result<IJournalImportResult>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    removeJournal(journalId: JournalId): Result<AnyJournalEntry>;
-    get size(): number;
 }
+
+// @public
+type JournalsMergeSource = SubLibraryMergeSource<JournalLibrary>;
 
 // @public
 type KeyDerivationFunction = 'pbkdf2';
@@ -4813,7 +4863,7 @@ declare namespace KeyStoreConverters {
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IKeyStoreFile"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreFile: Converter<IKeyStoreFile>;
@@ -4821,7 +4871,7 @@ const keystoreFile: Converter<IKeyStoreFile>;
 // @public
 type KeyStoreFormat = 'keystore-v1';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "KeyStoreFormat"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreFormat: Converter<KeyStoreFormat>;
@@ -4829,12 +4879,12 @@ const keystoreFormat: Converter<KeyStoreFormat>;
 // @public
 type KeyStoreLockState = 'locked' | 'unlocked';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IKeyStoreSecretEntryJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IKeyStoreVaultContents"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
@@ -4998,6 +5048,7 @@ declare namespace LibraryRuntime {
         IMoldContext,
         IRuntimeMold,
         RuntimeMold,
+        Internal,
         IInstantiatedLibrarySource,
         IChocolateLibraryCreateParams,
         ChocolateLibrary,
@@ -5049,6 +5100,11 @@ declare namespace LibraryRuntime {
         IRuntimeRolledTruffleVersion,
         AnyRuntimeConfectionVersion,
         IConfectionContext,
+        IGanacheAnalysis,
+        IGanacheValidation,
+        IGanacheCalculation,
+        IResolvedIngredient,
+        IngredientResolver,
         andFilters,
         orFilters,
         notFilter,
@@ -5074,45 +5130,7 @@ declare namespace LibraryRuntime {
         RuntimeProducedConfectionBase,
         RuntimeProducedMoldedBonBon,
         RuntimeProducedBarTruffle,
-        RuntimeProducedRolledTruffle,
-        contributesToWeight,
-        isWeightExcluded,
-        calculateIngredientWeight,
-        calculateTotalWeight,
-        calculateWeightContributions,
-        IWeightCalculationContext,
-        IWeightContribution,
-        defaultWeightContext,
-        scaleVersion,
-        scaleFillingRecipe,
-        scaleFillingRecipeByFactor,
-        calculateBaseWeight,
-        recalculateFillingRecipeVersion,
-        IVersionScaleOptions,
-        IFillingRecipeScaleOptions,
-        supportsScaling,
-        scaleAmount,
-        IFraction,
-        STANDARD_FRACTIONS,
-        IScaledAmount,
-        IUnitScaler,
-        ILinearScalerOptions,
-        LinearScaler,
-        PinchScaler,
-        ISpoonScalerOptions,
-        SpoonScaler,
-        UnitScalerRegistry,
-        defaultScalerRegistry,
-        calculateFromIngredients,
-        calculateFromFillingRecipeIngredients,
-        calculateForFillingRecipe,
-        validateGanache,
-        calculateGanache,
-        IGanacheAnalysis,
-        IGanacheValidation,
-        IGanacheCalculation,
-        IResolvedIngredient,
-        IngredientResolver
+        RuntimeProducedRolledTruffle
     }
 }
 export { LibraryRuntime }
@@ -6369,16 +6387,16 @@ const scaledFillingIngredient: Converter<IScaledFillingIngredient>;
 // @public
 const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
@@ -6392,7 +6410,7 @@ function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number
 function scaleMoldedBonBonVersionByFrames(confection: IMoldedBonBon, version: IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Calculations"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<IComputedScaledFillingRecipe>;
@@ -7011,9 +7029,5 @@ export const ZeroMeasurement: Measurement;
 
 // @public
 export const ZeroPercent: Percentage;
-
-// Warnings were encountered during analysis:
-//
-// src/packlets/entities/journal/library.ts:134:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

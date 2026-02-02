@@ -119,5 +119,5 @@ export { IMoldContext, IRuntimeMold, RuntimeMold } from './molds';
 // Produced wrappers (mutable editing containers)
 export * from './produced';
 
-// Calculation utilities (re-exported from internal for public API)
-export * from './internal';
+import * as Internal from './internal';
+export { Internal };

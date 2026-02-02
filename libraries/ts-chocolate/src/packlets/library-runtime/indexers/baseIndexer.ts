@@ -75,13 +75,13 @@ export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEn
     return this._findInternal(config);
   }
 
-  /** {@inheritdoc Runtime.Indexers.IIndexer.invalidate} */
+  /** {@inheritdoc LibraryRuntime.Indexers.IIndexer.invalidate} */
   public invalidate(): void {
     this._isBuilt = false;
     this._clearIndex();
   }
 
-  /** {@inheritdoc Runtime.Indexers.IIndexer.warmUp} */
+  /** {@inheritdoc LibraryRuntime.Indexers.IIndexer.warmUp} */
   public warmUp(): void {
     this._ensureBuilt();
   }

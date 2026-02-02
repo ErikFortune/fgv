@@ -65,7 +65,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "felchlin.mar
 
 A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
 
-Provides: - Storage for journal entries indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by filling ID (all journals for a filling) - Lookup by filling version ID (all journals for a specific filling version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal entries
+Journals are organized into user-defined collections (e.g., by person, location, time period). The library provides cross-collection indexing for efficient queries by filling/confection.
+
+Provides: - Multi-collection storage with FileTree persistence - Cross-collection lookup by filling ID (all journals for a filling) - Cross-collection lookup by filling version ID (all journals for a specific filling version) - Cross-collection lookup by confection ID (all journals for a confection) - Cross-collection lookup by confection version ID (all journals for a specific confection version) - Lazy index rebuilding for efficient queries
 
 
 </td></tr>
@@ -806,28 +808,6 @@ An inline task defined directly in a procedure step. Contains a full ITaskData d
 </td><td>
 
 Base interface for journal entries.
-
-
-</td></tr>
-<tr><td>
-
-[IJournalImportResult](./ts-chocolate.entities.ijournalimportresult.md)
-
-
-</td><td>
-
-Result of importing journals into the library
-
-
-</td></tr>
-<tr><td>
-
-[IJournalLibraryParams](./ts-chocolate.entities.ijournallibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a [JournalLibrary](./ts-chocolate.entities.journal.journallibrary.md) instance
 
 
 </td></tr>
@@ -1731,6 +1711,39 @@ Parameters for creating an IngredientsLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
+[IJournalFileTreeSource](./ts-chocolate.entities.ijournalfiletreesource.md)
+
+
+</td><td>
+
+File tree source for journal data.
+
+
+</td></tr>
+<tr><td>
+
+[IJournalLibraryAsyncParams](./ts-chocolate.entities.ijournallibraryasyncparams.md)
+
+
+</td><td>
+
+Parameters for creating a JournalLibrary instance asynchronously with encryption support.
+
+
+</td></tr>
+<tr><td>
+
+[IJournalLibraryParams](./ts-chocolate.entities.ijournallibraryparams.md)
+
+
+</td><td>
+
+Parameters for creating a JournalLibrary instance synchronously.
+
+
+</td></tr>
+<tr><td>
+
 [IMoldFileTreeSource](./ts-chocolate.entities.imoldfiletreesource.md)
 
 
@@ -1918,12 +1931,67 @@ Parameters for creating a TasksLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
+[JournalCollection](./ts-chocolate.entities.journalcollection.md)
+
+
+</td><td>
+
+Type for the collections in a JournalLibrary.
+
+
+</td></tr>
+<tr><td>
+
+[JournalCollectionEntry](./ts-chocolate.entities.journalcollectionentry.md)
+
+
+</td><td>
+
+A single entry in a journal collection.
+
+
+</td></tr>
+<tr><td>
+
+[JournalCollectionEntryInit](./ts-chocolate.entities.journalcollectionentryinit.md)
+
+
+</td><td>
+
+Initialization type for a JournalLibrary collection entry.
+
+
+</td></tr>
+<tr><td>
+
+[JournalCollectionValidator](./ts-chocolate.entities.journalcollectionvalidator.md)
+
+
+</td><td>
+
+Validator type for JournalLibrary collections.
+
+
+</td></tr>
+<tr><td>
+
 [JournalEntryType](./ts-chocolate.entities.journalentrytype.md)
 
 
 </td><td>
 
 Types of journal entries.
+
+
+</td></tr>
+<tr><td>
+
+[JournalsMergeSource](./ts-chocolate.entities.journalsmergesource.md)
+
+
+</td><td>
+
+Specifies a journals library to merge into a new library.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.IChocolateLibraryCreateParams.libraries property
 
-Pre-instantiated . Used for advanced scenarios like testing or custom library construction. If provided along with other sources, collections are combined.
+Pre-instantiated [library sources](./ts-chocolate.libraryruntime.iinstantiatedlibrarysource.md)<!-- -->. Used for advanced scenarios like testing or custom library construction. If provided along with other sources, collections are combined.
 
 **Signature:**
 

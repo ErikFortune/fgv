@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.Indexers.FillingRecipesByChocolateTypeIndexer.\_clearIndex() method
 
+Clears the internal index structure. Called when invalidating the index.
 
 **Signature:**
 

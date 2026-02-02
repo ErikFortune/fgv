@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.IRuntimeSugarIngredient.raw property
 
+Gets the underlying raw ingredient data.
 
 **Signature:**
 

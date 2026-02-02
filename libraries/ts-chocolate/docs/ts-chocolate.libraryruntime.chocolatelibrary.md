@@ -227,20 +227,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addJournal(journal)](./ts-chocolate.libraryruntime.chocolatelibrary.addjournal.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a [journal record](./ts-chocolate.entities.journal.anyfillingjournalentry.md) to the library
-
-
-</td></tr>
-<tr><td>
-
 [calculateGanache(id, versionSpec)](./ts-chocolate.libraryruntime.chocolatelibrary.calculateganache.md)
 
 
@@ -279,7 +265,7 @@ Calculates ganache characteristics for a recipe object Useful when working with 
 
 </td><td>
 
-Creates a new  instance.
+Creates a new [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md) instance.
 
 
 </td></tr>

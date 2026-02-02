@@ -4,7 +4,7 @@
 
 ## CryptoUtils.KeyStoreConverters.keystoreSecretEntryJson variable
 
-Converter for  in JSON format.
+Converter for [key store secret entry](./ts-chocolate.cryptoutils.ikeystoresecretentryjson.md) in JSON format.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Entities.Journal.JournalLibrary.getAllJournals() method
 
-Gets all journal entries in the library
+Gets all journal entries across all collections
 
 **Signature:**
 

@@ -77,6 +77,7 @@ Description
 
 </td><td>
 
+Builds the internal index structure. Called lazily on first query or explicitly via warmUp().
 
 
 </td></tr>
@@ -92,6 +93,7 @@ Description
 
 </td><td>
 
+Clears the internal index structure. Called when invalidating the index.
 
 
 </td></tr>
@@ -107,6 +109,7 @@ Description
 
 </td><td>
 
+Executes the query against the built index.
 
 
 </td></tr>

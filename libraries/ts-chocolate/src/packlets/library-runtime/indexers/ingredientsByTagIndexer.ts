@@ -97,7 +97,7 @@ export class IngredientsByTagIndexer extends BaseIndexer<
     return Array.from(this._tagToIngredients!.keys());
   }
 
-  /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
+  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._tagToIngredients = new Map<string, Set<IngredientId>>();
     const ingredients = this.library.ingredients;
@@ -111,12 +111,12 @@ export class IngredientsByTagIndexer extends BaseIndexer<
     }
   }
 
-  /** {@inheritdoc Runtime.Indexers.BaseIndexer._clearIndex} */
+  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
   protected _clearIndex(): void {
     this._tagToIngredients = undefined;
   }
 
-  /** {@inheritdoc Runtime.Indexers.BaseIndexer._findInternal} */
+  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(
     config: IIngredientsByTagConfig
   ): Result<ReadonlyArray<IRuntimeIngredient | IngredientId>> {

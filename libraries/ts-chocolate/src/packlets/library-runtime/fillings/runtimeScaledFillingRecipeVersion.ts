@@ -27,14 +27,11 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers } from '../../common';
 import { IComputedScaledFillingRecipe, IFillingRating } from '../../entities';
-import {
-  IGanacheCalculation,
-  calculateFromIngredients,
-  IResolvedIngredient,
-  validateGanache
-} from '../internal';
+import { calculateFromIngredients, validateGanache } from '../internal';
 import {
   ICategoryFilter,
+  IGanacheCalculation,
+  IResolvedIngredient,
   IResolvedScaledIngredient,
   IRuntimeScaledFillingRecipeVersion,
   IRuntimeScalingSource,

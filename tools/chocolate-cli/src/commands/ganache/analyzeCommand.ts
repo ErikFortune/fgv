@@ -175,7 +175,7 @@ export function createAnalyzeSubcommand(): Command {
       }
 
       // Calculate ganache characteristics
-      const calculationResult = LibraryRuntime.calculateGanache(
+      const calculationResult = LibraryRuntime.Internal.calculateGanache(
         filling,
         (ingredientId: IngredientId) => ingredientsLibrary.get(ingredientId),
         versionSpec

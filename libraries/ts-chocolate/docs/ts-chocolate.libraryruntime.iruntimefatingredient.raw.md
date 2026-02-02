@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.IRuntimeFatIngredient.raw property
 
+Gets the underlying raw ingredient data.
 
 **Signature:**
 

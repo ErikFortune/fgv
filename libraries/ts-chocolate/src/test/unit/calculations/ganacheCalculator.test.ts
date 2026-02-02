@@ -36,13 +36,9 @@ import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packl
 import { IFillingRecipe, IFillingRecipeVersion, IFillingIngredient } from '../../../packlets/entities';
 
 import {
-  calculateFromIngredients,
-  calculateFromFillingRecipeIngredients,
-  calculateForFillingRecipe,
-  calculateGanache,
-  validateGanache,
+  IngredientResolver,
   IResolvedIngredient,
-  IngredientResolver
+  Internal as RuntimeInternal
 } from '../../../packlets/library-runtime';
 
 describe('Ganache Calculator', () => {
@@ -101,7 +97,7 @@ describe('Ganache Calculator', () => {
         { ingredient: cream, amount: 50 as Measurement }
       ];
 
-      const analysis = calculateFromIngredients(resolved);
+      const analysis = RuntimeInternal.calculateFromIngredients(resolved);
 
       // Total weight
       expect(analysis.totalWeight).toBe(150);
@@ -121,7 +117,7 @@ describe('Ganache Calculator', () => {
         { ingredient: cream, amount: 50 as Measurement }
       ];
 
-      const analysis = calculateFromIngredients(resolved);
+      const analysis = RuntimeInternal.calculateFromIngredients(resolved);
 
       // totalFat = cacaoFat + milkFat + otherFats
       const expectedTotalFat =
@@ -137,7 +133,7 @@ describe('Ganache Calculator', () => {
         { ingredient: cream, amount: 50 as Measurement }
       ];
 
-      const analysis = calculateFromIngredients(resolved);
+      const analysis = RuntimeInternal.calculateFromIngredients(resolved);
 
       expect(analysis.fatToWaterRatio).toBeCloseTo(analysis.totalFat / analysis.characteristics.water, 2);
       expect(analysis.sugarToWaterRatio).toBeCloseTo(
@@ -147,7 +143,7 @@ describe('Ganache Calculator', () => {
     });
 
     test('handles empty ingredients list', () => {
-      const analysis = calculateFromIngredients([]);
+      const analysis = RuntimeInternal.calculateFromIngredients([]);
 
       expect(analysis.totalWeight).toBe(0);
       expect(analysis.characteristics.cacaoFat).toBe(0);
@@ -170,7 +166,7 @@ describe('Ganache Calculator', () => {
 
       const resolved: IResolvedIngredient[] = [{ ingredient: noWaterIngredient, amount: 100 as Measurement }];
 
-      const analysis = calculateFromIngredients(resolved);
+      const analysis = RuntimeInternal.calculateFromIngredients(resolved);
       expect(analysis.fatToWaterRatio).toBe(Infinity);
       expect(analysis.sugarToWaterRatio).toBe(Infinity);
     });
@@ -187,11 +183,11 @@ describe('Ganache Calculator', () => {
         { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ];
 
-      expect(calculateFromFillingRecipeIngredients(fillingIngredients, testResolver)).toSucceedAndSatisfy(
-        (analysis) => {
-          expect(analysis.totalWeight).toBe(150);
-        }
-      );
+      expect(
+        RuntimeInternal.calculateFromFillingRecipeIngredients(fillingIngredients, testResolver)
+      ).toSucceedAndSatisfy((analysis) => {
+        expect(analysis.totalWeight).toBe(150);
+      });
     });
 
     test('fails when ingredient not found', () => {
@@ -199,9 +195,9 @@ describe('Ganache Calculator', () => {
         { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Measurement }
       ];
 
-      expect(calculateFromFillingRecipeIngredients(fillingIngredients, testResolver)).toFailWith(
-        /Unknown ingredient/
-      );
+      expect(
+        RuntimeInternal.calculateFromFillingRecipeIngredients(fillingIngredients, testResolver)
+      ).toFailWith(/Unknown ingredient/);
     });
   });
 
@@ -229,14 +225,20 @@ describe('Ganache Calculator', () => {
     };
 
     test('calculates for golden version by default', () => {
-      expect(calculateForFillingRecipe(testRecipe, testResolver)).toSucceedAndSatisfy((analysis) => {
-        expect(analysis.totalWeight).toBe(150);
-      });
+      expect(RuntimeInternal.calculateForFillingRecipe(testRecipe, testResolver)).toSucceedAndSatisfy(
+        (analysis) => {
+          expect(analysis.totalWeight).toBe(150);
+        }
+      );
     });
 
     test('calculates for specific version by ID', () => {
       expect(
-        calculateForFillingRecipe(testRecipe, testResolver, '2026-01-01-01' as FillingVersionSpec)
+        RuntimeInternal.calculateForFillingRecipe(
+          testRecipe,
+          testResolver,
+          '2026-01-01-01' as FillingVersionSpec
+        )
       ).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
@@ -244,7 +246,11 @@ describe('Ganache Calculator', () => {
 
     test('fails for invalid version ID', () => {
       expect(
-        calculateForFillingRecipe(testRecipe, testResolver, '2026-12-31-99' as FillingVersionSpec)
+        RuntimeInternal.calculateForFillingRecipe(
+          testRecipe,
+          testResolver,
+          '2026-12-31-99' as FillingVersionSpec
+        )
       ).toFailWith(/not found/);
     });
   });
@@ -255,20 +261,22 @@ describe('Ganache Calculator', () => {
 
   describe('validateGanache', () => {
     test('validates balanced ganache as valid', () => {
-      const analysis = calculateFromIngredients([
+      const analysis = RuntimeInternal.calculateFromIngredients([
         { ingredient: darkChocolate, amount: 100 as Measurement },
         { ingredient: cream, amount: 50 as Measurement }
       ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.isValid).toBe(true);
     });
 
     test('warns on low fat', () => {
       // Cream only - low fat
-      const analysis = calculateFromIngredients([{ ingredient: cream, amount: 100 as Measurement }]);
+      const analysis = RuntimeInternal.calculateFromIngredients([
+        { ingredient: cream, amount: 100 as Measurement }
+      ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('Low fat'))).toBe(true);
     });
 
@@ -288,11 +296,11 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([
+      const analysis = RuntimeInternal.calculateFromIngredients([
         { ingredient: highFatIngredient, amount: 100 as Measurement }
       ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('High fat'))).toBe(true);
     });
 
@@ -312,11 +320,11 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([
+      const analysis = RuntimeInternal.calculateFromIngredients([
         { ingredient: highWaterIngredient, amount: 100 as Measurement }
       ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.isValid).toBe(false);
       expect(validation.errors.some((e) => e.includes('High water'))).toBe(true);
     });
@@ -337,11 +345,11 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([
+      const analysis = RuntimeInternal.calculateFromIngredients([
         { ingredient: lowWaterIngredient, amount: 100 as Measurement }
       ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('Low water'))).toBe(true);
     });
 
@@ -361,9 +369,11 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: unbalanced, amount: 100 as Measurement }]);
+      const analysis = RuntimeInternal.calculateFromIngredients([
+        { ingredient: unbalanced, amount: 100 as Measurement }
+      ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('fat-to-water'))).toBe(true);
     });
 
@@ -383,9 +393,11 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: lowSugar, amount: 100 as Measurement }]);
+      const analysis = RuntimeInternal.calculateFromIngredients([
+        { ingredient: lowSugar, amount: 100 as Measurement }
+      ]);
 
-      const validation = validateGanache(analysis);
+      const validation = RuntimeInternal.validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('sugar-to-water'))).toBe(true);
     });
   });
@@ -414,7 +426,7 @@ describe('Ganache Calculator', () => {
     };
 
     test('returns complete calculation with analysis and validation', () => {
-      expect(calculateGanache(testRecipe, testResolver)).toSucceedAndSatisfy((calc) => {
+      expect(RuntimeInternal.calculateGanache(testRecipe, testResolver)).toSucceedAndSatisfy((calc) => {
         expect(calc.analysis).toBeDefined();
         expect(calc.validation).toBeDefined();
         expect(calc.analysis.totalWeight).toBe(150);

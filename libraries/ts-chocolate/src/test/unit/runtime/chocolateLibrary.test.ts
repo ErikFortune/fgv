@@ -747,7 +747,10 @@ describe('ChocolateLibrary', () => {
     });
 
     test('creates with provided journals library', () => {
-      const journals = JournalLibrary.create({ journals: [testJournal] }).orThrow();
+      const items: Record<string, unknown> = { [testJournal.id]: testJournal };
+      const journals = JournalLibrary.create({
+        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
+      }).orThrow();
 
       expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
         (lib) => {
@@ -756,15 +759,16 @@ describe('ChocolateLibrary', () => {
       );
     });
 
-    test('addJournal adds a journal record', () => {
-      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        expect(lib.addJournal(testJournal)).toSucceedWith(testJournal.id);
-        expect(lib.journals.size).toBe(1);
-      });
-    });
+    // Note: addJournal removed - use EditableCollection for mutations
 
     test('getJournalsForFilling returns journals for a recipe', () => {
-      const journals = JournalLibrary.create({ journals: [testJournal, testJournal2] }).orThrow();
+      const items: Record<string, unknown> = {
+        [testJournal.id]: testJournal,
+        [testJournal2.id]: testJournal2
+      };
+      const journals = JournalLibrary.create({
+        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
+      }).orThrow();
 
       expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
         (lib) => {
@@ -782,7 +786,13 @@ describe('ChocolateLibrary', () => {
     });
 
     test('getJournalsForFillingVersion returns journals for a specific version', () => {
-      const journals = JournalLibrary.create({ journals: [testJournal, testJournal2] }).orThrow();
+      const items: Record<string, unknown> = {
+        [testJournal.id]: testJournal,
+        [testJournal2.id]: testJournal2
+      };
+      const journals = JournalLibrary.create({
+        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
+      }).orThrow();
 
       expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
         (lib) => {

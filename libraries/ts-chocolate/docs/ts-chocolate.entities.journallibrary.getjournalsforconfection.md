@@ -4,7 +4,7 @@
 
 ## Entities.JournalLibrary.getJournalsForConfection() method
 
-Gets all confection journal entries for a confection (across all versions)
+Gets all confection journal entries for a confection (across all versions and collections)
 
 **Signature:**
 

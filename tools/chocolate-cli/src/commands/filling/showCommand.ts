@@ -210,7 +210,7 @@ export function createShowSubcommand(): Command {
 
           // Build scale options
           const precision = localOptions.precision ? parseInt(localOptions.precision, 10) : undefined;
-          const scaleOptions: LibraryRuntime.IFillingRecipeScaleOptions = {
+          const scaleOptions: LibraryRuntime.Internal.IFillingRecipeScaleOptions = {
             versionSpec,
             precision
           };
@@ -218,14 +218,14 @@ export function createShowSubcommand(): Command {
           // Scale the filling
           let scaledResult: Result<Entities.Fillings.IComputedScaledFillingRecipe>;
           if (target.type === 'factor') {
-            scaledResult = LibraryRuntime.scaleFillingRecipeByFactor(
+            scaledResult = LibraryRuntime.Internal.scaleFillingRecipeByFactor(
               filling,
               fillingId,
               target.value,
               scaleOptions
             );
           } else {
-            scaledResult = LibraryRuntime.scaleFillingRecipe(
+            scaledResult = LibraryRuntime.Internal.scaleFillingRecipe(
               filling,
               fillingId,
               target.value as Measurement,

@@ -69,28 +69,6 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 </td></tr>
 <tr><td>
 
-[LinearScaler](./ts-chocolate.libraryruntime.linearscaler.md)
-
-
-</td><td>
-
-Generic linear scaler for units like grams and milliliters. Used as the default fallback for unknown units.
-
-
-</td></tr>
-<tr><td>
-
-[PinchScaler](./ts-chocolate.libraryruntime.pinchscaler.md)
-
-
-</td><td>
-
-Scaler for pinch measurements - always returns the original amount. Pinch is an imprecise measurement that doesn't scale linearly.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeAlcoholIngredient](./ts-chocolate.libraryruntime.runtimealcoholingredient.md)
 
 
@@ -330,28 +308,6 @@ RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) 
 </td></tr>
 <tr><td>
 
-[SpoonScaler](./ts-chocolate.libraryruntime.spoonscaler.md)
-
-
-</td><td>
-
-Scaler for spoon measurements (tsp/Tbsp) with fractional support. Handles conversion between tsp and Tbsp (1 Tbsp = 3 tsp).
-
-
-</td></tr>
-<tr><td>
-
-[UnitScalerRegistry](./ts-chocolate.libraryruntime.unitscalerregistry.md)
-
-
-</td><td>
-
-Registry of unit scalers. Maps measurement units to their appropriate scalers. Falls back to a default linear scaler for unknown units.
-
-
-</td></tr>
-<tr><td>
-
 [ValidatingLibrary](./ts-chocolate.libraryruntime.validatinglibrary.md)
 
 
@@ -494,98 +450,6 @@ Creates a filter for maximum value (inclusive).
 </td></tr>
 <tr><td>
 
-[calculateBaseWeight(version)](./ts-chocolate.libraryruntime.calculatebaseweight.md)
-
-
-</td><td>
-
-Calculates the base weight from filling recipe version (sum of ingredient amounts)
-
-
-</td></tr>
-<tr><td>
-
-[calculateForFillingRecipe(recipe, resolver, versionSpec)](./ts-chocolate.libraryruntime.calculateforfillingrecipe.md)
-
-
-</td><td>
-
-Resolves and calculates characteristics for a complete recipe
-
-
-</td></tr>
-<tr><td>
-
-[calculateFromFillingRecipeIngredients(recipeIngredients, resolver)](./ts-chocolate.libraryruntime.calculatefromfillingrecipeingredients.md)
-
-
-</td><td>
-
-Resolves recipe ingredients and calculates blended characteristics
-
-
-</td></tr>
-<tr><td>
-
-[calculateFromIngredients(resolvedIngredients)](./ts-chocolate.libraryruntime.calculatefromingredients.md)
-
-
-</td><td>
-
-Calculates blended characteristics from resolved ingredients
-
-
-</td></tr>
-<tr><td>
-
-[calculateGanache(recipe, resolver, versionSpec)](./ts-chocolate.libraryruntime.calculateganache.md)
-
-
-</td><td>
-
-Performs complete ganache calculation with validation
-
-
-</td></tr>
-<tr><td>
-
-[calculateIngredientWeight(ingredient, context)](./ts-chocolate.libraryruntime.calculateingredientweight.md)
-
-
-</td><td>
-
-Calculate the weight contribution for a single ingredient.
-
-Weight rules: - 'g': Added directly (amount in grams) - 'mL': Converted to grams via density (amount \* density) - 'tsp', 'Tbsp', 'pinch': Excluded (returns 0)
-
-
-</td></tr>
-<tr><td>
-
-[calculateTotalWeight(ingredients, context)](./ts-chocolate.libraryruntime.calculatetotalweight.md)
-
-
-</td><td>
-
-Calculate the total weight from all ingredients with unit conversion.
-
-This function handles mixed-unit filling recipes by: - Adding grams directly - Converting milliliters to grams via ingredient density - Excluding tsp, Tbsp, and pinch measurements
-
-
-</td></tr>
-<tr><td>
-
-[calculateWeightContributions(ingredients, context)](./ts-chocolate.libraryruntime.calculateweightcontributions.md)
-
-
-</td><td>
-
-Calculate weight contributions for all ingredients. Returns detailed breakdown of how each ingredient contributes to total weight.
-
-
-</td></tr>
-<tr><td>
-
 [canScaleByFrames(confection)](./ts-chocolate.libraryruntime.canscalebyframes.md)
 
 
@@ -625,17 +489,6 @@ Creates a filter that checks if a collection contains any of the values.
 </td><td>
 
 Creates a case-insensitive contains filter.
-
-
-</td></tr>
-<tr><td>
-
-[contributesToWeight(unit)](./ts-chocolate.libraryruntime.contributestoweight.md)
-
-
-</td><td>
-
-Check if a unit contributes to weight calculations.
 
 
 </td></tr>
@@ -696,17 +549,6 @@ Creates a filter for numeric range (inclusive).
 </td></tr>
 <tr><td>
 
-[isWeightExcluded(unit)](./ts-chocolate.libraryruntime.isweightexcluded.md)
-
-
-</td><td>
-
-Check if a unit is excluded from weight calculations.
-
-
-</td></tr>
-<tr><td>
-
 [notFilter(filter)](./ts-chocolate.libraryruntime.notfilter.md)
 
 
@@ -735,28 +577,6 @@ Creates a filter that checks if value is one of the allowed values.
 </td><td>
 
 Combines multiple filters with OR logic.
-
-
-</td></tr>
-<tr><td>
-
-[recalculateFillingRecipeVersion(version)](./ts-chocolate.libraryruntime.recalculatefillingrecipeversion.md)
-
-
-</td><td>
-
-Recalculates base weight for filling recipe version and returns updated version
-
-
-</td></tr>
-<tr><td>
-
-[scaleAmount(amount, unit, factor)](./ts-chocolate.libraryruntime.scaleamount.md)
-
-
-</td><td>
-
-Scale an ingredient amount using the appropriate scaler for the unit
 
 
 </td></tr>
@@ -823,30 +643,6 @@ Scales a confection version to a target count.
 </td></tr>
 <tr><td>
 
-[scaleFillingRecipe(fillingRecipe, fillingId, targetWeight, options)](./ts-chocolate.libraryruntime.scalefillingrecipe.md)
-
-
-</td><td>
-
-Scales a filling recipe to a target weight.
-
-This function looks up a version by spec and delegates to . Use this when you have a filling recipe and want to scale a specific version by spec.
-
-
-</td></tr>
-<tr><td>
-
-[scaleFillingRecipeByFactor(fillingRecipe, fillingId, factor, options)](./ts-chocolate.libraryruntime.scalefillingrecipebyfactor.md)
-
-
-</td><td>
-
-Scales a [filling recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by a supplied multiplier.
-
-
-</td></tr>
-<tr><td>
-
 [scaleMoldedBonBonByFrames(confection, frameCount, cavitiesPerMold, options)](./ts-chocolate.libraryruntime.scalemoldedbonbonbyframes.md)
 
 
@@ -868,41 +664,6 @@ For molded bonbons, this calculates the yield based on the number of frames and 
 Scales a molded bonbon version by number of frames/molds.
 
 For molded bonbons, this calculates the yield based on the number of frames and the cavities per mold.
-
-
-</td></tr>
-<tr><td>
-
-[scaleVersion(version, sourceVersionId, targetWeight, options)](./ts-chocolate.libraryruntime.scaleversion.md)
-
-
-</td><td>
-
-Scales a filling recipe version to a target weight.
-
-This is the core scaling function that operates directly on a version. Use this when you already have the version object and its ID.
-
-
-</td></tr>
-<tr><td>
-
-[supportsScaling(unit)](./ts-chocolate.libraryruntime.supportsscaling.md)
-
-
-</td><td>
-
-Check if a unit supports scaling
-
-
-</td></tr>
-<tr><td>
-
-[validateGanache(analysis)](./ts-chocolate.libraryruntime.validateganache.md)
-
-
-</td><td>
-
-Validates ganache analysis against standard guidelines
 
 
 </td></tr>
@@ -939,7 +700,7 @@ Filter by ingredient category.
 
 </td><td>
 
-Parameters for creating a .
+Parameters for creating a [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md)<!-- -->.
 
 Sources are processed in order: 1. Built-in collections (if enabled) 2. File tree sources (in array order) 3. Pre-instantiated libraries (merged in)
 
@@ -971,34 +732,12 @@ Structure describing what changed between two produced fillings
 </td></tr>
 <tr><td>
 
-[IFillingRecipeScaleOptions](./ts-chocolate.libraryruntime.ifillingrecipescaleoptions.md)
-
-
-</td><td>
-
-Options for filling recipe scaling (extends version options with version selection)
-
-
-</td></tr>
-<tr><td>
-
 [IFindOrchestrator](./ts-chocolate.libraryruntime.ifindorchestrator.md)
 
 
 </td><td>
 
 Interface for an orchestrator that provides find functionality.
-
-
-</td></tr>
-<tr><td>
-
-[IFraction](./ts-chocolate.libraryruntime.ifraction.md)
-
-
-</td><td>
-
-Represents a fraction for display purposes
 
 
 </td></tr>
@@ -1075,7 +814,7 @@ Information about how an ingredient is used in a recipe.
 
 </td><td>
 
-Pre-built library instances to include in a . Useful for testing or when libraries are constructed through other means.
+Pre-built library instances to include in a [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md)<!-- -->. Useful for testing or when libraries are constructed through other means.
 
 
 </td></tr>
@@ -1115,17 +854,6 @@ Note: For session creation capabilities, use IRuntimeContext from the runtime pa
 </td><td>
 
 Parameters for creating a LibraryRuntimeContext with a new library
-
-
-</td></tr>
-<tr><td>
-
-[ILinearScalerOptions](./ts-chocolate.libraryruntime.ilinearscaleroptions.md)
-
-
-</td><td>
-
-Options for linear scaling
 
 
 </td></tr>
@@ -1610,78 +1338,12 @@ This interface provides runtime-layer access to task data with: - Composite iden
 </td></tr>
 <tr><td>
 
-[IScaledAmount](./ts-chocolate.libraryruntime.iscaledamount.md)
-
-
-</td><td>
-
-Result of scaling an amount in a specific unit. Contains both the raw scaled value and display-friendly representation.
-
-
-</td></tr>
-<tr><td>
-
-[ISpoonScalerOptions](./ts-chocolate.libraryruntime.ispoonscaleroptions.md)
-
-
-</td><td>
-
-Options for spoon scaling
-
-
-</td></tr>
-<tr><td>
-
-[IUnitScaler](./ts-chocolate.libraryruntime.iunitscaler.md)
-
-
-</td><td>
-
-Interface for unit-specific scalers
-
-
-</td></tr>
-<tr><td>
-
 [IValidatingLibraryParams](./ts-chocolate.libraryruntime.ivalidatinglibraryparams.md)
 
 
 </td><td>
 
 Parameters for ValidatingLibrary construction.
-
-
-</td></tr>
-<tr><td>
-
-[IVersionScaleOptions](./ts-chocolate.libraryruntime.iversionscaleoptions.md)
-
-
-</td><td>
-
-Options for version scaling (precision and minimum amount only)
-
-
-</td></tr>
-<tr><td>
-
-[IWeightCalculationContext](./ts-chocolate.libraryruntime.iweightcalculationcontext.md)
-
-
-</td><td>
-
-Context for weight calculations that provides ingredient density lookup. Implementations should resolve ingredient IDs to their density values.
-
-
-</td></tr>
-<tr><td>
-
-[IWeightContribution](./ts-chocolate.libraryruntime.iweightcontribution.md)
-
-
-</td><td>
-
-Result of calculating weight contribution for a single ingredient.
 
 
 </td></tr>
@@ -1709,51 +1371,12 @@ Description
 
 
 </td></tr>
-</tbody></table>
-
-## Variables
-
-<table><thead><tr><th>
-
-Variable
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[defaultScalerRegistry](./ts-chocolate.libraryruntime.defaultscalerregistry.md)
-
-
-</td><td>
-
-Default scaler registry instance
-
-
-</td></tr>
 <tr><td>
 
-[defaultWeightContext](./ts-chocolate.libraryruntime.defaultweightcontext.md)
+[Internal](./ts-chocolate.libraryruntime.internal.md)
 
 
 </td><td>
-
-Default weight calculation context that returns 1.0 density for all ingredients. Use this when ingredient density data is not available.
-
-
-</td></tr>
-<tr><td>
-
-[STANDARD\_FRACTIONS](./ts-chocolate.libraryruntime.standard_fractions.md)
-
-
-</td><td>
-
-Standard fractions supported for tsp/Tbsp display. Ordered by decimal value for efficient searching.
 
 
 </td></tr>

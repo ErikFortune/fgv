@@ -153,7 +153,7 @@ export interface IWorkspaceCreateParams {
 
   /**
    * Pre-instantiated library sources.
-   * @see {@link Runtime.IInstantiatedLibrarySource}
+   * @see {@link LibraryRuntime.IInstantiatedLibrarySource}
    */
   readonly libraries?: IInstantiatedLibrarySource;
 

@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.IChocolateLibraryCreateParams interface
 
-Parameters for creating a .
+Parameters for creating a [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md)<!-- -->.
 
 Sources are processed in order: 1. Built-in collections (if enabled) 2. File tree sources (in array order) 3. Pre-instantiated libraries (merged in)
 
@@ -100,7 +100,7 @@ _(Optional)_ [File tree sources](./ts-chocolate.librarydata.ilibraryfiletreesour
 
 </td><td>
 
-_(Optional)_ Pre-instantiated . Used for advanced scenarios like testing or custom library construction. If provided along with other sources, collections are combined.
+_(Optional)_ Pre-instantiated [library sources](./ts-chocolate.libraryruntime.iinstantiatedlibrarysource.md)<!-- -->. Used for advanced scenarios like testing or custom library construction. If provided along with other sources, collections are combined.
 
 
 </td></tr>

@@ -21,16 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import { Measurement } from '../../../packlets/common';
-import {
-  STANDARD_FRACTIONS,
-  LinearScaler,
-  PinchScaler,
-  SpoonScaler,
-  UnitScalerRegistry,
-  defaultScalerRegistry,
-  supportsScaling,
-  scaleAmount
-} from '../../../packlets/library-runtime';
+import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
 describe('UnitScaler', () => {
   // ============================================================================
@@ -39,14 +30,16 @@ describe('UnitScaler', () => {
 
   describe('STANDARD_FRACTIONS', () => {
     test('contains expected fractions', () => {
-      expect(STANDARD_FRACTIONS).toHaveLength(9);
-      expect(STANDARD_FRACTIONS[0]).toEqual({ numerator: 1, denominator: 8, decimal: 0.125 });
-      expect(STANDARD_FRACTIONS[4]).toEqual({ numerator: 1, denominator: 2, decimal: 0.5 });
+      expect(RuntimeInternal.STANDARD_FRACTIONS).toHaveLength(9);
+      expect(RuntimeInternal.STANDARD_FRACTIONS[0]).toEqual({ numerator: 1, denominator: 8, decimal: 0.125 });
+      expect(RuntimeInternal.STANDARD_FRACTIONS[4]).toEqual({ numerator: 1, denominator: 2, decimal: 0.5 });
     });
 
     test('fractions are sorted by decimal value', () => {
-      for (let i = 1; i < STANDARD_FRACTIONS.length; i++) {
-        expect(STANDARD_FRACTIONS[i].decimal).toBeGreaterThan(STANDARD_FRACTIONS[i - 1].decimal);
+      for (let i = 1; i < RuntimeInternal.STANDARD_FRACTIONS.length; i++) {
+        expect(RuntimeInternal.STANDARD_FRACTIONS[i].decimal).toBeGreaterThan(
+          RuntimeInternal.STANDARD_FRACTIONS[i - 1].decimal
+        );
       }
     });
   });
@@ -57,7 +50,7 @@ describe('UnitScaler', () => {
 
   describe('LinearScaler', () => {
     describe('for grams', () => {
-      const scaler = new LinearScaler({ unit: 'g', decimalPlaces: 1 });
+      const scaler = new RuntimeInternal.LinearScaler({ unit: 'g', decimalPlaces: 1 });
 
       test('supportsScaling is true', () => {
         expect(scaler.supportsScaling).toBe(true);
@@ -103,7 +96,7 @@ describe('UnitScaler', () => {
     });
 
     describe('for milliliters', () => {
-      const scaler = new LinearScaler({ unit: 'mL', decimalPlaces: 0, displaySuffix: ' mL' });
+      const scaler = new RuntimeInternal.LinearScaler({ unit: 'mL', decimalPlaces: 0, displaySuffix: ' mL' });
 
       test('rounds to whole numbers', () => {
         expect(scaler.scale(33.7 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
@@ -123,14 +116,14 @@ describe('UnitScaler', () => {
 
     describe('with custom options', () => {
       test('uses default decimal places of 1', () => {
-        const scaler = new LinearScaler({ unit: 'g' });
+        const scaler = new RuntimeInternal.LinearScaler({ unit: 'g' });
         expect(scaler.scale(33.333 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
           expect(result.value).toBe(33.3);
         });
       });
 
       test('uses unit as default display suffix', () => {
-        const scaler = new LinearScaler({ unit: 'g' });
+        const scaler = new RuntimeInternal.LinearScaler({ unit: 'g' });
         expect(scaler.scale(100 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
           expect(result.displayValue).toBe('100g');
         });
@@ -143,7 +136,7 @@ describe('UnitScaler', () => {
   // ============================================================================
 
   describe('PinchScaler', () => {
-    const scaler = new PinchScaler();
+    const scaler = new RuntimeInternal.PinchScaler();
 
     test('supportsScaling is false', () => {
       expect(scaler.supportsScaling).toBe(false);
@@ -183,7 +176,7 @@ describe('UnitScaler', () => {
 
   describe('SpoonScaler', () => {
     describe('for teaspoons', () => {
-      const scaler = new SpoonScaler('tsp');
+      const scaler = new RuntimeInternal.SpoonScaler('tsp');
 
       test('supportsScaling is true', () => {
         expect(scaler.supportsScaling).toBe(true);
@@ -235,7 +228,7 @@ describe('UnitScaler', () => {
     });
 
     describe('for tablespoons', () => {
-      const scaler = new SpoonScaler('Tbsp');
+      const scaler = new RuntimeInternal.SpoonScaler('Tbsp');
 
       test('scales simple tablespoon amount', () => {
         expect(scaler.scale(1 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
@@ -261,7 +254,7 @@ describe('UnitScaler', () => {
 
     describe('with custom options', () => {
       test('preferTablespoons: false keeps teaspoons when not exceeding maxTeaspoons', () => {
-        const scaler = new SpoonScaler('tsp', { preferTablespoons: false });
+        const scaler = new RuntimeInternal.SpoonScaler('tsp', { preferTablespoons: false });
         // 3 tsp = maxTeaspoons, so stays in tsp
         expect(scaler.scale(1 as Measurement, 3.0)).toSucceedAndSatisfy((result) => {
           expect(result.unit).toBe('tsp');
@@ -270,7 +263,7 @@ describe('UnitScaler', () => {
       });
 
       test('preferTablespoons: false converts when exceeding maxTeaspoons', () => {
-        const scaler = new SpoonScaler('tsp', { preferTablespoons: false });
+        const scaler = new RuntimeInternal.SpoonScaler('tsp', { preferTablespoons: false });
         // 4 tsp > maxTeaspoons of 3, so converts to Tbsp
         expect(scaler.scale(1 as Measurement, 4.0)).toSucceedAndSatisfy((result) => {
           expect(result.unit).toBe('Tbsp');
@@ -278,7 +271,7 @@ describe('UnitScaler', () => {
       });
 
       test('maxTeaspoons controls conversion threshold', () => {
-        const scaler = new SpoonScaler('tsp', { preferTablespoons: false, maxTeaspoons: 6 });
+        const scaler = new RuntimeInternal.SpoonScaler('tsp', { preferTablespoons: false, maxTeaspoons: 6 });
         // 4 tsp < maxTeaspoons of 6 and preferTablespoons is false, stays in tsp
         expect(scaler.scale(1 as Measurement, 4.0)).toSucceedAndSatisfy((result) => {
           expect(result.unit).toBe('tsp');
@@ -288,7 +281,7 @@ describe('UnitScaler', () => {
     });
 
     describe('fractional display', () => {
-      const scaler = new SpoonScaler('tsp');
+      const scaler = new RuntimeInternal.SpoonScaler('tsp');
 
       test('shows 1/4 tsp', () => {
         expect(scaler.scale(1 as Measurement, 0.25)).toSucceedAndSatisfy((result) => {
@@ -342,7 +335,7 @@ describe('UnitScaler', () => {
 
   describe('UnitScalerRegistry', () => {
     describe('getScaler', () => {
-      const registry = new UnitScalerRegistry();
+      const registry = new RuntimeInternal.UnitScalerRegistry();
 
       test('returns LinearScaler for grams', () => {
         const scaler = registry.getScaler('g');
@@ -410,7 +403,7 @@ describe('UnitScaler', () => {
     });
 
     describe('supportsScaling', () => {
-      const registry = new UnitScalerRegistry();
+      const registry = new RuntimeInternal.UnitScalerRegistry();
 
       test('returns true for grams', () => {
         expect(registry.supportsScaling('g')).toBe(true);
@@ -442,7 +435,7 @@ describe('UnitScaler', () => {
     });
 
     describe('scale', () => {
-      const registry = new UnitScalerRegistry();
+      const registry = new RuntimeInternal.UnitScalerRegistry();
 
       test('scales grams correctly', () => {
         expect(registry.scale(100 as Measurement, 'g', 2.0)).toSucceedAndSatisfy((result) => {
@@ -479,34 +472,34 @@ describe('UnitScaler', () => {
 
   describe('defaultScalerRegistry', () => {
     test('is a UnitScalerRegistry instance', () => {
-      expect(defaultScalerRegistry).toBeInstanceOf(UnitScalerRegistry);
+      expect(RuntimeInternal.defaultScalerRegistry).toBeInstanceOf(RuntimeInternal.UnitScalerRegistry);
     });
 
     test('has all standard scalers registered', () => {
-      expect(defaultScalerRegistry.supportsScaling('g')).toBe(true);
-      expect(defaultScalerRegistry.supportsScaling('mL')).toBe(true);
-      expect(defaultScalerRegistry.supportsScaling('tsp')).toBe(true);
-      expect(defaultScalerRegistry.supportsScaling('Tbsp')).toBe(true);
-      expect(defaultScalerRegistry.supportsScaling('pinch')).toBe(false);
+      expect(RuntimeInternal.defaultScalerRegistry.supportsScaling('g')).toBe(true);
+      expect(RuntimeInternal.defaultScalerRegistry.supportsScaling('mL')).toBe(true);
+      expect(RuntimeInternal.defaultScalerRegistry.supportsScaling('tsp')).toBe(true);
+      expect(RuntimeInternal.defaultScalerRegistry.supportsScaling('Tbsp')).toBe(true);
+      expect(RuntimeInternal.defaultScalerRegistry.supportsScaling('pinch')).toBe(false);
     });
   });
 
   describe('supportsScaling helper', () => {
     test('returns true for scalable units', () => {
-      expect(supportsScaling('g')).toBe(true);
-      expect(supportsScaling('mL')).toBe(true);
-      expect(supportsScaling('tsp')).toBe(true);
-      expect(supportsScaling('Tbsp')).toBe(true);
+      expect(RuntimeInternal.supportsScaling('g')).toBe(true);
+      expect(RuntimeInternal.supportsScaling('mL')).toBe(true);
+      expect(RuntimeInternal.supportsScaling('tsp')).toBe(true);
+      expect(RuntimeInternal.supportsScaling('Tbsp')).toBe(true);
     });
 
     test('returns false for pinch', () => {
-      expect(supportsScaling('pinch')).toBe(false);
+      expect(RuntimeInternal.supportsScaling('pinch')).toBe(false);
     });
   });
 
   describe('scaleAmount helper', () => {
     test('scales grams correctly', () => {
-      expect(scaleAmount(100 as Measurement, 'g', 2.0)).toSucceedAndSatisfy((result) => {
+      expect(RuntimeInternal.scaleAmount(100 as Measurement, 'g', 2.0)).toSucceedAndSatisfy((result) => {
         expect(result.value).toBe(200);
         expect(result.unit).toBe('g');
         expect(result.displayValue).toBe('200g');
@@ -514,20 +507,20 @@ describe('UnitScaler', () => {
     });
 
     test('scales teaspoons correctly', () => {
-      expect(scaleAmount(1 as Measurement, 'tsp', 1.5)).toSucceedAndSatisfy((result) => {
+      expect(RuntimeInternal.scaleAmount(1 as Measurement, 'tsp', 1.5)).toSucceedAndSatisfy((result) => {
         expect(result.displayValue).toBe('1 1/2 tsp');
       });
     });
 
     test('handles pinch correctly', () => {
-      expect(scaleAmount(1 as Measurement, 'pinch', 2.0)).toSucceedAndSatisfy((result) => {
+      expect(RuntimeInternal.scaleAmount(1 as Measurement, 'pinch', 2.0)).toSucceedAndSatisfy((result) => {
         expect(result.value).toBe(1);
         expect(result.scalable).toBe(false);
       });
     });
 
     test('fails with invalid factor', () => {
-      expect(scaleAmount(100 as Measurement, 'g', 0)).toFailWith(/greater than zero/);
+      expect(RuntimeInternal.scaleAmount(100 as Measurement, 'g', 0)).toFailWith(/greater than zero/);
     });
   });
 });

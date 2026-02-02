@@ -11,7 +11,7 @@ This convenience method automatically retrieves the sourceItem from the library 
 **Signature:**
 
 ```typescript
-static fromLibrary<T, TBaseId extends string, TItem>(library: import('../library-data').SubLibraryBase<string, TBaseId, TItem>, collectionId: SourceId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
+static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: SourceId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ library
 
 </td><td>
 
-import('../library-data').[SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;string, TBaseId, TItem&gt;
+[SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;string, TBaseId, TItem&gt;
 
 
 </td><td>

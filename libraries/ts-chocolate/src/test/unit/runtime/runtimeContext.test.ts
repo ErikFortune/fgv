@@ -717,10 +717,14 @@ describe('RuntimeContext', () => {
 
     test('getJournalsForFilling returns journals for a recipe', () => {
       // Create library with pre-populated journals
-      const journalsLib = JournalLibrary.create().orThrow();
-      journalsLib.addJournal(testJournalRecord).orThrow();
-      journalsLib.addJournal(testJournalRecord2).orThrow();
-      journalsLib.addJournal(testJournalRecord3).orThrow();
+      const items: Record<string, unknown> = {
+        [testJournalRecord.id]: testJournalRecord,
+        [testJournalRecord2.id]: testJournalRecord2,
+        [testJournalRecord3.id]: testJournalRecord3
+      };
+      const journalsLib = JournalLibrary.create({
+        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
+      }).orThrow();
 
       const libWithJournals = ChocolateLibrary.create({
         builtin: false,
@@ -748,9 +752,13 @@ describe('RuntimeContext', () => {
 
     test('getJournalsForFillingVersion returns journals for a specific version', () => {
       // Create library with pre-populated journals
-      const journalsLib = JournalLibrary.create().orThrow();
-      journalsLib.addJournal(testJournalRecord).orThrow();
-      journalsLib.addJournal(testJournalRecord2).orThrow();
+      const items: Record<string, unknown> = {
+        [testJournalRecord.id]: testJournalRecord,
+        [testJournalRecord2.id]: testJournalRecord2
+      };
+      const journalsLib = JournalLibrary.create({
+        collections: [{ id: 'test' as SourceId, items, isMutable: true }]
+      }).orThrow();
 
       const libWithJournals = ChocolateLibrary.create({
         builtin: false,

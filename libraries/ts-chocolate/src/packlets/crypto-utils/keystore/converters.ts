@@ -33,7 +33,7 @@ import {
 // ============================================================================
 
 /**
- * Converter for {@link KeyStoreFormat | key store format} version.
+ * Converter for {@link CryptoUtils.KeyStoreFormat | key store format} version.
  * @public
  */
 export const keystoreFormat: Converter<KeyStoreFormat> = Converters.enumeratedValue<KeyStoreFormat>([
@@ -45,7 +45,7 @@ export const keystoreFormat: Converter<KeyStoreFormat> = Converters.enumeratedVa
 // ============================================================================
 
 /**
- * Converter for {@link IKeyStoreSecretEntryJson | key store secret entry} in JSON format.
+ * Converter for {@link CryptoUtils.IKeyStoreSecretEntryJson | key store secret entry} in JSON format.
  * @public
  */
 export const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson> =
@@ -66,7 +66,7 @@ export const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson> =
 // ============================================================================
 
 /**
- * Converter for {@link IKeyStoreVaultContents | key store vault contents} (decrypted state).
+ * Converter for {@link CryptoUtils.IKeyStoreVaultContents | key store vault contents} (decrypted state).
  * @public
  */
 export const keystoreVaultContents: Converter<IKeyStoreVaultContents> =
@@ -80,7 +80,7 @@ export const keystoreVaultContents: Converter<IKeyStoreVaultContents> =
 // ============================================================================
 
 /**
- * Converter for {@link IKeyStoreFile | encrypted key store file}.
+ * Converter for {@link CryptoUtils.IKeyStoreFile | encrypted key store file}.
  * @public
  */
 export const keystoreFile: Converter<IKeyStoreFile> = Converters.object<IKeyStoreFile>({

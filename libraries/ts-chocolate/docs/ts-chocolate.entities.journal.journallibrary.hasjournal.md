@@ -4,7 +4,7 @@
 
 ## Entities.Journal.JournalLibrary.hasJournal() method
 
-Checks if a journal with the given ID exists in the library.
+Checks if a journal with the given ID exists (searches all collections)
 
 **Signature:**
 

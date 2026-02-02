@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.Indexers.FillingRecipesByIngredientIndexer.\_buildIndex() method
 
+Builds the internal index structure. Called lazily on first query or explicitly via warmUp().
 
 **Signature:**
 

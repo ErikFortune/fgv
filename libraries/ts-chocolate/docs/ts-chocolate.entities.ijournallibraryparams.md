@@ -2,80 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Entities](./ts-chocolate.entities.md) &gt; [IJournalLibraryParams](./ts-chocolate.entities.ijournallibraryparams.md)
 
-## Entities.IJournalLibraryParams interface
+## Entities.IJournalLibraryParams type
 
-Parameters for creating a [JournalLibrary](./ts-chocolate.entities.journal.journallibrary.md) instance
+Parameters for creating a JournalLibrary instance synchronously.
 
 **Signature:**
 
 ```typescript
-export interface IJournalLibraryParams 
+export type IJournalLibraryParams = ISubLibraryParams<JournalLibrary, JournalCollectionEntryInit>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[journals?](./ts-chocolate.entities.ijournallibraryparams.journals.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;AnyJournalEntry&gt;
-
-
-</td><td>
-
-_(Optional)_ Initial journal entries to populate the library with. Accepts filling and confection journal entries (both edit and production types).
-
-
-</td></tr>
-<tr><td>
-
-[logger?](./ts-chocolate.entities.ijournallibraryparams.logger.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Logging.LogReporter&lt;unknown&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional logger for reporting operations
-
-
-</td></tr>
-</tbody></table>
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
 

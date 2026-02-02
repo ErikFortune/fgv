@@ -4,6 +4,7 @@
 
 ## LibraryRuntime.IRuntimeAlcoholIngredient.raw property
 
+Gets the underlying raw ingredient data.
 
 **Signature:**
 

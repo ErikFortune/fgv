@@ -39,12 +39,7 @@ import {
   isScaledFillingRecipeVersion,
   isFillingRecipeVersion
 } from '../../../packlets/entities';
-import {
-  scaleFillingRecipe,
-  scaleFillingRecipeByFactor,
-  calculateBaseWeight,
-  recalculateFillingRecipeVersion
-} from '../../../packlets/library-runtime';
+import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
 
@@ -984,41 +979,41 @@ describe('Recipe scaling', () => {
 
   describe('scaleFillingRecipe', () => {
     test('scales ingredients proportionally', () => {
-      expect(scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.scaledFrom.scaleFactor).toBe(2);
-          expect(scaled.scaledFrom.targetWeight).toBe(300);
-          expect(scaled.baseWeight).toBe(300);
-          expect(scaled.ingredients[0].amount).toBe(200);
-          expect(scaled.ingredients[1].amount).toBe(100);
-        }
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
+      ).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.scaledFrom.scaleFactor).toBe(2);
+        expect(scaled.scaledFrom.targetWeight).toBe(300);
+        expect(scaled.baseWeight).toBe(300);
+        expect(scaled.ingredients[0].amount).toBe(200);
+        expect(scaled.ingredients[1].amount).toBe(100);
+      });
     });
 
     test('preserves original amounts', () => {
-      expect(scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.ingredients[0].originalAmount).toBe(100);
-        }
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
+      ).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.ingredients[0].originalAmount).toBe(100);
+      });
     });
 
     test('includes scaling source information', () => {
-      expect(scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.scaledFrom.sourceVersionId).toBe('source.test@2026-01-01-01');
-          expect(scaled.scaledFrom.scaleFactor).toBe(2);
-          expect(scaled.scaledFrom.targetWeight).toBe(300);
-        }
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
+      ).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.scaledFrom.sourceVersionId).toBe('source.test@2026-01-01-01');
+        expect(scaled.scaledFrom.scaleFactor).toBe(2);
+        expect(scaled.scaledFrom.targetWeight).toBe(300);
+      });
     });
 
     test('includes createdDate', () => {
-      expect(scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.createdDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-        }
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
+      ).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.createdDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      });
     });
 
     test('preserves optional fields from source version', () => {
@@ -1031,27 +1026,29 @@ describe('Recipe scaling', () => {
         ...testRecipe,
         versions: [versionWithNotes]
       };
-      expect(scaleFillingRecipe(recipeWithNotes, testFillingId, 300 as Measurement)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.notes).toBe('Test notes');
-          expect(scaled.yield).toBe('20 bonbons');
-        }
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(recipeWithNotes, testFillingId, 300 as Measurement)
+      ).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.notes).toBe('Test notes');
+        expect(scaled.yield).toBe('20 bonbons');
+      });
     });
 
     test('fails with zero target weight', () => {
-      expect(scaleFillingRecipe(testRecipe, testFillingId, 0 as Measurement)).toFailWith(/greater than zero/);
+      expect(RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 0 as Measurement)).toFailWith(
+        /greater than zero/
+      );
     });
 
     test('fails with negative target weight', () => {
-      expect(scaleFillingRecipe(testRecipe, testFillingId, -100 as Measurement)).toFailWith(
+      expect(RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, -100 as Measurement)).toFailWith(
         /greater than zero/
       );
     });
 
     test('fails with invalid version ID', () => {
       expect(
-        scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement, {
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement, {
           versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').FillingVersionSpec
         })
       ).toFailWith(/not found/);
@@ -1059,7 +1056,7 @@ describe('Recipe scaling', () => {
 
     test('respects precision option', () => {
       expect(
-        scaleFillingRecipe(testRecipe, testFillingId, 333 as Measurement, { precision: 0 })
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 333 as Measurement, { precision: 0 })
       ).toSucceedAndSatisfy((scaled) => {
         expect(Number.isInteger(scaled.ingredients[0].amount)).toBe(true);
       });
@@ -1068,7 +1065,9 @@ describe('Recipe scaling', () => {
     test('respects minimumAmount option', () => {
       // Scale to very small amount that would be below minimum
       expect(
-        scaleFillingRecipe(testRecipe, testFillingId, 15 as Measurement, { minimumAmount: 5 as Measurement })
+        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 15 as Measurement, {
+          minimumAmount: 5 as Measurement
+        })
       ).toSucceedAndSatisfy((scaled) => {
         // Scaled amount would be 10 * 0.1 = 1, but minimum is 5
         expect(scaled.ingredients[0].amount).toBeGreaterThanOrEqual(5);
@@ -1089,36 +1088,42 @@ describe('Recipe scaling', () => {
         ...testRecipe,
         versions: [versionWithUnits]
       };
-      expect(scaleFillingRecipe(recipeWithUnits, testFillingId, 300 as Measurement)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.ingredients[0].unit).toBe('g');
-          expect(scaled.ingredients[1].unit).toBe('mL');
-          expect(scaled.ingredients[0].amount).toBe(200);
-          expect(scaled.ingredients[1].amount).toBe(100);
-        }
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(recipeWithUnits, testFillingId, 300 as Measurement)
+      ).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.ingredients[0].unit).toBe('g');
+        expect(scaled.ingredients[1].unit).toBe('mL');
+        expect(scaled.ingredients[0].amount).toBe(200);
+        expect(scaled.ingredients[1].amount).toBe(100);
+      });
     });
   });
 
   describe('scaleFillingRecipeByFactor', () => {
     test('scales by factor', () => {
-      expect(scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5)).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
-        expect(scaled.ingredients[0].amount).toBe(50);
-      });
+      expect(RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5)).toSucceedAndSatisfy(
+        (scaled) => {
+          expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
+          expect(scaled.ingredients[0].amount).toBe(50);
+        }
+      );
     });
 
     test('fails with zero factor', () => {
-      expect(scaleFillingRecipeByFactor(testRecipe, testFillingId, 0)).toFailWith(/greater than zero/);
+      expect(RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0)).toFailWith(
+        /greater than zero/
+      );
     });
 
     test('fails with negative factor', () => {
-      expect(scaleFillingRecipeByFactor(testRecipe, testFillingId, -1)).toFailWith(/greater than zero/);
+      expect(RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, -1)).toFailWith(
+        /greater than zero/
+      );
     });
 
     test('fails with invalid version ID', () => {
       expect(
-        scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5, {
+        RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5, {
           versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').FillingVersionSpec
         })
       ).toFailWith(/not found/);
@@ -1166,15 +1171,15 @@ describe('Recipe scaling', () => {
         goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec
       };
       const zeroFillingId = 'source.zero' as import('../../../packlets/common').FillingId;
-      expect(scaleFillingRecipe(zeroWeightRecipe, zeroFillingId, 100 as Measurement)).toFailWith(
-        /base weight must be greater than zero/
-      );
+      expect(
+        RuntimeInternal.scaleFillingRecipe(zeroWeightRecipe, zeroFillingId, 100 as Measurement)
+      ).toFailWith(/base weight must be greater than zero/);
     });
   });
 
   describe('calculateBaseWeight', () => {
     test('sums ingredient amounts', () => {
-      expect(calculateBaseWeight(testVersion)).toBe(150);
+      expect(RuntimeInternal.calculateBaseWeight(testVersion)).toBe(150);
     });
   });
 
@@ -1184,7 +1189,7 @@ describe('Recipe scaling', () => {
         ...testVersion,
         baseWeight: 999 as Measurement // Wrong value
       };
-      const recalced = recalculateFillingRecipeVersion(version);
+      const recalced = RuntimeInternal.recalculateFillingRecipeVersion(version);
       expect(recalced.baseWeight).toBe(150);
     });
   });

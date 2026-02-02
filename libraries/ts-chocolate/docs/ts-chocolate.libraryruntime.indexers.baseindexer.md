@@ -324,6 +324,7 @@ Finds entities or IDs matching the given configuration.
 
 </td><td>
 
+Invalidates any cached index data. Called when underlying library data changes.
 
 
 </td></tr>
@@ -337,6 +338,7 @@ Finds entities or IDs matching the given configuration.
 
 </td><td>
 
+Pre-builds the index for efficient queries. Called during warmup.
 
 
 </td></tr>

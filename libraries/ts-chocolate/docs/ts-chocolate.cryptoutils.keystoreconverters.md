@@ -50,7 +50,7 @@ Description
 
 </td><td>
 
-Converter for .
+Converter for [encrypted key store file](./ts-chocolate.cryptoutils.ikeystorefile.md)<!-- -->.
 
 
 </td></tr>
@@ -61,7 +61,7 @@ Converter for .
 
 </td><td>
 
-Converter for  version.
+Converter for [key store format](./ts-chocolate.cryptoutils.keystoreformat.md) version.
 
 
 </td></tr>
@@ -72,7 +72,7 @@ Converter for  version.
 
 </td><td>
 
-Converter for  in JSON format.
+Converter for [key store secret entry](./ts-chocolate.cryptoutils.ikeystoresecretentryjson.md) in JSON format.
 
 
 </td></tr>
@@ -83,7 +83,7 @@ Converter for  in JSON format.
 
 </td><td>
 
-Converter for  (decrypted state).
+Converter for [key store vault contents](./ts-chocolate.cryptoutils.ikeystorevaultcontents.md) (decrypted state).
 
 
 </td></tr>

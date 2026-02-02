@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.IInstantiatedLibrarySource interface
 
-Pre-built library instances to include in a . Useful for testing or when libraries are constructed through other means.
+Pre-built library instances to include in a [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md)<!-- -->. Useful for testing or when libraries are constructed through other means.
 
 **Signature:**
 
