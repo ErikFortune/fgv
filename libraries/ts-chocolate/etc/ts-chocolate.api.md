@@ -36,28 +36,31 @@ type AggregationMode = 'intersection' | 'union';
 const alcoholIngredient: Converter<IAlcoholIngredient>;
 
 // @public
-export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[];
+const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[];
 
 // @public
-export const allAllergens: Allergen[];
+const allAllergens: Allergen[];
 
 // @public
-export const allBuiltInSources: BuiltInSource[];
+const allBuiltInSources: BuiltInSource[];
 
 // @public
-export const allCacaoVarieties: CacaoVariety[];
+const allCacaoVarieties: CacaoVariety[];
 
 // @public
-export const allCertifications: Certification[];
+const allCertifications: Certification[];
 
 // @public
-export const allChocolateApplications: ChocolateApplication[];
+const allChocolateApplications: ChocolateApplication[];
 
 // @public
-export const allChocolateTypes: ChocolateType[];
+const allChocolateRoles: ChocolateRole[];
 
 // @public
-export const allConfectionTypes: ConfectionType[];
+const allChocolateTypes: ChocolateType[];
+
+// @public
+const allConfectionTypes: ConfectionType[];
 
 // @public
 export type Allergen = 'milk' | 'soy' | 'nuts' | 'gluten' | 'eggs' | 'peanuts';
@@ -66,19 +69,19 @@ export type Allergen = 'milk' | 'soy' | 'nuts' | 'gluten' | 'eggs' | 'peanuts';
 const allergen: Converter<Allergen>;
 
 // @public
-export const allFillingCategories: FillingCategory[];
+const allFillingCategories: FillingCategory[];
 
 // @public
 const allFillingCategories_2: FillingCategory_2[];
 
 // @public
-export const allFluidityStars: FluidityStars[];
+const allFluidityStars: FluidityStars[];
 
 // @public
-export const allIngredientCategories: IngredientCategory[];
+const allIngredientCategories: IngredientCategory[];
 
 // @public
-export const allIngredientPhases: IngredientPhase[];
+const allIngredientPhases: IngredientPhase[];
 
 // @public
 const allInventoryTypes: ReadonlyArray<InventoryType>;
@@ -89,10 +92,10 @@ const allInventoryTypes: ReadonlyArray<InventoryType>;
 const allJournalEntryTypes: JournalEntryType[];
 
 // @public
-export const allMeasurementUnits: MeasurementUnit[];
+const allMeasurementUnits: MeasurementUnit[];
 
 // @public
-export const allMoldFormats: MoldFormat[];
+const allMoldFormats: MoldFormat[];
 
 // @public
 const allPersistedSessionStatuses: ReadonlyArray<PersistedSessionStatus>;
@@ -101,7 +104,7 @@ const allPersistedSessionStatuses: ReadonlyArray<PersistedSessionStatus>;
 const allPersistedSessionTypes: ReadonlyArray<PersistedSessionType>;
 
 // @public
-export const allProcedureTypes: ProcedureType[];
+const allProcedureTypes: ProcedureType[];
 
 // @public
 const allRatingCategories: RatingCategory[];
@@ -110,16 +113,16 @@ const allRatingCategories: RatingCategory[];
 const allResolvedSlotTypes: ResolvedSlotType[];
 
 // @public
-export const allSpoonLevels: SpoonLevel[];
+const allSpoonLevels: SpoonLevel[];
 
 // @public
-export const allSpoonUnits: SpoonUnit[];
+const allSpoonUnits: SpoonUnit[];
 
 // @public
 const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
 
 // @public
-export const allWeightUnits: WeightUnit[];
+const allWeightUnits: WeightUnit[];
 
 // @public
 function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
@@ -1125,13 +1128,16 @@ const DEFAULT_ALGORITHM: EncryptionAlgorithm;
 const DEFAULT_KEYSTORE_ITERATIONS: number;
 
 // @public
-export const DEFAULT_NOTE_CATEGORY: NoteCategory;
+export const DefaultNoteCategory: NoteCategory;
 
 // @public
 const defaultRenderOptions: Required<Omit<IRenderOptions, 'additionalContext'>>;
 
 // @public
 const defaultScalerRegistry: UnitScalerRegistry;
+
+// @public
+export const DefaultUrlCategory: UrlCategory;
 
 // @public
 const defaultWeightContext: IWeightCalculationContext;
@@ -1577,6 +1583,30 @@ declare namespace Entities {
     }
 }
 export { Entities }
+
+declare namespace Enums {
+    export {
+        allIngredientCategories,
+        allChocolateTypes,
+        allCacaoVarieties,
+        allFluidityStars,
+        allChocolateApplications,
+        allWeightUnits,
+        allMeasurementUnits,
+        allSpoonUnits,
+        allSpoonLevels,
+        allIngredientPhases,
+        allAllergens,
+        allCertifications,
+        allBuiltInSources,
+        allMoldFormats,
+        allConfectionTypes,
+        allChocolateRoles,
+        allAdditionalChocolatePurposes,
+        allFillingCategories,
+        allProcedureTypes
+    }
+}
 
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
@@ -5600,6 +5630,7 @@ const minutes: Converter<Minutes>;
 
 declare namespace Model {
     export {
+        Enums,
         IMeasurementUnitOption,
         ICategorizedNote,
         ICategorizedUrl,

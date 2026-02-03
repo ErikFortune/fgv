@@ -28,21 +28,6 @@ import { Converter, Converters, Result } from '@fgv/ts-utils';
 import {
   AdditionalChocolatePurpose,
   Allergen,
-  allAdditionalChocolatePurposes,
-  allAllergens,
-  allCacaoVarieties,
-  allCertifications,
-  allChocolateApplications,
-  allChocolateTypes,
-  allConfectionTypes,
-  allFillingCategories,
-  allFluidityStars,
-  allIngredientCategories,
-  allIngredientPhases,
-  allMeasurementUnits,
-  allMoldFormats,
-  allSpoonLevels,
-  allWeightUnits,
   BaseConfectionId,
   BaseFillingId,
   BaseIngredientId,
@@ -89,11 +74,27 @@ import {
   TaskId,
   UrlCategory,
   WeightUnit,
-  allProcedureTypes,
   ProcedureType,
   NoteCategory
 } from './ids';
-
+import {
+  allAdditionalChocolatePurposes,
+  allAllergens,
+  allCacaoVarieties,
+  allCertifications,
+  allChocolateApplications,
+  allChocolateTypes,
+  allConfectionTypes,
+  allFillingCategories,
+  allFluidityStars,
+  allIngredientCategories,
+  allIngredientPhases,
+  allMeasurementUnits,
+  allMoldFormats,
+  allProcedureTypes,
+  allSpoonLevels,
+  allWeightUnits
+} from './enums';
 import {
   ICategorizedUrl,
   ID_SEPARATOR,

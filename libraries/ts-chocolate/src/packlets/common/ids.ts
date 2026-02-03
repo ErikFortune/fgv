@@ -324,38 +324,10 @@ export type IngredientCategory =
   | 'other';
 
 /**
- * All possible ingredient categories
- * @public
- */
-export const allIngredientCategories: IngredientCategory[] = [
-  'chocolate',
-  'sugar',
-  'dairy',
-  'fat',
-  'liquid',
-  'flavor',
-  'alcohol',
-  'other'
-];
-
-/**
  * Types of chocolate
  * @public
  */
 export type ChocolateType = 'dark' | 'milk' | 'white' | 'caramelized' | 'ruby' | 'flavored';
-
-/**
- * All possible chocolate types
- * @public
- */
-export const allChocolateTypes: ChocolateType[] = [
-  'dark',
-  'milk',
-  'white',
-  'caramelized',
-  'ruby',
-  'flavored'
-];
 
 /**
  * Varieties of cacao beans
@@ -364,23 +336,11 @@ export const allChocolateTypes: ChocolateType[] = [
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
 
 /**
- * All possible chocolate varieties.
- * @public
- */
-export const allCacaoVarieties: CacaoVariety[] = ['Blend', 'Criollo', 'Forastero', 'Nacional', 'Trinitario'];
-
-/**
  * Fluidity in Callebaut star ratings (1-5)
  * Lower stars = more fluid, higher stars = more viscous
  * @public
  */
 export type FluidityStars = 1 | 2 | 3 | 4 | 5;
-
-/**
- * All possible fluidity star ratings
- * @public
- */
-export const allFluidityStars: FluidityStars[] = [1, 2, 3, 4, 5];
 
 /**
  * Recommended applications for chocolate
@@ -404,39 +364,10 @@ export type ChocolateApplication =
   | 'sorbet';
 
 /**
- * All possible chocolate applications
- * @public
- */
-export const allChocolateApplications: ChocolateApplication[] = [
-  'baking',
-  'confectionary',
-  'baking',
-  'cookies',
-  'cremeux',
-  'drinks',
-  'enrobing',
-  'frozen-desserts',
-  'ganache',
-  'glazes',
-  'ice-cream',
-  'molding',
-  'mousse',
-  'pralines',
-  'sauces',
-  'sorbet'
-];
-
-/**
  * Supported weight units for output conversion
  * @public
  */
 export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
-
-/**
- * All possible weight units
- * @public
- */
-export const allWeightUnits: WeightUnit[] = ['g', 'oz', 'lb', 'kg'];
 
 /**
  * Measurement unit types for recipe ingredients.
@@ -452,22 +383,10 @@ export const allWeightUnits: WeightUnit[] = ['g', 'oz', 'lb', 'kg'];
 export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods';
 
 /**
- * All possible measurement units
- * @public
- */
-export const allMeasurementUnits: MeasurementUnit[] = ['g', 'mL', 'tsp', 'Tbsp', 'pinch', 'seeds', 'pods'];
-
-/**
  * Spoon measurement units that share the same scaling system
  * @public
  */
 export type SpoonUnit = 'tsp' | 'Tbsp';
-
-/**
- * All spoon measurement units
- * @public
- */
-export const allSpoonUnits: SpoonUnit[] = ['tsp', 'Tbsp'];
 
 /**
  * Spoon level indicator for dry measurements.
@@ -477,12 +396,6 @@ export const allSpoonUnits: SpoonUnit[] = ['tsp', 'Tbsp'];
 export type SpoonLevel = 'level' | 'heaping';
 
 /**
- * All spoon level indicators
- * @public
- */
-export const allSpoonLevels: SpoonLevel[] = ['level', 'heaping'];
-
-/**
  * Physical phase of an ingredient - display hint for UI.
  * Used to determine action verbs (e.g., "pour" vs "add").
  * @public
@@ -490,22 +403,10 @@ export const allSpoonLevels: SpoonLevel[] = ['level', 'heaping'];
 export type IngredientPhase = 'solid' | 'liquid';
 
 /**
- * All ingredient phases
- * @public
- */
-export const allIngredientPhases: IngredientPhase[] = ['solid', 'liquid'];
-
-/**
  * Common allergens that may be present in ingredients
  * @public
  */
 export type Allergen = 'milk' | 'soy' | 'nuts' | 'gluten' | 'eggs' | 'peanuts';
-
-/**
- * All possible common allergens
- * @public
- */
-export const allAllergens: Allergen[] = ['milk', 'soy', 'nuts', 'gluten', 'eggs', 'peanuts'];
 
 /**
  * Certifications that an ingredient may have.
@@ -528,37 +429,10 @@ export type Certification =
   | 'without-lecithin';
 
 /**
- * All possible certifications
- * @public
- */
-export const allCertifications: Certification[] = [
-  'all-natural',
-  'cocoa-horizons',
-  'fair-trade',
-  'gluten-free',
-  'halal',
-  'kosher-dairy',
-  'non-gmo',
-  'organic',
-  'peanut-free',
-  'real-vanilla',
-  'traceable-beans',
-  'vegan',
-  'vegetarian',
-  'without-lecithin'
-];
-
-/**
  * Well-known built-in source identifiers
  * @public
  */
 export type BuiltInSource = 'built-in';
-
-/**
- * All possible built-in source identifiers
- * @public
- */
-export const allBuiltInSources: BuiltInSource[] = ['built-in'];
 
 /**
  * Chocolate World mold format series.
@@ -570,22 +444,10 @@ export const allBuiltInSources: BuiltInSource[] = ['built-in'];
 export type MoldFormat = 'series-1000' | 'series-2000' | 'other';
 
 /**
- * All possible mold formats
- * @public
- */
-export const allMoldFormats: MoldFormat[] = ['series-1000', 'series-2000', 'other'];
-
-/**
  * Types of confections (discriminator for confection union)
  * @public
  */
 export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
-
-/**
- * All possible confection types
- * @public
- */
-export const allConfectionTypes: ConfectionType[] = ['molded-bonbon', 'bar-truffle', 'rolled-truffle'];
 
 /**
  * Role that a chocolate plays in a confection.
@@ -603,38 +465,16 @@ export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coat
 export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 
 /**
- * All possible additional chocolate purposes
- * @public
- */
-export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[] = ['seal', 'decoration'];
-
-/**
  * Filling recipe category for classification
  * @public
  */
 export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
 
 /**
- * All possible filling recipe categories
- * @public
- */
-export const allFillingCategories: FillingCategory[] = ['ganache', 'caramel', 'gianduja', 'other'];
-
-/**
  * Procedure type - can be a filling category, confection type, or other
  * @public
  */
 export type ProcedureType = FillingCategory | ConfectionType | 'other';
-
-/**
- * All possible procedure types
- * @public
- */
-export const allProcedureTypes: ProcedureType[] = [...allFillingCategories, ...allConfectionTypes, 'other'];
-
-// ============================================================================
-// Notes
-// ============================================================================
 
 /**
  * Category for notes associated with an entity.
@@ -648,11 +488,7 @@ export type NoteCategory = Brand<string, 'NoteCategory'>;
  * Default note category for general/unspecified notes.
  * @public
  */
-export const DEFAULT_NOTE_CATEGORY: NoteCategory = 'general' as NoteCategory;
-
-// ============================================================================
-// URLs
-// ============================================================================
+export const DefaultNoteCategory: NoteCategory = 'general' as NoteCategory;
 
 /**
  * Category for a URL associated with an entity.
@@ -661,3 +497,9 @@ export const DEFAULT_NOTE_CATEGORY: NoteCategory = 'general' as NoteCategory;
  * @public
  */
 export type UrlCategory = Brand<string, 'UrlCategory'>;
+
+/**
+ * Default URL category for general/unspecified URLs.
+ * @public
+ */
+export const DefaultUrlCategory: UrlCategory = 'general' as UrlCategory;

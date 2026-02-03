@@ -96,6 +96,30 @@ Generic reference type with an ID and optional categorized notes. Use as base fo
 </td></tr>
 </tbody></table>
 
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Enums](./ts-chocolate.model.enums.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

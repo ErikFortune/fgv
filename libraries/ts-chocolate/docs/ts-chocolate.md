@@ -303,210 +303,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[allAdditionalChocolatePurposes](./ts-chocolate.alladditionalchocolatepurposes.md)
-
-
-</td><td>
-
-All possible additional chocolate purposes
-
-
-</td></tr>
-<tr><td>
-
-[allAllergens](./ts-chocolate.allallergens.md)
-
-
-</td><td>
-
-All possible common allergens
-
-
-</td></tr>
-<tr><td>
-
-[allBuiltInSources](./ts-chocolate.allbuiltinsources.md)
-
-
-</td><td>
-
-All possible built-in source identifiers
-
-
-</td></tr>
-<tr><td>
-
-[allCacaoVarieties](./ts-chocolate.allcacaovarieties.md)
-
-
-</td><td>
-
-All possible chocolate varieties.
-
-
-</td></tr>
-<tr><td>
-
-[allCertifications](./ts-chocolate.allcertifications.md)
-
-
-</td><td>
-
-All possible certifications
-
-
-</td></tr>
-<tr><td>
-
-[allChocolateApplications](./ts-chocolate.allchocolateapplications.md)
-
-
-</td><td>
-
-All possible chocolate applications
-
-
-</td></tr>
-<tr><td>
-
-[allChocolateTypes](./ts-chocolate.allchocolatetypes.md)
-
-
-</td><td>
-
-All possible chocolate types
-
-
-</td></tr>
-<tr><td>
-
-[allConfectionTypes](./ts-chocolate.allconfectiontypes.md)
-
-
-</td><td>
-
-All possible confection types
-
-
-</td></tr>
-<tr><td>
-
-[allFillingCategories](./ts-chocolate.allfillingcategories.md)
-
-
-</td><td>
-
-All possible filling recipe categories
-
-
-</td></tr>
-<tr><td>
-
-[allFluidityStars](./ts-chocolate.allfluiditystars.md)
-
-
-</td><td>
-
-All possible fluidity star ratings
-
-
-</td></tr>
-<tr><td>
-
-[allIngredientCategories](./ts-chocolate.allingredientcategories.md)
-
-
-</td><td>
-
-All possible ingredient categories
-
-
-</td></tr>
-<tr><td>
-
-[allIngredientPhases](./ts-chocolate.allingredientphases.md)
-
-
-</td><td>
-
-All ingredient phases
-
-
-</td></tr>
-<tr><td>
-
-[allMeasurementUnits](./ts-chocolate.allmeasurementunits.md)
-
-
-</td><td>
-
-All possible measurement units
-
-
-</td></tr>
-<tr><td>
-
-[allMoldFormats](./ts-chocolate.allmoldformats.md)
-
-
-</td><td>
-
-All possible mold formats
-
-
-</td></tr>
-<tr><td>
-
-[allProcedureTypes](./ts-chocolate.allproceduretypes.md)
-
-
-</td><td>
-
-All possible procedure types
-
-
-</td></tr>
-<tr><td>
-
-[allSpoonLevels](./ts-chocolate.allspoonlevels.md)
-
-
-</td><td>
-
-All spoon level indicators
-
-
-</td></tr>
-<tr><td>
-
-[allSpoonUnits](./ts-chocolate.allspoonunits.md)
-
-
-</td><td>
-
-All spoon measurement units
-
-
-</td></tr>
-<tr><td>
-
-[allWeightUnits](./ts-chocolate.allweightunits.md)
-
-
-</td><td>
-
-All possible weight units
-
-
-</td></tr>
-<tr><td>
-
-[DEFAULT\_NOTE\_CATEGORY](./ts-chocolate.default_note_category.md)
+[DefaultNoteCategory](./ts-chocolate.defaultnotecategory.md)
 
 
 </td><td>
 
 Default note category for general/unspecified notes.
+
+
+</td></tr>
+<tr><td>
+
+[DefaultUrlCategory](./ts-chocolate.defaulturlcategory.md)
+
+
+</td><td>
+
+Default URL category for general/unspecified URLs.
 
 
 </td></tr>

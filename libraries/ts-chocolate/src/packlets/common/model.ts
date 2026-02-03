@@ -25,6 +25,9 @@
 
 import { SlotId, NoteCategory, UrlCategory, MeasurementUnit } from './ids';
 
+import * as Enums from './enums';
+export { Enums };
+
 /**
  * Option wrapper for measurement units (for use with IOptionsWithPreferred).
  * Wraps a MeasurementUnit to satisfy IHasId requirement.
