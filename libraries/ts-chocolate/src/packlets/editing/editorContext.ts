@@ -20,11 +20,15 @@
 
 import { Converters, Failure, Result, Success, captureResult } from '@fgv/ts-utils';
 import type { Converter } from '@fgv/ts-utils';
-import { Converters as CommonConverters, SourceId } from '../common';
+import {
+  Converters as CommonConverters,
+  Helpers as CommonHelpers,
+  Validation as CommonValidation,
+  SourceId
+} from '../common';
 import { IEditorContext, IValidationReport } from './model';
 import { EditableCollection } from './editableCollection';
 import { ValidationReportBuilder } from './validation';
-import { generateUniqueBaseIdFromName, validateUniqueBaseId } from './helpers';
 
 // ============================================================================
 // Editor Context Parameters
@@ -177,16 +181,18 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
     // Auto-generate base ID if not provided
     return (
       baseId === undefined
-        ? generateUniqueBaseIdFromName(this._getName(entity), existingKeys).onSuccess((generated) =>
-            Success.with(generated as TBaseId)
+        ? CommonHelpers.generateUniqueBaseIdFromName(this._getName(entity), existingKeys).onSuccess(
+            (generated: string) => Success.with(generated as TBaseId)
           )
         : Success.with(baseId)
     )
-      .onSuccess((finalBaseId) => {
+      .onSuccess((finalBaseId: TBaseId) => {
         // Validate base ID is unique
-        return validateUniqueBaseId(finalBaseId, existingKeys).onSuccess(() => Success.with(finalBaseId));
+        return CommonValidation.validateUniqueBaseId(finalBaseId, existingKeys).onSuccess(() =>
+          Success.with(finalBaseId)
+        );
       })
-      .onSuccess((finalBaseId) => {
+      .onSuccess((finalBaseId: TBaseId) => {
         // Add to collection
         return this._collection.set(finalBaseId, entity).asResult.onSuccess(() => {
           this._hasUnsavedChanges = true;

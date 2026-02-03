@@ -96,6 +96,28 @@ Creates a composite PersistedSessionId from collection ID and base session ID
 </td></tr>
 <tr><td>
 
+[generateUniqueBaseId(baseId, existingIds, maxAttempts)](./ts-chocolate.helpers.generateuniquebaseid.md)
+
+
+</td><td>
+
+Generate a unique base ID by appending a counter if needed.
+
+
+</td></tr>
+<tr><td>
+
+[generateUniqueBaseIdFromName(name, existingIds, maxAttempts)](./ts-chocolate.helpers.generateuniquebaseidfromname.md)
+
+
+</td><td>
+
+Generate a unique base ID from a name. Combines nameToBaseId and generateUniqueBaseId.
+
+
+</td></tr>
+<tr><td>
+
 [getFillingBaseId(id)](./ts-chocolate.helpers.getfillingbaseid.md)
 
 
@@ -250,6 +272,17 @@ Gets the preferred option from a collection, falling back to the first option.
 </td></tr>
 <tr><td>
 
+[nameToBaseId(name)](./ts-chocolate.helpers.nametobaseid.md)
+
+
+</td><td>
+
+Convert a name to a valid base ID. Uses kebab-case conversion.
+
+
+</td></tr>
+<tr><td>
+
 [parseConfectionVersionId(id)](./ts-chocolate.helpers.parseconfectionversionid.md)
 
 
@@ -333,6 +366,17 @@ Serialize an object to JSON string.
 </td><td>
 
 Serialize an object to YAML string.
+
+
+</td></tr>
+<tr><td>
+
+[toKebabCase(input)](./ts-chocolate.helpers.tokebabcase.md)
+
+
+</td><td>
+
+Convert a string to kebab-case. Useful for generating base IDs from names.
 
 
 </td></tr>

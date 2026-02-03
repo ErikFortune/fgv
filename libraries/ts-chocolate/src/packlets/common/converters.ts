@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result } from '@fgv/ts-utils';
+import { Converter, Converters, Result, Conversion, fail, succeed } from '@fgv/ts-utils';
 
 import {
   AdditionalChocolatePurpose,
@@ -810,3 +810,88 @@ export const categorizedUrl: Converter<ICategorizedUrl> = Converters.object<ICat
   category: urlCategory,
   url: Converters.string
 });
+
+// ============================================================================
+// Generic String and Number Converters
+// ============================================================================
+
+/**
+ * Converter for kebab-case strings.
+ * Validates that input is in kebab-case format (lowercase letters, numbers, and hyphens).
+ * @public
+ */
+export const kebabCase: Converter<string> = new Conversion.BaseConverter<string>(
+  (from: unknown): Result<string> => {
+    if (typeof from !== 'string') {
+      return fail('Value must be a string');
+    }
+
+    if (!from || from.length === 0) {
+      return fail('Kebab-case string cannot be empty');
+    }
+
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(from)) {
+      return fail('String must be in kebab-case format (lowercase letters, numbers, and hyphens only)');
+    }
+
+    return succeed(from);
+  }
+);
+
+/**
+ * Converter for non-empty strings.
+ * Validates that string is not empty after trimming.
+ * @public
+ */
+export const nonEmptyString: Converter<string> = new Conversion.BaseConverter<string>(
+  (from: unknown): Result<string> => {
+    if (typeof from !== 'string') {
+      return fail('Value must be a string');
+    }
+
+    if (from.trim().length === 0) {
+      return fail('String cannot be empty');
+    }
+
+    return succeed(from);
+  }
+);
+
+/**
+ * Converter for positive numbers (\>= 0).
+ * @public
+ */
+export const positiveNumber: Converter<number> = new Conversion.BaseConverter<number>(
+  (from: unknown): Result<number> => {
+    if (typeof from !== 'number' || isNaN(from)) {
+      return fail('Value must be a number');
+    }
+
+    if (from < 0) {
+      return fail('Number must be positive');
+    }
+
+    return succeed(from);
+  }
+);
+
+/**
+ * Factory for creating range-constrained number converters.
+ * @param min - Minimum value (inclusive)
+ * @param max - Maximum value (inclusive)
+ * @returns Converter that validates numbers are within the specified range
+ * @public
+ */
+export function numberInRange(min: number, max: number): Converter<number> {
+  return new Conversion.BaseConverter<number>((from: unknown): Result<number> => {
+    if (typeof from !== 'number' || isNaN(from)) {
+      return fail('Value must be a number');
+    }
+
+    if (from < min || from > max) {
+      return fail(`Number must be between ${min} and ${max}`);
+    }
+
+    return succeed(from);
+  });
+}

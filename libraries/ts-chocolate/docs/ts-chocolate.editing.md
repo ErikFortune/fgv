@@ -286,15 +286,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Helpers](./ts-chocolate.editing.helpers.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [Ingredients](./ts-chocolate.editing.ingredients.md)
 
 

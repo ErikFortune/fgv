@@ -30,6 +30,17 @@ Creates a converter for [IIdsWithPreferred\\&lt;TId\\&gt;](./ts-chocolate.model.
 </td></tr>
 <tr><td>
 
+[numberInRange(min, max)](./ts-chocolate.converters.numberinrange.md)
+
+
+</td><td>
+
+Factory for creating range-constrained number converters.
+
+
+</td></tr>
+<tr><td>
+
 [optionsWithPreferred(optionConverter, idConverter, context)](./ts-chocolate.converters.optionswithpreferred.md)
 
 
@@ -419,6 +430,17 @@ Converter for [JournalId](./ts-chocolate.journalid.md) (composite string). Accep
 </td></tr>
 <tr><td>
 
+[kebabCase](./ts-chocolate.converters.kebabcase.md)
+
+
+</td><td>
+
+Converter for kebab-case strings. Validates that input is in kebab-case format (lowercase letters, numbers, and hyphens).
+
+
+</td></tr>
+<tr><td>
+
 [measurement](./ts-chocolate.converters.measurement.md)
 
 
@@ -491,6 +513,17 @@ Converter for [MoldFormat](./ts-chocolate.moldformat.md)<!-- -->.
 </td><td>
 
 Converter for [MoldId](./ts-chocolate.moldid.md) (composite string). Accepts either an [MoldId](./ts-chocolate.moldid.md) string or a `CompositeId` object representation.
+
+
+</td></tr>
+<tr><td>
+
+[nonEmptyString](./ts-chocolate.converters.nonemptystring.md)
+
+
+</td><td>
+
+Converter for non-empty strings. Validates that string is not empty after trimming.
 
 
 </td></tr>
@@ -634,6 +667,17 @@ Converter for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 </td><td>
 
 Converter for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite string). Accepts either a [PersistedSessionId](./ts-chocolate.persistedsessionid.md) string or a `CompositeId` object representation.
+
+
+</td></tr>
+<tr><td>
+
+[positiveNumber](./ts-chocolate.converters.positivenumber.md)
+
+
+</td><td>
+
+Converter for positive numbers (<!-- -->&gt;<!-- -->= 0).
 
 
 </td></tr>

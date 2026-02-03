@@ -858,6 +858,7 @@ declare namespace Converters {
         optionsWithPreferred,
         idsWithPreferred,
         refWithNotes,
+        numberInRange,
         sourceId,
         baseIngredientId,
         baseFillingId,
@@ -930,7 +931,10 @@ declare namespace Converters {
         noteCategory,
         categorizedNote,
         urlCategory,
-        categorizedUrl
+        categorizedUrl,
+        kebabCase,
+        nonEmptyString,
+        positiveNumber
     }
 }
 export { Converters }
@@ -1079,7 +1083,6 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
 
 declare namespace Editing {
     export {
-        Helpers_2 as Helpers,
         Ingredients_3 as Ingredients,
         IEditorContext,
         IEditorContextValidator,
@@ -1965,29 +1968,16 @@ declare namespace Helpers {
         getPreferredOrFirst,
         getPreferredId,
         getPreferredIdOrFirst,
+        toKebabCase,
+        nameToBaseId,
+        generateUniqueBaseId,
+        generateUniqueBaseIdFromName,
         serializeToYaml,
         serializeToJson,
         ISerializationOptions
     }
 }
 export { Helpers }
-
-declare namespace Helpers_2 {
-    export {
-        toKebabCase,
-        validateKebabCase,
-        nameToBaseId,
-        generateUniqueBaseId,
-        generateUniqueBaseIdFromName,
-        validateNonEmptyString,
-        validateStringLength,
-        validatePositiveNumber,
-        validateNumberRange,
-        validatePercentage,
-        baseIdExists,
-        validateUniqueBaseId
-    }
-}
 
 // @public
 export const HundredPercent: Percentage;
@@ -4903,6 +4893,9 @@ class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournal
 // @public
 type JournalsMergeSource = SubLibraryMergeSource<JournalLibrary>;
 
+// @public
+const kebabCase: Converter<string>;
+
 declare namespace LibraryData {
     export {
         Converters_6 as Converters,
@@ -5445,6 +5438,9 @@ function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<
 function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
+const nonEmptyString: Converter<string>;
+
+// @public
 function normalizeFileSources<T extends {
     readonly directory: FileTree.IFileTreeDirectoryItem;
 }>(sources: T | ReadonlyArray<T> | undefined): ReadonlyArray<T>;
@@ -5460,6 +5456,9 @@ const noteCategory: Converter<NoteCategory>;
 
 // @public
 function notFilter<T>(filter: FilterPredicate<T>): FilterPredicate<T>;
+
+// @public
+function numberInRange(min: number, max: number): Converter<number>;
 
 // @public
 function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPredicate<T>;
@@ -5632,6 +5631,9 @@ class PinchScaler implements IUnitScaler {
     // (undocumented)
     readonly supportsScaling: boolean;
 }
+
+// @public
+const positiveNumber: Converter<number>;
 
 // @public
 type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedure>;
@@ -7039,9 +7041,6 @@ function validateNumberRange(value: unknown, fieldName: string, min: number, max
 function validateOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>, context?: string): Result<IOptionsWithPreferred<TOption, TId>>;
 
 // @public
-function validatePercentage(value: unknown, fieldName: string): Result<Percentage>;
-
-// @public
 function validatePositiveNumber(value: unknown, fieldName: string): Result<number>;
 
 // @public
@@ -7126,7 +7125,14 @@ declare namespace Validation {
         isValidSlotId,
         toSlotId,
         validateOptionsWithPreferred,
-        validateIdsWithPreferred
+        validateIdsWithPreferred,
+        validateKebabCase,
+        validateNonEmptyString,
+        validateStringLength,
+        validatePositiveNumber,
+        validateNumberRange,
+        baseIdExists,
+        validateUniqueBaseId
     }
 }
 export { Validation }

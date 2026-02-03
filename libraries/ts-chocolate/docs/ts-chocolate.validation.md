@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[baseIdExists(baseId, existingIds)](./ts-chocolate.validation.baseidexists.md)
+
+
+</td><td>
+
+Check if a base ID exists in a collection.
+
+
+</td></tr>
+<tr><td>
+
 [isValidBaseConfectionId(from)](./ts-chocolate.validation.isvalidbaseconfectionid.md)
 
 
@@ -602,12 +613,78 @@ Validates that preferredId (if specified) exists in the ids array.
 </td></tr>
 <tr><td>
 
+[validateKebabCase(input)](./ts-chocolate.validation.validatekebabcase.md)
+
+
+</td><td>
+
+Validate kebab-case string.
+
+
+</td></tr>
+<tr><td>
+
+[validateNonEmptyString(value, fieldName)](./ts-chocolate.validation.validatenonemptystring.md)
+
+
+</td><td>
+
+Validate that a string is not empty.
+
+
+</td></tr>
+<tr><td>
+
+[validateNumberRange(value, fieldName, min, max)](./ts-chocolate.validation.validatenumberrange.md)
+
+
+</td><td>
+
+Validate that a value is a number within a range.
+
+
+</td></tr>
+<tr><td>
+
 [validateOptionsWithPreferred(collection, context)](./ts-chocolate.validation.validateoptionswithpreferred.md)
 
 
 </td><td>
 
 Validates that preferredId (if specified) exists in the options array.
+
+
+</td></tr>
+<tr><td>
+
+[validatePositiveNumber(value, fieldName)](./ts-chocolate.validation.validatepositivenumber.md)
+
+
+</td><td>
+
+Validate that a value is a positive number.
+
+
+</td></tr>
+<tr><td>
+
+[validateStringLength(value, fieldName, options)](./ts-chocolate.validation.validatestringlength.md)
+
+
+</td><td>
+
+Validate string length constraints.
+
+
+</td></tr>
+<tr><td>
+
+[validateUniqueBaseId(baseId, existingIds, fieldName)](./ts-chocolate.validation.validateuniquebaseid.md)
+
+
+</td><td>
+
+Validate that a base ID is unique in a collection.
 
 
 </td></tr>

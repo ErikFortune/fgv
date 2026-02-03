@@ -36,9 +36,6 @@ export * from './editableCollection';
 // Collection manager (collection-level CRUD operations)
 export * from './collectionManager';
 
-// Converter utilities
-import * as Helpers from './helpers';
-
 // Editor context (base, accepts pre-validated types)
 export * from './editorContext';
 
@@ -51,4 +48,4 @@ export * from './validatingEditorContext';
 // Ingredient editing (specialized)
 import * as Ingredients from './ingredients';
 
-export { Helpers, Ingredients };
+export { Ingredients };

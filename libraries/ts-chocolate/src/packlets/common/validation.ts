@@ -786,3 +786,145 @@ export function validateIdsWithPreferred<TId extends string>(
   const prefix = context ? `${context}: ` : '';
   return Failure.with(`${prefix}preferredId '${collection.preferredId}' not found in ids`);
 }
+
+// ============================================================================
+// Generic Validation Functions
+// ============================================================================
+
+/**
+ * Validate kebab-case string.
+ * @param input - String to validate
+ * @returns Result with validated string or failure with error message
+ * @public
+ */
+export function validateKebabCase(input: string): Result<string> {
+  if (!input || input.length === 0) {
+    return Failure.with('Kebab-case string cannot be empty');
+  }
+
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(input)) {
+    return Failure.with('String must be in kebab-case format (lowercase letters, numbers, and hyphens only)');
+  }
+
+  return Success.with(input);
+}
+
+/**
+ * Validate that a string is not empty.
+ * @param value - Value to validate
+ * @param fieldName - Name of field for error message
+ * @returns Result with validated string or failure with error message
+ * @public
+ */
+export function validateNonEmptyString<T extends string = string>(value: T, fieldName: string): Result<T> {
+  if (value.trim().length === 0) {
+    return Failure.with(`${fieldName} cannot be empty`);
+  }
+
+  return Success.with(value);
+}
+
+/**
+ * Validate string length constraints.
+ * @param value - Value to validate
+ * @param fieldName - Name of field for error message
+ * @param options - Length constraints
+ * @returns Result with validated string or failure with error message
+ * @public
+ */
+export function validateStringLength<T extends string = string>(
+  value: T,
+  fieldName: string,
+  options: { minLength?: number; maxLength?: number }
+): Result<T> {
+  if (options.minLength !== undefined && value.length < options.minLength) {
+    return Failure.with(`${fieldName} must be at least ${options.minLength} characters`);
+  }
+
+  if (options.maxLength !== undefined && value.length > options.maxLength) {
+    return Failure.with(`${fieldName} must be at most ${options.maxLength} characters`);
+  }
+
+  return Success.with(value);
+}
+
+/**
+ * Validate that a value is a positive number.
+ * @param value - Value to validate
+ * @param fieldName - Name of field for error message
+ * @returns Result with validated number or failure with error message
+ * @public
+ */
+export function validatePositiveNumber(value: unknown, fieldName: string): Result<number> {
+  if (typeof value !== 'number' || isNaN(value)) {
+    return Failure.with(`${fieldName} must be a number`);
+  }
+
+  if (value < 0) {
+    return Failure.with(`${fieldName} must be positive`);
+  }
+
+  return Success.with(value);
+}
+
+/**
+ * Validate that a value is a number within a range.
+ * @param value - Value to validate
+ * @param fieldName - Name of field for error message
+ * @param min - Minimum value (inclusive)
+ * @param max - Maximum value (inclusive)
+ * @returns Result with validated number or failure with error message
+ * @public
+ */
+export function validateNumberRange(
+  value: unknown,
+  fieldName: string,
+  min: number,
+  max: number
+): Result<number> {
+  if (typeof value !== 'number' || isNaN(value)) {
+    return Failure.with(`${fieldName} must be a number`);
+  }
+
+  if (value < min || value > max) {
+    return Failure.with(`${fieldName} must be between ${min} and ${max}`);
+  }
+
+  return Success.with(value);
+}
+
+/**
+ * Check if a base ID exists in a collection.
+ * @param baseId - Base ID to check
+ * @param existingIds - Collection of existing IDs
+ * @returns True if ID exists
+ * @public
+ */
+export function baseIdExists(
+  baseId: string,
+  existingIds: ReadonlySet<string> | ReadonlyArray<string>
+): boolean {
+  if (existingIds instanceof Set) {
+    return existingIds.has(baseId);
+  }
+  return (existingIds as ReadonlyArray<string>).includes(baseId);
+}
+
+/**
+ * Validate that a base ID is unique in a collection.
+ * @param baseId - Base ID to validate
+ * @param existingIds - Collection of existing IDs
+ * @param fieldName - Name of field for error message
+ * @returns Result with validated ID or failure with error message
+ * @public
+ */
+export function validateUniqueBaseId<T extends string = string>(
+  baseId: T,
+  existingIds: ReadonlySet<T> | ReadonlyArray<T>,
+  fieldName: string = 'baseId'
+): Result<T> {
+  if (baseIdExists(baseId, existingIds)) {
+    return Failure.with(`${fieldName} "${baseId}" already exists in this collection`);
+  }
+  return Success.with(baseId);
+}

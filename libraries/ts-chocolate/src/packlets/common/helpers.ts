@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, captureResult } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import * as yaml from 'js-yaml';
 
 import {
@@ -394,6 +394,92 @@ export function getPreferredIdOrFirst<TId extends string>(
   collection: IIdsWithPreferred<TId>
 ): TId | undefined {
   return getPreferredId(collection) ?? collection.ids[0];
+}
+
+// ============================================================================
+// String Conversion Utilities
+// ============================================================================
+
+/**
+ * Convert a string to kebab-case.
+ * Useful for generating base IDs from names.
+ * @param input - String to convert
+ * @returns Kebab-case string
+ * @public
+ */
+export function toKebabCase(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Convert a name to a valid base ID.
+ * Uses kebab-case conversion.
+ * @param name - Name to convert
+ * @returns Result containing base ID or failure
+ * @public
+ */
+export function nameToBaseId(name: string): Result<string> {
+  if (!name || name.trim().length === 0) {
+    return fail('Name cannot be empty');
+  }
+
+  const baseId = toKebabCase(name);
+
+  if (baseId.length === 0) {
+    return fail('Name must contain at least one alphanumeric character');
+  }
+
+  return succeed(baseId);
+}
+
+/**
+ * Generate a unique base ID by appending a counter if needed.
+ * @param baseId - Base ID to make unique
+ * @param existingIds - Set of existing IDs to check against
+ * @param maxAttempts - Maximum number of attempts (default: 1000)
+ * @returns Result containing unique base ID or failure
+ * @public
+ */
+export function generateUniqueBaseId(
+  baseId: string,
+  existingIds: ReadonlySet<string> | ReadonlyArray<string>,
+  maxAttempts: number = 1000
+): Result<string> {
+  const idSet = existingIds instanceof Set ? existingIds : new Set(existingIds);
+
+  if (!idSet.has(baseId)) {
+    return succeed(baseId);
+  }
+
+  for (let i = 2; i <= maxAttempts; i++) {
+    const candidate = `${baseId}-${i}`;
+    if (!idSet.has(candidate)) {
+      return succeed(candidate);
+    }
+  }
+
+  return fail(`Could not generate unique base ID from "${baseId}" after ${maxAttempts} attempts`);
+}
+
+/**
+ * Generate a unique base ID from a name.
+ * Combines nameToBaseId and generateUniqueBaseId.
+ * @param name - Name to convert
+ * @param existingIds - Set of existing IDs to check against
+ * @param maxAttempts - Maximum number of attempts (default: 1000)
+ * @returns Result containing unique base ID or failure
+ * @public
+ */
+export function generateUniqueBaseIdFromName(
+  name: string,
+  existingIds: ReadonlySet<string> | ReadonlyArray<string>,
+  maxAttempts: number = 1000
+): Result<string> {
+  return nameToBaseId(name).onSuccess((baseId) => generateUniqueBaseId(baseId, existingIds, maxAttempts));
 }
 
 // ============================================================================
