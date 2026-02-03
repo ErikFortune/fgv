@@ -78,16 +78,13 @@ function maxLengthString(maxLength: number, fieldName: string): Converter<string
  * - tags: optional array of strings
  */
 const validatedMetadataConverter: Converter<ICollectionSourceMetadata> =
-  Converters.object<ICollectionSourceMetadata>(
-    {
-      name: trimmedNonEmptyString(200, 'Collection name'),
-      description: maxLengthString(2000, 'Collection description'),
-      secretName: trimmedNonEmptyString(100, 'Secret name'),
-      version: Converters.string,
-      tags: Converters.arrayOf(Converters.string)
-    },
-    { optionalFields: ['name', 'description', 'secretName', 'version', 'tags'] }
-  );
+  Converters.object<ICollectionSourceMetadata>({
+    name: trimmedNonEmptyString(200, 'Collection name').optional(),
+    description: maxLengthString(2000, 'Collection description').optional(),
+    secretName: trimmedNonEmptyString(100, 'Secret name').optional(),
+    version: Converters.string.optional(),
+    tags: Converters.arrayOf(Converters.string).optional()
+  });
 
 /**
  * Implementation of collection management operations.

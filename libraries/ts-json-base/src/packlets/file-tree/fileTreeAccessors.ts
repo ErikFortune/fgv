@@ -354,6 +354,7 @@ export function isPersistentAccessors<TCT extends string = string>(
   accessors: IFileTreeAccessors<TCT>
 ): accessors is IPersistentFileTreeAccessors<TCT> {
   const persistent = accessors as IPersistentFileTreeAccessors<TCT>;
+  /* c8 ignore next 6 - no current accessor implements IPersistentFileTreeAccessors */
   return (
     isMutableAccessors(accessors) &&
     typeof persistent.syncToDisk === 'function' &&

@@ -20,7 +20,12 @@
  * SOFTWARE.
  */
 
-import { FsFileTreeAccessors, InMemoryTreeAccessors, isMutableAccessors } from '../../../packlets/file-tree';
+import {
+  FsFileTreeAccessors,
+  InMemoryTreeAccessors,
+  isMutableAccessors,
+  isPersistentAccessors
+} from '../../../packlets/file-tree';
 
 describe('isMutableAccessors', () => {
   it('returns true for FsFileTreeAccessors (always implements IMutableFileTreeAccessors)', () => {
@@ -41,5 +46,17 @@ describe('isMutableAccessors', () => {
   it('returns true for InMemoryTreeAccessors with mutable: true', () => {
     const accessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
     expect(isMutableAccessors(accessors)).toBe(true);
+  });
+});
+
+describe('isPersistentAccessors', () => {
+  it('returns false for FsFileTreeAccessors (does not implement IPersistentFileTreeAccessors)', () => {
+    const accessors = new FsFileTreeAccessors();
+    expect(isPersistentAccessors(accessors)).toBe(false);
+  });
+
+  it('returns false for InMemoryTreeAccessors (does not implement IPersistentFileTreeAccessors)', () => {
+    const accessors = InMemoryTreeAccessors.create([]).orThrow();
+    expect(isPersistentAccessors(accessors)).toBe(false);
   });
 });

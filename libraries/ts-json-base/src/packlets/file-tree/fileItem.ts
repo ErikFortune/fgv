@@ -114,6 +114,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
     if (isMutableAccessors(this._hal)) {
       return this._hal.fileIsMutable(this.absolutePath);
     }
+    /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
     return failWithDetail(`${this.absolutePath}: mutation not supported`, 'not-supported');
   }
 
@@ -168,6 +169,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
     if (isMutableAccessors(this._hal)) {
       return this._hal.saveFileContents(this.absolutePath, contents);
     }
+    /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
     return fail(`${this.absolutePath}: mutation not supported`);
   }
 

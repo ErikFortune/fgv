@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { Converters } from '@fgv/ts-utils';
 
 import * as CryptoUtils from '../../../packlets/crypto-utils';
 
@@ -131,6 +132,84 @@ describe('Crypto Converters', () => {
 
     test('rejects missing key', () => {
       expect(CryptoUtils.Converters.namedSecret.convert({ name: 'test' })).toFail();
+    });
+  });
+
+  describe('isEncryptedFile', () => {
+    test('returns true for valid encrypted file object', () => {
+      const validFile = {
+        format: 'encrypted-collection-v1',
+        secretName: 'test',
+        algorithm: 'AES-256-GCM',
+        iv: 'AAAA',
+        authTag: 'BBBB',
+        encryptedData: 'CCCC'
+      };
+      expect(CryptoUtils.isEncryptedFile(validFile)).toBe(true);
+    });
+
+    test('returns false for non-object values', () => {
+      expect(CryptoUtils.isEncryptedFile(null)).toBe(false);
+      expect(CryptoUtils.isEncryptedFile(undefined)).toBe(false);
+      expect(CryptoUtils.isEncryptedFile('string')).toBe(false);
+      expect(CryptoUtils.isEncryptedFile(123)).toBe(false);
+    });
+
+    test('returns false for objects without correct format', () => {
+      expect(CryptoUtils.isEncryptedFile({})).toBe(false);
+      expect(CryptoUtils.isEncryptedFile({ format: 'wrong-format' })).toBe(false);
+    });
+  });
+
+  describe('createEncryptedFileConverter', () => {
+    const validEncryptedFile = {
+      format: 'encrypted-collection-v1',
+      secretName: 'test-secret',
+      algorithm: 'AES-256-GCM',
+      iv: 'AAAAAAAAAAAAAAAA',
+      authTag: 'AAAAAAAAAAAAAAAAAAAAAA==',
+      encryptedData: 'SGVsbG8gV29ybGQ='
+    };
+
+    test('converts encrypted file without metadata converter', () => {
+      const converter = CryptoUtils.Converters.createEncryptedFileConverter();
+      expect(converter.convert(validEncryptedFile)).toSucceed();
+    });
+
+    test('converts encrypted file with typed metadata when metadata matches', () => {
+      interface ITestMetadata {
+        version: number;
+      }
+      const metadataConverter = Converters.object<ITestMetadata>({
+        version: Converters.number
+      });
+      const converter = CryptoUtils.Converters.createEncryptedFileConverter(metadataConverter);
+
+      const fileWithMetadata = {
+        ...validEncryptedFile,
+        metadata: { version: 1 }
+      };
+
+      expect(converter.convert(fileWithMetadata)).toSucceedAndSatisfy((result) => {
+        expect(result.metadata).toEqual({ version: 1 });
+      });
+    });
+
+    test('fails when typed metadata does not match converter', () => {
+      interface ITestMetadata {
+        version: number;
+      }
+      const metadataConverter = Converters.object<ITestMetadata>({
+        version: Converters.number
+      });
+      const converter = CryptoUtils.Converters.createEncryptedFileConverter(metadataConverter);
+
+      const fileWithBadMetadata = {
+        ...validEncryptedFile,
+        metadata: { version: 'not-a-number' }
+      };
+
+      expect(converter.convert(fileWithBadMetadata)).toFailWith(/Invalid metadata/i);
     });
   });
 });

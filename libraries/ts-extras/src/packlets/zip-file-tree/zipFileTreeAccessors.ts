@@ -135,6 +135,7 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IFileT
    */
   public setRawContents(contents: string): Result<string> {
     return this.getIsMutable().asResult.onSuccess(() =>
+      /* c8 ignore next 1 - unreachable: ZIP files are always read-only */
       this._accessors.saveFileContents(this.absolutePath, contents)
     );
   }
