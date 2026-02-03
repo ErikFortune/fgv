@@ -13,7 +13,7 @@ getAllJournals(): ReadonlyArray<AnyJournalEntry>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;AnyJournalEntry&gt;
+ReadonlyArray&lt;[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)<!-- -->&gt;
 
 Array of all journal entries
 

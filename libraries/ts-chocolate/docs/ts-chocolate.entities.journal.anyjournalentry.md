@@ -11,3 +11,5 @@ Discriminated union of all journal entry types. Use type guards to narrow to spe
 ```typescript
 export type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
 ```
+**References:** [IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)<!-- -->, [IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)<!-- -->, [IFillingProductionJournalEntry](./ts-chocolate.entities.ifillingproductionjournalentry.md)<!-- -->, [IConfectionProductionJournalEntry](./ts-chocolate.entities.iconfectionproductionjournalentry.md)
+

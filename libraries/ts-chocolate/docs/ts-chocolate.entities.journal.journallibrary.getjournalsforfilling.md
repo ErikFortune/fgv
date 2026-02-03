@@ -50,7 +50,7 @@ The [filling ID](./ts-chocolate.fillingid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;AnyFillingJournalEntry&gt;
+ReadonlyArray&lt;[AnyFillingJournalEntry](./ts-chocolate.entities.anyfillingjournalentry.md)<!-- -->&gt;
 
 Array of filling journal entries (empty if none found)
 

@@ -11,5 +11,5 @@ A single entry in a journal collection.
 ```typescript
 export type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntry>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 

@@ -35,7 +35,7 @@ Converter for [AnyJournalEntry](./ts-chocolate.entities.journal.anyjournalentry.
 
 </td><td>
 
-Converter for . Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
+Converter for [AnyProducedConfection](./ts-chocolate.entities.confections.anyproducedconfection.md)<!-- -->. Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Converter for . Uses discriminated object pattern on `confectionType` field. Not
 
 </td><td>
 
-Converter for . Uses discriminated object pattern on `slotType` field.
+Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.confections.anyresolvedfillingslot.md)<!-- -->. Uses discriminated object pattern on `slotType` field.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ Converter for [JournalEntryType](./ts-chocolate.entities.journal.journalentrytyp
 
 </td><td>
 
-Converter for .
+Converter for [IProducedBarTruffle](./ts-chocolate.entities.confections.iproducedbartruffle.md)<!-- -->.
 
 
 </td></tr>
@@ -123,7 +123,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IProducedFilling](./ts-chocolate.entities.fillings.iproducedfilling.md)<!-- -->.
 
 
 </td></tr>
@@ -134,7 +134,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IProducedFillingIngredient](./ts-chocolate.entities.fillings.iproducedfillingingredient.md)<!-- -->.
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IProducedMoldedBonBon](./ts-chocolate.entities.confections.iproducedmoldedbonbon.md)<!-- -->.
 
 
 </td></tr>
@@ -156,7 +156,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IProducedRolledTruffle](./ts-chocolate.entities.confections.iproducedrolledtruffle.md)<!-- -->.
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IResolvedFillingSlot](./ts-chocolate.entities.confections.iresolvedfillingslot.md)<!-- -->.
 
 
 </td></tr>
@@ -178,7 +178,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [IResolvedIngredientSlot](./ts-chocolate.entities.confections.iresolvedingredientslot.md)<!-- -->.
 
 
 </td></tr>
@@ -189,7 +189,7 @@ Converter for .
 
 </td><td>
 
-Converter for .
+Converter for [ResolvedSlotType](./ts-chocolate.entities.confections.resolvedslottype.md)<!-- -->.
 
 
 </td></tr>

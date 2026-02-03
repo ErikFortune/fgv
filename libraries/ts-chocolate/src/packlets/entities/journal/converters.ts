@@ -75,13 +75,13 @@ export const journalEntryType: Converter<JournalEntryType> = Converters.enumerat
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Journal.ResolvedSlotType | ResolvedSlotType}.
+ * Converter for {@link Entities.Confections.ResolvedSlotType | ResolvedSlotType}.
  * @public
  */
 export const resolvedSlotType: Converter<ResolvedSlotType> = Converters.enumeratedValue(allResolvedSlotTypes);
 
 /**
- * Converter for {@link Entities.Journal.IResolvedFillingSlot | IResolvedFillingSlot}.
+ * Converter for {@link Entities.Confections.IResolvedFillingSlot | IResolvedFillingSlot}.
  * @public
  */
 export const resolvedFillingSlot: Converter<IResolvedFillingSlot> = Converters.object<IResolvedFillingSlot>({
@@ -91,7 +91,7 @@ export const resolvedFillingSlot: Converter<IResolvedFillingSlot> = Converters.o
 });
 
 /**
- * Converter for {@link Entities.Journal.IResolvedIngredientSlot | IResolvedIngredientSlot}.
+ * Converter for {@link Entities.Confections.IResolvedIngredientSlot | IResolvedIngredientSlot}.
  * @public
  */
 export const resolvedIngredientSlot: Converter<IResolvedIngredientSlot> =
@@ -102,7 +102,7 @@ export const resolvedIngredientSlot: Converter<IResolvedIngredientSlot> =
   });
 
 /**
- * Converter for {@link Entities.Journal.AnyResolvedFillingSlot | AnyResolvedFillingSlot}.
+ * Converter for {@link Entities.Confections.AnyResolvedFillingSlot | AnyResolvedFillingSlot}.
  * Uses discriminated object pattern on `slotType` field.
  * @public
  */
@@ -117,7 +117,7 @@ export const anyResolvedFillingSlot: Converter<AnyResolvedFillingSlot> =
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Journal.IProducedFillingIngredient | IProducedFillingIngredient}.
+ * Converter for {@link Entities.Fillings.IProducedFillingIngredient | IProducedFillingIngredient}.
  * @public
  */
 export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
@@ -130,7 +130,7 @@ export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
   });
 
 /**
- * Converter for {@link Entities.Journal.IProducedFilling | IProducedFilling}.
+ * Converter for {@link Entities.Fillings.IProducedFilling | IProducedFilling}.
  * @public
  */
 export const producedFilling: Converter<IProducedFilling> = Converters.object<IProducedFilling>({
@@ -147,7 +147,7 @@ export const producedFilling: Converter<IProducedFilling> = Converters.object<IP
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Journal.IProducedMoldedBonBon | IProducedMoldedBonBon}.
+ * Converter for {@link Entities.Confections.IProducedMoldedBonBon | IProducedMoldedBonBon}.
  * @public
  */
 export const producedMoldedBonBon: Converter<IProducedMoldedBonBon> =
@@ -165,7 +165,7 @@ export const producedMoldedBonBon: Converter<IProducedMoldedBonBon> =
   });
 
 /**
- * Converter for {@link Entities.Journal.IProducedBarTruffle | IProducedBarTruffle}.
+ * Converter for {@link Entities.Confections.IProducedBarTruffle | IProducedBarTruffle}.
  * @public
  */
 export const producedBarTruffle: Converter<IProducedBarTruffle> = Converters.object<IProducedBarTruffle>({
@@ -179,7 +179,7 @@ export const producedBarTruffle: Converter<IProducedBarTruffle> = Converters.obj
 });
 
 /**
- * Converter for {@link Entities.Journal.IProducedRolledTruffle | IProducedRolledTruffle}.
+ * Converter for {@link Entities.Confections.IProducedRolledTruffle | IProducedRolledTruffle}.
  * @public
  */
 export const producedRolledTruffle: Converter<IProducedRolledTruffle> =
@@ -195,7 +195,7 @@ export const producedRolledTruffle: Converter<IProducedRolledTruffle> =
   });
 
 /**
- * Converter for {@link Entities.Journal.AnyProducedConfection | AnyProducedConfection}.
+ * Converter for {@link Entities.Confections.AnyProducedConfection | AnyProducedConfection}.
  * Uses discriminated object pattern on `confectionType` field.
  * Note: Kebab-case keys are intentional - they match the type discriminator values.
  * @public

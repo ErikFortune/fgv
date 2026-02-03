@@ -50,7 +50,7 @@ The [confection version ID](./ts-chocolate.confectionversionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;AnyConfectionJournalEntry&gt;
+ReadonlyArray&lt;[AnyConfectionJournalEntry](./ts-chocolate.entities.anyconfectionjournalentry.md)<!-- -->&gt;
 
 Array of confection journal entries (empty if none found)
 

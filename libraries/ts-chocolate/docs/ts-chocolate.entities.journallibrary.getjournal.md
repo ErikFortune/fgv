@@ -50,7 +50,7 @@ The journal ID to look up
 
 **Returns:**
 
-Result&lt;AnyJournalEntry&gt;
+Result&lt;[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)<!-- -->&gt;
 
 Success with the journal entry, or Failure if not found
 

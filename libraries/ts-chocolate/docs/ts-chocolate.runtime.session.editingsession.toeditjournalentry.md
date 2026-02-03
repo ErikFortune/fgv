@@ -50,7 +50,7 @@ _(Optional)_ Optional notes to include in the journal entry
 
 **Returns:**
 
-Result&lt;IFillingEditJournalEntry&gt;
+Result&lt;[IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)<!-- -->&gt;
 
 Result with journal entry
 

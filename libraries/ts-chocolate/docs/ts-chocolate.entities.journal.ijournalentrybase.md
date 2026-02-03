@@ -131,7 +131,7 @@ Timestamp when this entry was created (ISO 8601 format)
 
 </td><td>
 
-JournalEntryType
+[JournalEntryType](./ts-chocolate.entities.journalentrytype.md)
 
 
 </td><td>

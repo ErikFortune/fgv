@@ -11,5 +11,5 @@ Initialization type for a JournalLibrary collection entry.
 ```typescript
 export type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntry>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 

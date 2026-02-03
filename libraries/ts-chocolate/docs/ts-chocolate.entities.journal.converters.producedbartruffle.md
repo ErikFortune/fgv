@@ -4,7 +4,7 @@
 
 ## Entities.Journal.Converters.producedBarTruffle variable
 
-Converter for .
+Converter for [IProducedBarTruffle](./ts-chocolate.entities.confections.iproducedbartruffle.md)<!-- -->.
 
 **Signature:**
 

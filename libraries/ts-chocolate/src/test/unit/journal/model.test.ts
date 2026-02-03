@@ -22,12 +22,8 @@ import '@fgv/ts-utils-jest';
 
 import {
   Confections,
-  allJournalEntryTypes,
+  Journal,
   JournalEntryType,
-  isFillingEditJournalEntry,
-  isFillingProductionJournalEntry,
-  isConfectionEditJournalEntry,
-  isConfectionProductionJournalEntry,
   AnyJournalEntry,
   IFillingEditJournalEntry,
   IFillingProductionJournalEntry,
@@ -41,18 +37,18 @@ import {
 describe('Journal Model', () => {
   describe('allJournalEntryTypes', () => {
     test('contains all expected entry types', () => {
-      expect(allJournalEntryTypes).toContain('filling-edit');
-      expect(allJournalEntryTypes).toContain('confection-edit');
-      expect(allJournalEntryTypes).toContain('filling-production');
-      expect(allJournalEntryTypes).toContain('confection-production');
+      expect(Journal.allJournalEntryTypes).toContain('filling-edit');
+      expect(Journal.allJournalEntryTypes).toContain('confection-edit');
+      expect(Journal.allJournalEntryTypes).toContain('filling-production');
+      expect(Journal.allJournalEntryTypes).toContain('confection-production');
     });
 
     test('has correct number of entry types', () => {
-      expect(allJournalEntryTypes.length).toBe(4);
+      expect(Journal.allJournalEntryTypes.length).toBe(4);
     });
 
     test('type assertion for JournalEntryType', () => {
-      allJournalEntryTypes.forEach((entryType) => {
+      Journal.allJournalEntryTypes.forEach((entryType) => {
         const typed: JournalEntryType = entryType;
         expect(typeof typed).toBe('string');
       });
@@ -151,18 +147,18 @@ describe('Journal Model', () => {
 
     describe('isFillingEditJournalEntry', () => {
       test('returns true for filling edit entries', () => {
-        expect(isFillingEditJournalEntry(fillingEditEntry)).toBe(true);
+        expect(Journal.isFillingEditJournalEntry(fillingEditEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(isFillingEditJournalEntry(fillingProductionEntry)).toBe(false);
-        expect(isFillingEditJournalEntry(confectionEditEntry)).toBe(false);
-        expect(isFillingEditJournalEntry(confectionProductionEntry)).toBe(false);
+        expect(Journal.isFillingEditJournalEntry(fillingProductionEntry)).toBe(false);
+        expect(Journal.isFillingEditJournalEntry(confectionEditEntry)).toBe(false);
+        expect(Journal.isFillingEditJournalEntry(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
         const entry: AnyJournalEntry = fillingEditEntry;
-        if (isFillingEditJournalEntry(entry)) {
+        if (Journal.isFillingEditJournalEntry(entry)) {
           expect(entry.type).toBe('filling-edit');
           expect(entry.versionId).toBe('source.recipe@2026-01-01-01');
         }
@@ -171,18 +167,18 @@ describe('Journal Model', () => {
 
     describe('isFillingProductionJournalEntry', () => {
       test('returns true for filling production entries', () => {
-        expect(isFillingProductionJournalEntry(fillingProductionEntry)).toBe(true);
+        expect(Journal.isFillingProductionJournalEntry(fillingProductionEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(isFillingProductionJournalEntry(fillingEditEntry)).toBe(false);
-        expect(isFillingProductionJournalEntry(confectionEditEntry)).toBe(false);
-        expect(isFillingProductionJournalEntry(confectionProductionEntry)).toBe(false);
+        expect(Journal.isFillingProductionJournalEntry(fillingEditEntry)).toBe(false);
+        expect(Journal.isFillingProductionJournalEntry(confectionEditEntry)).toBe(false);
+        expect(Journal.isFillingProductionJournalEntry(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
         const entry: AnyJournalEntry = fillingProductionEntry;
-        if (isFillingProductionJournalEntry(entry)) {
+        if (Journal.isFillingProductionJournalEntry(entry)) {
           expect(entry.type).toBe('filling-production');
           expect(entry.yield).toBe(300);
         }
@@ -191,18 +187,18 @@ describe('Journal Model', () => {
 
     describe('isConfectionEditJournalEntry', () => {
       test('returns true for confection edit entries', () => {
-        expect(isConfectionEditJournalEntry(confectionEditEntry)).toBe(true);
+        expect(Journal.isConfectionEditJournalEntry(confectionEditEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(isConfectionEditJournalEntry(fillingEditEntry)).toBe(false);
-        expect(isConfectionEditJournalEntry(fillingProductionEntry)).toBe(false);
-        expect(isConfectionEditJournalEntry(confectionProductionEntry)).toBe(false);
+        expect(Journal.isConfectionEditJournalEntry(fillingEditEntry)).toBe(false);
+        expect(Journal.isConfectionEditJournalEntry(fillingProductionEntry)).toBe(false);
+        expect(Journal.isConfectionEditJournalEntry(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
         const entry: AnyJournalEntry = confectionEditEntry;
-        if (isConfectionEditJournalEntry(entry)) {
+        if (Journal.isConfectionEditJournalEntry(entry)) {
           expect(entry.type).toBe('confection-edit');
           expect(entry.versionId).toBe('source.truffle@2026-01-01-01');
         }
@@ -211,18 +207,18 @@ describe('Journal Model', () => {
 
     describe('isConfectionProductionJournalEntry', () => {
       test('returns true for confection production entries', () => {
-        expect(isConfectionProductionJournalEntry(confectionProductionEntry)).toBe(true);
+        expect(Journal.isConfectionProductionJournalEntry(confectionProductionEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(isConfectionProductionJournalEntry(fillingEditEntry)).toBe(false);
-        expect(isConfectionProductionJournalEntry(fillingProductionEntry)).toBe(false);
-        expect(isConfectionProductionJournalEntry(confectionEditEntry)).toBe(false);
+        expect(Journal.isConfectionProductionJournalEntry(fillingEditEntry)).toBe(false);
+        expect(Journal.isConfectionProductionJournalEntry(fillingProductionEntry)).toBe(false);
+        expect(Journal.isConfectionProductionJournalEntry(confectionEditEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
         const entry: AnyJournalEntry = confectionProductionEntry;
-        if (isConfectionProductionJournalEntry(entry)) {
+        if (Journal.isConfectionProductionJournalEntry(entry)) {
           expect(entry.type).toBe('confection-production');
           expect(entry.yield.count).toBe(24);
         }

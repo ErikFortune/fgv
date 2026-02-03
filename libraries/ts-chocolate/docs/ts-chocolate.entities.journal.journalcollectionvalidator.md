@@ -11,5 +11,5 @@ Validator type for JournalLibrary collections.
 ```typescript
 export type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntry>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 

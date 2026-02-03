@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-IConfectionEditJournalEntry
+[IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)
 
 
 </td><td>

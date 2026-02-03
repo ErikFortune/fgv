@@ -61,8 +61,17 @@ export {
   IGanacheCharacteristics
 } from './ingredients';
 
-export { JournalLibrary } from './journal/library';
-export * from './journal/model';
+export {
+  JournalLibrary,
+  AnyConfectionJournalEntry,
+  AnyFillingJournalEntry,
+  AnyJournalEntry,
+  IConfectionProductionJournalEntry,
+  IConfectionEditJournalEntry,
+  IFillingProductionJournalEntry,
+  IFillingEditJournalEntry,
+  JournalEntryType
+} from './journal';
 
 export * from './session/model';
 export * from './session/library';

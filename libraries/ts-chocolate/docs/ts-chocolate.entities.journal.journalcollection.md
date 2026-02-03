@@ -11,5 +11,5 @@ Type for the collections in a JournalLibrary.
 ```typescript
 export type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntry>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 

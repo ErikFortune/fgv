@@ -37,7 +37,7 @@ entry
 
 </td><td>
 
-AnyJournalEntry
+[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Journal entry to check
 
 **Returns:**
 
-entry is AnyConfectionJournalEntry
+entry is [AnyConfectionJournalEntry](./ts-chocolate.entities.anyconfectionjournalentry.md)
 
 True if the entry is a confection journal entry (edit or production)
 

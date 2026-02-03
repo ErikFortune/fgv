@@ -172,50 +172,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isConfectionEditJournalEntry(entry)](./ts-chocolate.entities.isconfectioneditjournalentry.md)
-
-
-</td><td>
-
-Type guard for IConfectionEditJournalEntry
-
-
-</td></tr>
-<tr><td>
-
-[isConfectionProductionJournalEntry(entry)](./ts-chocolate.entities.isconfectionproductionjournalentry.md)
-
-
-</td><td>
-
-Type guard for IConfectionProductionJournalEntry
-
-
-</td></tr>
-<tr><td>
-
-[isFillingEditJournalEntry(entry)](./ts-chocolate.entities.isfillingeditjournalentry.md)
-
-
-</td><td>
-
-Type guard for IFillingEditJournalEntry
-
-
-</td></tr>
-<tr><td>
-
-[isFillingProductionJournalEntry(entry)](./ts-chocolate.entities.isfillingproductionjournalentry.md)
-
-
-</td><td>
-
-Type guard for IFillingProductionJournalEntry
-
-
-</td></tr>
-<tr><td>
-
 [isIngredientInventoryEntry(entry)](./ts-chocolate.entities.isingredientinventoryentry.md)
 
 
@@ -514,17 +470,6 @@ An inline task defined directly in a procedure step. Contains a full ITaskData d
 </td><td>
 
 Common properties shared by all inventory entry types.
-
-
-</td></tr>
-<tr><td>
-
-[IJournalEntryBase](./ts-chocolate.entities.ijournalentrybase.md)
-
-
-</td><td>
-
-Base interface for journal entries.
 
 
 </td></tr>
@@ -942,17 +887,6 @@ All possible inventory types.
 </td></tr>
 <tr><td>
 
-[allJournalEntryTypes](./ts-chocolate.entities.alljournalentrytypes.md)
-
-
-</td><td>
-
-All possible [journal entry types](./ts-chocolate.entities.journal.journalentrytype.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [allPersistedSessionStatuses](./ts-chocolate.entities.allpersistedsessionstatuses.md)
 
 
@@ -1034,12 +968,34 @@ Discriminated union of all confection data types. Use this when working with raw
 </td></tr>
 <tr><td>
 
+[AnyConfectionJournalEntry](./ts-chocolate.entities.anyconfectionjournalentry.md)
+
+
+</td><td>
+
+Union type for confection journal entries (edit or production)
+
+
+</td></tr>
+<tr><td>
+
 [AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>
 
 Union type for all confection version types.
+
+
+</td></tr>
+<tr><td>
+
+[AnyFillingJournalEntry](./ts-chocolate.entities.anyfillingjournalentry.md)
+
+
+</td><td>
+
+Union type for filling journal entries (edit or production)
 
 
 </td></tr>
