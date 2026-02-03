@@ -9,7 +9,7 @@ Factory method for creating a RuntimeBarTruffleVersion.
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, confectionId: ConfectionId, version: IBarTruffleVersion): Result<RuntimeBarTruffleVersion>;
+static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections.IBarTruffleVersion): Result<RuntimeBarTruffleVersion>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ version
 
 </td><td>
 
-IBarTruffleVersion
+Confections.IBarTruffleVersion
 
 
 </td><td>

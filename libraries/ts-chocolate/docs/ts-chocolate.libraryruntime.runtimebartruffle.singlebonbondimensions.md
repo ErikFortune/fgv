@@ -9,5 +9,5 @@ Single bonbon dimensions for cutting (from golden version).
 **Signature:**
 
 ```typescript
-get singleBonBonDimensions(): IBonBonDimensions;
+get singleBonBonDimensions(): Confections.IBonBonDimensions;
 ```

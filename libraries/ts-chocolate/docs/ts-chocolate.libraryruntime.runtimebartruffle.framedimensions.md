@@ -9,5 +9,5 @@ Frame dimensions for ganache slab (from golden version).
 **Signature:**
 
 ```typescript
-get frameDimensions(): IFrameDimensions;
+get frameDimensions(): Confections.IFrameDimensions;
 ```

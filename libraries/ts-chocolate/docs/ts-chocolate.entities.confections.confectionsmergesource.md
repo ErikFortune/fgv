@@ -11,5 +11,5 @@ Specifies a confections library to merge into a new library.
 ```typescript
 export type ConfectionsMergeSource = SubLibraryMergeSource<ConfectionsLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [ConfectionsLibrary](./ts-chocolate.entities.confectionslibrary.md)
 

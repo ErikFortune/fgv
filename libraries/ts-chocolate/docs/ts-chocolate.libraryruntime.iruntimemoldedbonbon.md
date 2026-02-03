@@ -132,7 +132,7 @@ Resolved molds with preferred selection (from golden version)
 
 </td><td>
 
-IMoldedBonBon
+Confections.IMoldedBonBon
 
 
 </td><td>

@@ -50,7 +50,7 @@ The original state when session started
 
 **Returns:**
 
-ISerializedEditingHistory&lt;T&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;T&gt;
 
 Serialized editing history
 

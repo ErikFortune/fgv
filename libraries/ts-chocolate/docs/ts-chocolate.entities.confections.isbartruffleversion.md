@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-AnyConfectionVersion
+[AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>

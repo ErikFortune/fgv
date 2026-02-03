@@ -9,5 +9,5 @@ Gets the underlying raw rolled truffle data
 **Signature:**
 
 ```typescript
-get raw(): IRolledTruffle;
+get raw(): Confections.IRolledTruffle;
 ```

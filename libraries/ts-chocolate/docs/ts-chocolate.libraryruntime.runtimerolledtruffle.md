@@ -117,7 +117,7 @@ Resolved enrobing chocolate specification (from golden version, optional).
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
 
 
 </td><td>
@@ -180,7 +180,7 @@ Resolved procedures from the golden version.
 
 </td><td>
 
-IRolledTruffle
+Confections.IRolledTruffle
 
 
 </td><td>

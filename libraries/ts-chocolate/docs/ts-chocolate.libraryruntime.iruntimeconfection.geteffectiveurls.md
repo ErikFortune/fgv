@@ -9,7 +9,7 @@ Gets effective URLs for a specific version.
 **Signature:**
 
 ```typescript
-getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
+getEffectiveUrls(version?: Confections.AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-AnyConfectionVersion
+[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>

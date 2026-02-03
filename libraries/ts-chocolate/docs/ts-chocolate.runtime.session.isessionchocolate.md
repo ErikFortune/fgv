@@ -110,7 +110,7 @@ The role of this chocolate in the confection
 
 </td><td>
 
-[ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
+ConfectionSelectionStatus
 
 
 </td><td>

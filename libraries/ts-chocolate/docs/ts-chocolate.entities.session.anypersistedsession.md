@@ -11,3 +11,5 @@ Discriminated union of all persisted session types. Use type guards to narrow to
 ```typescript
 export type AnyPersistedSession = IPersistedFillingSession | IPersistedConfectionSession;
 ```
+**References:** [IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)<!-- -->, [IPersistedConfectionSession](./ts-chocolate.entities.session.ipersistedconfectionsession.md)
+

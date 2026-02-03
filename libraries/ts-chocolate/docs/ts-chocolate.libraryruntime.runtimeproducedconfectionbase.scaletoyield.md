@@ -11,7 +11,7 @@ Note: This method updates the yield in the confection data. Actual filling scali
 **Signature:**
 
 ```typescript
-scaleToYield(yieldSpec: IConfectionYield): Result<IConfectionYield>;
+scaleToYield(yieldSpec: Confections.IConfectionYield): Result<Confections.IConfectionYield>;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ yieldSpec
 
 </td><td>
 
-IConfectionYield
+Confections.IConfectionYield
 
 
 </td><td>
@@ -52,7 +52,7 @@ Target yield specification
 
 **Returns:**
 
-Result&lt;IConfectionYield&gt;
+Result&lt;Confections.IConfectionYield&gt;
 
 Success with actual achieved yield, or failure
 

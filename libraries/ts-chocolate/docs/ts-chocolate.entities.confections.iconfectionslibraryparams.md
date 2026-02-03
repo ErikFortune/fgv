@@ -11,5 +11,5 @@ Parameters for creating a ConfectionsLibrary instance synchronously.
 ```typescript
 export type IConfectionsLibraryParams = ISubLibraryParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [ConfectionsLibrary](./ts-chocolate.entities.confectionslibrary.md)
 

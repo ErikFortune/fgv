@@ -9,5 +9,5 @@ Optional decorations for this version.
 **Signature:**
 
 ```typescript
-readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
 ```

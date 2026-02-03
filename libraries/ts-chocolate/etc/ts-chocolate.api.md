@@ -180,7 +180,7 @@ type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | 
 const anyJournalEntry: Converter<AnyJournalEntry>;
 
 // @public
-type AnyMaterializedSession = Session.EditingSession | Session.AnyConfectionEditingSession;
+type AnyMaterializedSession = Session_2.EditingSession | Session_2.AnyConfectionEditingSession;
 
 // @public
 type AnyPersistedSession = IPersistedFillingSession | IPersistedConfectionSession;
@@ -199,7 +199,7 @@ type AnyProducedConfection = IProducedMoldedBonBon | IProducedBarTruffle | IProd
 const anyProducedConfection: Converter<AnyProducedConfection>;
 
 // @public
-type AnyResolvedFillingSlot = IResolvedFillingSlot_2 | IResolvedIngredientSlot;
+type AnyResolvedFillingSlot = IResolvedFillingSlot | IResolvedIngredientSlot;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -232,7 +232,7 @@ class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBar
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create(baseConfection: RuntimeBarTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
     static fromPersistedState(baseConfection: RuntimeBarTruffle, history: ISerializedEditingHistory<IProducedBarTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
-    scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+    scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
 }
 
 // @public
@@ -402,7 +402,7 @@ function calculateTotalWeight(ingredients: ReadonlyArray<IFillingIngredient>, co
 function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
 
 // @public
-function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon;
+function canScaleByFrames(confection: Confections_2.ConfectionData): confection is Confections_2.IMoldedBonBon;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -461,7 +461,7 @@ export class ChocolateLibrary {
     calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
     calculateGanacheForRecipe(recipe: IFillingRecipe, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get confections(): ConfectionsLibrary;
+    get confections(): Entities.Confections.ConfectionsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
@@ -469,8 +469,8 @@ export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getConfection(id: ConfectionId): Result<ConfectionData>;
-    getEditableConfections(collectionId: SourceId): Result<EditableCollection<ConfectionData, BaseConfectionId>>;
+    getConfection(id: ConfectionId): Result<Entities.Confections.ConfectionData>;
+    getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.ConfectionData, BaseConfectionId>>;
     getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipe, BaseFillingId>>;
     getEditableIngredients(collectionId: SourceId): Result<EditableCollection<Ingredient, BaseIngredientId>>;
     getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
@@ -666,7 +666,7 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection, TRu
     protected _scaleAllFillingsByFactor(scaleFactor: number): Result<IFillingSessionMap>;
     // @internal
     protected _scaleFillingToWeight(slotId: SlotId, targetWeight: Measurement): Result<Measurement | undefined>;
-    abstract scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+    abstract scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
     get sessionId(): SessionId;
     // (undocumented)
     protected readonly _sessionId: SessionId;
@@ -784,7 +784,7 @@ declare namespace Confections_2 {
         ConfectionData,
         ResolvedSlotType,
         allResolvedSlotTypes,
-        IResolvedFillingSlot_2 as IResolvedFillingSlot,
+        IResolvedFillingSlot,
         IResolvedIngredientSlot,
         AnyResolvedFillingSlot,
         IProducedConfectionBase,
@@ -1195,6 +1195,8 @@ type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 
 declare namespace Entities {
     export {
+        ConfectionsLibrary,
+        AnyConfectionVersion,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -1203,7 +1205,7 @@ declare namespace Entities {
         Journal_2 as Journal,
         Molds_2 as Molds,
         Procedures_2 as Procedures,
-        Session_2 as Session,
+        Session,
         Tasks_2 as Tasks,
         isMoldedBonBonYield,
         isMoldedBonBon,
@@ -1237,7 +1239,6 @@ declare namespace Entities {
         IMoldedBonBonVersion,
         IBarTruffleVersion,
         IRolledTruffleVersion,
-        AnyConfectionVersion,
         IConfectionBase,
         IMoldedBonBon,
         IBarTruffle,
@@ -1245,7 +1246,7 @@ declare namespace Entities {
         ConfectionData,
         ResolvedSlotType,
         allResolvedSlotTypes,
-        IResolvedFillingSlot_2 as IResolvedFillingSlot,
+        IResolvedFillingSlot,
         IResolvedIngredientSlot,
         AnyResolvedFillingSlot,
         IProducedConfectionBase,
@@ -1253,15 +1254,6 @@ declare namespace Entities {
         IProducedBarTruffle,
         IProducedRolledTruffle,
         AnyProducedConfection,
-        ConfectionCollectionEntry,
-        ConfectionCollectionEntryInit,
-        ConfectionCollectionValidator,
-        ConfectionCollection,
-        IConfectionFileTreeSource,
-        ConfectionsMergeSource,
-        IConfectionsLibraryParams,
-        IConfectionsLibraryAsyncParams,
-        ConfectionsLibrary,
         isScaledFillingRecipeVersion,
         isFillingRecipeVersion,
         IIngredientModifiers,
@@ -2225,11 +2217,11 @@ interface IConfectionContext {
     getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
     getRuntimeMold(id: MoldId): Result<IRuntimeMold>;
     getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
-    resolveAdditionalChocolates(additional: ReadonlyArray<IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-    resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-    resolveCoatings(coatings: ICoatings): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    resolveMoldRefs(molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    resolveAdditionalChocolates(additional: ReadonlyArray<Confections_2.IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+    resolveChocolateSpec(spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+    resolveCoatings(coatings: Confections_2.ICoatings): IResolvedCoatings;
+    resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     resolveProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 
@@ -2243,7 +2235,7 @@ interface IConfectionDecoration {
 
 // @public
 interface IConfectionEditingSessionParams {
-    readonly initialYield?: AnyConfectionYield;
+    readonly initialYield?: Confections_2.AnyConfectionYield;
     readonly sessionId?: SessionId;
 }
 
@@ -2825,7 +2817,7 @@ interface IInlineTask {
 //
 // @public
 interface IInstantiatedLibrarySource {
-    readonly confections?: ConfectionsLibrary;
+    readonly confections?: Entities.Confections.ConfectionsLibrary;
     readonly fillings?: FillingsLibrary;
     readonly ingredients?: IngredientsLibrary;
     readonly molds?: MoldsLibrary;
@@ -2896,7 +2888,7 @@ interface ILibraryRuntimeContext {
     readonly cachedIngredientCount: number;
     readonly cachedRecipeCount: number;
     clearCache(): void;
-    readonly confections: ConfectionsLibrary;
+    readonly confections: Confections_2.ConfectionsLibrary;
     readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
@@ -3642,14 +3634,14 @@ interface IRenderOptions {
 interface IResolvedAdditionalChocolate {
     readonly chocolate: IResolvedChocolateSpec;
     readonly purpose: AdditionalChocolatePurpose;
-    readonly raw: IAdditionalChocolate;
+    readonly raw: Confections_2.IAdditionalChocolate;
 }
 
 // @public
 interface IResolvedChocolateSpec {
     readonly alternates: ReadonlyArray<IRuntimeChocolateIngredient>;
     readonly chocolate: IRuntimeChocolateIngredient;
-    readonly raw: IChocolateSpec;
+    readonly raw: Confections_2.IChocolateSpec;
 }
 
 // @public
@@ -3663,7 +3655,7 @@ interface IResolvedCoatingOption {
 interface IResolvedCoatings {
     readonly options: ReadonlyArray<IResolvedCoatingOption>;
     readonly preferred?: IResolvedCoatingOption;
-    readonly raw: ICoatings;
+    readonly raw: Confections_2.ICoatings;
 }
 
 // @public
@@ -3671,7 +3663,7 @@ interface IResolvedConfectionMoldRef {
     readonly id: MoldId;
     readonly mold: IRuntimeMold;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IConfectionMoldRef;
+    readonly raw: Confections_2.IConfectionMoldRef;
 }
 
 // @public
@@ -3704,16 +3696,16 @@ interface IResolvedFillingRecipeProcedure {
 
 // @public
 interface IResolvedFillingSlot {
-    readonly filling: Model.IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
-    readonly name?: string;
+    readonly fillingId: FillingId;
     readonly slotId: SlotId;
+    readonly slotType: 'recipe';
 }
 
 // @public
 interface IResolvedFillingSlot_2 {
-    readonly fillingId: FillingId;
+    readonly filling: Model.IOptionsWithPreferred<IResolvedFillingOption, Confections_2.FillingOptionId>;
+    readonly name?: string;
     readonly slotId: SlotId;
-    readonly slotType: 'recipe';
 }
 
 // @public
@@ -3735,7 +3727,7 @@ interface IResolvedIngredientFillingOption {
     readonly id: IngredientId;
     readonly ingredient: IRuntimeIngredient;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IIngredientFillingOption;
+    readonly raw: Confections_2.IIngredientFillingOption;
     readonly type: 'ingredient';
 }
 
@@ -3757,7 +3749,7 @@ interface IResolvedRecipeFillingOption {
     readonly filling: IRuntimeFillingRecipe;
     readonly id: FillingId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IRecipeFillingOption;
+    readonly raw: Confections_2.IRecipeFillingOption;
     readonly type: 'recipe';
 }
 
@@ -3814,11 +3806,11 @@ interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
 interface IRuntimeBarTruffle extends IRuntimeConfection {
     readonly confectionType: 'bar-truffle';
     readonly enrobingChocolate?: IResolvedChocolateSpec;
-    readonly frameDimensions: IFrameDimensions;
+    readonly frameDimensions: Confections_2.IFrameDimensions;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion>;
     readonly goldenVersion: IRuntimeBarTruffleVersion;
-    readonly raw: IBarTruffle;
-    readonly singleBonBonDimensions: IBonBonDimensions;
+    readonly raw: Confections_2.IBarTruffle;
+    readonly singleBonBonDimensions: Confections_2.IBonBonDimensions;
     readonly versions: ReadonlyArray<IRuntimeBarTruffleVersion>;
 }
 
@@ -3826,10 +3818,10 @@ interface IRuntimeBarTruffle extends IRuntimeConfection {
 interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase {
     readonly confection: IRuntimeBarTruffle;
     readonly enrobingChocolate?: IResolvedChocolateSpec;
-    readonly frameDimensions: IFrameDimensions;
+    readonly frameDimensions: Confections_2.IFrameDimensions;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-    readonly raw: IBarTruffleVersion;
-    readonly singleBonBonDimensions: IBonBonDimensions;
+    readonly raw: Confections_2.IBarTruffleVersion;
+    readonly singleBonBonDimensions: Confections_2.IBonBonDimensions;
 }
 
 // @public
@@ -3858,13 +3850,13 @@ interface IRuntimeCollection<T = JsonObject, TCOLLECTIONID extends string = stri
 interface IRuntimeConfection {
     readonly baseId: BaseConfectionId;
     readonly confectionType: ConfectionType;
-    readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+    readonly decorations?: ReadonlyArray<Confections_2.IConfectionDecoration>;
     readonly description?: string;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
-    readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
-    getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
-    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<Model.ICategorizedUrl>;
+    readonly fillings?: ReadonlyArray<IResolvedFillingSlot_2>;
+    getEffectiveTags(version?: Confections_2.AnyConfectionVersion): ReadonlyArray<string>;
+    getEffectiveUrls(version?: Confections_2.AnyConfectionVersion): ReadonlyArray<Model.ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
     readonly goldenVersion: AnyRuntimeConfectionVersion;
     readonly goldenVersionSpec: ConfectionVersionSpec;
@@ -3874,12 +3866,12 @@ interface IRuntimeConfection {
     isRolledTruffle(): this is IRuntimeRolledTruffle;
     readonly name: ConfectionName;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
-    readonly raw: ConfectionData;
+    readonly raw: Confections_2.ConfectionData;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly versions: ReadonlyArray<AnyRuntimeConfectionVersion>;
-    readonly yield: IConfectionYield;
+    readonly yield: Confections_2.IConfectionYield;
 }
 
 // @public
@@ -3887,19 +3879,19 @@ interface IRuntimeConfectionVersionBase {
     readonly confection: IRuntimeConfection;
     readonly confectionId: ConfectionId;
     readonly createdDate: string;
-    readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+    readonly decorations?: ReadonlyArray<Confections_2.IConfectionDecoration>;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
-    readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
+    readonly fillings?: ReadonlyArray<IResolvedFillingSlot_2>;
     isBarTruffleVersion(): this is IRuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is IRuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is IRuntimeRolledTruffleVersion;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
-    readonly raw: AnyConfectionVersion;
-    readonly version: AnyConfectionVersion;
+    readonly raw: Confections_2.AnyConfectionVersion;
+    readonly version: Confections_2.AnyConfectionVersion;
     readonly versionSpec: ConfectionVersionSpec;
-    readonly yield: IConfectionYield;
+    readonly yield: Confections_2.IConfectionYield;
 }
 
 // @public
@@ -4033,7 +4025,7 @@ interface IRuntimeMoldedBonBon extends IRuntimeConfection {
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
     readonly goldenVersion: IRuntimeMoldedBonBonVersion;
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    readonly raw: IMoldedBonBon;
+    readonly raw: Confections_2.IMoldedBonBon;
     readonly shellChocolate: IResolvedChocolateSpec;
     readonly versions: ReadonlyArray<IRuntimeMoldedBonBonVersion>;
 }
@@ -4045,7 +4037,7 @@ interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBase {
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly preferredMold: IResolvedConfectionMoldRef | undefined;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-    readonly raw: IMoldedBonBonVersion;
+    readonly raw: Confections_2.IMoldedBonBonVersion;
     readonly shellChocolate: IResolvedChocolateSpec;
 }
 
@@ -4101,7 +4093,7 @@ interface IRuntimeRolledTruffle extends IRuntimeConfection {
     readonly enrobingChocolate?: IResolvedChocolateSpec;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion>;
     readonly goldenVersion: IRuntimeRolledTruffleVersion;
-    readonly raw: IRolledTruffle;
+    readonly raw: Confections_2.IRolledTruffle;
     readonly versions: ReadonlyArray<IRuntimeRolledTruffleVersion>;
 }
 
@@ -4111,7 +4103,7 @@ interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionBase {
     readonly confection: IRuntimeRolledTruffle;
     readonly enrobingChocolate?: IResolvedChocolateSpec;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-    readonly raw: IRolledTruffleVersion;
+    readonly raw: Confections_2.IRolledTruffleVersion;
 }
 
 // @public
@@ -4428,7 +4420,7 @@ function isProducedMoldedBonBon(produced: AnyProducedConfection): produced is IP
 function isProducedRolledTruffle(produced: AnyProducedConfection): produced is IProducedRolledTruffle;
 
 // @public
-function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedFillingSlot_2;
+function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedFillingSlot;
 
 // @public
 function isResolvedIngredientSlot(slot: AnyResolvedFillingSlot): slot is IResolvedIngredientSlot;
@@ -4798,7 +4790,7 @@ declare namespace Journal_2 {
         isProducedMoldedBonBon,
         isProducedRolledTruffle,
         AnyResolvedFillingSlot,
-        IResolvedFillingSlot_2 as IResolvedFillingSlot,
+        IResolvedFillingSlot,
         IResolvedIngredientSlot,
         ResolvedSlotType,
         allResolvedSlotTypes,
@@ -5091,7 +5083,7 @@ declare namespace LibraryRuntime {
         IResolvedFillingOption,
         IResolvedRecipeFillingOption,
         IResolvedIngredientFillingOption,
-        IResolvedFillingSlot,
+        IResolvedFillingSlot_2 as IResolvedFillingSlot,
         IResolvedChocolateSpec,
         IResolvedAdditionalChocolate,
         IResolvedConfectionMoldRef,
@@ -5161,7 +5153,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
-    get confections(): ConfectionsLibrary;
+    get confections(): Confections_2.ConfectionsLibrary;
     static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
     createWeightContext(): IWeightCalculationContext;
     get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec>;
@@ -5169,7 +5161,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
-    getConfection(id: ConfectionId): Result<ConfectionData>;
+    getConfection(id: ConfectionId): Result<Confections_2.ConfectionData>;
     // @internal
     _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe>;
     // @internal
@@ -5199,11 +5191,11 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     // (undocumented)
     get library(): ChocolateLibrary;
     readonly logger: Logging.LogReporter<unknown>;
-    resolveAdditionalChocolates(additional: ReadonlyArray<IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-    resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-    resolveCoatings(coatings: ICoatings): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    resolveMoldRefs(molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    resolveAdditionalChocolates(additional: ReadonlyArray<Confections_2.IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+    resolveChocolateSpec(spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+    resolveCoatings(coatings: Confections_2.ICoatings): IResolvedCoatings;
+    resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     resolveProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
     warmUp(): void;
@@ -5304,8 +5296,8 @@ class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedM
     get currentMold(): IRuntimeMold;
     static fromPersistedState(baseConfection: RuntimeMoldedBonBon, history: ISerializedEditingHistory<IProducedMoldedBonBon>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
-    scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
-    setFrames(frames: number, bufferPercentage?: number): Result<IMoldedBonBonYield>;
+    scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
+    setFrames(frames: number, bufferPercentage?: number): Result<Confections_2.IMoldedBonBonYield>;
 }
 
 // @public
@@ -5788,7 +5780,7 @@ function resolveBuiltInSpec<TCollectionId extends string = string>(spec: FullLib
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resolvedFillingSlot: Converter<IResolvedFillingSlot_2>;
+const resolvedFillingSlot: Converter<IResolvedFillingSlot>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5827,7 +5819,7 @@ class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProduced
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create(baseConfection: RuntimeRolledTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
     static fromPersistedState(baseConfection: RuntimeRolledTruffle, history: ISerializedEditingHistory<IProducedRolledTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
-    scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+    scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
 }
 
 // @public
@@ -5837,7 +5829,7 @@ declare namespace Runtime {
     export {
         RuntimeContext,
         IRuntimeContextCreateParams,
-        Session,
+        Session_2 as Session,
         ISessionContext,
         IRuntimeContext,
         AnyRuntimeConfectionVersion
@@ -5861,37 +5853,37 @@ class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntime
 // @public
 class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
     // @internal
-    protected constructor(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle);
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IBarTruffle);
     get confectionType(): 'bar-truffle';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle): Result<RuntimeBarTruffle>;
+    static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IBarTruffle): Result<RuntimeBarTruffle>;
     // @internal
-    protected _createVersion(rawVersion: AnyConfectionVersion): IRuntimeBarTruffleVersion;
+    protected _createVersion(rawVersion: Confections_2.AnyConfectionVersion): IRuntimeBarTruffleVersion;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    get frameDimensions(): IFrameDimensions;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    get frameDimensions(): Confections_2.IFrameDimensions;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion>;
     get goldenVersion(): IRuntimeBarTruffleVersion;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get raw(): IBarTruffle;
-    get singleBonBonDimensions(): IBonBonDimensions;
+    get raw(): Confections_2.IBarTruffle;
+    get singleBonBonDimensions(): Confections_2.IBonBonDimensions;
     get versions(): ReadonlyArray<IRuntimeBarTruffleVersion>;
 }
 
 // @public
 class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements IRuntimeBarTruffleVersion {
     // @internal
-    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: IBarTruffleVersion);
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IBarTruffleVersion);
     get confection(): IRuntimeBarTruffle;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, confectionId: ConfectionId, version: IBarTruffleVersion): Result<RuntimeBarTruffleVersion>;
+    static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IBarTruffleVersion): Result<RuntimeBarTruffleVersion>;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
-    get frameDimensions(): IFrameDimensions;
+    get frameDimensions(): Confections_2.IFrameDimensions;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
-    get raw(): IBarTruffleVersion;
-    get singleBonBonDimensions(): IBonBonDimensions;
+    get raw(): Confections_2.IBarTruffleVersion;
+    get singleBonBonDimensions(): Confections_2.IBonBonDimensions;
 }
 
 // @public
@@ -5917,18 +5909,18 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
 abstract class RuntimeConfection {
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, id: ConfectionId, confection: ConfectionData): Result<AnyRuntimeConfection>;
+    static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.ConfectionData): Result<AnyRuntimeConfection>;
 }
 
 // @public
 abstract class RuntimeConfectionBase implements IRuntimeConfection {
     // @internal
-    protected constructor(context: IConfectionContext, id: ConfectionId, confection: ConfectionData);
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.ConfectionData);
     get baseId(): BaseConfectionId;
     // (undocumented)
     protected readonly _baseId: BaseConfectionId;
     // (undocumented)
-    protected readonly _confection: ConfectionData;
+    protected readonly _confection: Confections_2.ConfectionData;
     abstract get confectionType(): ConfectionType;
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -5936,14 +5928,14 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     // (undocumented)
     protected readonly _context: IConfectionContext;
     // @internal
-    protected abstract _createVersion(rawVersion: AnyConfectionVersion): AnyRuntimeConfectionVersion;
-    get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
+    protected abstract _createVersion(rawVersion: Confections_2.AnyConfectionVersion): AnyRuntimeConfectionVersion;
+    get decorations(): ReadonlyArray<Confections_2.IConfectionDecoration> | undefined;
     get description(): string | undefined;
     get effectiveTags(): ReadonlyArray<string>;
     get effectiveUrls(): ReadonlyArray<Model.ICategorizedUrl>;
-    abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
-    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<Model.ICategorizedUrl>;
+    abstract get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
+    getEffectiveTags(version?: Confections_2.AnyConfectionVersion): ReadonlyArray<string>;
+    getEffectiveUrls(version?: Confections_2.AnyConfectionVersion): ReadonlyArray<Model.ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
     get goldenVersion(): AnyRuntimeConfectionVersion;
     get goldenVersionSpec(): ConfectionVersionSpec;
@@ -5955,22 +5947,22 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     isRolledTruffle(): this is RuntimeRolledTruffle;
     get name(): ConfectionName;
     abstract get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    abstract get raw(): ConfectionData;
+    abstract get raw(): Confections_2.ConfectionData;
     // (undocumented)
-    protected readonly _rawGoldenVersion: AnyConfectionVersion;
+    protected readonly _rawGoldenVersion: Confections_2.AnyConfectionVersion;
     get sourceId(): SourceId;
     // (undocumented)
     protected readonly _sourceId: SourceId;
     get tags(): ReadonlyArray<string> | undefined;
     get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
     get versions(): ReadonlyArray<AnyRuntimeConfectionVersion>;
-    get yield(): IConfectionYield;
+    get yield(): Confections_2.IConfectionYield;
 }
 
 // @public
 abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersionBase {
     // @internal
-    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: AnyConfectionVersion);
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.AnyConfectionVersion);
     get confection(): IRuntimeConfection;
     get confectionId(): ConfectionId;
     // (undocumented)
@@ -5984,21 +5976,21 @@ abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersion
     // (undocumented)
     protected readonly _context: IConfectionContext;
     get createdDate(): string;
-    get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
+    get decorations(): ReadonlyArray<Confections_2.IConfectionDecoration> | undefined;
     get effectiveTags(): ReadonlyArray<string>;
     get effectiveUrls(): ReadonlyArray<Model.ICategorizedUrl>;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
     isBarTruffleVersion(): this is RuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    abstract get raw(): AnyConfectionVersion;
-    get version(): AnyConfectionVersion;
+    abstract get raw(): Confections_2.AnyConfectionVersion;
+    get version(): Confections_2.AnyConfectionVersion;
     // (undocumented)
-    protected readonly _version: AnyConfectionVersion;
+    protected readonly _version: Confections_2.AnyConfectionVersion;
     get versionSpec(): ConfectionVersionSpec;
-    get yield(): IConfectionYield;
+    get yield(): Confections_2.IConfectionYield;
 }
 
 // @public
@@ -6166,20 +6158,20 @@ class RuntimeMold implements IRuntimeMold {
 // @public
 class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
     // @internal
-    protected constructor(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon);
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IMoldedBonBon);
     get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     get confectionType(): 'molded-bonbon';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon): Result<RuntimeMoldedBonBon>;
+    static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IMoldedBonBon): Result<RuntimeMoldedBonBon>;
     // @internal
-    protected _createVersion(rawVersion: AnyConfectionVersion): IRuntimeMoldedBonBonVersion;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
+    protected _createVersion(rawVersion: Confections_2.AnyConfectionVersion): IRuntimeMoldedBonBonVersion;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
     get goldenVersion(): IRuntimeMoldedBonBonVersion;
     get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get raw(): IMoldedBonBon;
+    get raw(): Confections_2.IMoldedBonBon;
     get shellChocolate(): IResolvedChocolateSpec;
     get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion>;
 }
@@ -6187,16 +6179,16 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
 // @public
 class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements IRuntimeMoldedBonBonVersion {
     // @internal
-    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: IMoldedBonBonVersion);
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IMoldedBonBonVersion);
     get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     get confection(): IRuntimeMoldedBonBon;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, confectionId: ConfectionId, version: IMoldedBonBonVersion): Result<RuntimeMoldedBonBonVersion>;
+    static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IMoldedBonBonVersion): Result<RuntimeMoldedBonBonVersion>;
     get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get preferredMold(): IResolvedConfectionMoldRef | undefined;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
-    get raw(): IMoldedBonBonVersion;
+    get raw(): Confections_2.IMoldedBonBonVersion;
     get shellChocolate(): IResolvedChocolateSpec;
 }
 
@@ -6262,7 +6254,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
     protected _redoStack: T[];
     removeFillingSlot(slotId: SlotId): Result<void>;
     restoreSnapshot(snapshot: T): Result<void>;
-    scaleToYield(yieldSpec: IConfectionYield): Result<IConfectionYield>;
+    scaleToYield(yieldSpec: Confections_2.IConfectionYield): Result<Confections_2.IConfectionYield>;
     setFillingSlot(slotId: SlotId, choice: {
         type: 'recipe';
         fillingId: FillingId;
@@ -6277,7 +6269,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
     // (undocumented)
     protected _undoStack: T[];
     get versionId(): ConfectionVersionId;
-    get yield(): IConfectionYield;
+    get yield(): Confections_2.IConfectionYield;
 }
 
 // @public
@@ -6358,35 +6350,35 @@ class RuntimeReverseIndex {
 // @public
 class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
     // @internal
-    protected constructor(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle);
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IRolledTruffle);
     get coatings(): IResolvedCoatings | undefined;
     get confectionType(): 'rolled-truffle';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle): Result<RuntimeRolledTruffle>;
+    static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IRolledTruffle): Result<RuntimeRolledTruffle>;
     // @internal
-    protected _createVersion(rawVersion: AnyConfectionVersion): IRuntimeRolledTruffleVersion;
+    protected _createVersion(rawVersion: Confections_2.AnyConfectionVersion): IRuntimeRolledTruffleVersion;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
-    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion>;
     get goldenVersion(): IRuntimeRolledTruffleVersion;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get raw(): IRolledTruffle;
+    get raw(): Confections_2.IRolledTruffle;
     get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion>;
 }
 
 // @public
 class RuntimeRolledTruffleVersion extends RuntimeConfectionVersionBase implements IRuntimeRolledTruffleVersion {
     // @internal
-    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: IRolledTruffleVersion);
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IRolledTruffleVersion);
     get coatings(): IResolvedCoatings | undefined;
     get confection(): IRuntimeRolledTruffle;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, confectionId: ConfectionId, version: IRolledTruffleVersion): Result<RuntimeRolledTruffleVersion>;
+    static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IRolledTruffleVersion): Result<RuntimeRolledTruffleVersion>;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
-    get raw(): IRolledTruffleVersion;
+    get raw(): Confections_2.IRolledTruffleVersion;
 }
 
 // @public
@@ -6454,19 +6446,19 @@ function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number)
 // Warning: (ae-forgotten-export) The symbol "IScaledConfection" needs to be exported by the entry point index.d.ts
 //
 // @public
-function scaleConfection<T extends ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfection<T extends Confections_2.ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionByFactor<T extends ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionByFactor<T extends Confections_2.ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionToCount<T extends ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionToCount<T extends Confections_2.ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionVersionByFactor<T extends ConfectionData>(confection: T, version: AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionVersionByFactor<T extends Confections_2.ConfectionData>(confection: T, version: Confections_2.AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionVersionToCount<T extends ConfectionData>(confection: T, version: AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionVersionToCount<T extends Confections_2.ConfectionData>(confection: T, version: Confections_2.AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6495,10 +6487,10 @@ function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: Fi
 // Warning: (ae-forgotten-export) The symbol "IFrameScaleOptions" needs to be exported by the entry point index.d.ts
 //
 // @public
-function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
+function scaleMoldedBonBonByFrames(confection: Confections_2.IMoldedBonBon, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<Confections_2.IMoldedBonBon>>;
 
 // @public
-function scaleMoldedBonBonVersionByFrames(confection: IMoldedBonBon, version: IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
+function scaleMoldedBonBonVersionByFrames(confection: Confections_2.IMoldedBonBon, version: Confections_2.IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<Confections_2.IMoldedBonBon>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -6532,6 +6524,35 @@ function serializeToJson<T>(data: T, options?: ISerializationOptions): Result<st
 function serializeToYaml<T>(data: T, options?: ISerializationOptions): Result<string>;
 
 declare namespace Session {
+    export {
+        Converters_5 as Converters,
+        isPersistedFillingSession,
+        isPersistedConfectionSession,
+        PERSISTED_SESSION_SCHEMA_VERSION,
+        PersistedSessionSchemaVersion,
+        PersistedSessionType,
+        allPersistedSessionTypes,
+        PersistedSessionStatus,
+        allPersistedSessionStatuses,
+        IPersistedSessionDestination,
+        ISerializedEditingHistory,
+        IPersistedSessionBase,
+        IPersistedFillingSession,
+        IPersistedConfectionSession,
+        AnyPersistedSession,
+        SessionCollectionEntry,
+        SessionCollectionEntryInit,
+        SessionCollectionValidator,
+        SessionCollection,
+        ISessionFileTreeSource,
+        SessionsMergeSource,
+        ISessionLibraryParams,
+        ISessionLibraryAsyncParams,
+        SessionLibrary
+    }
+}
+
+declare namespace Session_2 {
     export {
         EditingSession,
         ConfectionEditingSession,
@@ -6567,35 +6588,6 @@ declare namespace Session {
         IConfectionSaveResult,
         IFillingSessionMap,
         IMoldChangeAnalysis
-    }
-}
-
-declare namespace Session_2 {
-    export {
-        Converters_5 as Converters,
-        isPersistedFillingSession,
-        isPersistedConfectionSession,
-        PERSISTED_SESSION_SCHEMA_VERSION,
-        PersistedSessionSchemaVersion,
-        PersistedSessionType,
-        allPersistedSessionTypes,
-        PersistedSessionStatus,
-        allPersistedSessionStatuses,
-        IPersistedSessionDestination,
-        ISerializedEditingHistory,
-        IPersistedSessionBase,
-        IPersistedFillingSession,
-        IPersistedConfectionSession,
-        AnyPersistedSession,
-        SessionCollectionEntry,
-        SessionCollectionEntryInit,
-        SessionCollectionValidator,
-        SessionCollection,
-        ISessionFileTreeSource,
-        SessionsMergeSource,
-        ISessionLibraryParams,
-        ISessionLibraryAsyncParams,
-        SessionLibrary
     }
 }
 

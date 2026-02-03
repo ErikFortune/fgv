@@ -13,7 +13,7 @@ Contains the complete undo/redo history so the session can be restored to its ex
 ```typescript
 export interface IPersistedConfectionSession extends IPersistedSessionBase 
 ```
-**Extends:** IPersistedSessionBase
+**Extends:** [IPersistedSessionBase](./ts-chocolate.entities.session.ipersistedsessionbase.md)
 
 ## Properties
 
@@ -92,7 +92,7 @@ Confection type discriminator (for type-specific restoration)
 
 </td><td>
 
-ISerializedEditingHistory&lt;AnyProducedConfection&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;AnyProducedConfection&gt;
 
 
 </td><td>

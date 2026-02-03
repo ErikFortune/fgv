@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _rawGoldenVersion: AnyConfectionVersion;
+protected readonly _rawGoldenVersion: Confections.AnyConfectionVersion;
 ```

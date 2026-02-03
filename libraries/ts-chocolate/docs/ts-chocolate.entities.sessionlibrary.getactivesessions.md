@@ -13,7 +13,7 @@ getActiveSessions(): ReadonlyArray<AnyPersistedSession>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;AnyPersistedSession&gt;
+ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
 
 Array of active sessions
 

@@ -9,5 +9,5 @@ Frame dimensions from the golden version
 **Signature:**
 
 ```typescript
-readonly frameDimensions: IFrameDimensions;
+readonly frameDimensions: Confections.IFrameDimensions;
 ```

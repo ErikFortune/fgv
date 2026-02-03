@@ -9,5 +9,5 @@ The [confections library](./ts-chocolate.entities.confections.confectionslibrary
 **Signature:**
 
 ```typescript
-get confections(): ConfectionsLibrary;
+get confections(): Entities.Confections.ConfectionsLibrary;
 ```

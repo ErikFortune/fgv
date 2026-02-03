@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-ISessionLibraryParams
+[ISessionLibraryParams](./ts-chocolate.entities.session.isessionlibraryparams.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ _(Optional)_ Optional [creation parameters](./ts-chocolate.entities.session.ises
 
 **Returns:**
 
-Result&lt;SessionLibrary&gt;
+Result&lt;[SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)<!-- -->&gt;
 
 `Success` with new instance, or `Failure` with error message
 

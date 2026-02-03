@@ -19,13 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import {
-  ConfectionsLibrary,
-  isMoldedBonBon,
-  isBarTruffle,
-  isRolledTruffle,
-  ConfectionCollectionEntryInit
-} from '../../../packlets/entities';
+import { Confections, ConfectionsLibrary } from '../../../packlets/entities';
 import { ConfectionId, SourceId } from '../../../packlets/common';
 
 describe('ConfectionsLibrary', () => {
@@ -84,7 +78,7 @@ describe('ConfectionsLibrary', () => {
     ]
   };
 
-  const testCollection: ConfectionCollectionEntryInit = {
+  const testCollection: Confections.ConfectionCollectionEntryInit = {
     id: 'test' as SourceId,
     isMutable: false,
     items: {
@@ -166,19 +160,19 @@ describe('ConfectionsLibrary', () => {
         expect(library.get('test.test-molded' as ConfectionId)).toSucceedAndSatisfy((confection) => {
           expect(confection.baseId).toBe('test-molded');
           expect(confection.name).toBe('Test Molded Bonbon');
-          expect(isMoldedBonBon(confection)).toBe(true);
+          expect(Confections.isMoldedBonBon(confection)).toBe(true);
         });
       });
 
       test('returns bar truffle for valid ID', () => {
         expect(library.get('test.test-bar' as ConfectionId)).toSucceedAndSatisfy((confection) => {
-          expect(isBarTruffle(confection)).toBe(true);
+          expect(Confections.isBarTruffle(confection)).toBe(true);
         });
       });
 
       test('returns rolled truffle for valid ID', () => {
         expect(library.get('test.test-rolled' as ConfectionId)).toSucceedAndSatisfy((confection) => {
-          expect(isRolledTruffle(confection)).toBe(true);
+          expect(Confections.isRolledTruffle(confection)).toBe(true);
         });
       });
 
@@ -257,7 +251,7 @@ describe('ConfectionsLibrary', () => {
 
     test('molded bonbon has type-specific properties', () => {
       expect(library.get('test.test-molded' as ConfectionId)).toSucceedAndSatisfy((confection) => {
-        if (isMoldedBonBon(confection)) {
+        if (Confections.isMoldedBonBon(confection)) {
           const version = confection.versions[0];
           expect(version.molds).toBeDefined();
           expect(version.shellChocolate).toBeDefined();
@@ -270,7 +264,7 @@ describe('ConfectionsLibrary', () => {
 
     test('bar truffle has type-specific properties', () => {
       expect(library.get('test.test-bar' as ConfectionId)).toSucceedAndSatisfy((confection) => {
-        if (isBarTruffle(confection)) {
+        if (Confections.isBarTruffle(confection)) {
           const version = confection.versions[0];
           expect(version.frameDimensions).toBeDefined();
           expect(version.singleBonBonDimensions).toBeDefined();
@@ -283,7 +277,7 @@ describe('ConfectionsLibrary', () => {
 
     test('rolled truffle has type-specific properties', () => {
       expect(library.get('test.test-rolled' as ConfectionId)).toSucceedAndSatisfy((confection) => {
-        if (isRolledTruffle(confection)) {
+        if (Confections.isRolledTruffle(confection)) {
           const version = confection.versions[0];
           // Rolled truffle optional properties
           expect(version.coatings).toBeUndefined();
@@ -312,15 +306,15 @@ describe('ConfectionsLibrary', () => {
     test('built-in confections have correct types', () => {
       expect(ConfectionsLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
         expect(lib.get('common.dark-dome-bonbon' as ConfectionId)).toSucceedAndSatisfy((c) => {
-          expect(isMoldedBonBon(c)).toBe(true);
+          expect(Confections.isMoldedBonBon(c)).toBe(true);
         });
 
         expect(lib.get('common.dark-bar-truffle' as ConfectionId)).toSucceedAndSatisfy((c) => {
-          expect(isBarTruffle(c)).toBe(true);
+          expect(Confections.isBarTruffle(c)).toBe(true);
         });
 
         expect(lib.get('common.dark-cocoa-truffle' as ConfectionId)).toSucceedAndSatisfy((c) => {
-          expect(isRolledTruffle(c)).toBe(true);
+          expect(Confections.isRolledTruffle(c)).toBe(true);
         });
       });
     });
@@ -333,7 +327,7 @@ describe('ConfectionsLibrary', () => {
   describe('collection merging', () => {
     test('merges multiple collections', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
-      const collection2: ConfectionCollectionEntryInit = {
+      const collection2: Confections.ConfectionCollectionEntryInit = {
         id: 'custom' as SourceId,
         isMutable: true,
         items: {
@@ -360,7 +354,7 @@ describe('ConfectionsLibrary', () => {
 
     test('second collection overwrites items with same collection ID', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
-      const duplicateCollection: ConfectionCollectionEntryInit = {
+      const duplicateCollection: Confections.ConfectionCollectionEntryInit = {
         id: 'test' as SourceId, // Same as testCollection
         isMutable: false,
         items: {
@@ -393,7 +387,7 @@ describe('ConfectionsLibrary', () => {
   describe('validation', () => {
     test('fails for confection with no versions', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
-      const invalidCollection: ConfectionCollectionEntryInit = {
+      const invalidCollection: Confections.ConfectionCollectionEntryInit = {
         id: 'invalid' as SourceId,
         isMutable: false,
         items: {
@@ -416,7 +410,7 @@ describe('ConfectionsLibrary', () => {
 
     test('fails for confection with missing golden version', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
-      const invalidCollection: ConfectionCollectionEntryInit = {
+      const invalidCollection: Confections.ConfectionCollectionEntryInit = {
         id: 'invalid' as SourceId,
         isMutable: false,
         items: {
@@ -445,7 +439,6 @@ describe('ConfectionsLibrary', () => {
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { CryptoUtils } from '@fgv/ts-extras';
-import { IConfectionFileTreeSource } from '../../../packlets/entities';
 
 describe('ConfectionsLibrary.createAsync', () => {
   const TEST_SECRET_NAME = 'test-secret';
@@ -490,7 +483,7 @@ describe('ConfectionsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IConfectionFileTreeSource = {
+    const fileSource: Confections.IConfectionFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: true
     };
@@ -536,7 +529,7 @@ describe('ConfectionsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IConfectionFileTreeSource = {
+    const fileSource: Confections.IConfectionFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };
@@ -589,7 +582,7 @@ describe('ConfectionsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IConfectionFileTreeSource = {
+    const fileSource: Confections.IConfectionFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };

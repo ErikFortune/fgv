@@ -50,7 +50,7 @@ The slot identifier
 
 **Returns:**
 
-Result&lt;[EditingSession](./ts-chocolate.runtime.session.editingsession.md) \| undefined&gt;
+Result&lt;EditingSession \| undefined&gt;
 
 `Success` with the removed filling session, or `undefined` if none existed; or `Failure`
 

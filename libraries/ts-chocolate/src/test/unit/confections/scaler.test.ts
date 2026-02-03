@@ -19,14 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import {
-  IMoldedBonBon,
-  IMoldedBonBonVersion,
-  IBarTruffle,
-  IBarTruffleVersion,
-  IRolledTruffle,
-  IRolledTruffleVersion
-} from '../../../packlets/entities';
+import { Confections } from '../../../packlets/entities';
 import {
   scaleConfection,
   scaleConfectionByFactor,
@@ -49,7 +42,7 @@ describe('Confection Scaler', () => {
   // Test Data
   // ============================================================================
 
-  const moldedBonBonVersion: IMoldedBonBonVersion = {
+  const moldedBonBonVersion: Confections.IMoldedBonBonVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
     yield: {
@@ -67,7 +60,7 @@ describe('Confection Scaler', () => {
     }
   };
 
-  const moldedBonBon: IMoldedBonBon = {
+  const moldedBonBon: Confections.IMoldedBonBon = {
     baseId: 'test-bonbon' as BaseConfectionId,
     confectionType: 'molded-bonbon',
     name: 'Test Bonbon' as ConfectionName,
@@ -75,7 +68,7 @@ describe('Confection Scaler', () => {
     versions: [moldedBonBonVersion]
   };
 
-  const barTruffleVersion: IBarTruffleVersion = {
+  const barTruffleVersion: Confections.IBarTruffleVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
     yield: {
@@ -87,7 +80,7 @@ describe('Confection Scaler', () => {
     singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters }
   };
 
-  const barTruffle: IBarTruffle = {
+  const barTruffle: Confections.IBarTruffle = {
     baseId: 'test-bar' as BaseConfectionId,
     confectionType: 'bar-truffle',
     name: 'Test Bar' as ConfectionName,
@@ -95,7 +88,7 @@ describe('Confection Scaler', () => {
     versions: [barTruffleVersion]
   };
 
-  const rolledTruffleVersion: IRolledTruffleVersion = {
+  const rolledTruffleVersion: Confections.IRolledTruffleVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
     yield: {
@@ -105,7 +98,7 @@ describe('Confection Scaler', () => {
     }
   };
 
-  const rolledTruffle: IRolledTruffle = {
+  const rolledTruffle: Confections.IRolledTruffle = {
     baseId: 'test-rolled' as BaseConfectionId,
     confectionType: 'rolled-truffle',
     name: 'Test Rolled' as ConfectionName,
@@ -241,11 +234,11 @@ describe('Confection Scaler', () => {
     });
 
     test('fails for confection with zero yield count', () => {
-      const zeroYieldVersion: IMoldedBonBonVersion = {
+      const zeroYieldVersion: Confections.IMoldedBonBonVersion = {
         ...moldedBonBonVersion,
         yield: { ...moldedBonBonVersion.yield, count: 0 }
       };
-      const zeroYield: IMoldedBonBon = {
+      const zeroYield: Confections.IMoldedBonBon = {
         ...moldedBonBon,
         versions: [zeroYieldVersion]
       };

@@ -13,5 +13,5 @@ toReadOnly(): IReadOnlyEditingSessionValidator;
 ```
 **Returns:**
 
-[IReadOnlyEditingSessionValidator](./ts-chocolate.runtime.session.ireadonlyeditingsessionvalidator.md)
+IReadOnlyEditingSessionValidator
 

@@ -9,5 +9,5 @@ Raw data typed to IBarTruffle
 **Signature:**
 
 ```typescript
-readonly raw: IBarTruffle;
+readonly raw: Confections.IBarTruffle;
 ```

@@ -194,7 +194,7 @@ _(Optional)_ Optional categorized URLs for external resources (tutorials, videos
 
 </td><td>
 
-ReadonlyArray&lt;AnyConfectionVersion&gt;
+ReadonlyArray&lt;[AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)<!-- -->&gt;
 
 
 </td><td>

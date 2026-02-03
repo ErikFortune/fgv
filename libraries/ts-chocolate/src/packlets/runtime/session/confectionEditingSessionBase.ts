@@ -26,7 +26,7 @@
 import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { FillingId, IngredientId, Measurement, SessionId, SlotId } from '../../common';
-import { AnyConfectionYield, AnyProducedConfection, IConfectionYield } from '../../entities';
+import { Confections, AnyProducedConfection } from '../../entities';
 import { AnyRuntimeConfection, RuntimeProducedConfectionBase } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
@@ -208,7 +208,9 @@ export abstract class ConfectionEditingSessionBase<
    * @returns Success with updated yield, or Failure
    * @public
    */
-  public abstract scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+  public abstract scaleToYield(
+    yieldSpec: Confections.AnyConfectionYield
+  ): Result<Confections.IConfectionYield>;
 
   // ============================================================================
   // Common Editing Methods

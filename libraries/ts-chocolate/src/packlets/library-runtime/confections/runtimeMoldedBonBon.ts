@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, MoldId, ProcedureId } from '../../common';
-import { AnyConfectionVersion, IMoldedBonBon, IMoldedBonBonVersion } from '../../entities';
+import { Confections } from '../../entities';
 import {
   IConfectionContext,
   IResolvedAdditionalChocolate,
@@ -50,14 +50,18 @@ import { RuntimeMoldedBonBonVersion } from './versions';
  * @public
  */
 export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
-  private readonly _moldedBonBon: IMoldedBonBon;
+  private readonly _moldedBonBon: Confections.IMoldedBonBon;
 
   /**
    * Creates a RuntimeMoldedBonBon.
    * Use RuntimeConfection.create() or RuntimeMoldedBonBon.create() instead.
    * @internal
    */
-  protected constructor(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon) {
+  protected constructor(
+    context: IConfectionContext,
+    id: ConfectionId,
+    confection: Confections.IMoldedBonBon
+  ) {
     super(context, id, confection);
     this._moldedBonBon = confection;
   }
@@ -72,7 +76,7 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: IMoldedBonBon
+    confection: Confections.IMoldedBonBon
   ): Result<RuntimeMoldedBonBon> {
     return Success.with(new RuntimeMoldedBonBon(context, id, confection));
   }
@@ -121,11 +125,13 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(rawVersion: AnyConfectionVersion): IRuntimeMoldedBonBonVersion {
+  protected override _createVersion(
+    rawVersion: Confections.AnyConfectionVersion
+  ): IRuntimeMoldedBonBonVersion {
     return RuntimeMoldedBonBonVersion.create(
       this._context,
       this._id,
-      rawVersion as IMoldedBonBonVersion
+      rawVersion as Confections.IMoldedBonBonVersion
     ).orThrow();
   }
 
@@ -177,7 +183,7 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   /**
    * Gets the underlying raw molded bonbon data
    */
-  public get raw(): IMoldedBonBon {
+  public get raw(): Confections.IMoldedBonBon {
     return this._moldedBonBon;
   }
 }

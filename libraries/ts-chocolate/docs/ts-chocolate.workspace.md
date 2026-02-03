@@ -134,7 +134,7 @@ The runtime context providing library resolution and session capabilities. Acces
 
 </td><td>
 
-SessionLibrary
+[SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)
 
 
 </td><td>

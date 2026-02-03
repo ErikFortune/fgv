@@ -11,5 +11,5 @@ Parameters for creating a SessionLibrary instance asynchronously with encryption
 ```typescript
 export type ISessionLibraryAsyncParams = ISubLibraryAsyncParams<SessionLibrary, SessionCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)<!-- -->, [SessionCollectionEntryInit](./ts-chocolate.entities.session.sessioncollectionentryinit.md)
 

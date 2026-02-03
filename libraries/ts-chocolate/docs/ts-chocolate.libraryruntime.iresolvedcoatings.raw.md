@@ -9,5 +9,5 @@ The original raw coatings spec
 **Signature:**
 
 ```typescript
-readonly raw: ICoatings;
+readonly raw: Confections.ICoatings;
 ```

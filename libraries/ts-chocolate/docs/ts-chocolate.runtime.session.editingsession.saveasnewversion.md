@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-[ISaveVersionOptions](./ts-chocolate.runtime.session.isaveversionoptions.md)
+ISaveVersionOptions
 
 
 </td><td>
@@ -50,7 +50,7 @@ Save options including version spec and base weight
 
 **Returns:**
 
-Result&lt;[ISaveResult](./ts-chocolate.runtime.session.isaveresult.md)<!-- -->&gt;
+Result&lt;ISaveResult&gt;
 
 Result with save result containing journal entry and version spec
 

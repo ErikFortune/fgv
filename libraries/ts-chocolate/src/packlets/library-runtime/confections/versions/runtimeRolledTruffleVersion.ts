@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, Helpers } from '../../../common';
-import { IRolledTruffleVersion } from '../../../entities';
+import { Confections } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
@@ -49,7 +49,7 @@ export class RuntimeRolledTruffleVersion
   extends RuntimeConfectionVersionBase
   implements IRuntimeRolledTruffleVersion
 {
-  private readonly _rolledTruffleVersion: IRolledTruffleVersion;
+  private readonly _rolledTruffleVersion: Confections.IRolledTruffleVersion;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
@@ -63,7 +63,7 @@ export class RuntimeRolledTruffleVersion
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: IRolledTruffleVersion
+    version: Confections.IRolledTruffleVersion
   ) {
     super(context, confectionId, version);
     this._rolledTruffleVersion = version;
@@ -79,7 +79,7 @@ export class RuntimeRolledTruffleVersion
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: IRolledTruffleVersion
+    version: Confections.IRolledTruffleVersion
   ): Result<RuntimeRolledTruffleVersion> {
     return Success.with(new RuntimeRolledTruffleVersion(context, confectionId, version));
   }
@@ -142,7 +142,7 @@ export class RuntimeRolledTruffleVersion
   /**
    * Gets the underlying raw rolled truffle version data.
    */
-  public override get raw(): IRolledTruffleVersion {
+  public override get raw(): Confections.IRolledTruffleVersion {
     return this._rolledTruffleVersion;
   }
 }

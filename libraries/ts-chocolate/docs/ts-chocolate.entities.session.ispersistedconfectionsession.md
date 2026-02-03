@@ -37,7 +37,7 @@ session
 
 </td><td>
 
-AnyPersistedSession
+[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Session to check
 
 **Returns:**
 
-session is IPersistedConfectionSession
+session is [IPersistedConfectionSession](./ts-chocolate.entities.session.ipersistedconfectionsession.md)
 
 True if the session is a confection session
 

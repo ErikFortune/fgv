@@ -21,6 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import {
+  Confections,
   allJournalEntryTypes,
   JournalEntryType,
   allResolvedSlotTypes,
@@ -40,7 +41,6 @@ import {
   IResolvedFillingSlot,
   IResolvedIngredientSlot,
   IFillingRecipeVersion,
-  IMoldedBonBonVersion,
   IProducedFilling,
   IProducedMoldedBonBon
 } from '../../../packlets/entities';
@@ -117,16 +117,16 @@ describe('Journal Model', () => {
       produced: producedFilling
     };
 
-    const confectionRecipe: IMoldedBonBonVersion = {
-      versionSpec: 'v1' as IMoldedBonBonVersion['versionSpec'],
+    const confectionRecipe: Confections.IMoldedBonBonVersion = {
+      versionSpec: 'v1' as Confections.IMoldedBonBonVersion['versionSpec'],
       createdDate: '2026-01-15',
       yield: { count: 24 },
       molds: {
-        preferredId: 'mold-1' as IMoldedBonBonVersion['molds']['preferredId'],
+        preferredId: 'mold-1' as Confections.IMoldedBonBonVersion['molds']['preferredId'],
         options: []
       },
       shellChocolate: {
-        ids: ['choc-1' as IMoldedBonBonVersion['shellChocolate']['ids'][number]]
+        ids: ['choc-1' as Confections.IMoldedBonBonVersion['shellChocolate']['ids'][number]]
       }
     };
 

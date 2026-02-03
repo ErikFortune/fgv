@@ -9,5 +9,5 @@ Frame dimensions for ganache slab
 **Signature:**
 
 ```typescript
-readonly frameDimensions: IFrameDimensions;
+readonly frameDimensions: Confections.IFrameDimensions;
 ```

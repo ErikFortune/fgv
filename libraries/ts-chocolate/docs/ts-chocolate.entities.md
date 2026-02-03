@@ -1694,67 +1694,12 @@ Union of resolved filling slot types. Discriminated on the `slotType` field.
 </td></tr>
 <tr><td>
 
-[ConfectionCollection](./ts-chocolate.entities.confectioncollection.md)
-
-
-</td><td>
-
-Type for the collections in a ConfectionsLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionCollectionEntry](./ts-chocolate.entities.confectioncollectionentry.md)
-
-
-</td><td>
-
-A single entry in a confections collection.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionCollectionEntryInit](./ts-chocolate.entities.confectioncollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a ConfectionsLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionCollectionValidator](./ts-chocolate.entities.confectioncollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for ConfectionsLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
 [ConfectionData](./ts-chocolate.entities.confectiondata.md)
 
 
 </td><td>
 
 Discriminated union of all confection data types. Use this when working with raw confection data.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionsMergeSource](./ts-chocolate.entities.confectionsmergesource.md)
-
-
-</td><td>
-
-Specifies a confections library to merge into a new library.
 
 
 </td></tr>
@@ -1881,45 +1826,12 @@ Coating specification for rolled truffles. Uses IIdsWithPreferred pattern - `ids
 </td></tr>
 <tr><td>
 
-[IConfectionFileTreeSource](./ts-chocolate.entities.iconfectionfiletreesource.md)
-
-
-</td><td>
-
-File tree source for confection data.
-
-
-</td></tr>
-<tr><td>
-
 [IConfectionMoldRef](./ts-chocolate.entities.iconfectionmoldref.md)
 
 
 </td><td>
 
 Reference to a mold used for a confection. Satisfies IHasId for use with IOptionsWithPreferred.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionsLibraryAsyncParams](./ts-chocolate.entities.iconfectionslibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a ConfectionsLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionsLibraryParams](./ts-chocolate.entities.iconfectionslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a ConfectionsLibrary instance synchronously.
 
 
 </td></tr>

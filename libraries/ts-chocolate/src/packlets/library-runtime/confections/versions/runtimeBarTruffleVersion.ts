@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, Helpers } from '../../../common';
-import { IBarTruffleVersion, IBonBonDimensions, IFrameDimensions } from '../../../entities';
+import { Confections } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
@@ -48,7 +48,7 @@ export class RuntimeBarTruffleVersion
   extends RuntimeConfectionVersionBase
   implements IRuntimeBarTruffleVersion
 {
-  private readonly _barTruffleVersion: IBarTruffleVersion;
+  private readonly _barTruffleVersion: Confections.IBarTruffleVersion;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
@@ -61,7 +61,7 @@ export class RuntimeBarTruffleVersion
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: IBarTruffleVersion
+    version: Confections.IBarTruffleVersion
   ) {
     super(context, confectionId, version);
     this._barTruffleVersion = version;
@@ -77,7 +77,7 @@ export class RuntimeBarTruffleVersion
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: IBarTruffleVersion
+    version: Confections.IBarTruffleVersion
   ): Result<RuntimeBarTruffleVersion> {
     return Success.with(new RuntimeBarTruffleVersion(context, confectionId, version));
   }
@@ -100,14 +100,14 @@ export class RuntimeBarTruffleVersion
   /**
    * Frame dimensions for ganache slab.
    */
-  public get frameDimensions(): IFrameDimensions {
+  public get frameDimensions(): Confections.IFrameDimensions {
     return this._barTruffleVersion.frameDimensions;
   }
 
   /**
    * Single bonbon dimensions for cutting.
    */
-  public get singleBonBonDimensions(): IBonBonDimensions {
+  public get singleBonBonDimensions(): Confections.IBonBonDimensions {
     return this._barTruffleVersion.singleBonBonDimensions;
   }
 
@@ -143,7 +143,7 @@ export class RuntimeBarTruffleVersion
   /**
    * Gets the underlying raw bar truffle version data.
    */
-  public override get raw(): IBarTruffleVersion {
+  public override get raw(): Confections.IBarTruffleVersion {
     return this._barTruffleVersion;
   }
 }

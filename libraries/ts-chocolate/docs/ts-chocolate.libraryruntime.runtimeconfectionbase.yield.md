@@ -9,5 +9,5 @@ Yield specification from the golden version
 **Signature:**
 
 ```typescript
-get yield(): IConfectionYield;
+get yield(): Confections.IConfectionYield;
 ```

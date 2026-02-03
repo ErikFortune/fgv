@@ -50,7 +50,7 @@ The composite session ID to remove
 
 **Returns:**
 
-Result&lt;AnyPersistedSession&gt;
+Result&lt;[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
 
 Success with the removed session, or Failure if not found or remove fails
 

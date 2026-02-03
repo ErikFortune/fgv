@@ -9,5 +9,5 @@ Initial yield specification (defaults to golden version yield)
 **Signature:**
 
 ```typescript
-readonly initialYield?: AnyConfectionYield;
+readonly initialYield?: Confections.AnyConfectionYield;
 ```

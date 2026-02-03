@@ -26,14 +26,7 @@
 import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
-import {
-  AnyConfectionYield,
-  IConfectionYield,
-  IMoldedBonBonYield,
-  isMoldedBonBonYield,
-  IProducedMoldedBonBon,
-  ISerializedEditingHistory
-} from '../../entities';
+import { Confections, IProducedMoldedBonBon, ISerializedEditingHistory } from '../../entities';
 import { RuntimeMoldedBonBon, IRuntimeMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
@@ -135,7 +128,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with computed yield, or Failure if invalid
    * @public
    */
-  public setFrames(frames: number, bufferPercentage: number = 0.1): Result<IMoldedBonBonYield> {
+  public setFrames(frames: number, bufferPercentage: number = 0.1): Result<Confections.IMoldedBonBonYield> {
     if (frames <= 0) {
       return fail(`Frames must be positive: ${frames}`);
     }
@@ -146,7 +139,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     // Compute count from frames and mold
     const count = frames * this._currentMold.cavityCount;
 
-    const yieldSpec: IMoldedBonBonYield = {
+    const yieldSpec: Confections.IMoldedBonBonYield = {
       yieldType: 'frames',
       frames,
       bufferPercentage,
@@ -166,12 +159,14 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with updated yield, or Failure
    * @public
    */
-  public override scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield> {
+  public override scaleToYield(
+    yieldSpec: Confections.AnyConfectionYield
+  ): Result<Confections.IConfectionYield> {
     // Extract frame-based parameters
     let frames: number;
     let bufferPercentage: number;
 
-    if (isMoldedBonBonYield(yieldSpec)) {
+    if (Confections.isMoldedBonBonYield(yieldSpec)) {
       frames = yieldSpec.frames;
       bufferPercentage = yieldSpec.bufferPercentage;
     } else {
@@ -181,7 +176,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     }
 
     // Update produced confection yield
-    const computedYield: IMoldedBonBonYield = {
+    const computedYield: Confections.IMoldedBonBonYield = {
       yieldType: 'frames',
       frames,
       bufferPercentage,
@@ -316,7 +311,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     let frames: number;
     let bufferPercentage: number;
 
-    if (isMoldedBonBonYield(currentYield)) {
+    if (Confections.isMoldedBonBonYield(currentYield)) {
       frames = currentYield.frames;
       bufferPercentage = currentYield.bufferPercentage;
     } else {

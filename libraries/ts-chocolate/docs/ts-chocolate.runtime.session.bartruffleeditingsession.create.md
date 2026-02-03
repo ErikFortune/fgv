@@ -69,7 +69,7 @@ params
 
 </td><td>
 
-[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+IConfectionEditingSessionParams
 
 
 </td><td>
@@ -82,7 +82,7 @@ _(Optional)_ Optional session parameters
 
 **Returns:**
 
-Result&lt;[BarTruffleEditingSession](./ts-chocolate.runtime.session.bartruffleeditingsession.md)<!-- -->&gt;
+Result&lt;BarTruffleEditingSession&gt;
 
 Success with BarTruffleEditingSession, or Failure
 

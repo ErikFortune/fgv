@@ -89,7 +89,7 @@ _(Optional)_ The original coating ingredient ID when the session started
 
 </td><td>
 
-[ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
+ConfectionSelectionStatus
 
 
 </td><td>

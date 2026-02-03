@@ -9,5 +9,5 @@ Raw version typed to IBarTruffleVersion
 **Signature:**
 
 ```typescript
-readonly raw: IBarTruffleVersion;
+readonly raw: Confections.IBarTruffleVersion;
 ```

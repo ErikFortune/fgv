@@ -112,7 +112,7 @@ Date this version was created (ISO 8601 format).
 
 </td><td>
 
-ReadonlyArray&lt;IConfectionDecoration&gt;
+ReadonlyArray&lt;Confections.IConfectionDecoration&gt;
 
 
 </td><td>
@@ -175,7 +175,7 @@ Effective URLs for this version (base confection URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt;
+ReadonlyArray&lt;IResolvedFillingSlot&gt;
 
 
 </td><td>
@@ -238,7 +238,7 @@ _(Optional)_ Resolved procedures for this version. Undefined if the version has 
 
 </td><td>
 
-AnyConfectionVersion
+[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>
@@ -259,7 +259,7 @@ Gets the underlying raw version data.
 
 </td><td>
 
-AnyConfectionVersion
+[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>
@@ -301,7 +301,7 @@ Version specifier for this version.
 
 </td><td>
 
-IConfectionYield
+Confections.IConfectionYield
 
 
 </td><td>

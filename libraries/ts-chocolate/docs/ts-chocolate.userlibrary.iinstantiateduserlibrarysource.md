@@ -110,7 +110,7 @@ _(Optional)_ Pre-built mold inventory library
 
 </td><td>
 
-SessionLibrary
+[SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)
 
 
 </td><td>

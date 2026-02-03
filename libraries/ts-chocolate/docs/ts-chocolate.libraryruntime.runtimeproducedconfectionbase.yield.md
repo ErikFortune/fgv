@@ -9,5 +9,5 @@ Gets the yield specification.
 **Signature:**
 
 ```typescript
-get yield(): IConfectionYield;
+get yield(): Confections.IConfectionYield;
 ```

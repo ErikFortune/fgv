@@ -91,7 +91,7 @@ Confection type (discriminator)
 
 </td><td>
 
-ReadonlyArray&lt;IConfectionDecoration&gt;
+ReadonlyArray&lt;Confections.IConfectionDecoration&gt;
 
 
 </td><td>
@@ -175,7 +175,7 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt;
+ReadonlyArray&lt;IResolvedFillingSlot&gt;
 
 
 </td><td>
@@ -301,7 +301,7 @@ _(Optional)_ Resolved procedures from the golden version
 
 </td><td>
 
-ConfectionData
+Confections.ConfectionData
 
 
 </td><td>
@@ -406,7 +406,7 @@ All versions - resolved.
 
 </td><td>
 
-IConfectionYield
+Confections.IConfectionYield
 
 
 </td><td>

@@ -9,7 +9,7 @@ Type guard to check if a confection is a molded bonbon for frame-based scaling
 **Signature:**
 
 ```typescript
-export declare function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon;
+export declare function canScaleByFrames(confection: Confections.ConfectionData): confection is Confections.IMoldedBonBon;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ confection
 
 </td><td>
 
-ConfectionData
+Confections.ConfectionData
 
 
 </td><td>
@@ -50,7 +50,7 @@ The confection to check
 
 **Returns:**
 
-confection is IMoldedBonBon
+confection is Confections.IMoldedBonBon
 
 True if the confection is a molded bonbon
 

@@ -9,7 +9,7 @@ Sets frames and buffer percentage for yield calculation. Count is computed as: f
 **Signature:**
 
 ```typescript
-setFrames(frames: number, bufferPercentage?: number): Result<IMoldedBonBonYield>;
+setFrames(frames: number, bufferPercentage?: number): Result<Confections.IMoldedBonBonYield>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Buffer overfill (e.g., 0.1 for 10%)
 
 **Returns:**
 
-Result&lt;IMoldedBonBonYield&gt;
+Result&lt;Confections.IMoldedBonBonYield&gt;
 
 Success with computed yield, or Failure if invalid
 

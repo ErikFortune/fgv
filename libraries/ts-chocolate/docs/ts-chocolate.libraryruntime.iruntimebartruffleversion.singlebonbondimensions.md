@@ -9,5 +9,5 @@ Single bonbon dimensions for cutting
 **Signature:**
 
 ```typescript
-readonly singleBonBonDimensions: IBonBonDimensions;
+readonly singleBonBonDimensions: Confections.IBonBonDimensions;
 ```

@@ -42,7 +42,7 @@ import {
   BaseTaskId,
   BaseConfectionId
 } from '../common';
-import { ConfectionData, ConfectionsLibrary } from '../entities';
+import * as Entities from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
 import { IFillingRecipe, FillingsLibrary } from '../entities';
 import { Converters as EntityConverters } from '../entities';
@@ -99,7 +99,7 @@ export interface IInstantiatedLibrarySource {
   /**
    * Pre-built confections library
    */
-  readonly confections?: ConfectionsLibrary;
+  readonly confections?: Entities.Confections.ConfectionsLibrary;
 }
 
 /**
@@ -166,7 +166,7 @@ export class ChocolateLibrary {
   private readonly _molds: MoldsLibrary;
   private readonly _procedures: ProceduresLibrary;
   private readonly _tasks: TasksLibrary;
-  private readonly _confections: ConfectionsLibrary;
+  private readonly _confections: Entities.Confections.ConfectionsLibrary;
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -179,7 +179,7 @@ export class ChocolateLibrary {
     molds: MoldsLibrary,
     procedures: ProceduresLibrary,
     tasks: TasksLibrary,
-    confections: ConfectionsLibrary,
+    confections: Entities.Confections.ConfectionsLibrary,
     logger?: Logging.ILogger
   ) {
     /* c8 ignore next - default logger branch tested implicitly via create() */
@@ -242,7 +242,7 @@ export class ChocolateLibrary {
       logger
     }).report(logger);
 
-    const confectionsResult = ConfectionsLibrary.create({
+    const confectionsResult = Entities.Confections.ConfectionsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'confections'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'confections'),
       mergeLibraries: params.libraries?.confections,
@@ -328,7 +328,7 @@ export class ChocolateLibrary {
   /**
    * The {@link Entities.Confections.ConfectionsLibrary | confections library}.
    */
-  public get confections(): ConfectionsLibrary {
+  public get confections(): Entities.Confections.ConfectionsLibrary {
     return this._confections;
   }
 
@@ -427,7 +427,7 @@ export class ChocolateLibrary {
    * @param id - The {@link ConfectionId | id} of the confection to retrieve.
    * @returns `Success` with confection data, or `Failure` if not found
    */
-  public getConfection(id: ConfectionId): Result<ConfectionData> {
+  public getConfection(id: ConfectionId): Result<Entities.Confections.ConfectionData> {
     return this._confections.get(id);
   }
 
@@ -573,7 +573,7 @@ export class ChocolateLibrary {
    */
   public getEditableConfections(
     collectionId: SourceId
-  ): Result<EditableCollection<ConfectionData, BaseConfectionId>> {
+  ): Result<EditableCollection<Entities.Confections.ConfectionData, BaseConfectionId>> {
     return EditableCollection.fromLibrary(
       this.confections,
       collectionId,

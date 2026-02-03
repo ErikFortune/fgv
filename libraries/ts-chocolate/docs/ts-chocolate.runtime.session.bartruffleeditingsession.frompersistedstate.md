@@ -53,7 +53,7 @@ history
 
 </td><td>
 
-ISerializedEditingHistory&lt;IProducedBarTruffle&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;IProducedBarTruffle&gt;
 
 
 </td><td>
@@ -85,7 +85,7 @@ params
 
 </td><td>
 
-[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+IConfectionEditingSessionParams
 
 
 </td><td>
@@ -98,7 +98,7 @@ _(Optional)_ Optional session parameters
 
 **Returns:**
 
-Result&lt;[BarTruffleEditingSession](./ts-chocolate.runtime.session.bartruffleeditingsession.md)<!-- -->&gt;
+Result&lt;BarTruffleEditingSession&gt;
 
 Success with restored session, or Failure
 

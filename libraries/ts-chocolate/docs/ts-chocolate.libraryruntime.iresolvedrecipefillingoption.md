@@ -110,7 +110,7 @@ _(Optional)_ Optional notes specific to this filling option
 
 </td><td>
 
-IRecipeFillingOption
+Confections.IRecipeFillingOption
 
 
 </td><td>

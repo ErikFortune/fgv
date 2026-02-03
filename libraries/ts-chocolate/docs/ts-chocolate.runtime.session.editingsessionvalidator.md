@@ -13,7 +13,7 @@ This allows consumers to use plain strings and numbers instead of IngredientId a
 ```typescript
 export declare class EditingSessionValidator implements IEditingSessionValidator 
 ```
-**Implements:** [IEditingSessionValidator](./ts-chocolate.runtime.session.ieditingsessionvalidator.md)
+**Implements:** IEditingSessionValidator
 
 ## Example
 
@@ -96,7 +96,7 @@ Description
 
 </td><td>
 
-[EditingSession](./ts-chocolate.runtime.session.editingsession.md)
+EditingSession
 
 
 </td><td>

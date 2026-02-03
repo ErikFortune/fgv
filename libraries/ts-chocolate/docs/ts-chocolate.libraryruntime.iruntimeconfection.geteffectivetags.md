@@ -9,7 +9,7 @@ Gets effective tags for a specific version.
 **Signature:**
 
 ```typescript
-getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
+getEffectiveTags(version?: Confections.AnyConfectionVersion): ReadonlyArray<string>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-AnyConfectionVersion
+[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>

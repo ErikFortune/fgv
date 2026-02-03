@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ConfectionsLibrary
+[Entities.Confections.ConfectionsLibrary](./ts-chocolate.entities.confectionslibrary.md)
 
 
 </td><td>

@@ -9,5 +9,5 @@ Single bonbon dimensions from the golden version
 **Signature:**
 
 ```typescript
-readonly singleBonBonDimensions: IBonBonDimensions;
+readonly singleBonBonDimensions: Confections.IBonBonDimensions;
 ```

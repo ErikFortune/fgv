@@ -11,5 +11,5 @@ Initialization type for a SessionLibrary collection entry.
 ```typescript
 export type SessionCollectionEntryInit = SubLibraryEntryInit<SessionBaseId, AnyPersistedSession>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)
 

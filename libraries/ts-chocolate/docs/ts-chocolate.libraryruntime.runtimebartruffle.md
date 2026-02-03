@@ -96,7 +96,7 @@ Resolved enrobing chocolate specification (from golden version, optional).
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
 
 
 </td><td>
@@ -117,7 +117,7 @@ Resolved filling slots from the golden version.
 
 </td><td>
 
-IFrameDimensions
+Confections.IFrameDimensions
 
 
 </td><td>
@@ -180,7 +180,7 @@ Resolved procedures from the golden version.
 
 </td><td>
 
-IBarTruffle
+Confections.IBarTruffle
 
 
 </td><td>
@@ -201,7 +201,7 @@ Gets the underlying raw bar truffle data
 
 </td><td>
 
-IBonBonDimensions
+Confections.IBonBonDimensions
 
 
 </td><td>

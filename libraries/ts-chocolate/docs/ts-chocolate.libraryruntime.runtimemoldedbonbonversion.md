@@ -159,7 +159,7 @@ Gets the preferred procedure, falling back to first available.
 
 </td><td>
 
-IMoldedBonBonVersion
+Confections.IMoldedBonBonVersion
 
 
 </td><td>

@@ -9,5 +9,5 @@ The confections library for accessing confection data. Use `.get(id)` for ID-bas
 **Signature:**
 
 ```typescript
-readonly confections: ConfectionsLibrary;
+readonly confections: Confections.ConfectionsLibrary;
 ```

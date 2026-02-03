@@ -11,7 +11,7 @@ Full interface for EditingSessionValidator. Provides validated mutating operatio
 ```typescript
 export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator 
 ```
-**Extends:** [IReadOnlyEditingSessionValidator](./ts-chocolate.runtime.session.ireadonlyeditingsessionvalidator.md)
+**Extends:** IReadOnlyEditingSessionValidator
 
 ## Methods
 

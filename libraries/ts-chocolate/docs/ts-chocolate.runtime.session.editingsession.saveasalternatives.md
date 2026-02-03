@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-[ISaveAlternativesOptions](./ts-chocolate.runtime.session.isavealternativesoptions.md)
+ISaveAlternativesOptions
 
 
 </td><td>
@@ -50,7 +50,7 @@ Save options including version spec
 
 **Returns:**
 
-Result&lt;[ISaveResult](./ts-chocolate.runtime.session.isaveresult.md)<!-- -->&gt;
+Result&lt;ISaveResult&gt;
 
 Result with save result containing journal entry
 

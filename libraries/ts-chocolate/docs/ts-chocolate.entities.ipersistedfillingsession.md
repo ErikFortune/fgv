@@ -13,7 +13,7 @@ Contains the complete undo/redo history so the session can be restored to its ex
 ```typescript
 export interface IPersistedFillingSession extends IPersistedSessionBase 
 ```
-**Extends:** IPersistedSessionBase
+**Extends:** [IPersistedSessionBase](./ts-chocolate.entities.session.ipersistedsessionbase.md)
 
 ## Properties
 
@@ -50,7 +50,7 @@ Description
 
 </td><td>
 
-ISerializedEditingHistory&lt;IProducedFilling&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;IProducedFilling&gt;
 
 
 </td><td>

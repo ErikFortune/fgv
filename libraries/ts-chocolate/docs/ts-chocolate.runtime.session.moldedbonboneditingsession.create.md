@@ -69,7 +69,7 @@ params
 
 </td><td>
 
-[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+IConfectionEditingSessionParams
 
 
 </td><td>
@@ -82,7 +82,7 @@ _(Optional)_ Optional session parameters
 
 **Returns:**
 
-Result&lt;[MoldedBonBonEditingSession](./ts-chocolate.runtime.session.moldedbonboneditingsession.md)<!-- -->&gt;
+Result&lt;MoldedBonBonEditingSession&gt;
 
 Success with MoldedBonBonEditingSession, or Failure
 

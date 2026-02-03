@@ -66,7 +66,7 @@ _(Optional)_ Optional initial scale factor (default: 1.0)
 
 **Returns:**
 
-Result&lt;[EditingSession](./ts-chocolate.runtime.session.editingsession.md)<!-- -->&gt;
+Result&lt;EditingSession&gt;
 
 Result with new EditingSession or error
 

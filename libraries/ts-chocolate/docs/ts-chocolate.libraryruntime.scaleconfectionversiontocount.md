@@ -9,7 +9,7 @@ Scales a confection version to a target count.
 **Signature:**
 
 ```typescript
-export declare function scaleConfectionVersionToCount<T extends ConfectionData>(confection: T, version: AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+export declare function scaleConfectionVersionToCount<T extends Confections.ConfectionData>(confection: T, version: Confections.AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ version
 
 </td><td>
 
-AnyConfectionVersion
+[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Gets a confection by ID.
 **Signature:**
 
 ```typescript
-getConfection(id: ConfectionId): Result<ConfectionData>;
+getConfection(id: ConfectionId): Result<Confections.ConfectionData>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The confection ID
 
 **Returns:**
 
-Result&lt;ConfectionData&gt;
+Result&lt;Confections.ConfectionData&gt;
 
 Success with confection data, or Failure if not found
 

@@ -69,7 +69,7 @@ params
 
 </td><td>
 
-[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+IConfectionEditingSessionParams
 
 
 </td><td>
@@ -82,7 +82,7 @@ _(Optional)_ Optional session parameters (sessionId, initialYield)
 
 **Returns:**
 
-Result&lt;[AnyConfectionEditingSession](./ts-chocolate.runtime.session.anyconfectioneditingsession.md)<!-- -->&gt;
+Result&lt;AnyConfectionEditingSession&gt;
 
 Success with type-specific session, or Failure
 

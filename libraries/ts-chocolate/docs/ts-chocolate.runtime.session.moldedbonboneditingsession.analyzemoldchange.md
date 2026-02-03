@@ -50,7 +50,7 @@ The new mold ID
 
 **Returns:**
 
-Result&lt;[IMoldChangeAnalysis](./ts-chocolate.runtime.session.imoldchangeanalysis.md)<!-- -->&gt;
+Result&lt;IMoldChangeAnalysis&gt;
 
 Success with analysis, or Failure if mold not found
 

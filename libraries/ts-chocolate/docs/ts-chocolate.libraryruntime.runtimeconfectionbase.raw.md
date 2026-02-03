@@ -9,5 +9,5 @@ Gets the underlying raw confection data (read-only)
 **Signature:**
 
 ```typescript
-abstract get raw(): ConfectionData;
+abstract get raw(): Confections.ConfectionData;
 ```

@@ -89,7 +89,7 @@ The currently selected procedure ID
 
 </td><td>
 
-[ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
+ConfectionSelectionStatus
 
 
 </td><td>

@@ -66,7 +66,7 @@ Creation options including target collection
 
 **Returns:**
 
-Result&lt;IPersistedFillingSession&gt;
+Result&lt;[IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)<!-- -->&gt;
 
 Result with the created persisted session
 

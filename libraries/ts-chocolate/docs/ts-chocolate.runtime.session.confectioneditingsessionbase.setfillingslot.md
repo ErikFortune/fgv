@@ -72,7 +72,7 @@ Recipe or ingredient choice
 
 **Returns:**
 
-Result&lt;[EditingSession](./ts-chocolate.runtime.session.editingsession.md) \| undefined&gt;
+Result&lt;EditingSession \| undefined&gt;
 
 `Success` with the new or updated filling session, or `undefined` for ingredient slots; or `Failure`
 

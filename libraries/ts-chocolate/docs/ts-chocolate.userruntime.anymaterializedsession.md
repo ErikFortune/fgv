@@ -11,5 +11,3 @@ Union type for any materialized editing session.
 ```typescript
 export type AnyMaterializedSession = Session.EditingSession | Session.AnyConfectionEditingSession;
 ```
-**References:** [Session.EditingSession](./ts-chocolate.runtime.session.editingsession.md)<!-- -->, [Session.AnyConfectionEditingSession](./ts-chocolate.runtime.session.anyconfectioneditingsession.md)
-

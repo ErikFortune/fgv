@@ -11,5 +11,5 @@ Parameters for creating a ConfectionsLibrary instance asynchronously with encryp
 ```typescript
 export type IConfectionsLibraryAsyncParams = ISubLibraryAsyncParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [ConfectionsLibrary](./ts-chocolate.entities.confectionslibrary.md)
 

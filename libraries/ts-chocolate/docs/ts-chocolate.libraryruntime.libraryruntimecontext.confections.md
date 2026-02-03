@@ -9,5 +9,5 @@ The confections library for accessing confection data.
 **Signature:**
 
 ```typescript
-get confections(): ConfectionsLibrary;
+get confections(): Confections.ConfectionsLibrary;
 ```

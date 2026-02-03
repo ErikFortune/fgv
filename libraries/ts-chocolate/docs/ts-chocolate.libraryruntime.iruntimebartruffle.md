@@ -90,7 +90,7 @@ _(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 
 </td><td>
 
-IFrameDimensions
+Confections.IFrameDimensions
 
 
 </td><td>
@@ -132,7 +132,7 @@ Golden version typed as IRuntimeBarTruffleVersion
 
 </td><td>
 
-IBarTruffle
+Confections.IBarTruffle
 
 
 </td><td>
@@ -153,7 +153,7 @@ Raw data typed to IBarTruffle
 
 </td><td>
 
-IBonBonDimensions
+Confections.IBonBonDimensions
 
 
 </td><td>

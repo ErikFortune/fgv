@@ -11,5 +11,3 @@ Union type of all confection editing session types. Use this for type-safe handl
 ```typescript
 export type AnyConfectionEditingSession = MoldedBonBonEditingSession | BarTruffleEditingSession | RolledTruffleEditingSession;
 ```
-**References:** [MoldedBonBonEditingSession](./ts-chocolate.runtime.session.moldedbonboneditingsession.md)<!-- -->, [BarTruffleEditingSession](./ts-chocolate.runtime.session.bartruffleeditingsession.md)<!-- -->, [RolledTruffleEditingSession](./ts-chocolate.runtime.session.rolledtruffleeditingsession.md)
-

@@ -50,7 +50,7 @@ Original state when editing started (for change detection on restore)
 
 **Returns:**
 
-ISerializedEditingHistory&lt;IProducedFilling&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;IProducedFilling&gt;
 
 Serialized editing history
 

@@ -132,7 +132,7 @@ Gets the preferred procedure, falling back to first available
 
 </td><td>
 
-IRolledTruffleVersion
+Confections.IRolledTruffleVersion
 
 
 </td><td>

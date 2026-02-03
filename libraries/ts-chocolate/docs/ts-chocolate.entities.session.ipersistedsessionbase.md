@@ -89,7 +89,7 @@ ISO 8601 timestamp when session was created
 
 </td><td>
 
-IPersistedSessionDestination
+[IPersistedSessionDestination](./ts-chocolate.entities.session.ipersistedsessiondestination.md)
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Optional categorized notes
 
 </td><td>
 
-PersistedSessionType
+[PersistedSessionType](./ts-chocolate.entities.session.persistedsessiontype.md)
 
 
 </td><td>
@@ -173,7 +173,7 @@ Session type discriminator
 
 </td><td>
 
-PersistedSessionStatus
+[PersistedSessionStatus](./ts-chocolate.entities.session.persistedsessionstatus.md)
 
 
 </td><td>

@@ -9,5 +9,5 @@ Gets the underlying raw version data (read-only)
 **Signature:**
 
 ```typescript
-abstract get raw(): AnyConfectionVersion;
+abstract get raw(): Confections.AnyConfectionVersion;
 ```

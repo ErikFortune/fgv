@@ -11,5 +11,5 @@ A single entry in a session collection.
 ```typescript
 export type SessionCollectionEntry = SubLibraryCollectionEntry<SessionBaseId, AnyPersistedSession>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)
 

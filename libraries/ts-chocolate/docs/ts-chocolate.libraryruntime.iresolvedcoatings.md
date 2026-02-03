@@ -89,7 +89,7 @@ _(Optional)_ The preferred/default coating (resolved ingredient)
 
 </td><td>
 
-ICoatings
+Confections.ICoatings
 
 
 </td><td>

@@ -9,7 +9,7 @@ Scales a confection to a target count using the golden version.
 **Signature:**
 
 ```typescript
-export declare function scaleConfectionToCount<T extends ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+export declare function scaleConfectionToCount<T extends Confections.ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 ```
 
 ## Parameters

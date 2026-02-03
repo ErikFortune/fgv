@@ -50,7 +50,7 @@ The session ID to look up
 
 **Returns:**
 
-Result&lt;AnyPersistedSession&gt;
+Result&lt;[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
 
 Success with the session, or Failure if not found
 

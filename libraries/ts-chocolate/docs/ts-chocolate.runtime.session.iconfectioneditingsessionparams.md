@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-AnyConfectionYield
+Confections.AnyConfectionYield
 
 
 </td><td>

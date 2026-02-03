@@ -9,5 +9,5 @@ Gets the underlying raw bar truffle version data.
 **Signature:**
 
 ```typescript
-get raw(): IBarTruffleVersion;
+get raw(): Confections.IBarTruffleVersion;
 ```

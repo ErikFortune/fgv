@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { Converters, isMoldedBonBon, isBarTruffle, isRolledTruffle } from '../../../packlets/entities';
+import { Converters, Confections } from '../../../packlets/entities';
 
 const ConfectionConverters = Converters.Confections;
 
@@ -453,20 +453,20 @@ describe('Confections converters', () => {
   describe('confectionData (discriminated union)', () => {
     test('converts molded bonbon', () => {
       expect(ConfectionConverters.confectionData.convert(validMoldedBonBon)).toSucceedAndSatisfy((result) => {
-        expect(isMoldedBonBon(result)).toBe(true);
+        expect(Confections.isMoldedBonBon(result)).toBe(true);
       });
     });
 
     test('converts bar truffle', () => {
       expect(ConfectionConverters.confectionData.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
-        expect(isBarTruffle(result)).toBe(true);
+        expect(Confections.isBarTruffle(result)).toBe(true);
       });
     });
 
     test('converts rolled truffle', () => {
       expect(ConfectionConverters.confectionData.convert(validRolledTruffle)).toSucceedAndSatisfy(
         (result) => {
-          expect(isRolledTruffle(result)).toBe(true);
+          expect(Confections.isRolledTruffle(result)).toBe(true);
         }
       );
     });

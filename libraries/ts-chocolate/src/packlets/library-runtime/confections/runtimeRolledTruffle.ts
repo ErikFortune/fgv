@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
-import { AnyConfectionVersion, IRolledTruffle, IRolledTruffleVersion } from '../../entities';
+import { Confections } from '../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
@@ -49,14 +49,18 @@ import { RuntimeRolledTruffleVersion } from './versions';
  * @public
  */
 export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
-  private readonly _rolledTruffle: IRolledTruffle;
+  private readonly _rolledTruffle: Confections.IRolledTruffle;
 
   /**
    * Creates a RuntimeRolledTruffle.
    * Use RuntimeConfection.create() or RuntimeRolledTruffle.create() instead.
    * @internal
    */
-  protected constructor(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle) {
+  protected constructor(
+    context: IConfectionContext,
+    id: ConfectionId,
+    confection: Confections.IRolledTruffle
+  ) {
     super(context, id, confection);
     this._rolledTruffle = confection;
   }
@@ -71,7 +75,7 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: IRolledTruffle
+    confection: Confections.IRolledTruffle
   ): Result<RuntimeRolledTruffle> {
     return Success.with(new RuntimeRolledTruffle(context, id, confection));
   }
@@ -120,11 +124,13 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(rawVersion: AnyConfectionVersion): IRuntimeRolledTruffleVersion {
+  protected override _createVersion(
+    rawVersion: Confections.AnyConfectionVersion
+  ): IRuntimeRolledTruffleVersion {
     return RuntimeRolledTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as IRolledTruffleVersion
+      rawVersion as Confections.IRolledTruffleVersion
     ).orThrow();
   }
 
@@ -169,7 +175,7 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   /**
    * Gets the underlying raw rolled truffle data
    */
-  public get raw(): IRolledTruffle {
+  public get raw(): Confections.IRolledTruffle {
     return this._rolledTruffle;
   }
 }

@@ -9,5 +9,5 @@ The original raw chocolate spec
 **Signature:**
 
 ```typescript
-readonly raw: IChocolateSpec;
+readonly raw: Confections.IChocolateSpec;
 ```

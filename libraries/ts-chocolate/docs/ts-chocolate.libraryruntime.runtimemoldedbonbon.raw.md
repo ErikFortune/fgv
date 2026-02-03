@@ -9,5 +9,5 @@ Gets the underlying raw molded bonbon data
 **Signature:**
 
 ```typescript
-get raw(): IMoldedBonBon;
+get raw(): Confections.IMoldedBonBon;
 ```

@@ -90,7 +90,7 @@ _(Optional)_ Resolved enrobing chocolate specification (optional)
 
 </td><td>
 
-IFrameDimensions
+Confections.IFrameDimensions
 
 
 </td><td>
@@ -132,7 +132,7 @@ Gets the preferred procedure, falling back to first available
 
 </td><td>
 
-IBarTruffleVersion
+Confections.IBarTruffleVersion
 
 
 </td><td>
@@ -153,7 +153,7 @@ Raw version typed to IBarTruffleVersion
 
 </td><td>
 
-IBonBonDimensions
+Confections.IBonBonDimensions
 
 
 </td><td>

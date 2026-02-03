@@ -96,7 +96,7 @@ Resolved enrobing chocolate specification (lazy-loaded).
 
 </td><td>
 
-IFrameDimensions
+Confections.IFrameDimensions
 
 
 </td><td>
@@ -138,7 +138,7 @@ Gets the preferred procedure, falling back to first available.
 
 </td><td>
 
-IBarTruffleVersion
+Confections.IBarTruffleVersion
 
 
 </td><td>
@@ -159,7 +159,7 @@ Gets the underlying raw bar truffle version data.
 
 </td><td>
 
-IBonBonDimensions
+Confections.IBonBonDimensions
 
 
 </td><td>

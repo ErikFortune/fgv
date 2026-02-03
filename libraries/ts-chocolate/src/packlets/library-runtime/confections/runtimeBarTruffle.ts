@@ -26,13 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
-import {
-  AnyConfectionVersion,
-  IBarTruffle,
-  IBarTruffleVersion,
-  IBonBonDimensions,
-  IFrameDimensions
-} from '../../entities';
+import { Confections } from '../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
@@ -54,14 +48,14 @@ import { RuntimeBarTruffleVersion } from './versions';
  * @public
  */
 export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
-  private readonly _barTruffle: IBarTruffle;
+  private readonly _barTruffle: Confections.IBarTruffle;
 
   /**
    * Creates a RuntimeBarTruffle.
    * Use RuntimeConfection.create() or RuntimeBarTruffle.create() instead.
    * @internal
    */
-  protected constructor(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle) {
+  protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections.IBarTruffle) {
     super(context, id, confection);
     this._barTruffle = confection;
   }
@@ -76,7 +70,7 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: IBarTruffle
+    confection: Confections.IBarTruffle
   ): Result<RuntimeBarTruffle> {
     return Success.with(new RuntimeBarTruffle(context, id, confection));
   }
@@ -125,11 +119,11 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(rawVersion: AnyConfectionVersion): IRuntimeBarTruffleVersion {
+  protected override _createVersion(rawVersion: Confections.AnyConfectionVersion): IRuntimeBarTruffleVersion {
     return RuntimeBarTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as IBarTruffleVersion
+      rawVersion as Confections.IBarTruffleVersion
     ).orThrow();
   }
 
@@ -140,14 +134,14 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   /**
    * Frame dimensions for ganache slab (from golden version).
    */
-  public get frameDimensions(): IFrameDimensions {
+  public get frameDimensions(): Confections.IFrameDimensions {
     return this.goldenVersion.frameDimensions;
   }
 
   /**
    * Single bonbon dimensions for cutting (from golden version).
    */
-  public get singleBonBonDimensions(): IBonBonDimensions {
+  public get singleBonBonDimensions(): Confections.IBonBonDimensions {
     return this.goldenVersion.singleBonBonDimensions;
   }
 
@@ -181,7 +175,7 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   /**
    * Gets the underlying raw bar truffle data
    */
-  public get raw(): IBarTruffle {
+  public get raw(): Confections.IBarTruffle {
     return this._barTruffle;
   }
 }

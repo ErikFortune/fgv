@@ -234,7 +234,7 @@ Gets the version ID.
 
 </td><td>
 
-IConfectionYield
+Confections.IConfectionYield
 
 
 </td><td>

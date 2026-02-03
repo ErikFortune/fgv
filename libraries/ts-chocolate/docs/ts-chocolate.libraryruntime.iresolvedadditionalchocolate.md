@@ -89,7 +89,7 @@ Purpose of this additional chocolate
 
 </td><td>
 
-IAdditionalChocolate
+Confections.IAdditionalChocolate
 
 
 </td><td>

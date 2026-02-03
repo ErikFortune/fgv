@@ -26,14 +26,7 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionVersionSpec, Measurement } from '../../common';
-import {
-  AnyConfectionVersion,
-  ConfectionData,
-  IConfectionYield,
-  IMoldedBonBon,
-  IMoldedBonBonVersion,
-  isMoldedBonBon
-} from '../../entities';
+import { Confections } from '../../entities';
 
 // ============================================================================
 // Scaled Confection Types
@@ -62,7 +55,7 @@ export interface IScaledConfectionYield {
  * A scaled confection with computed yield values
  * @public
  */
-export interface IScaledConfection<T extends ConfectionData = ConfectionData> {
+export interface IScaledConfection<T extends Confections.ConfectionData = Confections.ConfectionData> {
   /** The original confection data */
   readonly confection: T;
   /** The version that was scaled */
@@ -128,7 +121,7 @@ function applyRounding(value: number, mode: 'round' | 'floor' | 'ceil'): number 
  * @internal
  */
 function createScaledYield(
-  originalYield: IConfectionYield,
+  originalYield: Confections.IConfectionYield,
   scaleFactor: number,
   options: IConfectionScaleOptions
 ): IScaledConfectionYield {
@@ -158,7 +151,7 @@ function createScaledYield(
  * Gets the yield from a version.
  * @internal
  */
-function getVersionYield(version: AnyConfectionVersion): IConfectionYield {
+function getVersionYield(version: Confections.AnyConfectionVersion): Confections.IConfectionYield {
   return version.yield;
 }
 
@@ -166,7 +159,9 @@ function getVersionYield(version: AnyConfectionVersion): IConfectionYield {
  * Gets the golden version from a confection data object.
  * @internal
  */
-function getGoldenVersion<T extends ConfectionData>(confection: T): Result<AnyConfectionVersion> {
+function getGoldenVersion<T extends Confections.ConfectionData>(
+  confection: T
+): Result<Confections.AnyConfectionVersion> {
   const version = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
   /* c8 ignore next 5 - defensive coding: converter validates golden version exists */
   if (!version) {
@@ -189,9 +184,9 @@ function getGoldenVersion<T extends ConfectionData>(confection: T): Result<AnyCo
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionVersionByFactor<T extends ConfectionData>(
+export function scaleConfectionVersionByFactor<T extends Confections.ConfectionData>(
   confection: T,
-  version: AnyConfectionVersion,
+  version: Confections.AnyConfectionVersion,
   factor: number,
   options: IConfectionScaleOptions = {}
 ): Result<IScaledConfection<T>> {
@@ -221,7 +216,7 @@ export function scaleConfectionVersionByFactor<T extends ConfectionData>(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionByFactor<T extends ConfectionData>(
+export function scaleConfectionByFactor<T extends Confections.ConfectionData>(
   confection: T,
   factor: number,
   options: IConfectionScaleOptions = {}
@@ -241,9 +236,9 @@ export function scaleConfectionByFactor<T extends ConfectionData>(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionVersionToCount<T extends ConfectionData>(
+export function scaleConfectionVersionToCount<T extends Confections.ConfectionData>(
   confection: T,
-  version: AnyConfectionVersion,
+  version: Confections.AnyConfectionVersion,
   targetCount: number,
   options: IConfectionScaleOptions = {}
 ): Result<IScaledConfection<T>> {
@@ -269,7 +264,7 @@ export function scaleConfectionVersionToCount<T extends ConfectionData>(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionToCount<T extends ConfectionData>(
+export function scaleConfectionToCount<T extends Confections.ConfectionData>(
   confection: T,
   targetCount: number,
   options: IConfectionScaleOptions = {}
@@ -294,12 +289,12 @@ export function scaleConfectionToCount<T extends ConfectionData>(
  * @public
  */
 export function scaleMoldedBonBonVersionByFrames(
-  confection: IMoldedBonBon,
-  version: IMoldedBonBonVersion,
+  confection: Confections.IMoldedBonBon,
+  version: Confections.IMoldedBonBonVersion,
   frameCount: number,
   cavitiesPerMold: number,
   options: IFrameScaleOptions = {}
-): Result<IScaledConfection<IMoldedBonBon>> {
+): Result<IScaledConfection<Confections.IMoldedBonBon>> {
   if (frameCount <= 0) {
     return Failure.with('Frame count must be greater than zero');
   }
@@ -335,13 +330,13 @@ export function scaleMoldedBonBonVersionByFrames(
  * @public
  */
 export function scaleMoldedBonBonByFrames(
-  confection: IMoldedBonBon,
+  confection: Confections.IMoldedBonBon,
   frameCount: number,
   cavitiesPerMold: number,
   options: IFrameScaleOptions = {}
-): Result<IScaledConfection<IMoldedBonBon>> {
+): Result<IScaledConfection<Confections.IMoldedBonBon>> {
   return getGoldenVersion(confection).onSuccess((goldenVersion) => {
-    const version = goldenVersion as IMoldedBonBonVersion;
+    const version = goldenVersion as Confections.IMoldedBonBonVersion;
     return scaleMoldedBonBonVersionByFrames(confection, version, frameCount, cavitiesPerMold, options);
   });
 }
@@ -358,7 +353,7 @@ export function scaleMoldedBonBonByFrames(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfection<T extends ConfectionData>(
+export function scaleConfection<T extends Confections.ConfectionData>(
   confection: T,
   factor: number,
   options: IConfectionScaleOptions = {}
@@ -372,6 +367,8 @@ export function scaleConfection<T extends ConfectionData>(
  * @returns True if the confection is a molded bonbon
  * @public
  */
-export function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon {
-  return isMoldedBonBon(confection);
+export function canScaleByFrames(
+  confection: Confections.ConfectionData
+): confection is Confections.IMoldedBonBon {
+  return Confections.isMoldedBonBon(confection);
 }

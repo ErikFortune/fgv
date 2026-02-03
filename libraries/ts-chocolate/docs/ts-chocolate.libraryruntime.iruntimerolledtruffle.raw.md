@@ -9,5 +9,5 @@ Raw data typed to IRolledTruffle
 **Signature:**
 
 ```typescript
-readonly raw: IRolledTruffle;
+readonly raw: Confections.IRolledTruffle;
 ```

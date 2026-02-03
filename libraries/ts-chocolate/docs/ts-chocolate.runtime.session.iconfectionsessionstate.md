@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.chocolaterole.md)<!-- -->, [ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)<!-- -->&gt;
+ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.chocolaterole.md)<!-- -->, ISessionChocolate&gt;
 
 
 </td><td>
@@ -68,7 +68,7 @@ Current chocolate selections by role
 
 </td><td>
 
-[ISessionCoating](./ts-chocolate.runtime.session.isessioncoating.md)
+ISessionCoating
 
 
 </td><td>
@@ -131,7 +131,7 @@ Whether journaling is enabled
 
 </td><td>
 
-[ISessionMold](./ts-chocolate.runtime.session.isessionmold.md)
+ISessionMold
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Current mold selection (for molded bonbons)
 
 </td><td>
 
-[ISessionProcedure](./ts-chocolate.runtime.session.isessionprocedure.md)
+ISessionProcedure
 
 
 </td><td>
@@ -215,7 +215,7 @@ Source confection being edited
 
 </td><td>
 
-[ISessionYield](./ts-chocolate.runtime.session.isessionyield.md)
+ISessionYield
 
 
 </td><td>

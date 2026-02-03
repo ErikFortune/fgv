@@ -9,5 +9,5 @@ The original raw additional chocolate data
 **Signature:**
 
 ```typescript
-readonly raw: IAdditionalChocolate;
+readonly raw: Confections.IAdditionalChocolate;
 ```

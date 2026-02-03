@@ -151,7 +151,7 @@ Gets the number of cached recipes.
 
 </td><td>
 
-ConfectionsLibrary
+[Confections.ConfectionsLibrary](./ts-chocolate.entities.confectionslibrary.md)
 
 
 </td><td>

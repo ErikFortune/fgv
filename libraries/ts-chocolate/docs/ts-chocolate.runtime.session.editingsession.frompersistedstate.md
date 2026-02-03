@@ -37,7 +37,7 @@ data
 
 </td><td>
 
-IPersistedFillingSession
+[IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ Runtime recipe version to associate with the session
 
 **Returns:**
 
-Result&lt;[EditingSession](./ts-chocolate.runtime.session.editingsession.md)<!-- -->&gt;
+Result&lt;EditingSession&gt;
 
 Result with restored EditingSession
 

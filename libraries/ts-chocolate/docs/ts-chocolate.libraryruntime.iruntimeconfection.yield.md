@@ -9,5 +9,5 @@ Yield specification from the golden version
 **Signature:**
 
 ```typescript
-readonly yield: IConfectionYield;
+readonly yield: Confections.IConfectionYield;
 ```

@@ -66,7 +66,7 @@ Target weight for the filling in grams
 
 **Returns:**
 
-Result&lt;[EditingSession](./ts-chocolate.runtime.session.editingsession.md)<!-- -->&gt;
+Result&lt;EditingSession&gt;
 
 Success with EditingSession, or Failure if creation fails
 

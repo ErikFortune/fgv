@@ -9,5 +9,5 @@ Pre-built confections library
 **Signature:**
 
 ```typescript
-readonly confections?: ConfectionsLibrary;
+readonly confections?: Entities.Confections.ConfectionsLibrary;
 ```

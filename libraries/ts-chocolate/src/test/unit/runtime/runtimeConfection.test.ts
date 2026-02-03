@@ -45,13 +45,6 @@ import {
   UrlCategory
 } from '../../../packlets/common';
 import {
-  IChocolateIngredient,
-  IFillingRecipe,
-  IMoldedBonBon,
-  IBarTruffle,
-  IRolledTruffle
-} from '../../../packlets/entities';
-import {
   IConfectionContext,
   IResolvedAdditionalChocolate,
   IResolvedChocolateSpec,
@@ -70,6 +63,9 @@ import {
   RuntimeRolledTruffle
 } from '../../../packlets/library-runtime';
 import {
+  Confections,
+  IChocolateIngredient,
+  IFillingRecipe,
   IAdditionalChocolate,
   IChocolateSpec,
   ICoatings,
@@ -83,7 +79,7 @@ describe('RuntimeConfection', () => {
   // Test Data
   // ============================================================================
 
-  const moldedBonBonData: IMoldedBonBon = {
+  const moldedBonBonData: Confections.IMoldedBonBon = {
     baseId: 'test-bonbon' as BaseConfectionId,
     confectionType: 'molded-bonbon',
     name: 'Test Bonbon' as ConfectionName,
@@ -155,7 +151,7 @@ describe('RuntimeConfection', () => {
     ]
   };
 
-  const barTruffleData: IBarTruffle = {
+  const barTruffleData: Confections.IBarTruffle = {
     baseId: 'test-bar' as BaseConfectionId,
     confectionType: 'bar-truffle',
     name: 'Test Bar Truffle' as ConfectionName,
@@ -187,7 +183,7 @@ describe('RuntimeConfection', () => {
     ]
   };
 
-  const rolledTruffleData: IRolledTruffle = {
+  const rolledTruffleData: Confections.IRolledTruffle = {
     baseId: 'test-rolled' as BaseConfectionId,
     confectionType: 'rolled-truffle',
     name: 'Test Rolled Truffle' as ConfectionName,
@@ -833,7 +829,7 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('confection without optional properties', () => {
-    const minimalMolded: IMoldedBonBon = {
+    const minimalMolded: Confections.IMoldedBonBon = {
       baseId: 'minimal' as BaseConfectionId,
       confectionType: 'molded-bonbon',
       name: 'Minimal Bonbon' as ConfectionName,
@@ -892,7 +888,7 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('bar truffle without enrobing chocolate', () => {
-    const barWithoutEnrobing: IBarTruffle = {
+    const barWithoutEnrobing: Confections.IBarTruffle = {
       baseId: 'no-enrobing' as BaseConfectionId,
       confectionType: 'bar-truffle',
       name: 'Bar Without Enrobing' as ConfectionName,
@@ -929,7 +925,7 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('rolled truffle without coatings', () => {
-    const rolledWithoutCoatings: IRolledTruffle = {
+    const rolledWithoutCoatings: Confections.IRolledTruffle = {
       baseId: 'no-coatings' as BaseConfectionId,
       confectionType: 'rolled-truffle',
       name: 'Rolled Without Coatings' as ConfectionName,

@@ -26,12 +26,7 @@
 import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
-import {
-  AnyConfectionYield,
-  IConfectionYield,
-  IProducedRolledTruffle,
-  ISerializedEditingHistory
-} from '../../entities';
+import { Confections, IProducedRolledTruffle, ISerializedEditingHistory } from '../../entities';
 import {
   RuntimeRolledTruffle,
   RuntimeRolledTruffleVersion,
@@ -132,7 +127,9 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with updated yield, or Failure
    * @public
    */
-  public override scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield> {
+  public override scaleToYield(
+    yieldSpec: Confections.AnyConfectionYield
+  ): Result<Confections.IConfectionYield> {
     const currentYield = this._produced.yield;
     const scaleFactor = yieldSpec.count / currentYield.count;
 

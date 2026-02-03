@@ -50,7 +50,7 @@ Session to save
 
 **Returns:**
 
-Result&lt;AnyPersistedSession&gt;
+Result&lt;[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
 
 Result with the updated persisted session
 

@@ -97,7 +97,7 @@ TRuntime
 
 </td><td>
 
-Map&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->, [EditingSession](./ts-chocolate.runtime.session.editingsession.md)<!-- -->&gt;
+Map&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->, EditingSession&gt;
 
 
 </td><td>
@@ -221,7 +221,7 @@ Gets the runtime context.
 
 </td><td>
 
-[IFillingSessionMap](./ts-chocolate.runtime.session.ifillingsessionmap.md)
+IFillingSessionMap
 
 
 </td><td>

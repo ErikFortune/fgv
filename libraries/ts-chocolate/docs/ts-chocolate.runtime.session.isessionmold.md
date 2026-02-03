@@ -89,7 +89,7 @@ The original mold ID when the session started
 
 </td><td>
 
-[ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
+ConfectionSelectionStatus
 
 
 </td><td>

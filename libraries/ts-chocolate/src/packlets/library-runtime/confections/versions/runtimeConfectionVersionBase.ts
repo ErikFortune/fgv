@@ -24,14 +24,7 @@
  */
 
 import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../../common';
-import {
-  AnyConfectionVersion,
-  IConfectionDecoration,
-  IConfectionYield,
-  isBarTruffleVersion,
-  isMoldedBonBonVersion,
-  isRolledTruffleVersion
-} from '../../../entities';
+import { Confections } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedConfectionProcedure,
@@ -57,7 +50,7 @@ import type { RuntimeRolledTruffleVersion } from './runtimeRolledTruffleVersion'
 export abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersionBase {
   protected readonly _context: IConfectionContext;
   protected readonly _confectionId: ConfectionId;
-  protected readonly _version: AnyConfectionVersion;
+  protected readonly _version: Confections.AnyConfectionVersion;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _confection: IRuntimeConfection | undefined;
@@ -77,7 +70,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: AnyConfectionVersion
+    version: Confections.AnyConfectionVersion
   ) {
     this._context = context;
     this._confectionId = confectionId;
@@ -133,7 +126,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
    * The underlying confection version.
    * Use this to get the raw version data for persistence or journaling.
    */
-  public get version(): AnyConfectionVersion {
+  public get version(): Confections.AnyConfectionVersion {
     return this._version;
   }
 
@@ -144,14 +137,14 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   /**
    * Yield specification for this version.
    */
-  public get yield(): IConfectionYield {
+  public get yield(): Confections.IConfectionYield {
     return this._version.yield;
   }
 
   /**
    * Optional decorations for this version.
    */
-  public get decorations(): ReadonlyArray<IConfectionDecoration> | undefined {
+  public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
     return this._version.decorations;
   }
 
@@ -221,21 +214,21 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
    * Returns true if this is a molded bonbon version.
    */
   public isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion {
-    return isMoldedBonBonVersion(this._version);
+    return Confections.isMoldedBonBonVersion(this._version);
   }
 
   /**
    * Returns true if this is a bar truffle version.
    */
   public isBarTruffleVersion(): this is RuntimeBarTruffleVersion {
-    return isBarTruffleVersion(this._version);
+    return Confections.isBarTruffleVersion(this._version);
   }
 
   /**
    * Returns true if this is a rolled truffle version.
    */
   public isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion {
-    return isRolledTruffleVersion(this._version);
+    return Confections.isRolledTruffleVersion(this._version);
   }
 
   // ============================================================================
@@ -245,5 +238,5 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   /**
    * Gets the underlying raw version data (read-only)
    */
-  public abstract get raw(): AnyConfectionVersion;
+  public abstract get raw(): Confections.AnyConfectionVersion;
 }

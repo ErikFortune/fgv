@@ -110,7 +110,7 @@ _(Optional)_ Original weight per piece when the session started
 
 </td><td>
 
-[ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
+ConfectionSelectionStatus
 
 
 </td><td>

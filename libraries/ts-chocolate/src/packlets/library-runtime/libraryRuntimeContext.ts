@@ -36,21 +36,7 @@ import {
   FillingId,
   TaskId
 } from '../common';
-import {
-  AnyFillingOption,
-  ConfectionData,
-  ConfectionsLibrary,
-  FillingOptionId,
-  IAdditionalChocolate,
-  IChocolateSpec,
-  ICoatings,
-  IComputedScaledFillingRecipe,
-  IConfectionMoldRef,
-  IFillingSlot,
-  IProcedure,
-  IProcedureRef,
-  ITaskData
-} from '../entities';
+import { Confections, IComputedScaledFillingRecipe, IProcedure, IProcedureRef, ITaskData } from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
 import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -225,7 +211,7 @@ export class LibraryRuntimeContext
   /**
    * The confections library for accessing confection data.
    */
-  public get confections(): ConfectionsLibrary {
+  public get confections(): Confections.ConfectionsLibrary {
     return this._library.confections;
   }
 
@@ -234,7 +220,7 @@ export class LibraryRuntimeContext
    * @param id - The confection ID
    * @returns Success with confection data, or Failure if not found
    */
-  public getConfection(id: ConfectionId): Result<ConfectionData> {
+  public getConfection(id: ConfectionId): Result<Confections.ConfectionData> {
     return this._library.getConfection(id);
   }
 
@@ -325,7 +311,10 @@ export class LibraryRuntimeContext
    * @param confectionId - The confection ID (for error messages)
    * @returns Resolved chocolate specification with primary chocolate + alternates
    */
-  public resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec {
+  public resolveChocolateSpec(
+    spec: Confections.IChocolateSpec,
+    confectionId: ConfectionId
+  ): IResolvedChocolateSpec {
     // Determine primary chocolate ID (preferredId if set, otherwise first in list)
     /* c8 ignore next - branch: preferredId set vs not set */
     const primaryId = spec.preferredId ?? spec.ids[0];
@@ -363,7 +352,7 @@ export class LibraryRuntimeContext
    * @param coatings - The raw coatings specification
    * @returns Resolved coatings specification
    */
-  public resolveCoatings(coatings: ICoatings): IResolvedCoatings {
+  public resolveCoatings(coatings: Confections.ICoatings): IResolvedCoatings {
     // Resolve all coating ingredient options
     const resolvedOptions: IResolvedCoatingOption[] = [];
     for (const id of coatings.ids) {
@@ -394,7 +383,7 @@ export class LibraryRuntimeContext
    * @returns Resolved mold references
    */
   public resolveMoldRefs(
-    molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+    molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>
   ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     const resolvedOptions: IResolvedConfectionMoldRef[] = [];
     for (const ref of molds.options) {
@@ -423,7 +412,7 @@ export class LibraryRuntimeContext
    * @returns Resolved additional chocolates, or undefined if none
    */
   public resolveAdditionalChocolates(
-    additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+    additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined,
     confectionId: ConfectionId
   ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
     if (!additional || additional.length === 0) {
@@ -443,7 +432,7 @@ export class LibraryRuntimeContext
    * @returns Resolved filling slots, or undefined if none
    */
   public resolveFillingSlots(
-    slots: ReadonlyArray<IFillingSlot> | undefined
+    slots: ReadonlyArray<Confections.IFillingSlot> | undefined
   ): ReadonlyArray<IResolvedFillingSlot> | undefined {
     if (!slots || slots.length === 0) {
       return undefined;
@@ -500,8 +489,8 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveFillingOptions(
-    options: CommonModel.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>
-  ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId> {
+    options: CommonModel.IOptionsWithPreferred<Confections.AnyFillingOption, Confections.FillingOptionId>
+  ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId> {
     const resolvedOptions = options.options
       .map((opt) => this._resolveFillingOption(opt))
       .filter((r): r is IResolvedFillingOption => r !== undefined);
@@ -518,7 +507,7 @@ export class LibraryRuntimeContext
    * @returns Resolved filling option, or undefined if resolution fails
    * @internal
    */
-  private _resolveFillingOption(option: AnyFillingOption): IResolvedFillingOption | undefined {
+  private _resolveFillingOption(option: Confections.AnyFillingOption): IResolvedFillingOption | undefined {
     if (option.type === 'recipe') {
       const filling = this.getRuntimeFilling(option.id);
       /* c8 ignore next - defensive: skip fillings that fail to resolve */

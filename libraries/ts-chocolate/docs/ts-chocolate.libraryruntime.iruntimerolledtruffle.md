@@ -132,7 +132,7 @@ Golden version typed as IRuntimeRolledTruffleVersion
 
 </td><td>
 
-IRolledTruffle
+Confections.IRolledTruffle
 
 
 </td><td>

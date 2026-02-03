@@ -50,7 +50,7 @@ The [confection version ID](./ts-chocolate.confectionversionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IPersistedConfectionSession&gt;
+ReadonlyArray&lt;[IPersistedConfectionSession](./ts-chocolate.entities.session.ipersistedconfectionsession.md)<!-- -->&gt;
 
 Array of confection sessions (empty if none found)
 

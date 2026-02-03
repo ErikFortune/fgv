@@ -11,3 +11,5 @@ Schema version discriminator type.
 ```typescript
 export type PersistedSessionSchemaVersion = typeof PERSISTED_SESSION_SCHEMA_VERSION;
 ```
+**References:** [PERSISTED\_SESSION\_SCHEMA\_VERSION](./ts-chocolate.entities.session.persisted_session_schema_version.md)
+

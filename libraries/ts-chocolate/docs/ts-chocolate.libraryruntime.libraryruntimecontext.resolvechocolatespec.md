@@ -9,7 +9,7 @@ Resolves a chocolate specification to runtime ingredient objects.
 **Signature:**
 
 ```typescript
-resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+resolveChocolateSpec(spec: Confections.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ spec
 
 </td><td>
 
-IChocolateSpec
+Confections.IChocolateSpec
 
 
 </td><td>

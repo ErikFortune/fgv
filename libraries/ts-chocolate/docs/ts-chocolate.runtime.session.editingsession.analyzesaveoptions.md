@@ -13,7 +13,7 @@ analyzeSaveOptions(): ISaveAnalysis;
 ```
 **Returns:**
 
-[ISaveAnalysis](./ts-chocolate.runtime.session.isaveanalysis.md)
+ISaveAnalysis
 
 Analysis of changes and available save options
 

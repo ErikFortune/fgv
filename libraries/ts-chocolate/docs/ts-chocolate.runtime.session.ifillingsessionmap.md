@@ -11,5 +11,5 @@ Map of filling editing sessions keyed by slot ID. Used by confection editing ses
 ```typescript
 export type IFillingSessionMap = Map<SlotId, import('./editingSession').EditingSession>;
 ```
-**References:** [SlotId](./ts-chocolate.slotid.md)<!-- -->, [EditingSession](./ts-chocolate.runtime.session.editingsession.md)
+**References:** [SlotId](./ts-chocolate.slotid.md)
 

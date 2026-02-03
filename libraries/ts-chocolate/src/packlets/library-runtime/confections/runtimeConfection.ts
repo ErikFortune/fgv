@@ -26,7 +26,7 @@
 import { Failure, Result } from '@fgv/ts-utils';
 
 import { ConfectionId } from '../../common';
-import { ConfectionData } from '../../entities';
+import { Confections } from '../../entities';
 import { IConfectionContext } from '../model';
 import { RuntimeMoldedBonBon } from './runtimeMoldedBonBon';
 import { RuntimeBarTruffle } from './runtimeBarTruffle';
@@ -79,7 +79,7 @@ export abstract class RuntimeConfection {
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: ConfectionData
+    confection: Confections.ConfectionData
   ): Result<AnyRuntimeConfection> {
     switch (confection.confectionType) {
       case 'molded-bonbon':
@@ -90,7 +90,9 @@ export abstract class RuntimeConfection {
         return RuntimeRolledTruffle.create(context, id, confection);
       /* c8 ignore next 2 - defensive coding: ConfectionData union type ensures all types are handled */
       default:
-        return Failure.with(`Unknown confection type: ${(confection as ConfectionData).confectionType}`);
+        return Failure.with(
+          `Unknown confection type: ${(confection as Confections.ConfectionData).confectionType}`
+        );
     }
   }
 }

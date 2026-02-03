@@ -37,7 +37,7 @@ history
 
 </td><td>
 
-ISerializedEditingHistory&lt;IProducedBarTruffle&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;IProducedBarTruffle&gt;
 
 
 </td><td>

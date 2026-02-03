@@ -11,7 +11,7 @@ Journal entry for confection production sessions.
 ```typescript
 export interface IConfectionProductionJournalEntry extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> 
 ```
-**Extends:** IJournalEntryBase&lt;AnyConfectionVersion, [ConfectionVersionId](./ts-chocolate.confectionversionid.md)<!-- -->&gt;
+**Extends:** IJournalEntryBase&lt;[AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)<!-- -->, [ConfectionVersionId](./ts-chocolate.confectionversionid.md)<!-- -->&gt;
 
 ## Properties
 

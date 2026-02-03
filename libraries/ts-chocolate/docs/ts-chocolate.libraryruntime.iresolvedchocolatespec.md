@@ -89,7 +89,7 @@ The preferred/primary chocolate ingredient (always chocolate category)
 
 </td><td>
 
-IChocolateSpec
+Confections.IChocolateSpec
 
 
 </td><td>

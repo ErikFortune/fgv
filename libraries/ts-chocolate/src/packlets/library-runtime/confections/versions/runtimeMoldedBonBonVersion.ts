@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, Helpers, Model as CommonModel, MoldId } from '../../../common';
-import { IMoldedBonBonVersion } from '../../../entities';
+import { Confections } from '../../../entities';
 import {
   IConfectionContext,
   IResolvedAdditionalChocolate,
@@ -50,7 +50,7 @@ export class RuntimeMoldedBonBonVersion
   extends RuntimeConfectionVersionBase
   implements IRuntimeMoldedBonBonVersion
 {
-  private readonly _moldedBonBonVersion: IMoldedBonBonVersion;
+  private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersion;
 
   // Lazy-resolved caches (undefined = not yet resolved)
   private _resolvedShellChocolate: IResolvedChocolateSpec | undefined;
@@ -65,7 +65,7 @@ export class RuntimeMoldedBonBonVersion
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: IMoldedBonBonVersion
+    version: Confections.IMoldedBonBonVersion
   ) {
     super(context, confectionId, version);
     this._moldedBonBonVersion = version;
@@ -81,7 +81,7 @@ export class RuntimeMoldedBonBonVersion
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: IMoldedBonBonVersion
+    version: Confections.IMoldedBonBonVersion
   ): Result<RuntimeMoldedBonBonVersion> {
     return Success.with(new RuntimeMoldedBonBonVersion(context, confectionId, version));
   }
@@ -165,7 +165,7 @@ export class RuntimeMoldedBonBonVersion
   /**
    * Gets the underlying raw molded bonbon version data.
    */
-  public override get raw(): IMoldedBonBonVersion {
+  public override get raw(): Confections.IMoldedBonBonVersion {
     return this._moldedBonBonVersion;
   }
 }

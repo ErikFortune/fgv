@@ -134,7 +134,7 @@ Mold inventory library for tracking owned molds.
 
 </td><td>
 
-SessionLibrary
+[SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)
 
 
 </td><td>

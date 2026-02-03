@@ -36,9 +36,9 @@ import {
   Helpers
 } from '../../common';
 import {
+  Confections,
   AnyProducedConfection,
   AnyResolvedFillingSlot,
-  IConfectionYield,
   IProducedBarTruffle,
   IProducedMoldedBonBon,
   IProducedRolledTruffle,
@@ -264,7 +264,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * @returns Success with actual achieved yield, or failure
    * @public
    */
-  public scaleToYield(yieldSpec: IConfectionYield): Result<IConfectionYield> {
+  public scaleToYield(yieldSpec: Confections.IConfectionYield): Result<Confections.IConfectionYield> {
     if (yieldSpec.count <= 0) {
       return fail(`Yield count must be positive: ${yieldSpec.count}`);
     }
@@ -383,7 +383,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Gets the yield specification.
    * @public
    */
-  public get yield(): IConfectionYield {
+  public get yield(): Confections.IConfectionYield {
     return this._current.yield;
   }
 
@@ -482,7 +482,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
   /**
    * Compares two yield specifications for equality.
    */
-  private _yieldEqual(a: IConfectionYield, b: IConfectionYield): boolean {
+  private _yieldEqual(a: Confections.IConfectionYield, b: Confections.IConfectionYield): boolean {
     return a.count === b.count && a.unit === b.unit && a.weightPerPiece === b.weightPerPiece;
   }
 

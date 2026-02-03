@@ -9,5 +9,5 @@ The original raw ingredient filling option data
 **Signature:**
 
 ```typescript
-readonly raw: IIngredientFillingOption;
+readonly raw: Confections.IIngredientFillingOption;
 ```

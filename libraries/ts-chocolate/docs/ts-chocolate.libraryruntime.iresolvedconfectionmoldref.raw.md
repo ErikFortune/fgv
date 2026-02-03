@@ -9,5 +9,5 @@ The original raw mold reference data
 **Signature:**
 
 ```typescript
-readonly raw: IConfectionMoldRef;
+readonly raw: Confections.IConfectionMoldRef;
 ```

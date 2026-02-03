@@ -50,7 +50,7 @@ The slot identifier
 
 **Returns:**
 
-[EditingSession](./ts-chocolate.runtime.session.editingsession.md) \| undefined
+EditingSession \| undefined
 
 The editing session, or undefined if not found
 

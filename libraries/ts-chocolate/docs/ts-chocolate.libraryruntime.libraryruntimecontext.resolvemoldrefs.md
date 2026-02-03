@@ -9,7 +9,7 @@ Resolves mold references to runtime mold objects.
 **Signature:**
 
 ```typescript
-resolveMoldRefs(molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+resolveMoldRefs(molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ molds
 
 </td><td>
 
-[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;Confections.IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>

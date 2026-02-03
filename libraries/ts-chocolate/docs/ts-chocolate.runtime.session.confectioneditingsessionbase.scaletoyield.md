@@ -9,7 +9,7 @@ Scales to a new yield specification. Implementation is type-specific: - Molded b
 **Signature:**
 
 ```typescript
-abstract scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+abstract scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ yieldSpec
 
 </td><td>
 
-AnyConfectionYield
+Confections.AnyConfectionYield
 
 
 </td><td>
@@ -50,7 +50,7 @@ The new yield specification
 
 **Returns:**
 
-Result&lt;IConfectionYield&gt;
+Result&lt;Confections.IConfectionYield&gt;
 
 Success with updated yield, or Failure
 

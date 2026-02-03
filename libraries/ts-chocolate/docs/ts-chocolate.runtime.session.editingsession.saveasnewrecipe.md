@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-[ISaveNewRecipeOptions](./ts-chocolate.runtime.session.isavenewrecipeoptions.md)
+ISaveNewRecipeOptions
 
 
 </td><td>
@@ -50,7 +50,7 @@ Save options including new ID, version spec, and base weight
 
 **Returns:**
 
-Result&lt;[ISaveResult](./ts-chocolate.runtime.session.isaveresult.md)<!-- -->&gt;
+Result&lt;ISaveResult&gt;
 
 Result with save result containing journal entry
 

@@ -110,7 +110,7 @@ _(Optional)_ Optional notes specific to using this mold
 
 </td><td>
 
-IConfectionMoldRef
+Confections.IConfectionMoldRef
 
 
 </td><td>

@@ -75,7 +75,7 @@ Description
 
 </td><td>
 
-ConfectionData
+Confections.ConfectionData
 
 
 </td><td>
@@ -138,7 +138,7 @@ IConfectionContext
 
 </td><td>
 
-AnyConfectionVersion
+[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>
@@ -222,7 +222,7 @@ Confection type - must be overridden by subclasses
 
 </td><td>
 
-ReadonlyArray&lt;IConfectionDecoration&gt; \| undefined
+ReadonlyArray&lt;Confections.IConfectionDecoration&gt; \| undefined
 
 
 </td><td>
@@ -308,7 +308,7 @@ Gets effective URLs for the golden version (base URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
 
 
 </td><td>
@@ -438,7 +438,7 @@ Resolved procedures from the golden version (lazy-loaded)
 
 </td><td>
 
-ConfectionData
+Confections.ConfectionData
 
 
 </td><td>
@@ -543,7 +543,7 @@ All versions - resolved. Resolved lazily on first access.
 
 </td><td>
 
-IConfectionYield
+Confections.IConfectionYield
 
 
 </td><td>

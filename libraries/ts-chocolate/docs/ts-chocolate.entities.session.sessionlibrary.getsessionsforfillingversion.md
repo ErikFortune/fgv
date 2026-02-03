@@ -50,7 +50,7 @@ The [filling version ID](./ts-chocolate.fillingversionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;IPersistedFillingSession&gt;
+ReadonlyArray&lt;[IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)<!-- -->&gt;
 
 Array of filling sessions (empty if none found)
 

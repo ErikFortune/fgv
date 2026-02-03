@@ -11,7 +11,7 @@ For molded bonbons, this calculates the yield based on the number of frames and 
 **Signature:**
 
 ```typescript
-export declare function scaleMoldedBonBonVersionByFrames(confection: IMoldedBonBon, version: IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
+export declare function scaleMoldedBonBonVersionByFrames(confection: Confections.IMoldedBonBon, version: Confections.IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<Confections.IMoldedBonBon>>;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ confection
 
 </td><td>
 
-IMoldedBonBon
+Confections.IMoldedBonBon
 
 
 </td><td>
@@ -55,7 +55,7 @@ version
 
 </td><td>
 
-IMoldedBonBonVersion
+Confections.IMoldedBonBonVersion
 
 
 </td><td>
@@ -116,7 +116,7 @@ _(Optional)_ Optional frame scaling options
 
 **Returns:**
 
-Result&lt;IScaledConfection&lt;IMoldedBonBon&gt;&gt;
+Result&lt;IScaledConfection&lt;Confections.IMoldedBonBon&gt;&gt;
 
 Success with scaled confection, or Failure if invalid
 

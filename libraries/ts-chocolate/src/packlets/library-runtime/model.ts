@@ -67,7 +67,7 @@ import {
   Model as CommonModel
 } from '../common';
 import {
-  ConfectionsLibrary,
+  Confections,
   IAlcoholIngredient,
   IChocolateIngredient,
   IDairyIngredient,
@@ -87,28 +87,6 @@ import {
   IScaledFillingIngredient
 } from '../entities';
 import { IVersionScaleOptions } from './internal';
-import {
-  AnyConfectionVersion,
-  ConfectionData,
-  FillingOptionId,
-  IAdditionalChocolate,
-  IBarTruffle,
-  IBarTruffleVersion,
-  IBonBonDimensions,
-  IChocolateSpec,
-  ICoatings,
-  IConfectionDecoration,
-  IConfectionMoldRef,
-  IConfectionYield,
-  IFillingSlot,
-  IFrameDimensions,
-  IIngredientFillingOption,
-  IMoldedBonBon,
-  IMoldedBonBonVersion,
-  IRecipeFillingOption,
-  IRolledTruffle,
-  IRolledTruffleVersion
-} from '../entities';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
@@ -1173,7 +1151,7 @@ export interface ILibraryRuntimeContext {
    * Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
    * `.values()` for iteration.
    */
-  readonly confections: ConfectionsLibrary;
+  readonly confections: Confections.ConfectionsLibrary;
 
   // ---- Journals ----
 
@@ -1313,21 +1291,21 @@ export interface IRuntimeConfection {
    * Gets effective tags for a specific version.
    * @param version - The version to get tags for (defaults to golden version)
    */
-  getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
+  getEffectiveTags(version?: Confections.AnyConfectionVersion): ReadonlyArray<string>;
 
   /**
    * Gets effective URLs for a specific version.
    * @param version - The version to get URLs for (defaults to golden version)
    */
-  getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
+  getEffectiveUrls(version?: Confections.AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   // ---- Convenience accessors for golden version properties ----
 
   /** Decorations from the golden version */
-  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+  readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
 
   /** Yield specification from the golden version */
-  readonly yield: IConfectionYield;
+  readonly yield: Confections.IConfectionYield;
 
   /** Resolved filling slots from the golden version */
   readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
@@ -1360,7 +1338,7 @@ export interface IRuntimeConfection {
   /**
    * Gets the underlying raw confection data.
    */
-  readonly raw: ConfectionData;
+  readonly raw: Confections.ConfectionData;
 }
 
 /**
@@ -1390,7 +1368,7 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 
   /** Raw data typed to IMoldedBonBon */
-  readonly raw: IMoldedBonBon;
+  readonly raw: Confections.IMoldedBonBon;
 }
 
 /**
@@ -1411,16 +1389,16 @@ export interface IRuntimeBarTruffle extends IRuntimeConfection {
   getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion>;
 
   /** Frame dimensions from the golden version */
-  readonly frameDimensions: IFrameDimensions;
+  readonly frameDimensions: Confections.IFrameDimensions;
 
   /** Single bonbon dimensions from the golden version */
-  readonly singleBonBonDimensions: IBonBonDimensions;
+  readonly singleBonBonDimensions: Confections.IBonBonDimensions;
 
   /** Resolved enrobing chocolate (from golden version, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
   /** Raw data typed to IBarTruffle */
-  readonly raw: IBarTruffle;
+  readonly raw: Confections.IBarTruffle;
 }
 
 /**
@@ -1447,7 +1425,7 @@ export interface IRuntimeRolledTruffle extends IRuntimeConfection {
   readonly coatings?: IResolvedCoatings;
 
   /** Raw data typed to IRolledTruffle */
-  readonly raw: IRolledTruffle;
+  readonly raw: Confections.IRolledTruffle;
 }
 
 /**
@@ -1471,7 +1449,7 @@ export interface IResolvedRecipeFillingOption {
   /** Optional notes specific to this filling option */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw recipe filling option data */
-  readonly raw: IRecipeFillingOption;
+  readonly raw: Confections.IRecipeFillingOption;
 }
 
 /**
@@ -1488,7 +1466,7 @@ export interface IResolvedIngredientFillingOption {
   /** Optional notes specific to this filling option */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw ingredient filling option data */
-  readonly raw: IIngredientFillingOption;
+  readonly raw: Confections.IIngredientFillingOption;
 }
 
 /**
@@ -1501,7 +1479,7 @@ export interface IResolvedFillingSlot {
   /** Human-readable name for display */
   readonly name?: string;
   /** Resolved filling options with preferred selection */
-  readonly filling: CommonModel.IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+  readonly filling: CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId>;
 }
 
 // ============================================================================
@@ -1519,7 +1497,7 @@ export interface IResolvedChocolateSpec {
   /** Alternate chocolate options (all chocolate category) */
   readonly alternates: ReadonlyArray<IRuntimeChocolateIngredient>;
   /** The original raw chocolate spec */
-  readonly raw: IChocolateSpec;
+  readonly raw: Confections.IChocolateSpec;
 }
 
 /**
@@ -1532,7 +1510,7 @@ export interface IResolvedAdditionalChocolate {
   /** Purpose of this additional chocolate */
   readonly purpose: AdditionalChocolatePurpose;
   /** The original raw additional chocolate data */
-  readonly raw: IAdditionalChocolate;
+  readonly raw: Confections.IAdditionalChocolate;
 }
 
 // ============================================================================
@@ -1551,7 +1529,7 @@ export interface IResolvedConfectionMoldRef {
   /** Optional notes specific to using this mold */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw mold reference data */
-  readonly raw: IConfectionMoldRef;
+  readonly raw: Confections.IConfectionMoldRef;
 }
 
 // ============================================================================
@@ -1589,7 +1567,7 @@ export interface IResolvedCoatings {
   /** The preferred/default coating (resolved ingredient) */
   readonly preferred?: IResolvedCoatingOption;
   /** The original raw coatings spec */
-  readonly raw: ICoatings;
+  readonly raw: Confections.ICoatings;
 }
 
 /**
@@ -1648,19 +1626,19 @@ export interface IRuntimeConfectionVersionBase {
    * The underlying confection version.
    * Use this to get the raw version data for persistence or journaling.
    */
-  readonly version: AnyConfectionVersion;
+  readonly version: Confections.AnyConfectionVersion;
 
   // ---- Version Properties ----
 
   /**
    * Yield specification for this version.
    */
-  readonly yield: IConfectionYield;
+  readonly yield: Confections.IConfectionYield;
 
   /**
    * Optional decorations for this version.
    */
-  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+  readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
 
   /**
    * Optional notes about this version.
@@ -1715,7 +1693,7 @@ export interface IRuntimeConfectionVersionBase {
   /**
    * Gets the underlying raw version data.
    */
-  readonly raw: AnyConfectionVersion;
+  readonly raw: Confections.AnyConfectionVersion;
 }
 
 /**
@@ -1742,7 +1720,7 @@ export interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBa
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IMoldedBonBonVersion */
-  readonly raw: IMoldedBonBonVersion;
+  readonly raw: Confections.IMoldedBonBonVersion;
 }
 
 /**
@@ -1754,10 +1732,10 @@ export interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase
   readonly confection: IRuntimeBarTruffle;
 
   /** Frame dimensions for ganache slab */
-  readonly frameDimensions: IFrameDimensions;
+  readonly frameDimensions: Confections.IFrameDimensions;
 
   /** Single bonbon dimensions for cutting */
-  readonly singleBonBonDimensions: IBonBonDimensions;
+  readonly singleBonBonDimensions: Confections.IBonBonDimensions;
 
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
@@ -1766,7 +1744,7 @@ export interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IBarTruffleVersion */
-  readonly raw: IBarTruffleVersion;
+  readonly raw: Confections.IBarTruffleVersion;
 }
 
 /**
@@ -1787,7 +1765,7 @@ export interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionB
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IRolledTruffleVersion */
-  readonly raw: IRolledTruffleVersion;
+  readonly raw: Confections.IRolledTruffleVersion;
 }
 
 /**
@@ -1849,14 +1827,14 @@ export interface IConfectionContext {
    * @param confectionId - The confection ID (for error messages)
    * @returns Resolved chocolate specification with primary chocolate + alternates
    */
-  resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+  resolveChocolateSpec(spec: Confections.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
 
   /**
    * Resolves coating specifications to runtime ingredient objects.
    * @param coatings - The raw coatings specification
    * @returns Resolved coatings specification
    */
-  resolveCoatings(coatings: ICoatings): IResolvedCoatings;
+  resolveCoatings(coatings: Confections.ICoatings): IResolvedCoatings;
 
   /**
    * Resolves mold references to runtime mold objects.
@@ -1864,7 +1842,7 @@ export interface IConfectionContext {
    * @returns Resolved mold references
    */
   resolveMoldRefs(
-    molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+    molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>
   ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
   /**
@@ -1874,7 +1852,7 @@ export interface IConfectionContext {
    * @returns Resolved additional chocolates, or undefined if none
    */
   resolveAdditionalChocolates(
-    additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+    additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined,
     confectionId: ConfectionId
   ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
 
@@ -1884,7 +1862,7 @@ export interface IConfectionContext {
    * @returns Resolved filling slots, or undefined if none
    */
   resolveFillingSlots(
-    slots: ReadonlyArray<IFillingSlot> | undefined
+    slots: ReadonlyArray<Confections.IFillingSlot> | undefined
   ): ReadonlyArray<IResolvedFillingSlot> | undefined;
 
   /**

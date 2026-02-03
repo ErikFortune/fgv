@@ -36,7 +36,7 @@ import {
   SessionId,
   SlotId
 } from '../../common';
-import { IFillingEditJournalEntry, IConfectionEditJournalEntry, AnyConfectionYield } from '../../entities';
+import { IFillingEditJournalEntry, IConfectionEditJournalEntry, Confections } from '../../entities';
 import { IRuntimeConfection } from '../../library-runtime';
 
 // ============================================================================
@@ -379,7 +379,7 @@ export interface IConfectionEditingSessionParams {
   /**
    * Initial yield specification (defaults to golden version yield)
    */
-  readonly initialYield?: AnyConfectionYield;
+  readonly initialYield?: Confections.AnyConfectionYield;
 }
 
 // ============================================================================
