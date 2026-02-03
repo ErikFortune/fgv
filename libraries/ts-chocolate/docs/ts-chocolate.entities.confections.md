@@ -254,7 +254,7 @@ Base confection interface - all confection types share these properties. Contain
 
 </td><td>
 
-Decoration specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
+Decoration specification for a [confection](./ts-chocolate.entities.confections.anyconfection.md)<!-- -->.
 
 
 </td></tr>
@@ -276,7 +276,7 @@ Base version interface - shared by all confection version types. Contains the co
 
 </td><td>
 
-Yield specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
+Yield specification for a [confection](./ts-chocolate.entities.confections.anyconfection.md)<!-- -->.
 
 
 </td></tr>
@@ -512,6 +512,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AnyConfection](./ts-chocolate.entities.confections.anyconfection.md)
+
+
+</td><td>
+
+Discriminated union of all confection data types. Use this when working with raw confection data.
+
+
+</td></tr>
+<tr><td>
+
 [AnyConfectionVersion](./ts-chocolate.entities.confections.anyconfectionversion.md)
 
 
@@ -606,17 +617,6 @@ Initialization type for a ConfectionsLibrary collection entry.
 </td><td>
 
 Validator type for ConfectionsLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionData](./ts-chocolate.entities.confections.confectiondata.md)
-
-
-</td><td>
-
-Discriminated union of all confection data types. Use this when working with raw confection data.
 
 
 </td></tr>

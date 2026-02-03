@@ -423,11 +423,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Entities.Confections.ConfectionData | confection} by its {@link ConfectionId | composite ID}
+   * Gets a {@link Entities.Confections.AnyConfection | confection} by its {@link ConfectionId | composite ID}
    * @param id - The {@link ConfectionId | id} of the confection to retrieve.
    * @returns `Success` with confection data, or `Failure` if not found
    */
-  public getConfection(id: ConfectionId): Result<Entities.Confections.ConfectionData> {
+  public getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfection> {
     return this._confections.get(id);
   }
 
@@ -573,12 +573,12 @@ export class ChocolateLibrary {
    */
   public getEditableConfections(
     collectionId: SourceId
-  ): Result<EditableCollection<Entities.Confections.ConfectionData, BaseConfectionId>> {
+  ): Result<EditableCollection<Entities.Confections.AnyConfection, BaseConfectionId>> {
     return EditableCollection.fromLibrary(
       this.confections,
       collectionId,
       CommonConverters.baseConfectionId,
-      EntityConverters.Confections.confectionData
+      EntityConverters.Confections.anyConfectionRaw
     );
   }
 }

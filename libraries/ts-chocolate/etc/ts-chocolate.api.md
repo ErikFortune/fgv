@@ -125,10 +125,21 @@ const allWeightUnits: WeightUnit[];
 function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
+type AnyConfection = IMoldedBonBon | IBarTruffle | IRolledTruffle;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const anyConfection: Converter<AnyConfection>;
+
+// @public
 type AnyConfectionEditingSession = MoldedBonBonEditingSession | BarTruffleEditingSession | RolledTruffleEditingSession;
 
 // @public
 type AnyConfectionJournalEntry = IConfectionEditJournalEntry | IConfectionProductionJournalEntry;
+
+// @public
+const anyConfectionRaw: Converter<AnyConfection>;
 
 // @public
 type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
@@ -402,7 +413,7 @@ function calculateTotalWeight(ingredients: ReadonlyArray<IFillingIngredient>, co
 function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
 
 // @public
-function canScaleByFrames(confection: Confections_2.ConfectionData): confection is Confections_2.IMoldedBonBon;
+function canScaleByFrames(confection: Confections_2.AnyConfection): confection is Confections_2.IMoldedBonBon;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -469,8 +480,8 @@ export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getConfection(id: ConfectionId): Result<Entities.Confections.ConfectionData>;
-    getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.ConfectionData, BaseConfectionId>>;
+    getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfection>;
+    getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfection, BaseConfectionId>>;
     getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipe, BaseFillingId>>;
     getEditableIngredients(collectionId: SourceId): Result<EditableCollection<Ingredient, BaseIngredientId>>;
     getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
@@ -593,11 +604,6 @@ type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 // @public
 const COMPOSITE_ID_PATTERN: RegExp;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const confection: Converter<ConfectionData>;
-
 // @public
 const CONFECTION_VERSION_ID_PATTERN: RegExp;
 
@@ -605,25 +611,19 @@ const CONFECTION_VERSION_ID_PATTERN: RegExp;
 const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
-type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
+type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfection>;
 
 // @public
-type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, ConfectionData>;
+type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, AnyConfection>;
 
 // @public
-type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, ConfectionData>;
+type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfection>;
 
 // @public
 const confectionCollections: Record<string, JsonObject>;
 
 // @public
-type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, ConfectionData>;
-
-// @public
-type ConfectionData = IMoldedBonBon | IBarTruffle | IRolledTruffle;
-
-// @public
-const confectionData: Converter<ConfectionData>;
+type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfection>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -736,8 +736,8 @@ declare namespace Confections {
         moldedBonBon,
         barTruffle,
         rolledTruffle,
-        confectionData,
-        confection
+        anyConfectionRaw,
+        anyConfection
     }
 }
 
@@ -781,7 +781,7 @@ declare namespace Confections_2 {
         IMoldedBonBon,
         IBarTruffle,
         IRolledTruffle,
-        ConfectionData,
+        AnyConfection,
         ResolvedSlotType,
         allResolvedSlotTypes,
         IResolvedFillingSlot,
@@ -808,7 +808,7 @@ declare namespace Confections_2 {
 type ConfectionSelectionStatus = 'original' | 'modified';
 
 // @public
-class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, ConfectionData> {
+class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, AnyConfection> {
     static create(params?: IConfectionsLibraryParams): Result<ConfectionsLibrary>;
     static createAsync(params?: IConfectionsLibraryAsyncParams): Promise<Result<ConfectionsLibrary>>;
 }
@@ -1197,7 +1197,7 @@ declare namespace Entities {
     export {
         ConfectionsLibrary,
         AnyConfectionVersion,
-        ConfectionData,
+        AnyConfection,
         FillingsLibrary,
         AnyFillingRecipeVersion,
         Converters_2 as Converters,
@@ -3834,7 +3834,7 @@ interface IRuntimeConfection {
     isRolledTruffle(): this is IRuntimeRolledTruffle;
     readonly name: ConfectionName;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
-    readonly raw: Confections_2.ConfectionData;
+    readonly raw: Confections_2.AnyConfection;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
@@ -4195,7 +4195,7 @@ interface ISaveVersionOptions {
 }
 
 // @public
-function isBarTruffle(confection: ConfectionData): confection is IBarTruffle;
+function isBarTruffle(confection: AnyConfection): confection is IBarTruffle;
 
 // @public
 function isBarTruffleVersion(version: AnyConfectionVersion): version is IBarTruffleVersion;
@@ -4353,7 +4353,7 @@ function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
 function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
 
 // @public
-function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon;
+function isMoldedBonBon(confection: AnyConfection): confection is IMoldedBonBon;
 
 // @public
 function isMoldedBonBonVersion(version: AnyConfectionVersion): version is IMoldedBonBonVersion;
@@ -4394,7 +4394,7 @@ function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedF
 function isResolvedIngredientSlot(slot: AnyResolvedFillingSlot): slot is IResolvedIngredientSlot;
 
 // @public
-function isRolledTruffle(confection: ConfectionData): confection is IRolledTruffle;
+function isRolledTruffle(confection: AnyConfection): confection is IRolledTruffle;
 
 // @public
 function isRolledTruffleVersion(version: AnyConfectionVersion): version is IRolledTruffleVersion;
@@ -5129,7 +5129,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
-    getConfection(id: ConfectionId): Result<Confections_2.ConfectionData>;
+    getConfection(id: ConfectionId): Result<Confections_2.AnyConfection>;
     // @internal
     _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe>;
     // @internal
@@ -5877,18 +5877,18 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
 abstract class RuntimeConfection {
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-    static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.ConfectionData): Result<AnyRuntimeConfection>;
+    static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.AnyConfection): Result<AnyRuntimeConfection>;
 }
 
 // @public
 abstract class RuntimeConfectionBase implements IRuntimeConfection {
     // @internal
-    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.ConfectionData);
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.AnyConfection);
     get baseId(): BaseConfectionId;
     // (undocumented)
     protected readonly _baseId: BaseConfectionId;
     // (undocumented)
-    protected readonly _confection: Confections_2.ConfectionData;
+    protected readonly _confection: Confections_2.AnyConfection;
     abstract get confectionType(): ConfectionType;
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -5915,7 +5915,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     isRolledTruffle(): this is RuntimeRolledTruffle;
     get name(): ConfectionName;
     abstract get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    abstract get raw(): Confections_2.ConfectionData;
+    abstract get raw(): Confections_2.AnyConfection;
     // (undocumented)
     protected readonly _rawGoldenVersion: Confections_2.AnyConfectionVersion;
     get sourceId(): SourceId;
@@ -6414,19 +6414,19 @@ function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number)
 // Warning: (ae-forgotten-export) The symbol "IScaledConfection" needs to be exported by the entry point index.d.ts
 //
 // @public
-function scaleConfection<T extends Confections_2.ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfection<T extends Confections_2.AnyConfection>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionByFactor<T extends Confections_2.ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionByFactor<T extends Confections_2.AnyConfection>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionToCount<T extends Confections_2.ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionToCount<T extends Confections_2.AnyConfection>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionVersionByFactor<T extends Confections_2.ConfectionData>(confection: T, version: Confections_2.AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionVersionByFactor<T extends Confections_2.AnyConfection>(confection: T, version: Confections_2.AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // @public
-function scaleConfectionVersionToCount<T extends Confections_2.ConfectionData>(confection: T, version: Confections_2.AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+function scaleConfectionVersionToCount<T extends Confections_2.AnyConfection>(confection: T, version: Confections_2.AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

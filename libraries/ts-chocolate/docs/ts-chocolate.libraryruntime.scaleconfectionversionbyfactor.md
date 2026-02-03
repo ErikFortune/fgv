@@ -11,7 +11,7 @@ This function applies a linear scale factor to the version's yield.
 **Signature:**
 
 ```typescript
-export declare function scaleConfectionVersionByFactor<T extends Confections.ConfectionData>(confection: T, version: Confections.AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+export declare function scaleConfectionVersionByFactor<T extends Confections.AnyConfection>(confection: T, version: Confections.AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 ```
 
 ## Parameters

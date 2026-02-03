@@ -30,6 +30,28 @@ Converter for IAdditionalChocolate
 </td></tr>
 <tr><td>
 
+[anyConfection](./ts-chocolate.entities.converters.confections.anyconfection.md)
+
+
+</td><td>
+
+Converter for [AnyConfection](./ts-chocolate.entities.confections.anyconfection.md) with validation. Validates that goldenVersionSpec exists in versions. Returns the plain data object (discriminated union), not a class instance.
+
+
+</td></tr>
+<tr><td>
+
+[anyConfectionRaw](./ts-chocolate.entities.converters.confections.anyconfectionraw.md)
+
+
+</td><td>
+
+Converter for AnyConfection (discriminated union) Dispatches to the appropriate type-specific converter based on confectionType
+
+
+</td></tr>
+<tr><td>
+
 [anyConfectionVersion](./ts-chocolate.entities.converters.confections.anyconfectionversion.md)
 
 
@@ -124,28 +146,6 @@ Converter for IBonBonDimensions
 </td><td>
 
 Converter for ICoatings (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
-
-
-</td></tr>
-<tr><td>
-
-[confection](./ts-chocolate.entities.converters.confections.confection.md)
-
-
-</td><td>
-
-Converter for [ConfectionData](./ts-chocolate.entities.confections.confectiondata.md) with validation. Validates that goldenVersionSpec exists in versions. Returns the plain data object (discriminated union), not a class instance.
-
-
-</td></tr>
-<tr><td>
-
-[confectionData](./ts-chocolate.entities.converters.confections.confectiondata.md)
-
-
-</td><td>
-
-Converter for ConfectionData (discriminated union) Dispatches to the appropriate type-specific converter based on confectionType
 
 
 </td></tr>

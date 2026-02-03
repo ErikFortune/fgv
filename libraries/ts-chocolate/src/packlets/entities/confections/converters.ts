@@ -29,7 +29,7 @@ import { Converters as CommonConverters, Model, MoldId } from '../../common';
 import {
   AnyConfectionVersion,
   AnyFillingOption,
-  ConfectionData,
+  AnyConfection,
   FillingOptionId,
   IAdditionalChocolate,
   IBarTruffle,
@@ -376,25 +376,25 @@ export const rolledTruffle: Converter<IRolledTruffle> = Converters.object<IRolle
 // ============================================================================
 
 /**
- * Converter for ConfectionData (discriminated union)
+ * Converter for AnyConfection (discriminated union)
  * Dispatches to the appropriate type-specific converter based on confectionType
  * @public
  */
-export const confectionData: Converter<ConfectionData> = Converters.oneOf<ConfectionData>([
+export const anyConfectionRaw: Converter<AnyConfection> = Converters.oneOf<AnyConfection>([
   moldedBonBon,
   barTruffle,
   rolledTruffle
 ]);
 
 /**
- * Converter for {@link Entities.Confections.ConfectionData | ConfectionData} with validation.
+ * Converter for {@link Entities.Confections.AnyConfection | AnyConfection} with validation.
  * Validates that goldenVersionSpec exists in versions.
  * Returns the plain data object (discriminated union), not a class instance.
  * @public
  */
-export const confection: Converter<ConfectionData> = Converters.generic<ConfectionData>(
-  (from: unknown): Result<ConfectionData> => {
-    return confectionData.convert(from).onSuccess((data) => {
+export const anyConfection: Converter<AnyConfection> = Converters.generic<AnyConfection>(
+  (from: unknown): Result<AnyConfection> => {
+    return anyConfectionRaw.convert(from).onSuccess((data) => {
       if (data.versions.length === 0) {
         return Failure.with('Confection must have at least one version');
       }

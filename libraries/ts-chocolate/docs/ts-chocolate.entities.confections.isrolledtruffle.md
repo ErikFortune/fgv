@@ -9,7 +9,7 @@ Type guard for IRolledTruffle
 **Signature:**
 
 ```typescript
-export declare function isRolledTruffle(confection: ConfectionData): confection is IRolledTruffle;
+export declare function isRolledTruffle(confection: AnyConfection): confection is IRolledTruffle;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ confection
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.entities.confectiondata.md)
+[AnyConfection](./ts-chocolate.entities.anyconfection.md)
 
 
 </td><td>

@@ -47,7 +47,7 @@ import { IProcedureRef } from '../fillings';
 // ============================================================================
 
 /**
- * Yield specification for a {@link Entities.Confections.ConfectionData | confection}.
+ * Yield specification for a {@link Entities.Confections.AnyConfection | confection}.
  * @public
  */
 export interface IConfectionYield {
@@ -96,7 +96,7 @@ export function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is
 }
 
 /**
- * Decoration specification for a {@link Entities.Confections.ConfectionData | confection}.
+ * Decoration specification for a {@link Entities.Confections.AnyConfection | confection}.
  * @public
  */
 export interface IConfectionDecoration {
@@ -398,7 +398,7 @@ export interface IRolledTruffle extends IConfectionBase {
  * Use this when working with raw confection data.
  * @public
  */
-export type ConfectionData = IMoldedBonBon | IBarTruffle | IRolledTruffle;
+export type AnyConfection = IMoldedBonBon | IBarTruffle | IRolledTruffle;
 
 // ============================================================================
 // Type Guards
@@ -410,7 +410,7 @@ export type ConfectionData = IMoldedBonBon | IBarTruffle | IRolledTruffle;
  * @returns True if the confection is a molded bonbon
  * @public
  */
-export function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon {
+export function isMoldedBonBon(confection: AnyConfection): confection is IMoldedBonBon {
   return confection.confectionType === 'molded-bonbon';
 }
 
@@ -420,7 +420,7 @@ export function isMoldedBonBon(confection: ConfectionData): confection is IMolde
  * @returns True if the confection is a bar truffle
  * @public
  */
-export function isBarTruffle(confection: ConfectionData): confection is IBarTruffle {
+export function isBarTruffle(confection: AnyConfection): confection is IBarTruffle {
   return confection.confectionType === 'bar-truffle';
 }
 
@@ -430,7 +430,7 @@ export function isBarTruffle(confection: ConfectionData): confection is IBarTruf
  * @returns True if the confection is a rolled truffle
  * @public
  */
-export function isRolledTruffle(confection: ConfectionData): confection is IRolledTruffle {
+export function isRolledTruffle(confection: AnyConfection): confection is IRolledTruffle {
   return confection.confectionType === 'rolled-truffle';
 }
 

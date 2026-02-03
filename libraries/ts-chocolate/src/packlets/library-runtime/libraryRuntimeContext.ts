@@ -220,7 +220,7 @@ export class LibraryRuntimeContext
    * @param id - The confection ID
    * @returns Success with confection data, or Failure if not found
    */
-  public getConfection(id: ConfectionId): Result<Confections.ConfectionData> {
+  public getConfection(id: ConfectionId): Result<Confections.AnyConfection> {
     return this._library.getConfection(id);
   }
 

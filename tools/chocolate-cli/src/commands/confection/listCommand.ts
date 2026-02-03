@@ -55,7 +55,7 @@ interface IConfectionListOptions extends IEntityListOptions {
 /**
  * Gets yield string from a confection version
  */
-function getYieldString(confection: Entities.Confections.ConfectionData): string {
+function getYieldString(confection: Entities.Confections.AnyConfection): string {
   const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
   if (!goldenVersion) {
     return '';
@@ -68,7 +68,7 @@ function getYieldString(confection: Entities.Confections.ConfectionData): string
  * Checks if a confection matches the specified filters
  */
 function matchesFilters(
-  confection: Entities.Confections.ConfectionData,
+  confection: Entities.Confections.AnyConfection,
   confectionId: ConfectionId,
   sourceId: SourceId,
   options: IConfectionListOptions

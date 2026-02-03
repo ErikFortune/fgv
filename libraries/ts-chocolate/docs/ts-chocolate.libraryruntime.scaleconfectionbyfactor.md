@@ -11,7 +11,7 @@ This function applies a linear scale factor to the golden version's yield.
 **Signature:**
 
 ```typescript
-export declare function scaleConfectionByFactor<T extends Confections.ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+export declare function scaleConfectionByFactor<T extends Confections.AnyConfection>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 ```
 
 ## Parameters

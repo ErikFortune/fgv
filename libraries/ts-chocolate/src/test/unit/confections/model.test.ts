@@ -207,7 +207,7 @@ describe('Confections model', () => {
 
     describe('type narrowing', () => {
       test('narrows correctly for molded bonbon', () => {
-        const confection: Confections.ConfectionData = baseMoldedBonBon;
+        const confection: Confections.AnyConfection = baseMoldedBonBon;
         if (Confections.isMoldedBonBon(confection)) {
           // TypeScript should know this is IMoldedBonBon
           const version = confection.versions[0];
@@ -219,7 +219,7 @@ describe('Confections model', () => {
       });
 
       test('narrows correctly for bar truffle', () => {
-        const confection: Confections.ConfectionData = baseBarTruffle;
+        const confection: Confections.AnyConfection = baseBarTruffle;
         if (Confections.isBarTruffle(confection)) {
           // TypeScript should know this is IBarTruffle
           const version = confection.versions[0];
@@ -231,7 +231,7 @@ describe('Confections model', () => {
       });
 
       test('narrows correctly for rolled truffle', () => {
-        const confection: Confections.ConfectionData = baseRolledTruffle;
+        const confection: Confections.AnyConfection = baseRolledTruffle;
         if (Confections.isRolledTruffle(confection)) {
           // TypeScript should know this is IRolledTruffle
           const version = confection.versions[0];

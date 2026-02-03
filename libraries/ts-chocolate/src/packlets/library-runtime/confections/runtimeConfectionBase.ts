@@ -62,7 +62,7 @@ import type { RuntimeRolledTruffle } from './runtimeRolledTruffle';
 export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected readonly _context: IConfectionContext;
   protected readonly _id: ConfectionId;
-  protected readonly _confection: Confections.ConfectionData;
+  protected readonly _confection: Confections.AnyConfection;
   protected readonly _sourceId: SourceId;
   protected readonly _baseId: BaseConfectionId;
   protected readonly _rawGoldenVersion: Confections.AnyConfectionVersion;
@@ -82,7 +82,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.ConfectionData
+    confection: Confections.AnyConfection
   ) {
     this._context = context;
     this._id = id;
@@ -351,5 +351,5 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * Gets the underlying raw confection data (read-only)
    */
-  public abstract get raw(): Confections.ConfectionData;
+  public abstract get raw(): Confections.AnyConfection;
 }

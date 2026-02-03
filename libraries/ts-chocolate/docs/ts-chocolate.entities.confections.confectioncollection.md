@@ -9,7 +9,7 @@ Type for the collections in a ConfectionsLibrary.
 **Signature:**
 
 ```typescript
-export type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
+export type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfection>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.entities.anyconfection.md)
 

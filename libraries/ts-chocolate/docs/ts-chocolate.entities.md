@@ -1298,6 +1298,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AnyConfection](./ts-chocolate.entities.anyconfection.md)
+
+
+</td><td>
+
+Discriminated union of all confection data types. Use this when working with raw confection data.
+
+
+</td></tr>
+<tr><td>
+
 [AnyConfectionJournalEntry](./ts-chocolate.entities.anyconfectionjournalentry.md)
 
 
@@ -1392,17 +1403,6 @@ Discriminated union of produced confection types. Discriminated on the `confecti
 </td><td>
 
 Union of resolved filling slot types. Discriminated on the `slotType` field.
-
-
-</td></tr>
-<tr><td>
-
-[ConfectionData](./ts-chocolate.entities.confectiondata.md)
-
-
-</td><td>
-
-Discriminated union of all confection data types. Use this when working with raw confection data.
 
 
 </td></tr>

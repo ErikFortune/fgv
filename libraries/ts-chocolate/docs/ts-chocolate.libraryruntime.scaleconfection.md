@@ -11,7 +11,7 @@ For molded bonbons, if frameCount and cavitiesPerMold are provided, uses frame-b
 **Signature:**
 
 ```typescript
-export declare function scaleConfection<T extends Confections.ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+export declare function scaleConfection<T extends Confections.AnyConfection>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 ```
 
 ## Parameters

@@ -1338,7 +1338,7 @@ export interface IRuntimeConfection {
   /**
    * Gets the underlying raw confection data.
    */
-  readonly raw: Confections.ConfectionData;
+  readonly raw: Confections.AnyConfection;
 }
 
 /**

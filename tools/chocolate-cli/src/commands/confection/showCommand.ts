@@ -44,14 +44,14 @@ interface IConfectionShowOptions extends IEntityBaseOptions {
  */
 interface IConfectionSelectableItem extends ISelectableItem {
   id: ConfectionId;
-  confection: Entities.Confections.ConfectionData;
+  confection: Entities.Confections.AnyConfection;
 }
 
 /**
  * Formats a confection for human-readable output
  */
 export function formatConfectionHuman(
-  confection: Entities.Confections.ConfectionData,
+  confection: Entities.Confections.AnyConfection,
   confectionId: ConfectionId,
   versionSpec?: ConfectionVersionSpec
 ): string {
@@ -269,7 +269,7 @@ export function createShowSubcommand(): Command {
 
         // Determine confection ID - either from argument or interactive selection
         let confectionId: ConfectionId;
-        let confection: Entities.Confections.ConfectionData;
+        let confection: Entities.Confections.AnyConfection;
 
         if (localOptions.interactive || !confectionIdArg) {
           if (!localOptions.interactive && !confectionIdArg) {

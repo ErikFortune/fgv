@@ -25,7 +25,7 @@
 
 // Re-export models, collections, and libraries (not Converters which would conflict)
 
-export { ConfectionsLibrary, AnyConfectionVersion, ConfectionData } from './confections';
+export { ConfectionsLibrary, AnyConfectionVersion, AnyConfection } from './confections';
 export { FillingsLibrary, AnyFillingRecipeVersion } from './fillings';
 
 export * from './fillings/model';

@@ -452,19 +452,21 @@ describe('Confections converters', () => {
 
   describe('confectionData (discriminated union)', () => {
     test('converts molded bonbon', () => {
-      expect(ConfectionConverters.confectionData.convert(validMoldedBonBon)).toSucceedAndSatisfy((result) => {
-        expect(Confections.isMoldedBonBon(result)).toBe(true);
-      });
+      expect(ConfectionConverters.anyConfectionRaw.convert(validMoldedBonBon)).toSucceedAndSatisfy(
+        (result) => {
+          expect(Confections.isMoldedBonBon(result)).toBe(true);
+        }
+      );
     });
 
     test('converts bar truffle', () => {
-      expect(ConfectionConverters.confectionData.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyConfectionRaw.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
         expect(Confections.isBarTruffle(result)).toBe(true);
       });
     });
 
     test('converts rolled truffle', () => {
-      expect(ConfectionConverters.confectionData.convert(validRolledTruffle)).toSucceedAndSatisfy(
+      expect(ConfectionConverters.anyConfectionRaw.convert(validRolledTruffle)).toSucceedAndSatisfy(
         (result) => {
           expect(Confections.isRolledTruffle(result)).toBe(true);
         }
@@ -473,7 +475,7 @@ describe('Confections converters', () => {
 
     test('fails for unknown confection type', () => {
       const input = { ...validMoldedBonBon, confectionType: 'unknown-type' };
-      expect(ConfectionConverters.confectionData.convert(input)).toFail();
+      expect(ConfectionConverters.anyConfectionRaw.convert(input)).toFail();
     });
   });
 
@@ -483,7 +485,7 @@ describe('Confections converters', () => {
 
   describe('confection (validated)', () => {
     test('converts and validates valid confection', () => {
-      expect(ConfectionConverters.confection.convert(validMoldedBonBon)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyConfection.convert(validMoldedBonBon)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('dark-dome-bonbon');
         expect(result.goldenVersionSpec).toBe('2026-01-01-01');
       });
@@ -491,12 +493,12 @@ describe('Confections converters', () => {
 
     test('fails when versions array is empty', () => {
       const input = { ...validMoldedBonBon, versions: [] };
-      expect(ConfectionConverters.confection.convert(input)).toFailWith(/at least one version/i);
+      expect(ConfectionConverters.anyConfection.convert(input)).toFailWith(/at least one version/i);
     });
 
     test('fails when golden version not found in versions', () => {
       const input = { ...validMoldedBonBon, goldenVersionSpec: '9999-99-99-99' };
-      expect(ConfectionConverters.confection.convert(input)).toFailWith(/Golden version.*not found/i);
+      expect(ConfectionConverters.anyConfection.convert(input)).toFailWith(/Golden version.*not found/i);
     });
 
     test('succeeds when golden version exists in versions', () => {
@@ -508,7 +510,7 @@ describe('Confections converters', () => {
         ],
         goldenVersionSpec: '2026-02-01-01'
       };
-      expect(ConfectionConverters.confection.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyConfection.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.goldenVersionSpec).toBe('2026-02-01-01');
       });
     });

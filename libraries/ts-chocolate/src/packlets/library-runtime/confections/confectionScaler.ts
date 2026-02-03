@@ -55,7 +55,7 @@ export interface IScaledConfectionYield {
  * A scaled confection with computed yield values
  * @public
  */
-export interface IScaledConfection<T extends Confections.ConfectionData = Confections.ConfectionData> {
+export interface IScaledConfection<T extends Confections.AnyConfection = Confections.AnyConfection> {
   /** The original confection data */
   readonly confection: T;
   /** The version that was scaled */
@@ -159,7 +159,7 @@ function getVersionYield(version: Confections.AnyConfectionVersion): Confections
  * Gets the golden version from a confection data object.
  * @internal
  */
-function getGoldenVersion<T extends Confections.ConfectionData>(
+function getGoldenVersion<T extends Confections.AnyConfection>(
   confection: T
 ): Result<Confections.AnyConfectionVersion> {
   const version = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
@@ -184,7 +184,7 @@ function getGoldenVersion<T extends Confections.ConfectionData>(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionVersionByFactor<T extends Confections.ConfectionData>(
+export function scaleConfectionVersionByFactor<T extends Confections.AnyConfection>(
   confection: T,
   version: Confections.AnyConfectionVersion,
   factor: number,
@@ -216,7 +216,7 @@ export function scaleConfectionVersionByFactor<T extends Confections.ConfectionD
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionByFactor<T extends Confections.ConfectionData>(
+export function scaleConfectionByFactor<T extends Confections.AnyConfection>(
   confection: T,
   factor: number,
   options: IConfectionScaleOptions = {}
@@ -236,7 +236,7 @@ export function scaleConfectionByFactor<T extends Confections.ConfectionData>(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionVersionToCount<T extends Confections.ConfectionData>(
+export function scaleConfectionVersionToCount<T extends Confections.AnyConfection>(
   confection: T,
   version: Confections.AnyConfectionVersion,
   targetCount: number,
@@ -264,7 +264,7 @@ export function scaleConfectionVersionToCount<T extends Confections.ConfectionDa
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfectionToCount<T extends Confections.ConfectionData>(
+export function scaleConfectionToCount<T extends Confections.AnyConfection>(
   confection: T,
   targetCount: number,
   options: IConfectionScaleOptions = {}
@@ -353,7 +353,7 @@ export function scaleMoldedBonBonByFrames(
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleConfection<T extends Confections.ConfectionData>(
+export function scaleConfection<T extends Confections.AnyConfection>(
   confection: T,
   factor: number,
   options: IConfectionScaleOptions = {}
@@ -368,7 +368,7 @@ export function scaleConfection<T extends Confections.ConfectionData>(
  * @public
  */
 export function canScaleByFrames(
-  confection: Confections.ConfectionData
+  confection: Confections.AnyConfection
 ): confection is Confections.IMoldedBonBon {
   return Confections.isMoldedBonBon(confection);
 }

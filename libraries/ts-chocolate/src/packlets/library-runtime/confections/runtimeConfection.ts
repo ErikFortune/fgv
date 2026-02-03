@@ -79,7 +79,7 @@ export abstract class RuntimeConfection {
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.ConfectionData
+    confection: Confections.AnyConfection
   ): Result<AnyRuntimeConfection> {
     switch (confection.confectionType) {
       case 'molded-bonbon':
@@ -91,7 +91,7 @@ export abstract class RuntimeConfection {
       /* c8 ignore next 2 - defensive coding: ConfectionData union type ensures all types are handled */
       default:
         return Failure.with(
-          `Unknown confection type: ${(confection as Confections.ConfectionData).confectionType}`
+          `Unknown confection type: ${(confection as Confections.AnyConfection).confectionType}`
         );
     }
   }

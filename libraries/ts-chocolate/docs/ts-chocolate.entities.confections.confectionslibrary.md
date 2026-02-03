@@ -11,9 +11,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.dark-do
 **Signature:**
 
 ```typescript
-export declare class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, ConfectionData> 
+export declare class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, AnyConfection> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.entities.anyconfection.md)<!-- -->&gt;
 
 ## Methods
 

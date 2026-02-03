@@ -9,7 +9,7 @@ Type guard for IBarTruffle
 **Signature:**
 
 ```typescript
-export declare function isBarTruffle(confection: ConfectionData): confection is IBarTruffle;
+export declare function isBarTruffle(confection: AnyConfection): confection is IBarTruffle;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ confection
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.entities.confectiondata.md)
+[AnyConfection](./ts-chocolate.entities.anyconfection.md)
 
 
 </td><td>

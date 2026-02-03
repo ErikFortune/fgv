@@ -9,7 +9,7 @@ Type guard for IMoldedBonBon
 **Signature:**
 
 ```typescript
-export declare function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon;
+export declare function isMoldedBonBon(confection: AnyConfection): confection is IMoldedBonBon;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ confection
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.entities.confectiondata.md)
+[AnyConfection](./ts-chocolate.entities.anyconfection.md)
 
 
 </td><td>
