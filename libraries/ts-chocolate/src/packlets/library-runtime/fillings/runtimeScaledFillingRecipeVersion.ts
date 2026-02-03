@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Measurement, Helpers, ICategorizedNote } from '../../common';
+import { Measurement, Helpers, Model as CommonModel } from '../../common';
 import { IComputedScaledFillingRecipe, IFillingRating } from '../../entities';
 import { calculateFromIngredients, validateGanache } from '../internal';
 import {
@@ -201,7 +201,7 @@ export class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingR
    * Optional categorized notes from the source version
    */
   /* c8 ignore next 3 - tested via property access pattern check */
-  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
     return this._scaled.notes;
   }
 

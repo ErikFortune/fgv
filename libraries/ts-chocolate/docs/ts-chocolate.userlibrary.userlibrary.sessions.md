@@ -4,6 +4,7 @@
 
 ## UserLibrary.UserLibrary.sessions property
 
+Session library for persisted editing sessions.
 
 **Signature:**
 

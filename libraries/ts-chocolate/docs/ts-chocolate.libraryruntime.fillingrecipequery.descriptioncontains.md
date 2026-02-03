@@ -50,5 +50,5 @@ Text to search for
 
 **Returns:**
 
-[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
+[FillingRecipeQuery](./ts-chocolate.libraryruntime.fillingrecipequery.md)
 

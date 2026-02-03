@@ -42,7 +42,7 @@ PersistedSessionStatus
 
 </td><td>
 
-The  to filter by
+The [status](./ts-chocolate.entities.session.persistedsessionstatus.md) to filter by
 
 
 </td></tr>

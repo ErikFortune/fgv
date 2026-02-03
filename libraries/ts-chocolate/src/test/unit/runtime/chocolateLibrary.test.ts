@@ -29,10 +29,10 @@ import {
   BaseFillingId,
   ConfectionId,
   FillingVersionSpec,
-  ICategorizedNote,
   Measurement,
   IngredientId,
   Millimeters,
+  Model as CommonModel,
   MoldId,
   Percentage,
   ProcedureId,
@@ -292,7 +292,7 @@ describe('ChocolateLibrary', () => {
       },
       format: 'series-2000',
       tags: ['test'],
-      notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
+      notes: [{ category: 'user', note: 'Test notes' }] as CommonModel.ICategorizedNote[]
     };
 
     let library: ChocolateLibrary;

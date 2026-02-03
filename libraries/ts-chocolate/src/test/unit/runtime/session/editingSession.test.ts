@@ -23,17 +23,17 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseFillingId,
-  ICategorizedNote,
   Measurement,
   IngredientId,
   Percentage,
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId,
+  Model as CommonModel,
   NoteCategory,
   ProcedureId,
-  SessionBaseId
+  SessionBaseId,
+  SourceId
 } from '../../../../packlets/common';
 import {
   IGanacheCharacteristics,
@@ -109,7 +109,7 @@ describe('EditingSession', () => {
       {
         versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
-        notes: [{ category: 'user', note: 'Original recipe' }] as ICategorizedNote[],
+        notes: [{ category: 'user', note: 'Original recipe' }] as CommonModel.ICategorizedNote[],
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }

@@ -26,13 +26,13 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
-  ICategorizedNote,
   Measurement,
   Helpers,
   IngredientId,
   FillingId,
   FillingVersionId,
-  FillingVersionSpec
+  FillingVersionSpec,
+  Model as CommonModel
 } from '../../common';
 import { IFillingRecipeVersion, IFillingRating } from '../../entities';
 import { calculateFromIngredients, validateGanache, scaleVersion, IVersionScaleOptions } from '../internal';
@@ -215,7 +215,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   /**
    * Optional categorized notes about this version
    */
-  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
     return this._version.notes;
   }
 

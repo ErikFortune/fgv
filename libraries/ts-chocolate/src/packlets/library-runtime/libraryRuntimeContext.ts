@@ -30,7 +30,7 @@ import {
   Converters,
   Helpers,
   IngredientId,
-  IOptionsWithPreferred,
+  Model as CommonModel,
   MoldId,
   ProcedureId,
   FillingId,
@@ -394,8 +394,8 @@ export class LibraryRuntimeContext
    * @returns Resolved mold references
    */
   public resolveMoldRefs(
-    molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
-  ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
+    molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     const resolvedOptions: IResolvedConfectionMoldRef[] = [];
     for (const ref of molds.options) {
       const moldResult = this.getRuntimeMold(ref.id);
@@ -462,8 +462,8 @@ export class LibraryRuntimeContext
    * @returns Resolved procedures, or undefined if none
    */
   public resolveProcedures(
-    procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
-  ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+    procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
     if (!procedures || procedures.options.length === 0) {
       return undefined;
     }
@@ -500,8 +500,8 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveFillingOptions(
-    options: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>
-  ): IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId> {
+    options: CommonModel.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>
+  ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId> {
     const resolvedOptions = options.options
       .map((opt) => this._resolveFillingOption(opt))
       .filter((r): r is IResolvedFillingOption => r !== undefined);

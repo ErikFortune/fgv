@@ -32,8 +32,7 @@ import {
   ConfectionType,
   ConfectionVersionSpec,
   Converters,
-  ICategorizedUrl,
-  IOptionsWithPreferred,
+  Model as CommonModel,
   ProcedureId,
   SourceId
 } from '../../common';
@@ -164,7 +163,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * Base URLs (version may add more via additionalUrls)
    */
-  public get urls(): ReadonlyArray<ICategorizedUrl> | undefined {
+  public get urls(): ReadonlyArray<CommonModel.ICategorizedUrl> | undefined {
     return this._confection.urls;
   }
 
@@ -202,7 +201,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Resolved procedures from the golden version (lazy-loaded)
    */
   public abstract get procedures():
-    | IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined;
 
   // ============================================================================
@@ -293,7 +292,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * Gets effective URLs for the golden version (base URLs + version's additional URLs).
    */
-  public get effectiveUrls(): ReadonlyArray<ICategorizedUrl> {
+  public get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl> {
     return this.getEffectiveUrls(this._rawGoldenVersion);
   }
 
@@ -313,7 +312,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Gets effective URLs for a specific version (base URLs + version's additional URLs).
    * @param version - The version to get URLs for (defaults to golden version)
    */
-  public getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl> {
+  public getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl> {
     const targetVersion = version ?? this._rawGoldenVersion;
     const baseUrls = this._confection.urls ?? [];
     const versionUrls = targetVersion.additionalUrls ?? [];

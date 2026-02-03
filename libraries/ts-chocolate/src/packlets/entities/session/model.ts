@@ -32,7 +32,7 @@ import {
   ConfectionType,
   ConfectionVersionId,
   FillingVersionId,
-  ICategorizedNote,
+  Model as CommonModel,
   PersistedSessionId,
   SessionBaseId,
   SlotId,
@@ -150,7 +150,7 @@ export interface IPersistedSessionBase {
   /** User-provided label for the session */
   readonly label?: string;
   /** Optional categorized notes */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** Destination configuration for saving derived entities */
   readonly destination?: IPersistedSessionDestination;
 }

@@ -110,7 +110,7 @@ Ingredients used in this version of the filling recipe
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
+ReadonlyArray&lt;[Model.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
@@ -131,7 +131,7 @@ _(Optional)_ Optional categorized notes about this version
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>

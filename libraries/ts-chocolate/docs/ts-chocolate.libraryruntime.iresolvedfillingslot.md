@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedFillingOption](./ts-chocolate.libraryruntime.iresolvedfillingoption.md)<!-- -->, FillingOptionId&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedFillingOption](./ts-chocolate.libraryruntime.iresolvedfillingoption.md)<!-- -->, FillingOptionId&gt;
 
 
 </td><td>

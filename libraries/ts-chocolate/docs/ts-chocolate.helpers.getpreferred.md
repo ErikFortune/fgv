@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;TOption, TId&gt;
+[IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;TOption, TId&gt;
 
 
 </td><td>

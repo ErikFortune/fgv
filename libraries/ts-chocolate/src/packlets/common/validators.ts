@@ -48,7 +48,6 @@ import {
   FillingId,
   FillingVersionId,
   FillingVersionSpec,
-  ID_SEPARATOR,
   IngredientId,
   JournalBaseId,
   JournalId,
@@ -57,9 +56,9 @@ import {
   ProcedureId,
   SessionBaseId,
   SourceId,
-  TaskId,
-  VERSION_ID_SEPARATOR
-} from './model';
+  TaskId
+} from './ids';
+import { ID_SEPARATOR, VERSION_ID_SEPARATOR } from './model';
 
 import {
   isValidBaseConfectionId,

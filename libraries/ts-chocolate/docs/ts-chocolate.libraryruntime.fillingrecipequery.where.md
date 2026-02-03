@@ -50,5 +50,5 @@ Custom filter function
 
 **Returns:**
 
-[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
+[FillingRecipeQuery](./ts-chocolate.libraryruntime.fillingrecipequery.md)
 

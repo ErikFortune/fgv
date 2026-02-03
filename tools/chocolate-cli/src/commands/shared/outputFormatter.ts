@@ -19,13 +19,7 @@
 // SOFTWARE.
 
 import * as yaml from 'yaml';
-import {
-  ICategorizedNote,
-  ICategorizedUrl,
-  IOptionsWithPreferred,
-  IRefWithNotes,
-  SourceId
-} from '@fgv/ts-chocolate';
+import { Model as CommonModel, SourceId } from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
 
@@ -49,7 +43,7 @@ export function formatNumber(value: number, precision: number = 1): string {
  * Converts categorized notes to a single string for display
  */
 export function formatCategorizedNotes(
-  notes: ReadonlyArray<ICategorizedNote> | undefined,
+  notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined,
   separator: string = '; '
 ): string | undefined {
   if (!notes || notes.length === 0) {
@@ -79,7 +73,7 @@ export function getSourceIdFromCompositeId(compositeId: string): SourceId {
 /**
  * Formats URLs for human output
  */
-export function formatUrls(urls: ReadonlyArray<ICategorizedUrl>, lines: string[]): void {
+export function formatUrls(urls: ReadonlyArray<CommonModel.ICategorizedUrl>, lines: string[]): void {
   lines.push('');
   lines.push('URLs:');
   for (const url of urls) {
@@ -99,7 +93,7 @@ export function formatTags(tags: ReadonlyArray<string> | undefined): string {
  * Returns preferredId if set, otherwise the first option's ID.
  */
 export function getPreferredId<TOption extends { id: TId }, TId extends string>(
-  options: IOptionsWithPreferred<TOption, TId>
+  options: CommonModel.IOptionsWithPreferred<TOption, TId>
 ): TId | undefined {
   if (options.preferredId) {
     return options.preferredId;
@@ -111,7 +105,7 @@ export function getPreferredId<TOption extends { id: TId }, TId extends string>(
  * Formats options with preferred IDs for display
  */
 export function formatOptionsWithPreferred<TId extends string>(
-  options: IOptionsWithPreferred<IRefWithNotes<TId>, TId>,
+  options: CommonModel.IOptionsWithPreferred<CommonModel.IRefWithNotes<TId>, TId>,
   lines: string[],
   label: string
 ): void {

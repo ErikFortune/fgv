@@ -50,5 +50,5 @@ Tag to search for (case-insensitive)
 
 **Returns:**
 
-[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
+[FillingRecipeQuery](./ts-chocolate.libraryruntime.fillingrecipequery.md)
 

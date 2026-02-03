@@ -25,15 +25,7 @@
  * @packageDocumentation
  */
 
-import {
-  BaseMoldId,
-  ICategorizedNote,
-  ICategorizedUrl,
-  Measurement,
-  MoldFormat,
-  MoldId,
-  SourceId
-} from '../../common';
+import { BaseMoldId, Measurement, Model as CommonModel, MoldFormat, MoldId, SourceId } from '../../common';
 import { ICavities, ICavityDimensions, IMold } from '../../entities';
 
 // ============================================================================
@@ -115,10 +107,10 @@ export interface IRuntimeMold {
   readonly related?: ReadonlyArray<MoldId>;
 
   /** Optional categorized notes */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /** Optional categorized URLs */
-  readonly urls?: ReadonlyArray<ICategorizedUrl>;
+  readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   // ---- Computed Properties ----
 

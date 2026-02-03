@@ -50,5 +50,5 @@ Ingredient IDs that must all be present
 
 **Returns:**
 
-[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
+[FillingRecipeQuery](./ts-chocolate.libraryruntime.fillingrecipequery.md)
 

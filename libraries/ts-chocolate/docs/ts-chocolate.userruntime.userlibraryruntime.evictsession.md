@@ -4,6 +4,7 @@
 
 ## UserRuntime.UserLibraryRuntime.evictSession() method
 
+Evicts a materialized session from the cache. The persisted session remains in the library.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ sessionId
 
 </td><td>
 
+Session to evict
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ sessionId
 **Returns:**
 
 boolean
+
+True if session was cached and evicted
 

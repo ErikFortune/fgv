@@ -9,5 +9,5 @@ Optional categorized notes about the derivation
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 ```

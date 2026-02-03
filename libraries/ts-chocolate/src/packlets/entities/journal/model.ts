@@ -26,9 +26,9 @@
 import {
   ConfectionVersionId,
   FillingVersionId,
-  ICategorizedNote,
   JournalBaseId,
-  Measurement
+  Measurement,
+  Model as CommonModel
 } from '../../common';
 import {
   AnyConfectionVersion,
@@ -128,7 +128,7 @@ export interface IJournalEntryBase<TVersion, TVersionId> {
   /** ID of the updated version if it was saved */
   readonly updatedId?: TVersionId;
   /** Optional categorized notes about this entry */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
 /**

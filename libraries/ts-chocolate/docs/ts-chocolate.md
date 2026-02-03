@@ -34,28 +34,6 @@ Provides unified access to: - Ingredient management (multi-source with built-ins
 </td></tr>
 <tr><td>
 
-[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
-
-
-</td><td>
-
-Fluent query builder for recipes. Allows chaining filters to build complex queries.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientQuery](./ts-chocolate.ingredientquery.md)
-
-
-</td><td>
-
-Fluent query builder for ingredients. Allows chaining filters to build complex queries.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeContext](./ts-chocolate.runtimecontext.md)
 
 
@@ -123,78 +101,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ICategorizedNote](./ts-chocolate.icategorizednote.md)
-
-
-</td><td>
-
-A categorized note associated with an entity.
-
-
-</td></tr>
-<tr><td>
-
-[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)
-
-
-</td><td>
-
-A categorized URL for linking to external resources. Used on ingredients, recipes, molds, and confections.
-
-
-</td></tr>
-<tr><td>
-
-[IHasId](./ts-chocolate.ihasid.md)
-
-
-</td><td>
-
-Base interface that option types must extend for use with IOptionsWithPreferred. Enables generic helpers that work with any option type.
-
-
-</td></tr>
-<tr><td>
-
-[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)
-
-
-</td><td>
-
-Collection of simple IDs with a preferred selection. Use when options are just IDs without additional metadata.
-
-
-</td></tr>
-<tr><td>
-
 [IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)
 
 
 </td><td>
 
 Option wrapper for measurement units (for use with IOptionsWithPreferred). Wraps a MeasurementUnit to satisfy IHasId requirement.
-
-
-</td></tr>
-<tr><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)
-
-
-</td><td>
-
-Collection of options (objects with IDs) with a preferred selection. Use when options are objects containing IDs plus additional metadata.
-
-
-</td></tr>
-<tr><td>
-
-[IRefWithNotes](./ts-chocolate.irefwithnotes.md)
-
-
-</td><td>
-
-Generic reference type with an ID and optional categorized notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
 
 
 </td></tr>
@@ -325,6 +237,15 @@ Description
 <tr><td>
 
 [LibraryRuntime](./ts-chocolate.libraryruntime.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Model](./ts-chocolate.model.md)
 
 
 </td><td>
@@ -591,50 +512,6 @@ All possible weight units
 </td></tr>
 <tr><td>
 
-[BASE\_ID\_PATTERN](./ts-chocolate.base_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid base IDs (no dots allowed)
-
-
-</td></tr>
-<tr><td>
-
-[COMPOSITE\_ID\_PATTERN](./ts-chocolate.composite_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid composite IDs (exactly one dot)
-
-
-</td></tr>
-<tr><td>
-
-[CONFECTION\_VERSION\_ID\_PATTERN](./ts-chocolate.confection_version_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid confection version IDs Format: confectionId<!-- -->@<!-- -->versionSpec where confectionId is sourceId.baseConfectionId
-
-
-</td></tr>
-<tr><td>
-
-[CONFECTION\_VERSION\_SPEC\_PATTERN](./ts-chocolate.confection_version_spec_pattern.md)
-
-
-</td><td>
-
-Pattern for valid confection version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes) Same pattern as recipe version specs
-
-
-</td></tr>
-<tr><td>
-
 [DEFAULT\_NOTE\_CATEGORY](./ts-chocolate.default_note_category.md)
 
 
@@ -646,111 +523,12 @@ Default note category for general/unspecified notes.
 </td></tr>
 <tr><td>
 
-[FILLING\_VERSION\_ID\_PATTERN](./ts-chocolate.filling_version_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid filling version IDs Format: fillingId<!-- -->@<!-- -->versionSpec where fillingId is sourceId.baseFillingId
-
-
-</td></tr>
-<tr><td>
-
-[FILLING\_VERSION\_SPEC\_PATTERN](./ts-chocolate.filling_version_spec_pattern.md)
-
-
-</td><td>
-
-Pattern for valid filling version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
-
-
-</td></tr>
-<tr><td>
-
 [HundredPercent](./ts-chocolate.hundredpercent.md)
 
 
 </td><td>
 
 One hundred percent constant
-
-
-</td></tr>
-<tr><td>
-
-[ID\_SEPARATOR](./ts-chocolate.id_separator.md)
-
-
-</td><td>
-
-Separator character used in composite IDs
-
-
-</td></tr>
-<tr><td>
-
-[JOURNAL\_BASE\_ID\_PATTERN](./ts-chocolate.journal_base_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid journal base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
-[JOURNAL\_ID\_PATTERN](./ts-chocolate.journal_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid composite journal IDs Format: collectionId.baseJournalId Example: "user-journals.2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
-[PERSISTED\_SESSION\_ID\_PATTERN](./ts-chocolate.persisted_session_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid composite persisted session IDs Format: collectionId.baseSessionId Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
-[SESSION\_BASE\_ID\_PATTERN](./ts-chocolate.session_base_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid session base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
-[SESSION\_ID\_PATTERN](./ts-chocolate.session_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid session IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
-[VERSION\_ID\_SEPARATOR](./ts-chocolate.version_id_separator.md)
-
-
-</td><td>
-
-Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## Converters.categorizedUrl variable
 
-Converter for [ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->.
+Converter for [ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->.
 
 **Signature:**
 

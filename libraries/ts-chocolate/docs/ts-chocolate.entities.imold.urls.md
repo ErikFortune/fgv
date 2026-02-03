@@ -9,5 +9,5 @@ Optional categorized URLs for external resources (manufacturer page, purchase li
 **Signature:**
 
 ```typescript
-readonly urls?: ReadonlyArray<ICategorizedUrl>;
+readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 ```

@@ -50,5 +50,5 @@ Maximum water percentage
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.libraryruntime.ingredientquery.md)
 

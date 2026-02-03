@@ -9,7 +9,7 @@ Reference to a procedure that can be used with a filling recipe. Contains the pr
 **Signature:**
 
 ```typescript
-export type IProcedureRef = IRefWithNotes<ProcedureId>;
+export type IProcedureRef = Model.IRefWithNotes<ProcedureId>;
 ```
-**References:** [IRefWithNotes](./ts-chocolate.irefwithnotes.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)
+**References:** [Model.IRefWithNotes](./ts-chocolate.model.irefwithnotes.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)
 

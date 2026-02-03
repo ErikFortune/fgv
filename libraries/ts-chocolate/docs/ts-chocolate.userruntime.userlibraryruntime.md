@@ -55,6 +55,7 @@ ReadonlyMap&lt;[PersistedSessionId](./ts-chocolate.persistedsessionid.md)<!-- --
 
 </td><td>
 
+All currently materialized sessions.
 
 
 </td></tr>
@@ -104,6 +105,7 @@ Creates a new UserLibraryRuntime.
 
 </td><td>
 
+Creates a new persisted filling session from a filling version. The session is created and persisted immediately.
 
 
 </td></tr>
@@ -117,6 +119,7 @@ Creates a new UserLibraryRuntime.
 
 </td><td>
 
+Evicts a materialized session from the cache. The persisted session remains in the library.
 
 
 </td></tr>
@@ -130,6 +133,7 @@ Creates a new UserLibraryRuntime.
 
 </td><td>
 
+Gets a materialized editing session from a persisted session. Returns cached session if already materialized, or materializes on demand.
 
 
 </td></tr>
@@ -143,6 +147,7 @@ Creates a new UserLibraryRuntime.
 
 </td><td>
 
+Saves an active session back to the library.
 
 
 </td></tr>

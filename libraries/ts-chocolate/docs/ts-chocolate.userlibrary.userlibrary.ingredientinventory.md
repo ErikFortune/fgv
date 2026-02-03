@@ -4,6 +4,7 @@
 
 ## UserLibrary.UserLibrary.ingredientInventory property
 
+Ingredient inventory library for tracking ingredient stock.
 
 **Signature:**
 

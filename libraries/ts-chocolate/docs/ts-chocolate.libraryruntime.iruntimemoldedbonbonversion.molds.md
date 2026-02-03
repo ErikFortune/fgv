@@ -9,5 +9,5 @@ Resolved molds with preferred selection
 **Signature:**
 
 ```typescript
-readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 ```

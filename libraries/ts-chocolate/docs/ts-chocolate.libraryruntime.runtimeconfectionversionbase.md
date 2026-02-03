@@ -241,7 +241,7 @@ Effective tags for this version (base confection tags + version's additional tag
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>
@@ -283,7 +283,7 @@ Resolved filling slots for this version. Undefined if the version has no filling
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -304,7 +304,7 @@ Optional categorized notes about this version.
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

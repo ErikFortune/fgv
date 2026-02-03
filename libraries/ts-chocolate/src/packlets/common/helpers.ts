@@ -26,6 +26,13 @@
 import { Result } from '@fgv/ts-utils';
 
 import {
+  ID_SEPARATOR,
+  IHasId,
+  IIdsWithPreferred,
+  IOptionsWithPreferred,
+  VERSION_ID_SEPARATOR
+} from './model';
+import {
   BaseFillingId,
   BaseIngredientId,
   ConfectionId,
@@ -34,18 +41,13 @@ import {
   FillingId,
   FillingVersionId,
   FillingVersionSpec,
-  ID_SEPARATOR,
-  IHasId,
-  IIdsWithPreferred,
   IngredientId,
-  IOptionsWithPreferred,
   JournalBaseId,
   JournalId,
   PersistedSessionId,
   SessionBaseId,
-  SourceId,
-  VERSION_ID_SEPARATOR
-} from './model';
+  SourceId
+} from './ids';
 import {
   confectionVersionId as confectionVersionIdConverter,
   fillingVersionId as fillingVersionIdConverter,

@@ -4,6 +4,7 @@
 
 ## UserRuntime.UserLibraryRuntime.createFillingSession() method
 
+Creates a new persisted filling session from a filling version. The session is created and persisted immediately.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ versionId
 
 </td><td>
 
+Source filling version to create session for
+
 
 </td></tr>
 <tr><td>
@@ -55,6 +58,8 @@ options
 
 </td><td>
 
+Creation options including target collection
+
 
 </td></tr>
 </tbody></table>
@@ -62,4 +67,6 @@ options
 **Returns:**
 
 Result&lt;IPersistedFillingSession&gt;
+
+Result with the created persisted session
 

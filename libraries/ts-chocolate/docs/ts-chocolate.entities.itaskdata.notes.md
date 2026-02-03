@@ -9,5 +9,5 @@ Optional categorized notes about the task
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 ```

@@ -9,7 +9,7 @@ Creates an edit journal entry from this session. Records the original version an
 **Signature:**
 
 ```typescript
-toEditJournalEntry(notes?: ICategorizedNote[]): Result<IFillingEditJournalEntry>;
+toEditJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingEditJournalEntry>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ notes
 
 </td><td>
 
-[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->\[\]
+[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]
 
 
 </td><td>

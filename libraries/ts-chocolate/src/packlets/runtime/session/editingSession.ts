@@ -26,7 +26,6 @@
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
 import {
-  ICategorizedNote,
   IngredientId,
   Measurement,
   MeasurementUnit,
@@ -35,7 +34,8 @@ import {
   SessionId,
   SourceId,
   Helpers as CommonHelpers,
-  Converters as CommonConverters
+  Converters as CommonConverters,
+  Model as CommonModel
 } from '../../common';
 import {
   IFillingEditJournalEntry,
@@ -169,7 +169,7 @@ export class EditingSession {
    * @returns Success or failure
    * @public
    */
-  public setNotes(notes: ICategorizedNote[]): Result<void> {
+  public setNotes(notes: CommonModel.ICategorizedNote[]): Result<void> {
     return this._produced.setNotes(notes);
   }
 
@@ -341,7 +341,7 @@ export class EditingSession {
    * @returns Result with journal entry
    * @public
    */
-  public toEditJournalEntry(notes?: ICategorizedNote[]): Result<IFillingEditJournalEntry> {
+  public toEditJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingEditJournalEntry> {
     return this._createJournalEntry(undefined, notes);
   }
 
@@ -352,7 +352,9 @@ export class EditingSession {
    * @returns Result with production journal entry
    * @public
    */
-  public toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry> {
+  public toProductionJournalEntry(
+    notes?: CommonModel.ICategorizedNote[]
+  ): Result<IFillingProductionJournalEntry> {
     return generateJournalId().onSuccess((baseId) =>
       succeed({
         type: 'filling-production' as const,
@@ -383,7 +385,7 @@ export class EditingSession {
     readonly baseId?: SessionBaseId;
     readonly status?: PersistedSessionStatus;
     readonly label?: string;
-    readonly notes?: ICategorizedNote[];
+    readonly notes?: CommonModel.ICategorizedNote[];
   }): Result<IPersistedFillingSession> {
     const baseIdResult = options.baseId ? succeed(options.baseId) : generateSessionBaseId();
 
@@ -487,7 +489,7 @@ export class EditingSession {
    */
   private _createJournalEntry(
     updatedVersionSpec: string | undefined,
-    notes: ICategorizedNote[] | undefined
+    notes: CommonModel.ICategorizedNote[] | undefined
   ): Result<IFillingEditJournalEntry> {
     return generateJournalId().onSuccess((baseId) => {
       // Create updated version ID if needed

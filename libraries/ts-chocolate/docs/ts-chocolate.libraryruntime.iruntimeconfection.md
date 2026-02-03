@@ -154,7 +154,7 @@ Gets effective tags for the golden version (base + version's additional tags).
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>
@@ -280,7 +280,7 @@ Human-readable name
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -364,7 +364,7 @@ _(Optional)_ Base tags for searching/filtering (version may add more)
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>

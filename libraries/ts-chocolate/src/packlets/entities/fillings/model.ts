@@ -28,14 +28,10 @@ import {
   FillingName,
   FillingVersionId,
   FillingVersionSpec,
-  ICategorizedNote,
-  ICategorizedUrl,
-  IIdsWithPreferred,
   IngredientId,
-  IOptionsWithPreferred,
-  IRefWithNotes,
   Measurement,
   MeasurementUnit,
+  Model,
   ProcedureId,
   RatingScore,
   SpoonLevel
@@ -79,7 +75,7 @@ export interface IFillingIngredient {
    * Available ingredient options with preferred selection.
    * The preferredId (or first id if not specified) is the primary ingredient.
    */
-  readonly ingredient: IIdsWithPreferred<IngredientId>;
+  readonly ingredient: Model.IIdsWithPreferred<IngredientId>;
 
   /**
    * Amount of this ingredient in the specified unit.
@@ -102,7 +98,7 @@ export interface IFillingIngredient {
   /**
    * Optional categorized notes for this specific ingredient usage
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -154,7 +150,7 @@ export interface IFillingRating {
   /**
    * Optional categorized notes about the rating
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -185,7 +181,7 @@ export interface IFillingUsage {
   /**
    * Optional categorized notes about this usage
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 
   /**
    * If modifications were made during this usage that created a new version,
@@ -227,7 +223,7 @@ export interface IFillingRecipeVersion {
   /**
    * Optional categorized notes about this version
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 
   /**
    * Optional ratings for this version
@@ -238,7 +234,7 @@ export interface IFillingRecipeVersion {
    * Optional procedures associated with this version.
    * Contains applicable procedures and the preferred default.
    */
-  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+  readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 }
 /**
  * Reference to a source filling recipe+version from which a filling recipe was derived.
@@ -260,7 +256,7 @@ export interface IFillingDerivation {
   /**
    * Optional categorized notes about the derivation
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -268,7 +264,7 @@ export interface IFillingDerivation {
  * Contains the procedure ID and optional notes.
  * @public
  */
-export type IProcedureRef = IRefWithNotes<ProcedureId>;
+export type IProcedureRef = Model.IRefWithNotes<ProcedureId>;
 
 /**
  * Complete filling recipe with version history
@@ -319,7 +315,7 @@ export interface IFillingRecipe {
   /**
    * Optional categorized URLs for external resources (tutorials, videos, etc.)
    */
-  readonly urls?: ReadonlyArray<ICategorizedUrl>;
+  readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
 }
 
 /**
@@ -390,7 +386,7 @@ export interface IIngredientSnapshot {
   /**
    * Optional categorized notes for this ingredient
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -414,7 +410,7 @@ export interface IScaledFillingRecipeVersion {
   /**
    * Optional categorized notes
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -474,7 +470,7 @@ export interface IComputedScaledFillingRecipe {
   /**
    * Optional categorized notes from the source version
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 
   /**
    * Optional ratings from the source version
@@ -530,7 +526,7 @@ export interface IProducedFillingIngredient {
   /** Measurement modifiers (spoonLevel, toTaste) - production metadata */
   readonly modifiers?: IIngredientModifiers;
   /** Optional categorized notes about this ingredient usage */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -550,5 +546,5 @@ export interface IProducedFilling {
   /** Resolved procedure ID if one was used */
   readonly procedureId?: ProcedureId;
   /** Optional categorized notes about production */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }

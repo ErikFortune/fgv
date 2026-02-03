@@ -9,5 +9,5 @@ Optional categorized notes for this step
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 ```

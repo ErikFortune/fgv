@@ -9,5 +9,5 @@ Gets the notes as a readonly array.
 **Signature:**
 
 ```typescript
-get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined;
 ```

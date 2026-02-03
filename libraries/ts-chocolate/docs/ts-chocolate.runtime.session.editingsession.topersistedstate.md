@@ -14,7 +14,7 @@ toPersistedState(options: {
         readonly baseId?: SessionBaseId;
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
-        readonly notes?: ICategorizedNote[];
+        readonly notes?: CommonModel.ICategorizedNote[];
     }): Result<IPersistedFillingSession>;
 ```
 
@@ -43,7 +43,7 @@ options
 
 </td><td>
 
-{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->; readonly status?: PersistedSessionStatus; readonly label?: string; readonly notes?: [ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->\[\]; }
+{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->; readonly status?: PersistedSessionStatus; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
 
 
 </td><td>

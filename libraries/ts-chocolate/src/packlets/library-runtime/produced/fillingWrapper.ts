@@ -31,9 +31,9 @@ import {
   Measurement,
   MeasurementUnit,
   ProcedureId,
-  ICategorizedNote,
   Helpers,
-  Converters as CommonConverters
+  Converters as CommonConverters,
+  Model as CommonModel
 } from '../../common';
 import {
   IProducedFilling,
@@ -421,7 +421,7 @@ export class RuntimeProducedFilling {
    * @returns Success or failure
    * @public
    */
-  public setNotes(notes: ICategorizedNote[]): Result<void> {
+  public setNotes(notes: CommonModel.ICategorizedNote[]): Result<void> {
     this._pushUndo();
 
     this._current = {
@@ -638,8 +638,8 @@ export class RuntimeProducedFilling {
    * Compares two notes arrays for equality.
    */
   private _notesEqual(
-    a: ReadonlyArray<ICategorizedNote> | undefined,
-    b: ReadonlyArray<ICategorizedNote> | undefined
+    a: ReadonlyArray<CommonModel.ICategorizedNote> | undefined,
+    b: ReadonlyArray<CommonModel.ICategorizedNote> | undefined
   ): boolean {
     if (a === undefined && b === undefined) {
       return true;

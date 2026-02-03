@@ -9,5 +9,5 @@ Resolved procedures for this version. Undefined if the version has no procedures
 **Signature:**
 
 ```typescript
-get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+get procedures(): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 ```

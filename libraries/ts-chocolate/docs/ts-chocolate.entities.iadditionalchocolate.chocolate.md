@@ -9,5 +9,5 @@ Available chocolate options with preferred selection
 **Signature:**
 
 ```typescript
-readonly chocolate: IIdsWithPreferred<IngredientId>;
+readonly chocolate: Model.IIdsWithPreferred<IngredientId>;
 ```

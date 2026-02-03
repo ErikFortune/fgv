@@ -50,5 +50,5 @@ The category to filter by
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.libraryruntime.ingredientquery.md)
 

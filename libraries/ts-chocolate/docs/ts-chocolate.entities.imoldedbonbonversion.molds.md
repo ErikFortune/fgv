@@ -9,5 +9,5 @@ Required molds with preferred selection
 **Signature:**
 
 ```typescript
-readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+readonly molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
 ```

@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 import { fail } from '@fgv/ts-utils';
 
-import { BaseTaskId, ICategorizedNote, TaskId, Minutes, Celsius } from '../../../packlets/common';
+import { BaseTaskId, Celsius, TaskId, Minutes, Model as CommonModel } from '../../../packlets/common';
 import { ITaskData } from '../../../packlets/entities';
 import { RuntimeTask, ITaskContext } from '../../../packlets/library-runtime';
 
@@ -48,7 +48,9 @@ describe('RuntimeTask', () => {
     defaultActiveTime: 15 as Minutes,
     defaultTemperature: 32 as Celsius,
     tags: ['tempering', 'chocolate'],
-    notes: [{ category: 'user', note: 'Ensure accurate temperature control' }] as ICategorizedNote[]
+    notes: [
+      { category: 'user', note: 'Ensure accurate temperature control' }
+    ] as CommonModel.ICategorizedNote[]
   };
 
   describe('create', () => {

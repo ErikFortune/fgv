@@ -23,7 +23,6 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseFillingId,
-  ICategorizedNote,
   Measurement,
   IngredientId,
   Percentage,
@@ -31,6 +30,7 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
+  Model as CommonModel,
   SourceId
 } from '../../../packlets/common';
 
@@ -121,7 +121,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       {
         versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
-        notes: [{ category: 'user', note: 'Original recipe' }] as ICategorizedNote[],
+        notes: [{ category: 'user', note: 'Original recipe' }] as CommonModel.ICategorizedNote[],
         yield: '50 bonbons',
         ingredients: [
           {
@@ -130,7 +130,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
               preferredId: 'test.dark-chocolate' as IngredientId
             },
             amount: 200 as Measurement,
-            notes: [{ category: 'user', note: 'Use couverture' }] as ICategorizedNote[]
+            notes: [{ category: 'user', note: 'Use couverture' }] as CommonModel.ICategorizedNote[]
           },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
@@ -139,14 +139,14 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
           {
             category: 'texture',
             score: 4 as RatingScore,
-            notes: [{ category: 'user', note: 'Good texture' }] as ICategorizedNote[]
+            notes: [{ category: 'user', note: 'Good texture' }] as CommonModel.ICategorizedNote[]
           }
         ]
       },
       {
         versionSpec: '2026-02-01-01' as FillingVersionSpec,
         createdDate: '2026-02-01',
-        notes: [{ category: 'user', note: 'Revised with butter' }] as ICategorizedNote[],
+        notes: [{ category: 'user', note: 'Revised with butter' }] as CommonModel.ICategorizedNote[],
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Measurement },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement },

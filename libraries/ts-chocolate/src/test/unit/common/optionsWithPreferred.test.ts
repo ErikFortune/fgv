@@ -23,10 +23,8 @@ import { Converters } from '@fgv/ts-utils';
 import {
   Converters as CommonConverters,
   Helpers,
-  Validation,
-  IOptionsWithPreferred,
-  IIdsWithPreferred,
-  IRefWithNotes
+  Model as CommonModel,
+  Validation
 } from '../../../packlets/common';
 
 describe('optionsWithPreferred', () => {
@@ -38,7 +36,7 @@ describe('optionsWithPreferred', () => {
 
   describe('getPreferred', () => {
     test('returns undefined when preferredId is not specified', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -48,7 +46,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns the preferred option when it exists', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -59,7 +57,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns undefined when preferredId is not in options', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -70,7 +68,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns undefined for empty options', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [],
         preferredId: 'a'
       };
@@ -80,7 +78,7 @@ describe('optionsWithPreferred', () => {
 
   describe('getPreferredOrFirst', () => {
     test('returns the preferred option when it exists', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -91,7 +89,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns the first option when no preferredId', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -101,7 +99,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns the first option when preferredId is not found', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -112,7 +110,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns undefined for empty options', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: []
       };
       expect(Helpers.getPreferredOrFirst(collection)).toBeUndefined();
@@ -121,14 +119,14 @@ describe('optionsWithPreferred', () => {
 
   describe('getPreferredId', () => {
     test('returns undefined when preferredId is not specified', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c']
       };
       expect(Helpers.getPreferredId(collection)).toBeUndefined();
     });
 
     test('returns the preferredId when it exists in ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c'],
         preferredId: 'b'
       };
@@ -136,7 +134,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns undefined when preferredId is not in ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c'],
         preferredId: 'd'
       };
@@ -144,7 +142,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns undefined for empty ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: [],
         preferredId: 'a'
       };
@@ -154,7 +152,7 @@ describe('optionsWithPreferred', () => {
 
   describe('getPreferredIdOrFirst', () => {
     test('returns the preferredId when it exists in ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c'],
         preferredId: 'b'
       };
@@ -162,14 +160,14 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns the first id when no preferredId', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c']
       };
       expect(Helpers.getPreferredIdOrFirst(collection)).toBe('a');
     });
 
     test('returns the first id when preferredId is not found', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c'],
         preferredId: 'd'
       };
@@ -177,7 +175,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('returns undefined for empty ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: []
       };
       expect(Helpers.getPreferredIdOrFirst(collection)).toBeUndefined();
@@ -186,7 +184,7 @@ describe('optionsWithPreferred', () => {
 
   describe('validateOptionsWithPreferred', () => {
     test('succeeds when preferredId is undefined', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -196,7 +194,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('succeeds when preferredId exists in options', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -207,7 +205,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails when preferredId is not in options', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [
           { id: 'a', name: 'Option A' },
           { id: 'b', name: 'Option B' }
@@ -220,7 +218,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails with context in error message', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [{ id: 'a', name: 'Option A' }],
         preferredId: 'missing'
       };
@@ -230,7 +228,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails for empty options with preferredId', () => {
-      const collection: IOptionsWithPreferred<TestOption, string> = {
+      const collection: CommonModel.IOptionsWithPreferred<TestOption, string> = {
         options: [],
         preferredId: 'a'
       };
@@ -242,14 +240,14 @@ describe('optionsWithPreferred', () => {
 
   describe('validateIdsWithPreferred', () => {
     test('succeeds when preferredId is undefined', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c']
       };
       expect(Validation.validateIdsWithPreferred(collection)).toSucceedWith(collection);
     });
 
     test('succeeds when preferredId exists in ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c'],
         preferredId: 'b'
       };
@@ -257,7 +255,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails when preferredId is not in ids', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b', 'c'],
         preferredId: 'd'
       };
@@ -265,7 +263,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails with context in error message', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: ['a', 'b'],
         preferredId: 'missing'
       };
@@ -275,7 +273,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails for empty ids with preferredId', () => {
-      const collection: IIdsWithPreferred<string> = {
+      const collection: CommonModel.IIdsWithPreferred<string> = {
         ids: [],
         preferredId: 'a'
       };
@@ -420,7 +418,7 @@ describe('optionsWithPreferred', () => {
 
     test('converts valid data with id only', () => {
       const input = { id: 'test-id' };
-      expect(converter.convert(input)).toSucceedAndSatisfy((result: IRefWithNotes<string>) => {
+      expect(converter.convert(input)).toSucceedAndSatisfy((result: CommonModel.IRefWithNotes<string>) => {
         expect(result.id).toBe('test-id');
         expect(result.notes).toBeUndefined();
       });
@@ -428,7 +426,7 @@ describe('optionsWithPreferred', () => {
 
     test('converts valid data with id and notes', () => {
       const input = { id: 'test-id', notes: [{ category: 'user', note: 'Some notes about this ref' }] };
-      expect(converter.convert(input)).toSucceedAndSatisfy((result: IRefWithNotes<string>) => {
+      expect(converter.convert(input)).toSucceedAndSatisfy((result: CommonModel.IRefWithNotes<string>) => {
         expect(result.id).toBe('test-id');
         expect(result.notes).toEqual([{ category: 'user', note: 'Some notes about this ref' }]);
       });

@@ -9,5 +9,5 @@ Base URLs (version may add more via additionalUrls)
 **Signature:**
 
 ```typescript
-get urls(): ReadonlyArray<ICategorizedUrl> | undefined;
+get urls(): ReadonlyArray<CommonModel.ICategorizedUrl> | undefined;
 ```

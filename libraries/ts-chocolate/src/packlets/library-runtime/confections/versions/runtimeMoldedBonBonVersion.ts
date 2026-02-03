@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, Helpers, IOptionsWithPreferred, MoldId } from '../../../common';
+import { ConfectionId, Helpers, Model as CommonModel, MoldId } from '../../../common';
 import { IMoldedBonBonVersion } from '../../../entities';
 import {
   IConfectionContext,
@@ -55,7 +55,7 @@ export class RuntimeMoldedBonBonVersion
   // Lazy-resolved caches (undefined = not yet resolved)
   private _resolvedShellChocolate: IResolvedChocolateSpec | undefined;
   private _resolvedAdditionalChocolates: ReadonlyArray<IResolvedAdditionalChocolate> | undefined | null;
-  private _resolvedMolds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> | undefined;
+  private _resolvedMolds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> | undefined;
 
   /**
    * Creates a RuntimeMoldedBonBonVersion.
@@ -104,7 +104,7 @@ export class RuntimeMoldedBonBonVersion
   /**
    * Resolved molds with preferred selection (lazy-loaded).
    */
-  public get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
+  public get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     if (this._resolvedMolds === undefined) {
       this._resolvedMolds = this._context.resolveMoldRefs(this._moldedBonBonVersion.molds);
     }

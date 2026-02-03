@@ -56,13 +56,15 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   FluidityStars,
-  ICategorizedNote,
   IngredientCategory,
   IngredientId,
   Measurement,
+  MoldId,
   Percentage,
+  ProcedureId,
   SlotId,
-  SourceId
+  SourceId,
+  Model as CommonModel
 } from '../common';
 import {
   ConfectionsLibrary,
@@ -107,7 +109,6 @@ import {
   IRolledTruffle,
   IRolledTruffleVersion
 } from '../entities';
-import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
@@ -446,7 +447,7 @@ export interface IRuntimeFillingRecipeVersion {
   /**
    * Optional notes about this version.
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
    * Optional ratings for this version.
@@ -623,7 +624,7 @@ export interface IRuntimeScaledFillingRecipeVersion {
   /**
    * Optional notes from the source version.
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
    * Optional ratings from the source version.
@@ -709,7 +710,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * Optional notes specific to using this procedure with the recipe.
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
    * The original raw procedure reference data.
@@ -875,7 +876,7 @@ export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredie
   /**
    * Optional notes for this specific ingredient usage
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
    * Resolved alternate ingredients that can substitute for the primary
@@ -916,7 +917,7 @@ export interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredien
   /**
    * Optional notes for this ingredient usage
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
    * Resolved alternate ingredients
@@ -1272,7 +1273,7 @@ export interface IRuntimeConfection {
   readonly tags?: ReadonlyArray<string>;
 
   /** Base URLs (version may add more) */
-  readonly urls?: ReadonlyArray<ICategorizedUrl>;
+  readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;
@@ -1306,7 +1307,7 @@ export interface IRuntimeConfection {
   /**
    * Gets effective URLs for the golden version (base + version's additional URLs).
    */
-  readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+  readonly effectiveUrls: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   /**
    * Gets effective tags for a specific version.
@@ -1318,7 +1319,7 @@ export interface IRuntimeConfection {
    * Gets effective URLs for a specific version.
    * @param version - The version to get URLs for (defaults to golden version)
    */
-  getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+  getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   // ---- Convenience accessors for golden version properties ----
 
@@ -1332,7 +1333,7 @@ export interface IRuntimeConfection {
   readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
 
   /** Resolved procedures from the golden version */
-  readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+  readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 
   // ---- Type narrowing methods ----
 
@@ -1380,7 +1381,7 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
 
   /** Resolved molds with preferred selection (from golden version) */
-  readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+  readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
   /** Resolved shell chocolate specification (from golden version) */
   readonly shellChocolate: IResolvedChocolateSpec;
@@ -1468,7 +1469,7 @@ export interface IResolvedRecipeFillingOption {
   /** The resolved filling recipe object */
   readonly filling: IRuntimeFillingRecipe;
   /** Optional notes specific to this filling option */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw recipe filling option data */
   readonly raw: IRecipeFillingOption;
 }
@@ -1485,7 +1486,7 @@ export interface IResolvedIngredientFillingOption {
   /** The resolved ingredient object */
   readonly ingredient: IRuntimeIngredient;
   /** Optional notes specific to this filling option */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw ingredient filling option data */
   readonly raw: IIngredientFillingOption;
 }
@@ -1500,7 +1501,7 @@ export interface IResolvedFillingSlot {
   /** Human-readable name for display */
   readonly name?: string;
   /** Resolved filling options with preferred selection */
-  readonly filling: IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+  readonly filling: CommonModel.IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
 }
 
 // ============================================================================
@@ -1548,7 +1549,7 @@ export interface IResolvedConfectionMoldRef {
   /** The resolved mold object */
   readonly mold: IRuntimeMold;
   /** Optional notes specific to using this mold */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw mold reference data */
   readonly raw: IConfectionMoldRef;
 }
@@ -1568,7 +1569,7 @@ export interface IResolvedConfectionProcedure {
   /** The resolved procedure object */
   readonly procedure: IRuntimeProcedure;
   /** Optional notes specific to using this procedure */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw procedure reference data */
   readonly raw: IProcedureRef;
 }
@@ -1601,7 +1602,7 @@ export interface IResolvedCoatingOption {
   /** The resolved ingredient object */
   readonly ingredient: IRuntimeIngredient;
   /** Optional notes specific to this coating option */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
 // ============================================================================
@@ -1664,7 +1665,7 @@ export interface IRuntimeConfectionVersionBase {
   /**
    * Optional notes about this version.
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   // ---- Resolved References ----
 
@@ -1678,7 +1679,7 @@ export interface IRuntimeConfectionVersionBase {
    * Resolved procedures for this version.
    * Undefined if the version has no procedures.
    */
-  readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+  readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 
   // ---- Effective Tags/URLs ----
 
@@ -1690,7 +1691,7 @@ export interface IRuntimeConfectionVersionBase {
   /**
    * Effective URLs for this version (base confection URLs + version's additional URLs).
    */
-  readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+  readonly effectiveUrls: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   // ---- Type Guards ----
 
@@ -1726,7 +1727,7 @@ export interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBa
   readonly confection: IRuntimeMoldedBonBon;
 
   /** Resolved molds with preferred selection */
-  readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+  readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
   /** Resolved shell chocolate specification */
   readonly shellChocolate: IResolvedChocolateSpec;
@@ -1863,8 +1864,8 @@ export interface IConfectionContext {
    * @returns Resolved mold references
    */
   resolveMoldRefs(
-    molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
-  ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
   /**
    * Resolves additional chocolates to runtime objects.
@@ -1892,8 +1893,8 @@ export interface IConfectionContext {
    * @returns Resolved procedures, or undefined if none
    */
   resolveProcedures(
-    procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
-  ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 
 /**

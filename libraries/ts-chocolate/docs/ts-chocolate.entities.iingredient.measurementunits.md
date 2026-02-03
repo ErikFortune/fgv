@@ -9,5 +9,5 @@ Preferred and acceptable measurement units for this ingredient
 **Signature:**
 
 ```typescript
-readonly measurementUnits?: IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
+readonly measurementUnits?: CommonModel.IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
 ```

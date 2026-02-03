@@ -25,13 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import {
-  ConfectionId,
-  ConfectionVersionSpec,
-  IOptionsWithPreferred,
-  MoldId,
-  ProcedureId
-} from '../../common';
+import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, MoldId, ProcedureId } from '../../common';
 import { AnyConfectionVersion, IMoldedBonBon, IMoldedBonBonVersion } from '../../entities';
 import {
   IConfectionContext,
@@ -149,14 +143,16 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   /**
    * Resolved procedures from the golden version.
    */
-  public get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+  public get procedures():
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | undefined {
     return this.goldenVersion.procedures;
   }
 
   /**
    * Resolved molds with preferred selection (from golden version).
    */
-  public get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
+  public get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     return this.goldenVersion.molds;
   }
 

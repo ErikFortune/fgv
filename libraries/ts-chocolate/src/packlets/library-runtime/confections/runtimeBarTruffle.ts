@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, ProcedureId, IOptionsWithPreferred } from '../../common';
+import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
 import {
   AnyConfectionVersion,
   IBarTruffle,
@@ -161,7 +161,9 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   /**
    * Resolved procedures from the golden version.
    */
-  public get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+  public get procedures():
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | undefined {
     return this.goldenVersion.procedures;
   }
 

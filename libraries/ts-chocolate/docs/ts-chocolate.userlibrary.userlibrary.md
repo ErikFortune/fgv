@@ -55,6 +55,7 @@ Description
 
 </td><td>
 
+Ingredient inventory library for tracking ingredient stock.
 
 
 </td></tr>
@@ -75,6 +76,7 @@ JournalLibrary
 
 </td><td>
 
+Journal library for production records.
 
 
 </td></tr>
@@ -116,6 +118,7 @@ Logger used by this library and its sub-libraries.
 
 </td><td>
 
+Mold inventory library for tracking owned molds.
 
 
 </td></tr>
@@ -136,6 +139,7 @@ SessionLibrary
 
 </td><td>
 
+Session library for persisted editing sessions.
 
 
 </td></tr>

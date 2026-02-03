@@ -9,5 +9,5 @@ Converter for filling recipe procedures with preferred selection. Validates that
 **Signature:**
 
 ```typescript
-procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>>
+procedures: Converter<Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>>
 ```

@@ -9,5 +9,5 @@ Optional categorized notes about this inventory item
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 ```

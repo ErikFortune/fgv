@@ -4,6 +4,7 @@
 
 ## UserLibrary.UserLibrary.journals property
 
+Journal library for production records.
 
 **Signature:**
 

@@ -9,5 +9,5 @@ Optional categorized notes about the mold
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 ```

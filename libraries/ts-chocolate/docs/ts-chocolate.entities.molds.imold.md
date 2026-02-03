@@ -150,7 +150,7 @@ Manufacturer of the mold
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
@@ -234,7 +234,7 @@ _(Optional)_ Optional tags for categorization and search
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>

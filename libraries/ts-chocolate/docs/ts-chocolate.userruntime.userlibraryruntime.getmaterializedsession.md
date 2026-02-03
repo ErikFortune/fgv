@@ -4,6 +4,7 @@
 
 ## UserRuntime.UserLibraryRuntime.getMaterializedSession() method
 
+Gets a materialized editing session from a persisted session. Returns cached session if already materialized, or materializes on demand.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ sessionId
 
 </td><td>
 
+Full persisted session ID (collectionId.baseId)
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ sessionId
 **Returns:**
 
 Result&lt;[AnyMaterializedSession](./ts-chocolate.userruntime.anymaterializedsession.md)<!-- -->&gt;
+
+Result with the materialized editing session (filling or confection)
 

@@ -96,7 +96,7 @@ Parent confection narrowed to molded bonbon type.
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>

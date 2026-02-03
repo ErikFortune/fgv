@@ -9,5 +9,5 @@ Optional categorized URLs
 **Signature:**
 
 ```typescript
-get urls(): ReadonlyArray<ICategorizedUrl> | undefined;
+get urls(): ReadonlyArray<CommonModel.ICategorizedUrl> | undefined;
 ```

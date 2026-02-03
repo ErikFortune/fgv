@@ -9,5 +9,5 @@ Resolved molds with preferred selection (from golden version).
 **Signature:**
 
 ```typescript
-get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 ```

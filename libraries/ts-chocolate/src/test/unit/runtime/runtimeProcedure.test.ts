@@ -24,8 +24,8 @@ import { fail, succeed } from '@fgv/ts-utils';
 import {
   BaseProcedureId,
   BaseTaskId,
-  ICategorizedNote,
   Minutes,
+  Model as CommonModel,
   ProcedureId,
   TaskId
 } from '../../../packlets/common';
@@ -151,7 +151,7 @@ describe('RuntimeProcedure', () => {
       }
     ],
     tags: ['multi', 'test'],
-    notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
+    notes: [{ category: 'user', note: 'Test notes' }] as CommonModel.ICategorizedNote[]
   };
 
   // Procedure with all timing types (wait and hold)

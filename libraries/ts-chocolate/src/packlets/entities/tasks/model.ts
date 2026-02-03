@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseTaskId, Celsius, ICategorizedNote, Minutes, TaskId } from '../../common';
+import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
 
 // ============================================================================
 // Task Interfaces
@@ -75,7 +75,7 @@ export interface ITaskData {
   /**
    * Optional categorized notes about the task
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
    * Optional tags for categorization and search

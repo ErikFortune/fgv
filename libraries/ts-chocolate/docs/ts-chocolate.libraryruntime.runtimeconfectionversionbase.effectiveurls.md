@@ -9,5 +9,5 @@ Effective URLs for this version (base confection URLs + version's additional URL
 **Signature:**
 
 ```typescript
-get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
+get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl>;
 ```

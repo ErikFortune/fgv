@@ -23,14 +23,7 @@
  * @packageDocumentation
  */
 
-import {
-  ConfectionId,
-  ConfectionVersionSpec,
-  ICategorizedNote,
-  ICategorizedUrl,
-  IOptionsWithPreferred,
-  ProcedureId
-} from '../../../common';
+import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../../common';
 import {
   AnyConfectionVersion,
   IConfectionDecoration,
@@ -70,7 +63,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   private _confection: IRuntimeConfection | undefined;
   private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined | null;
   private _resolvedProcedures:
-    | IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined
     | null;
 
@@ -165,7 +158,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   /**
    * Optional categorized notes about this version.
    */
-  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
     return this._version.notes;
   }
 
@@ -188,7 +181,9 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
    * Resolved procedures for this version.
    * Undefined if the version has no procedures.
    */
-  public get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+  public get procedures():
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | undefined {
     if (this._resolvedProcedures === undefined) {
       this._resolvedProcedures = this._context.resolveProcedures(this._version.procedures) ?? null;
     }
@@ -212,7 +207,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   /**
    * Effective URLs for this version (base confection URLs + version's additional URLs).
    */
-  public get effectiveUrls(): ReadonlyArray<ICategorizedUrl> {
+  public get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl> {
     const baseUrls = this.confection.urls ?? [];
     const versionUrls = this._version.additionalUrls ?? [];
     return [...baseUrls, ...versionUrls];

@@ -242,7 +242,7 @@ const barTruffleVersion: Converter<IBarTruffleVersion>;
 const base64String: Converter<string>;
 
 // @public
-export const BASE_ID_PATTERN: RegExp;
+const BASE_ID_PATTERN: RegExp;
 
 // @public
 const baseConfection: Converter<IConfectionBase>;
@@ -420,9 +420,13 @@ function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredi
 // @public
 function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const categorizedNote: Converter<ICategorizedNote>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const categorizedUrl: Converter<ICategorizedUrl>;
 
@@ -597,7 +601,7 @@ const collectionSourceMetadata: Converter<ICollectionSourceMetadata>;
 type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 
 // @public
-export const COMPOSITE_ID_PATTERN: RegExp;
+const COMPOSITE_ID_PATTERN: RegExp;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -605,10 +609,10 @@ export const COMPOSITE_ID_PATTERN: RegExp;
 const confection: Converter<ConfectionData>;
 
 // @public
-export const CONFECTION_VERSION_ID_PATTERN: RegExp;
+const CONFECTION_VERSION_ID_PATTERN: RegExp;
 
 // @public
-export const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
+const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
 type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
@@ -703,7 +707,7 @@ const confectionId_2: Validator<ConfectionId>;
 const confectionMoldRef: Converter<IConfectionMoldRef>;
 
 // @public
-const confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef, MoldId>>;
+const confectionMolds: Converter<Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>>;
 
 // @public
 export type ConfectionName = Brand<string, 'ConfectionName'>;
@@ -1213,18 +1217,18 @@ class EditingSession {
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     get sessionId(): SessionId;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
-    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
     get targetWeight(): Measurement;
-    toEditJournalEntry(notes?: ICategorizedNote[]): Result<IFillingEditJournalEntry>;
+    toEditJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingEditJournalEntry>;
     toPersistedState(options: {
         readonly collectionId: SourceId;
         readonly baseId?: SessionBaseId;
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
-        readonly notes?: ICategorizedNote[];
+        readonly notes?: Model.ICategorizedNote[];
     }): Result<IPersistedFillingSession>;
-    toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
+    toProductionJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
     undo(): Result<boolean>;
 }
 
@@ -1581,10 +1585,10 @@ function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPr
 const fatIngredient: Converter<IFatIngredient>;
 
 // @public
-export const FILLING_VERSION_ID_PATTERN: RegExp;
+const FILLING_VERSION_ID_PATTERN: RegExp;
 
 // @public
-export const FILLING_VERSION_SPEC_PATTERN: RegExp;
+const FILLING_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
 export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
@@ -1646,7 +1650,7 @@ const fillingName: Converter<FillingName>;
 type FillingOptionId = FillingId | IngredientId;
 
 // @public
-const fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>;
+const fillingOptions: Converter<Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>;
 
 // @public
 type FillingOptionType = 'recipe' | 'ingredient';
@@ -1690,7 +1694,7 @@ class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeF
 type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
 // @public
-export class FillingRecipeQuery {
+class FillingRecipeQuery {
     constructor(context: LibraryRuntimeContext);
     count(): number;
     descriptionContains(text: string): FillingRecipeQuery;
@@ -2102,7 +2106,7 @@ export const HundredPercent: Percentage;
 
 // @public
 interface IAdditionalChocolate {
-    readonly chocolate: IIdsWithPreferred<IngredientId>;
+    readonly chocolate: Model.IIdsWithPreferred<IngredientId>;
     readonly purpose: AdditionalChocolatePurpose;
 }
 
@@ -2144,13 +2148,13 @@ interface IBonBonDimensions {
 }
 
 // @public
-export interface ICategorizedNote {
+interface ICategorizedNote {
     readonly category: NoteCategory;
     readonly note: string;
 }
 
 // @public
-export interface ICategorizedUrl {
+interface ICategorizedUrl {
     readonly category: UrlCategory;
     readonly url: string;
 }
@@ -2214,10 +2218,10 @@ interface IChocolateLibraryCreateParams {
 }
 
 // @public
-type IChocolateSpec = IIdsWithPreferred<IngredientId>;
+type IChocolateSpec = Model.IIdsWithPreferred<IngredientId>;
 
 // @public
-type ICoatings = IIdsWithPreferred<IngredientId>;
+type ICoatings = Model.IIdsWithPreferred<IngredientId>;
 
 // @public
 interface ICollection<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
@@ -2319,7 +2323,7 @@ interface IComputedScaledFillingRecipe {
     readonly baseWeight: Measurement;
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IScaledFillingIngredient>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly ratings?: ReadonlyArray<IFillingRating>;
     readonly scaledFrom: IScalingSource;
     readonly yield?: string;
@@ -2333,7 +2337,7 @@ interface IConfectionBase {
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly name: ConfectionName;
     readonly tags?: ReadonlyArray<string>;
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly versions: ReadonlyArray<AnyConfectionVersion>;
 }
 
@@ -2363,8 +2367,8 @@ interface IConfectionContext {
     resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
     resolveCoatings(coatings: ICoatings): IResolvedCoatings;
     resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    resolveMoldRefs(molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    resolveMoldRefs(molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    resolveProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2391,7 +2395,7 @@ interface IConfectionEditJournalEntry extends IJournalEntryBase<AnyConfectionVer
 type IConfectionFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-type IConfectionMoldRef = IRefWithNotes<MoldId>;
+type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
 
 // @public
 interface IConfectionProductionJournalEntry extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> {
@@ -2440,12 +2444,12 @@ type IConfectionsLibraryParams = ISubLibraryParams<ConfectionsLibrary, Confectio
 // @public
 interface IConfectionVersionBase {
     readonly additionalTags?: ReadonlyArray<string>;
-    readonly additionalUrls?: ReadonlyArray<ICategorizedUrl>;
+    readonly additionalUrls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly createdDate: string;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly fillings?: ReadonlyArray<IFillingSlot>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
-    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly versionSpec: ConfectionVersionSpec;
     readonly yield: IConfectionYield;
 }
@@ -2493,7 +2497,7 @@ interface ICryptoProvider {
 }
 
 // @public
-export const ID_SEPARATOR: string;
+const ID_SEPARATOR: string;
 
 // @public
 interface IDairyIngredient extends IIngredient {
@@ -2508,6 +2512,8 @@ interface IDirectorySearchQueueItem {
     readonly dir: FileTree.IFileTreeDirectoryItem;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function idsWithPreferred<TId extends string>(idConverter: Converter<TId>, context?: string): Converter<IIdsWithPreferred<TId>>;
 
@@ -2662,7 +2668,7 @@ interface IFillingChanges {
 // @public
 interface IFillingDerivation {
     readonly derivedDate: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly sourceVersionId: FillingVersionId;
 }
 
@@ -2678,9 +2684,9 @@ type IFillingFileTreeSource = SubLibraryFileTreeSource;
 // @public
 interface IFillingIngredient {
     readonly amount: Measurement;
-    readonly ingredient: IIdsWithPreferred<IngredientId>;
+    readonly ingredient: Model.IIdsWithPreferred<IngredientId>;
     readonly modifiers?: IIngredientModifiers;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly unit?: MeasurementUnit;
 }
 
@@ -2695,7 +2701,7 @@ interface IFillingProductionJournalEntry extends IJournalEntryBase<AnyFillingRec
 // @public
 interface IFillingRating {
     readonly category: RatingCategory;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly score: RatingScore;
 }
 
@@ -2708,7 +2714,7 @@ interface IFillingRecipe {
     readonly goldenVersionSpec: FillingVersionSpec;
     readonly name: FillingName;
     readonly tags?: ReadonlyArray<string>;
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly versions: ReadonlyArray<IFillingRecipeVersion>;
 }
 
@@ -2755,8 +2761,8 @@ interface IFillingRecipeVersion {
     readonly baseWeight: Measurement;
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IFillingIngredient>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
-    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly ratings?: ReadonlyArray<IFillingRating>;
     readonly versionSpec: FillingVersionSpec;
     readonly yield?: string;
@@ -2773,7 +2779,7 @@ type IFillingsLibraryParams = ISubLibraryParams<FillingsLibrary, FillingCollecti
 
 // @public
 interface IFillingSlot {
-    readonly filling: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
+    readonly filling: Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
     readonly name?: string;
     readonly slotId: SlotId;
 }
@@ -2782,7 +2788,7 @@ interface IFillingSlot {
 interface IFillingUsage {
     readonly date: string;
     readonly modifiedVersionSpec?: FillingVersionSpec;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly scaledWeight: Measurement;
     readonly scaleFactor?: number;
     readonly versionSpec: FillingVersionSpec;
@@ -2867,13 +2873,13 @@ interface IGanacheValidation {
 }
 
 // @public
-export interface IHasId<TId extends string> {
+interface IHasId<TId extends string> {
     // (undocumented)
     readonly id: TId;
 }
 
 // @public
-export interface IIdsWithPreferred<TId extends string> {
+interface IIdsWithPreferred<TId extends string> {
     readonly ids: ReadonlyArray<TId>;
     readonly preferredId?: TId;
     readonly slotId?: SlotId;
@@ -2913,12 +2919,12 @@ interface IIngredient {
     readonly description?: string;
     readonly ganacheCharacteristics: IGanacheCharacteristics;
     readonly manufacturer?: string;
-    readonly measurementUnits?: IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
+    readonly measurementUnits?: Model.IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
     readonly name: string;
     readonly phase?: IngredientPhase;
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly vegan?: boolean;
 }
 
@@ -2935,7 +2941,7 @@ type IIngredientFileTreeSource = SubLibraryFileTreeSource;
 // @public
 interface IIngredientFillingOption {
     readonly id: IngredientId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly type: 'ingredient';
 }
 
@@ -2995,7 +3001,7 @@ type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, Ingredien
 // @public
 interface IIngredientSnapshot {
     readonly ingredientId: IngredientId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly originalAmount: Measurement;
     readonly scaledAmount: Measurement;
 }
@@ -3038,7 +3044,7 @@ interface IInstantiatedUserLibrarySource {
 interface IInventoryEntryBase {
     readonly inventoryType: InventoryType;
     readonly location?: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 // @public
@@ -3050,7 +3056,7 @@ interface IIterationOptions {
 // @public
 interface IJournalEntryBase<TVersion, TVersionId> {
     readonly baseId: JournalBaseId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly recipe: TVersion;
     readonly timestamp: string;
     readonly type: JournalEntryType;
@@ -3190,12 +3196,12 @@ interface IMold {
     readonly description?: string;
     readonly format: MoldFormat;
     readonly manufacturer: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly productNumber: string;
     // (undocumented)
     readonly related?: ReadonlyArray<MoldId>;
     readonly tags?: ReadonlyArray<string>;
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
 }
 
 // @public
@@ -3222,7 +3228,7 @@ interface IMoldedBonBon extends IConfectionBase {
 // @public
 interface IMoldedBonBonVersion extends IConfectionVersionBase {
     readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
-    readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+    readonly molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     readonly shellChocolate: IChocolateSpec;
 }
 
@@ -3446,7 +3452,7 @@ export type IngredientPhase = 'solid' | 'liquid';
 const ingredientPhase: Converter<IngredientPhase>;
 
 // @public
-export class IngredientQuery {
+class IngredientQuery {
     constructor(context: LibraryRuntimeContext);
     alcohol(): IngredientQuery;
     byManufacturer(manufacturer: string): IngredientQuery;
@@ -3694,7 +3700,7 @@ type InventoryType = 'mold' | 'ingredient';
 const inventoryType: Converter<InventoryType>;
 
 // @public
-export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
+interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
     readonly options: ReadonlyArray<TOption>;
     readonly preferredId?: TId;
 }
@@ -3723,7 +3729,7 @@ interface IPersistedSessionBase {
     readonly createdAt: string;
     readonly destination?: IPersistedSessionDestination;
     readonly label?: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly sessionType: PersistedSessionType;
     readonly status: PersistedSessionStatus;
     readonly updatedAt: string;
@@ -3741,7 +3747,7 @@ interface IProcedure {
     readonly category?: ProcedureType;
     readonly description?: string;
     readonly name: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly steps: ReadonlyArray<IProcedureStep>;
     readonly tags?: ReadonlyArray<string>;
 }
@@ -3756,7 +3762,7 @@ interface IProcedureContext {
 type IProcedureFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-type IProcedureRef = IRefWithNotes<ProcedureId>;
+type IProcedureRef = Model.IRefWithNotes<ProcedureId>;
 
 // @public
 type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
@@ -3768,7 +3774,7 @@ type IProceduresLibraryParams = ISubLibraryParams<ProceduresLibrary, ProcedureCo
 interface IProcedureStep {
     readonly activeTime?: Minutes;
     readonly holdTime?: Minutes;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly order: number;
     readonly task: ITaskInvocation;
     readonly temperature?: Celsius;
@@ -3791,7 +3797,7 @@ interface IProducedBarTruffle extends IProducedConfectionBase {
 interface IProducedConfectionBase {
     readonly confectionType: ConfectionType;
     readonly fillings?: ReadonlyArray<AnyResolvedFillingSlot>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedureId?: ProcedureId;
     readonly versionId: ConfectionVersionId;
     readonly yield: IConfectionYield;
@@ -3800,7 +3806,7 @@ interface IProducedConfectionBase {
 // @public
 interface IProducedFilling {
     readonly ingredients: ReadonlyArray<IProducedFillingIngredient>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedureId?: ProcedureId;
     readonly scaleFactor: number;
     readonly targetWeight: Measurement;
@@ -3812,7 +3818,7 @@ interface IProducedFillingIngredient {
     readonly amount: Measurement;
     readonly ingredientId: IngredientId;
     readonly modifiers?: IIngredientModifiers;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly unit?: MeasurementUnit;
 }
 
@@ -3869,12 +3875,12 @@ interface IReadOnlyValidatingLibrary<TK extends string, TV, TSpec> extends Colle
 // @public
 interface IRecipeFillingOption {
     readonly id: FillingId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly type: 'recipe';
 }
 
 // @public
-export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
+interface IRefWithNotes<TId extends string> extends IHasId<TId> {
     readonly id: TId;
     readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
@@ -3904,7 +3910,7 @@ interface IResolvedChocolateSpec {
 interface IResolvedCoatingOption {
     readonly id: IngredientId;
     readonly ingredient: IRuntimeIngredient;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 // @public
@@ -3918,14 +3924,14 @@ interface IResolvedCoatings {
 interface IResolvedConfectionMoldRef {
     readonly id: MoldId;
     readonly mold: IRuntimeMold;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly raw: IConfectionMoldRef;
 }
 
 // @public
 interface IResolvedConfectionProcedure {
     readonly id: ProcedureId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IRuntimeProcedure;
     readonly raw: IProcedureRef;
 }
@@ -3935,7 +3941,7 @@ interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IR
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Measurement;
     readonly ingredient: TIngredient;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly raw: IFillingIngredient;
 }
 
@@ -3945,14 +3951,14 @@ type IResolvedFillingOption = IResolvedRecipeFillingOption | IResolvedIngredient
 // @public
 interface IResolvedFillingRecipeProcedure {
     readonly id: ProcedureId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IProcedure;
     readonly raw: IProcedureRef;
 }
 
 // @public
 interface IResolvedFillingSlot {
-    readonly filling: IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+    readonly filling: Model.IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
     readonly name?: string;
     readonly slotId: SlotId;
 }
@@ -3982,7 +3988,7 @@ interface IResolvedIngredient {
 interface IResolvedIngredientFillingOption {
     readonly id: IngredientId;
     readonly ingredient: IRuntimeIngredient;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly raw: IIngredientFillingOption;
     readonly type: 'ingredient';
 }
@@ -4004,7 +4010,7 @@ interface IResolvedProcedures {
 interface IResolvedRecipeFillingOption {
     readonly filling: IRuntimeFillingRecipe;
     readonly id: FillingId;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly raw: IRecipeFillingOption;
     readonly type: 'recipe';
 }
@@ -4014,7 +4020,7 @@ interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRu
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Measurement;
     readonly ingredient: TIngredient;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly originalAmount: Measurement;
     readonly raw: IScaledFillingIngredient;
     readonly scaleFactor: number;
@@ -4109,10 +4115,10 @@ interface IRuntimeConfection {
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
     readonly effectiveTags: ReadonlyArray<string>;
-    readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+    readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
     readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
-    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<Model.ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
     readonly goldenVersion: AnyRuntimeConfectionVersion;
     readonly goldenVersionSpec: ConfectionVersionSpec;
@@ -4121,11 +4127,11 @@ interface IRuntimeConfection {
     isMoldedBonBon(): this is IRuntimeMoldedBonBon;
     isRolledTruffle(): this is IRuntimeRolledTruffle;
     readonly name: ConfectionName;
-    readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+    readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
     readonly raw: ConfectionData;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly versions: ReadonlyArray<AnyRuntimeConfectionVersion>;
     readonly yield: IConfectionYield;
 }
@@ -4137,13 +4143,13 @@ interface IRuntimeConfectionVersionBase {
     readonly createdDate: string;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly effectiveTags: ReadonlyArray<string>;
-    readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+    readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
     readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     isBarTruffleVersion(): this is IRuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is IRuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is IRuntimeRolledTruffleVersion;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
-    readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
     readonly raw: AnyConfectionVersion;
     readonly version: AnyConfectionVersion;
     readonly versionSpec: ConfectionVersionSpec;
@@ -4212,7 +4218,7 @@ interface IRuntimeFillingRecipeVersion {
     readonly fillingId: FillingId;
     readonly fillingRecipe: IRuntimeFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
     readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IFillingRating>;
@@ -4264,14 +4270,14 @@ interface IRuntimeMold {
     readonly format: MoldFormat;
     readonly id: MoldId;
     readonly manufacturer: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly productNumber: string;
     readonly raw: IMold;
     readonly related?: ReadonlyArray<MoldId>;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     readonly totalCapacity: Measurement | undefined;
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
 }
 
 // @public
@@ -4280,7 +4286,7 @@ interface IRuntimeMoldedBonBon extends IRuntimeConfection {
     readonly confectionType: 'molded-bonbon';
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
     readonly goldenVersion: IRuntimeMoldedBonBonVersion;
-    readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly raw: IMoldedBonBon;
     readonly shellChocolate: IResolvedChocolateSpec;
     readonly versions: ReadonlyArray<IRuntimeMoldedBonBonVersion>;
@@ -4290,7 +4296,7 @@ interface IRuntimeMoldedBonBon extends IRuntimeConfection {
 interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBase {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
     readonly confection: IRuntimeMoldedBonBon;
-    readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly preferredMold: IResolvedConfectionMoldRef | undefined;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly raw: IMoldedBonBonVersion;
@@ -4305,7 +4311,7 @@ interface IRuntimeProcedure {
     readonly id: ProcedureId;
     readonly isCategorySpecific: boolean;
     readonly name: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly raw: IProcedure;
     render(context: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
     readonly stepCount: number;
@@ -4368,7 +4374,7 @@ interface IRuntimeScaledFillingRecipeVersion {
     calculateGanache(): Result<IGanacheCalculation>;
     readonly createdDate: string;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly ratings: ReadonlyArray<IFillingRating>;
     readonly raw: IComputedScaledFillingRecipe;
     readonly scaledFrom: IRuntimeScalingSource;
@@ -4405,7 +4411,7 @@ interface IRuntimeTask {
     readonly defaultWaitTime?: Minutes;
     readonly id: TaskId;
     readonly name: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly raw: ITaskData;
     render(params: Record<string, unknown>): Result<string>;
     readonly requiredVariables: ReadonlyArray<string>;
@@ -4504,7 +4510,7 @@ interface IScaledFillingIngredient extends IFillingIngredient {
 
 // @public
 interface IScaledFillingRecipeVersion {
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly scalingRef: IScalingRef;
     readonly snapshotIngredients?: ReadonlyArray<IIngredientSnapshot>;
 }
@@ -4843,7 +4849,7 @@ interface ITaskData {
     readonly defaultTemperature?: Celsius;
     readonly defaultWaitTime?: Minutes;
     readonly name: string;
-    readonly notes?: ReadonlyArray<ICategorizedNote>;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly tags?: ReadonlyArray<string>;
     readonly template: string;
 }
@@ -5075,10 +5081,10 @@ declare namespace Journal_2 {
 }
 
 // @public
-export const JOURNAL_BASE_ID_PATTERN: RegExp;
+const JOURNAL_BASE_ID_PATTERN: RegExp;
 
 // @public
-export const JOURNAL_ID_PATTERN: RegExp;
+const JOURNAL_ID_PATTERN: RegExp;
 
 // @public
 export type JournalBaseId = Brand<string, 'JournalBaseId'>;
@@ -5534,8 +5540,8 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     resolveChocolateSpec(spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
     resolveCoatings(coatings: ICoatings): IResolvedCoatings;
     resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    resolveMoldRefs(molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    resolveMoldRefs(molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    resolveProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
     warmUp(): void;
 }
@@ -5589,6 +5595,30 @@ export type Minutes = Brand<number, 'Minutes'>;
 
 // @public
 const minutes: Converter<Minutes>;
+
+declare namespace Model {
+    export {
+        ICategorizedNote,
+        ICategorizedUrl,
+        ID_SEPARATOR,
+        BASE_ID_PATTERN,
+        COMPOSITE_ID_PATTERN,
+        FILLING_VERSION_SPEC_PATTERN,
+        VERSION_ID_SEPARATOR,
+        FILLING_VERSION_ID_PATTERN,
+        SESSION_ID_PATTERN,
+        SESSION_BASE_ID_PATTERN,
+        PERSISTED_SESSION_ID_PATTERN,
+        JOURNAL_BASE_ID_PATTERN,
+        JOURNAL_ID_PATTERN,
+        CONFECTION_VERSION_SPEC_PATTERN,
+        CONFECTION_VERSION_ID_PATTERN,
+        IHasId,
+        IOptionsWithPreferred,
+        IIdsWithPreferred,
+        IRefWithNotes
+    }
+}
 
 // @public
 type MoldCollection = SubLibraryCollection<BaseMoldId, IMold>;
@@ -5797,6 +5827,8 @@ function notFilter<T>(filter: FilterPredicate<T>): FilterPredicate<T>;
 // @public
 function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPredicate<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(optionConverter: Converter<TOption>, idConverter: Converter<TId>, context?: string): Converter<IOptionsWithPreferred<TOption, TId>>;
 
@@ -5926,7 +5958,7 @@ export type Percentage = Brand<number, 'Percentage'>;
 const percentage: Converter<Percentage>;
 
 // @public
-export const PERSISTED_SESSION_ID_PATTERN: RegExp;
+const PERSISTED_SESSION_ID_PATTERN: RegExp;
 
 // @public
 const PERSISTED_SESSION_SCHEMA_VERSION: 1;
@@ -6021,7 +6053,7 @@ declare namespace Procedures {
 }
 
 // @public
-const procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
+const procedures: Converter<Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
 
 declare namespace Procedures_2 {
     export {
@@ -6112,6 +6144,8 @@ const recipeCollections: Record<string, JsonObject>;
 // @public
 const recipeFillingOption: Converter<IRecipeFillingOption>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>>;
 
@@ -6221,7 +6255,7 @@ class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruf
     get frameDimensions(): IFrameDimensions;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion>;
     get goldenVersion(): IRuntimeBarTruffleVersion;
-    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IBarTruffle;
     get singleBonBonDimensions(): IBonBonDimensions;
     get versions(): ReadonlyArray<IRuntimeBarTruffleVersion>;
@@ -6288,10 +6322,10 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
     get description(): string | undefined;
     get effectiveTags(): ReadonlyArray<string>;
-    get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
+    get effectiveUrls(): ReadonlyArray<Model.ICategorizedUrl>;
     abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
-    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<Model.ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion>;
     get goldenVersion(): AnyRuntimeConfectionVersion;
     get goldenVersionSpec(): ConfectionVersionSpec;
@@ -6302,7 +6336,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     isMoldedBonBon(): this is RuntimeMoldedBonBon;
     isRolledTruffle(): this is RuntimeRolledTruffle;
     get name(): ConfectionName;
-    abstract get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    abstract get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     abstract get raw(): ConfectionData;
     // (undocumented)
     protected readonly _rawGoldenVersion: AnyConfectionVersion;
@@ -6310,7 +6344,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     // (undocumented)
     protected readonly _sourceId: SourceId;
     get tags(): ReadonlyArray<string> | undefined;
-    get urls(): ReadonlyArray<ICategorizedUrl> | undefined;
+    get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
     get versions(): ReadonlyArray<AnyRuntimeConfectionVersion>;
     get yield(): IConfectionYield;
 }
@@ -6334,13 +6368,13 @@ abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersion
     get createdDate(): string;
     get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
     get effectiveTags(): ReadonlyArray<string>;
-    get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
+    get effectiveUrls(): ReadonlyArray<Model.ICategorizedUrl>;
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     isBarTruffleVersion(): this is RuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
-    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     abstract get raw(): AnyConfectionVersion;
     get version(): AnyConfectionVersion;
     // (undocumented)
@@ -6421,7 +6455,7 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     get fillingId(): FillingId;
     get fillingRecipe(): IRuntimeFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
@@ -6500,7 +6534,7 @@ class RuntimeMold implements IRuntimeMold {
     get format(): MoldFormat;
     get id(): MoldId;
     get manufacturer(): string;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get productNumber(): string;
     get raw(): IMold;
     // (undocumented)
@@ -6508,7 +6542,7 @@ class RuntimeMold implements IRuntimeMold {
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string> | undefined;
     get totalCapacity(): Measurement | undefined;
-    get urls(): ReadonlyArray<ICategorizedUrl> | undefined;
+    get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
 }
 
 // @public
@@ -6525,8 +6559,8 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
     get goldenVersion(): IRuntimeMoldedBonBonVersion;
-    get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IMoldedBonBon;
     get shellChocolate(): IResolvedChocolateSpec;
     get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion>;
@@ -6541,7 +6575,7 @@ class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, confectionId: ConfectionId, version: IMoldedBonBonVersion): Result<RuntimeMoldedBonBonVersion>;
-    get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get preferredMold(): IResolvedConfectionMoldRef | undefined;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
     get raw(): IMoldedBonBonVersion;
@@ -6561,7 +6595,7 @@ class RuntimeProcedure implements IRuntimeProcedure {
     get id(): ProcedureId;
     get isCategorySpecific(): boolean;
     get name(): string;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get raw(): IProcedure;
     render(renderContext: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
     get stepCount(): number;
@@ -6602,7 +6636,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
     abstract getChanges(original: T): IConfectionChanges;
     getSerializedHistory(original: T): ISerializedEditingHistory<T>;
     hasChanges(original: T): boolean;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedureId(): ProcedureId | undefined;
     protected _pushUndo(): void;
     redo(): Result<boolean>;
@@ -6618,7 +6652,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
         type: 'ingredient';
         ingredientId: IngredientId;
     }): Result<void>;
-    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
     get snapshot(): T;
     undo(): Result<boolean>;
@@ -6645,7 +6679,7 @@ class RuntimeProducedFilling {
     restoreSnapshot(snapshot: IProducedFilling): Result<void>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
-    setNotes(notes: ICategorizedNote[]): Result<void>;
+    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
     get snapshot(): IProducedFilling;
     get targetWeight(): Measurement;
@@ -6718,7 +6752,7 @@ class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRoll
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion>;
     get goldenVersion(): IRuntimeRolledTruffleVersion;
-    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IRolledTruffle;
     get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion>;
 }
@@ -6748,7 +6782,7 @@ class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingRecipeVe
     static create(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
     get createdDate(): string;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
     get raw(): IComputedScaledFillingRecipe;
     get scaledFrom(): IRuntimeScalingSource;
@@ -6785,7 +6819,7 @@ class RuntimeTask implements IRuntimeTask {
     get defaultWaitTime(): Minutes | undefined;
     get id(): TaskId;
     get name(): string;
-    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get raw(): ITaskData;
     render(params: Record<string, unknown>): Result<string>;
     get requiredVariables(): ReadonlyArray<string>;
@@ -6957,10 +6991,10 @@ declare namespace Session_2 {
 }
 
 // @public
-export const SESSION_BASE_ID_PATTERN: RegExp;
+const SESSION_BASE_ID_PATTERN: RegExp;
 
 // @public
-export const SESSION_ID_PATTERN: RegExp;
+const SESSION_ID_PATTERN: RegExp;
 
 // @public
 export type SessionBaseId = Brand<string, 'SessionBaseId'>;
@@ -7003,7 +7037,7 @@ class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBaseId, A
     getActiveSessions(): ReadonlyArray<AnyPersistedSession>;
     getAllSessions(): ReadonlyArray<AnyPersistedSession>;
     getSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedSessionStatus"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnyPersistedSession>;
     getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IPersistedConfectionSession>;
     getSessionsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<IPersistedConfectionSession>;
@@ -7328,20 +7362,20 @@ class UserLibrary_2 implements IUserLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IUserLibraryCreateParams): Result<UserLibrary_2>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get ingredientInventory(): IngredientInventoryLibrary;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get journals(): JournalLibrary;
     readonly logger: Logging.LogReporter<unknown>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get moldInventory(): MoldInventoryLibrary;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get sessions(): SessionLibrary;
@@ -7350,23 +7384,23 @@ class UserLibrary_2 implements IUserLibrary {
 // @public
 class UserLibraryRuntime implements IUserLibraryRuntime {
     static create(userLibrary: IUserLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IPersistedFillingSession>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     evictSession(sessionId: PersistedSessionId): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get materializedSessions(): ReadonlyMap<PersistedSessionId, AnyMaterializedSession>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
@@ -7581,7 +7615,7 @@ declare namespace Validators_2 {
 }
 
 // @public
-export const VERSION_ID_SEPARATOR: string;
+const VERSION_ID_SEPARATOR: string;
 
 // @public
 export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';

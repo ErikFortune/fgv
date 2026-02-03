@@ -9,7 +9,7 @@ Sets the notes for the filling.
 **Signature:**
 
 ```typescript
-setNotes(notes: ICategorizedNote[]): Result<void>;
+setNotes(notes: CommonModel.ICategorizedNote[]): Result<void>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ notes
 
 </td><td>
 
-[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->\[\]
+[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]
 
 
 </td><td>

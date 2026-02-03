@@ -22,9 +22,9 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseMoldId,
-  ICategorizedNote,
   Measurement,
   Millimeters,
+  Model as CommonModel,
   MoldFormat,
   MoldId
 } from '../../../packlets/common';
@@ -55,7 +55,7 @@ describe('RuntimeMold', () => {
     },
     format: 'chocolate-world-275x135' as MoldFormat,
     tags: ['bar', 'rectangle'],
-    notes: [{ category: 'user', note: 'Classic bar mold' }] as ICategorizedNote[]
+    notes: [{ category: 'user', note: 'Classic bar mold' }] as CommonModel.ICategorizedNote[]
   };
 
   const moldWithoutWeight: IMold = {

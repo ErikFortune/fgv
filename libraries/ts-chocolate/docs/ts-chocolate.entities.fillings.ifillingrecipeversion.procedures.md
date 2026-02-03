@@ -9,5 +9,5 @@ Optional procedures associated with this version. Contains applicable procedures
 **Signature:**
 
 ```typescript
-readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 ```

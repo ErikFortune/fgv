@@ -9,7 +9,7 @@ Resolves procedure references to runtime objects.
 **Signature:**
 
 ```typescript
-resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+resolveProcedures(procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ procedures
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -50,7 +50,7 @@ The raw procedure references
 
 **Returns:**
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 Resolved procedures, or undefined if none
 

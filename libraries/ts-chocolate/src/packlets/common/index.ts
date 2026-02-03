@@ -23,8 +23,10 @@
  * @packageDocumentation
  */
 
-// Types and Enums
-export * from './model';
+export * from './ids';
+
+// Types
+export * as Model from './model';
 
 // Converters, Validators, Validation, and Helpers namespaces for organized access
 import * as Converters from './converters';

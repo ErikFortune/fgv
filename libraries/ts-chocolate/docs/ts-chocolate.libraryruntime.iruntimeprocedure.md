@@ -175,7 +175,7 @@ Human-readable name
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

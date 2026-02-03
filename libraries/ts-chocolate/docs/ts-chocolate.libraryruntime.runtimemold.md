@@ -260,7 +260,7 @@ Manufacturer of the mold
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -405,7 +405,7 @@ Gets the total capacity of the mold (all cavities) in grams. Returns undefined i
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

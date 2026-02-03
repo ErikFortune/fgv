@@ -9,5 +9,5 @@ Optional categorized notes for this specific ingredient usage
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 ```

@@ -150,7 +150,7 @@ Gets the fillings as a readonly array.
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

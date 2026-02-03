@@ -9,5 +9,5 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 **Signature:**
 
 ```typescript
-readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+readonly effectiveUrls: ReadonlyArray<CommonModel.ICategorizedUrl>;
 ```

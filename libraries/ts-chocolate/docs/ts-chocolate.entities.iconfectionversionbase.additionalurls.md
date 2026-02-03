@@ -9,5 +9,5 @@ Additional URLs (merged with base confection URLs)
 **Signature:**
 
 ```typescript
-readonly additionalUrls?: ReadonlyArray<ICategorizedUrl>;
+readonly additionalUrls?: ReadonlyArray<Model.ICategorizedUrl>;
 ```

@@ -38,11 +38,11 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
-  ICategorizedNote,
   IngredientId,
   MoldId,
   FillingId,
-  SlotId
+  SlotId,
+  Model as CommonModel
 } from '../../../packlets/common';
 import { Measurement, Millimeters } from '../../../packlets/common';
 
@@ -54,7 +54,9 @@ describe('Confections model', () => {
   const moldedBonBonVersion: IMoldedBonBonVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
-    notes: [{ category: 'user', note: 'Basic dome bonbon with dark ganache filling' }] as ICategorizedNote[],
+    notes: [
+      { category: 'user', note: 'Basic dome bonbon with dark ganache filling' }
+    ] as CommonModel.ICategorizedNote[],
     yield: {
       count: 24,
       unit: 'pieces',
@@ -92,7 +94,9 @@ describe('Confections model', () => {
   const barTruffleVersion: IBarTruffleVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
-    notes: [{ category: 'user', note: 'Standard 25mm square bar truffles' }] as ICategorizedNote[],
+    notes: [
+      { category: 'user', note: 'Standard 25mm square bar truffles' }
+    ] as CommonModel.ICategorizedNote[],
     yield: {
       count: 48,
       unit: 'pieces',
@@ -137,7 +141,7 @@ describe('Confections model', () => {
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Traditional rolled truffle with cocoa coating' }
-    ] as ICategorizedNote[],
+    ] as CommonModel.ICategorizedNote[],
     yield: {
       count: 40,
       unit: 'pieces',

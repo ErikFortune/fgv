@@ -95,7 +95,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   // ============================================================================
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.getMaterializedSession}
+   * {@inheritDoc UserRuntime.IUserLibraryRuntime.getMaterializedSession}
    */
   public getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession> {
     // Check cache first
@@ -125,7 +125,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.createFillingSession}
+   * {@inheritDoc UserRuntime.IUserLibraryRuntime.createFillingSession}
    */
   public createFillingSession(
     versionId: FillingVersionId,
@@ -151,7 +151,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.saveSession}
+   * {@inheritDoc UserRuntime.IUserLibraryRuntime.saveSession}
    */
   public saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession> {
     // Get the materialized session
@@ -196,14 +196,14 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.evictSession}
+   * {@inheritDoc UserRuntime.IUserLibraryRuntime.evictSession}
    */
   public evictSession(sessionId: PersistedSessionId): boolean {
     return this._materializedSessions.delete(sessionId);
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.materializedSessions}
+   * {@inheritDoc UserRuntime.IUserLibraryRuntime.materializedSessions}
    */
   public get materializedSessions(): ReadonlyMap<PersistedSessionId, AnyMaterializedSession> {
     return this._materializedSessions;

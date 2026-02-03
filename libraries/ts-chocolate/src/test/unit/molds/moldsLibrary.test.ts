@@ -23,11 +23,11 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import {
   BaseMoldId,
-  ICategorizedNote,
   Measurement,
   Millimeters,
   MoldId,
-  SourceId
+  SourceId,
+  Model as CommonModel
 } from '../../../packlets/common';
 
 import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/entities';
@@ -58,7 +58,7 @@ describe('MoldsLibrary', () => {
     },
     format: 'series-2000',
     tags: ['test', 'sample'],
-    notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
+    notes: [{ category: 'user', note: 'Test notes' }] as CommonModel.ICategorizedNote[]
   };
 
   // Create an IMold for mutation tests

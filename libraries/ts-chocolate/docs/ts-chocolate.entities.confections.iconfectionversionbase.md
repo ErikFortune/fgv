@@ -68,7 +68,7 @@ _(Optional)_ Additional tags (merged with base confection tags)
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[Model.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Optional filling slots - each slot has independent options with a p
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
+ReadonlyArray&lt;[Model.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
@@ -173,7 +173,7 @@ _(Optional)_ Optional categorized notes about this version
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>

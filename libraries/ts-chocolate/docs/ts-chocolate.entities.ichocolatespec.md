@@ -9,7 +9,7 @@ Chocolate specification for shell, enrobing, or coating. Uses IIdsWithPreferred 
 **Signature:**
 
 ```typescript
-export type IChocolateSpec = IIdsWithPreferred<IngredientId>;
+export type IChocolateSpec = Model.IIdsWithPreferred<IngredientId>;
 ```
-**References:** [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
+**References:** [Model.IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
 

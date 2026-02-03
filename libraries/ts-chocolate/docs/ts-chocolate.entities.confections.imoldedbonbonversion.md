@@ -69,7 +69,7 @@ _(Optional)_ Optional additional chocolates (seal, decoration)
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>

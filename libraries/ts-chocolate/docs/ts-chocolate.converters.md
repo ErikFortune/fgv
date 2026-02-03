@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Creates a converter for [IIdsWithPreferred\\&lt;TId\\&gt;](./ts-chocolate.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
+Creates a converter for [IIdsWithPreferred\\&lt;TId\\&gt;](./ts-chocolate.model.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ Creates a converter for [IIdsWithPreferred\\&lt;TId\\&gt;](./ts-chocolate.iidswi
 
 </td><td>
 
-Creates a converter for [IOptionsWithPreferred\\&lt;TOption, TId\\&gt;](./ts-chocolate.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
+Creates a converter for [IOptionsWithPreferred\\&lt;TOption, TId\\&gt;](./ts-chocolate.model.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Creates a converter for [IOptionsWithPreferred\\&lt;TOption, TId\\&gt;](./ts-cho
 
 </td><td>
 
-Creates a converter for [IRefWithNotes\\&lt;TId\\&gt;](./ts-chocolate.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
+Creates a converter for [IRefWithNotes\\&lt;TId\\&gt;](./ts-chocolate.model.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
 
 
 </td></tr>
@@ -171,7 +171,7 @@ Converter for [CacaoVariety](./ts-chocolate.cacaovariety.md)<!-- -->.
 
 </td><td>
 
-Converter for [ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->.
+Converter for [ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->.
 
 
 </td></tr>
@@ -182,7 +182,7 @@ Converter for [ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->.
 
 </td><td>
 
-Converter for [ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->.
+Converter for [ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->.
 
 
 </td></tr>

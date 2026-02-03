@@ -161,28 +161,28 @@ export class UserLibrary implements IUserLibrary {
   // ============================================================================
 
   /**
-   * {@inheritDoc IUserLibrary.journals}
+   * {@inheritDoc UserLibrary.IUserLibrary.journals}
    */
   public get journals(): JournalLibrary {
     return this._journals;
   }
 
   /**
-   * {@inheritDoc IUserLibrary.sessions}
+   * {@inheritDoc UserLibrary.IUserLibrary.sessions}
    */
   public get sessions(): SessionLibrary {
     return this._sessions;
   }
 
   /**
-   * {@inheritDoc IUserLibrary.moldInventory}
+   * {@inheritDoc UserLibrary.IUserLibrary.moldInventory}
    */
   public get moldInventory(): MoldInventoryLibrary {
     return this._moldInventory;
   }
 
   /**
-   * {@inheritDoc IUserLibrary.ingredientInventory}
+   * {@inheritDoc UserLibrary.IUserLibrary.ingredientInventory}
    */
   public get ingredientInventory(): IngredientInventoryLibrary {
     return this._ingredientInventory;

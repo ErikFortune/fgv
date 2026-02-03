@@ -28,9 +28,8 @@ import { Result, Success } from '@fgv/ts-utils';
 import {
   BaseMoldId,
   Converters,
-  ICategorizedNote,
-  ICategorizedUrl,
   Measurement,
+  Model as CommonModel,
   MoldFormat,
   MoldId,
   SourceId
@@ -179,7 +178,7 @@ export class RuntimeMold implements IRuntimeMold {
   /**
    * Optional categorized notes
    */
-  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
     return this._mold.notes;
   }
 
@@ -187,7 +186,7 @@ export class RuntimeMold implements IRuntimeMold {
    * Optional categorized URLs
    */
   /* c8 ignore next 3 - simple getter, tested via Mold class */
-  public get urls(): ReadonlyArray<ICategorizedUrl> | undefined {
+  public get urls(): ReadonlyArray<CommonModel.ICategorizedUrl> | undefined {
     return this.raw.urls;
   }
 

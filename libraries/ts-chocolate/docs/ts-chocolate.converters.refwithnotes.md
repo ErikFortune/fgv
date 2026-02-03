@@ -4,7 +4,7 @@
 
 ## Converters.refWithNotes() function
 
-Creates a converter for [IRefWithNotes\\&lt;TId\\&gt;](./ts-chocolate.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
+Creates a converter for [IRefWithNotes\\&lt;TId\\&gt;](./ts-chocolate.model.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
 
 **Signature:**
 
@@ -50,7 +50,7 @@ Converter for the ID type
 
 **Returns:**
 
-Converter&lt;[IRefWithNotes](./ts-chocolate.irefwithnotes.md)<!-- -->&lt;TId&gt;&gt;
+Converter&lt;[IRefWithNotes](./ts-chocolate.model.irefwithnotes.md)<!-- -->&lt;TId&gt;&gt;
 
 A converter that produces IRefWithNotes objects
 

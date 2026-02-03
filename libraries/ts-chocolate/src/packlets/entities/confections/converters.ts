@@ -25,7 +25,7 @@
 
 import { Conversion, Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, IOptionsWithPreferred, MoldId } from '../../common';
+import { Converters as CommonConverters, Model, MoldId } from '../../common';
 import {
   AnyConfectionVersion,
   AnyFillingOption,
@@ -152,7 +152,7 @@ export const anyFillingOption: Converter<AnyFillingOption> = Converters.oneOf<An
  * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>> =
+export const fillingOptions: Converter<Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>> =
   CommonConverters.optionsWithPreferred(anyFillingOption, fillingOptionId, 'fillingOptions');
 
 /**
@@ -205,7 +205,7 @@ export const confectionMoldRef: Converter<IConfectionMoldRef> = CommonConverters
  * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef, MoldId>> =
+export const confectionMolds: Converter<Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>> =
   CommonConverters.optionsWithPreferred(confectionMoldRef, CommonConverters.moldId, 'confectionMolds');
 
 // ============================================================================

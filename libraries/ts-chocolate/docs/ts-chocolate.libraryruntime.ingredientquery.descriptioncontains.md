@@ -50,5 +50,5 @@ Text to search for
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.libraryruntime.ingredientquery.md)
 

@@ -33,12 +33,11 @@ import {
   ChocolateType,
   DegreesMacMichael,
   FluidityStars,
-  ICategorizedUrl,
   IMeasurementUnitOption,
   IngredientCategory,
   IngredientPhase,
-  IOptionsWithPreferred,
   MeasurementUnit,
+  Model as CommonModel,
   Percentage
 } from '../../common';
 
@@ -120,9 +119,9 @@ export interface IIngredient {
   /** Physical phase - display hint for UI (e.g., "pour" vs "add") */
   readonly phase?: IngredientPhase;
   /** Preferred and acceptable measurement units for this ingredient */
-  readonly measurementUnits?: IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
+  readonly measurementUnits?: CommonModel.IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
   /** Optional categorized URLs for external resources (manufacturer, product page, etc.) */
-  readonly urls?: ReadonlyArray<ICategorizedUrl>;
+  readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 }
 
 // ============================================================================

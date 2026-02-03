@@ -9,7 +9,7 @@ Creates a production journal entry from this session. Records the produced filli
 **Signature:**
 
 ```typescript
-toProductionJournalEntry(notes?: ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
+toProductionJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ notes
 
 </td><td>
 
-[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->\[\]
+[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]
 
 
 </td><td>

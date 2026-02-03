@@ -9,5 +9,5 @@ Available ingredient options with preferred selection. The preferredId (or first
 **Signature:**
 
 ```typescript
-readonly ingredient: IIdsWithPreferred<IngredientId>;
+readonly ingredient: Model.IIdsWithPreferred<IngredientId>;
 ```

@@ -4,7 +4,7 @@
 
 ## Converters.categorizedNote variable
 
-Converter for [ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->.
+Converter for [ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->.
 
 **Signature:**
 

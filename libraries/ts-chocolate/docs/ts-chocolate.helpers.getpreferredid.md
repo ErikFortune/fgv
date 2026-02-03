@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;TId&gt;
+[IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->&lt;TId&gt;
 
 
 </td><td>

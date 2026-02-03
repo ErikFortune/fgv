@@ -29,7 +29,7 @@
 
 import { Brand } from '@fgv/ts-utils';
 
-import { ICategorizedNote, IngredientId, Measurement, MeasurementUnit, MoldId } from '../../common';
+import { IngredientId, Measurement, MeasurementUnit, Model as CommonModel, MoldId } from '../../common';
 
 // ============================================================================
 // Inventory Entry ID Types
@@ -109,7 +109,7 @@ export interface IInventoryEntryBase {
   /** Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet') */
   readonly location?: string;
   /** Optional categorized notes about this inventory item */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
 // ============================================================================

@@ -194,7 +194,7 @@ _(Optional)_ Optional tags for categorization and search
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[Model.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>

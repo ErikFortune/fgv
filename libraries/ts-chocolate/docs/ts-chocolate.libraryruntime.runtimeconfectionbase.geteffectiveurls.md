@@ -9,7 +9,7 @@ Gets effective URLs for a specific version (base URLs + version's additional URL
 **Signature:**
 
 ```typescript
-getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
 ```
 
 ## Parameters
@@ -50,5 +50,5 @@ _(Optional)_ The version to get URLs for (defaults to golden version)
 
 **Returns:**
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 

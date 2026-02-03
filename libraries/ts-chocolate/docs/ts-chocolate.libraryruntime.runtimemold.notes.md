@@ -9,5 +9,5 @@ Optional categorized notes
 **Signature:**
 
 ```typescript
-get notes(): ReadonlyArray<ICategorizedNote> | undefined;
+get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined;
 ```

@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;TId&gt;
+[IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->&lt;TId&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional context string for error messages
 
 **Returns:**
 
-Result&lt;[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;TId&gt;&gt;
+Result&lt;[IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->&lt;TId&gt;&gt;
 
 Success with the collection if valid, Failure if preferredId is not found in ids
 

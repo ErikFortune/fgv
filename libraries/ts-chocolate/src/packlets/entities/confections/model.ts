@@ -30,14 +30,10 @@ import {
   ConfectionType,
   ConfectionVersionId,
   ConfectionVersionSpec,
-  ICategorizedNote,
-  ICategorizedUrl,
-  IIdsWithPreferred,
   IngredientId,
-  IOptionsWithPreferred,
-  IRefWithNotes,
   Measurement,
   Millimeters,
+  Model,
   MoldId,
   ProcedureId,
   FillingId,
@@ -137,7 +133,7 @@ export interface IRecipeFillingOption {
   /** The filling recipe ID */
   readonly id: FillingId;
   /** Optional categorized notes specific to this filling option */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -150,7 +146,7 @@ export interface IIngredientFillingOption {
   /** The ingredient ID */
   readonly id: IngredientId;
   /** Optional categorized notes specific to this filling option */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**
@@ -171,7 +167,7 @@ export interface IFillingSlot {
   /** Human-readable name for display (e.g., "Inner Layer", "Ganache Center") */
   readonly name?: string;
   /** Available filling options with preferred selection */
-  readonly filling: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
+  readonly filling: Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
 }
 
 // ============================================================================
@@ -184,7 +180,7 @@ export interface IFillingSlot {
  * `preferredId` indicates the default/recommended one.
  * @public
  */
-export type IChocolateSpec = IIdsWithPreferred<IngredientId>;
+export type IChocolateSpec = Model.IIdsWithPreferred<IngredientId>;
 
 /**
  * Additional chocolate specification with purpose.
@@ -193,7 +189,7 @@ export type IChocolateSpec = IIdsWithPreferred<IngredientId>;
  */
 export interface IAdditionalChocolate {
   /** Available chocolate options with preferred selection */
-  readonly chocolate: IIdsWithPreferred<IngredientId>;
+  readonly chocolate: Model.IIdsWithPreferred<IngredientId>;
   /** Purpose of this additional chocolate */
   readonly purpose: AdditionalChocolatePurpose;
 }
@@ -207,7 +203,7 @@ export interface IAdditionalChocolate {
  * Satisfies IHasId for use with IOptionsWithPreferred.
  * @public
  */
-export type IConfectionMoldRef = IRefWithNotes<MoldId>;
+export type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
 
 // ============================================================================
 // Dimension Types (for bar truffles)
@@ -247,7 +243,7 @@ export interface IBonBonDimensions {
  * `preferredId` indicates the default/recommended one.
  * @public
  */
-export type ICoatings = IIdsWithPreferred<IngredientId>;
+export type ICoatings = Model.IIdsWithPreferred<IngredientId>;
 
 // ============================================================================
 // Version Types
@@ -270,13 +266,13 @@ export interface IConfectionVersionBase {
   /** Optional decorations for this version */
   readonly decorations?: ReadonlyArray<IConfectionDecoration>;
   /** Optional procedures with preferred selection */
-  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+  readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
   /** Optional categorized notes about this version */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
   /** Additional tags (merged with base confection tags) */
   readonly additionalTags?: ReadonlyArray<string>;
   /** Additional URLs (merged with base confection URLs) */
-  readonly additionalUrls?: ReadonlyArray<ICategorizedUrl>;
+  readonly additionalUrls?: ReadonlyArray<Model.ICategorizedUrl>;
 }
 
 /**
@@ -286,7 +282,7 @@ export interface IConfectionVersionBase {
  */
 export interface IMoldedBonBonVersion extends IConfectionVersionBase {
   /** Required molds with preferred selection */
-  readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+  readonly molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
   /** Required shell chocolate specification */
   readonly shellChocolate: IChocolateSpec;
   /** Optional additional chocolates (seal, decoration) */
@@ -346,7 +342,7 @@ export interface IConfectionBase {
   /** Optional tags for searching/filtering */
   readonly tags?: ReadonlyArray<string>;
   /** Optional categorized URLs for external resources (tutorials, videos, etc.) */
-  readonly urls?: ReadonlyArray<ICategorizedUrl>;
+  readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;
   /** Version history - contains type-specific configuration details */
@@ -562,7 +558,7 @@ export interface IProducedConfectionBase {
   /** Resolved procedure ID if one was used */
   readonly procedureId?: ProcedureId;
   /** Optional categorized notes about production */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
 /**

@@ -66,5 +66,5 @@ _(Optional)_ Optional maximum fat percentage
 
 **Returns:**
 
-[FillingRecipeQuery](./ts-chocolate.fillingrecipequery.md)
+[FillingRecipeQuery](./ts-chocolate.libraryruntime.fillingrecipequery.md)
 

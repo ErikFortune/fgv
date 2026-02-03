@@ -54,9 +54,6 @@ export {
 // eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific factory
 export { createBrowserWorkspace } from './packlets/workspace/browserFactory';
 
-// Query builders
-export { FillingRecipeQuery, IngredientQuery } from './packlets/library-runtime';
-
 // All branded types and common utilities
 export * from './packlets/common';
 

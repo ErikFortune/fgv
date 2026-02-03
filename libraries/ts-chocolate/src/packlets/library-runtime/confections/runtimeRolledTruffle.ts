@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, IOptionsWithPreferred, ProcedureId } from '../../common';
+import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
 import { AnyConfectionVersion, IRolledTruffle, IRolledTruffleVersion } from '../../entities';
 import {
   IConfectionContext,
@@ -142,7 +142,9 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   /**
    * Resolved procedures from the golden version.
    */
-  public get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+  public get procedures():
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | undefined {
     return this.goldenVersion.procedures;
   }
 

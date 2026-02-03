@@ -68,7 +68,7 @@ Amount of this ingredient in the specified unit. When unit is not specified, thi
 
 </td><td>
 
-[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
+[Model.IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -110,7 +110,7 @@ _(Optional)_ Optional modifiers that qualify how the ingredient is measured or a
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
+ReadonlyArray&lt;[Model.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

@@ -43,9 +43,6 @@ export {
   createNodeWorkspace
 } from './packlets/workspace';
 
-// Query builders
-export { FillingRecipeQuery, IngredientQuery } from './packlets/library-runtime';
-
 // All branded types and common utilities
 export * from './packlets/common';
 

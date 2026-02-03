@@ -67,16 +67,10 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   FluidityStars,
-  ICategorizedUrl,
-  ID_SEPARATOR,
-  IHasId,
-  IIdsWithPreferred,
   IMeasurementUnitOption,
   IngredientCategory,
   IngredientId,
   IngredientPhase,
-  IOptionsWithPreferred,
-  IRefWithNotes,
   JournalId,
   Measurement,
   MeasurementUnit,
@@ -95,11 +89,20 @@ import {
   SpoonLevel,
   TaskId,
   UrlCategory,
-  VERSION_ID_SEPARATOR,
   WeightUnit,
   allProcedureTypes,
   ProcedureType,
-  NoteCategory,
+  NoteCategory
+} from './ids';
+
+import {
+  ICategorizedUrl,
+  ID_SEPARATOR,
+  IHasId,
+  IIdsWithPreferred,
+  IOptionsWithPreferred,
+  IRefWithNotes,
+  VERSION_ID_SEPARATOR,
   ICategorizedNote
 } from './model';
 import {
@@ -696,7 +699,7 @@ export const measurementUnitOption: Converter<IMeasurementUnitOption> =
 // ============================================================================
 
 /**
- * Creates a converter for {@link IOptionsWithPreferred | IOptionsWithPreferred\<TOption, TId\>} collections.
+ * Creates a converter for {@link Model.IOptionsWithPreferred | IOptionsWithPreferred\<TOption, TId\>} collections.
  * Validates that preferredId (if specified) exists in the options array.
  *
  * @typeParam TOption - The option object type (must have an `id` property)
@@ -727,7 +730,7 @@ export function optionsWithPreferred<TOption extends IHasId<TId>, TId extends st
 }
 
 /**
- * Creates a converter for {@link IIdsWithPreferred | IIdsWithPreferred\<TId\>} collections.
+ * Creates a converter for {@link Model.IIdsWithPreferred | IIdsWithPreferred\<TId\>} collections.
  * Validates that preferredId (if specified) exists in the ids array.
  *
  * @typeParam TId - The ID type
@@ -764,7 +767,7 @@ export function idsWithPreferred<TId extends string>(
 export const noteCategory: Converter<NoteCategory> = Converters.generic(toNoteCategory);
 
 /**
- * Converter for {@link ICategorizedNote | ICategorizedNote}.
+ * Converter for {@link Model.ICategorizedNote | ICategorizedNote}.
  * @public
  */
 export const categorizedNote: Converter<ICategorizedNote> = Converters.object<ICategorizedNote>({
@@ -773,7 +776,7 @@ export const categorizedNote: Converter<ICategorizedNote> = Converters.object<IC
 });
 
 /**
- * Creates a converter for {@link IRefWithNotes | IRefWithNotes\<TId\>} objects.
+ * Creates a converter for {@link Model.IRefWithNotes | IRefWithNotes\<TId\>} objects.
  * A simple reference with an ID and optional notes.
  *
  * @typeParam TId - The ID type
@@ -799,7 +802,7 @@ export function refWithNotes<TId extends string>(idConverter: Converter<TId>): C
 export const urlCategory: Converter<UrlCategory> = Converters.generic(toUrlCategory);
 
 /**
- * Converter for {@link ICategorizedUrl | ICategorizedUrl}.
+ * Converter for {@link Model.ICategorizedUrl | ICategorizedUrl}.
  * @public
  */
 export const categorizedUrl: Converter<ICategorizedUrl> = Converters.object<ICategorizedUrl>({

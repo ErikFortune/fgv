@@ -9,5 +9,5 @@ Optional categorized notes about the rating
 **Signature:**
 
 ```typescript
-readonly notes?: ReadonlyArray<ICategorizedNote>;
+readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 ```

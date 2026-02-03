@@ -4,6 +4,7 @@
 
 ## UserLibrary.UserLibrary.moldInventory property
 
+Mold inventory library for tracking owned molds.
 
 **Signature:**
 

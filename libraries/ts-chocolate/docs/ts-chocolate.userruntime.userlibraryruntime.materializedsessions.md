@@ -4,6 +4,7 @@
 
 ## UserRuntime.UserLibraryRuntime.materializedSessions property
 
+All currently materialized sessions.
 
 **Signature:**
 

@@ -9,5 +9,5 @@ Optional procedures with preferred selection
 **Signature:**
 
 ```typescript
-readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 ```

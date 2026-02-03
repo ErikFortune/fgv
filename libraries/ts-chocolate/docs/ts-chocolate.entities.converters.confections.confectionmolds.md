@@ -9,5 +9,5 @@ Converter for confection molds with preferred selection. Validates that preferre
 **Signature:**
 
 ```typescript
-confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef, MoldId>>
+confectionMolds: Converter<Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>>
 ```

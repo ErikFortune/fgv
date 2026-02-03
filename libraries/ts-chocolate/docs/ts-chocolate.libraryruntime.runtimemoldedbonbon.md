@@ -138,7 +138,7 @@ Golden version typed as IRuntimeMoldedBonBonVersion.
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -159,7 +159,7 @@ Resolved molds with preferred selection (from golden version).
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

@@ -23,12 +23,12 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import {
   BaseFillingId,
-  ICategorizedNote,
   Measurement,
   IngredientId,
   FillingId,
   FillingName,
   FillingVersionSpec,
+  Model as CommonModel,
   NoteCategory,
   SourceId
 } from '../../../packlets/common';
@@ -1019,7 +1019,9 @@ describe('Recipe scaling', () => {
     });
 
     test('preserves optional fields from source version', () => {
-      const testNotes: ICategorizedNote[] = [{ category: 'user' as NoteCategory, note: 'Test notes' }];
+      const testNotes: CommonModel.ICategorizedNote[] = [
+        { category: 'user' as NoteCategory, note: 'Test notes' }
+      ];
       const versionWithNotes: IFillingRecipeVersion = {
         ...testVersion,
         notes: testNotes,

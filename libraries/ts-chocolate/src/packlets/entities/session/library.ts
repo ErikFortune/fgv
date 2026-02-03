@@ -414,7 +414,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
 
   /**
    * Gets all sessions with a specific status (across all collections)
-   * @param status - The {@link PersistedSessionStatus | status} to filter by
+   * @param status - The {@link Entities.Session.PersistedSessionStatus | status} to filter by
    * @returns Array of sessions with that status (empty if none found)
    * @public
    */

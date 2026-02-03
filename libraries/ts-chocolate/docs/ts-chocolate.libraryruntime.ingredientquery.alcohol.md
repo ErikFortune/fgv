@@ -13,5 +13,5 @@ alcohol(): IngredientQuery;
 ```
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.libraryruntime.ingredientquery.md)
 

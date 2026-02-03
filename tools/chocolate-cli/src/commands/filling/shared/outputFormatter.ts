@@ -24,9 +24,8 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  IOptionsWithPreferred,
-  IRefWithNotes,
   Measurement,
+  Model as CommonModel,
   ProcedureId,
   SourceId
 } from '@fgv/ts-chocolate';
@@ -84,7 +83,7 @@ function getIngredientDisplayId(ingredient: Entities.Fillings.IFillingIngredient
  * Returns preferredId if set, otherwise the first option's ID.
  */
 function getPreferredId<TOption extends { id: TId }, TId extends string>(
-  options: IOptionsWithPreferred<TOption, TId>
+  options: CommonModel.IOptionsWithPreferred<TOption, TId>
 ): TId | undefined {
   return getPreferredIdGeneric(options);
 }
@@ -93,7 +92,7 @@ function getPreferredId<TOption extends { id: TId }, TId extends string>(
  * Formats procedure references for human output
  */
 function formatProcedureRefs(
-  procedures: IOptionsWithPreferred<IRefWithNotes<ProcedureId>, ProcedureId>,
+  procedures: CommonModel.IOptionsWithPreferred<CommonModel.IRefWithNotes<ProcedureId>, ProcedureId>,
   lines: string[],
   _context?: IFillingRenderContext
 ): void {

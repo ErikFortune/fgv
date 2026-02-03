@@ -215,7 +215,7 @@ _(Optional)_ Optional manufacturer
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->, [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->, [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->&gt;
 
 
 </td><td>
@@ -320,7 +320,7 @@ _(Optional)_ Optional list of trace allergens possibly present (e.g. due to cont
 
 </td><td>
 
-ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+ReadonlyArray&lt;[CommonModel.ICategorizedUrl](./ts-chocolate.model.icategorizedurl.md)<!-- -->&gt;
 
 
 </td><td>

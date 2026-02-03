@@ -9,5 +9,5 @@ Available filling options with preferred selection
 **Signature:**
 
 ```typescript
-readonly filling: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
+readonly filling: Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
 ```

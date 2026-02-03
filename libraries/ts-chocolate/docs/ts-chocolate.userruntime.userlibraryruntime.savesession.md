@@ -4,6 +4,7 @@
 
 ## UserRuntime.UserLibraryRuntime.saveSession() method
 
+Saves an active session back to the library.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ sessionId
 
 </td><td>
 
+Session to save
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ sessionId
 **Returns:**
 
 Result&lt;AnyPersistedSession&gt;
+
+Result with the updated persisted session
 

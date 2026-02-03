@@ -28,9 +28,9 @@ import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
 import {
   ConfectionVersionId,
   FillingId,
-  ICategorizedNote,
   IngredientId,
   MoldId,
+  Model as CommonModel,
   ProcedureId,
   SlotId,
   Helpers
@@ -222,7 +222,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * @returns Success or failure
    * @public
    */
-  public setNotes(notes: ICategorizedNote[]): Result<void> {
+  public setNotes(notes: CommonModel.ICategorizedNote[]): Result<void> {
     this._pushUndo();
 
     this._current = {
@@ -399,7 +399,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Gets the notes as a readonly array.
    * @public
    */
-  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
     return this._current.notes;
   }
 
@@ -539,8 +539,8 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Compares two notes arrays for equality.
    */
   private _notesEqual(
-    a: ReadonlyArray<ICategorizedNote> | undefined,
-    b: ReadonlyArray<ICategorizedNote> | undefined
+    a: ReadonlyArray<CommonModel.ICategorizedNote> | undefined,
+    b: ReadonlyArray<CommonModel.ICategorizedNote> | undefined
   ): boolean {
     if (a === undefined && b === undefined) {
       return true;

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseProcedureId, Celsius, ICategorizedNote, Minutes, ProcedureType } from '../../common';
+import { BaseProcedureId, Celsius, Minutes, Model as CommonModel, ProcedureType } from '../../common';
 import { ITaskInvocation, TaskRefStatus } from '../tasks';
 
 /**
@@ -65,7 +65,7 @@ export interface IProcedureStep {
   /**
    * Optional categorized notes for this step
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
 /**
@@ -141,5 +141,5 @@ export interface IProcedure {
   /**
    * Optional categorized notes about the procedure
    */
-  readonly notes?: ReadonlyArray<ICategorizedNote>;
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }

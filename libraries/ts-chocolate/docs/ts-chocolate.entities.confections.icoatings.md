@@ -9,7 +9,7 @@ Coating specification for rolled truffles. Uses IIdsWithPreferred pattern - `ids
 **Signature:**
 
 ```typescript
-export type ICoatings = IIdsWithPreferred<IngredientId>;
+export type ICoatings = Model.IIdsWithPreferred<IngredientId>;
 ```
-**References:** [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
+**References:** [Model.IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
 

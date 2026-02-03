@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;TOption, TId&gt;
+[IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;TOption, TId&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional context string for error messages
 
 **Returns:**
 
-Result&lt;[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;TOption, TId&gt;&gt;
+Result&lt;[IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;TOption, TId&gt;&gt;
 
 Success with the collection if valid, Failure if preferredId is not found in options
 

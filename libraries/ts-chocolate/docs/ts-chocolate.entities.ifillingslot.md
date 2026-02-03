@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;AnyFillingOption, FillingOptionId&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;AnyFillingOption, FillingOptionId&gt;
 
 
 </td><td>

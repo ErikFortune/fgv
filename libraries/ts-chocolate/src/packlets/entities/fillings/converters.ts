@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, IOptionsWithPreferred, ProcedureId } from '../../common';
+import { Converters as CommonConverters, Model, ProcedureId } from '../../common';
 import {
   allFillingCategories,
   allRatingCategories,
@@ -112,7 +112,7 @@ export const procedureRef: Converter<IProcedureRef> = CommonConverters.refWithNo
  * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>> =
+export const procedures: Converter<Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>> =
   CommonConverters.optionsWithPreferred(procedureRef, CommonConverters.procedureId, 'procedures');
 
 /**

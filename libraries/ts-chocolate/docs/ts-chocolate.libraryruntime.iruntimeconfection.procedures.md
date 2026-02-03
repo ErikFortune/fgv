@@ -9,5 +9,5 @@ Resolved procedures from the golden version
 **Signature:**
 
 ```typescript
-readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 ```

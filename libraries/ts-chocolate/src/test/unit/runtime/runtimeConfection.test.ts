@@ -31,11 +31,11 @@ import {
   ConfectionVersionSpec,
   FillingName,
   FillingVersionSpec,
-  ICategorizedNote,
   IngredientCategory,
   IngredientId,
   Measurement,
   Millimeters,
+  Model as CommonModel,
   MoldId,
   FillingId,
   ProcedureId,
@@ -77,7 +77,6 @@ import {
   IFillingSlot,
   IProcedureRef
 } from '../../../packlets/entities';
-import { IOptionsWithPreferred } from '../../../packlets/common';
 
 describe('RuntimeConfection', () => {
   // ============================================================================
@@ -96,7 +95,7 @@ describe('RuntimeConfection', () => {
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
         createdDate: '2026-01-01',
-        notes: [{ category: 'user', note: 'Initial version' }] as ICategorizedNote[],
+        notes: [{ category: 'user', note: 'Initial version' }] as CommonModel.ICategorizedNote[],
         yield: {
           count: 24,
           unit: 'pieces',
@@ -138,7 +137,7 @@ describe('RuntimeConfection', () => {
       {
         versionSpec: '2026-01-02-01' as ConfectionVersionSpec,
         createdDate: '2026-01-02',
-        notes: [{ category: 'user', note: 'Updated recipe' }] as ICategorizedNote[],
+        notes: [{ category: 'user', note: 'Updated recipe' }] as CommonModel.ICategorizedNote[],
         yield: {
           count: 24,
           unit: 'pieces',
@@ -336,8 +335,8 @@ describe('RuntimeConfection', () => {
       };
     },
     resolveMoldRefs: (
-      molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>
-    ): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> => {
+      molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+    ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> => {
       const options = molds.options.map((ref) => ({
         id: ref.id,
         mold: mockContext.getRuntimeMold(ref.id).value!,
@@ -391,8 +390,8 @@ describe('RuntimeConfection', () => {
       }));
     },
     resolveProcedures: (
-      procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
-    ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined => {
+      procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+    ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined => {
       if (!procedures || procedures.options.length === 0) return undefined;
       const options = procedures.options.map((ref) => ({
         id: ref.id,

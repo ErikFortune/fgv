@@ -21,7 +21,13 @@
 import '@fgv/ts-utils-jest';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
-import { BaseProcedureId, ICategorizedNote, Minutes, ProcedureId, SourceId } from '../../../packlets/common';
+import {
+  BaseProcedureId,
+  Minutes,
+  Model as CommonModel,
+  ProcedureId,
+  SourceId
+} from '../../../packlets/common';
 
 import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/entities';
 
@@ -59,7 +65,7 @@ describe('ProceduresLibrary', () => {
       { order: 2, task: inlineTask('Step 2'), waitTime: 10 as Minutes }
     ],
     tags: ['test', 'sample'],
-    notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
+    notes: [{ category: 'user', note: 'Test notes' }] as CommonModel.ICategorizedNote[]
   };
 
   // Create a procedure for mutation tests

@@ -9,7 +9,7 @@ Reference to a mold used for a confection. Satisfies IHasId for use with IOption
 **Signature:**
 
 ```typescript
-export type IConfectionMoldRef = IRefWithNotes<MoldId>;
+export type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
 ```
-**References:** [IRefWithNotes](./ts-chocolate.irefwithnotes.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)
+**References:** [Model.IRefWithNotes](./ts-chocolate.model.irefwithnotes.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)
 

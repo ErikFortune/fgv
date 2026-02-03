@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
+[Model.IIdsWithPreferred](./ts-chocolate.model.iidswithpreferred.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
 
 
 </td><td>

@@ -9,5 +9,5 @@ Converter for filling options with preferred selection. Validates that preferred
 **Signature:**
 
 ```typescript
-fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>
+fillingOptions: Converter<Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>
 ```

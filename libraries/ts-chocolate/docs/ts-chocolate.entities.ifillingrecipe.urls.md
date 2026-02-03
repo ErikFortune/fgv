@@ -9,5 +9,5 @@ Optional categorized URLs for external resources (tutorials, videos, etc.)
 **Signature:**
 
 ```typescript
-readonly urls?: ReadonlyArray<ICategorizedUrl>;
+readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
 ```

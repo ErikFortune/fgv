@@ -25,12 +25,7 @@
 
 import { Converter, Converters, Failure, fail, Result, Success, succeed } from '@fgv/ts-utils';
 
-import {
-  BASE_ID_PATTERN,
-  COMPOSITE_ID_PATTERN,
-  Converters as CommonConverters,
-  SourceId
-} from '../../common';
+import { Converters as CommonConverters, Model as CommonModel, SourceId } from '../../common';
 import {
   allInventoryTypes,
   AnyInventoryEntry,
@@ -58,7 +53,7 @@ const ID_SEPARATOR: string = '.';
  * @internal
  */
 function toMoldInventoryEntryBaseId(from: unknown): Result<MoldInventoryEntryBaseId> {
-  if (typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from)) {
+  if (typeof from === 'string' && from.length > 0 && CommonModel.BASE_ID_PATTERN.test(from)) {
     return Success.with(from as MoldInventoryEntryBaseId);
   }
   return Failure.with(
@@ -71,7 +66,7 @@ function toMoldInventoryEntryBaseId(from: unknown): Result<MoldInventoryEntryBas
  * @internal
  */
 function toMoldInventoryEntryId(from: unknown): Result<MoldInventoryEntryId> {
-  if (typeof from === 'string' && from.length > 0 && COMPOSITE_ID_PATTERN.test(from)) {
+  if (typeof from === 'string' && from.length > 0 && CommonModel.COMPOSITE_ID_PATTERN.test(from)) {
     return Success.with(from as MoldInventoryEntryId);
   }
   return Failure.with('Invalid MoldInventoryEntryId: must be in format collection.entryId');
@@ -121,7 +116,7 @@ export const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId> =
  * @internal
  */
 function toIngredientInventoryEntryBaseId(from: unknown): Result<IngredientInventoryEntryBaseId> {
-  if (typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from)) {
+  if (typeof from === 'string' && from.length > 0 && CommonModel.BASE_ID_PATTERN.test(from)) {
     return Success.with(from as IngredientInventoryEntryBaseId);
   }
   return Failure.with(
@@ -134,7 +129,7 @@ function toIngredientInventoryEntryBaseId(from: unknown): Result<IngredientInven
  * @internal
  */
 function toIngredientInventoryEntryId(from: unknown): Result<IngredientInventoryEntryId> {
-  if (typeof from === 'string' && from.length > 0 && COMPOSITE_ID_PATTERN.test(from)) {
+  if (typeof from === 'string' && from.length > 0 && CommonModel.COMPOSITE_ID_PATTERN.test(from)) {
     return Success.with(from as IngredientInventoryEntryId);
   }
   return Failure.with('Invalid IngredientInventoryEntryId: must be in format collection.entryId');
