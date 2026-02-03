@@ -4,7 +4,7 @@
 
 ## Entities.Journal.Converters.resolvedIngredientSlot variable
 
-Converter for [IResolvedIngredientSlot](./ts-chocolate.entities.journal.iresolvedingredientslot.md)<!-- -->.
+Converter for .
 
 **Signature:**
 

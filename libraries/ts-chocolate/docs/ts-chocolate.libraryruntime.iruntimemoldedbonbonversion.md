@@ -153,7 +153,7 @@ Gets the preferred procedure, falling back to first available
 
 </td><td>
 
-Confections.IMoldedBonBonVersion
+[Confections.IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)
 
 
 </td><td>

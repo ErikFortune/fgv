@@ -69,7 +69,7 @@ Type discriminator
 
 </td><td>
 
-ReadonlyArray&lt;IRolledTruffleVersion&gt;
+ReadonlyArray&lt;[IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)<!-- -->&gt;
 
 
 </td><td>

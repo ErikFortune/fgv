@@ -1187,11 +1187,22 @@ declare namespace Entities {
         ConfectionsLibrary,
         AnyConfectionVersion,
         AnyConfection,
+        AnyProducedConfection,
+        IBarTruffle,
+        IMoldedBonBon,
+        IRolledTruffle,
+        IBarTruffleVersion,
+        IMoldedBonBonVersion,
+        IRolledTruffleVersion,
+        IProducedBarTruffle,
+        IProducedMoldedBonBon,
+        IProducedRolledTruffle,
         FillingsLibrary,
         FillingCategory_2 as FillingCategory,
         IFillingRecipe,
         IFillingRecipeVersion,
         IFillingRating,
+        IProducedFilling,
         IIngredient,
         Ingredient,
         IngredientsLibrary,
@@ -1201,6 +1212,7 @@ declare namespace Entities {
         IFatIngredient,
         ISugarIngredient,
         IGanacheCharacteristics,
+        JournalLibrary,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -1215,22 +1227,6 @@ declare namespace Entities {
         isConfectionEditJournalEntry,
         isFillingProductionJournalEntry,
         isConfectionProductionJournalEntry,
-        IProducedFilling,
-        IProducedFillingIngredient,
-        AnyProducedConfection,
-        IProducedBarTruffle,
-        IProducedMoldedBonBon,
-        IProducedRolledTruffle,
-        isProducedBarTruffle,
-        isProducedMoldedBonBon,
-        isProducedRolledTruffle,
-        AnyResolvedFillingSlot,
-        IResolvedFillingSlot,
-        IResolvedIngredientSlot,
-        ResolvedSlotType,
-        allResolvedSlotTypes,
-        isResolvedFillingSlot,
-        isResolvedIngredientSlot,
         JournalEntryType,
         allJournalEntryTypes,
         IJournalEntryBase,
@@ -1239,19 +1235,6 @@ declare namespace Entities {
         IFillingProductionJournalEntry,
         IConfectionProductionJournalEntry,
         AnyJournalEntry,
-        isFillingJournalEntry,
-        isConfectionJournalEntry,
-        JournalCollectionEntry,
-        JournalCollectionEntryInit,
-        JournalCollectionValidator,
-        JournalCollection,
-        AnyFillingJournalEntry,
-        AnyConfectionJournalEntry,
-        IJournalFileTreeSource,
-        JournalsMergeSource,
-        IJournalLibraryParams,
-        IJournalLibraryAsyncParams,
-        JournalLibrary,
         isPersistedFillingSession,
         isPersistedConfectionSession,
         PERSISTED_SESSION_SCHEMA_VERSION,
@@ -4607,22 +4590,6 @@ declare namespace Journal_2 {
         isConfectionEditJournalEntry,
         isFillingProductionJournalEntry,
         isConfectionProductionJournalEntry,
-        IProducedFilling,
-        IProducedFillingIngredient,
-        AnyProducedConfection,
-        IProducedBarTruffle,
-        IProducedMoldedBonBon,
-        IProducedRolledTruffle,
-        isProducedBarTruffle,
-        isProducedMoldedBonBon,
-        isProducedRolledTruffle,
-        AnyResolvedFillingSlot,
-        IResolvedFillingSlot,
-        IResolvedIngredientSlot,
-        ResolvedSlotType,
-        allResolvedSlotTypes,
-        isResolvedFillingSlot,
-        isResolvedIngredientSlot,
         JournalEntryType,
         allJournalEntryTypes,
         IJournalEntryBase,
@@ -6050,7 +6017,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
     // (undocumented)
     protected _current: T;
     protected abstract _deepCopy(confection: T): T;
-    get fillings(): ReadonlyArray<AnyResolvedFillingSlot> | undefined;
+    get fillings(): ReadonlyArray<Confections_2.AnyResolvedFillingSlot> | undefined;
     abstract getChanges(original: T): IConfectionChanges;
     getSerializedHistory(original: T): ISerializedEditingHistory<T>;
     hasChanges(original: T): boolean;
@@ -6090,7 +6057,7 @@ class RuntimeProducedFilling {
     getChanges(original: IProducedFilling): IFillingChanges;
     getSerializedHistory(original: IProducedFilling): ISerializedEditingHistory<IProducedFilling>;
     hasChanges(original: IProducedFilling): boolean;
-    get ingredients(): ReadonlyArray<IProducedFillingIngredient>;
+    get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredient>;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
     static restoreFromHistory(history: ISerializedEditingHistory<IProducedFilling>): Result<RuntimeProducedFilling>;

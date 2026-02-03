@@ -13,7 +13,7 @@ createSnapshot(): IProducedFilling;
 ```
 **Returns:**
 
-IProducedFilling
+[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
 
 Immutable copy of current produced filling
 

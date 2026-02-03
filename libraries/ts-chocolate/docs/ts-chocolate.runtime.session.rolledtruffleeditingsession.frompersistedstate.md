@@ -53,7 +53,7 @@ history
 
 </td><td>
 
-[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;IProducedRolledTruffle&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)<!-- -->&gt;
 
 
 </td><td>

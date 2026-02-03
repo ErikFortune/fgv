@@ -180,7 +180,7 @@ Resolved procedures from the golden version.
 
 </td><td>
 
-Confections.IBarTruffle
+[Confections.IBarTruffle](./ts-chocolate.entities.ibartruffle.md)
 
 
 </td><td>

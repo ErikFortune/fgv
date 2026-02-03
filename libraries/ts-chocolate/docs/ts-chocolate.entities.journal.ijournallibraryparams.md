@@ -11,5 +11,5 @@ Parameters for creating a JournalLibrary instance synchronously.
 ```typescript
 export type IJournalLibraryParams = ISubLibraryParams<JournalLibrary, JournalCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 

@@ -24,22 +24,15 @@ import {
   Confections,
   allJournalEntryTypes,
   JournalEntryType,
-  allResolvedSlotTypes,
-  ResolvedSlotType,
   isFillingEditJournalEntry,
   isFillingProductionJournalEntry,
   isConfectionEditJournalEntry,
   isConfectionProductionJournalEntry,
-  isResolvedFillingSlot,
-  isResolvedIngredientSlot,
   AnyJournalEntry,
   IFillingEditJournalEntry,
   IFillingProductionJournalEntry,
   IConfectionEditJournalEntry,
   IConfectionProductionJournalEntry,
-  AnyResolvedFillingSlot,
-  IResolvedFillingSlot,
-  IResolvedIngredientSlot,
   IFillingRecipeVersion,
   IProducedFilling,
   IProducedMoldedBonBon
@@ -68,17 +61,17 @@ describe('Journal Model', () => {
 
   describe('allResolvedSlotTypes', () => {
     test('contains all expected slot types', () => {
-      expect(allResolvedSlotTypes).toContain('recipe');
-      expect(allResolvedSlotTypes).toContain('ingredient');
+      expect(Confections.allResolvedSlotTypes).toContain('recipe');
+      expect(Confections.allResolvedSlotTypes).toContain('ingredient');
     });
 
     test('has correct number of slot types', () => {
-      expect(allResolvedSlotTypes.length).toBe(2);
+      expect(Confections.allResolvedSlotTypes.length).toBe(2);
     });
 
     test('type assertion for ResolvedSlotType', () => {
-      allResolvedSlotTypes.forEach((slotType) => {
-        const typed: ResolvedSlotType = slotType;
+      Confections.allResolvedSlotTypes.forEach((slotType) => {
+        const typed: Confections.ResolvedSlotType = slotType;
         expect(typeof typed).toBe('string');
       });
     });
@@ -238,30 +231,30 @@ describe('Journal Model', () => {
   });
 
   describe('type guards for resolved slots', () => {
-    const fillingSlot: IResolvedFillingSlot = {
+    const fillingSlot: Confections.IResolvedFillingSlot = {
       slotType: 'recipe',
-      slotId: 'slot-1' as IResolvedFillingSlot['slotId'],
-      fillingId: 'filling-1' as IResolvedFillingSlot['fillingId']
+      slotId: 'slot-1' as Confections.IResolvedFillingSlot['slotId'],
+      fillingId: 'filling-1' as Confections.IResolvedFillingSlot['fillingId']
     };
 
-    const ingredientSlot: IResolvedIngredientSlot = {
+    const ingredientSlot: Confections.IResolvedIngredientSlot = {
       slotType: 'ingredient',
-      slotId: 'slot-2' as IResolvedIngredientSlot['slotId'],
-      ingredientId: 'ingredient-1' as IResolvedIngredientSlot['ingredientId']
+      slotId: 'slot-2' as Confections.IResolvedIngredientSlot['slotId'],
+      ingredientId: 'ingredient-1' as Confections.IResolvedIngredientSlot['ingredientId']
     };
 
     describe('isResolvedFillingSlot', () => {
       test('returns true for recipe slots', () => {
-        expect(isResolvedFillingSlot(fillingSlot)).toBe(true);
+        expect(Confections.isResolvedFillingSlot(fillingSlot)).toBe(true);
       });
 
       test('returns false for ingredient slots', () => {
-        expect(isResolvedFillingSlot(ingredientSlot)).toBe(false);
+        expect(Confections.isResolvedFillingSlot(ingredientSlot)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const slot: AnyResolvedFillingSlot = fillingSlot;
-        if (isResolvedFillingSlot(slot)) {
+        const slot: Confections.AnyResolvedFillingSlot = fillingSlot;
+        if (Confections.isResolvedFillingSlot(slot)) {
           expect(slot.slotType).toBe('recipe');
           expect(slot.fillingId).toBe('filling-1');
         }
@@ -270,16 +263,16 @@ describe('Journal Model', () => {
 
     describe('isResolvedIngredientSlot', () => {
       test('returns true for ingredient slots', () => {
-        expect(isResolvedIngredientSlot(ingredientSlot)).toBe(true);
+        expect(Confections.isResolvedIngredientSlot(ingredientSlot)).toBe(true);
       });
 
       test('returns false for recipe slots', () => {
-        expect(isResolvedIngredientSlot(fillingSlot)).toBe(false);
+        expect(Confections.isResolvedIngredientSlot(fillingSlot)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const slot: AnyResolvedFillingSlot = ingredientSlot;
-        if (isResolvedIngredientSlot(slot)) {
+        const slot: Confections.AnyResolvedFillingSlot = ingredientSlot;
+        if (Confections.isResolvedIngredientSlot(slot)) {
           expect(slot.slotType).toBe('ingredient');
           expect(slot.ingredientId).toBe('ingredient-1');
         }

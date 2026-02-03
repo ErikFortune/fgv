@@ -129,7 +129,7 @@ Gets the current produced confection.
 
 </td><td>
 
-ReadonlyArray&lt;AnyResolvedFillingSlot&gt; \| undefined
+ReadonlyArray&lt;Confections.AnyResolvedFillingSlot&gt; \| undefined
 
 
 </td><td>

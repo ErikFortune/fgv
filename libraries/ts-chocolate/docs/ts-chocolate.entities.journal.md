@@ -113,61 +113,6 @@ Type guard for IFillingProductionJournalEntry
 
 
 </td></tr>
-<tr><td>
-
-[isProducedBarTruffle(produced)](./ts-chocolate.entities.journal.isproducedbartruffle.md)
-
-
-</td><td>
-
-Type guard for IProducedBarTruffle
-
-
-</td></tr>
-<tr><td>
-
-[isProducedMoldedBonBon(produced)](./ts-chocolate.entities.journal.isproducedmoldedbonbon.md)
-
-
-</td><td>
-
-Type guard for IProducedMoldedBonBon
-
-
-</td></tr>
-<tr><td>
-
-[isProducedRolledTruffle(produced)](./ts-chocolate.entities.journal.isproducedrolledtruffle.md)
-
-
-</td><td>
-
-Type guard for IProducedRolledTruffle
-
-
-</td></tr>
-<tr><td>
-
-[isResolvedFillingSlot(slot)](./ts-chocolate.entities.journal.isresolvedfillingslot.md)
-
-
-</td><td>
-
-Type guard for IResolvedFillingSlot
-
-
-</td></tr>
-<tr><td>
-
-[isResolvedIngredientSlot(slot)](./ts-chocolate.entities.journal.isresolvedingredientslot.md)
-
-
-</td><td>
-
-Type guard for IResolvedIngredientSlot
-
-
-</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -238,83 +183,6 @@ Base interface for journal entries.
 
 
 </td></tr>
-<tr><td>
-
-[IProducedBarTruffle](./ts-chocolate.entities.journal.iproducedbartruffle.md)
-
-
-</td><td>
-
-Produced bar truffle with concrete choices.
-
-
-</td></tr>
-<tr><td>
-
-[IProducedFilling](./ts-chocolate.entities.journal.iproducedfilling.md)
-
-
-</td><td>
-
-Produced filling with concrete choices. Captures what was actually made during a filling production session.
-
-
-</td></tr>
-<tr><td>
-
-[IProducedFillingIngredient](./ts-chocolate.entities.journal.iproducedfillingingredient.md)
-
-
-</td><td>
-
-Resolved filling ingredient with concrete choice. Unlike IFillingIngredient which uses IIdsWithPreferred, this stores the single actual ingredient that was used in production.
-
-
-</td></tr>
-<tr><td>
-
-[IProducedMoldedBonBon](./ts-chocolate.entities.journal.iproducedmoldedbonbon.md)
-
-
-</td><td>
-
-Produced molded bonbon with concrete choices.
-
-
-</td></tr>
-<tr><td>
-
-[IProducedRolledTruffle](./ts-chocolate.entities.journal.iproducedrolledtruffle.md)
-
-
-</td><td>
-
-Produced rolled truffle with concrete choices.
-
-
-</td></tr>
-<tr><td>
-
-[IResolvedFillingSlot](./ts-chocolate.entities.journal.iresolvedfillingslot.md)
-
-
-</td><td>
-
-Resolved slot with recipe filling.
-
-
-</td></tr>
-<tr><td>
-
-[IResolvedIngredientSlot](./ts-chocolate.entities.journal.iresolvedingredientslot.md)
-
-
-</td><td>
-
-Resolved slot with ingredient filling.
-
-
-</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -365,17 +233,6 @@ All possible [journal entry types](./ts-chocolate.entities.journal.journalentryt
 
 
 </td></tr>
-<tr><td>
-
-[allResolvedSlotTypes](./ts-chocolate.entities.journal.allresolvedslottypes.md)
-
-
-</td><td>
-
-All resolved slot types.
-
-
-</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -421,28 +278,6 @@ Union type for filling journal entries (edit or production)
 </td><td>
 
 Discriminated union of all journal entry types. Use type guards to narrow to specific types.
-
-
-</td></tr>
-<tr><td>
-
-[AnyProducedConfection](./ts-chocolate.entities.journal.anyproducedconfection.md)
-
-
-</td><td>
-
-Discriminated union of produced confection types. Discriminated on the `confectionType` field.
-
-
-</td></tr>
-<tr><td>
-
-[AnyResolvedFillingSlot](./ts-chocolate.entities.journal.anyresolvedfillingslot.md)
-
-
-</td><td>
-
-Union of resolved filling slot types. Discriminated on the `slotType` field.
 
 
 </td></tr>
@@ -542,17 +377,6 @@ Types of journal entries.
 </td><td>
 
 Specifies a journals library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[ResolvedSlotType](./ts-chocolate.entities.journal.resolvedslottype.md)
-
-
-</td><td>
-
-Resolved slot type discriminator.
 
 
 </td></tr>

@@ -11,5 +11,5 @@ Parameters for creating a JournalLibrary instance asynchronously with encryption
 ```typescript
 export type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, JournalCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 

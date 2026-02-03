@@ -4,7 +4,7 @@
 
 ## Entities.Journal.Converters.anyResolvedFillingSlot variable
 
-Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.journal.anyresolvedfillingslot.md)<!-- -->. Uses discriminated object pattern on `slotType` field.
+Converter for . Uses discriminated object pattern on `slotType` field.
 
 **Signature:**
 

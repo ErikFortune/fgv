@@ -25,13 +25,28 @@
 
 // Re-export models, collections, and libraries (not Converters which would conflict)
 
-export { ConfectionsLibrary, AnyConfectionVersion, AnyConfection } from './confections';
+export {
+  ConfectionsLibrary,
+  AnyConfectionVersion,
+  AnyConfection,
+  AnyProducedConfection,
+  IBarTruffle,
+  IMoldedBonBon,
+  IRolledTruffle,
+  IBarTruffleVersion,
+  IMoldedBonBonVersion,
+  IRolledTruffleVersion,
+  IProducedBarTruffle,
+  IProducedMoldedBonBon,
+  IProducedRolledTruffle
+} from './confections';
 export {
   FillingsLibrary,
   FillingCategory,
   IFillingRecipe,
   IFillingRecipeVersion,
-  IFillingRating
+  IFillingRating,
+  IProducedFilling
 } from './fillings';
 
 export {
@@ -46,8 +61,8 @@ export {
   IGanacheCharacteristics
 } from './ingredients';
 
+export { JournalLibrary } from './journal/library';
 export * from './journal/model';
-export * from './journal/library';
 
 export * from './session/model';
 export * from './session/library';

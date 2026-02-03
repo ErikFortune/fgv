@@ -69,7 +69,7 @@ version
 
 </td><td>
 
-Confections.IBarTruffleVersion
+[Confections.IBarTruffleVersion](./ts-chocolate.entities.ibartruffleversion.md)
 
 
 </td><td>

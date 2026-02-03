@@ -37,7 +37,7 @@ produced
 
 </td><td>
 
-AnyProducedConfection
+[AnyProducedConfection](./ts-chocolate.entities.anyproducedconfection.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Produced confection to check
 
 **Returns:**
 
-produced is IProducedMoldedBonBon
+produced is [IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
 
 True if this is a produced molded bonbon
 

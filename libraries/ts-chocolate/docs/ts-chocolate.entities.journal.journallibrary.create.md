@@ -50,7 +50,7 @@ _(Optional)_ Optional [creation parameters](./ts-chocolate.entities.journal.ijou
 
 **Returns:**
 
-Result&lt;JournalLibrary&gt;
+Result&lt;[JournalLibrary](./ts-chocolate.entities.journallibrary.md)<!-- -->&gt;
 
 `Success` with new instance, or `Failure` with error message
 

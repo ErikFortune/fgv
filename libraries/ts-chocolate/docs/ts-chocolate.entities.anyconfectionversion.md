@@ -11,3 +11,5 @@ Union type for all confection version types.
 ```typescript
 export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
 ```
+**References:** [IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)<!-- -->, [IBarTruffleVersion](./ts-chocolate.entities.ibartruffleversion.md)<!-- -->, [IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
+

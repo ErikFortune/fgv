@@ -11,3 +11,5 @@ Discriminated union of produced confection types. Discriminated on the `confecti
 ```typescript
 export type AnyProducedConfection = IProducedMoldedBonBon | IProducedBarTruffle | IProducedRolledTruffle;
 ```
+**References:** [IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)<!-- -->, [IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)<!-- -->, [IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+

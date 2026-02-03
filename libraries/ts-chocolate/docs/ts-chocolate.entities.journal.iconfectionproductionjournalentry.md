@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-AnyProducedConfection
+[AnyProducedConfection](./ts-chocolate.entities.anyproducedconfection.md)
 
 
 </td><td>

@@ -37,7 +37,7 @@ initial
 
 </td><td>
 
-IProducedBarTruffle
+[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)
 
 
 </td><td>

@@ -11,7 +11,7 @@ Mutable wrapper for IProducedRolledTruffle with undo/redo support. Provides roll
 ```typescript
 export declare class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffle> 
 ```
-**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;IProducedRolledTruffle&gt;
+**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)<!-- -->&gt;
 
 ## Properties
 

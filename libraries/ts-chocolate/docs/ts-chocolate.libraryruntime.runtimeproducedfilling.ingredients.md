@@ -9,5 +9,5 @@ Gets the ingredients as a readonly array.
 **Signature:**
 
 ```typescript
-get ingredients(): ReadonlyArray<IProducedFillingIngredient>;
+get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredient>;
 ```

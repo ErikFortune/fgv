@@ -69,7 +69,7 @@ version
 
 </td><td>
 
-Confections.IMoldedBonBonVersion
+[Confections.IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)
 
 
 </td><td>

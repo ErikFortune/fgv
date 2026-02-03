@@ -50,7 +50,7 @@ Version to check
 
 **Returns:**
 
-version is IMoldedBonBonVersion
+version is [IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)
 
 True if the version is a molded bonbon version
 

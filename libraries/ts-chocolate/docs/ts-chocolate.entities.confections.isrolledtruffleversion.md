@@ -50,7 +50,7 @@ Version to check
 
 **Returns:**
 
-version is IRolledTruffleVersion
+version is [IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
 
 True if the version is a rolled truffle version
 

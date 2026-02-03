@@ -68,7 +68,7 @@ _(Optional)_ Pre-built ingredient inventory library
 
 </td><td>
 
-JournalLibrary
+[JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 
 
 </td><td>

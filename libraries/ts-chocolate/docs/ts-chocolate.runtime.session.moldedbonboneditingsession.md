@@ -11,7 +11,7 @@ Editing session for molded bonbon confections. Supports frame-based yield specif
 ```typescript
 export declare class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBon, RuntimeMoldedBonBon> 
 ```
-**Extends:** ConfectionEditingSessionBase&lt;IProducedMoldedBonBon, [RuntimeMoldedBonBon](./ts-chocolate.libraryruntime.runtimemoldedbonbon.md)<!-- -->&gt;
+**Extends:** ConfectionEditingSessionBase&lt;[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)<!-- -->, [RuntimeMoldedBonBon](./ts-chocolate.libraryruntime.runtimemoldedbonbon.md)<!-- -->&gt;
 
 ## Remarks
 

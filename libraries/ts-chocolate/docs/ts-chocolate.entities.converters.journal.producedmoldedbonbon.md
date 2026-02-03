@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Journal.producedMoldedBonBon variable
 
-Converter for [IProducedMoldedBonBon](./ts-chocolate.entities.journal.iproducedmoldedbonbon.md)<!-- -->.
+Converter for .
 
 **Signature:**
 

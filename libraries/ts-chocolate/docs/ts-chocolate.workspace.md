@@ -71,7 +71,7 @@ Whether the workspace is ready for use (unlocked or no key store configured).
 
 </td><td>
 
-JournalLibrary
+[JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 
 
 </td><td>

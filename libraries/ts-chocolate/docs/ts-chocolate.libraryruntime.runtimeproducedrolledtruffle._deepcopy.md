@@ -35,7 +35,7 @@ confection
 
 </td><td>
 
-IProducedRolledTruffle
+[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
 
 
 </td><td>
@@ -46,5 +46,5 @@ IProducedRolledTruffle
 
 **Returns:**
 
-IProducedRolledTruffle
+[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
 

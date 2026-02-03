@@ -50,7 +50,7 @@ _(Optional)_ [Async creation parameters](./ts-chocolate.entities.journal.ijourna
 
 **Returns:**
 
-Promise&lt;Result&lt;JournalLibrary&gt;&gt;
+Promise&lt;Result&lt;[JournalLibrary](./ts-chocolate.entities.journallibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure
 

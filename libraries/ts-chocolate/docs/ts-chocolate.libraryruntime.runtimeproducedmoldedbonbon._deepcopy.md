@@ -35,7 +35,7 @@ confection
 
 </td><td>
 
-IProducedMoldedBonBon
+[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
 
 
 </td><td>
@@ -46,5 +46,5 @@ IProducedMoldedBonBon
 
 **Returns:**
 
-IProducedMoldedBonBon
+[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
 

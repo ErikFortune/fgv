@@ -138,7 +138,7 @@ Gets the preferred procedure, falling back to first available.
 
 </td><td>
 
-Confections.IBarTruffleVersion
+[Confections.IBarTruffleVersion](./ts-chocolate.entities.ibartruffleversion.md)
 
 
 </td><td>

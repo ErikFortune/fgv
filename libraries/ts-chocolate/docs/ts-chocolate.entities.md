@@ -183,17 +183,6 @@ Type guard for IConfectionEditJournalEntry
 </td></tr>
 <tr><td>
 
-[isConfectionJournalEntry(entry)](./ts-chocolate.entities.isconfectionjournalentry.md)
-
-
-</td><td>
-
-Type guard for confection journal entries
-
-
-</td></tr>
-<tr><td>
-
 [isConfectionProductionJournalEntry(entry)](./ts-chocolate.entities.isconfectionproductionjournalentry.md)
 
 
@@ -211,17 +200,6 @@ Type guard for IConfectionProductionJournalEntry
 </td><td>
 
 Type guard for IFillingEditJournalEntry
-
-
-</td></tr>
-<tr><td>
-
-[isFillingJournalEntry(entry)](./ts-chocolate.entities.isfillingjournalentry.md)
-
-
-</td><td>
-
-Type guard for filling journal entries
 
 
 </td></tr>
@@ -293,61 +271,6 @@ Type guard for IPersistedFillingSession.
 </td></tr>
 <tr><td>
 
-[isProducedBarTruffle(produced)](./ts-chocolate.entities.isproducedbartruffle.md)
-
-
-</td><td>
-
-Type guard for IProducedBarTruffle
-
-
-</td></tr>
-<tr><td>
-
-[isProducedMoldedBonBon(produced)](./ts-chocolate.entities.isproducedmoldedbonbon.md)
-
-
-</td><td>
-
-Type guard for IProducedMoldedBonBon
-
-
-</td></tr>
-<tr><td>
-
-[isProducedRolledTruffle(produced)](./ts-chocolate.entities.isproducedrolledtruffle.md)
-
-
-</td><td>
-
-Type guard for IProducedRolledTruffle
-
-
-</td></tr>
-<tr><td>
-
-[isResolvedFillingSlot(slot)](./ts-chocolate.entities.isresolvedfillingslot.md)
-
-
-</td><td>
-
-Type guard for IResolvedFillingSlot
-
-
-</td></tr>
-<tr><td>
-
-[isResolvedIngredientSlot(slot)](./ts-chocolate.entities.isresolvedingredientslot.md)
-
-
-</td><td>
-
-Type guard for IResolvedIngredientSlot
-
-
-</td></tr>
-<tr><td>
-
 [isTaskRef(invocation)](./ts-chocolate.entities.istaskref.md)
 
 
@@ -380,6 +303,28 @@ Description
 </td><td>
 
 Alcohol-specific ingredient
+
+
+</td></tr>
+<tr><td>
+
+[IBarTruffle](./ts-chocolate.entities.ibartruffle.md)
+
+
+</td><td>
+
+Bar truffle confection Ganache slab cut into squares and enrobed
+
+
+</td></tr>
+<tr><td>
+
+[IBarTruffleVersion](./ts-chocolate.entities.ibartruffleversion.md)
+
+
+</td><td>
+
+Version interface for bar truffle confections. Includes frame and cutting dimensions.
 
 
 </td></tr>
@@ -596,6 +541,28 @@ Represents a chocolate mold
 </td></tr>
 <tr><td>
 
+[IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
+
+
+</td><td>
+
+Molded bonbon confection Uses chocolate molds for shell formation
+
+
+</td></tr>
+<tr><td>
+
+[IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)
+
+
+</td><td>
+
+Version interface for molded bonbon confections. Includes mold and chocolate shell specifications.
+
+
+</td></tr>
+<tr><td>
+
 [IMoldInventoryEntry](./ts-chocolate.entities.imoldinventoryentry.md)
 
 
@@ -712,17 +679,6 @@ Produced filling with concrete choices. Captures what was actually made during a
 </td></tr>
 <tr><td>
 
-[IProducedFillingIngredient](./ts-chocolate.entities.iproducedfillingingredient.md)
-
-
-</td><td>
-
-Resolved filling ingredient with concrete choice. Unlike IFillingIngredient which uses IIdsWithPreferred, this stores the single actual ingredient that was used in production.
-
-
-</td></tr>
-<tr><td>
-
 [IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
 
 
@@ -756,23 +712,23 @@ Options for rendering procedure steps.
 </td></tr>
 <tr><td>
 
-[IResolvedFillingSlot](./ts-chocolate.entities.iresolvedfillingslot.md)
+[IRolledTruffle](./ts-chocolate.entities.irolledtruffle.md)
 
 
 </td><td>
 
-Resolved slot with recipe filling.
+Rolled truffle confection Hand-rolled ganache balls with various coatings
 
 
 </td></tr>
 <tr><td>
 
-[IResolvedIngredientSlot](./ts-chocolate.entities.iresolvedingredientslot.md)
+[IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
 
 
 </td><td>
 
-Resolved slot with ingredient filling.
+Version interface for rolled truffle confections. Includes enrobing and coating specifications.
 
 
 </td></tr>
@@ -1019,17 +975,6 @@ All possible persisted session types.
 </td></tr>
 <tr><td>
 
-[allResolvedSlotTypes](./ts-chocolate.entities.allresolvedslottypes.md)
-
-
-</td><td>
-
-All resolved slot types.
-
-
-</td></tr>
-<tr><td>
-
 [defaultRenderOptions](./ts-chocolate.entities.defaultrenderoptions.md)
 
 
@@ -1089,34 +1034,12 @@ Discriminated union of all confection data types. Use this when working with raw
 </td></tr>
 <tr><td>
 
-[AnyConfectionJournalEntry](./ts-chocolate.entities.anyconfectionjournalentry.md)
-
-
-</td><td>
-
-Union type for confection journal entries (edit or production)
-
-
-</td></tr>
-<tr><td>
-
 [AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
 
 
 </td><td>
 
 Union type for all confection version types.
-
-
-</td></tr>
-<tr><td>
-
-[AnyFillingJournalEntry](./ts-chocolate.entities.anyfillingjournalentry.md)
-
-
-</td><td>
-
-Union type for filling journal entries (edit or production)
 
 
 </td></tr>
@@ -1161,17 +1084,6 @@ Discriminated union of all persisted session types. Use type guards to narrow to
 </td><td>
 
 Discriminated union of produced confection types. Discriminated on the `confectionType` field.
-
-
-</td></tr>
-<tr><td>
-
-[AnyResolvedFillingSlot](./ts-chocolate.entities.anyresolvedfillingslot.md)
-
-
-</td><td>
-
-Union of resolved filling slot types. Discriminated on the `slotType` field.
 
 
 </td></tr>
@@ -1227,39 +1139,6 @@ Parameters for creating an IngredientInventoryLibrary instance asynchronously wi
 </td><td>
 
 Parameters for creating an IngredientInventoryLibrary instance synchronously.
-
-
-</td></tr>
-<tr><td>
-
-[IJournalFileTreeSource](./ts-chocolate.entities.ijournalfiletreesource.md)
-
-
-</td><td>
-
-File tree source for journal data.
-
-
-</td></tr>
-<tr><td>
-
-[IJournalLibraryAsyncParams](./ts-chocolate.entities.ijournallibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a JournalLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IJournalLibraryParams](./ts-chocolate.entities.ijournallibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a JournalLibrary instance synchronously.
 
 
 </td></tr>
@@ -1551,67 +1430,12 @@ Parameters for creating a TasksLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
-[JournalCollection](./ts-chocolate.entities.journalcollection.md)
-
-
-</td><td>
-
-Type for the collections in a JournalLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[JournalCollectionEntry](./ts-chocolate.entities.journalcollectionentry.md)
-
-
-</td><td>
-
-A single entry in a journal collection.
-
-
-</td></tr>
-<tr><td>
-
-[JournalCollectionEntryInit](./ts-chocolate.entities.journalcollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a JournalLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[JournalCollectionValidator](./ts-chocolate.entities.journalcollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for JournalLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
 [JournalEntryType](./ts-chocolate.entities.journalentrytype.md)
 
 
 </td><td>
 
 Types of journal entries.
-
-
-</td></tr>
-<tr><td>
-
-[JournalsMergeSource](./ts-chocolate.entities.journalsmergesource.md)
-
-
-</td><td>
-
-Specifies a journals library to merge into a new library.
 
 
 </td></tr>
@@ -1832,17 +1656,6 @@ Validator type for ProceduresLibrary collections.
 </td><td>
 
 Specifies a procedures library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[ResolvedSlotType](./ts-chocolate.entities.resolvedslottype.md)
-
-
-</td><td>
-
-Resolved slot type discriminator.
 
 
 </td></tr>

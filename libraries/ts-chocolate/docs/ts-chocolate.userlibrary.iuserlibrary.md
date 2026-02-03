@@ -68,7 +68,7 @@ Ingredient inventory library for tracking ingredient stock.
 
 </td><td>
 
-JournalLibrary
+[JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 
 
 </td><td>

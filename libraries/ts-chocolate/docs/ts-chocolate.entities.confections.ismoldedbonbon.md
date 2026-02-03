@@ -50,7 +50,7 @@ Confection data to check
 
 **Returns:**
 
-confection is IMoldedBonBon
+confection is [IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
 
 True if the confection is a molded bonbon
 

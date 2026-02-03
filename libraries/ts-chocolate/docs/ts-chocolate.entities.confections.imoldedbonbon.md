@@ -69,7 +69,7 @@ Type discriminator
 
 </td><td>
 
-ReadonlyArray&lt;IMoldedBonBonVersion&gt;
+ReadonlyArray&lt;[IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)<!-- -->&gt;
 
 
 </td><td>

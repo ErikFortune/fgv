@@ -51,7 +51,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;IProducedFillingIngredient&gt;
+ReadonlyArray&lt;Fillings.IProducedFillingIngredient&gt;
 
 
 </td><td>
@@ -72,7 +72,7 @@ Gets the ingredients as a readonly array.
 
 </td><td>
 
-IProducedFilling
+[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
 
 
 </td><td>

@@ -50,7 +50,7 @@ Confection data to check
 
 **Returns:**
 
-confection is IRolledTruffle
+confection is [IRolledTruffle](./ts-chocolate.entities.irolledtruffle.md)
 
 True if the confection is a rolled truffle
 

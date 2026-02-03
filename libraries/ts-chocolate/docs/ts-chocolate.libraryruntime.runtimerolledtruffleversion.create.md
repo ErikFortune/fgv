@@ -69,7 +69,7 @@ version
 
 </td><td>
 
-Confections.IRolledTruffleVersion
+[Confections.IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
 
 
 </td><td>

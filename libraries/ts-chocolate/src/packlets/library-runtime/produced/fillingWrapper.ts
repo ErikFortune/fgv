@@ -35,12 +35,7 @@ import {
   Converters as CommonConverters,
   Model as CommonModel
 } from '../../common';
-import {
-  Fillings,
-  IProducedFilling,
-  IProducedFillingIngredient,
-  ISerializedEditingHistory
-} from '../../entities';
+import { Fillings, IProducedFilling, ISerializedEditingHistory } from '../../entities';
 import type { IRuntimeFillingRecipeVersion } from '../model';
 
 /**
@@ -168,7 +163,7 @@ export class RuntimeProducedFilling {
   private static _convertIngredient(
     ing: Fillings.IFillingIngredient,
     scaleFactor: number
-  ): Result<IProducedFillingIngredient> {
+  ): Result<Fillings.IProducedFillingIngredient> {
     // Use helper to get preferred ID
     const ingredientId = Helpers.getPreferredIdOrFirst(ing.ingredient);
     if (ingredientId === undefined) {
@@ -315,7 +310,7 @@ export class RuntimeProducedFilling {
     const ingredients = [...this._current.ingredients];
     const existingIndex = ingredients.findIndex((ing) => ing.ingredientId === id);
 
-    const newIngredient: IProducedFillingIngredient = {
+    const newIngredient: Fillings.IProducedFillingIngredient = {
       ingredientId: id,
       amount,
       unit,
@@ -483,7 +478,7 @@ export class RuntimeProducedFilling {
    * Gets the ingredients as a readonly array.
    * @public
    */
-  public get ingredients(): ReadonlyArray<IProducedFillingIngredient> {
+  public get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredient> {
     return this._current.ingredients;
   }
 
@@ -550,7 +545,7 @@ export class RuntimeProducedFilling {
    * Only includes weight-contributing units (g, mL).
    */
   private _calculateWeightFromIngredients(
-    ingredients: ReadonlyArray<IProducedFillingIngredient>
+    ingredients: ReadonlyArray<Fillings.IProducedFillingIngredient>
   ): Measurement {
     const total = ingredients.reduce((sum, ing) => {
       const unit = ing.unit ?? 'g';
@@ -587,8 +582,8 @@ export class RuntimeProducedFilling {
    * Compares two ingredient arrays for equality.
    */
   private _ingredientsEqual(
-    a: ReadonlyArray<IProducedFillingIngredient>,
-    b: ReadonlyArray<IProducedFillingIngredient>
+    a: ReadonlyArray<Fillings.IProducedFillingIngredient>,
+    b: ReadonlyArray<Fillings.IProducedFillingIngredient>
   ): boolean {
     if (a.length !== b.length) {
       return false;
@@ -610,7 +605,10 @@ export class RuntimeProducedFilling {
   /**
    * Compares two ingredients for equality.
    */
-  private _ingredientEqual(a: IProducedFillingIngredient, b: IProducedFillingIngredient): boolean {
+  private _ingredientEqual(
+    a: Fillings.IProducedFillingIngredient,
+    b: Fillings.IProducedFillingIngredient
+  ): boolean {
     return (
       a.ingredientId === b.ingredientId &&
       a.amount === b.amount &&

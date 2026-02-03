@@ -38,12 +38,9 @@ import {
 import {
   Confections,
   AnyProducedConfection,
-  AnyResolvedFillingSlot,
   IProducedBarTruffle,
   IProducedMoldedBonBon,
   IProducedRolledTruffle,
-  IResolvedFillingSlot,
-  IResolvedIngredientSlot,
   ISerializedEditingHistory
 } from '../../entities';
 import type {
@@ -300,7 +297,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
     const fillings = [...(this._current.fillings ?? [])];
     const existingIndex = fillings.findIndex((slot) => slot.slotId === slotId);
 
-    const newSlot: AnyResolvedFillingSlot =
+    const newSlot: Confections.AnyResolvedFillingSlot =
       choice.type === 'recipe'
         ? {
             slotType: 'recipe' as const,
@@ -391,7 +388,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Gets the fillings as a readonly array.
    * @public
    */
-  public get fillings(): ReadonlyArray<AnyResolvedFillingSlot> | undefined {
+  public get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined {
     return this._current.fillings;
   }
 
@@ -490,8 +487,8 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Compares two filling arrays for equality.
    */
   private _fillingsEqual(
-    a: ReadonlyArray<AnyResolvedFillingSlot> | undefined,
-    b: ReadonlyArray<AnyResolvedFillingSlot> | undefined
+    a: ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined,
+    b: ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined
   ): boolean {
     if (a === undefined && b === undefined) {
       return true;
@@ -519,7 +516,10 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
   /**
    * Compares two filling slots for equality.
    */
-  private _fillingSlotEqual(a: AnyResolvedFillingSlot, b: AnyResolvedFillingSlot): boolean {
+  private _fillingSlotEqual(
+    a: Confections.AnyResolvedFillingSlot,
+    b: Confections.AnyResolvedFillingSlot
+  ): boolean {
     if (a.slotId !== b.slotId || a.slotType !== b.slotType) {
       return false;
     }
@@ -655,7 +655,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    */
   private static _convertFillingSlots(
     slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
-  ): Result<ReadonlyArray<IResolvedFillingSlot | IResolvedIngredientSlot>> {
+  ): Result<ReadonlyArray<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot>> {
     const slotResults = slots.map((slot) => RuntimeProducedMoldedBonBon._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
@@ -666,7 +666,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    */
   private static _convertFillingSlot(
     slot: IRuntimeResolvedFillingSlot
-  ): Result<IResolvedFillingSlot | IResolvedIngredientSlot> {
+  ): Result<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
       return fail(`Filling slot ${slot.slotId} has no options`);
@@ -939,7 +939,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    */
   private static _convertFillingSlots(
     slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
-  ): Result<ReadonlyArray<IResolvedFillingSlot | IResolvedIngredientSlot>> {
+  ): Result<ReadonlyArray<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot>> {
     const slotResults = slots.map((slot) => RuntimeProducedBarTruffle._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
@@ -950,7 +950,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    */
   private static _convertFillingSlot(
     slot: IRuntimeResolvedFillingSlot
-  ): Result<IResolvedFillingSlot | IResolvedIngredientSlot> {
+  ): Result<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
       return fail(`Filling slot ${slot.slotId} has no options`);
@@ -1134,7 +1134,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    */
   private static _convertFillingSlots(
     slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
-  ): Result<ReadonlyArray<IResolvedFillingSlot | IResolvedIngredientSlot>> {
+  ): Result<ReadonlyArray<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot>> {
     const slotResults = slots.map((slot) => RuntimeProducedRolledTruffle._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
@@ -1145,7 +1145,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    */
   private static _convertFillingSlot(
     slot: IRuntimeResolvedFillingSlot
-  ): Result<IResolvedFillingSlot | IResolvedIngredientSlot> {
+  ): Result<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
       return fail(`Filling slot ${slot.slotId} has no options`);

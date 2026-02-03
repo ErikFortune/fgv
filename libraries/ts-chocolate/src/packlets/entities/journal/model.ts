@@ -30,62 +30,8 @@ import {
   Measurement,
   Model as CommonModel
 } from '../../common';
-import {
-  AnyConfectionVersion,
-  AnyProducedConfection,
-  AnyResolvedFillingSlot,
-  IConfectionYield,
-  IProducedBarTruffle,
-  IProducedMoldedBonBon,
-  IProducedRolledTruffle,
-  IResolvedFillingSlot,
-  IResolvedIngredientSlot,
-  ResolvedSlotType,
-  allResolvedSlotTypes,
-  isProducedBarTruffle,
-  isProducedMoldedBonBon,
-  isProducedRolledTruffle,
-  isResolvedFillingSlot,
-  isResolvedIngredientSlot
-} from '../confections';
-import { IFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
-
-// ============================================================================
-// Re-export Produced Types from Their Home Modules
-// ============================================================================
-
-/**
- * Re-export produced filling types from the fillings module.
- * These types capture what was actually used in production.
- * @public
- */
-export type { IProducedFilling, IProducedFillingIngredient };
-
-/**
- * Re-export produced confection types from the confections module.
- * These types capture what was actually used in production.
- * @public
- */
-export type { AnyProducedConfection, IProducedBarTruffle, IProducedMoldedBonBon, IProducedRolledTruffle };
-
-/**
- * Re-export type guards for produced confections.
- * @public
- */
-export { isProducedBarTruffle, isProducedMoldedBonBon, isProducedRolledTruffle };
-
-/**
- * Re-export resolved slot types from the confections module.
- * These types represent concrete filling choices for confection slots.
- * @public
- */
-export type { AnyResolvedFillingSlot, IResolvedFillingSlot, IResolvedIngredientSlot, ResolvedSlotType };
-
-/**
- * Re-export resolved slot constants and type guards.
- * @public
- */
-export { allResolvedSlotTypes, isResolvedFillingSlot, isResolvedIngredientSlot };
+import { AnyConfectionVersion, AnyProducedConfection, IConfectionYield } from '../confections';
+import { IFillingRecipeVersion, IProducedFilling } from '../fillings';
 
 /**
  * Types of journal entries.

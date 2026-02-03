@@ -11,5 +11,5 @@ Specifies a journals library to merge into a new library.
 ```typescript
 export type JournalsMergeSource = SubLibraryMergeSource<JournalLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 

@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Journal.anyProducedConfection variable
 
-Converter for [AnyProducedConfection](./ts-chocolate.entities.journal.anyproducedconfection.md)<!-- -->. Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
+Converter for . Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 **Signature:**
 

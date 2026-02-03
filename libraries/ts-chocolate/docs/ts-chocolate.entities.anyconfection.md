@@ -11,3 +11,5 @@ Discriminated union of all confection data types. Use this when working with raw
 ```typescript
 export type AnyConfection = IMoldedBonBon | IBarTruffle | IRolledTruffle;
 ```
+**References:** [IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)<!-- -->, [IBarTruffle](./ts-chocolate.entities.ibartruffle.md)<!-- -->, [IRolledTruffle](./ts-chocolate.entities.irolledtruffle.md)
+

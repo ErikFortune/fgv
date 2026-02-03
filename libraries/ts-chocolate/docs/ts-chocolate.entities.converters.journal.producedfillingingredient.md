@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Journal.producedFillingIngredient variable
 
-Converter for [IProducedFillingIngredient](./ts-chocolate.entities.journal.iproducedfillingingredient.md)<!-- -->.
+Converter for .
 
 **Signature:**
 

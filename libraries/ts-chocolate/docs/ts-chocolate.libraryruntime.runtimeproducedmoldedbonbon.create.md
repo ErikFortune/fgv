@@ -37,7 +37,7 @@ initial
 
 </td><td>
 
-IProducedMoldedBonBon
+[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
 
 
 </td><td>

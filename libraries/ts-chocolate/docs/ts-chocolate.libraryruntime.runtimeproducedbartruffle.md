@@ -11,7 +11,7 @@ Mutable wrapper for IProducedBarTruffle with undo/redo support. Provides bar tru
 ```typescript
 export declare class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedBarTruffle> 
 ```
-**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;IProducedBarTruffle&gt;
+**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)<!-- -->&gt;
 
 ## Properties
 

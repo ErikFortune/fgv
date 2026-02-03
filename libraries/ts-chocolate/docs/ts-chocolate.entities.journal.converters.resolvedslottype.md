@@ -4,7 +4,7 @@
 
 ## Entities.Journal.Converters.resolvedSlotType variable
 
-Converter for [ResolvedSlotType](./ts-chocolate.entities.journal.resolvedslottype.md)<!-- -->.
+Converter for .
 
 **Signature:**
 

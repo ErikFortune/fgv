@@ -35,7 +35,7 @@ Converter for [AnyJournalEntry](./ts-chocolate.entities.journal.anyjournalentry.
 
 </td><td>
 
-Converter for [AnyProducedConfection](./ts-chocolate.entities.journal.anyproducedconfection.md)<!-- -->. Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
+Converter for . Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Converter for [AnyProducedConfection](./ts-chocolate.entities.journal.anyproduce
 
 </td><td>
 
-Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.journal.anyresolvedfillingslot.md)<!-- -->. Uses discriminated object pattern on `slotType` field.
+Converter for . Uses discriminated object pattern on `slotType` field.
 
 
 </td></tr>
@@ -112,7 +112,7 @@ Converter for [JournalEntryType](./ts-chocolate.entities.journal.journalentrytyp
 
 </td><td>
 
-Converter for [IProducedBarTruffle](./ts-chocolate.entities.journal.iproducedbartruffle.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -123,7 +123,7 @@ Converter for [IProducedBarTruffle](./ts-chocolate.entities.journal.iproducedbar
 
 </td><td>
 
-Converter for [IProducedFilling](./ts-chocolate.entities.journal.iproducedfilling.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -134,7 +134,7 @@ Converter for [IProducedFilling](./ts-chocolate.entities.journal.iproducedfillin
 
 </td><td>
 
-Converter for [IProducedFillingIngredient](./ts-chocolate.entities.journal.iproducedfillingingredient.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Converter for [IProducedFillingIngredient](./ts-chocolate.entities.journal.iprod
 
 </td><td>
 
-Converter for [IProducedMoldedBonBon](./ts-chocolate.entities.journal.iproducedmoldedbonbon.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -156,7 +156,7 @@ Converter for [IProducedMoldedBonBon](./ts-chocolate.entities.journal.iproducedm
 
 </td><td>
 
-Converter for [IProducedRolledTruffle](./ts-chocolate.entities.journal.iproducedrolledtruffle.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Converter for [IProducedRolledTruffle](./ts-chocolate.entities.journal.iproduced
 
 </td><td>
 
-Converter for [IResolvedFillingSlot](./ts-chocolate.entities.journal.iresolvedfillingslot.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -178,7 +178,7 @@ Converter for [IResolvedFillingSlot](./ts-chocolate.entities.journal.iresolvedfi
 
 </td><td>
 
-Converter for [IResolvedIngredientSlot](./ts-chocolate.entities.journal.iresolvedingredientslot.md)<!-- -->.
+Converter for .
 
 
 </td></tr>
@@ -189,7 +189,7 @@ Converter for [IResolvedIngredientSlot](./ts-chocolate.entities.journal.iresolve
 
 </td><td>
 
-Converter for [ResolvedSlotType](./ts-chocolate.entities.journal.resolvedslottype.md)<!-- -->.
+Converter for .
 
 
 </td></tr>

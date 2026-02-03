@@ -112,7 +112,7 @@ _(Optional)_ File tree sources to load data from.
 
 </td><td>
 
-JournalLibrary
+[JournalLibrary](./ts-chocolate.entities.journallibrary.md)
 
 
 </td><td>

@@ -180,7 +180,7 @@ Resolved procedures from the golden version.
 
 </td><td>
 
-Confections.IMoldedBonBon
+[Confections.IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
 
 
 </td><td>
