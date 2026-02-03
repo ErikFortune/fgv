@@ -34,8 +34,8 @@ import {
 } from '../../../packlets/common';
 
 import {
+  Fillings,
   IFillingRecipe,
-  IFillingFileTreeSource,
   IFillingRecipeVersion,
   FillingsLibrary,
   isScaledFillingRecipeVersion,
@@ -458,7 +458,7 @@ describe('FillingsLibrary', () => {
         { path: '/library/data/fillings/mutable-source.json', contents: validRecipeData }
       ];
       const root = getLibraryDir(files);
-      const source: IFillingFileTreeSource = {
+      const source: Fillings.IFillingFileTreeSource = {
         directory: root,
         mutable: true
       };
@@ -1272,7 +1272,7 @@ describe('Recipe scaling', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const rootDir = tree.getItem('/').orThrow();
-      const fileSource: IFillingFileTreeSource = {
+      const fileSource: Fillings.IFillingFileTreeSource = {
         directory: rootDir as FileTree.IFileTreeDirectoryItem,
         mutable: true
       };
@@ -1326,7 +1326,7 @@ describe('Recipe scaling', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const rootDir = tree.getItem('/').orThrow();
-      const fileSource: IFillingFileTreeSource = {
+      const fileSource: Fillings.IFillingFileTreeSource = {
         directory: rootDir as FileTree.IFileTreeDirectoryItem,
         mutable: false
       };
@@ -1385,7 +1385,7 @@ describe('Recipe scaling', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const rootDir = tree.getItem('/').orThrow();
-      const fileSource: IFillingFileTreeSource = {
+      const fileSource: Fillings.IFillingFileTreeSource = {
         directory: rootDir as FileTree.IFileTreeDirectoryItem,
         mutable: false
       };
@@ -1464,7 +1464,7 @@ describe('Recipe scaling', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const rootDir = tree.getItem('/').orThrow();
-      const fileSource: IFillingFileTreeSource = {
+      const fileSource: Fillings.IFillingFileTreeSource = {
         directory: rootDir as FileTree.IFileTreeDirectoryItem,
         mutable: false
       };

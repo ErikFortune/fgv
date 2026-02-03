@@ -1463,56 +1463,12 @@ Validator type for FillingsLibrary collections.
 </td></tr>
 <tr><td>
 
-[FillingsMergeSource](./ts-chocolate.entities.fillingsmergesource.md)
-
-
-</td><td>
-
-Specifies a fillings library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
 [ICavities](./ts-chocolate.entities.icavities.md)
 
 
 </td><td>
 
 Represents the cavities in a mold
-
-
-</td></tr>
-<tr><td>
-
-[IFillingFileTreeSource](./ts-chocolate.entities.ifillingfiletreesource.md)
-
-
-</td><td>
-
-File tree source for filling recipe data.
-
-
-</td></tr>
-<tr><td>
-
-[IFillingsLibraryAsyncParams](./ts-chocolate.entities.ifillingslibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a FillingsLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IFillingsLibraryParams](./ts-chocolate.entities.ifillingslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a FillingsLibrary instance synchronously.
 
 
 </td></tr>

@@ -30,7 +30,6 @@ export { FillingsLibrary, AnyFillingRecipeVersion } from './fillings';
 
 export * from './fillings/model';
 export * from './fillings/collection';
-export * from './fillings/library';
 
 export * from './ingredients/model';
 export * from './ingredients/collection';
