@@ -24,7 +24,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'yaml';
 
-import { BuiltInData, ingredientCollections, recipeCollections } from '../../../packlets/built-in';
+import { BuiltInData, ingredientCollections, fillingCollections } from '../../../packlets/built-in';
 
 describe('BuiltInData', () => {
   beforeEach(() => {
@@ -367,7 +367,7 @@ describe('BuiltInData', () => {
       const jsonFiles = fs.readdirSync(recipesSourceDir).filter((f) => f.endsWith('.json'));
 
       // All source files (YAML unencrypted + JSON encrypted) should match generated collections
-      const generatedNames = Object.keys(recipeCollections).sort();
+      const generatedNames = Object.keys(fillingCollections).sort();
       const yamlSourceNames = sourceFiles.map((f) => path.basename(f, path.extname(f)));
       const jsonSourceNames = jsonFiles.map((f) => path.basename(f, path.extname(f)));
       const allSourceNames = [...yamlSourceNames, ...jsonSourceNames].sort();
@@ -377,7 +377,7 @@ describe('BuiltInData', () => {
       for (const file of sourceFiles) {
         const name = path.basename(file, path.extname(file));
         const sourceContent = yaml.parse(fs.readFileSync(path.join(recipesSourceDir, file), 'utf-8'));
-        expect(recipeCollections[name]).toEqual(sourceContent);
+        expect(fillingCollections[name]).toEqual(sourceContent);
       }
     });
 

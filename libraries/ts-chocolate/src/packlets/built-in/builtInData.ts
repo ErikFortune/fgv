@@ -33,7 +33,7 @@ import {
   ingredientCollections,
   moldCollections,
   procedureCollections,
-  recipeCollections,
+  fillingCollections,
   taskCollections
 } from './builtInData.generated';
 
@@ -47,7 +47,7 @@ const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
     path: `/data/ingredients/${name}.json`,
     contents: data
   })),
-  ...Object.entries(recipeCollections).map(([name, data]) => ({
+  ...Object.entries(fillingCollections).map(([name, data]) => ({
     path: `/data/fillings/${name}.json`,
     contents: data
   })),

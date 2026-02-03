@@ -42,7 +42,6 @@ export { isKeyStoreFile } from './keystore/converters';
 
 // Crypto providers
 export { NodeCryptoProvider, nodeCryptoProvider } from './nodeCryptoProvider';
-export { BrowserCryptoProvider, createBrowserCryptoProvider } from './browserCryptoProvider';
 
 // High-level helpers
 export {

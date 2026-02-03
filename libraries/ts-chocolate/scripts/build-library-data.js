@@ -79,8 +79,8 @@ function loadCollectionsFromDir(dir) {
 // Load ingredients
 const ingredients = loadCollectionsFromDir(INGREDIENTS_DIR);
 
-// Load fillings (recipes)
-const recipes = loadCollectionsFromDir(FILLINGS_DIR);
+// Load fillings
+const fillings = loadCollectionsFromDir(FILLINGS_DIR);
 
 // Load molds
 const molds = loadCollectionsFromDir(MOLDS_DIR);
@@ -97,7 +97,7 @@ const confections = loadCollectionsFromDir(CONFECTIONS_DIR);
 // Build source file comments
 const sourceComments = [
   ...ingredients.files.map((f) => `//   - data/published/ingredients/${f}`),
-  ...recipes.files.map((f) => `//   - data/published/fillings/${f}`),
+  ...fillings.files.map((f) => `//   - data/published/fillings/${f}`),
   ...molds.files.map((f) => `//   - data/published/molds/${f}`),
   ...procedures.files.map((f) => `//   - data/published/procedures/${f}`),
   ...tasks.files.map((f) => `//   - data/published/tasks/${f}`),
@@ -126,10 +126,14 @@ export const ingredientCollections: Record<string, JsonObject> = ${JSON.stringif
 )};
 
 /**
- * Generated recipe collections from source YAML files.
+ * Generated fillings collections from source YAML files.
  * @public
  */
-export const recipeCollections: Record<string, JsonObject> = ${JSON.stringify(recipes.collections, null, 2)};
+export const fillingCollections: Record<string, JsonObject> = ${JSON.stringify(
+  fillings.collections,
+  null,
+  2
+)};
 
 /**
  * Generated mold collections from source YAML files.
@@ -170,7 +174,7 @@ fs.writeFileSync(OUTPUT_FILE, output);
 // Count file types for reporting
 const allFiles = [
   ...ingredients.files,
-  ...recipes.files,
+  ...fillings.files,
   ...molds.files,
   ...procedures.files,
   ...tasks.files,
@@ -182,7 +186,7 @@ const jsonCount = allFiles.filter(isJsonFile).length;
 console.log(
   `Generated ${path.relative(process.cwd(), OUTPUT_FILE)} from ${
     ingredients.files.length
-  } ingredient files, ${recipes.files.length} filling files, ${molds.files.length} mold files, ${
+  } ingredient files, ${fillings.files.length} filling files, ${molds.files.length} mold files, ${
     procedures.files.length
   } procedure files, ${tasks.files.length} task files, and ${
     confections.files.length

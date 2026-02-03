@@ -56,6 +56,17 @@ Generated confection collections from source YAML files.
 </td></tr>
 <tr><td>
 
+[fillingCollections](./ts-chocolate.builtin.fillingcollections.md)
+
+
+</td><td>
+
+Generated fillings collections from source YAML files.
+
+
+</td></tr>
+<tr><td>
+
 [ingredientCollections](./ts-chocolate.builtin.ingredientcollections.md)
 
 
@@ -67,12 +78,12 @@ Generated ingredient collections from source YAML files.
 </td></tr>
 <tr><td>
 
-[recipeCollections](./ts-chocolate.builtin.recipecollections.md)
+[procedureCollections](./ts-chocolate.builtin.procedurecollections.md)
 
 
 </td><td>
 
-Generated recipe collections from source YAML files.
+Generated procedure collections from source YAML files.
 
 
 </td></tr>

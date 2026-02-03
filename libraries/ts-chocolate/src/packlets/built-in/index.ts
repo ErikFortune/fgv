@@ -22,6 +22,7 @@ export * from './builtInData';
 export {
   confectionCollections,
   ingredientCollections,
-  recipeCollections,
+  fillingCollections,
+  procedureCollections,
   taskCollections
 } from './builtInData.generated';

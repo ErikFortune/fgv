@@ -1270,10 +1270,10 @@ export const ingredientCollections: Record<string, JsonObject> = {
 };
 
 /**
- * Generated recipe collections from source YAML files.
+ * Generated fillings collections from source YAML files.
  * @public
  */
-export const recipeCollections: Record<string, JsonObject> = {
+export const fillingCollections: Record<string, JsonObject> = {
   common: {
     metadata: {
       name: 'Common Recipes',

@@ -349,25 +349,12 @@ const baseTaskId_2: Validator<BaseTaskId>;
 // @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class BrowserCryptoProvider implements ICryptoProvider {
-    constructor(cryptoApi?: Crypto);
-    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
-    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
-    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
-    fromBase64(base64: string): Result<Uint8Array>;
-    generateKey(): Promise<Result<Uint8Array>>;
-    generateRandomBytes(length: number): Result<Uint8Array>;
-    toBase64(data: Uint8Array): string;
-}
-
 declare namespace BuiltIn {
     export {
         confectionCollections,
         ingredientCollections,
-        recipeCollections,
+        fillingCollections,
+        procedureCollections,
         taskCollections,
         BuiltInData
     }
@@ -1018,11 +1005,6 @@ declare namespace Converters_7 {
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
-
 // @public
 function createConfectionVersionId(parts: {
     collectionId: ConfectionId;
@@ -1070,8 +1052,6 @@ declare namespace CryptoUtils {
         isKeyStoreFile,
         NodeCryptoProvider,
         nodeCryptoProvider,
-        BrowserCryptoProvider,
-        createBrowserCryptoProvider,
         createEncryptedCollectionFile,
         decryptCollectionFile,
         tryDecryptCollectionFile,
@@ -1642,6 +1622,9 @@ type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingR
 
 // @public
 type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipe>;
+
+// @public
+const fillingCollections: Record<string, JsonObject>;
 
 // @public
 type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipe>;
@@ -6017,6 +6000,9 @@ type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProc
 type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedure>;
 
 // @public
+const procedureCollections: Record<string, JsonObject>;
+
+// @public
 type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedure>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -6128,9 +6114,6 @@ const ratingScore: Converter<RatingScore>;
 
 // @public
 function recalculateFillingRecipeVersion(version: IFillingRecipeVersion): IFillingRecipeVersion;
-
-// @public
-const recipeCollections: Record<string, JsonObject>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

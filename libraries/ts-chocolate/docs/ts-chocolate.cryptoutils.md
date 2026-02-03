@@ -19,19 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[BrowserCryptoProvider](./ts-chocolate.cryptoutils.browsercryptoprovider.md)
-
-
-</td><td>
-
-Browser implementation of [ICryptoProvider](./ts-chocolate.cryptoutils.icryptoprovider.md) using the Web Crypto API. Uses AES-256-GCM for authenticated encryption.
-
-Note: This provider requires a browser environment with Web Crypto API support. In Node.js 15+, Web Crypto is available via globalThis.crypto or require('crypto').webcrypto.
-
-
-</td></tr>
-<tr><td>
-
 [EncryptionHelper](./ts-chocolate.cryptoutils.encryptionhelper.md)
 
 
@@ -81,17 +68,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[createBrowserCryptoProvider()](./ts-chocolate.cryptoutils.createbrowsercryptoprovider.md)
-
-
-</td><td>
-
-Creates a [BrowserCryptoProvider](./ts-chocolate.cryptoutils.browsercryptoprovider.md) if Web Crypto API is available.
-
-
-</td></tr>
-<tr><td>
 
 [createEncryptedCollectionFile(params)](./ts-chocolate.cryptoutils.createencryptedcollectionfile.md)
 
