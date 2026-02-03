@@ -44,7 +44,7 @@ import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { collectionSourceMetadata as collectionSourceMetadataConverter } from './converters';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
 import {
@@ -1100,7 +1100,7 @@ export abstract class SubLibraryBase<
     }
 
     // Decrypt the collection (expected payload is a record of items)
-    const decryptResult = await Crypto.decryptFile(
+    const decryptResult = await CryptoUtils.decryptFile(
       internal.encryptedFile,
       keyResult.value,
       encryption.cryptoProvider,

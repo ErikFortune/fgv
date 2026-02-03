@@ -91,7 +91,7 @@ Journal library for production records (user-specific data).
 
 </td><td>
 
-Crypto.KeyStore.KeyStore \| undefined
+CryptoUtils.KeyStore.KeyStore \| undefined
 
 
 </td><td>

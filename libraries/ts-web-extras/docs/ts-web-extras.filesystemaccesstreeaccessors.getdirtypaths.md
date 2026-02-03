@@ -4,6 +4,7 @@
 
 ## FileSystemAccessTreeAccessors.getDirtyPaths() method
 
+Implements `FileTree.IPersistentFileTreeAccessors.getDirtyPaths`
 
 **Signature:**
 

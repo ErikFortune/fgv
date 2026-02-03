@@ -43,7 +43,7 @@ import {
 } from '../../../packlets/entities';
 import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 
 describe('FillingsLibrary', () => {
   // ============================================================================
@@ -1210,14 +1210,14 @@ describe('Recipe scaling', () => {
 
     beforeAll(async () => {
       // Generate a test key for encryption tests
-      testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
+      testKey = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
     });
 
     test('creates library with built-ins using onMissingKey skip mode', async () => {
       // When loading built-ins with encrypted files but no key, use onMissingKey: 'skip'
       const result = await FillingsLibrary.createAsync({
         encryption: {
-          cryptoProvider: Crypto.nodeCryptoProvider,
+          cryptoProvider: CryptoUtils.nodeCryptoProvider,
           onMissingKey: 'skip' // Skip encrypted files that we don't have keys for
         }
       });
@@ -1309,11 +1309,11 @@ describe('Recipe scaling', () => {
       };
 
       const encryptedFile = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content: secretRecipeData,
           secretName: TEST_SECRET_NAME,
           key: testKey,
-          cryptoProvider: Crypto.nodeCryptoProvider
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -1336,7 +1336,7 @@ describe('Recipe scaling', () => {
         fileSources: fileSource,
         encryption: {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: Crypto.nodeCryptoProvider
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
         }
       });
 
@@ -1368,11 +1368,11 @@ describe('Recipe scaling', () => {
       };
 
       const encryptedFile = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content: secretRecipeData,
           secretName: TEST_SECRET_NAME,
           key: testKey,
-          cryptoProvider: Crypto.nodeCryptoProvider
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -1443,11 +1443,11 @@ describe('Recipe scaling', () => {
       };
 
       const encryptedFile = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content: secretRecipeData,
           secretName: TEST_SECRET_NAME,
           key: testKey,
-          cryptoProvider: Crypto.nodeCryptoProvider
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -1474,7 +1474,7 @@ describe('Recipe scaling', () => {
         fileSources: fileSource,
         encryption: {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: Crypto.nodeCryptoProvider
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
         }
       });
 

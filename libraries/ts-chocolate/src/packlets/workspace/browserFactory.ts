@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { fail, Result } from '@fgv/ts-utils';
-import { createBrowserCryptoProvider } from '@fgv/ts-web-extras';
+import { CryptoUtils } from '@fgv/ts-web-extras';
 import { IWorkspaceFactoryParams } from './model';
 import { Workspace } from './workspace';
 
@@ -33,7 +33,7 @@ import { Workspace } from './workspace';
  */
 export function createBrowserWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace> {
   // Create browser crypto provider
-  const cryptoResult = createBrowserCryptoProvider();
+  const cryptoResult = CryptoUtils.createBrowserCryptoProvider();
   if (cryptoResult.isFailure()) {
     return fail(`Failed to create browser crypto provider: ${cryptoResult.message}`);
   }

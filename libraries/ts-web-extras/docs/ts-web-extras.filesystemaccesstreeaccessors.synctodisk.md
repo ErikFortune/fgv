@@ -4,6 +4,7 @@
 
 ## FileSystemAccessTreeAccessors.syncToDisk() method
 
+Implements `FileTree.IPersistentFileTreeAccessors.syncToDisk`
 
 **Signature:**
 

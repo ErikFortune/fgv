@@ -23,7 +23,7 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result, fail } from '@fgv/ts-utils';
 import { JsonObject, JsonValue } from '@fgv/ts-json-base';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { LibraryData } from '@fgv/ts-chocolate';
 import * as yaml from 'yaml';
 
@@ -286,10 +286,10 @@ export function createFetchDataCommand(): Command {
           }
 
           // Decrypt the content
-          const decryptResult = await Crypto.tryDecryptFile(
+          const decryptResult = await CryptoUtils.tryDecryptFile(
             encryptedFile,
             keyResult.value,
-            Crypto.nodeCryptoProvider
+            CryptoUtils.nodeCryptoProvider
           );
 
           if (decryptResult.isFailure()) {

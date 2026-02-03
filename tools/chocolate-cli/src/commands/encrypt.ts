@@ -23,7 +23,7 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result, fail } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { LibraryData } from '@fgv/ts-chocolate';
 
 /**
@@ -81,7 +81,7 @@ async function encryptFile(
   secretName: string,
   key: Uint8Array,
   includeMetadata: boolean,
-  keyDerivation?: Crypto.IKeyDerivationParams
+  keyDerivation?: CryptoUtils.IKeyDerivationParams
 ): Promise<Result<void>> {
   // Read and parse input file
   const jsonResult = readJsonFile(inputPath);
@@ -100,13 +100,13 @@ async function encryptFile(
     : undefined;
 
   // Encrypt the content
-  const encryptResult = await Crypto.createEncryptedFile({
+  const encryptResult = await CryptoUtils.createEncryptedFile({
     content,
     secretName,
     key,
     metadata,
     keyDerivation,
-    cryptoProvider: Crypto.nodeCryptoProvider
+    cryptoProvider: CryptoUtils.nodeCryptoProvider
   });
 
   if (encryptResult.isFailure()) {
@@ -146,7 +146,7 @@ export function createEncryptCommand(): Command {
       }
 
       // Build key derivation params if salt is provided
-      let keyDerivation: Crypto.IKeyDerivationParams | undefined;
+      let keyDerivation: CryptoUtils.IKeyDerivationParams | undefined;
       if (options.salt) {
         const iterations = options.iterations ? parseInt(options.iterations, 10) : 100000;
         if (isNaN(iterations) || iterations <= 0) {

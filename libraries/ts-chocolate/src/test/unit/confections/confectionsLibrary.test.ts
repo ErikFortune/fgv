@@ -444,7 +444,7 @@ describe('ConfectionsLibrary', () => {
 // ============================================================================
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { IConfectionFileTreeSource } from '../../../packlets/entities';
 
 describe('ConfectionsLibrary.createAsync', () => {
@@ -452,7 +452,7 @@ describe('ConfectionsLibrary.createAsync', () => {
   let testKey: Uint8Array;
 
   beforeAll(async () => {
-    testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
+    testKey = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
   });
 
   test('creates library with built-ins by default', async () => {
@@ -519,11 +519,11 @@ describe('ConfectionsLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await Crypto.createEncryptedFile({
+      await CryptoUtils.createEncryptedFile({
         content: secretConfectionData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: Crypto.nodeCryptoProvider
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -546,7 +546,7 @@ describe('ConfectionsLibrary.createAsync', () => {
       fileSources: fileSource,
       encryption: {
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: Crypto.nodeCryptoProvider
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
       }
     });
 
@@ -572,11 +572,11 @@ describe('ConfectionsLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await Crypto.createEncryptedFile({
+      await CryptoUtils.createEncryptedFile({
         content: secretConfectionData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: Crypto.nodeCryptoProvider
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
       })
     ).orThrow();
 

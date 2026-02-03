@@ -8,7 +8,7 @@ import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { Converters as Converters_4 } from '@fgv/ts-utils';
-import { Crypto as Crypto_2 } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
@@ -1169,14 +1169,14 @@ class EditorContextValidator<T, TBaseId extends string = string, TId extends str
 }
 
 // @public
-type EncryptedCollectionFile = Crypto_2.IEncryptedFile<IEncryptedCollectionMetadata>;
+type EncryptedCollectionFile = CryptoUtils.IEncryptedFile<IEncryptedCollectionMetadata>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EncryptedCollectionFile"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CryptoUtils"
 //
 // @public
 const encryptedCollectionFile: Converter<EncryptedCollectionFile>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IEncryptedCollectionMetadata"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CryptoUtils"
 //
 // @public
 const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
@@ -2433,11 +2433,11 @@ interface IEncryptedCollectionMetadata {
 
 // @public
 interface IEncryptionConfig {
-    readonly cryptoProvider: Crypto_2.ICryptoProvider;
-    readonly onDecryptionError?: Crypto_2.EncryptedFileErrorMode;
-    readonly onMissingKey?: Crypto_2.EncryptedFileErrorMode;
+    readonly cryptoProvider: CryptoUtils.ICryptoProvider;
+    readonly onDecryptionError?: CryptoUtils.EncryptedFileErrorMode;
+    readonly onMissingKey?: CryptoUtils.EncryptedFileErrorMode;
     readonly secretProvider?: SecretProvider;
-    readonly secrets?: ReadonlyArray<Crypto_2.INamedSecret>;
+    readonly secrets?: ReadonlyArray<CryptoUtils.INamedSecret>;
 }
 
 // @public
@@ -3592,7 +3592,7 @@ interface IProtectedCollectionInfo<TCollectionId extends string = string> {
     readonly isBuiltIn: boolean;
     readonly isMutable: boolean;
     readonly itemCount?: number;
-    readonly keyDerivation?: Crypto_2.IKeyDerivationParams;
+    readonly keyDerivation?: CryptoUtils.IKeyDerivationParams;
     readonly secretName: string;
 }
 
@@ -4722,7 +4722,7 @@ interface IWeightContribution {
 export interface IWorkspace {
     readonly isReady: boolean;
     readonly journals: JournalLibrary;
-    readonly keyStore: Crypto_2.KeyStore.KeyStore | undefined;
+    readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
     readonly runtime: RuntimeContext;
     readonly sessions: SessionLibrary;
@@ -4752,7 +4752,7 @@ export interface IWorkspaceCreateParams {
 
 // @public
 export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'keyStore'> {
-    readonly keyStoreFile?: Crypto_2.KeyStore.IKeyStoreFile;
+    readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
 }
 
 declare namespace Journal {
@@ -7220,7 +7220,7 @@ export class Workspace implements IWorkspace {
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
     get isReady(): boolean;
     get journals(): JournalLibrary;
-    get keyStore(): Crypto_2.KeyStore.KeyStore | undefined;
+    get keyStore(): CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
     get runtime(): RuntimeContext;
     get sessions(): SessionLibrary;

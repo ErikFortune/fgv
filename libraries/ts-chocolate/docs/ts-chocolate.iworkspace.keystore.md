@@ -9,5 +9,5 @@ The key store for encryption key management, if configured.
 **Signature:**
 
 ```typescript
-readonly keyStore: Crypto.KeyStore.KeyStore | undefined;
+readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
 ```

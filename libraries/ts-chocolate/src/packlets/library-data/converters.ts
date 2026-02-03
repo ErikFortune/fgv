@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Converter, Converters, Failure, Result, Success, Validator } from '@fgv/ts-utils';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import {
   EncryptedCollectionFile,
   ICollection,
@@ -132,7 +132,7 @@ export function collection<TCOLLECTIONID extends string, TITEMID extends string,
 // ============================================================================
 
 /**
- * Converter for {@link IEncryptedCollectionMetadata | encrypted collection metadata}.
+ * Converter for {@link CryptoUtils.IEncryptedCollectionMetadata | encrypted collection metadata}.
  * @public
  */
 export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata> =
@@ -148,9 +148,9 @@ export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata
   );
 
 /**
- * Converter for {@link EncryptedCollectionFile | encrypted collection files}.
+ * Converter for {@link CryptoUtils.EncryptedCollectionFile | encrypted collection files}.
  * Uses the factory from ts-extras with chocolate-specific metadata converter.
  * @public
  */
 export const encryptedCollectionFile: Converter<EncryptedCollectionFile> =
-  Crypto.Converters.createEncryptedFileConverter(encryptedCollectionMetadata);
+  CryptoUtils.Converters.createEncryptedFileConverter(encryptedCollectionMetadata);

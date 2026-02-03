@@ -9,7 +9,7 @@ Encrypted collection file format - an encrypted file with collection-specific me
 **Signature:**
 
 ```typescript
-export type EncryptedCollectionFile = Crypto.IEncryptedFile<IEncryptedCollectionMetadata>;
+export type EncryptedCollectionFile = CryptoUtils.IEncryptedFile<IEncryptedCollectionMetadata>;
 ```
 **References:** [IEncryptedCollectionMetadata](./ts-chocolate.librarydata.iencryptedcollectionmetadata.md)
 

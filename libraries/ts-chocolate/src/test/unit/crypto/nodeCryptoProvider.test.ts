@@ -20,17 +20,17 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 
 describe('Crypto.NodeCryptoProvider', () => {
-  const provider = Crypto.nodeCryptoProvider;
+  const provider = CryptoUtils.nodeCryptoProvider;
 
   describe('generateKey', () => {
     test('generates a 32-byte key', async () => {
       const result = await provider.generateKey();
       expect(result).toSucceedAndSatisfy((key) => {
         expect(key).toBeInstanceOf(Uint8Array);
-        expect(key.length).toBe(Crypto.AES_256_KEY_SIZE);
+        expect(key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
       });
     });
 
@@ -48,8 +48,8 @@ describe('Crypto.NodeCryptoProvider', () => {
 
       const encryptResult = await provider.encrypt(plaintext, key);
       expect(encryptResult).toSucceedAndSatisfy((encrypted) => {
-        expect(encrypted.iv.length).toBe(Crypto.GCM_IV_SIZE);
-        expect(encrypted.authTag.length).toBe(Crypto.GCM_AUTH_TAG_SIZE);
+        expect(encrypted.iv.length).toBe(CryptoUtils.Constants.GCM_IV_SIZE);
+        expect(encrypted.authTag.length).toBe(CryptoUtils.Constants.GCM_AUTH_TAG_SIZE);
         expect(encrypted.encryptedData.length).toBeGreaterThan(0);
       });
 
@@ -200,7 +200,7 @@ describe('Crypto.NodeCryptoProvider', () => {
       const result = await provider.deriveKey(password, salt, 1000);
       expect(result).toSucceedAndSatisfy((key) => {
         expect(key).toBeInstanceOf(Uint8Array);
-        expect(key.length).toBe(Crypto.AES_256_KEY_SIZE);
+        expect(key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
       });
     });
 
@@ -269,7 +269,7 @@ describe('Crypto.NodeCryptoProvider', () => {
 
   describe('singleton instance', () => {
     test('Crypto.nodeCryptoProvider is a Crypto.NodeCryptoProvider instance', () => {
-      expect(Crypto.nodeCryptoProvider).toBeInstanceOf(Crypto.NodeCryptoProvider);
+      expect(CryptoUtils.nodeCryptoProvider).toBeInstanceOf(CryptoUtils.NodeCryptoProvider);
     });
   });
 

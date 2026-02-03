@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Result } from '@fgv/ts-utils';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { IWorkspaceFactoryParams } from './model';
 import { Workspace } from './workspace';
 
@@ -37,7 +37,7 @@ export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Wo
     keyStore: params?.keyStoreFile
       ? {
           file: params.keyStoreFile,
-          cryptoProvider: Crypto.nodeCryptoProvider
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
         }
       : undefined
   });

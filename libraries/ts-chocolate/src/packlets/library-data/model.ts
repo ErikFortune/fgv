@@ -20,7 +20,7 @@
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 
 // ============================================================================
 // Chocolate-Specific Encrypted Collection Types
@@ -52,7 +52,7 @@ export interface IEncryptedCollectionMetadata {
  * Encrypted collection file format - an encrypted file with collection-specific metadata.
  * @public
  */
-export type EncryptedCollectionFile = Crypto.IEncryptedFile<IEncryptedCollectionMetadata>;
+export type EncryptedCollectionFile = CryptoUtils.IEncryptedFile<IEncryptedCollectionMetadata>;
 
 /**
  * Checks if a JSON object appears to be an encrypted collection file.
@@ -62,7 +62,7 @@ export type EncryptedCollectionFile = Crypto.IEncryptedFile<IEncryptedCollection
  * @public
  */
 export function isEncryptedCollectionFile(json: unknown): boolean {
-  return Crypto.isEncryptedFile(json);
+  return CryptoUtils.isEncryptedFile(json);
 }
 
 // ============================================================================
@@ -416,7 +416,7 @@ export interface IEncryptionConfig {
    * Array of named secrets to use for decryption.
    * Each secret has a name and a 32-byte key for AES-256 encryption.
    */
-  readonly secrets?: ReadonlyArray<Crypto.INamedSecret>;
+  readonly secrets?: ReadonlyArray<CryptoUtils.INamedSecret>;
 
   /**
    * Optional function to dynamically provide keys by secret name.
@@ -428,7 +428,7 @@ export interface IEncryptionConfig {
    * The crypto provider to use for decryption.
    * Use `nodeCryptoProvider` for Node.js or `BrowserCryptoProvider` for browsers.
    */
-  readonly cryptoProvider: Crypto.ICryptoProvider;
+  readonly cryptoProvider: CryptoUtils.ICryptoProvider;
 
   /**
    * How to handle encrypted files when the required secret is not available.
@@ -436,7 +436,7 @@ export interface IEncryptionConfig {
    * - `'skip'`: Skip the encrypted file and continue loading other files.
    * - `'warn'`: Log a warning and skip the encrypted file.
    */
-  readonly onMissingKey?: Crypto.EncryptedFileErrorMode;
+  readonly onMissingKey?: CryptoUtils.EncryptedFileErrorMode;
 
   /**
    * How to handle decryption errors (e.g., wrong key, corrupted data).
@@ -444,7 +444,7 @@ export interface IEncryptionConfig {
    * - `'skip'`: Skip the file and continue loading other files.
    * - `'warn'`: Log a warning and skip the file.
    */
-  readonly onDecryptionError?: Crypto.EncryptedFileErrorMode;
+  readonly onDecryptionError?: CryptoUtils.EncryptedFileErrorMode;
 }
 
 // ============================================================================
@@ -497,7 +497,7 @@ export interface IProtectedCollectionInfo<TCollectionId extends string = string>
    * Optional key derivation parameters from the encrypted file.
    * If present, allows password-based decryption using these parameters.
    */
-  readonly keyDerivation?: Crypto.IKeyDerivationParams;
+  readonly keyDerivation?: CryptoUtils.IKeyDerivationParams;
 }
 
 /**

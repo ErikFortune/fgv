@@ -4,6 +4,7 @@
 
 ## FileSystemAccessTreeAccessors.isDirty() method
 
+Implements `FileTree.IPersistentFileTreeAccessors.isDirty`
 
 **Signature:**
 

@@ -21,18 +21,18 @@
 import '@fgv/ts-utils-jest';
 
 import { JsonObject } from '@fgv/ts-json-base';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { isEncryptedCollectionFile } from '../../../packlets/library-data';
 
 describe('Encryption Functions', () => {
-  const provider = Crypto.nodeCryptoProvider;
+  const provider = CryptoUtils.nodeCryptoProvider;
 
   describe('Crypto.createEncryptedFile', () => {
     test('creates valid encrypted file from JSON object', async () => {
       const content = { items: [1, 2, 3], name: 'test' };
       const key = (await provider.generateKey()).orThrow();
 
-      const result = await Crypto.createEncryptedFile({
+      const result = await CryptoUtils.createEncryptedFile({
         content,
         secretName: 'my-secret',
         key,
@@ -40,9 +40,9 @@ describe('Encryption Functions', () => {
       });
 
       expect(result).toSucceedAndSatisfy((encrypted) => {
-        expect(encrypted.format).toBe(Crypto.ENCRYPTED_FILE_FORMAT);
+        expect(encrypted.format).toBe(CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT);
         expect(encrypted.secretName).toBe('my-secret');
-        expect(encrypted.algorithm).toBe(Crypto.DEFAULT_ALGORITHM);
+        expect(encrypted.algorithm).toBe(CryptoUtils.Constants.DEFAULT_ALGORITHM);
         expect(encrypted.iv).toBeDefined();
         expect(encrypted.authTag).toBeDefined();
         expect(encrypted.encryptedData).toBeDefined();
@@ -53,7 +53,7 @@ describe('Encryption Functions', () => {
       const content = { items: [1, 2, 3] };
       const key = (await provider.generateKey()).orThrow();
 
-      const result = await Crypto.createEncryptedFile({
+      const result = await CryptoUtils.createEncryptedFile({
         content,
         secretName: 'my-secret',
         key,
@@ -76,7 +76,7 @@ describe('Encryption Functions', () => {
       const content = { items: [1, 2, 3] };
       const key = (await provider.generateKey()).orThrow();
 
-      const result = await Crypto.createEncryptedFile({
+      const result = await CryptoUtils.createEncryptedFile({
         content,
         secretName: 'my-secret',
         key,
@@ -99,7 +99,7 @@ describe('Encryption Functions', () => {
       const key = (await provider.generateKey()).orThrow();
 
       // String
-      const strResult = await Crypto.createEncryptedFile({
+      const strResult = await CryptoUtils.createEncryptedFile({
         content: 'hello',
         secretName: 'test',
         key,
@@ -108,7 +108,7 @@ describe('Encryption Functions', () => {
       expect(strResult).toSucceed();
 
       // Number
-      const numResult = await Crypto.createEncryptedFile({
+      const numResult = await CryptoUtils.createEncryptedFile({
         content: 42,
         secretName: 'test',
         key,
@@ -117,7 +117,7 @@ describe('Encryption Functions', () => {
       expect(numResult).toSucceed();
 
       // Array
-      const arrResult = await Crypto.createEncryptedFile({
+      const arrResult = await CryptoUtils.createEncryptedFile({
         content: [1, 2, 3],
         secretName: 'test',
         key,
@@ -130,7 +130,7 @@ describe('Encryption Functions', () => {
       const content = { test: 'data' };
       const invalidKey = new Uint8Array(16); // Too short - needs 32 bytes
 
-      const result = await Crypto.createEncryptedFile({
+      const result = await CryptoUtils.createEncryptedFile({
         content,
         secretName: 'test',
         key: invalidKey,
@@ -146,7 +146,7 @@ describe('Encryption Functions', () => {
       const circular: Record<string, unknown> = {};
       circular.self = circular;
 
-      const result = await Crypto.createEncryptedFile({
+      const result = await CryptoUtils.createEncryptedFile({
         // @ts-expect-error - intentionally passing non-serializable object for test
         content: circular,
         secretName: 'test',
@@ -164,7 +164,7 @@ describe('Encryption Functions', () => {
       const key = (await provider.generateKey()).orThrow();
 
       const encrypted = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content,
           secretName: 'my-secret',
           key,
@@ -172,7 +172,7 @@ describe('Encryption Functions', () => {
         })
       ).orThrow();
 
-      const result = await Crypto.decryptFile(encrypted, key, provider);
+      const result = await CryptoUtils.decryptFile(encrypted, key, provider);
       expect(result).toSucceedWith(content);
     });
 
@@ -182,7 +182,7 @@ describe('Encryption Functions', () => {
       const key2 = (await provider.generateKey()).orThrow();
 
       const encrypted = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content,
           secretName: 'my-secret',
           key: key1,
@@ -190,7 +190,7 @@ describe('Encryption Functions', () => {
         })
       ).orThrow();
 
-      const result = await Crypto.decryptFile(encrypted, key2, provider);
+      const result = await CryptoUtils.decryptFile(encrypted, key2, provider);
       expect(result).toFail();
     });
   });
@@ -201,7 +201,7 @@ describe('Encryption Functions', () => {
       const key = (await provider.generateKey()).orThrow();
 
       const encrypted = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content,
           secretName: 'my-secret',
           key,
@@ -210,7 +210,7 @@ describe('Encryption Functions', () => {
       ).orThrow();
 
       // Cast to JsonObject since the encrypted file conforms to the expected structure
-      const result = await Crypto.tryDecryptFile(encrypted as unknown as JsonObject, key, provider);
+      const result = await CryptoUtils.tryDecryptFile(encrypted as unknown as JsonObject, key, provider);
       expect(result).toSucceedWith(content);
     });
 
@@ -218,19 +218,19 @@ describe('Encryption Functions', () => {
       const plainJson: JsonObject = { items: [1, 2, 3] };
       const key = (await provider.generateKey()).orThrow();
 
-      const result = await Crypto.tryDecryptFile(plainJson, key, provider);
+      const result = await CryptoUtils.tryDecryptFile(plainJson, key, provider);
       expect(result).toFailWith(/not an encrypted file/i);
     });
 
     test('fails for malformed encrypted file', async () => {
       const malformed: JsonObject = {
-        format: Crypto.ENCRYPTED_FILE_FORMAT,
+        format: CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT,
         // Missing required fields
         secretName: 'test'
       };
       const key = (await provider.generateKey()).orThrow();
 
-      const result = await Crypto.tryDecryptFile(malformed, key, provider);
+      const result = await CryptoUtils.tryDecryptFile(malformed, key, provider);
       expect(result).toFailWith(/invalid encrypted file format/i);
     });
   });
@@ -258,7 +258,7 @@ describe('Encryption Functions', () => {
       const key = (await provider.generateKey()).orThrow();
 
       const encrypted = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content,
           secretName: 'complex-secret',
           key,
@@ -266,7 +266,7 @@ describe('Encryption Functions', () => {
         })
       ).orThrow();
 
-      const decrypted = await Crypto.decryptFile(encrypted, key, provider);
+      const decrypted = await CryptoUtils.decryptFile(encrypted, key, provider);
       expect(decrypted).toSucceedWith(content);
     });
 
@@ -281,7 +281,7 @@ describe('Encryption Functions', () => {
       const key = (await provider.generateKey()).orThrow();
 
       const encrypted = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content,
           secretName: 'utf8-secret',
           key,
@@ -289,7 +289,7 @@ describe('Encryption Functions', () => {
         })
       ).orThrow();
 
-      const decrypted = await Crypto.decryptFile(encrypted, key, provider);
+      const decrypted = await CryptoUtils.decryptFile(encrypted, key, provider);
       expect(decrypted).toSucceedWith(content);
     });
   });
@@ -298,7 +298,7 @@ describe('Encryption Functions', () => {
     test('returns true for encrypted file objects', async () => {
       const key = (await provider.generateKey()).orThrow();
       const encrypted = (
-        await Crypto.createEncryptedFile({
+        await CryptoUtils.createEncryptedFile({
           content: { test: 'data' },
           secretName: 'test',
           key,

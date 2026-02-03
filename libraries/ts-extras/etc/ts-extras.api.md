@@ -64,12 +64,12 @@ declare namespace Converters_3 {
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFile"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFileParams<TMetadata>): Promise<Result<IEncryptedFile<TMetadata>>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFile"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
@@ -77,13 +77,9 @@ function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?:
 // @public
 function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
 
-declare namespace Crypto_2 {
+declare namespace CryptoUtils {
     export {
-        AES_256_KEY_SIZE,
-        DEFAULT_ALGORITHM,
-        ENCRYPTED_FILE_FORMAT,
-        GCM_AUTH_TAG_SIZE,
-        GCM_IV_SIZE,
+        Constants,
         KeyStore,
         Converters_3 as Converters,
         NodeCryptoProvider,
@@ -95,7 +91,6 @@ declare namespace Crypto_2 {
         toBase64,
         tryDecryptFile,
         isEncryptedFile,
-        Constants,
         EncryptionAlgorithm,
         EncryptedFileFormat,
         INamedSecret,
@@ -109,7 +104,7 @@ declare namespace Crypto_2 {
         IEncryptionConfig
     }
 }
-export { Crypto_2 as Crypto }
+export { CryptoUtils }
 
 declare namespace Csv {
     export {
@@ -129,8 +124,8 @@ interface CsvOptions {
     delimiter?: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFile"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function decryptFile<TPayload extends JsonValue = JsonValue>(file: IEncryptedFile<unknown>, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>): Promise<Result<TPayload>>;
@@ -156,7 +151,7 @@ const encryptedFile: Converter<IEncryptedFile>;
 // @public
 type EncryptedFileErrorMode = 'fail' | 'skip' | 'warn';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "EncryptedFileErrorMode"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const encryptedFileErrorMode: Converter<EncryptedFileErrorMode>;
@@ -164,7 +159,7 @@ const encryptedFileErrorMode: Converter<EncryptedFileErrorMode>;
 // @public
 type EncryptedFileFormat = typeof Constants.ENCRYPTED_FILE_FORMAT;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "EncryptedFileFormat"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const encryptedFileFormat: Converter<EncryptedFileFormat>;
@@ -172,7 +167,7 @@ const encryptedFileFormat: Converter<EncryptedFileFormat>;
 // @public
 type EncryptionAlgorithm = typeof Constants.DEFAULT_ALGORITHM;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "EncryptionAlgorithm"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
@@ -290,15 +285,15 @@ interface IContextValidationResult {
     readonly presentVariables: readonly string[];
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFile"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface ICreateEncryptedFileParams<TMetadata = JsonValue> {
     readonly content: JsonValue;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly cryptoProvider: ICryptoProvider;
     readonly key: Uint8Array;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IKeyDerivationParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly keyDerivation?: IKeyDerivationParams;
     readonly metadata?: TMetadata;
     readonly metadataConverter?: Converter<TMetadata>;
@@ -468,12 +463,12 @@ interface JarRecordParserOptions {
 // @public
 type KeyDerivationFunction = 'pbkdf2';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyDerivationFunction"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keyDerivationFunction: Converter<KeyDerivationFunction>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IKeyDerivationParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keyDerivationParams: Converter<IKeyDerivationParams>;
@@ -526,7 +521,7 @@ class KeyStore_2 {
 // @public
 const KEYSTORE_FORMAT: KeyStoreFormat;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IKeyStoreFile"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreFile: Converter<IKeyStoreFile>;
@@ -534,7 +529,7 @@ const keystoreFile: Converter<IKeyStoreFile>;
 // @public
 type KeyStoreFormat = 'keystore-v1';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStoreFormat"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreFormat: Converter<KeyStoreFormat>;
@@ -542,12 +537,12 @@ const keystoreFormat: Converter<KeyStoreFormat>;
 // @public
 type KeyStoreLockState = 'locked' | 'unlocked';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IKeyStoreSecretEntryJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IKeyStoreVaultContents"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
@@ -592,12 +587,12 @@ class MustacheTemplate {
 // @public
 type MustacheTokenType = 'text' | 'name' | '&' | '#' | '^' | '!' | '>' | '=';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "INamedSecret"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const namedSecret: Converter<INamedSecret>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class NodeCryptoProvider implements ICryptoProvider {
@@ -610,7 +605,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     toBase64(data: Uint8Array): string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "NodeCryptoProvider"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const nodeCryptoProvider: NodeCryptoProvider;
@@ -713,8 +708,8 @@ function templateString(defaultContext?: unknown): Conversion.StringConverter<st
 // @public
 function toBase64(bytes: Uint8Array): string;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFile"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = JsonValue>(json: JsonValue, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>, metadataConverter?: Converter<TMetadata>): Promise<Result<TPayload>>;

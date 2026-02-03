@@ -23,7 +23,7 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { LibraryData } from '@fgv/ts-chocolate';
 
 /**
@@ -74,7 +74,7 @@ function decodeKey(base64Key: string): Result<Uint8Array> {
  */
 async function deriveKeyFromPassword(
   password: string,
-  keyDerivation: Crypto.IKeyDerivationParams
+  keyDerivation: CryptoUtils.IKeyDerivationParams
 ): Promise<Result<Uint8Array>> {
   const saltResult = captureResult(() => Buffer.from(keyDerivation.salt, 'base64'));
   if (saltResult.isFailure()) {
@@ -82,7 +82,7 @@ async function deriveKeyFromPassword(
   }
 
   const salt = new Uint8Array(saltResult.value);
-  return Crypto.nodeCryptoProvider.deriveKey(password, salt, keyDerivation.iterations);
+  return CryptoUtils.nodeCryptoProvider.deriveKey(password, salt, keyDerivation.iterations);
 }
 
 /**
@@ -163,7 +163,7 @@ export function createDecryptCommand(): Command {
       }
 
       // Decrypt the content
-      const decryptResult = await Crypto.decryptFile(tombstone, key, Crypto.nodeCryptoProvider);
+      const decryptResult = await CryptoUtils.decryptFile(tombstone, key, CryptoUtils.nodeCryptoProvider);
 
       if (decryptResult.isFailure()) {
         console.error(`Error: Decryption failed: ${decryptResult.message}`);

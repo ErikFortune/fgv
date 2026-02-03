@@ -44,7 +44,7 @@ import {
   MutabilitySpec
 } from './model';
 import * as LibraryConverters from './converters';
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 
 /**
  * Parameters used to initialize a {@link LibraryData.CollectionLoader | CollectionLoader}.
@@ -452,7 +452,11 @@ export class CollectionLoader<
     }
 
     // Decrypt the collection
-    const decryptResult = await Crypto.decryptFile(encryptedFile, keyResult.value, encryption.cryptoProvider);
+    const decryptResult = await CryptoUtils.decryptFile(
+      encryptedFile,
+      keyResult.value,
+      encryption.cryptoProvider
+    );
     if (decryptResult.isFailure()) {
       return this._handleEncryptionError(
         `Decryption failed for collection "${collectionName}": ${decryptResult.message}`,

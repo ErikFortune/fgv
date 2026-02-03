@@ -4,16 +4,16 @@
 
 ```ts
 
-import { Crypto as Crypto_2 } from '@fgv/ts-extras';
+import { CryptoUtils as CryptoUtils_2 } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
 // Warning: (ae-forgotten-export) The symbol "ICryptoProvider" needs to be exported by the entry point index.d.ts
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "ICryptoProvider"
 //
 // @public
-export class BrowserCryptoProvider implements ICryptoProvider {
+class BrowserCryptoProvider implements ICryptoProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(cryptoApi?: Crypto);
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
@@ -26,13 +26,24 @@ export class BrowserCryptoProvider implements ICryptoProvider {
 }
 
 // @public
-export class BrowserHashProvider {
+class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-export function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
+function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
+
+declare namespace CryptoUtils {
+    export {
+        BrowserHashProvider,
+        createBrowserCryptoProvider,
+        BrowserCryptoProvider
+    }
+}
+export { CryptoUtils }
 
 // @public
 const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;
@@ -71,31 +82,14 @@ export interface FilePickerAcceptType {
     description?: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-//
 // @public
 export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
     protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-    //
-    // (undocumented)
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromDirectoryHandle<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-    //
-    // (undocumented)
     getDirtyPaths(): string[];
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-    //
-    // (undocumented)
     isDirty(): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-    //
-    // (undocumented)
     saveFileContents(path: string, contents: string): Result<string>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-    //
-    // (undocumented)
     syncToDisk(): Promise<Result<void>>;
 }
 

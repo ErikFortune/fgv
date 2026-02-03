@@ -47,7 +47,7 @@ export interface IFileSystemAccessTreeParams<TCT extends string = string>
 }
 
 /**
- * Implementation of {@link FileTree.IPersistentFileTreeAccessors} that uses the File System Access API
+ * Implementation of `FileTree.IPersistentFileTreeAccessors` that uses the File System Access API
  * to provide persistent file editing in browsers.
  * @public
  */
@@ -196,7 +196,7 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
   }
 
   /**
-   * {@inheritdoc FileTree.IPersistentFileTreeAccessors.syncToDisk}
+   * Implements `FileTree.IPersistentFileTreeAccessors.syncToDisk`
    */
   public async syncToDisk(): Promise<Result<void>> {
     if (!this._hasWritePermission) {
@@ -221,21 +221,21 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
   }
 
   /**
-   * {@inheritdoc FileTree.IPersistentFileTreeAccessors.isDirty}
+   * Implements `FileTree.IPersistentFileTreeAccessors.isDirty`
    */
   public isDirty(): boolean {
     return this._dirtyFiles.size > 0;
   }
 
   /**
-   * {@inheritdoc FileTree.IPersistentFileTreeAccessors.getDirtyPaths}
+   * Implements `FileTree.IPersistentFileTreeAccessors.getDirtyPaths`
    */
   public getDirtyPaths(): string[] {
     return Array.from(this._dirtyFiles);
   }
 
   /**
-   * {@inheritdoc FileTree.IMutableFileTreeAccessors.saveFileContents}
+   * Implements `FileTree.IMutableFileTreeAccessors.saveFileContents`
    */
   public saveFileContents(path: string, contents: string): Result<string> {
     // Call parent to update in-memory state
@@ -257,7 +257,7 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
   }
 
   /**
-   * {@inheritdoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
+   * Implements `FileTree.IMutableFileTreeAccessors.fileIsMutable`
    */
   public fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail> {
     const baseResult = super.fileIsMutable(path);

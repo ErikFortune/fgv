@@ -32,7 +32,7 @@ import {
 
 import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/entities';
 
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 
 describe('MoldsLibrary', () => {
   // ============================================================================
@@ -249,7 +249,7 @@ describe('MoldsLibrary.createAsync', () => {
   let testKey: Uint8Array;
 
   beforeAll(async () => {
-    testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
+    testKey = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
   });
 
   test('creates library with built-ins by default', async () => {
@@ -316,11 +316,11 @@ describe('MoldsLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await Crypto.createEncryptedFile({
+      await CryptoUtils.createEncryptedFile({
         content: secretMoldData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: Crypto.nodeCryptoProvider
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -343,7 +343,7 @@ describe('MoldsLibrary.createAsync', () => {
       fileSources: fileSource,
       encryption: {
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: Crypto.nodeCryptoProvider
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
       }
     });
 
@@ -368,11 +368,11 @@ describe('MoldsLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await Crypto.createEncryptedFile({
+      await CryptoUtils.createEncryptedFile({
         content: secretMoldData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: Crypto.nodeCryptoProvider
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
       })
     ).orThrow();
 

@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-Crypto.KeyStore.IKeyStoreFile
+CryptoUtils.KeyStore.IKeyStoreFile
 
 
 </td><td>

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import * as Crypto from './packlets/crypto';
+import * as CryptoUtils from './packlets/crypto-utils';
 import * as Csv from './packlets/csv';
 import * as Experimental from './packlets/experimental';
 import * as Hash from './packlets/hash';
@@ -30,4 +30,4 @@ import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-export { Converters, Crypto, Csv, Experimental, Hash, Mustache, RecordJar, ZipFileTree };
+export { Converters, CryptoUtils, Csv, Experimental, Hash, Mustache, RecordJar, ZipFileTree };

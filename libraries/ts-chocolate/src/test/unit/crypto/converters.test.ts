@@ -20,73 +20,75 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { isEncryptedCollectionFile, Converters as ChocolateConverters } from '../../../packlets/library-data';
 
 describe('Crypto Converters', () => {
   describe('encryptionAlgorithm', () => {
     test('accepts valid algorithm', () => {
-      expect(Crypto.Converters.encryptionAlgorithm.convert('AES-256-GCM')).toSucceedWith('AES-256-GCM');
+      expect(CryptoUtils.Converters.encryptionAlgorithm.convert('AES-256-GCM')).toSucceedWith('AES-256-GCM');
     });
 
     test('rejects invalid algorithm', () => {
-      expect(Crypto.Converters.encryptionAlgorithm.convert('AES-128-GCM')).toFail();
+      expect(CryptoUtils.Converters.encryptionAlgorithm.convert('AES-128-GCM')).toFail();
     });
 
     test('rejects non-string', () => {
-      expect(Crypto.Converters.encryptionAlgorithm.convert(123)).toFail();
+      expect(CryptoUtils.Converters.encryptionAlgorithm.convert(123)).toFail();
     });
   });
 
   describe('encryptedFileFormat', () => {
     test('accepts valid format', () => {
-      expect(Crypto.Converters.encryptedFileFormat.convert('encrypted-collection-v1')).toSucceedWith(
+      expect(CryptoUtils.Converters.encryptedFileFormat.convert('encrypted-collection-v1')).toSucceedWith(
         'encrypted-collection-v1'
       );
     });
 
     test('rejects invalid format', () => {
-      expect(Crypto.Converters.encryptedFileFormat.convert('encrypted-collection-v2')).toFail();
+      expect(CryptoUtils.Converters.encryptedFileFormat.convert('encrypted-collection-v2')).toFail();
     });
   });
 
   describe('encryptedFileErrorMode', () => {
     test('accepts "fail"', () => {
-      expect(Crypto.Converters.encryptedFileErrorMode.convert('fail')).toSucceedWith('fail');
+      expect(CryptoUtils.Converters.encryptedFileErrorMode.convert('fail')).toSucceedWith('fail');
     });
 
     test('accepts "skip"', () => {
-      expect(Crypto.Converters.encryptedFileErrorMode.convert('skip')).toSucceedWith('skip');
+      expect(CryptoUtils.Converters.encryptedFileErrorMode.convert('skip')).toSucceedWith('skip');
     });
 
     test('accepts "warn"', () => {
-      expect(Crypto.Converters.encryptedFileErrorMode.convert('warn')).toSucceedWith('warn');
+      expect(CryptoUtils.Converters.encryptedFileErrorMode.convert('warn')).toSucceedWith('warn');
     });
 
     test('rejects invalid mode', () => {
-      expect(Crypto.Converters.encryptedFileErrorMode.convert('ignore')).toFail();
+      expect(CryptoUtils.Converters.encryptedFileErrorMode.convert('ignore')).toFail();
     });
   });
 
   describe('base64String', () => {
     test('accepts valid base64 string', () => {
-      expect(Crypto.Converters.base64String.convert('SGVsbG8gV29ybGQ=')).toSucceedWith('SGVsbG8gV29ybGQ=');
+      expect(CryptoUtils.Converters.base64String.convert('SGVsbG8gV29ybGQ=')).toSucceedWith(
+        'SGVsbG8gV29ybGQ='
+      );
     });
 
     test('accepts empty string', () => {
-      expect(Crypto.Converters.base64String.convert('')).toSucceedWith('');
+      expect(CryptoUtils.Converters.base64String.convert('')).toSucceedWith('');
     });
 
     test('accepts base64 without padding', () => {
-      expect(Crypto.Converters.base64String.convert('SGVsbG8')).toSucceedWith('SGVsbG8');
+      expect(CryptoUtils.Converters.base64String.convert('SGVsbG8')).toSucceedWith('SGVsbG8');
     });
 
     test('rejects invalid base64 characters', () => {
-      expect(Crypto.Converters.base64String.convert('Hello!@#$')).toFailWith(/invalid base64/i);
+      expect(CryptoUtils.Converters.base64String.convert('Hello!@#$')).toFailWith(/invalid base64/i);
     });
 
     test('rejects non-string', () => {
-      expect(Crypto.Converters.base64String.convert(123)).toFail();
+      expect(CryptoUtils.Converters.base64String.convert(123)).toFail();
     });
   });
 
@@ -119,9 +121,9 @@ describe('Crypto Converters', () => {
 
   describe('encryptedCollectionFile', () => {
     const validTombstone = {
-      format: Crypto.ENCRYPTED_FILE_FORMAT,
+      format: CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT,
       secretName: 'my-secret',
-      algorithm: Crypto.DEFAULT_ALGORITHM,
+      algorithm: CryptoUtils.Constants.DEFAULT_ALGORITHM,
       iv: 'AAAAAAAAAAAAAAAA',
       authTag: 'AAAAAAAAAAAAAAAAAAAAAA==',
       encryptedData: 'SGVsbG8gV29ybGQ='
@@ -130,9 +132,9 @@ describe('Crypto Converters', () => {
     test('accepts valid tombstone without metadata', () => {
       expect(ChocolateConverters.encryptedCollectionFile.convert(validTombstone)).toSucceedAndSatisfy(
         (result) => {
-          expect(result.format).toBe(Crypto.ENCRYPTED_FILE_FORMAT);
+          expect(result.format).toBe(CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT);
           expect(result.secretName).toBe('my-secret');
-          expect(result.algorithm).toBe(Crypto.DEFAULT_ALGORITHM);
+          expect(result.algorithm).toBe(CryptoUtils.Constants.DEFAULT_ALGORITHM);
         }
       );
     });
@@ -180,20 +182,22 @@ describe('Crypto Converters', () => {
 
   describe('uint8ArrayFromBase64', () => {
     test('converts valid base64 to Uint8Array', () => {
-      expect(Crypto.Converters.uint8ArrayFromBase64.convert('SGVsbG8=')).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Uint8Array);
-        expect(Array.from(result)).toEqual([72, 101, 108, 108, 111]); // "Hello"
-      });
+      expect(CryptoUtils.Converters.uint8ArrayFromBase64.convert('SGVsbG8=')).toSucceedAndSatisfy(
+        (result) => {
+          expect(result).toBeInstanceOf(Uint8Array);
+          expect(Array.from(result)).toEqual([72, 101, 108, 108, 111]); // "Hello"
+        }
+      );
     });
 
     test('converts empty string to empty Uint8Array', () => {
-      expect(Crypto.Converters.uint8ArrayFromBase64.convert('')).toSucceedAndSatisfy((result) => {
+      expect(CryptoUtils.Converters.uint8ArrayFromBase64.convert('')).toSucceedAndSatisfy((result) => {
         expect(result.length).toBe(0);
       });
     });
 
     test('rejects non-string', () => {
-      expect(Crypto.Converters.uint8ArrayFromBase64.convert(123)).toFail();
+      expect(CryptoUtils.Converters.uint8ArrayFromBase64.convert(123)).toFail();
     });
   });
 
@@ -203,7 +207,7 @@ describe('Crypto Converters', () => {
         name: 'my-secret',
         key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' // 32 bytes of zeros
       };
-      expect(Crypto.Converters.namedSecret.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(CryptoUtils.Converters.namedSecret.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.name).toBe('my-secret');
         expect(result.key).toBeInstanceOf(Uint8Array);
         expect(result.key.length).toBe(32);
@@ -211,17 +215,17 @@ describe('Crypto Converters', () => {
     });
 
     test('rejects missing name', () => {
-      expect(Crypto.Converters.namedSecret.convert({ key: 'AAAA' })).toFail();
+      expect(CryptoUtils.Converters.namedSecret.convert({ key: 'AAAA' })).toFail();
     });
 
     test('rejects missing key', () => {
-      expect(Crypto.Converters.namedSecret.convert({ name: 'test' })).toFail();
+      expect(CryptoUtils.Converters.namedSecret.convert({ name: 'test' })).toFail();
     });
   });
 
   describe('isEncryptedCollectionFile', () => {
     test('returns true for valid tombstone format', () => {
-      expect(isEncryptedCollectionFile({ format: Crypto.ENCRYPTED_FILE_FORMAT })).toBe(true);
+      expect(isEncryptedCollectionFile({ format: CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT })).toBe(true);
     });
 
     test('returns false for wrong format value', () => {

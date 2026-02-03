@@ -154,7 +154,7 @@ _(Optional)_ Optional item count from unencrypted metadata.
 
 </td><td>
 
-Crypto.IKeyDerivationParams
+CryptoUtils.IKeyDerivationParams
 
 
 </td><td>

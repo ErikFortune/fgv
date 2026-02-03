@@ -28,7 +28,7 @@ Description
 </td></tr>
 <tr><td>
 
-[Crypto\_2](./ts-extras.crypto_2.md)
+[CryptoUtils](./ts-extras.cryptoutils.md)
 
 
 </td><td>

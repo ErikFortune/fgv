@@ -4,7 +4,7 @@
 
 ## FileSystemAccessTreeAccessors class
 
-Implementation of  that uses the File System Access API to provide persistent file editing in browsers.
+Implementation of `FileTree.IPersistentFileTreeAccessors` that uses the File System Access API to provide persistent file editing in browsers.
 
 **Signature:**
 
@@ -79,6 +79,7 @@ Description
 
 </td><td>
 
+Implements `FileTree.IMutableFileTreeAccessors.fileIsMutable`
 
 
 </td></tr>
@@ -108,6 +109,7 @@ Creates a new FileSystemAccessTreeAccessors instance from a directory handle.
 
 </td><td>
 
+Implements `FileTree.IPersistentFileTreeAccessors.getDirtyPaths`
 
 
 </td></tr>
@@ -121,6 +123,7 @@ Creates a new FileSystemAccessTreeAccessors instance from a directory handle.
 
 </td><td>
 
+Implements `FileTree.IPersistentFileTreeAccessors.isDirty`
 
 
 </td></tr>
@@ -134,6 +137,7 @@ Creates a new FileSystemAccessTreeAccessors instance from a directory handle.
 
 </td><td>
 
+Implements `FileTree.IMutableFileTreeAccessors.saveFileContents`
 
 
 </td></tr>
@@ -147,6 +151,7 @@ Creates a new FileSystemAccessTreeAccessors instance from a directory handle.
 
 </td><td>
 
+Implements `FileTree.IPersistentFileTreeAccessors.syncToDisk`
 
 
 </td></tr>

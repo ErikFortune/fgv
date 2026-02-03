@@ -9,5 +9,5 @@ Key store file data to load. The crypto provider will be supplied by the platfor
 **Signature:**
 
 ```typescript
-readonly keyStoreFile?: Crypto.KeyStore.IKeyStoreFile;
+readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
 ```

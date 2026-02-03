@@ -25,7 +25,7 @@
 
 import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
-import { Crypto } from '@fgv/ts-extras';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { JournalLibrary, SessionLibrary } from '../entities';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
@@ -57,8 +57,8 @@ import {
 export class Workspace implements IWorkspace {
   private readonly _runtime: RuntimeContext;
   private readonly _userLibrary: UserLibrary;
-  private readonly _keyStore: Crypto.KeyStore.KeyStore | undefined;
-  private readonly _cryptoProvider: Crypto.ICryptoProvider | undefined;
+  private readonly _keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
+  private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
   private _userRuntime: UserLibraryRuntime | undefined;
@@ -69,8 +69,8 @@ export class Workspace implements IWorkspace {
   private constructor(
     runtime: RuntimeContext,
     userLibrary: UserLibrary,
-    keyStore: Crypto.KeyStore.KeyStore | undefined,
-    cryptoProvider: Crypto.ICryptoProvider | undefined,
+    keyStore: CryptoUtils.KeyStore.KeyStore | undefined,
+    cryptoProvider: CryptoUtils.ICryptoProvider | undefined,
     settings: ISettingsManager | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
@@ -100,15 +100,15 @@ export class Workspace implements IWorkspace {
     const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Create key store if configured
-    let keyStore: Crypto.KeyStore.KeyStore | undefined;
-    let cryptoProvider: Crypto.ICryptoProvider | undefined;
+    let keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
+    let cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
 
     if (params.keyStore) {
       cryptoProvider = params.keyStore.cryptoProvider;
 
       if (params.keyStore.file) {
         // Open existing key store
-        const openResult = Crypto.KeyStore.KeyStore.open({
+        const openResult = CryptoUtils.KeyStore.KeyStore.open({
           keystoreFile: params.keyStore.file,
           cryptoProvider
         });
@@ -118,7 +118,7 @@ export class Workspace implements IWorkspace {
         keyStore = openResult.value;
       } else {
         // Create new key store (caller will need to initialize it)
-        const createResult = Crypto.KeyStore.KeyStore.create({ cryptoProvider });
+        const createResult = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider });
         if (createResult.isFailure()) {
           return fail(`Failed to create key store: ${createResult.message}`);
         }
@@ -178,15 +178,15 @@ export class Workspace implements IWorkspace {
     const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Create key store if configured
-    let keyStore: Crypto.KeyStore.KeyStore | undefined;
-    let cryptoProvider: Crypto.ICryptoProvider | undefined;
+    let keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
+    let cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
 
     if (params.keyStore) {
       cryptoProvider = params.keyStore.cryptoProvider;
 
       if (params.keyStore.file) {
         // Open existing key store
-        const openResult = Crypto.KeyStore.KeyStore.open({
+        const openResult = CryptoUtils.KeyStore.KeyStore.open({
           keystoreFile: params.keyStore.file,
           cryptoProvider
         });
@@ -196,7 +196,7 @@ export class Workspace implements IWorkspace {
         keyStore = openResult.value;
       } else {
         // Create new key store (caller will need to initialize it)
-        const createResult = Crypto.KeyStore.KeyStore.create({ cryptoProvider });
+        const createResult = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider });
         if (createResult.isFailure()) {
           return fail(`Failed to create key store: ${createResult.message}`);
         }
@@ -284,7 +284,7 @@ export class Workspace implements IWorkspace {
   /**
    * {@inheritDoc IWorkspace.keyStore}
    */
-  public get keyStore(): Crypto.KeyStore.KeyStore | undefined {
+  public get keyStore(): CryptoUtils.KeyStore.KeyStore | undefined {
     return this._keyStore;
   }
 

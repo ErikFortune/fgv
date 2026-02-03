@@ -22,7 +22,7 @@
 
 /* c8 ignore start - Browser-specific export used conditionally in package.json */
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Crypto from './packlets/crypto/index.browser';
+import * as Crypto from './packlets/crypto-utils/index.browser';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Csv from './packlets/csv/index.browser';
 import * as Experimental from './packlets/experimental';

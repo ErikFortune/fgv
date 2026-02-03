@@ -4,6 +4,7 @@
 
 ## FileSystemAccessTreeAccessors.fileIsMutable() method
 
+Implements `FileTree.IMutableFileTreeAccessors.fileIsMutable`
 
 **Signature:**
 

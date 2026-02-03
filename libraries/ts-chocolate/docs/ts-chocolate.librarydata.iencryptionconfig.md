@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-Crypto.ICryptoProvider
+CryptoUtils.ICryptoProvider
 
 
 </td><td>
@@ -68,7 +68,7 @@ The crypto provider to use for decryption. Use `nodeCryptoProvider` for Node.js 
 
 </td><td>
 
-Crypto.EncryptedFileErrorMode
+CryptoUtils.EncryptedFileErrorMode
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_ How to handle decryption errors (e.g., wrong key, corrupted data). 
 
 </td><td>
 
-Crypto.EncryptedFileErrorMode
+CryptoUtils.EncryptedFileErrorMode
 
 
 </td><td>
@@ -131,7 +131,7 @@ _(Optional)_ Optional function to dynamically provide keys by secret name. Calle
 
 </td><td>
 
-ReadonlyArray&lt;Crypto.INamedSecret&gt;
+ReadonlyArray&lt;CryptoUtils.INamedSecret&gt;
 
 
 </td><td>
