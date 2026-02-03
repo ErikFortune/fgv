@@ -81,10 +81,7 @@ export {
   PersistedSessionStatus
 } from './session';
 
-export * from './inventory/model';
-export * from './inventory/collection';
-export * from './inventory/moldInventoryLibrary';
-export * from './inventory/ingredientInventoryLibrary';
+export { IngredientInventoryLibrary, MoldInventoryLibrary, InventoryType } from './inventory';
 
 export * from './molds/model';
 export * from './molds/collection';

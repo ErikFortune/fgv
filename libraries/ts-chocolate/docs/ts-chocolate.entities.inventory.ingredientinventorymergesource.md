@@ -11,5 +11,5 @@ Specifies an ingredient inventory library to merge into a new library.
 ```typescript
 export type IngredientInventoryMergeSource = SubLibraryMergeSource<IngredientInventoryLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [IngredientInventoryLibrary](./ts-chocolate.entities.ingredientinventorylibrary.md)
 

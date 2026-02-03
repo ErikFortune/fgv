@@ -50,7 +50,7 @@ _(Optional)_ Optional [creation parameters](./ts-chocolate.entities.inventory.im
 
 **Returns:**
 
-Result&lt;[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)<!-- -->&gt;
+Result&lt;[MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)<!-- -->&gt;
 
 `Success` with new instance, or `Failure` with error message
 

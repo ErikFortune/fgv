@@ -50,7 +50,7 @@ _(Optional)_ [Async creation parameters](./ts-chocolate.entities.inventory.imold
 
 **Returns:**
 
-Promise&lt;Result&lt;[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)<!-- -->&gt;&gt;
+Promise&lt;Result&lt;[MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure
 

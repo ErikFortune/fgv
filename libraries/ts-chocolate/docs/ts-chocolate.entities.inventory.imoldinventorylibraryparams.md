@@ -11,5 +11,5 @@ Parameters for creating a MoldInventoryLibrary instance synchronously.
 ```typescript
 export type IMoldInventoryLibraryParams = ISubLibraryParams<MoldInventoryLibrary, MoldInventoryCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)<!-- -->, [MoldInventoryCollectionEntryInit](./ts-chocolate.entities.inventory.moldinventorycollectionentryinit.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)<!-- -->, [MoldInventoryCollectionEntryInit](./ts-chocolate.entities.inventory.moldinventorycollectionentryinit.md)
 

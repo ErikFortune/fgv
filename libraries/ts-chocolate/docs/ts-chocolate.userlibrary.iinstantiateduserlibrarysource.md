@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)
+[IngredientInventoryLibrary](./ts-chocolate.entities.ingredientinventorylibrary.md)
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_ Pre-built journals library
 
 </td><td>
 
-[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)
+[MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)
 
 
 </td><td>

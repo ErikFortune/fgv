@@ -11,5 +11,5 @@ Specifies a mold inventory library to merge into a new library.
 ```typescript
 export type MoldInventoryMergeSource = SubLibraryMergeSource<MoldInventoryLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)
 

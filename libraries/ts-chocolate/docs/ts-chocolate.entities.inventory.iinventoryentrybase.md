@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[InventoryType](./ts-chocolate.entities.inventory.inventorytype.md)
+[InventoryType](./ts-chocolate.entities.inventorytype.md)
 
 
 </td><td>

@@ -11,5 +11,5 @@ Parameters for creating a MoldInventoryLibrary instance asynchronously with encr
 ```typescript
 export type IMoldInventoryLibraryAsyncParams = ISubLibraryAsyncParams<MoldInventoryLibrary, MoldInventoryCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)<!-- -->, [MoldInventoryCollectionEntryInit](./ts-chocolate.entities.inventory.moldinventorycollectionentryinit.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)<!-- -->, [MoldInventoryCollectionEntryInit](./ts-chocolate.entities.inventory.moldinventorycollectionentryinit.md)
 

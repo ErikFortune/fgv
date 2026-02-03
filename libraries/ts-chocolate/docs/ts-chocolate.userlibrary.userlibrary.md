@@ -50,7 +50,7 @@ Description
 
 </td><td>
 
-[IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)
+[IngredientInventoryLibrary](./ts-chocolate.entities.ingredientinventorylibrary.md)
 
 
 </td><td>
@@ -113,7 +113,7 @@ Logger used by this library and its sub-libraries.
 
 </td><td>
 
-[MoldInventoryLibrary](./ts-chocolate.entities.inventory.moldinventorylibrary.md)
+[MoldInventoryLibrary](./ts-chocolate.entities.moldinventorylibrary.md)
 
 
 </td><td>

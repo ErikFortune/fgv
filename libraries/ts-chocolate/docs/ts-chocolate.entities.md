@@ -172,34 +172,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isIngredientInventoryEntry(entry)](./ts-chocolate.entities.isingredientinventoryentry.md)
-
-
-</td><td>
-
-Type guard for IIngredientInventoryEntry.
-
-
-</td></tr>
-<tr><td>
-
 [isInlineTask(invocation)](./ts-chocolate.entities.isinlinetask.md)
 
 
 </td><td>
 
 Type guard for inline task - discriminates by presence of `task`
-
-
-</td></tr>
-<tr><td>
-
-[isMoldInventoryEntry(entry)](./ts-chocolate.entities.ismoldinventoryentry.md)
-
-
-</td><td>
-
-Type guard for IMoldInventoryEntry.
 
 
 </td></tr>
@@ -418,36 +396,12 @@ Base ingredient interface All ingredients have these common properties
 </td></tr>
 <tr><td>
 
-[IIngredientInventoryEntry](./ts-chocolate.entities.iingredientinventoryentry.md)
-
-
-</td><td>
-
-Inventory entry for ingredients.
-
-The ingredientId is the full composite ID (e.g., 'builtin.cocoa-butter') identifying which specific ingredient from which collection is being inventoried.
-
-
-</td></tr>
-<tr><td>
-
 [IInlineTask](./ts-chocolate.entities.iinlinetask.md)
 
 
 </td><td>
 
 An inline task defined directly in a procedure step. Contains a full ITaskData definition with a synthetic baseId (derived from procedure/step) plus params for rendering.
-
-
-</td></tr>
-<tr><td>
-
-[IInventoryEntryBase](./ts-chocolate.entities.iinventoryentrybase.md)
-
-
-</td><td>
-
-Common properties shared by all inventory entry types.
 
 
 </td></tr>
@@ -481,19 +435,6 @@ Molded bonbon confection Uses chocolate molds for shell formation
 </td><td>
 
 Version interface for molded bonbon confections. Includes mold and chocolate shell specifications.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldInventoryEntry](./ts-chocolate.entities.imoldinventoryentry.md)
-
-
-</td><td>
-
-Inventory entry for molds.
-
-The moldId is the full composite ID (e.g., 'builtin.silicone-round') identifying which specific mold from which collection is being inventoried.
 
 
 </td></tr>
@@ -821,34 +762,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[allInventoryTypes](./ts-chocolate.entities.allinventorytypes.md)
-
-
-</td><td>
-
-All possible inventory types.
-
-
-</td></tr>
-<tr><td>
-
 [defaultRenderOptions](./ts-chocolate.entities.defaultrenderoptions.md)
 
 
 </td><td>
 
 Default render options
-
-
-</td></tr>
-<tr><td>
-
-[INVENTORY\_SCHEMA\_VERSION](./ts-chocolate.entities.inventory_schema_version.md)
-
-
-</td><td>
-
-Current schema version for inventory entries.
 
 
 </td></tr>
@@ -913,17 +832,6 @@ Union type for filling journal entries (edit or production)
 </td></tr>
 <tr><td>
 
-[AnyInventoryEntry](./ts-chocolate.entities.anyinventoryentry.md)
-
-
-</td><td>
-
-Discriminated union of all inventory entry types. Use type guards to narrow to specific types.
-
-
-</td></tr>
-<tr><td>
-
 [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
 
 
@@ -979,78 +887,12 @@ Represents the cavities in a mold
 </td></tr>
 <tr><td>
 
-[IIngredientInventoryFileTreeSource](./ts-chocolate.entities.iingredientinventoryfiletreesource.md)
-
-
-</td><td>
-
-File tree source for ingredient inventory data.
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientInventoryLibraryAsyncParams](./ts-chocolate.entities.iingredientinventorylibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating an IngredientInventoryLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientInventoryLibraryParams](./ts-chocolate.entities.iingredientinventorylibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating an IngredientInventoryLibrary instance synchronously.
-
-
-</td></tr>
-<tr><td>
-
 [IMoldFileTreeSource](./ts-chocolate.entities.imoldfiletreesource.md)
 
 
 </td><td>
 
 File tree source for mold data.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldInventoryFileTreeSource](./ts-chocolate.entities.imoldinventoryfiletreesource.md)
-
-
-</td><td>
-
-File tree source for mold inventory data.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldInventoryLibraryAsyncParams](./ts-chocolate.entities.imoldinventorylibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a MoldInventoryLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldInventoryLibraryParams](./ts-chocolate.entities.imoldinventorylibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a MoldInventoryLibrary instance synchronously.
 
 
 </td></tr>
@@ -1084,94 +926,6 @@ Parameters for creating a MoldsLibrary instance synchronously.
 </td><td>
 
 Discriminated union of all ingredient types
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryCollection](./ts-chocolate.entities.ingredientinventorycollection.md)
-
-
-</td><td>
-
-Type for the collections in an IngredientInventoryLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryCollectionEntry](./ts-chocolate.entities.ingredientinventorycollectionentry.md)
-
-
-</td><td>
-
-A single entry in an ingredient inventory collection. Keyed by the inventory entry's base ID (not the ingredient's ID). The entry's `ingredientId` field contains the composite IngredientId of the ingredient being inventoried.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryCollectionEntryInit](./ts-chocolate.entities.ingredientinventorycollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for an IngredientInventoryLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryCollectionValidator](./ts-chocolate.entities.ingredientinventorycollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for IngredientInventoryLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryEntryBaseId](./ts-chocolate.entities.ingredientinventoryentrybaseid.md)
-
-
-</td><td>
-
-Base ID for an ingredient inventory entry within an inventory collection. Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryEntryId](./ts-chocolate.entities.ingredientinventoryentryid.md)
-
-
-</td><td>
-
-Composite ID for an ingredient inventory entry (inventoryCollection.entryBaseId).
-
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryMergeSource](./ts-chocolate.entities.ingredientinventorymergesource.md)
-
-
-</td><td>
-
-Specifies an ingredient inventory library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[InventorySchemaVersion](./ts-chocolate.entities.inventoryschemaversion.md)
-
-
-</td><td>
-
-Schema version discriminator type.
 
 
 </td></tr>
@@ -1315,83 +1069,6 @@ Initialization type for a MoldsLibrary collection entry.
 </td><td>
 
 Validator type for MoldsLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryCollection](./ts-chocolate.entities.moldinventorycollection.md)
-
-
-</td><td>
-
-Type for the collections in a MoldInventoryLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryCollectionEntry](./ts-chocolate.entities.moldinventorycollectionentry.md)
-
-
-</td><td>
-
-A single entry in a mold inventory collection. Keyed by the inventory entry's base ID (not the mold's ID). The entry's `moldId` field contains the composite MoldId of the mold being inventoried.
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryCollectionEntryInit](./ts-chocolate.entities.moldinventorycollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a MoldInventoryLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryCollectionValidator](./ts-chocolate.entities.moldinventorycollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for MoldInventoryLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryEntryBaseId](./ts-chocolate.entities.moldinventoryentrybaseid.md)
-
-
-</td><td>
-
-Base ID for a mold inventory entry within an inventory collection. Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryEntryId](./ts-chocolate.entities.moldinventoryentryid.md)
-
-
-</td><td>
-
-Composite ID for a mold inventory entry (inventoryCollection.entryBaseId).
-
-
-</td></tr>
-<tr><td>
-
-[MoldInventoryMergeSource](./ts-chocolate.entities.moldinventorymergesource.md)
-
-
-</td><td>
-
-Specifies a mold inventory library to merge into a new library.
 
 
 </td></tr>

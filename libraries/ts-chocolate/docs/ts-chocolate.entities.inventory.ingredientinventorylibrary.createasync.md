@@ -50,7 +50,7 @@ _(Optional)_ [Async creation parameters](./ts-chocolate.entities.inventory.iingr
 
 **Returns:**
 
-Promise&lt;Result&lt;[IngredientInventoryLibrary](./ts-chocolate.entities.inventory.ingredientinventorylibrary.md)<!-- -->&gt;&gt;
+Promise&lt;Result&lt;[IngredientInventoryLibrary](./ts-chocolate.entities.ingredientinventorylibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure
 
