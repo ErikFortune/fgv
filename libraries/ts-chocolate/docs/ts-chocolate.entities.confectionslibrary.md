@@ -13,7 +13,7 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.dark-do
 ```typescript
 export declare class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, ConfectionData> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, ConfectionData&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)<!-- -->&gt;
 
 ## Methods
 

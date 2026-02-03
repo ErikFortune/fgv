@@ -68,7 +68,7 @@ _(Optional)_ Pre-built confections library
 
 </td><td>
 
-FillingsLibrary
+[FillingsLibrary](./ts-chocolate.entities.fillingslibrary.md)
 
 
 </td><td>

@@ -11,5 +11,5 @@ Parameters for creating a FillingsLibrary instance asynchronously with encryptio
 ```typescript
 export type IFillingsLibraryAsyncParams = ISubLibraryAsyncParams<FillingsLibrary, FillingCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [FillingsLibrary](./ts-chocolate.entities.fillingslibrary.md)
 

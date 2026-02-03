@@ -52,7 +52,7 @@ _(Optional)_ Optional creation parameters with initial collections and encryptio
 
 **Returns:**
 
-Promise&lt;Result&lt;FillingsLibrary&gt;&gt;
+Promise&lt;Result&lt;[FillingsLibrary](./ts-chocolate.entities.fillingslibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure with error message
 

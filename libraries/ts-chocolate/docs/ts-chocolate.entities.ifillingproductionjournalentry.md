@@ -11,7 +11,7 @@ Journal entry for filling production sessions.
 ```typescript
 export interface IFillingProductionJournalEntry extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> 
 ```
-**Extends:** IJournalEntryBase&lt;AnyFillingRecipeVersion, [FillingVersionId](./ts-chocolate.fillingversionid.md)<!-- -->&gt;
+**Extends:** IJournalEntryBase&lt;[AnyFillingRecipeVersion](./ts-chocolate.entities.anyfillingrecipeversion.md)<!-- -->, [FillingVersionId](./ts-chocolate.fillingversionid.md)<!-- -->&gt;
 
 ## Properties
 

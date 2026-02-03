@@ -183,28 +183,6 @@ Type guard for IAlcoholIngredient
 </td></tr>
 <tr><td>
 
-[isBarTruffle(confection)](./ts-chocolate.entities.isbartruffle.md)
-
-
-</td><td>
-
-Type guard for IBarTruffle
-
-
-</td></tr>
-<tr><td>
-
-[isBarTruffleVersion(version)](./ts-chocolate.entities.isbartruffleversion.md)
-
-
-</td><td>
-
-Type guard for IBarTruffleVersion
-
-
-</td></tr>
-<tr><td>
-
 [isChocolateIngredient(ingredient)](./ts-chocolate.entities.ischocolateingredient.md)
 
 
@@ -337,39 +315,6 @@ Type guard for inline task - discriminates by presence of `task`
 </td></tr>
 <tr><td>
 
-[isMoldedBonBon(confection)](./ts-chocolate.entities.ismoldedbonbon.md)
-
-
-</td><td>
-
-Type guard for IMoldedBonBon
-
-
-</td></tr>
-<tr><td>
-
-[isMoldedBonBonVersion(version)](./ts-chocolate.entities.ismoldedbonbonversion.md)
-
-
-</td><td>
-
-Type guard for IMoldedBonBonVersion
-
-
-</td></tr>
-<tr><td>
-
-[isMoldedBonBonYield(yieldSpec)](./ts-chocolate.entities.ismoldedbonbonyield.md)
-
-
-</td><td>
-
-Type guard to check if a yield is frame-based (for molded bonbons).
-
-
-</td></tr>
-<tr><td>
-
 [isMoldInventoryEntry(entry)](./ts-chocolate.entities.ismoldinventoryentry.md)
 
 
@@ -458,28 +403,6 @@ Type guard for IResolvedIngredientSlot
 </td></tr>
 <tr><td>
 
-[isRolledTruffle(confection)](./ts-chocolate.entities.isrolledtruffle.md)
-
-
-</td><td>
-
-Type guard for IRolledTruffle
-
-
-</td></tr>
-<tr><td>
-
-[isRolledTruffleVersion(version)](./ts-chocolate.entities.isrolledtruffleversion.md)
-
-
-</td><td>
-
-Type guard for IRolledTruffleVersion
-
-
-</td></tr>
-<tr><td>
-
 [isScaledFillingRecipeVersion(version)](./ts-chocolate.entities.isscaledfillingrecipeversion.md)
 
 
@@ -528,56 +451,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IAdditionalChocolate](./ts-chocolate.entities.iadditionalchocolate.md)
-
-
-</td><td>
-
-Additional chocolate specification with purpose. Used for seal chocolate, decoration chocolate, etc.
-
-
-</td></tr>
-<tr><td>
-
 [IAlcoholIngredient](./ts-chocolate.entities.ialcoholingredient.md)
 
 
 </td><td>
 
 Alcohol-specific ingredient
-
-
-</td></tr>
-<tr><td>
-
-[IBarTruffle](./ts-chocolate.entities.ibartruffle.md)
-
-
-</td><td>
-
-Bar truffle confection Ganache slab cut into squares and enrobed
-
-
-</td></tr>
-<tr><td>
-
-[IBarTruffleVersion](./ts-chocolate.entities.ibartruffleversion.md)
-
-
-</td><td>
-
-Version interface for bar truffle confections. Includes frame and cutting dimensions.
-
-
-</td></tr>
-<tr><td>
-
-[IBonBonDimensions](./ts-chocolate.entities.ibonbondimensions.md)
-
-
-</td><td>
-
-Single bonbon dimensions for bar truffle cutting
 
 
 </td></tr>
@@ -627,28 +506,6 @@ A computed scaled filling recipe with full ingredient data. This is the output f
 </td></tr>
 <tr><td>
 
-[IConfectionBase](./ts-chocolate.entities.iconfectionbase.md)
-
-
-</td><td>
-
-Base confection interface - all confection types share these properties. Contains stable identity and metadata; configuration details are in versions.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionDecoration](./ts-chocolate.entities.iconfectiondecoration.md)
-
-
-</td><td>
-
-Decoration specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)
 
 
@@ -666,28 +523,6 @@ Journal entry for confection edits.
 </td><td>
 
 Journal entry for confection production sessions.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionVersionBase](./ts-chocolate.entities.iconfectionversionbase.md)
-
-
-</td><td>
-
-Base version interface - shared by all confection version types. Contains the configuration details that can change between versions.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
-
-
-</td><td>
-
-Yield specification for a [confection](./ts-chocolate.entities.confections.confectiondata.md)<!-- -->.
 
 
 </td></tr>
@@ -792,34 +627,12 @@ Complete details for a single version of a filling recipe
 </td></tr>
 <tr><td>
 
-[IFillingSlot](./ts-chocolate.entities.ifillingslot.md)
-
-
-</td><td>
-
-A single filling slot with its own options and preferred selection. Each slot can hold recipes OR ingredients (or both).
-
-
-</td></tr>
-<tr><td>
-
 [IFillingUsage](./ts-chocolate.entities.ifillingusage.md)
 
 
 </td><td>
 
 Record of a filling recipe being used (for production tracking)
-
-
-</td></tr>
-<tr><td>
-
-[IFrameDimensions](./ts-chocolate.entities.iframedimensions.md)
-
-
-</td><td>
-
-Frame dimensions for bar truffle production
 
 
 </td></tr>
@@ -842,17 +655,6 @@ Characteristics relevant to ganache calculations These percentages represent the
 </td><td>
 
 Base ingredient interface All ingredients have these common properties
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientFillingOption](./ts-chocolate.entities.iingredientfillingoption.md)
-
-
-</td><td>
-
-Ingredient filling option - references an ingredient (e.g., praline paste)
 
 
 </td></tr>
@@ -932,39 +734,6 @@ Base interface for journal entries.
 </td><td>
 
 Represents a chocolate mold
-
-
-</td></tr>
-<tr><td>
-
-[IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
-
-
-</td><td>
-
-Molded bonbon confection Uses chocolate molds for shell formation
-
-
-</td></tr>
-<tr><td>
-
-[IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)
-
-
-</td><td>
-
-Version interface for molded bonbon confections. Includes mold and chocolate shell specifications.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldedBonBonYield](./ts-chocolate.entities.imoldedbonbonyield.md)
-
-
-</td><td>
-
-Frame-based yield specification for molded bonbons. Stores frames + buffer percentage as primary values; count is computed from mold.
 
 
 </td></tr>
@@ -1075,17 +844,6 @@ Produced bar truffle with concrete choices.
 </td></tr>
 <tr><td>
 
-[IProducedConfectionBase](./ts-chocolate.entities.iproducedconfectionbase.md)
-
-
-</td><td>
-
-Base interface for all produced confection types. Contains common fields shared by all confection productions.
-
-
-</td></tr>
-<tr><td>
-
 [IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
 
 
@@ -1130,17 +888,6 @@ Produced rolled truffle with concrete choices.
 </td></tr>
 <tr><td>
 
-[IRecipeFillingOption](./ts-chocolate.entities.irecipefillingoption.md)
-
-
-</td><td>
-
-Recipe filling option - references a recipe (e.g., ganache)
-
-
-</td></tr>
-<tr><td>
-
 [IRenderOptions](./ts-chocolate.entities.irenderoptions.md)
 
 
@@ -1169,28 +916,6 @@ Resolved slot with recipe filling.
 </td><td>
 
 Resolved slot with ingredient filling.
-
-
-</td></tr>
-<tr><td>
-
-[IRolledTruffle](./ts-chocolate.entities.irolledtruffle.md)
-
-
-</td><td>
-
-Rolled truffle confection Hand-rolled ganache balls with various coatings
-
-
-</td></tr>
-<tr><td>
-
-[IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
-
-
-</td><td>
-
-Version interface for rolled truffle confections. Includes enrobing and coating specifications.
 
 
 </td></tr>
@@ -1595,34 +1320,12 @@ Union type for all confection version types.
 </td></tr>
 <tr><td>
 
-[AnyConfectionYield](./ts-chocolate.entities.anyconfectionyield.md)
-
-
-</td><td>
-
-Discriminated union of all yield types.
-
-
-</td></tr>
-<tr><td>
-
 [AnyFillingJournalEntry](./ts-chocolate.entities.anyfillingjournalentry.md)
 
 
 </td><td>
 
 Union type for filling journal entries (edit or production)
-
-
-</td></tr>
-<tr><td>
-
-[AnyFillingOption](./ts-chocolate.entities.anyfillingoption.md)
-
-
-</td><td>
-
-Discriminated union of filling options. Satisfies IHasId<FillingOptionId> for use with IOptionsWithPreferred.
 
 
 </td></tr>
@@ -1760,28 +1463,6 @@ Validator type for FillingsLibrary collections.
 </td></tr>
 <tr><td>
 
-[FillingOptionId](./ts-chocolate.entities.fillingoptionid.md)
-
-
-</td><td>
-
-Union type for filling option IDs. Can be either a RecipeId or IngredientId - disambiguation happens via the type discriminator.
-
-
-</td></tr>
-<tr><td>
-
-[FillingOptionType](./ts-chocolate.entities.fillingoptiontype.md)
-
-
-</td><td>
-
-Discriminator for filling option types
-
-
-</td></tr>
-<tr><td>
-
 [FillingsMergeSource](./ts-chocolate.entities.fillingsmergesource.md)
 
 
@@ -1799,39 +1480,6 @@ Specifies a fillings library to merge into a new library.
 </td><td>
 
 Represents the cavities in a mold
-
-
-</td></tr>
-<tr><td>
-
-[IChocolateSpec](./ts-chocolate.entities.ichocolatespec.md)
-
-
-</td><td>
-
-Chocolate specification for shell, enrobing, or coating. Uses IIdsWithPreferred pattern - `ids` contains all valid chocolates, `preferredId` indicates the default/recommended one.
-
-
-</td></tr>
-<tr><td>
-
-[ICoatings](./ts-chocolate.entities.icoatings.md)
-
-
-</td><td>
-
-Coating specification for rolled truffles. Uses IIdsWithPreferred pattern - `ids` contains all valid coating ingredients, `preferredId` indicates the default/recommended one.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionMoldRef](./ts-chocolate.entities.iconfectionmoldref.md)
-
-
-</td><td>
-
-Reference to a mold used for a confection. Satisfies IHasId for use with IOptionsWithPreferred.
 
 
 </td></tr>

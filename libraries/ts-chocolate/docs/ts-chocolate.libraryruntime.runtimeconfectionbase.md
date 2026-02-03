@@ -75,7 +75,7 @@ Description
 
 </td><td>
 
-Confections.ConfectionData
+[Confections.ConfectionData](./ts-chocolate.entities.confectiondata.md)
 
 
 </td><td>
@@ -438,7 +438,7 @@ Resolved procedures from the golden version (lazy-loaded)
 
 </td><td>
 
-Confections.ConfectionData
+[Confections.ConfectionData](./ts-chocolate.entities.confectiondata.md)
 
 
 </td><td>

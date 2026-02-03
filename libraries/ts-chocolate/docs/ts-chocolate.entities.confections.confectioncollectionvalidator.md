@@ -11,5 +11,5 @@ Validator type for ConfectionsLibrary collections.
 ```typescript
 export type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, ConfectionData>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ConfectionId](./ts-chocolate.confectionid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)
 

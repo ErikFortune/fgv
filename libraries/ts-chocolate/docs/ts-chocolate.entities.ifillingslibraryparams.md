@@ -11,5 +11,5 @@ Parameters for creating a FillingsLibrary instance synchronously.
 ```typescript
 export type IFillingsLibraryParams = ISubLibraryParams<FillingsLibrary, FillingCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [FillingsLibrary](./ts-chocolate.entities.fillingslibrary.md)
 

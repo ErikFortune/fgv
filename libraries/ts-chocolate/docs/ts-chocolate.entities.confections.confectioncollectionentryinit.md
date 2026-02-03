@@ -11,5 +11,5 @@ Initialization type for a ConfectionsLibrary collection entry.
 ```typescript
 export type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, ConfectionData>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)
 

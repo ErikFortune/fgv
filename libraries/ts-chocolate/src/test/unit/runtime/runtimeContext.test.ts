@@ -43,6 +43,7 @@ import {
 } from '../../../packlets/common';
 
 import {
+  Confections as ConfectionsEntities,
   IGanacheCharacteristics,
   IChocolateIngredient,
   IIngredient,
@@ -1248,8 +1249,7 @@ describe('RuntimeContext', () => {
             name: 'Center Filling',
             filling: {
               options: [{ type: 'recipe' as const, id: 'common.dark-ganache-classic' as FillingId }],
-              preferredId:
-                'common.dark-ganache-classic' as import('../../../packlets/entities').FillingOptionId
+              preferredId: 'common.dark-ganache-classic' as ConfectionsEntities.FillingOptionId
             }
           }
         ];

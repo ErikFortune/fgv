@@ -43,16 +43,13 @@ import {
   SourceId
 } from '../../../../packlets/common';
 import {
+  Confections as ConfectionEntities,
   IChocolateIngredient,
   IFillingRecipe,
-  FillingOptionId,
   IGanacheCharacteristics,
   IIngredient,
   IMold,
-  IMoldedBonBon,
-  IBarTruffle,
   IProcedure,
-  IRolledTruffle,
   ConfectionsLibrary,
   FillingsLibrary,
   IngredientsLibrary,
@@ -146,7 +143,7 @@ describe('ConfectionEditingSession Factory', () => {
     steps: []
   };
 
-  const moldedBonBon: IMoldedBonBon = {
+  const moldedBonBon: ConfectionEntities.IMoldedBonBon = {
     baseId: 'test-bonbon' as BaseConfectionId,
     name: 'Test Bonbon' as ConfectionName,
     confectionType: 'molded-bonbon',
@@ -178,7 +175,7 @@ describe('ConfectionEditingSession Factory', () => {
                   id: 'test.caramel-filling' as FillingId
                 }
               ],
-              preferredId: 'test.caramel-filling' as FillingOptionId
+              preferredId: 'test.caramel-filling' as ConfectionEntities.FillingOptionId
             }
           }
         ],
@@ -190,7 +187,7 @@ describe('ConfectionEditingSession Factory', () => {
     ]
   };
 
-  const barTruffle: IBarTruffle = {
+  const barTruffle: ConfectionEntities.IBarTruffle = {
     baseId: 'test-bar' as BaseConfectionId,
     name: 'Test Bar' as ConfectionName,
     confectionType: 'bar-truffle',
@@ -227,7 +224,7 @@ describe('ConfectionEditingSession Factory', () => {
                   id: 'test.caramel-filling' as FillingId
                 }
               ],
-              preferredId: 'test.caramel-filling' as FillingOptionId
+              preferredId: 'test.caramel-filling' as ConfectionEntities.FillingOptionId
             }
           }
         ]
@@ -235,7 +232,7 @@ describe('ConfectionEditingSession Factory', () => {
     ]
   };
 
-  const rolledTruffle: IRolledTruffle = {
+  const rolledTruffle: ConfectionEntities.IRolledTruffle = {
     baseId: 'test-rolled' as BaseConfectionId,
     name: 'Test Rolled' as ConfectionName,
     confectionType: 'rolled-truffle',
@@ -263,7 +260,7 @@ describe('ConfectionEditingSession Factory', () => {
                   id: 'test.caramel-filling' as FillingId
                 }
               ],
-              preferredId: 'test.caramel-filling' as FillingOptionId
+              preferredId: 'test.caramel-filling' as ConfectionEntities.FillingOptionId
             }
           }
         ]

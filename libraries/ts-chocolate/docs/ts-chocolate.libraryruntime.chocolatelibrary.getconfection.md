@@ -50,7 +50,7 @@ The [id](./ts-chocolate.confectionid.md) of the confection to retrieve.
 
 **Returns:**
 
-Result&lt;Entities.Confections.ConfectionData&gt;
+Result&lt;[Entities.Confections.ConfectionData](./ts-chocolate.entities.confectiondata.md)<!-- -->&gt;
 
 `Success` with confection data, or `Failure` if not found
 

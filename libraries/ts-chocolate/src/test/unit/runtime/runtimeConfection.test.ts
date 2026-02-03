@@ -62,17 +62,7 @@ import {
   RuntimeBarTruffle,
   RuntimeRolledTruffle
 } from '../../../packlets/library-runtime';
-import {
-  Confections,
-  IChocolateIngredient,
-  IFillingRecipe,
-  IAdditionalChocolate,
-  IChocolateSpec,
-  ICoatings,
-  IConfectionMoldRef,
-  IFillingSlot,
-  IProcedureRef
-} from '../../../packlets/entities';
+import { Confections, IChocolateIngredient, IFillingRecipe, IProcedureRef } from '../../../packlets/entities';
 
 describe('RuntimeConfection', () => {
   // ============================================================================
@@ -305,7 +295,10 @@ describe('RuntimeConfection', () => {
       } as unknown as IRuntimeConfection);
     },
     // Resolution helpers - these delegate to the mock getRuntime* methods
-    resolveChocolateSpec: (spec: IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec => {
+    resolveChocolateSpec: (
+      spec: Confections.IChocolateSpec,
+      confectionId: ConfectionId
+    ): IResolvedChocolateSpec => {
       const primaryId = spec.preferredId ?? spec.ids[0];
       const chocolate = mockContext.getRuntimeIngredient(primaryId).value as IRuntimeChocolateIngredient;
       // Populate alternates from all IDs except the primary
@@ -318,7 +311,7 @@ describe('RuntimeConfection', () => {
         raw: spec
       };
     },
-    resolveCoatings: (coatings: ICoatings): IResolvedCoatings => {
+    resolveCoatings: (coatings: Confections.ICoatings): IResolvedCoatings => {
       const options = coatings.ids.map((id) => ({
         id,
         ingredient: mockContext.getRuntimeIngredient(id).value!
@@ -331,7 +324,7 @@ describe('RuntimeConfection', () => {
       };
     },
     resolveMoldRefs: (
-      molds: CommonModel.IOptionsWithPreferred<IConfectionMoldRef, MoldId>
+      molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>
     ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> => {
       const options = molds.options.map((ref) => ({
         id: ref.id,
@@ -345,7 +338,7 @@ describe('RuntimeConfection', () => {
       };
     },
     resolveAdditionalChocolates: (
-      additional: ReadonlyArray<IAdditionalChocolate> | undefined,
+      additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined,
       confectionId: ConfectionId
     ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined => {
       if (!additional || additional.length === 0) return undefined;
@@ -356,7 +349,7 @@ describe('RuntimeConfection', () => {
       }));
     },
     resolveFillingSlots: (
-      slots: ReadonlyArray<IFillingSlot> | undefined
+      slots: ReadonlyArray<Confections.IFillingSlot> | undefined
     ): ReadonlyArray<IResolvedFillingSlot> | undefined => {
       if (!slots || slots.length === 0) return undefined;
       return slots.map((slot) => ({

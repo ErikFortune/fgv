@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;Entities.Confections.ConfectionData, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[Entities.Confections.ConfectionData](./ts-chocolate.entities.confectiondata.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

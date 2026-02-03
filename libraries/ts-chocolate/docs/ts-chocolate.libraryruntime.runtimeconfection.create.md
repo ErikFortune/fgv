@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-Confections.ConfectionData
+[Confections.ConfectionData](./ts-chocolate.entities.confectiondata.md)
 
 
 </td><td>

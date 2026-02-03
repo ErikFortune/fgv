@@ -11,5 +11,5 @@ Type for the collections in a ConfectionsLibrary.
 ```typescript
 export type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)
 

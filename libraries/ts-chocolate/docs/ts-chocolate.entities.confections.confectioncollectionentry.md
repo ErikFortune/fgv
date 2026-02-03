@@ -11,5 +11,5 @@ A single entry in a confections collection.
 ```typescript
 export type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, ConfectionData>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [ConfectionData](./ts-chocolate.entities.confectiondata.md)
 

@@ -11,5 +11,5 @@ Specifies a fillings library to merge into a new library.
 ```typescript
 export type FillingsMergeSource = SubLibraryMergeSource<FillingsLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [FillingsLibrary](./ts-chocolate.entities.fillingslibrary.md)
 

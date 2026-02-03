@@ -70,7 +70,7 @@ The [confections library](./ts-chocolate.entities.confections.confectionslibrary
 
 </td><td>
 
-FillingsLibrary
+[FillingsLibrary](./ts-chocolate.entities.fillingslibrary.md)
 
 
 </td><td>

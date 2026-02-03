@@ -301,7 +301,7 @@ _(Optional)_ Resolved procedures from the golden version
 
 </td><td>
 
-Confections.ConfectionData
+[Confections.ConfectionData](./ts-chocolate.entities.confectiondata.md)
 
 
 </td><td>
