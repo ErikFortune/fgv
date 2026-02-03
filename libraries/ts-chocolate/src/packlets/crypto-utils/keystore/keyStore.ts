@@ -19,13 +19,7 @@
 // SOFTWARE.
 
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
-import {
-  AES_256_KEY_SIZE,
-  DEFAULT_ALGORITHM,
-  ICryptoProvider,
-  IEncryptionConfig,
-  SecretProvider
-} from '../model';
+import { Constants as CryptoConstants, ICryptoProvider, IEncryptionConfig, SecretProvider } from '../model';
 import {
   DEFAULT_KEYSTORE_ITERATIONS,
   IAddSecretOptions,
@@ -428,8 +422,8 @@ export class KeyStore {
     if (!name || name.length === 0) {
       return fail('Secret name cannot be empty');
     }
-    if (key.length !== AES_256_KEY_SIZE) {
-      return fail(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
+      return fail(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
 
     const exists = this._secrets.has(name);
@@ -567,7 +561,7 @@ export class KeyStore {
 
     const keystoreFileData: IKeyStoreFile = {
       format: KEYSTORE_FORMAT,
-      algorithm: DEFAULT_ALGORITHM,
+      algorithm: CryptoConstants.DEFAULT_ALGORITHM,
       iv: this._cryptoProvider.toBase64(iv),
       authTag: this._cryptoProvider.toBase64(authTag),
       encryptedData: this._cryptoProvider.toBase64(encryptedData),

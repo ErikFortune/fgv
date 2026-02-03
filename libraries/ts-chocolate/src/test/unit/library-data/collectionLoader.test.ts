@@ -26,7 +26,7 @@ import { FileTree, JsonObject, JsonValue } from '@fgv/ts-json-base';
 import { CollectionLoader } from '../../../packlets/library-data';
 import {
   createEncryptedCollectionFile,
-  ENCRYPTED_COLLECTION_FORMAT,
+  Constants as CryptoConstants,
   nodeCryptoProvider
 } from '../../../packlets/crypto-utils';
 
@@ -1350,7 +1350,7 @@ describe('CollectionLoader', () => {
       test('handles invalid encrypted file format with onDecryptionError', async () => {
         // Create a malformed encrypted file (has format field but missing other required fields)
         const malformed = {
-          format: ENCRYPTED_COLLECTION_FORMAT,
+          format: CryptoConstants.ENCRYPTED_COLLECTION_FORMAT,
           secretName: 'test-secret'
           // Missing: algorithm, iv, authTag, encryptedData
         };

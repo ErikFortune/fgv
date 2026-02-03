@@ -57,7 +57,7 @@ import {
 export class Workspace implements IWorkspace {
   private readonly _runtime: RuntimeContext;
   private readonly _userLibrary: UserLibrary;
-  private readonly _keyStore: KeyStore | undefined;
+  private readonly _keyStore: KeyStore.KeyStore | undefined;
   private readonly _cryptoProvider: ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
@@ -69,7 +69,7 @@ export class Workspace implements IWorkspace {
   private constructor(
     runtime: RuntimeContext,
     userLibrary: UserLibrary,
-    keyStore: KeyStore | undefined,
+    keyStore: KeyStore.KeyStore | undefined,
     cryptoProvider: ICryptoProvider | undefined,
     settings: ISettingsManager | undefined,
     logger: Logging.LogReporter<unknown>
@@ -100,7 +100,7 @@ export class Workspace implements IWorkspace {
     const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Create key store if configured
-    let keyStore: KeyStore | undefined;
+    let keyStore: KeyStore.KeyStore | undefined;
     let cryptoProvider: ICryptoProvider | undefined;
 
     if (params.keyStore) {
@@ -108,7 +108,7 @@ export class Workspace implements IWorkspace {
 
       if (params.keyStore.file) {
         // Open existing key store
-        const openResult = KeyStore.open({
+        const openResult = KeyStore.KeyStore.open({
           keystoreFile: params.keyStore.file,
           cryptoProvider
         });
@@ -118,7 +118,7 @@ export class Workspace implements IWorkspace {
         keyStore = openResult.value;
       } else {
         // Create new key store (caller will need to initialize it)
-        const createResult = KeyStore.create({ cryptoProvider });
+        const createResult = KeyStore.KeyStore.create({ cryptoProvider });
         if (createResult.isFailure()) {
           return fail(`Failed to create key store: ${createResult.message}`);
         }
@@ -178,7 +178,7 @@ export class Workspace implements IWorkspace {
     const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Create key store if configured
-    let keyStore: KeyStore | undefined;
+    let keyStore: KeyStore.KeyStore | undefined;
     let cryptoProvider: ICryptoProvider | undefined;
 
     if (params.keyStore) {
@@ -186,7 +186,7 @@ export class Workspace implements IWorkspace {
 
       if (params.keyStore.file) {
         // Open existing key store
-        const openResult = KeyStore.open({
+        const openResult = KeyStore.KeyStore.open({
           keystoreFile: params.keyStore.file,
           cryptoProvider
         });
@@ -196,7 +196,7 @@ export class Workspace implements IWorkspace {
         keyStore = openResult.value;
       } else {
         // Create new key store (caller will need to initialize it)
-        const createResult = KeyStore.create({ cryptoProvider });
+        const createResult = KeyStore.KeyStore.create({ cryptoProvider });
         if (createResult.isFailure()) {
           return fail(`Failed to create key store: ${createResult.message}`);
         }
@@ -284,7 +284,7 @@ export class Workspace implements IWorkspace {
   /**
    * {@inheritDoc IWorkspace.keyStore}
    */
-  public get keyStore(): KeyStore | undefined {
+  public get keyStore(): KeyStore.KeyStore | undefined {
     return this._keyStore;
   }
 

@@ -30,8 +30,5 @@ export * from './model';
 import * as Converters from './converters';
 export { Converters };
 
-// Re-export detection helper for convenience
-export { isKeyStoreFile } from './converters';
-
 // Key store class
 export { KeyStore } from './keyStore';

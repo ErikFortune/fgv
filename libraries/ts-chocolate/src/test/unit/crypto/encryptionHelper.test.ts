@@ -27,8 +27,7 @@ import {
   tryDecryptCollectionFile,
   EncryptionHelper,
   nodeCryptoProvider,
-  ENCRYPTED_COLLECTION_FORMAT,
-  DEFAULT_ALGORITHM,
+  Constants as CryptoConstants,
   isEncryptedCollectionFile
 } from '../../../packlets/crypto-utils';
 
@@ -48,9 +47,9 @@ describe('EncryptionHelper', () => {
       });
 
       expect(result).toSucceedAndSatisfy((encrypted) => {
-        expect(encrypted.format).toBe(ENCRYPTED_COLLECTION_FORMAT);
+        expect(encrypted.format).toBe(CryptoConstants.ENCRYPTED_COLLECTION_FORMAT);
         expect(encrypted.secretName).toBe('my-secret');
-        expect(encrypted.algorithm).toBe(DEFAULT_ALGORITHM);
+        expect(encrypted.algorithm).toBe(CryptoConstants.DEFAULT_ALGORITHM);
         expect(encrypted.iv).toBeDefined();
         expect(encrypted.authTag).toBeDefined();
         expect(encrypted.encryptedData).toBeDefined();
@@ -232,7 +231,7 @@ describe('EncryptionHelper', () => {
 
     test('fails for malformed encrypted file', async () => {
       const malformed: JsonObject = {
-        format: ENCRYPTED_COLLECTION_FORMAT,
+        format: CryptoConstants.ENCRYPTED_COLLECTION_FORMAT,
         // Missing required fields
         secretName: 'test'
       };
@@ -261,7 +260,7 @@ describe('EncryptionHelper', () => {
       const result = await helper.encrypt(content, 'my-secret', key);
 
       expect(result).toSucceedAndSatisfy((encrypted) => {
-        expect(encrypted.format).toBe(ENCRYPTED_COLLECTION_FORMAT);
+        expect(encrypted.format).toBe(CryptoConstants.ENCRYPTED_COLLECTION_FORMAT);
         expect(encrypted.secretName).toBe('my-secret');
       });
     });

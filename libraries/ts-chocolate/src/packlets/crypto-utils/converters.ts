@@ -20,8 +20,7 @@
 
 import { Converter, Converters, fail, succeed } from '@fgv/ts-utils';
 import {
-  DEFAULT_ALGORITHM,
-  ENCRYPTED_COLLECTION_FORMAT,
+  Constants as CryptoConstants,
   EncryptedCollectionErrorMode,
   EncryptedCollectionFormat,
   EncryptionAlgorithm,
@@ -41,14 +40,14 @@ import {
  * @public
  */
 export const encryptionAlgorithm: Converter<EncryptionAlgorithm> =
-  Converters.enumeratedValue<EncryptionAlgorithm>([DEFAULT_ALGORITHM]);
+  Converters.enumeratedValue<EncryptionAlgorithm>([CryptoConstants.DEFAULT_ALGORITHM]);
 
 /**
  * Converter for {@link CryptoUtils.EncryptedCollectionFormat | encrypted collection format} version.
  * @public
  */
 export const encryptedCollectionFormat: Converter<EncryptedCollectionFormat> = Converters.enumeratedValue([
-  ENCRYPTED_COLLECTION_FORMAT
+  CryptoConstants.ENCRYPTED_COLLECTION_FORMAT
 ]);
 
 /**
@@ -173,22 +172,3 @@ export const namedSecret: Converter<INamedSecret> = Converters.object<INamedSecr
   name: Converters.string,
   key: uint8ArrayFromBase64
 });
-
-// ============================================================================
-// Detection Helper
-// ============================================================================
-
-/**
- * Checks if a JSON object appears to be an encrypted collection tombstone.
- * Uses the format field as a discriminator.
- * @param json - JSON object to check
- * @returns true if the object has the encrypted collection format field
- * @public
- */
-export function isEncryptedCollectionFile(json: unknown): boolean {
-  if (typeof json !== 'object' || json === null) {
-    return false;
-  }
-  const obj = json as Record<string, unknown>;
-  return obj.format === ENCRYPTED_COLLECTION_FORMAT;
-}

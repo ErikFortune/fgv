@@ -297,36 +297,24 @@ export interface IEncryptionConfig {
   readonly onDecryptionError?: EncryptedCollectionErrorMode;
 }
 
+import * as Constants from './constants';
+export { Constants };
+
 // ============================================================================
-// Constants
+// Detection Helper
 // ============================================================================
 
 /**
- * Current format version for encrypted collection files.
+ * Checks if a JSON object appears to be an encrypted collection tombstone.
+ * Uses the format field as a discriminator.
+ * @param json - JSON object to check
+ * @returns true if the object has the encrypted collection format field
  * @public
  */
-export const ENCRYPTED_COLLECTION_FORMAT: EncryptedCollectionFormat = 'encrypted-collection-v1';
-
-/**
- * Default encryption algorithm.
- * @public
- */
-export const DEFAULT_ALGORITHM: EncryptionAlgorithm = 'AES-256-GCM';
-
-/**
- * Key size in bytes for AES-256.
- * @public
- */
-export const AES_256_KEY_SIZE: number = 32;
-
-/**
- * IV size in bytes for GCM mode.
- * @public
- */
-export const GCM_IV_SIZE: number = 12;
-
-/**
- * Auth tag size in bytes for GCM mode.
- * @public
- */
-export const GCM_AUTH_TAG_SIZE: number = 16;
+export function isEncryptedCollectionFile(json: unknown): boolean {
+  if (typeof json !== 'object' || json === null) {
+    return false;
+  }
+  const obj = json as Record<string, unknown>;
+  return obj.format === Constants.ENCRYPTED_COLLECTION_FORMAT;
+}

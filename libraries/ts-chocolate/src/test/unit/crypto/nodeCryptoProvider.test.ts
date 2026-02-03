@@ -21,9 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import {
-  AES_256_KEY_SIZE,
-  GCM_AUTH_TAG_SIZE,
-  GCM_IV_SIZE,
+  Constants as CryptoConstants,
   NodeCryptoProvider,
   nodeCryptoProvider
 } from '../../../packlets/crypto-utils';
@@ -36,7 +34,7 @@ describe('NodeCryptoProvider', () => {
       const result = await provider.generateKey();
       expect(result).toSucceedAndSatisfy((key) => {
         expect(key).toBeInstanceOf(Uint8Array);
-        expect(key.length).toBe(AES_256_KEY_SIZE);
+        expect(key.length).toBe(CryptoConstants.AES_256_KEY_SIZE);
       });
     });
 
@@ -54,8 +52,8 @@ describe('NodeCryptoProvider', () => {
 
       const encryptResult = await provider.encrypt(plaintext, key);
       expect(encryptResult).toSucceedAndSatisfy((encrypted) => {
-        expect(encrypted.iv.length).toBe(GCM_IV_SIZE);
-        expect(encrypted.authTag.length).toBe(GCM_AUTH_TAG_SIZE);
+        expect(encrypted.iv.length).toBe(CryptoConstants.GCM_IV_SIZE);
+        expect(encrypted.authTag.length).toBe(CryptoConstants.GCM_AUTH_TAG_SIZE);
         expect(encrypted.encryptedData.length).toBeGreaterThan(0);
       });
 
@@ -206,7 +204,7 @@ describe('NodeCryptoProvider', () => {
       const result = await provider.deriveKey(password, salt, 1000);
       expect(result).toSucceedAndSatisfy((key) => {
         expect(key).toBeInstanceOf(Uint8Array);
-        expect(key.length).toBe(AES_256_KEY_SIZE);
+        expect(key.length).toBe(CryptoConstants.AES_256_KEY_SIZE);
       });
     });
 

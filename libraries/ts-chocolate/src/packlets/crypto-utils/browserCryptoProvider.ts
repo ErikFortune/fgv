@@ -20,13 +20,7 @@
 
 /* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
 import { captureResult, Failure, Result, Success } from '@fgv/ts-utils';
-import {
-  AES_256_KEY_SIZE,
-  GCM_AUTH_TAG_SIZE,
-  GCM_IV_SIZE,
-  ICryptoProvider,
-  IEncryptionResult
-} from './model';
+import { Constants as CryptoConstants, ICryptoProvider, IEncryptionResult } from './model';
 
 /**
  * Extracts an `ArrayBuffer` from a Uint8Array, handling the potential SharedArrayBuffer case.
@@ -75,13 +69,13 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    * @returns `Success` with encryption result, or `Failure` with an error.
    */
   public async encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>> {
-    if (key.length !== AES_256_KEY_SIZE) {
-      return Failure.with(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
+      return Failure.with(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
 
     try {
       // Generate random IV
-      const iv = this._crypto.getRandomValues(new Uint8Array(GCM_IV_SIZE));
+      const iv = this._crypto.getRandomValues(new Uint8Array(CryptoConstants.GCM_IV_SIZE));
 
       // Import the key
       const cryptoKey = await this._crypto.subtle.importKey(
@@ -101,7 +95,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
         {
           name: 'AES-GCM',
           iv: iv,
-          tagLength: GCM_AUTH_TAG_SIZE * 8 // bits
+          tagLength: CryptoConstants.GCM_AUTH_TAG_SIZE * 8 // bits
         },
         cryptoKey,
         plaintextBytes
@@ -109,9 +103,11 @@ export class BrowserCryptoProvider implements ICryptoProvider {
 
       // Split ciphertext and auth tag (auth tag is last 16 bytes)
       const encryptedArray = new Uint8Array(encryptedWithTag);
-      const encryptedData = encryptedArray.slice(0, encryptedArray.length - GCM_AUTH_TAG_SIZE);
-      const authTag = encryptedArray.slice(encryptedArray.length - GCM_AUTH_TAG_SIZE);
-
+      const encryptedData = encryptedArray.slice(
+        0,
+        encryptedArray.length - CryptoConstants.GCM_AUTH_TAG_SIZE
+      );
+      const authTag = encryptedArray.slice(encryptedArray.length - CryptoConstants.GCM_AUTH_TAG_SIZE);
       return Success.with({
         iv,
         authTag,
@@ -137,14 +133,16 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     iv: Uint8Array,
     authTag: Uint8Array
   ): Promise<Result<string>> {
-    if (key.length !== AES_256_KEY_SIZE) {
-      return Failure.with(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
+      return Failure.with(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
-    if (iv.length !== GCM_IV_SIZE) {
-      return Failure.with(`IV must be ${GCM_IV_SIZE} bytes, got ${iv.length}`);
+    if (iv.length !== CryptoConstants.GCM_IV_SIZE) {
+      return Failure.with(`IV must be ${CryptoConstants.GCM_IV_SIZE} bytes, got ${iv.length}`);
     }
-    if (authTag.length !== GCM_AUTH_TAG_SIZE) {
-      return Failure.with(`Auth tag must be ${GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`);
+    if (authTag.length !== CryptoConstants.GCM_AUTH_TAG_SIZE) {
+      return Failure.with(
+        `Auth tag must be ${CryptoConstants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
+      );
     }
 
     try {
@@ -167,7 +165,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
         {
           name: 'AES-GCM',
           iv: toArrayBuffer(iv),
-          tagLength: GCM_AUTH_TAG_SIZE * 8 // bits
+          tagLength: CryptoConstants.GCM_AUTH_TAG_SIZE * 8 // bits
         },
         cryptoKey,
         encryptedWithTag
@@ -188,7 +186,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    */
   public async generateKey(): Promise<Result<Uint8Array>> {
     try {
-      return Success.with(this._crypto.getRandomValues(new Uint8Array(AES_256_KEY_SIZE)));
+      return Success.with(this._crypto.getRandomValues(new Uint8Array(CryptoConstants.AES_256_KEY_SIZE)));
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       return Failure.with(`Key generation failed: ${message}`);
@@ -233,7 +231,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
           hash: 'SHA-256'
         },
         keyMaterial,
-        AES_256_KEY_SIZE * 8 // bits
+        CryptoConstants.AES_256_KEY_SIZE * 8 // bits
       );
 
       return Success.with(new Uint8Array(derivedBits));

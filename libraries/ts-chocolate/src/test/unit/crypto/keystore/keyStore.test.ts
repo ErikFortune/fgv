@@ -21,11 +21,8 @@
 import '@fgv/ts-utils-jest';
 
 import {
-  AES_256_KEY_SIZE,
-  DEFAULT_KEYSTORE_ITERATIONS,
-  IKeyStoreFile,
+  Constants as CryptoConstants,
   KeyStore,
-  KEYSTORE_FORMAT,
   nodeCryptoProvider
 } from '../../../../packlets/crypto-utils';
 
@@ -35,7 +32,7 @@ describe('KeyStore', () => {
 
   describe('create', () => {
     test('creates a new locked key store', () => {
-      const result = KeyStore.create({ cryptoProvider: provider });
+      const result = KeyStore.KeyStore.create({ cryptoProvider: provider });
 
       expect(result).toSucceedAndSatisfy((keystore) => {
         expect(keystore.isUnlocked).toBe(false);
@@ -45,24 +42,24 @@ describe('KeyStore', () => {
     });
 
     test('uses default iterations when not specified', () => {
-      const result = KeyStore.create({ cryptoProvider: provider });
+      const result = KeyStore.KeyStore.create({ cryptoProvider: provider });
       expect(result).toSucceed();
     });
 
     test('accepts custom iterations', () => {
-      const result = KeyStore.create({ cryptoProvider: provider, iterations: 100000 });
+      const result = KeyStore.KeyStore.create({ cryptoProvider: provider, iterations: 100000 });
       expect(result).toSucceed();
     });
 
     test('fails with invalid iterations', () => {
-      expect(KeyStore.create({ cryptoProvider: provider, iterations: 0 })).toFailWith(/at least 1/);
-      expect(KeyStore.create({ cryptoProvider: provider, iterations: -1 })).toFailWith(/at least 1/);
+      expect(KeyStore.KeyStore.create({ cryptoProvider: provider, iterations: 0 })).toFailWith(/at least 1/);
+      expect(KeyStore.KeyStore.create({ cryptoProvider: provider, iterations: -1 })).toFailWith(/at least 1/);
     });
   });
 
   describe('initialize', () => {
     test('initializes new key store with password', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
 
       const result = await keystore.initialize(testPassword);
 
@@ -74,14 +71,14 @@ describe('KeyStore', () => {
     });
 
     test('fails with empty password', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
 
       const result = await keystore.initialize('');
       expect(result).toFailWith(/password cannot be empty/i);
     });
 
     test('fails if already initialized', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
 
       const result = await keystore.initialize('another-password');
@@ -90,10 +87,9 @@ describe('KeyStore', () => {
   });
 
   describe('secret management', () => {
-    let keystore: KeyStore;
-
+    let keystore: KeyStore.KeyStore;
     beforeEach(async () => {
-      keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
     });
 
@@ -104,7 +100,7 @@ describe('KeyStore', () => {
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.entry.name).toBe('my-secret');
           expect(addResult.entry.key).toBeInstanceOf(Uint8Array);
-          expect(addResult.entry.key.length).toBe(AES_256_KEY_SIZE);
+          expect(addResult.entry.key.length).toBe(CryptoConstants.AES_256_KEY_SIZE);
           expect(addResult.entry.createdAt).toBeDefined();
           expect(addResult.replaced).toBe(false);
         });
@@ -356,7 +352,7 @@ describe('KeyStore', () => {
 
   describe('lock/unlock', () => {
     test('lock clears secrets from memory', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
 
@@ -371,7 +367,7 @@ describe('KeyStore', () => {
     });
 
     test('lock fails with unsaved changes', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
 
@@ -381,7 +377,7 @@ describe('KeyStore', () => {
     });
 
     test('lock with force discards changes', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
 
@@ -392,7 +388,7 @@ describe('KeyStore', () => {
     });
 
     test('lock is idempotent', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.save(testPassword);
 
@@ -405,25 +401,25 @@ describe('KeyStore', () => {
 
   describe('save and open', () => {
     test('save returns encrypted key store file', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret', { description: 'Test secret' });
 
       const result = await keystore.save(testPassword);
 
       expect(result).toSucceedAndSatisfy((file) => {
-        expect(file.format).toBe(KEYSTORE_FORMAT);
+        expect(file.format).toBe(KeyStore.KEYSTORE_FORMAT);
         expect(file.algorithm).toBe('AES-256-GCM');
         expect(file.iv).toBeDefined();
         expect(file.authTag).toBeDefined();
         expect(file.encryptedData).toBeDefined();
         expect(file.keyDerivation.kdf).toBe('pbkdf2');
-        expect(file.keyDerivation.iterations).toBe(DEFAULT_KEYSTORE_ITERATIONS);
+        expect(file.keyDerivation.iterations).toBe(KeyStore.DEFAULT_KEYSTORE_ITERATIONS);
       });
     });
 
     test('save clears dirty flag', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
 
@@ -435,7 +431,7 @@ describe('KeyStore', () => {
     });
 
     test('save fails with empty password', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
 
       const result = await keystore.save('');
@@ -443,7 +439,7 @@ describe('KeyStore', () => {
     });
 
     test('save fails when locked', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       // Don't initialize - stays locked
 
       const result = await keystore.save(testPassword);
@@ -453,21 +449,23 @@ describe('KeyStore', () => {
     test('open validates file format', () => {
       const invalidFile = { format: 'invalid' };
 
-      const result = KeyStore.open({
+      const result = KeyStore.KeyStore.open({
         cryptoProvider: provider,
-        keystoreFile: invalidFile as unknown as IKeyStoreFile
+        keystoreFile: invalidFile as unknown as KeyStore.IKeyStoreFile
       });
 
       expect(result).toFailWith(/invalid key store file/i);
     });
 
     test('unlock fails with wrong password', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       const savedFile = (await keystore.save(testPassword)).orThrow();
 
-      const keystore2 = KeyStore.open({ cryptoProvider: provider, keystoreFile: savedFile }).orThrow();
-
+      const keystore2 = KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
       const result = await keystore2.unlock('wrong-password');
       expect(result).toFailWith(/incorrect password/i);
     });
@@ -476,7 +474,7 @@ describe('KeyStore', () => {
   describe('round-trip', () => {
     test('saves and reopens key store with secrets', async () => {
       // Create and populate key store
-      const keystore1 = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore1 = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore1.initialize(testPassword);
       await keystore1.addSecret('secret-1', { description: 'First secret' });
       await keystore1.addSecret('secret-2', { description: 'Second secret' });
@@ -485,7 +483,10 @@ describe('KeyStore', () => {
       const savedFile = (await keystore1.save(testPassword)).orThrow();
 
       // Reopen
-      const keystore2 = KeyStore.open({ cryptoProvider: provider, keystoreFile: savedFile }).orThrow();
+      const keystore2 = KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
       const unlockResult = await keystore2.unlock(testPassword);
 
       expect(unlockResult).toSucceed();
@@ -499,7 +500,7 @@ describe('KeyStore', () => {
 
       expect(keystore2.getSecret('secret-1')).toSucceedAndSatisfy((entry) => {
         expect(entry.description).toBe('First secret');
-        expect(entry.key.length).toBe(AES_256_KEY_SIZE);
+        expect(entry.key.length).toBe(CryptoConstants.AES_256_KEY_SIZE);
       });
     });
 
@@ -507,7 +508,7 @@ describe('KeyStore', () => {
       const originalKey = (await provider.generateKey()).orThrow();
 
       // Create and import key
-      const keystore1 = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore1 = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore1.initialize(testPassword);
       keystore1.importSecret('my-key', originalKey);
 
@@ -515,7 +516,10 @@ describe('KeyStore', () => {
       const savedFile = (await keystore1.save(testPassword)).orThrow();
 
       // Reopen
-      const keystore2 = KeyStore.open({ cryptoProvider: provider, keystoreFile: savedFile }).orThrow();
+      const keystore2 = KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
       await keystore2.unlock(testPassword);
 
       // Verify key is identical
@@ -527,7 +531,7 @@ describe('KeyStore', () => {
 
   describe('changePassword', () => {
     test('changes password for key store', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret', { description: 'Test' });
       await keystore.save(testPassword);
@@ -542,7 +546,10 @@ describe('KeyStore', () => {
       const savedFile = (await keystore.save(newPassword)).orThrow();
 
       // Open with new file and verify we can unlock with new password
-      const keystore2 = KeyStore.open({ cryptoProvider: provider, keystoreFile: savedFile }).orThrow();
+      const keystore2 = KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
       const unlockResult = await keystore2.unlock(newPassword);
 
       expect(unlockResult).toSucceed();
@@ -552,7 +559,7 @@ describe('KeyStore', () => {
     });
 
     test('fails with wrong current password', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
       await keystore.save(testPassword);
@@ -562,7 +569,7 @@ describe('KeyStore', () => {
     });
 
     test('fails with empty new password', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.save(testPassword);
 
@@ -571,7 +578,7 @@ describe('KeyStore', () => {
     });
 
     test('fails when locked', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       // Don't initialize - stays locked
 
       const result = await keystore.changePassword('old', 'new');
@@ -581,7 +588,7 @@ describe('KeyStore', () => {
 
   describe('getSecretProvider', () => {
     test('returns a working secret provider', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
 
@@ -594,7 +601,7 @@ describe('KeyStore', () => {
     });
 
     test('secret provider fails for unknown secret', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
 
       const secretProvider = keystore.getSecretProvider().orThrow();
@@ -604,7 +611,7 @@ describe('KeyStore', () => {
     });
 
     test('fails when locked', () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       const result = keystore.getSecretProvider();
       expect(result).toFailWith(/locked/i);
     });
@@ -612,7 +619,7 @@ describe('KeyStore', () => {
 
   describe('getEncryptionConfig', () => {
     test('returns partial encryption config', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore.initialize(testPassword);
 
       const result = keystore.getEncryptionConfig();
@@ -624,7 +631,7 @@ describe('KeyStore', () => {
     });
 
     test('fails when locked', () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       const result = keystore.getEncryptionConfig();
       expect(result).toFailWith(/locked/i);
     });
@@ -632,7 +639,7 @@ describe('KeyStore', () => {
 
   describe('unlock vs initialize', () => {
     test('cannot unlock a new key store', async () => {
-      const keystore = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
 
       const result = await keystore.unlock(testPassword);
       expect(result).toFailWith(/use initialize/i);
@@ -640,12 +647,15 @@ describe('KeyStore', () => {
 
     test('cannot initialize an opened key store', async () => {
       // First create and save a key store
-      const keystore1 = KeyStore.create({ cryptoProvider: provider }).orThrow();
+      const keystore1 = KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore1.initialize(testPassword);
       const savedFile = (await keystore1.save(testPassword)).orThrow();
 
       // Open it
-      const keystore2 = KeyStore.open({ cryptoProvider: provider, keystoreFile: savedFile }).orThrow();
+      const keystore2 = KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
 
       const result = await keystore2.initialize('some-password');
       expect(result).toFailWith(/use unlock/i);

@@ -33,7 +33,7 @@ import {
 // ============================================================================
 
 /**
- * Converter for {@link CryptoUtils.KeyStoreFormat | key store format} version.
+ * Converter for {@link CryptoUtils.KeyStore.KeyStoreFormat | key store format} version.
  * @public
  */
 export const keystoreFormat: Converter<KeyStoreFormat> = Converters.enumeratedValue<KeyStoreFormat>([
@@ -45,7 +45,7 @@ export const keystoreFormat: Converter<KeyStoreFormat> = Converters.enumeratedVa
 // ============================================================================
 
 /**
- * Converter for {@link CryptoUtils.IKeyStoreSecretEntryJson | key store secret entry} in JSON format.
+ * Converter for {@link CryptoUtils.KeyStore.IKeyStoreSecretEntryJson | key store secret entry} in JSON format.
  * @public
  */
 export const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson> =
@@ -66,7 +66,7 @@ export const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson> =
 // ============================================================================
 
 /**
- * Converter for {@link CryptoUtils.IKeyStoreVaultContents | key store vault contents} (decrypted state).
+ * Converter for {@link CryptoUtils.KeyStore.IKeyStoreVaultContents | key store vault contents} (decrypted state).
  * @public
  */
 export const keystoreVaultContents: Converter<IKeyStoreVaultContents> =
@@ -80,7 +80,7 @@ export const keystoreVaultContents: Converter<IKeyStoreVaultContents> =
 // ============================================================================
 
 /**
- * Converter for {@link CryptoUtils.IKeyStoreFile | encrypted key store file}.
+ * Converter for {@link CryptoUtils.KeyStore.IKeyStoreFile | encrypted key store file}.
  * @public
  */
 export const keystoreFile: Converter<IKeyStoreFile> = Converters.object<IKeyStoreFile>({
@@ -91,22 +91,3 @@ export const keystoreFile: Converter<IKeyStoreFile> = Converters.object<IKeyStor
   encryptedData: base64String,
   keyDerivation: keyDerivationParams
 });
-
-// ============================================================================
-// Detection Helper
-// ============================================================================
-
-/**
- * Checks if a JSON object appears to be a key store file.
- * Uses the format field as a discriminator.
- * @param json - JSON object to check
- * @returns true if the object has the key store format field
- * @public
- */
-export function isKeyStoreFile(json: unknown): boolean {
-  if (typeof json !== 'object' || json === null) {
-    return false;
-  }
-  const obj = json as Record<string, unknown>;
-  return obj.format === KEYSTORE_FORMAT;
-}

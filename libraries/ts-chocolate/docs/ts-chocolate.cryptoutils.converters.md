@@ -4,32 +4,6 @@
 
 ## CryptoUtils.Converters namespace
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[isEncryptedCollectionFile(json)](./ts-chocolate.cryptoutils.converters.isencryptedcollectionfile.md)
-
-
-</td><td>
-
-Checks if a JSON object appears to be an encrypted collection tombstone. Uses the format field as a discriminator.
-
-
-</td></tr>
-</tbody></table>
-
 ## Variables
 
 <table><thead><tr><th>

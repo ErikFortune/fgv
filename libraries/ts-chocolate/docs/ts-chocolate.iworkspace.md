@@ -91,7 +91,7 @@ Journal library for production records (user-specific data).
 
 </td><td>
 
-[KeyStore](./ts-chocolate.cryptoutils.keystore.md) \| undefined
+KeyStore.KeyStore \| undefined
 
 
 </td><td>

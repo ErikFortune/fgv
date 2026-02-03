@@ -30,19 +30,6 @@ High-level helper class for encrypting and decrypting collection files.
 </td></tr>
 <tr><td>
 
-[KeyStore](./ts-chocolate.cryptoutils.keystore.md)
-
-
-</td><td>
-
-Password-protected key store for managing encryption secrets.
-
-The KeyStore provides a secure vault for storing named encryption keys. The vault is encrypted at rest using a master password via PBKDF2 key derivation.
-
-
-</td></tr>
-<tr><td>
-
 [NodeCryptoProvider](./ts-chocolate.cryptoutils.nodecryptoprovider.md)
 
 
@@ -102,17 +89,6 @@ Checks if a JSON object appears to be an encrypted collection tombstone. Uses th
 </td></tr>
 <tr><td>
 
-[isKeyStoreFile(json)](./ts-chocolate.cryptoutils.iskeystorefile.md)
-
-
-</td><td>
-
-Checks if a JSON object appears to be a key store file. Uses the format field as a discriminator.
-
-
-</td></tr>
-<tr><td>
-
 [tryDecryptCollectionFile(json, key, cryptoProvider)](./ts-chocolate.cryptoutils.trydecryptcollectionfile.md)
 
 
@@ -138,28 +114,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[IAddSecretOptions](./ts-chocolate.cryptoutils.iaddsecretoptions.md)
-
-
-</td><td>
-
-Options for adding a secret.
-
-
-</td></tr>
-<tr><td>
-
-[IAddSecretResult](./ts-chocolate.cryptoutils.iaddsecretresult.md)
-
-
-</td><td>
-
-Result of adding a secret to the key store.
-
-
-</td></tr>
-<tr><td>
 
 [ICreateEncryptedFileParams](./ts-chocolate.cryptoutils.icreateencryptedfileparams.md)
 
@@ -227,89 +181,12 @@ Result of an encryption operation.
 </td></tr>
 <tr><td>
 
-[IImportSecretOptions](./ts-chocolate.cryptoutils.iimportsecretoptions.md)
-
-
-</td><td>
-
-Options for importing a secret.
-
-
-</td></tr>
-<tr><td>
-
 [IKeyDerivationParams](./ts-chocolate.cryptoutils.ikeyderivationparams.md)
 
 
 </td><td>
 
 Key derivation parameters stored in encrypted files. Allows decryption with password without needing to know the original salt/iterations.
-
-
-</td></tr>
-<tr><td>
-
-[IKeyStoreCreateParams](./ts-chocolate.cryptoutils.ikeystorecreateparams.md)
-
-
-</td><td>
-
-Parameters for creating a new key store.
-
-
-</td></tr>
-<tr><td>
-
-[IKeyStoreFile](./ts-chocolate.cryptoutils.ikeystorefile.md)
-
-
-</td><td>
-
-The encrypted key store file format. Similar to IEncryptedCollectionFile but specialized for key store.
-
-
-</td></tr>
-<tr><td>
-
-[IKeyStoreOpenParams](./ts-chocolate.cryptoutils.ikeystoreopenparams.md)
-
-
-</td><td>
-
-Parameters for opening an existing key store.
-
-
-</td></tr>
-<tr><td>
-
-[IKeyStoreSecretEntry](./ts-chocolate.cryptoutils.ikeystoresecretentry.md)
-
-
-</td><td>
-
-A secret entry stored in the vault (in-memory representation).
-
-
-</td></tr>
-<tr><td>
-
-[IKeyStoreSecretEntryJson](./ts-chocolate.cryptoutils.ikeystoresecretentryjson.md)
-
-
-</td><td>
-
-JSON-serializable version of secret entry (for storage).
-
-
-</td></tr>
-<tr><td>
-
-[IKeyStoreVaultContents](./ts-chocolate.cryptoutils.ikeystorevaultcontents.md)
-
-
-</td><td>
-
-The decrypted vault contents - a versioned map of secrets.
 
 
 </td></tr>
@@ -341,6 +218,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Constants](./ts-chocolate.cryptoutils.constants.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Converters](./ts-chocolate.cryptoutils.converters.md)
 
 
@@ -350,7 +236,7 @@ Description
 </td></tr>
 <tr><td>
 
-[KeyStoreConverters](./ts-chocolate.cryptoutils.keystoreconverters.md)
+[KeyStore](./ts-chocolate.cryptoutils.keystore.md)
 
 
 </td><td>
@@ -373,94 +259,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[AES\_256\_KEY\_SIZE](./ts-chocolate.cryptoutils.aes_256_key_size.md)
-
-
-</td><td>
-
-Key size in bytes for AES-256.
-
-
-</td></tr>
-<tr><td>
-
-[DEFAULT\_ALGORITHM](./ts-chocolate.cryptoutils.default_algorithm.md)
-
-
-</td><td>
-
-Default encryption algorithm.
-
-
-</td></tr>
-<tr><td>
-
-[DEFAULT\_KEYSTORE\_ITERATIONS](./ts-chocolate.cryptoutils.default_keystore_iterations.md)
-
-
-</td><td>
-
-Default PBKDF2 iterations for key store encryption. Higher than collection files since this protects the master key vault.
-
-
-</td></tr>
-<tr><td>
-
-[ENCRYPTED\_COLLECTION\_FORMAT](./ts-chocolate.cryptoutils.encrypted_collection_format.md)
-
-
-</td><td>
-
-Current format version for encrypted collection files.
-
-
-</td></tr>
-<tr><td>
-
-[GCM\_AUTH\_TAG\_SIZE](./ts-chocolate.cryptoutils.gcm_auth_tag_size.md)
-
-
-</td><td>
-
-Auth tag size in bytes for GCM mode.
-
-
-</td></tr>
-<tr><td>
-
-[GCM\_IV\_SIZE](./ts-chocolate.cryptoutils.gcm_iv_size.md)
-
-
-</td><td>
-
-IV size in bytes for GCM mode.
-
-
-</td></tr>
-<tr><td>
-
-[KEYSTORE\_FORMAT](./ts-chocolate.cryptoutils.keystore_format.md)
-
-
-</td><td>
-
-Current format version constant.
-
-
-</td></tr>
-<tr><td>
-
-[MIN\_SALT\_LENGTH](./ts-chocolate.cryptoutils.min_salt_length.md)
-
-
-</td><td>
-
-Minimum salt length for key derivation.
-
-
-</td></tr>
-<tr><td>
 
 [nodeCryptoProvider](./ts-chocolate.cryptoutils.nodecryptoprovider.md)
 
@@ -527,28 +325,6 @@ Supported encryption algorithms.
 </td><td>
 
 Supported key derivation functions.
-
-
-</td></tr>
-<tr><td>
-
-[KeyStoreFormat](./ts-chocolate.cryptoutils.keystoreformat.md)
-
-
-</td><td>
-
-Format version for key store files.
-
-
-</td></tr>
-<tr><td>
-
-[KeyStoreLockState](./ts-chocolate.cryptoutils.keystorelockstate.md)
-
-
-</td><td>
-
-Key store lock state.
 
 
 </td></tr>

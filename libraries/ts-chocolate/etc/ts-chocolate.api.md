@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_4 } from '@fgv/ts-utils';
+import { Converters as Converters_5 } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
@@ -845,6 +845,16 @@ const confectionVersionSpec_2: Validator<ConfectionVersionSpec>;
 // @public
 const confectionYield: Converter<IConfectionYield>;
 
+declare namespace Constants {
+    export {
+        ENCRYPTED_COLLECTION_FORMAT,
+        DEFAULT_ALGORITHM,
+        AES_256_KEY_SIZE,
+        GCM_IV_SIZE,
+        GCM_AUTH_TAG_SIZE
+    }
+}
+
 // @public
 function containsIgnoreCase<T>(text: string, getter: (item: T) => string | undefined): FilterPredicate<T>;
 
@@ -937,6 +947,15 @@ export { Converters }
 
 declare namespace Converters_2 {
     export {
+        keystoreFormat,
+        keystoreSecretEntryJson,
+        keystoreVaultContents,
+        keystoreFile
+    }
+}
+
+declare namespace Converters_3 {
+    export {
         Confections,
         Fillings,
         Ingredients,
@@ -947,7 +966,7 @@ declare namespace Converters_2 {
     }
 }
 
-declare namespace Converters_3 {
+declare namespace Converters_4 {
     export {
         moldInventoryEntryBaseId,
         moldInventoryEntryId,
@@ -964,7 +983,7 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_5 {
+declare namespace Converters_6 {
     export {
         persistedSessionType,
         persistedSessionStatus,
@@ -978,9 +997,8 @@ declare namespace Converters_5 {
     }
 }
 
-declare namespace Converters_6 {
+declare namespace Converters_7 {
     export {
-        isEncryptedCollectionFile,
         encryptionAlgorithm,
         encryptedCollectionFormat,
         encryptedCollectionErrorMode,
@@ -994,7 +1012,7 @@ declare namespace Converters_6 {
     }
 }
 
-declare namespace Converters_7 {
+declare namespace Converters_8 {
     export {
         removeExtension,
         collectionSourceFile,
@@ -1046,10 +1064,7 @@ function createPersistedSessionId(collectionId: SourceId, baseId: SessionBaseId)
 declare namespace CryptoUtils {
     export {
         KeyStore,
-        Converters_6 as Converters,
-        KeyStoreConverters,
-        isEncryptedCollectionFile,
-        isKeyStoreFile,
+        Converters_7 as Converters,
         NodeCryptoProvider,
         nodeCryptoProvider,
         createEncryptedCollectionFile,
@@ -1057,6 +1072,7 @@ declare namespace CryptoUtils {
         tryDecryptCollectionFile,
         EncryptionHelper,
         ICreateEncryptedFileParams,
+        isEncryptedCollectionFile,
         EncryptionAlgorithm,
         EncryptedCollectionFormat,
         INamedSecret,
@@ -1069,25 +1085,7 @@ declare namespace CryptoUtils {
         EncryptedCollectionErrorMode,
         SecretProvider_2 as SecretProvider,
         IEncryptionConfig_2 as IEncryptionConfig,
-        ENCRYPTED_COLLECTION_FORMAT,
-        DEFAULT_ALGORITHM,
-        AES_256_KEY_SIZE,
-        GCM_IV_SIZE,
-        GCM_AUTH_TAG_SIZE,
-        KeyStoreFormat,
-        KEYSTORE_FORMAT,
-        DEFAULT_KEYSTORE_ITERATIONS,
-        MIN_SALT_LENGTH,
-        IKeyStoreSecretEntry,
-        IKeyStoreSecretEntryJson,
-        IKeyStoreVaultContents,
-        IKeyStoreFile,
-        KeyStoreLockState,
-        IKeyStoreCreateParams,
-        IKeyStoreOpenParams,
-        IAddSecretResult,
-        IAddSecretOptions,
-        IImportSecretOptions
+        Constants
     }
 }
 export { CryptoUtils }
@@ -1311,7 +1309,7 @@ class EncryptionHelper {
 
 declare namespace Entities {
     export {
-        Converters_2 as Converters,
+        Converters_3 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
         Ingredients_2 as Ingredients,
@@ -3654,7 +3652,7 @@ interface INumericRange {
 
 declare namespace Inventory {
     export {
-        Converters_3 as Converters,
+        Converters_4 as Converters,
         MoldInventoryLibrary,
         IMoldInventoryFileTreeSource,
         MoldInventoryMergeSource,
@@ -4983,7 +4981,7 @@ interface IWeightContribution {
 export interface IWorkspace {
     readonly isReady: boolean;
     readonly journals: JournalLibrary;
-    readonly keyStore: KeyStore | undefined;
+    readonly keyStore: KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
     readonly runtime: RuntimeContext;
     readonly sessions: SessionLibrary;
@@ -5013,7 +5011,7 @@ export interface IWorkspaceCreateParams {
 
 // @public
 export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'keyStore'> {
-    readonly keyStoreFile?: IKeyStoreFile;
+    readonly keyStoreFile?: KeyStore.IKeyStoreFile;
 }
 
 declare namespace Journal {
@@ -5163,41 +5161,53 @@ const keyDerivationFunction: Converter<KeyDerivationFunction>;
 // @public
 const keyDerivationParams: Converter<IKeyDerivationParams>;
 
+declare namespace KeyStore {
+    export {
+        Converters_2 as Converters,
+        KeyStore_2 as KeyStore,
+        isKeyStoreFile,
+        KeyStoreFormat,
+        KEYSTORE_FORMAT,
+        DEFAULT_KEYSTORE_ITERATIONS,
+        MIN_SALT_LENGTH,
+        IKeyStoreSecretEntry,
+        IKeyStoreSecretEntryJson,
+        IKeyStoreVaultContents,
+        IKeyStoreFile,
+        KeyStoreLockState,
+        IKeyStoreCreateParams,
+        IKeyStoreOpenParams,
+        IAddSecretResult,
+        IAddSecretOptions,
+        IImportSecretOptions
+    }
+}
+
 // @public
-class KeyStore {
+class KeyStore_2 {
     addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
-    changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore>>;
-    static create(params: IKeyStoreCreateParams): Result<KeyStore>;
+    changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
+    static create(params: IKeyStoreCreateParams): Result<KeyStore_2>;
     getEncryptionConfig(): Result<Pick<IEncryptionConfig_2, 'secretProvider' | 'cryptoProvider'>>;
     getSecret(name: string): Result<IKeyStoreSecretEntry>;
     getSecretProvider(): Result<SecretProvider_2>;
     hasSecret(name: string): Result<boolean>;
     importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
-    initialize(password: string): Promise<Result<KeyStore>>;
+    initialize(password: string): Promise<Result<KeyStore_2>>;
     get isDirty(): boolean;
     get isUnlocked(): boolean;
     listSecrets(): Result<readonly string[]>;
-    lock(force?: boolean): Result<KeyStore>;
-    static open(params: IKeyStoreOpenParams): Result<KeyStore>;
+    lock(force?: boolean): Result<KeyStore_2>;
+    static open(params: IKeyStoreOpenParams): Result<KeyStore_2>;
     removeSecret(name: string): Result<IKeyStoreSecretEntry>;
     renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
     save(password: string): Promise<Result<IKeyStoreFile>>;
     get state(): KeyStoreLockState;
-    unlock(password: string): Promise<Result<KeyStore>>;
+    unlock(password: string): Promise<Result<KeyStore_2>>;
 }
 
 // @public
 const KEYSTORE_FORMAT: KeyStoreFormat;
-
-declare namespace KeyStoreConverters {
-    export {
-        isKeyStoreFile,
-        keystoreFormat,
-        keystoreSecretEntryJson,
-        keystoreVaultContents,
-        keystoreFile
-    }
-}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5227,7 +5237,7 @@ const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
 
 declare namespace LibraryData {
     export {
-        Converters_7 as Converters,
+        Converters_8 as Converters,
         resolveSubLibraryLoadSpec,
         ICollectionSourceMetadata,
         ICollectionSourceFile,
@@ -5827,31 +5837,31 @@ function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'):
 function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
 
 // @public
-type ParsedConfectionId = Converters_4.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_5.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_4.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionVersionId = Converters_5.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 // @public
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_4.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_5.ICompositeId<SourceId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_4.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingVersionId = Converters_5.ICompositeId<FillingId, FillingVersionSpec>;
 
 // @public
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_4.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_5.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
@@ -5859,7 +5869,7 @@ const parsedIngredientId: Converter<ParsedIngredientId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, IngredientInventoryEntryBaseId>;
+type ParsedIngredientInventoryEntryId = Converters_5.ICompositeId<SourceId, IngredientInventoryEntryBaseId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5867,13 +5877,13 @@ type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, Ingr
 const parsedIngredientInventoryEntryId: Converter<ParsedIngredientInventoryEntryId>;
 
 // @public
-type ParsedJournalId = Converters_4.ICompositeId<SourceId, JournalBaseId>;
+type ParsedJournalId = Converters_5.ICompositeId<SourceId, JournalBaseId>;
 
 // @public
 const parsedJournalId: Converter<ParsedJournalId>;
 
 // @public
-type ParsedMoldId = Converters_4.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_5.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
@@ -5881,7 +5891,7 @@ const parsedMoldId: Converter<ParsedMoldId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
+type ParsedMoldInventoryEntryId = Converters_5.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5889,19 +5899,19 @@ type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInvent
 const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId>;
 
 // @public
-type ParsedPersistedSessionId = Converters_4.ICompositeId<SourceId, SessionBaseId>;
+type ParsedPersistedSessionId = Converters_5.ICompositeId<SourceId, SessionBaseId>;
 
 // @public
 const parsedPersistedSessionId: Converter<ParsedPersistedSessionId>;
 
 // @public
-type ParsedProcedureId = Converters_4.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_5.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedTaskId = Converters_4.ICompositeId<SourceId, BaseTaskId>;
+type ParsedTaskId = Converters_5.ICompositeId<SourceId, BaseTaskId>;
 
 // @public
 const parsedTaskId: Converter<ParsedTaskId>;
@@ -6933,7 +6943,7 @@ declare namespace Session {
 
 declare namespace Session_2 {
     export {
-        Converters_5 as Converters,
+        Converters_6 as Converters,
         isPersistedFillingSession,
         isPersistedConfectionSession,
         PERSISTED_SESSION_SCHEMA_VERSION,
@@ -7591,7 +7601,7 @@ export class Workspace implements IWorkspace {
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
     get isReady(): boolean;
     get journals(): JournalLibrary;
-    get keyStore(): KeyStore | undefined;
+    get keyStore(): KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
     get runtime(): RuntimeContext;
     get sessions(): SessionLibrary;

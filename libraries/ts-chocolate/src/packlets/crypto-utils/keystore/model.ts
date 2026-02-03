@@ -241,3 +241,22 @@ export interface IImportSecretOptions extends IAddSecretOptions {
    */
   readonly replace?: boolean;
 }
+
+// ============================================================================
+// Detection Helper
+// ============================================================================
+
+/**
+ * Checks if a JSON object appears to be a key store file.
+ * Uses the format field as a discriminator.
+ * @param json - JSON object to check
+ * @returns true if the object has the key store format field
+ * @public
+ */
+export function isKeyStoreFile(json: unknown): boolean {
+  if (typeof json !== 'object' || json === null) {
+    return false;
+  }
+  const obj = json as Record<string, unknown>;
+  return obj.format === KEYSTORE_FORMAT;
+}

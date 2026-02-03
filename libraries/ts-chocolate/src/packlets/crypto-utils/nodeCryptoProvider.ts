@@ -20,13 +20,7 @@
 
 import * as crypto from 'crypto';
 import { captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
-import {
-  AES_256_KEY_SIZE,
-  GCM_AUTH_TAG_SIZE,
-  GCM_IV_SIZE,
-  ICryptoProvider,
-  IEncryptionResult
-} from './model';
+import { Constants as CryptoConstants, ICryptoProvider, IEncryptionResult } from './model';
 
 /**
  * Node.js implementation of {@link CryptoUtils.ICryptoProvider | ICryptoProvider} using the built-in crypto module.
@@ -42,12 +36,12 @@ export class NodeCryptoProvider implements ICryptoProvider {
    */
   public async encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>> {
     return captureResult(() => {
-      if (key.length !== AES_256_KEY_SIZE) {
-        throw new Error(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+      if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
+        throw new Error(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
       }
 
       // Generate random IV
-      const iv = crypto.randomBytes(GCM_IV_SIZE);
+      const iv = crypto.randomBytes(CryptoConstants.GCM_IV_SIZE);
 
       // Create cipher
       const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -80,14 +74,14 @@ export class NodeCryptoProvider implements ICryptoProvider {
     iv: Uint8Array,
     authTag: Uint8Array
   ): Promise<Result<string>> {
-    if (key.length !== AES_256_KEY_SIZE) {
-      return fail(`Key must be ${AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
+      return fail(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
-    if (iv.length !== GCM_IV_SIZE) {
-      return fail(`IV must be ${GCM_IV_SIZE} bytes, got ${iv.length}`);
+    if (iv.length !== CryptoConstants.GCM_IV_SIZE) {
+      return fail(`IV must be ${CryptoConstants.GCM_IV_SIZE} bytes, got ${iv.length}`);
     }
-    if (authTag.length !== GCM_AUTH_TAG_SIZE) {
-      return fail(`Auth tag must be ${GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`);
+    if (authTag.length !== CryptoConstants.GCM_AUTH_TAG_SIZE) {
+      return fail(`Auth tag must be ${CryptoConstants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`);
     }
 
     return captureResult(() => {
@@ -110,7 +104,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
    */
   public async generateKey(): Promise<Result<Uint8Array>> {
     return captureResult(() => {
-      const key = crypto.randomBytes(AES_256_KEY_SIZE);
+      const key = crypto.randomBytes(CryptoConstants.AES_256_KEY_SIZE);
       return new Uint8Array(key);
     });
   }
@@ -139,7 +133,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
         password,
         Buffer.from(salt),
         iterations,
-        AES_256_KEY_SIZE,
+        CryptoConstants.AES_256_KEY_SIZE,
         'sha256',
         (err, derivedKey) => {
           /* c8 ignore next 3 - PBKDF2 internal errors are hard to trigger with valid parameters */

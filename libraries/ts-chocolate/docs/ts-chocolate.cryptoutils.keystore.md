@@ -2,58 +2,41 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [CryptoUtils](./ts-chocolate.cryptoutils.md) &gt; [KeyStore](./ts-chocolate.cryptoutils.keystore.md)
 
-## CryptoUtils.KeyStore class
+## CryptoUtils.KeyStore namespace
+
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[KeyStore](./ts-chocolate.cryptoutils.keystore.keystore.md)
+
+
+</td><td>
 
 Password-protected key store for managing encryption secrets.
 
 The KeyStore provides a secure vault for storing named encryption keys. The vault is encrypted at rest using a master password via PBKDF2 key derivation.
 
-**Signature:**
 
-```typescript
-export declare class KeyStore 
-```
+</td></tr>
+</tbody></table>
 
-## Example
-
-
-```typescript
-// Create new key store
-const keystore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
-await keystore.initialize('master-password');
-
-// Add secrets
-await keystore.addSecret('my-key', { description: 'Production key' });
-
-// Save to file
-const fileContent = await keystore.save();
-
-// Later: Open existing key store
-const keystore2 = KeyStore.open({
-  cryptoProvider: nodeCryptoProvider,
-  keystoreFile: fileContent.value
-}).orThrow();
-await keystore2.unlock('master-password');
-
-// Use as secret provider for library loading
-const encryptionConfig = keystore2.getEncryptionConfig().orThrow();
-```
-
-## Properties
+## Functions
 
 <table><thead><tr><th>
 
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
+Function
 
 
 </th><th>
@@ -64,79 +47,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isDirty](./ts-chocolate.cryptoutils.keystore.isdirty.md)
+[isKeyStoreFile(json)](./ts-chocolate.cryptoutils.keystore.iskeystorefile.md)
 
 
 </td><td>
 
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-Checks if there are unsaved changes.
-
-
-</td></tr>
-<tr><td>
-
-[isUnlocked](./ts-chocolate.cryptoutils.keystore.isunlocked.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-Checks if the key store is unlocked.
-
-
-</td></tr>
-<tr><td>
-
-[state](./ts-chocolate.cryptoutils.keystore.state.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[KeyStoreLockState](./ts-chocolate.cryptoutils.keystorelockstate.md)
-
-
-</td><td>
-
-Gets the current lock state.
+Checks if a JSON object appears to be a key store file. Uses the format field as a discriminator.
 
 
 </td></tr>
 </tbody></table>
 
-## Methods
+## Interfaces
 
 <table><thead><tr><th>
 
-Method
-
-
-</th><th>
-
-Modifiers
+Interface
 
 
 </th><th>
@@ -147,229 +73,209 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[addSecret(name, options)](./ts-chocolate.cryptoutils.keystore.addsecret.md)
+[IAddSecretOptions](./ts-chocolate.cryptoutils.keystore.iaddsecretoptions.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Adds a new secret with a randomly generated key.
+Options for adding a secret.
 
 
 </td></tr>
 <tr><td>
 
-[changePassword(currentPassword, newPassword)](./ts-chocolate.cryptoutils.keystore.changepassword.md)
+[IAddSecretResult](./ts-chocolate.cryptoutils.keystore.iaddsecretresult.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Changes the master password. Re-encrypts the vault with the new password-derived key.
+Result of adding a secret to the key store.
 
 
 </td></tr>
 <tr><td>
 
-[create(params)](./ts-chocolate.cryptoutils.keystore.create.md)
+[IImportSecretOptions](./ts-chocolate.cryptoutils.keystore.iimportsecretoptions.md)
 
 
 </td><td>
 
-`static`
-
-
-</td><td>
-
-Creates a new, empty key store. Call `initialize(password)` to set the master password.
+Options for importing a secret.
 
 
 </td></tr>
 <tr><td>
 
-[getEncryptionConfig()](./ts-chocolate.cryptoutils.keystore.getencryptionconfig.md)
+[IKeyStoreCreateParams](./ts-chocolate.cryptoutils.keystore.ikeystorecreateparams.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Creates a partial IEncryptionConfig using this key store as the secret source.
+Parameters for creating a new key store.
 
 
 </td></tr>
 <tr><td>
 
-[getSecret(name)](./ts-chocolate.cryptoutils.keystore.getsecret.md)
+[IKeyStoreFile](./ts-chocolate.cryptoutils.keystore.ikeystorefile.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Gets a secret by name.
+The encrypted key store file format. Similar to IEncryptedCollectionFile but specialized for key store.
 
 
 </td></tr>
 <tr><td>
 
-[getSecretProvider()](./ts-chocolate.cryptoutils.keystore.getsecretprovider.md)
+[IKeyStoreOpenParams](./ts-chocolate.cryptoutils.keystore.ikeystoreopenparams.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Creates a SecretProvider function for use with IEncryptionConfig. The returned function looks up secrets from this key store.
+Parameters for opening an existing key store.
 
 
 </td></tr>
 <tr><td>
 
-[hasSecret(name)](./ts-chocolate.cryptoutils.keystore.hassecret.md)
+[IKeyStoreSecretEntry](./ts-chocolate.cryptoutils.keystore.ikeystoresecretentry.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Checks if a secret exists.
+A secret entry stored in the vault (in-memory representation).
 
 
 </td></tr>
 <tr><td>
 
-[importSecret(name, key, options)](./ts-chocolate.cryptoutils.keystore.importsecret.md)
+[IKeyStoreSecretEntryJson](./ts-chocolate.cryptoutils.keystore.ikeystoresecretentryjson.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Imports an existing secret key.
+JSON-serializable version of secret entry (for storage).
 
 
 </td></tr>
 <tr><td>
 
-[initialize(password)](./ts-chocolate.cryptoutils.keystore.initialize.md)
+[IKeyStoreVaultContents](./ts-chocolate.cryptoutils.keystore.ikeystorevaultcontents.md)
+
+
+</td><td>
+
+The decrypted vault contents - a versioned map of secrets.
+
+
+</td></tr>
+</tbody></table>
+
+## Namespaces
+
+<table><thead><tr><th>
+
+Namespace
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converters](./ts-chocolate.cryptoutils.keystore.converters.md)
 
 
 </td><td>
 
 
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[DEFAULT\_KEYSTORE\_ITERATIONS](./ts-chocolate.cryptoutils.keystore.default_keystore_iterations.md)
+
+
 </td><td>
 
-Initializes a new key store with the master password. Generates a random salt for key derivation. Only valid for newly created (not opened) key stores.
+Default PBKDF2 iterations for key store encryption. Higher than collection files since this protects the master key vault.
 
 
 </td></tr>
 <tr><td>
 
-[listSecrets()](./ts-chocolate.cryptoutils.keystore.listsecrets.md)
+[KEYSTORE\_FORMAT](./ts-chocolate.cryptoutils.keystore.keystore_format.md)
 
 
 </td><td>
 
-
-</td><td>
-
-Lists all secret names in the key store.
+Current format version constant.
 
 
 </td></tr>
 <tr><td>
 
-[lock(force)](./ts-chocolate.cryptoutils.keystore.lock.md)
+[MIN\_SALT\_LENGTH](./ts-chocolate.cryptoutils.keystore.min_salt_length.md)
 
 
 </td><td>
 
+Minimum salt length for key derivation.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[KeyStoreFormat](./ts-chocolate.cryptoutils.keystore.keystoreformat.md)
+
 
 </td><td>
 
-Locks the key store, clearing all secrets from memory.
+Format version for key store files.
 
 
 </td></tr>
 <tr><td>
 
-[open(params)](./ts-chocolate.cryptoutils.keystore.open.md)
+[KeyStoreLockState](./ts-chocolate.cryptoutils.keystore.keystorelockstate.md)
 
 
 </td><td>
 
-`static`
-
-
-</td><td>
-
-Opens an existing encrypted key store. Call `unlock(password)` to decrypt and access secrets.
-
-
-</td></tr>
-<tr><td>
-
-[removeSecret(name)](./ts-chocolate.cryptoutils.keystore.removesecret.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Removes a secret by name.
-
-
-</td></tr>
-<tr><td>
-
-[renameSecret(oldName, newName)](./ts-chocolate.cryptoutils.keystore.renamesecret.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Renames a secret.
-
-
-</td></tr>
-<tr><td>
-
-[save(password)](./ts-chocolate.cryptoutils.keystore.save.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Saves the key store, returning the encrypted file content. Requires the master password to encrypt.
-
-
-</td></tr>
-<tr><td>
-
-[unlock(password)](./ts-chocolate.cryptoutils.keystore.unlock.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Unlocks an existing key store with the master password. Decrypts the vault and loads secrets into memory.
+Key store lock state.
 
 
 </td></tr>

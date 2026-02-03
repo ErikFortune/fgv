@@ -28,17 +28,12 @@
 export * from './model';
 
 // Key store types and class
-export * from './keystore/model';
-export { KeyStore } from './keystore/keyStore';
+import * as KeyStore from './keystore';
+export { KeyStore };
 
 // Converters namespace
 import * as Converters from './converters';
-import * as KeyStoreConverters from './keystore/converters';
-export { Converters, KeyStoreConverters };
-
-// Re-export the detection helpers directly for convenience
-export { isEncryptedCollectionFile } from './converters';
-export { isKeyStoreFile } from './keystore/converters';
+export { Converters };
 
 // Browser crypto provider only (no Node.js provider)
 export { BrowserCryptoProvider, createBrowserCryptoProvider } from './browserCryptoProvider';

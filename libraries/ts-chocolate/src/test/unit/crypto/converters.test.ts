@@ -22,8 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import {
   Converters,
-  ENCRYPTED_COLLECTION_FORMAT,
-  DEFAULT_ALGORITHM,
+  Constants as CryptoConstants,
   isEncryptedCollectionFile
 } from '../../../packlets/crypto-utils';
 
@@ -123,9 +122,9 @@ describe('Crypto Converters', () => {
 
   describe('encryptedCollectionFile', () => {
     const validTombstone = {
-      format: ENCRYPTED_COLLECTION_FORMAT,
+      format: CryptoConstants.ENCRYPTED_COLLECTION_FORMAT,
       secretName: 'my-secret',
-      algorithm: DEFAULT_ALGORITHM,
+      algorithm: CryptoConstants.DEFAULT_ALGORITHM,
       iv: 'AAAAAAAAAAAAAAAA',
       authTag: 'AAAAAAAAAAAAAAAAAAAAAA==',
       encryptedData: 'SGVsbG8gV29ybGQ='
@@ -133,9 +132,9 @@ describe('Crypto Converters', () => {
 
     test('accepts valid tombstone without metadata', () => {
       expect(Converters.encryptedCollectionFile.convert(validTombstone)).toSucceedAndSatisfy((result) => {
-        expect(result.format).toBe(ENCRYPTED_COLLECTION_FORMAT);
+        expect(result.format).toBe(CryptoConstants.ENCRYPTED_COLLECTION_FORMAT);
         expect(result.secretName).toBe('my-secret');
-        expect(result.algorithm).toBe(DEFAULT_ALGORITHM);
+        expect(result.algorithm).toBe(CryptoConstants.DEFAULT_ALGORITHM);
       });
     });
 
@@ -219,7 +218,7 @@ describe('Crypto Converters', () => {
 
   describe('isEncryptedCollectionFile', () => {
     test('returns true for valid tombstone format', () => {
-      expect(isEncryptedCollectionFile({ format: ENCRYPTED_COLLECTION_FORMAT })).toBe(true);
+      expect(isEncryptedCollectionFile({ format: CryptoConstants.ENCRYPTED_COLLECTION_FORMAT })).toBe(true);
     });
 
     test('returns false for wrong format value', () => {

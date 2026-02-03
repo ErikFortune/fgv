@@ -38,7 +38,7 @@
 import { fail, Result } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { ICryptoProvider, IKeyStoreFile } from '../crypto-utils';
+import { ICryptoProvider, KeyStore } from '../crypto-utils';
 import { FullLibraryLoadSpec, ILibraryFileTreeSource, SubLibraryId } from '../library-data';
 import {
   DeviceId,
@@ -116,7 +116,7 @@ export interface IPlatformInitResult {
   /**
    * The key store file contents, if found.
    */
-  readonly keyStoreFile?: IKeyStoreFile;
+  readonly keyStoreFile?: KeyStore.IKeyStoreFile;
 
   /**
    * The common settings (loaded from file or defaults).
@@ -354,7 +354,7 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
   }
 
   // Create key store configuration if we have a key store file
-  let keyStoreConfig: { file?: IKeyStoreFile; cryptoProvider: ICryptoProvider } | undefined;
+  let keyStoreConfig: { file?: KeyStore.IKeyStoreFile; cryptoProvider: ICryptoProvider } | undefined;
   if (platformInit.keyStoreFile || platformInit.cryptoProvider) {
     keyStoreConfig = {
       file: platformInit.keyStoreFile,

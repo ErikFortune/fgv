@@ -21,12 +21,12 @@
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import {
-  DEFAULT_ALGORITHM,
-  ENCRYPTED_COLLECTION_FORMAT,
+  Constants as CryptoConstants,
   ICryptoProvider,
   IEncryptedCollectionFile,
   IEncryptedCollectionMetadata,
-  IKeyDerivationParams
+  IKeyDerivationParams,
+  isEncryptedCollectionFile
 } from './model';
 import * as Convert from './converters';
 
@@ -142,9 +142,9 @@ export async function createEncryptedCollectionFile(
 
   // Build the tombstone structure
   const tombstone: IEncryptedCollectionFile = {
-    format: ENCRYPTED_COLLECTION_FORMAT,
+    format: CryptoConstants.ENCRYPTED_COLLECTION_FORMAT,
     secretName,
-    algorithm: DEFAULT_ALGORITHM,
+    algorithm: CryptoConstants.DEFAULT_ALGORITHM,
     iv: toBase64(iv),
     authTag: toBase64(authTag),
     encryptedData: toBase64(encryptedData),
@@ -199,7 +199,7 @@ export async function tryDecryptCollectionFile(
   cryptoProvider: ICryptoProvider
 ): Promise<Result<JsonObject>> {
   // Check if it's an encrypted file
-  if (!Convert.isEncryptedCollectionFile(json)) {
+  if (!isEncryptedCollectionFile(json)) {
     return fail('Not an encrypted collection file');
   }
 
@@ -299,6 +299,6 @@ export class EncryptionHelper {
    * @returns true if the JSON is an encrypted collection file
    */
   public isEncrypted(json: unknown): boolean {
-    return Convert.isEncryptedCollectionFile(json);
+    return isEncryptedCollectionFile(json);
   }
 }

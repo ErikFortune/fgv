@@ -81,7 +81,7 @@ describe('Workspace', () => {
 
     test('creates workspace with existing key store file', async () => {
       // First create and initialize a key store
-      const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+      const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
       await keyStore.initialize('test-password');
       const keystoreFile = (await keyStore.save('test-password')).orThrow();
 
@@ -162,7 +162,7 @@ describe('Workspace', () => {
 
     test('lock succeeds when key store is already locked', async () => {
       // Create key store file
-      const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+      const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
       await keyStore.initialize('test-password');
       const keystoreFile = (await keyStore.save('test-password')).orThrow();
 
@@ -197,7 +197,7 @@ describe('Workspace', () => {
 
     test('full lock/unlock cycle works', async () => {
       // Create key store file
-      const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+      const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
       await keyStore.initialize('test-password');
       const keystoreFile = (await keyStore.save('test-password')).orThrow();
 
@@ -226,7 +226,7 @@ describe('Workspace', () => {
 
     test('unlock fails with wrong password', async () => {
       // Create key store file
-      const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+      const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
       await keyStore.initialize('correct-password');
       const keystoreFile = (await keyStore.save('correct-password')).orThrow();
 
@@ -250,7 +250,7 @@ describe('Workspace', () => {
     });
 
     test('returns locked when key store is locked', async () => {
-      const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+      const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
       await keyStore.initialize('test-password');
       const keystoreFile = (await keyStore.save('test-password')).orThrow();
 
@@ -265,7 +265,7 @@ describe('Workspace', () => {
     });
 
     test('returns unlocked when key store is unlocked', async () => {
-      const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+      const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
       await keyStore.initialize('test-password');
       const keystoreFile = (await keyStore.save('test-password')).orThrow();
 
@@ -293,7 +293,7 @@ describe('createNodeWorkspace', () => {
 
   test('creates workspace with keystore file', async () => {
     // First create and initialize a key store
-    const keyStore = KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
+    const keyStore = KeyStore.KeyStore.create({ cryptoProvider: nodeCryptoProvider }).orThrow();
     await keyStore.initialize('test-password');
     const keystoreFile = (await keyStore.save('test-password')).orThrow();
 
