@@ -124,7 +124,7 @@ Check if validation report indicates success. Convenience function for checking 
 </td></tr>
 <tr><td>
 
-[parseCollection(content)](./ts-chocolate.editing.parsecollection.md)
+[parseCollection(content, itemConverter)](./ts-chocolate.editing.parsecollection.md)
 
 
 </td><td>
@@ -135,7 +135,7 @@ Parse content based on detected format. Attempts to auto-detect format from cont
 </td></tr>
 <tr><td>
 
-[parseCollectionWithFormat(content, format)](./ts-chocolate.editing.parsecollectionwithformat.md)
+[parseCollectionWithFormat(content, format, itemConverter)](./ts-chocolate.editing.parsecollectionwithformat.md)
 
 
 </td><td>
@@ -146,7 +146,7 @@ Parse content with explicit format.
 </td></tr>
 <tr><td>
 
-[parseJson(content)](./ts-chocolate.editing.parsejson.md)
+[parseJson(content, itemConverter)](./ts-chocolate.editing.parsejson.md)
 
 
 </td><td>
@@ -157,7 +157,7 @@ Parse a JSON string into a collection source file.
 </td></tr>
 <tr><td>
 
-[parseYaml(content)](./ts-chocolate.editing.parseyaml.md)
+[parseYaml(content, itemConverter)](./ts-chocolate.editing.parseyaml.md)
 
 
 </td><td>
@@ -201,7 +201,7 @@ Serialize a collection to YAML string.
 </td></tr>
 <tr><td>
 
-[validateAndParseCollection(content, format)](./ts-chocolate.editing.validateandparsecollection.md)
+[validateAndParseCollection(content, itemConverter, format)](./ts-chocolate.editing.validateandparsecollection.md)
 
 
 </td><td>

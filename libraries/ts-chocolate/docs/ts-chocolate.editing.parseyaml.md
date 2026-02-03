@@ -9,7 +9,7 @@ Parse a YAML string into a collection source file.
 **Signature:**
 
 ```typescript
-export declare function parseYaml<T>(content: string): Result<ICollectionSourceFile<T>>;
+export declare function parseYaml<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 YAML string content
+
+
+</td></tr>
+<tr><td>
+
+itemConverter
+
+
+</td><td>
+
+Converter&lt;T&gt;
+
+
+</td><td>
+
+Converter for validating collection items
 
 
 </td></tr>

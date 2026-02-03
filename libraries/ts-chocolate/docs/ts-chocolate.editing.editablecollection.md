@@ -230,6 +230,22 @@ Export collection to ICollectionSourceFile format.
 </td></tr>
 <tr><td>
 
+[fromJson(content, params)](./ts-chocolate.editing.editablecollection.fromjson.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Parse a JSON string and create an editable collection.
+
+
+</td></tr>
+<tr><td>
+
 [fromLibrary(library, collectionId, keyConverter, valueConverter)](./ts-chocolate.editing.editablecollection.fromlibrary.md)
 
 
@@ -243,6 +259,22 @@ Export collection to ICollectionSourceFile format.
 Create an editable collection from a SubLibrary collection with persistence enabled.
 
 This convenience method automatically retrieves the sourceItem from the library to enable direct save() functionality.
+
+
+</td></tr>
+<tr><td>
+
+[fromYaml(content, params)](./ts-chocolate.editing.editablecollection.fromyaml.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Parse a YAML string and create an editable collection.
 
 
 </td></tr>
@@ -262,6 +294,22 @@ Check if the source file has unsaved changes. Only applicable if the collection 
 </td></tr>
 <tr><td>
 
+[parse(content, params)](./ts-chocolate.editing.editablecollection.parse.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Parse content (auto-detecting format) and create an editable collection.
+
+
+</td></tr>
+<tr><td>
+
 [save()](./ts-chocolate.editing.editablecollection.save.md)
 
 
@@ -271,6 +319,48 @@ Check if the source file has unsaved changes. Only applicable if the collection 
 </td><td>
 
 Save the collection to its source file using FileTree persistence. Requires a sourceItem with a mutable FileTree.
+
+
+</td></tr>
+<tr><td>
+
+[serialize(format, options)](./ts-chocolate.editing.editablecollection.serialize.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Serialize collection to string based on format.
+
+
+</td></tr>
+<tr><td>
+
+[serializeToJson(options)](./ts-chocolate.editing.editablecollection.serializetojson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Serialize collection to JSON string.
+
+
+</td></tr>
+<tr><td>
+
+[serializeToYaml(options)](./ts-chocolate.editing.editablecollection.serializetoyaml.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Serialize collection to YAML string.
 
 
 </td></tr>

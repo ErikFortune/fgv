@@ -31,7 +31,8 @@ import {
 import { FileTree } from '@fgv/ts-json-base';
 import { SourceId } from '../common';
 import { ICollectionSourceFile, ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
-import { serializeToYaml } from './exportImport';
+import { serializeToYaml, serializeToJson, parseYaml, parseJson, parseCollection } from './exportImport';
+import { IExportOptions } from './model';
 
 // ============================================================================
 // Parameters for Creating Editable Collections
@@ -172,6 +173,93 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   }
 
   /**
+   * Parse a YAML string and create an editable collection.
+   * @param content - YAML string content
+   * @param params - Collection creation parameters (without initialItems)
+   * @returns Result containing EditableCollection or failure
+   * @public
+   */
+  public static fromYaml<T, TBaseId extends string = string>(
+    content: string,
+    params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>
+  ): Result<EditableCollection<T, TBaseId>> {
+    return parseYaml<T>(content, params.valueConverter).onSuccess((sourceFile) => {
+      const itemsMap = new Map<TBaseId, T>();
+      for (const [key, value] of Object.entries(sourceFile.items)) {
+        const keyResult = params.keyConverter.convert(key);
+        if (keyResult.isFailure()) {
+          return Failure.with(`Invalid key "${key}": ${keyResult.message}`);
+        }
+        itemsMap.set(keyResult.value, value);
+      }
+
+      return EditableCollection.createEditable({
+        ...params,
+        metadata: sourceFile.metadata ?? params.metadata,
+        initialItems: itemsMap
+      });
+    });
+  }
+
+  /**
+   * Parse a JSON string and create an editable collection.
+   * @param content - JSON string content
+   * @param params - Collection creation parameters (without initialItems)
+   * @returns Result containing EditableCollection or failure
+   * @public
+   */
+  public static fromJson<T, TBaseId extends string = string>(
+    content: string,
+    params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>
+  ): Result<EditableCollection<T, TBaseId>> {
+    return parseJson<T>(content, params.valueConverter).onSuccess((sourceFile) => {
+      const itemsMap = new Map<TBaseId, T>();
+      for (const [key, value] of Object.entries(sourceFile.items)) {
+        const keyResult = params.keyConverter.convert(key);
+        if (keyResult.isFailure()) {
+          return Failure.with(`Invalid key "${key}": ${keyResult.message}`);
+        }
+        itemsMap.set(keyResult.value, value);
+      }
+
+      return EditableCollection.createEditable({
+        ...params,
+        metadata: sourceFile.metadata ?? params.metadata,
+        initialItems: itemsMap
+      });
+    });
+  }
+
+  /**
+   * Parse content (auto-detecting format) and create an editable collection.
+   * @param content - String content to parse (YAML or JSON)
+   * @param params - Collection creation parameters (without initialItems)
+   * @returns Result containing EditableCollection or failure
+   * @public
+   */
+  public static parse<T, TBaseId extends string = string>(
+    content: string,
+    params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>
+  ): Result<EditableCollection<T, TBaseId>> {
+    return parseCollection<T>(content, params.valueConverter).onSuccess((sourceFile) => {
+      const itemsMap = new Map<TBaseId, T>();
+      for (const [key, value] of Object.entries(sourceFile.items)) {
+        const keyResult = params.keyConverter.convert(key);
+        if (keyResult.isFailure()) {
+          return Failure.with(`Invalid key "${key}": ${keyResult.message}`);
+        }
+        itemsMap.set(keyResult.value, value);
+      }
+
+      return EditableCollection.createEditable({
+        ...params,
+        metadata: sourceFile.metadata ?? params.metadata,
+        initialItems: itemsMap
+      });
+    });
+  }
+
+  /**
    * Create an editable collection from a SubLibrary collection with persistence enabled.
    *
    * This convenience method automatically retrieves the sourceItem from the library
@@ -266,6 +354,37 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     return Success.with(sourceFile);
   }
 
+  /**
+   * Serialize collection to YAML string.
+   * @param options - Optional export options
+   * @returns Result containing YAML string or failure
+   */
+  public serializeToYaml(options?: IExportOptions): Result<string> {
+    return this.export().onSuccess((sourceFile) => serializeToYaml(sourceFile, options));
+  }
+
+  /**
+   * Serialize collection to JSON string.
+   * @param options - Optional export options
+   * @returns Result containing JSON string or failure
+   */
+  public serializeToJson(options?: IExportOptions): Result<string> {
+    return this.export().onSuccess((sourceFile) => serializeToJson(sourceFile, options));
+  }
+
+  /**
+   * Serialize collection to string based on format.
+   * @param format - Export format ('yaml' or 'json')
+   * @param options - Optional export options
+   * @returns Result containing serialized string or failure
+   */
+  public serialize(format: 'yaml' | 'json', options?: IExportOptions): Result<string> {
+    if (format === 'yaml') {
+      return this.serializeToYaml(options);
+    }
+    return this.serializeToJson(options);
+  }
+
   // ==========================================================================
   // Persistence Methods (Phase 2)
   // ==========================================================================
@@ -329,15 +448,13 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
       );
     }
 
-    // Export to source file format and serialize to YAML
-    return this.export()
-      .onSuccess((sourceFile) => serializeToYaml(sourceFile))
-      .onSuccess((yaml) => {
-        // Use the file item's setRawContents method to save
-        return (this.sourceItem as FileTree.IFileTreeFileItem)
-          .setRawContents(yaml)
-          .onSuccess(() => Success.with(undefined));
-      });
+    // Serialize to YAML
+    return this.serializeToYaml().onSuccess((yaml) => {
+      // Use the file item's setRawContents method to save
+      return (this.sourceItem as FileTree.IFileTreeFileItem)
+        .setRawContents(yaml)
+        .onSuccess(() => Success.with(undefined));
+    });
   }
 
   // ==========================================================================

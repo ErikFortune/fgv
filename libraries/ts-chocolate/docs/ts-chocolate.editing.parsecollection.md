@@ -9,7 +9,7 @@ Parse content based on detected format. Attempts to auto-detect format from cont
 **Signature:**
 
 ```typescript
-export declare function parseCollection<T>(content: string): Result<ICollectionSourceFile<T>>;
+export declare function parseCollection<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 String content to parse
+
+
+</td></tr>
+<tr><td>
+
+itemConverter
+
+
+</td><td>
+
+Converter&lt;T&gt;
+
+
+</td><td>
+
+Converter for validating collection items
 
 
 </td></tr>

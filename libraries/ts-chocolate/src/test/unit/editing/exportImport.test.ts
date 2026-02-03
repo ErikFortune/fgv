@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { Converters } from '@fgv/ts-utils';
 import {
   serializeToYaml,
   serializeToJson,
@@ -36,6 +37,11 @@ interface TestItem {
   name: string;
   value: number;
 }
+
+const testItemConverter = Converters.object<TestItem>({
+  name: Converters.string,
+  value: Converters.number
+});
 
 describe('serializeToYaml', () => {
   const testCollection: ICollectionSourceFile<TestItem> = {
@@ -189,7 +195,7 @@ items:
     value: 20
 `;
 
-    expect(parseYaml<TestItem>(yaml)).toSucceedAndSatisfy((collection) => {
+    expect(parseYaml<TestItem>(yaml, testItemConverter)).toSucceedAndSatisfy((collection) => {
       expect(collection.metadata?.name).toBe('Test Collection');
       expect(collection.items.item1).toEqual({ name: 'Item 1', value: 10 });
       expect(collection.items.item2).toEqual({ name: 'Item 2', value: 20 });
@@ -203,7 +209,7 @@ metadata:
 items: {}
 `;
 
-    expect(parseYaml<TestItem>(yaml)).toSucceedAndSatisfy((collection) => {
+    expect(parseYaml<TestItem>(yaml, testItemConverter)).toSucceedAndSatisfy((collection) => {
       expect(collection.metadata?.name).toBe('Empty Collection');
       expect(collection.items).toEqual({});
     });
@@ -211,18 +217,18 @@ items: {}
 
   test('should fail for invalid YAML', () => {
     const invalidYaml = 'metadata:\n  name: Test\n  invalid: [unclosed';
-    expect(parseYaml<TestItem>(invalidYaml)).toFailWith(/failed to parse yaml/i);
+    expect(parseYaml<TestItem>(invalidYaml, testItemConverter)).toFailWith(/failed to parse yaml/i);
   });
 
   test('should parse array YAML (arrays are objects in JS)', () => {
     const arrayYaml = '- item1\n- item2';
-    // Arrays are objects in JavaScript, so this will succeed but fail structure validation
-    expect(parseYaml<TestItem>(arrayYaml)).toSucceed();
+    // Arrays are objects in JavaScript, so parsing succeeds but validation will fail
+    expect(parseYaml<TestItem>(arrayYaml, testItemConverter)).toFail();
   });
 
   test('should fail for null YAML', () => {
     const nullYaml = 'null';
-    expect(parseYaml<TestItem>(nullYaml)).toFailWith(/yaml content must be an object/i);
+    expect(parseYaml<TestItem>(nullYaml, testItemConverter)).toFailWith(/yaml content must be an object/i);
   });
 });
 
@@ -239,7 +245,7 @@ describe('parseJson', () => {
       }
     });
 
-    expect(parseJson<TestItem>(json)).toSucceedAndSatisfy((collection) => {
+    expect(parseJson<TestItem>(json, testItemConverter)).toSucceedAndSatisfy((collection) => {
       expect(collection.metadata?.name).toBe('Test Collection');
       expect(collection.items.item1).toEqual({ name: 'Item 1', value: 10 });
     });
@@ -251,83 +257,89 @@ describe('parseJson', () => {
       items: {}
     });
 
-    expect(parseJson<TestItem>(json)).toSucceedAndSatisfy((collection) => {
+    expect(parseJson<TestItem>(json, testItemConverter)).toSucceedAndSatisfy((collection) => {
       expect(collection.items).toEqual({});
     });
   });
 
   test('should fail for invalid JSON', () => {
     const invalidJson = '{ "metadata": { "name": "Test", }'; // Trailing comma
-    expect(parseJson<TestItem>(invalidJson)).toFailWith(/failed to parse json/i);
+    expect(parseJson<TestItem>(invalidJson, testItemConverter)).toFailWith(/failed to parse json/i);
   });
 
   test('should parse array JSON (arrays are objects in JS)', () => {
     const arrayJson = '["item1", "item2"]';
-    // Arrays are objects in JavaScript, so this will succeed but fail structure validation
-    expect(parseJson<TestItem>(arrayJson)).toSucceed();
+    // Arrays are objects in JavaScript, so parsing succeeds but validation will fail
+    expect(parseJson<TestItem>(arrayJson, testItemConverter)).toFail();
   });
 
   test('should fail for null JSON', () => {
     const nullJson = 'null';
-    expect(parseJson<TestItem>(nullJson)).toFailWith(/json content must be an object/i);
+    expect(parseJson<TestItem>(nullJson, testItemConverter)).toFailWith(/json content must be an object/i);
   });
 });
 
 describe('parseCollection', () => {
   test('should parse JSON when content starts with {', () => {
     const json = '{"metadata":{"name":"Test"},"items":{}}';
-    expect(parseCollection<TestItem>(json)).toSucceedAndSatisfy((collection) => {
+    expect(parseCollection<TestItem>(json, testItemConverter)).toSucceedAndSatisfy((collection) => {
       expect(collection.metadata?.name).toBe('Test');
     });
   });
 
   test('should parse YAML when content does not start with { or [', () => {
     const yaml = 'metadata:\n  name: Test\nitems: {}';
-    expect(parseCollection<TestItem>(yaml)).toSucceedAndSatisfy((collection) => {
+    expect(parseCollection<TestItem>(yaml, testItemConverter)).toSucceedAndSatisfy((collection) => {
       expect(collection.metadata?.name).toBe('Test');
     });
   });
 
   test('should try YAML fallback for malformed JSON', () => {
     const yaml = 'metadata:\n  name: Test\nitems: {}';
-    expect(parseCollection<TestItem>(yaml)).toSucceed();
+    expect(parseCollection<TestItem>(yaml, testItemConverter)).toSucceed();
   });
 
   test('should fail for empty content', () => {
-    expect(parseCollection<TestItem>('')).toFailWith(/content is empty/i);
-    expect(parseCollection<TestItem>('   ')).toFailWith(/content is empty/i);
+    expect(parseCollection<TestItem>('', testItemConverter)).toFailWith(/content is empty/i);
+    expect(parseCollection<TestItem>('   ', testItemConverter)).toFailWith(/content is empty/i);
   });
 
   test('should handle content with leading whitespace', () => {
     const json = '  {"metadata":{"name":"Test"},"items":{}}';
-    expect(parseCollection<TestItem>(json)).toSucceed();
+    expect(parseCollection<TestItem>(json, testItemConverter)).toSucceed();
   });
 
   test('should fail when both YAML and JSON parsing fail', () => {
     const invalidContent = 'this is not valid YAML or JSON at all {{ [ } ]';
     // Will try to parse (fails), then fallback (also fails)
-    expect(parseCollection<TestItem>(invalidContent)).toFail();
+    expect(parseCollection<TestItem>(invalidContent, testItemConverter)).toFail();
   });
 });
 
 describe('parseCollectionWithFormat', () => {
   test('should parse YAML when format is yaml', () => {
     const yaml = 'metadata:\n  name: Test\nitems: {}';
-    expect(parseCollectionWithFormat<TestItem>(yaml, 'yaml')).toSucceedAndSatisfy((collection) => {
-      expect(collection.metadata?.name).toBe('Test');
-    });
+    expect(parseCollectionWithFormat<TestItem>(yaml, 'yaml', testItemConverter)).toSucceedAndSatisfy(
+      (collection) => {
+        expect(collection.metadata?.name).toBe('Test');
+      }
+    );
   });
 
   test('should parse JSON when format is json', () => {
     const json = '{"metadata":{"name":"Test"},"items":{}}';
-    expect(parseCollectionWithFormat<TestItem>(json, 'json')).toSucceedAndSatisfy((collection) => {
-      expect(collection.metadata?.name).toBe('Test');
-    });
+    expect(parseCollectionWithFormat<TestItem>(json, 'json', testItemConverter)).toSucceedAndSatisfy(
+      (collection) => {
+        expect(collection.metadata?.name).toBe('Test');
+      }
+    );
   });
 
   test('should fail for wrong format hint', () => {
     const yaml = 'metadata:\n  name: Test\nitems: {}';
-    expect(parseCollectionWithFormat<TestItem>(yaml, 'json')).toFailWith(/failed to parse json/i);
+    expect(parseCollectionWithFormat<TestItem>(yaml, 'json', testItemConverter)).toFailWith(
+      /failed to parse json/i
+    );
   });
 });
 
@@ -404,36 +416,44 @@ describe('validateCollectionStructure', () => {
 describe('validateAndParseCollection', () => {
   test('should validate and parse valid YAML', () => {
     const yaml = 'metadata:\n  name: Test\nitems:\n  item1:\n    name: Item\n    value: 10';
-    expect(validateAndParseCollection<TestItem>(yaml, 'yaml')).toSucceedAndSatisfy((collection) => {
-      expect(collection.metadata?.name).toBe('Test');
-      expect(collection.items.item1).toBeDefined();
-    });
+    expect(validateAndParseCollection<TestItem>(yaml, testItemConverter, 'yaml')).toSucceedAndSatisfy(
+      (collection) => {
+        expect(collection.metadata?.name).toBe('Test');
+        expect(collection.items.item1).toBeDefined();
+      }
+    );
   });
 
   test('should validate and parse valid JSON', () => {
     const json = '{"metadata":{"name":"Test"},"items":{"item1":{"name":"Item","value":10}}}';
-    expect(validateAndParseCollection<TestItem>(json, 'json')).toSucceedAndSatisfy((collection) => {
-      expect(collection.metadata?.name).toBe('Test');
-    });
+    expect(validateAndParseCollection<TestItem>(json, testItemConverter, 'json')).toSucceedAndSatisfy(
+      (collection) => {
+        expect(collection.metadata?.name).toBe('Test');
+      }
+    );
   });
 
   test('should auto-detect and parse JSON', () => {
     const json = '{"metadata":{"name":"Test"},"items":{}}';
-    expect(validateAndParseCollection<TestItem>(json)).toSucceed();
+    expect(validateAndParseCollection<TestItem>(json, testItemConverter)).toSucceed();
   });
 
   test('should auto-detect and parse YAML', () => {
     const yaml = 'metadata:\n  name: Test\nitems: {}';
-    expect(validateAndParseCollection<TestItem>(yaml)).toSucceed();
+    expect(validateAndParseCollection<TestItem>(yaml, testItemConverter)).toSucceed();
   });
 
   test('should fail for invalid structure', () => {
     const invalid = '{"metadata":{"name":"Test"}}'; // Missing items
-    expect(validateAndParseCollection<TestItem>(invalid, 'json')).toFailWith(/must have an "items" field/i);
+    expect(validateAndParseCollection<TestItem>(invalid, testItemConverter, 'json')).toFailWith(
+      /field items not found/i
+    );
   });
 
   test('should fail for malformed content', () => {
     const invalid = '{invalid json}';
-    expect(validateAndParseCollection<TestItem>(invalid, 'json')).toFailWith(/failed to parse/i);
+    expect(validateAndParseCollection<TestItem>(invalid, testItemConverter, 'json')).toFailWith(
+      /failed to parse/i
+    );
   });
 });

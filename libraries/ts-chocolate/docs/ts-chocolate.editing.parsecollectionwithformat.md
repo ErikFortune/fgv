@@ -9,7 +9,7 @@ Parse content with explicit format.
 **Signature:**
 
 ```typescript
-export declare function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
+export declare function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json', itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ format
 </td><td>
 
 Expected format ('yaml' or 'json')
+
+
+</td></tr>
+<tr><td>
+
+itemConverter
+
+
+</td><td>
+
+Converter&lt;T&gt;
+
+
+</td><td>
+
+Converter for validating collection items
 
 
 </td></tr>

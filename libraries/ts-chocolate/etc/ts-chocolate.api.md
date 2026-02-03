@@ -1051,11 +1051,17 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
     delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
     export(): Result<ICollectionSourceFile<T>>;
+    static fromJson<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: SourceId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
+    static fromYaml<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     isDirty(): boolean;
     readonly isMutable: boolean;
     get metadata(): ICollectionSourceMetadata;
+    static parse<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     save(): Result<void>;
+    serialize(format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
+    serializeToJson(options?: IExportOptions): Result<string>;
+    serializeToYaml(options?: IExportOptions): Result<string>;
     set(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     readonly sourceItem?: FileTree.FileTreeItem;
     update(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
@@ -5459,10 +5465,10 @@ function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(o
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-function parseCollection<T>(content: string): Result<ICollectionSourceFile<T>>;
+function parseCollection<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 
 // @public
-function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
+function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json', itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 
 // @public
 function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
@@ -5560,13 +5566,13 @@ function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
 function parseJournalId(id: JournalId): Result<ParsedJournalId>;
 
 // @public
-function parseJson<T>(content: string): Result<ICollectionSourceFile<T>>;
+function parseJson<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 
 // @public
 function parsePersistedSessionId(id: PersistedSessionId): Result<ParsedPersistedSessionId>;
 
 // @public
-function parseYaml<T>(content: string): Result<ICollectionSourceFile<T>>;
+function parseYaml<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 
 // @public
 export type Percentage = Brand<number, 'Percentage'>;
@@ -7010,7 +7016,7 @@ export { UserRuntime }
 function validateAlcoholFields(entity: Ingredient): Result<true>;
 
 // @public
-function validateAndParseCollection<T>(content: string, format?: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
+function validateAndParseCollection<T>(content: string, itemConverter: Converter<T>, format?: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
 
 // @public
 function validateChocolateFields(entity: Ingredient): Result<true>;

@@ -9,7 +9,7 @@ Validate and parse collection source file. Combines parsing and validation in on
 **Signature:**
 
 ```typescript
-export declare function validateAndParseCollection<T>(content: string, format?: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
+export declare function validateAndParseCollection<T>(content: string, itemConverter: Converter<T>, format?: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 String content to parse
+
+
+</td></tr>
+<tr><td>
+
+itemConverter
+
+
+</td><td>
+
+Converter&lt;T&gt;
+
+
+</td><td>
+
+Converter for validating collection items
 
 
 </td></tr>

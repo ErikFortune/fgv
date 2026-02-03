@@ -9,7 +9,7 @@ Parse a JSON string into a collection source file.
 **Signature:**
 
 ```typescript
-export declare function parseJson<T>(content: string): Result<ICollectionSourceFile<T>>;
+export declare function parseJson<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 JSON string content
+
+
+</td></tr>
+<tr><td>
+
+itemConverter
+
+
+</td><td>
+
+Converter&lt;T&gt;
+
+
+</td><td>
+
+Converter for validating collection items
 
 
 </td></tr>
