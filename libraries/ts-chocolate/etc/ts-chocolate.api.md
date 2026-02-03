@@ -554,6 +554,9 @@ class CollectionFilter<T extends string> {
 }
 
 // @public
+function collectionJsonConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
+
+// @public
 class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
     constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -580,6 +583,9 @@ function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Co
 
 // @public
 const collectionSourceMetadata: Converter<ICollectionSourceMetadata>;
+
+// @public
+function collectionYamlConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
 // @public
 type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
@@ -977,6 +983,8 @@ declare namespace Converters_6 {
         removeExtension,
         collectionSourceFile,
         collection,
+        collectionYamlConverter,
+        collectionJsonConverter,
         removeJsonExtension,
         collectionSourceMetadata,
         ICollectionConverterParams,
@@ -1066,6 +1074,7 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     readonly sourceItem?: FileTree.FileTreeItem;
     update(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     updateMetadata(metadata: Partial<ICollectionSourceMetadata>): Result<void>;
+    static validateStructure(data: unknown): Result<true>;
 }
 
 declare namespace Editing {
@@ -1089,12 +1098,6 @@ declare namespace Editing {
         serializeToYaml,
         serializeToJson,
         serializeCollection,
-        parseYaml,
-        parseJson,
-        parseCollection,
-        parseCollectionWithFormat,
-        validateCollectionStructure,
-        validateAndParseCollection,
         IEditorContextParams,
         EditorContext,
         IEditorContextValidatorParams,
@@ -5465,12 +5468,6 @@ function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(o
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-function parseCollection<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
-
-// @public
-function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json', itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
-
-// @public
 function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
 
 // @public
@@ -5566,13 +5563,7 @@ function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
 function parseJournalId(id: JournalId): Result<ParsedJournalId>;
 
 // @public
-function parseJson<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
-
-// @public
 function parsePersistedSessionId(id: PersistedSessionId): Result<ParsedPersistedSessionId>;
-
-// @public
-function parseYaml<T>(content: string, itemConverter: Converter<T>): Result<ICollectionSourceFile<T>>;
 
 // @public
 export type Percentage = Brand<number, 'Percentage'>;
@@ -7016,13 +7007,7 @@ export { UserRuntime }
 function validateAlcoholFields(entity: Ingredient): Result<true>;
 
 // @public
-function validateAndParseCollection<T>(content: string, itemConverter: Converter<T>, format?: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
-
-// @public
 function validateChocolateFields(entity: Ingredient): Result<true>;
-
-// @public
-function validateCollectionStructure(data: unknown): Result<true>;
 
 // @public
 function validateDairyFields(entity: Ingredient): Result<true>;

@@ -30,12 +30,34 @@ Returns a converter that validates a [collection](./ts-chocolate.librarydata.ico
 </td></tr>
 <tr><td>
 
+[collectionJsonConverter(itemConverter)](./ts-chocolate.librarydata.converters.collectionjsonconverter.md)
+
+
+</td><td>
+
+Creates a converter for JSON collection source files. Parses JSON string content and validates as a collection source file.
+
+
+</td></tr>
+<tr><td>
+
 [collectionSourceFile(itemConverter)](./ts-chocolate.librarydata.converters.collectionsourcefile.md)
 
 
 </td><td>
 
 Creates a converter for collection source files with the new format.
+
+
+</td></tr>
+<tr><td>
+
+[collectionYamlConverter(itemConverter)](./ts-chocolate.librarydata.converters.collectionyamlconverter.md)
+
+
+</td><td>
+
+Creates a converter for YAML collection source files. Parses YAML string content and validates as a collection source file.
 
 
 </td></tr>

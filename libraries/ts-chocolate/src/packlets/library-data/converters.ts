@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 import { Converter, Converters, Failure, Result, Success, Validator } from '@fgv/ts-utils';
-import { CryptoUtils } from '@fgv/ts-extras';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { CryptoUtils, Yaml } from '@fgv/ts-extras';
 import {
   EncryptedCollectionFile,
   ICollection,
@@ -154,3 +155,29 @@ export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata
  */
 export const encryptedCollectionFile: Converter<EncryptedCollectionFile> =
   CryptoUtils.Converters.createEncryptedFileConverter(encryptedCollectionMetadata);
+
+/**
+ * Creates a converter for YAML collection source files.
+ * Parses YAML string content and validates as a collection source file.
+ * @param itemConverter - Converter for individual collection items
+ * @returns Converter that parses YAML and validates as collection
+ * @public
+ */
+export function collectionYamlConverter<T>(
+  itemConverter: Converter<T> | Validator<T>
+): Converter<ICollectionSourceFile<T>> {
+  return Yaml.yamlConverter(collectionSourceFile(itemConverter));
+}
+
+/**
+ * Creates a converter for JSON collection source files.
+ * Parses JSON string content and validates as a collection source file.
+ * @param itemConverter - Converter for individual collection items
+ * @returns Converter that parses JSON and validates as collection
+ * @public
+ */
+export function collectionJsonConverter<T>(
+  itemConverter: Converter<T> | Validator<T>
+): Converter<ICollectionSourceFile<T>> {
+  return JsonConverters.jsonConverter(collectionSourceFile(itemConverter));
+}

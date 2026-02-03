@@ -26,6 +26,7 @@ import {
   Converters as BaseConverters,
   Result,
   StringConverter,
+  captureResult,
   fail,
   succeed
 } from '@fgv/ts-utils';
@@ -255,4 +256,30 @@ export function enumeratedValue<T>(
       return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
     }
   );
+}
+
+/**
+ * Creates a converter that parses JSON string content and then applies the supplied converter.
+ * @param converter - Converter to apply to the parsed JSON
+ * @returns Converter that parses JSON then validates
+ * @public
+ */
+export function jsonConverter<T>(converter: Converter<T>): Converter<T> {
+  return new Conversion.BaseConverter<T>((from: unknown): Result<T> => {
+    if (typeof from !== 'string') {
+      return fail('Input must be a string');
+    }
+
+    const parseResult = captureResult(() => JSON.parse(from));
+    if (parseResult.isFailure()) {
+      return fail(`Failed to parse JSON: ${parseResult.message}`);
+    }
+
+    const parsed = parseResult.value;
+    if (typeof parsed !== 'object' || parsed === null) {
+      return fail('Failed to parse JSON: JSON content must be an object');
+    }
+
+    return converter.convert(parsed);
+  });
 }

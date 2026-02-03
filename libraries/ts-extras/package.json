@@ -97,14 +97,16 @@
     "@rushstack/heft-jest-plugin": "1.1.7",
     "eslint-plugin-tsdoc": "~0.4.0",
     "@fgv/ts-utils-jest": "workspace:*",
-    "@fgv/ts-utils": "workspace:*"
+    "@fgv/ts-utils": "workspace:*",
+    "@types/js-yaml": "~4.0.9"
   },
   "dependencies": {
     "luxon": "^3.7.2",
     "mustache": "^4.2.0",
     "papaparse": "^5.4.1",
     "fflate": "~0.8.2",
-    "@fgv/ts-json-base": "workspace:*"
+    "@fgv/ts-json-base": "workspace:*",
+    "js-yaml": "~4.1.1"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

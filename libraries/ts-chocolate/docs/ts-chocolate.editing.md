@@ -124,50 +124,6 @@ Check if validation report indicates success. Convenience function for checking 
 </td></tr>
 <tr><td>
 
-[parseCollection(content, itemConverter)](./ts-chocolate.editing.parsecollection.md)
-
-
-</td><td>
-
-Parse content based on detected format. Attempts to auto-detect format from content.
-
-
-</td></tr>
-<tr><td>
-
-[parseCollectionWithFormat(content, format, itemConverter)](./ts-chocolate.editing.parsecollectionwithformat.md)
-
-
-</td><td>
-
-Parse content with explicit format.
-
-
-</td></tr>
-<tr><td>
-
-[parseJson(content, itemConverter)](./ts-chocolate.editing.parsejson.md)
-
-
-</td><td>
-
-Parse a JSON string into a collection source file.
-
-
-</td></tr>
-<tr><td>
-
-[parseYaml(content, itemConverter)](./ts-chocolate.editing.parseyaml.md)
-
-
-</td><td>
-
-Parse a YAML string into a collection source file.
-
-
-</td></tr>
-<tr><td>
-
 [serializeCollection(collection, format, options)](./ts-chocolate.editing.serializecollection.md)
 
 
@@ -196,28 +152,6 @@ Serialize a collection to JSON string.
 </td><td>
 
 Serialize a collection to YAML string.
-
-
-</td></tr>
-<tr><td>
-
-[validateAndParseCollection(content, itemConverter, format)](./ts-chocolate.editing.validateandparsecollection.md)
-
-
-</td><td>
-
-Validate and parse collection source file. Combines parsing and validation in one step.
-
-
-</td></tr>
-<tr><td>
-
-[validateCollectionStructure(data)](./ts-chocolate.editing.validatecollectionstructure.md)
-
-
-</td><td>
-
-Validate that parsed data matches ICollectionSourceFile structure.
 
 
 </td></tr>

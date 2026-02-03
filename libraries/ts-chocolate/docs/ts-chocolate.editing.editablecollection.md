@@ -304,7 +304,7 @@ Check if the source file has unsaved changes. Only applicable if the collection 
 
 </td><td>
 
-Parse content (auto-detecting format) and create an editable collection.
+Parse content (auto-detecting format) and create an editable collection. Tries JSON first if content looks like JSON, otherwise tries YAML with JSON fallback.
 
 
 </td></tr>
@@ -403,6 +403,22 @@ Update item only if key exists. Fails if collection is immutable.
 </td><td>
 
 Update collection metadata.
+
+
+</td></tr>
+<tr><td>
+
+[validateStructure(data)](./ts-chocolate.editing.editablecollection.validatestructure.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Validate collection structure.
 
 
 </td></tr>

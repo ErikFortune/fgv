@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2024 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,31 @@
  * SOFTWARE.
  */
 
-import * as CryptoUtils from './packlets/crypto-utils';
-import * as Csv from './packlets/csv';
-import * as Experimental from './packlets/experimental';
-import * as Hash from './packlets/hash';
-import * as Mustache from './packlets/mustache';
-import * as RecordJar from './packlets/record-jar';
-import * as Yaml from './packlets/yaml';
-import * as ZipFileTree from './packlets/zip-file-tree';
+import { Conversion, Converter, Result, captureResult, fail } from '@fgv/ts-utils';
+import * as yaml from 'js-yaml';
 
-import { Converters } from './packlets/conversion';
+/**
+ * Creates a converter that parses YAML string content and then applies the supplied converter.
+ * @param converter - Converter to apply to the parsed YAML
+ * @returns Converter that parses YAML then validates
+ * @public
+ */
+export function yamlConverter<T>(converter: Converter<T>): Converter<T> {
+  return new Conversion.BaseConverter<T>((from: unknown): Result<T> => {
+    if (typeof from !== 'string') {
+      return fail('Input must be a string');
+    }
 
-export { Converters, CryptoUtils, Csv, Experimental, Hash, Mustache, RecordJar, Yaml, ZipFileTree };
+    const parseResult = captureResult(() => yaml.load(from));
+    if (parseResult.isFailure()) {
+      return fail(`Failed to parse YAML: ${parseResult.message}`);
+    }
+
+    const parsed = parseResult.value;
+    if (typeof parsed !== 'object' || parsed === null) {
+      return fail('Failed to parse YAML: YAML content must be an object');
+    }
+
+    return converter.convert(parsed);
+  });
+}

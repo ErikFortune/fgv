@@ -30,6 +30,17 @@ Helper function to create a `Converter` which converts `unknown` to one of a set
 </td></tr>
 <tr><td>
 
+[jsonConverter(converter)](./ts-json-base.converters.jsonconverter.md)
+
+
+</td><td>
+
+Creates a converter that parses JSON string content and then applies the supplied converter.
+
+
+</td></tr>
+<tr><td>
+
 [literal(value)](./ts-json-base.converters.literal.md)
 
 

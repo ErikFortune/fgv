@@ -82,6 +82,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Yaml](./ts-extras.yaml.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [ZipFileTree](./ts-extras.zipfiletree.md)
 
 

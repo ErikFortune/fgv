@@ -717,6 +717,16 @@ function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = Json
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
 
+declare namespace Yaml {
+    export {
+        yamlConverter
+    }
+}
+export { Yaml }
+
+// @public
+function yamlConverter<T>(converter: Converter<T>): Converter<T>;
+
 // @public
 type ZipCompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 

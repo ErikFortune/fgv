@@ -55,6 +55,7 @@ declare namespace Converters {
     export {
         literal,
         enumeratedValue,
+        jsonConverter,
         IJsonConverterContext,
         jsonPrimitive,
         jsonObject,
@@ -581,6 +582,9 @@ export type JsonCompatibleArray<T> = Array<JsonCompatibleType<T>>;
 export type JsonCompatibleType<T> = IsUnknown<T> extends true ? JsonValue : T extends JsonPrimitive | undefined ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
     [K in keyof T]: JsonCompatibleType<T[K]>;
 } : ['Error: Non-JSON type'];
+
+// @public
+function jsonConverter<T>(converter: Converter<T>): Converter<T>;
 
 declare namespace JsonFile {
     export {

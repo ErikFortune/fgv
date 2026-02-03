@@ -4,7 +4,7 @@
 
 ## Editing.EditableCollection.parse() method
 
-Parse content (auto-detecting format) and create an editable collection.
+Parse content (auto-detecting format) and create an editable collection. Tries JSON first if content looks like JSON, otherwise tries YAML with JSON fallback.
 
 **Signature:**
 

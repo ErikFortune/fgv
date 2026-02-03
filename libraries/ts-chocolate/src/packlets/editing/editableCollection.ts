@@ -26,12 +26,19 @@ import {
   Failure,
   Result,
   Success,
-  ValidatingResultMap
+  ValidatingResultMap,
+  fail,
+  succeed
 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { SourceId } from '../common';
-import { ICollectionSourceFile, ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
-import { serializeToYaml, serializeToJson, parseYaml, parseJson, parseCollection } from './exportImport';
+import {
+  ICollectionSourceFile,
+  ICollectionSourceMetadata,
+  SubLibraryBase,
+  Converters as LibraryDataConverters
+} from '../library-data';
+import { serializeToYaml, serializeToJson } from './exportImport';
 import { IExportOptions } from './model';
 
 // ============================================================================
@@ -173,6 +180,36 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   }
 
   /**
+   * Validate collection structure.
+   * @param data - Collection data to validate
+   * @returns Result of true if valid, or failure with error message
+   * @public
+   */
+  public static validateStructure(data: unknown): Result<true> {
+    if (typeof data !== 'object' || data === null) {
+      return fail('Collection data must be an object');
+    }
+
+    const obj = data as Record<string, unknown>;
+
+    if (!('items' in obj)) {
+      return fail('Collection data must have an "items" field');
+    }
+
+    if (typeof obj.items !== 'object' || obj.items === null) {
+      return fail('Collection "items" field must be an object');
+    }
+
+    if ('metadata' in obj) {
+      if (typeof obj.metadata !== 'object' || obj.metadata === null) {
+        return fail('Collection "metadata" field must be an object if present');
+      }
+    }
+
+    return succeed(true);
+  }
+
+  /**
    * Parse a YAML string and create an editable collection.
    * @param content - YAML string content
    * @param params - Collection creation parameters (without initialItems)
@@ -183,7 +220,8 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     content: string,
     params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>
   ): Result<EditableCollection<T, TBaseId>> {
-    return parseYaml<T>(content, params.valueConverter).onSuccess((sourceFile) => {
+    const converter = LibraryDataConverters.collectionYamlConverter(params.valueConverter);
+    return converter.convert(content).onSuccess((sourceFile) => {
       const itemsMap = new Map<TBaseId, T>();
       for (const [key, value] of Object.entries(sourceFile.items)) {
         const keyResult = params.keyConverter.convert(key);
@@ -212,7 +250,8 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     content: string,
     params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>
   ): Result<EditableCollection<T, TBaseId>> {
-    return parseJson<T>(content, params.valueConverter).onSuccess((sourceFile) => {
+    const converter = LibraryDataConverters.collectionJsonConverter(params.valueConverter);
+    return converter.convert(content).onSuccess((sourceFile) => {
       const itemsMap = new Map<TBaseId, T>();
       for (const [key, value] of Object.entries(sourceFile.items)) {
         const keyResult = params.keyConverter.convert(key);
@@ -232,6 +271,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
 
   /**
    * Parse content (auto-detecting format) and create an editable collection.
+   * Tries JSON first if content looks like JSON, otherwise tries YAML with JSON fallback.
    * @param content - String content to parse (YAML or JSON)
    * @param params - Collection creation parameters (without initialItems)
    * @returns Result containing EditableCollection or failure
@@ -241,22 +281,41 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     content: string,
     params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>
   ): Result<EditableCollection<T, TBaseId>> {
-    return parseCollection<T>(content, params.valueConverter).onSuccess((sourceFile) => {
-      const itemsMap = new Map<TBaseId, T>();
-      for (const [key, value] of Object.entries(sourceFile.items)) {
-        const keyResult = params.keyConverter.convert(key);
-        if (keyResult.isFailure()) {
-          return Failure.with(`Invalid key "${key}": ${keyResult.message}`);
-        }
-        itemsMap.set(keyResult.value, value);
-      }
+    if (!content || content.trim().length === 0) {
+      return fail('Content is empty');
+    }
 
-      return EditableCollection.createEditable({
-        ...params,
-        metadata: sourceFile.metadata ?? params.metadata,
-        initialItems: itemsMap
+    const trimmed = content.trim();
+    const converter =
+      trimmed.startsWith('{') || trimmed.startsWith('[')
+        ? LibraryDataConverters.collectionJsonConverter(params.valueConverter)
+        : LibraryDataConverters.collectionYamlConverter(params.valueConverter);
+
+    return converter
+      .convert(content)
+      .onFailure(() => {
+        const fallbackConverter =
+          trimmed.startsWith('{') || trimmed.startsWith('[')
+            ? LibraryDataConverters.collectionYamlConverter(params.valueConverter)
+            : LibraryDataConverters.collectionJsonConverter(params.valueConverter);
+        return fallbackConverter.convert(content);
+      })
+      .onSuccess((sourceFile) => {
+        const itemsMap = new Map<TBaseId, T>();
+        for (const [key, value] of Object.entries(sourceFile.items)) {
+          const keyResult = params.keyConverter.convert(key);
+          if (keyResult.isFailure()) {
+            return Failure.with(`Invalid key "${key}": ${keyResult.message}`);
+          }
+          itemsMap.set(keyResult.value, value);
+        }
+
+        return EditableCollection.createEditable({
+          ...params,
+          metadata: sourceFile.metadata ?? params.metadata,
+          initialItems: itemsMap
+        });
       });
-    });
   }
 
   /**
