@@ -11,5 +11,5 @@ Type for the collections in a MoldsLibrary.
 ```typescript
 export type MoldCollection = SubLibraryCollection<BaseMoldId, IMold>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMold](./ts-chocolate.entities.imold.md)
 

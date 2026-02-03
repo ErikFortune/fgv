@@ -110,7 +110,7 @@ _(Optional)_ Pre-built ingredients library
 
 </td><td>
 
-MoldsLibrary
+[MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)
 
 
 </td><td>

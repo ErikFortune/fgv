@@ -69,7 +69,7 @@ mold
 
 </td><td>
 
-IMold
+[IMold](./ts-chocolate.entities.imold.md)
 
 
 </td><td>

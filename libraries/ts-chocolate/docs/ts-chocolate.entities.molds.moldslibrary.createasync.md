@@ -52,7 +52,7 @@ _(Optional)_ Optional creation parameters with initial collections and encryptio
 
 **Returns:**
 
-Promise&lt;Result&lt;MoldsLibrary&gt;&gt;
+Promise&lt;Result&lt;[MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure with error message
 

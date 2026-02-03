@@ -887,39 +887,6 @@ Represents the cavities in a mold
 </td></tr>
 <tr><td>
 
-[IMoldFileTreeSource](./ts-chocolate.entities.imoldfiletreesource.md)
-
-
-</td><td>
-
-File tree source for mold data.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldsLibraryAsyncParams](./ts-chocolate.entities.imoldslibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a MoldsLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IMoldsLibraryParams](./ts-chocolate.entities.imoldslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a MoldsLibrary instance synchronously.
-
-
-</td></tr>
-<tr><td>
-
 [Ingredient](./ts-chocolate.entities.ingredient.md)
 
 
@@ -1025,61 +992,6 @@ Parameters for creating a TasksLibrary instance synchronously.
 </td><td>
 
 Types of journal entries.
-
-
-</td></tr>
-<tr><td>
-
-[MoldCollection](./ts-chocolate.entities.moldcollection.md)
-
-
-</td><td>
-
-Type for the collections in a MoldsLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[MoldCollectionEntry](./ts-chocolate.entities.moldcollectionentry.md)
-
-
-</td><td>
-
-A single entry in a molds collection.
-
-
-</td></tr>
-<tr><td>
-
-[MoldCollectionEntryInit](./ts-chocolate.entities.moldcollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a MoldsLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[MoldCollectionValidator](./ts-chocolate.entities.moldcollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for MoldsLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[MoldsMergeSource](./ts-chocolate.entities.moldsmergesource.md)
-
-
-</td><td>
-
-Specifies a molds library to merge into a new library.
 
 
 </td></tr>

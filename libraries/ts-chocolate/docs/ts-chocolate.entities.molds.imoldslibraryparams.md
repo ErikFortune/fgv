@@ -11,5 +11,5 @@ Parameters for creating a MoldsLibrary instance synchronously.
 ```typescript
 export type IMoldsLibraryParams = ISubLibraryParams<MoldsLibrary, MoldCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)
 

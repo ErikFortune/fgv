@@ -11,5 +11,5 @@ A single entry in a molds collection.
 ```typescript
 export type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, IMold>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMold](./ts-chocolate.entities.imold.md)
 

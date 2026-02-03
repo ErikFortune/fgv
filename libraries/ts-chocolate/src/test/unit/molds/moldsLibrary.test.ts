@@ -30,7 +30,7 @@ import {
   Model as CommonModel
 } from '../../../packlets/common';
 
-import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/entities';
+import { MoldsLibrary, IMold, Molds } from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 
@@ -287,7 +287,7 @@ describe('MoldsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IMoldFileTreeSource = {
+    const fileSource: Molds.IMoldFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: true
     };
@@ -333,7 +333,7 @@ describe('MoldsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IMoldFileTreeSource = {
+    const fileSource: Molds.IMoldFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };
@@ -385,7 +385,7 @@ describe('MoldsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IMoldFileTreeSource = {
+    const fileSource: Molds.IMoldFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };

@@ -20,3 +20,5 @@ export type ICavities = {
     readonly info?: ICavityInfo;
 };
 ```
+**References:** [ICavityInfo](./ts-chocolate.entities.icavityinfo.md)
+

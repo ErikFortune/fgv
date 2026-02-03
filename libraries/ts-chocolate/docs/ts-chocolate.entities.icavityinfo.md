@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ICavityDimensions
+[ICavityDimensions](./ts-chocolate.entities.icavitydimensions.md)
 
 
 </td><td>

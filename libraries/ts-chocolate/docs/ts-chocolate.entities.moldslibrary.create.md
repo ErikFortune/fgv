@@ -50,7 +50,7 @@ _(Optional)_ Optional creation parameters with initial collections
 
 **Returns:**
 
-Result&lt;MoldsLibrary&gt;
+Result&lt;[MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)<!-- -->&gt;
 
 Success with new instance, or Failure with error message
 

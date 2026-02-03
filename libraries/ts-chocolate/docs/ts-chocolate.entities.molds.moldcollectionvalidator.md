@@ -11,5 +11,5 @@ Validator type for MoldsLibrary collections.
 ```typescript
 export type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMold>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->, [IMold](./ts-chocolate.entities.imold.md)
 

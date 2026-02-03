@@ -50,7 +50,7 @@ The [id](./ts-chocolate.moldid.md) of the mold to retrieve.
 
 **Returns:**
 
-Result&lt;IMold&gt;
+Result&lt;[IMold](./ts-chocolate.entities.imold.md)<!-- -->&gt;
 
 `Success` with mold data, or `Failure` if not found
 

@@ -71,7 +71,7 @@ The base mold ID within the source
 
 </td><td>
 
-ICavities
+[ICavities](./ts-chocolate.entities.icavities.md)
 
 
 </td><td>
@@ -113,7 +113,7 @@ Number of cavities in the mold
 
 </td><td>
 
-ICavityDimensions \| undefined
+[ICavityDimensions](./ts-chocolate.entities.icavitydimensions.md) \| undefined
 
 
 </td><td>
@@ -302,7 +302,7 @@ Product number from the manufacturer
 
 </td><td>
 
-IMold
+[IMold](./ts-chocolate.entities.imold.md)
 
 
 </td><td>

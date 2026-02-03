@@ -133,7 +133,7 @@ Logger used by this library and its sub-libraries.
 
 </td><td>
 
-MoldsLibrary
+[MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)
 
 
 </td><td>

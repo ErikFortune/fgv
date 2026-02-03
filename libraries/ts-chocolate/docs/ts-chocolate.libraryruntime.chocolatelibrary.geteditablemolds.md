@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;IMold, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IMold](./ts-chocolate.entities.imold.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

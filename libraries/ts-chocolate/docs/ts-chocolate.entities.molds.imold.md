@@ -68,7 +68,7 @@ Base mold identifier (unique within source)
 
 </td><td>
 
-ICavities
+[ICavities](./ts-chocolate.entities.icavities.md)
 
 
 </td><td>

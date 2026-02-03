@@ -13,7 +13,7 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "cw.chocolate
 ```typescript
 export declare class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMold> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[MoldId](./ts-chocolate.moldid.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, IMold&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[MoldId](./ts-chocolate.moldid.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMold](./ts-chocolate.entities.imold.md)<!-- -->&gt;
 
 ## Methods
 

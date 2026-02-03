@@ -11,5 +11,5 @@ Specifies a molds library to merge into a new library.
 ```typescript
 export type MoldsMergeSource = SubLibraryMergeSource<MoldsLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)
 

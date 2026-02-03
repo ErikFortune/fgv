@@ -11,5 +11,5 @@ Parameters for creating a MoldsLibrary instance asynchronously with encryption s
 ```typescript
 export type IMoldsLibraryAsyncParams = ISubLibraryAsyncParams<MoldsLibrary, MoldCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [MoldsLibrary](./ts-chocolate.entities.moldslibrary.md)
 

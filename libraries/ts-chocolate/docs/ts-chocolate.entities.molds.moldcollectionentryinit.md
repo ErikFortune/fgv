@@ -11,5 +11,5 @@ Initialization type for a MoldsLibrary collection entry.
 ```typescript
 export type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMold>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMold](./ts-chocolate.entities.imold.md)
 

@@ -83,9 +83,7 @@ export {
 
 export { IngredientInventoryLibrary, MoldInventoryLibrary, InventoryType } from './inventory';
 
-export * from './molds/model';
-export * from './molds/collection';
-export * from './molds/library';
+export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMold } from './molds';
 
 export * from './procedures/model';
 export * from './procedures/collection';
