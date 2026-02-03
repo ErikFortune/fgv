@@ -26,7 +26,7 @@
  */
 
 import { Result, Success, Failure } from '@fgv/ts-utils';
-import { Ingredient, isChocolateIngredient, isDairyIngredient, isAlcoholIngredient } from '../../entities';
+import { Ingredients, Ingredient } from '../../entities';
 
 /**
  * Validate ganache characteristics percentages.
@@ -67,7 +67,7 @@ export function validateGanacheCharacteristics(entity: Ingredient): Result<true>
  * @public
  */
 export function validateTemperatureCurve(entity: Ingredient): Result<true> {
-  if (!isChocolateIngredient(entity)) {
+  if (!Ingredients.isChocolateIngredient(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -112,7 +112,7 @@ export function validateTemperatureCurve(entity: Ingredient): Result<true> {
  * @public
  */
 export function validateChocolateFields(entity: Ingredient): Result<true> {
-  if (!isChocolateIngredient(entity)) {
+  if (!Ingredients.isChocolateIngredient(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -145,7 +145,7 @@ export function validateChocolateFields(entity: Ingredient): Result<true> {
  * @public
  */
 export function validateDairyFields(entity: Ingredient): Result<true> {
-  if (!isDairyIngredient(entity)) {
+  if (!Ingredients.isDairyIngredient(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -181,7 +181,7 @@ export function validateDairyFields(entity: Ingredient): Result<true> {
  * @public
  */
 export function validateAlcoholFields(entity: Ingredient): Result<true> {
-  if (!isAlcoholIngredient(entity)) {
+  if (!Ingredients.isAlcoholIngredient(entity)) {
     return Success.with(true); // Not applicable
   }
 

@@ -11,5 +11,5 @@ Parameters for creating an IngredientsLibrary instance asynchronously with encry
 ```typescript
 export type IIngredientsLibraryAsyncParams = ISubLibraryAsyncParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [IngredientsLibrary](./ts-chocolate.entities.ingredientslibrary.md)
 

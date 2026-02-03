@@ -11,5 +11,5 @@ Validator type for IngredientsLibrary collections.
 ```typescript
 export type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
 

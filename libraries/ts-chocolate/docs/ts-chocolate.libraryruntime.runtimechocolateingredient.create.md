@@ -69,7 +69,7 @@ ingredient
 
 </td><td>
 
-IChocolateIngredient
+[IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)
 
 
 </td><td>

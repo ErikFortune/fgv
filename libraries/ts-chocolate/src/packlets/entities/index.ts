@@ -34,9 +34,17 @@ export {
   IFillingRating
 } from './fillings';
 
-export * from './ingredients/model';
-export * from './ingredients/collection';
-export * from './ingredients/library';
+export {
+  IIngredient,
+  Ingredient,
+  IngredientsLibrary,
+  IAlcoholIngredient,
+  IDairyIngredient,
+  IChocolateIngredient,
+  IFatIngredient,
+  ISugarIngredient,
+  IGanacheCharacteristics
+} from './ingredients';
 
 export * from './journal/model';
 export * from './journal/library';

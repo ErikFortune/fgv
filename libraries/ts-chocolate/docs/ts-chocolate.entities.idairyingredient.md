@@ -11,7 +11,7 @@ Dairy-specific ingredient
 ```typescript
 export interface IDairyIngredient extends IIngredient 
 ```
-**Extends:** IIngredient
+**Extends:** [IIngredient](./ts-chocolate.entities.iingredient.md)
 
 ## Properties
 

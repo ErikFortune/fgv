@@ -69,6 +69,7 @@ import {
 import {
   Confections,
   Fillings,
+  Ingredients,
   IAlcoholIngredient,
   IChocolateIngredient,
   IDairyIngredient,
@@ -76,10 +77,8 @@ import {
   IFillingRating,
   IFillingRecipe,
   IFillingRecipeVersion,
-  IGanacheCharacteristics,
   Ingredient,
-  ISugarIngredient,
-  ITemperatureCurve
+  ISugarIngredient
 } from '../entities';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
@@ -131,7 +130,7 @@ export interface IRuntimeIngredient {
   readonly category: IngredientCategory;
 
   /** Ganache-relevant characteristics */
-  readonly ganacheCharacteristics: IGanacheCharacteristics;
+  readonly ganacheCharacteristics: Ingredients.IGanacheCharacteristics;
 
   /** Optional description */
   readonly description?: string;
@@ -232,7 +231,7 @@ export interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
   readonly viscosityMcM?: DegreesMacMichael;
 
   /** Tempering curve (optional) */
-  readonly temperatureCurve?: ITemperatureCurve;
+  readonly temperatureCurve?: Ingredients.ITemperatureCurve;
 
   /** Bean varieties used in the chocolate (optional) */
   readonly beanVarieties?: ReadonlyArray<CacaoVariety>;
@@ -1667,7 +1666,7 @@ export interface IGanacheAnalysis {
   /**
    * Weighted average characteristics of all ingredients
    */
-  readonly characteristics: IGanacheCharacteristics;
+  readonly characteristics: Ingredients.IGanacheCharacteristics;
 
   /**
    * Total fat percentage (cacaoFat + milkFat + otherFats)

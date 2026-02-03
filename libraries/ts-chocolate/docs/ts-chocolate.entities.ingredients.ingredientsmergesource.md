@@ -11,5 +11,5 @@ Specifies an ingredients library to merge into a new library.
 ```typescript
 export type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [IngredientsLibrary](./ts-chocolate.entities.ingredientslibrary.md)
 

@@ -201,7 +201,7 @@ Origin descriptions (optional)
 
 </td><td>
 
-IChocolateIngredient
+[IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)
 
 
 </td><td>
@@ -222,7 +222,7 @@ Gets the underlying raw chocolate ingredient data
 
 </td><td>
 
-ITemperatureCurve \| undefined
+Ingredients.ITemperatureCurve \| undefined
 
 
 </td><td>

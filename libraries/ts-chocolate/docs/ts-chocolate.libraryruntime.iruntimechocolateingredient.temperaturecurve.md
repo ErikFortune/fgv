@@ -9,5 +9,5 @@ Tempering curve (optional)
 **Signature:**
 
 ```typescript
-readonly temperatureCurve?: ITemperatureCurve;
+readonly temperatureCurve?: Ingredients.ITemperatureCurve;
 ```

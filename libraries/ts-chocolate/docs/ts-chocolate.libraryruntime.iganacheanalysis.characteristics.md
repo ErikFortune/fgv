@@ -9,5 +9,5 @@ Weighted average characteristics of all ingredients
 **Signature:**
 
 ```typescript
-readonly characteristics: IGanacheCharacteristics;
+readonly characteristics: Ingredients.IGanacheCharacteristics;
 ```

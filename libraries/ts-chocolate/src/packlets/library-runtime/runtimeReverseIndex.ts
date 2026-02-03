@@ -24,7 +24,7 @@
  */
 
 import { ChocolateType, Helpers, IngredientId, FillingId } from '../common';
-import { isChocolateIngredient } from '../entities';
+import { Ingredients } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 import { IIngredientUsageInfo } from './model';
 
@@ -316,7 +316,7 @@ export class RuntimeReverseIndex {
         const ingredientResult = ingredients.get(ingredientId);
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
-          if (isChocolateIngredient(ingredient)) {
+          if (Ingredients.isChocolateIngredient(ingredient)) {
             this._addToIndex(this._chocolateTypeToFillings, ingredient.chocolateType, fillingId as FillingId);
           }
         }

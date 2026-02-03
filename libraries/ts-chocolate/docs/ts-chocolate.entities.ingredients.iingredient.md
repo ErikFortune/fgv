@@ -173,7 +173,7 @@ _(Optional)_ Optional description
 
 </td><td>
 
-IGanacheCharacteristics
+[IGanacheCharacteristics](./ts-chocolate.entities.iganachecharacteristics.md)
 
 
 </td><td>

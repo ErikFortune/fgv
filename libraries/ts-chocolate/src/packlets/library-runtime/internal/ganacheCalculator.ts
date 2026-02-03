@@ -26,7 +26,7 @@
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers, Percentage, FillingVersionSpec } from '../../common';
-import { IGanacheCharacteristics, Ingredient } from '../../entities';
+import { Ingredients, Ingredient } from '../../entities';
 import { IFillingRecipe, Fillings } from '../../entities';
 import {
   IGanacheAnalysis,
@@ -45,7 +45,7 @@ import {
  * @returns Zeroed ganache characteristics
  * @internal
  */
-function createEmptyCharacteristics(): IGanacheCharacteristics {
+function createEmptyCharacteristics(): Ingredients.IGanacheCharacteristics {
   return {
     cacaoFat: 0 as Percentage,
     sugar: 0 as Percentage,
@@ -100,7 +100,7 @@ function addWeightedCharacteristics(
 function normalizeCharacteristics(
   accumulator: IMutableCharacteristicsAccumulator,
   totalWeight: Measurement
-): IGanacheCharacteristics {
+): Ingredients.IGanacheCharacteristics {
   if (totalWeight <= 0) {
     return createEmptyCharacteristics();
   }

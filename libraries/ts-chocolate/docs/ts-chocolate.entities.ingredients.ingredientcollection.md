@@ -11,5 +11,5 @@ Type for the collections in an IngredientsLibrary.
 ```typescript
 export type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
 

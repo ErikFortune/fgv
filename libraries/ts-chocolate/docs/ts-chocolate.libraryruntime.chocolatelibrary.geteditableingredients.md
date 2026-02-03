@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;Ingredient, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

@@ -11,7 +11,7 @@ Fat-specific ingredient
 ```typescript
 export interface IFatIngredient extends IIngredient 
 ```
-**Extends:** IIngredient
+**Extends:** [IIngredient](./ts-chocolate.entities.iingredient.md)
 
 ## Properties
 

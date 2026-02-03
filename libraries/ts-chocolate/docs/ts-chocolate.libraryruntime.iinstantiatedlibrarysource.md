@@ -89,7 +89,7 @@ _(Optional)_ Pre-built fillings library
 
 </td><td>
 
-IngredientsLibrary
+[IngredientsLibrary](./ts-chocolate.entities.ingredientslibrary.md)
 
 
 </td><td>

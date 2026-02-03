@@ -25,16 +25,10 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../packlets/common';
 
 import {
+  IGanacheCharacteristics,
   IngredientsLibrary,
   Ingredient,
-  IIngredient,
-  IGanacheCharacteristics,
-  IIngredientFileTreeSource,
-  isChocolateIngredient,
-  isDairyIngredient,
-  isFatIngredient,
-  isSugarIngredient,
-  isAlcoholIngredient
+  Ingredients
 } from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
@@ -53,7 +47,7 @@ describe('IngredientsLibrary', () => {
     otherFats: 0 as Percentage
   };
 
-  const testIngredient: IIngredient = {
+  const testIngredient: Ingredients.IIngredient = {
     baseId: 'test-choco' as BaseIngredientId,
     name: 'Test Chocolate',
     category: 'chocolate',
@@ -533,7 +527,7 @@ describe('IngredientsLibrary', () => {
         { path: '/library/data/ingredients/mutable-source.json', contents: validIngredientData }
       ];
       const root = getLibraryDir(files);
-      const source: IIngredientFileTreeSource = {
+      const source: Ingredients.IIngredientFileTreeSource = {
         directory: root,
         mutable: true
       };
@@ -1034,7 +1028,7 @@ describe('IngredientsLibrary', () => {
 // ============================================================================
 
 describe('Ingredient type guards', () => {
-  const baseIngredient: IIngredient = {
+  const baseIngredient: Ingredients.IIngredient = {
     baseId: 'test' as BaseIngredientId,
     name: 'Test',
     category: 'other',
@@ -1061,16 +1055,16 @@ describe('Ingredient type guards', () => {
   const alcoholIngredient: Ingredient = { ...baseIngredient, category: 'alcohol' };
 
   test.each([
-    ['isChocolateIngredient', isChocolateIngredient, chocolateIngredient, true],
-    ['isChocolateIngredient', isChocolateIngredient, sugarIngredient, false],
-    ['isSugarIngredient', isSugarIngredient, sugarIngredient, true],
-    ['isSugarIngredient', isSugarIngredient, chocolateIngredient, false],
-    ['isDairyIngredient', isDairyIngredient, dairyIngredient, true],
-    ['isDairyIngredient', isDairyIngredient, chocolateIngredient, false],
-    ['isFatIngredient', isFatIngredient, fatIngredient, true],
-    ['isFatIngredient', isFatIngredient, chocolateIngredient, false],
-    ['isAlcoholIngredient', isAlcoholIngredient, alcoholIngredient, true],
-    ['isAlcoholIngredient', isAlcoholIngredient, chocolateIngredient, false]
+    ['isChocolateIngredient', Ingredients.isChocolateIngredient, chocolateIngredient, true],
+    ['isChocolateIngredient', Ingredients.isChocolateIngredient, sugarIngredient, false],
+    ['isSugarIngredient', Ingredients.isSugarIngredient, sugarIngredient, true],
+    ['isSugarIngredient', Ingredients.isSugarIngredient, chocolateIngredient, false],
+    ['isDairyIngredient', Ingredients.isDairyIngredient, dairyIngredient, true],
+    ['isDairyIngredient', Ingredients.isDairyIngredient, chocolateIngredient, false],
+    ['isFatIngredient', Ingredients.isFatIngredient, fatIngredient, true],
+    ['isFatIngredient', Ingredients.isFatIngredient, chocolateIngredient, false],
+    ['isAlcoholIngredient', Ingredients.isAlcoholIngredient, alcoholIngredient, true],
+    ['isAlcoholIngredient', Ingredients.isAlcoholIngredient, chocolateIngredient, false]
   ])('%s returns %p for %p', (name, fn, input, expected) => {
     expect(fn(input)).toBe(expected);
   });
@@ -1131,7 +1125,7 @@ describe('IngredientsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IIngredientFileTreeSource = {
+    const fileSource: Ingredients.IIngredientFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: true
     };
@@ -1183,7 +1177,7 @@ describe('IngredientsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IIngredientFileTreeSource = {
+    const fileSource: Ingredients.IIngredientFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };
@@ -1241,7 +1235,7 @@ describe('IngredientsLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IIngredientFileTreeSource = {
+    const fileSource: Ingredients.IIngredientFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };
@@ -1311,7 +1305,7 @@ describe('IngredientsLibrary protected collections', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IIngredientFileTreeSource = {
+    const fileSource: Ingredients.IIngredientFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: true
     };
@@ -1546,7 +1540,7 @@ describe('IngredientsLibrary protected collections', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const rootDir = tree.getItem('/').orThrow();
-      const fileSource: IIngredientFileTreeSource = {
+      const fileSource: Ingredients.IIngredientFileTreeSource = {
         directory: rootDir as FileTree.IFileTreeDirectoryItem,
         mutable: true
       };
@@ -1648,7 +1642,7 @@ describe('IngredientsLibrary protected collections', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const rootDir = tree.getItem('/').orThrow();
-      const fileSource: IIngredientFileTreeSource = {
+      const fileSource: Ingredients.IIngredientFileTreeSource = {
         directory: rootDir as FileTree.IFileTreeDirectoryItem,
         mutable: true
       };

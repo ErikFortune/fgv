@@ -32,15 +32,7 @@ import {
   IngredientId,
   SourceId
 } from '../../common';
-import {
-  IGanacheCharacteristics,
-  Ingredient,
-  isChocolateIngredient,
-  isDairyIngredient,
-  isSugarIngredient,
-  isFatIngredient,
-  isAlcoholIngredient
-} from '../../entities';
+import { Ingredients, Ingredient } from '../../entities';
 import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
@@ -141,7 +133,7 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   /**
    * Ganache-relevant characteristics
    */
-  public get ganacheCharacteristics(): IGanacheCharacteristics {
+  public get ganacheCharacteristics(): Ingredients.IGanacheCharacteristics {
     return this._ingredient.ganacheCharacteristics;
   }
 
@@ -189,35 +181,35 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
    * Returns true if this is a chocolate ingredient.
    */
   public isChocolate(): this is RuntimeChocolateIngredient {
-    return isChocolateIngredient(this._ingredient);
+    return Ingredients.isChocolateIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is a dairy ingredient.
    */
   public isDairy(): this is RuntimeDairyIngredient {
-    return isDairyIngredient(this._ingredient);
+    return Ingredients.isDairyIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is a sugar ingredient.
    */
   public isSugar(): this is RuntimeSugarIngredient {
-    return isSugarIngredient(this._ingredient);
+    return Ingredients.isSugarIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is a fat ingredient.
    */
   public isFat(): this is RuntimeFatIngredient {
-    return isFatIngredient(this._ingredient);
+    return Ingredients.isFatIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is an alcohol ingredient.
    */
   public isAlcohol(): this is RuntimeAlcoholIngredient {
-    return isAlcoholIngredient(this._ingredient);
+    return Ingredients.isAlcoholIngredient(this._ingredient);
   }
 
   // ============================================================================

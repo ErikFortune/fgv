@@ -11,5 +11,5 @@ Function type for resolving an ingredient ID to its full ingredient data
 ```typescript
 export type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
 ```
-**References:** [IngredientId](./ts-chocolate.ingredientid.md)
+**References:** [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
 

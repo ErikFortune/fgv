@@ -11,5 +11,5 @@ Parameters for creating an IngredientsLibrary instance synchronously.
 ```typescript
 export type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [IngredientsLibrary](./ts-chocolate.entities.ingredientslibrary.md)
 

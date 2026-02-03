@@ -111,7 +111,7 @@ _(Optional)_ Flavor profile description (optional)
 
 </td><td>
 
-IAlcoholIngredient
+[IAlcoholIngredient](./ts-chocolate.entities.ialcoholingredient.md)
 
 
 </td><td>

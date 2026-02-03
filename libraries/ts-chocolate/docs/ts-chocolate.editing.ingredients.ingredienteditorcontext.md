@@ -11,7 +11,7 @@ Editor context specialized for Ingredient entities. Extends ValidatingEditorCont
 ```typescript
 export declare class IngredientEditorContext extends ValidatingEditorContext<Ingredient, BaseIngredientId, IngredientId> 
 ```
-**Extends:** [ValidatingEditorContext](./ts-chocolate.editing.validatingeditorcontext.md)<!-- -->&lt;Ingredient, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
+**Extends:** [ValidatingEditorContext](./ts-chocolate.editing.validatingeditorcontext.md)<!-- -->&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
 
 ## Methods
 

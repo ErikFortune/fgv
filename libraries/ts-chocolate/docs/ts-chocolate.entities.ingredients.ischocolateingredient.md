@@ -37,7 +37,7 @@ ingredient
 
 </td><td>
 
-Ingredient
+[Ingredient](./ts-chocolate.entities.ingredient.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Ingredient to check
 
 **Returns:**
 
-ingredient is IChocolateIngredient
+ingredient is [IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)
 
 True if the ingredient is a chocolate ingredient
 

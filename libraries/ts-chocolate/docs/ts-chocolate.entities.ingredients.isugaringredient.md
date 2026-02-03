@@ -11,7 +11,7 @@ Sugar-specific ingredient
 ```typescript
 export interface ISugarIngredient extends IIngredient 
 ```
-**Extends:** IIngredient
+**Extends:** [IIngredient](./ts-chocolate.entities.iingredient.md)
 
 ## Properties
 

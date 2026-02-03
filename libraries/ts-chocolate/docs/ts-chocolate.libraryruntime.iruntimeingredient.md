@@ -156,7 +156,7 @@ _(Optional)_ Optional description
 
 </td><td>
 
-IGanacheCharacteristics
+[Ingredients.IGanacheCharacteristics](./ts-chocolate.entities.iganachecharacteristics.md)
 
 
 </td><td>
@@ -240,7 +240,7 @@ Display name
 
 </td><td>
 
-Ingredient
+[Ingredient](./ts-chocolate.entities.ingredient.md)
 
 
 </td><td>

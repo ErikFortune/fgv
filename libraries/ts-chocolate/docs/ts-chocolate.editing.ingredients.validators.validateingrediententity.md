@@ -37,7 +37,7 @@ entity
 
 </td><td>
 
-Ingredient
+[Ingredient](./ts-chocolate.entities.ingredient.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Complete ingredient entity to validate
 
 **Returns:**
 
-Result&lt;Ingredient&gt;
+Result&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->&gt;
 
 Result indicating validation success or failure
 

@@ -11,7 +11,7 @@ Alcohol-specific ingredient
 ```typescript
 export interface IAlcoholIngredient extends IIngredient 
 ```
-**Extends:** IIngredient
+**Extends:** [IIngredient](./ts-chocolate.entities.iingredient.md)
 
 ## Properties
 

@@ -172,28 +172,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isAlcoholIngredient(ingredient)](./ts-chocolate.entities.isalcoholingredient.md)
-
-
-</td><td>
-
-Type guard for IAlcoholIngredient
-
-
-</td></tr>
-<tr><td>
-
-[isChocolateIngredient(ingredient)](./ts-chocolate.entities.ischocolateingredient.md)
-
-
-</td><td>
-
-Type guard for IChocolateIngredient
-
-
-</td></tr>
-<tr><td>
-
 [isConfectionEditJournalEntry(entry)](./ts-chocolate.entities.isconfectioneditjournalentry.md)
 
 
@@ -222,28 +200,6 @@ Type guard for confection journal entries
 </td><td>
 
 Type guard for IConfectionProductionJournalEntry
-
-
-</td></tr>
-<tr><td>
-
-[isDairyIngredient(ingredient)](./ts-chocolate.entities.isdairyingredient.md)
-
-
-</td><td>
-
-Type guard for IDairyIngredient
-
-
-</td></tr>
-<tr><td>
-
-[isFatIngredient(ingredient)](./ts-chocolate.entities.isfatingredient.md)
-
-
-</td><td>
-
-Type guard for IFatIngredient
 
 
 </td></tr>
@@ -387,17 +343,6 @@ Type guard for IResolvedFillingSlot
 </td><td>
 
 Type guard for IResolvedIngredientSlot
-
-
-</td></tr>
-<tr><td>
-
-[isSugarIngredient(ingredient)](./ts-chocolate.entities.issugaringredient.md)
-
-
-</td><td>
-
-Type guard for ISugarIngredient
 
 
 </td></tr>
@@ -899,17 +844,6 @@ Result of validating a task reference against a task definition.
 </td></tr>
 <tr><td>
 
-[ITemperatureCurve](./ts-chocolate.entities.itemperaturecurve.md)
-
-
-</td><td>
-
-Temperature curve for chocolate tempering
-
-
-</td></tr>
-<tr><td>
-
 [IValidatedProcedureStep](./ts-chocolate.entities.ivalidatedprocedurestep.md)
 
 
@@ -1265,17 +1199,6 @@ Represents the cavities in a mold
 </td></tr>
 <tr><td>
 
-[IIngredientFileTreeSource](./ts-chocolate.entities.iingredientfiletreesource.md)
-
-
-</td><td>
-
-File tree source for ingredient data.
-
-
-</td></tr>
-<tr><td>
-
 [IIngredientInventoryFileTreeSource](./ts-chocolate.entities.iingredientinventoryfiletreesource.md)
 
 
@@ -1304,28 +1227,6 @@ Parameters for creating an IngredientInventoryLibrary instance asynchronously wi
 </td><td>
 
 Parameters for creating an IngredientInventoryLibrary instance synchronously.
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientsLibraryAsyncParams](./ts-chocolate.entities.iingredientslibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating an IngredientsLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientsLibraryParams](./ts-chocolate.entities.iingredientslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating an IngredientsLibrary instance synchronously.
 
 
 </td></tr>
@@ -1441,50 +1342,6 @@ Discriminated union of all ingredient types
 </td></tr>
 <tr><td>
 
-[IngredientCollection](./ts-chocolate.entities.ingredientcollection.md)
-
-
-</td><td>
-
-Type for the collections in an IngredientsLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientCollectionEntry](./ts-chocolate.entities.ingredientcollectionentry.md)
-
-
-</td><td>
-
-A single entry in an ingredients collection.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientCollectionEntryInit](./ts-chocolate.entities.ingredientcollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for an IngredientsLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientCollectionValidator](./ts-chocolate.entities.ingredientcollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for IngredientsLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
 [IngredientInventoryCollection](./ts-chocolate.entities.ingredientinventorycollection.md)
 
 
@@ -1557,17 +1414,6 @@ Composite ID for an ingredient inventory entry (inventoryCollection.entryBaseId)
 </td><td>
 
 Specifies an ingredient inventory library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[IngredientsMergeSource](./ts-chocolate.entities.ingredientsmergesource.md)
-
-
-</td><td>
-
-Specifies an ingredients library to merge into a new library.
 
 
 </td></tr>

@@ -9,5 +9,5 @@ Ganache-relevant characteristics
 **Signature:**
 
 ```typescript
-readonly ganacheCharacteristics: IGanacheCharacteristics;
+readonly ganacheCharacteristics: Ingredients.IGanacheCharacteristics;
 ```

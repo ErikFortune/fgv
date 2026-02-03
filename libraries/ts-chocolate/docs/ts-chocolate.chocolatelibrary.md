@@ -91,7 +91,7 @@ The [fillings library](./ts-chocolate.entities.fillings.fillingslibrary.md)<!-- 
 
 </td><td>
 
-IngredientsLibrary
+[IngredientsLibrary](./ts-chocolate.entities.ingredientslibrary.md)
 
 
 </td><td>

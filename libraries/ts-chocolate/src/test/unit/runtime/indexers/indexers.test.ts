@@ -36,7 +36,7 @@ import {
 import {
   IGanacheCharacteristics,
   IChocolateIngredient,
-  IIngredient,
+  Ingredients,
   IngredientsLibrary
 } from '../../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/entities';
@@ -114,7 +114,7 @@ describe('Indexers', () => {
     tags: ['premium']
   };
 
-  const cream: IIngredient = {
+  const cream: Ingredients.IIngredient = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',

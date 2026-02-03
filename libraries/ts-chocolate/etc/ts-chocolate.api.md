@@ -1192,6 +1192,15 @@ declare namespace Entities {
         IFillingRecipe,
         IFillingRecipeVersion,
         IFillingRating,
+        IIngredient,
+        Ingredient,
+        IngredientsLibrary,
+        IAlcoholIngredient,
+        IDairyIngredient,
+        IChocolateIngredient,
+        IFatIngredient,
+        ISugarIngredient,
+        IGanacheCharacteristics,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -1202,29 +1211,6 @@ declare namespace Entities {
         Procedures_2 as Procedures,
         Session,
         Tasks_2 as Tasks,
-        isChocolateIngredient,
-        isSugarIngredient,
-        isDairyIngredient,
-        isFatIngredient,
-        isAlcoholIngredient,
-        IGanacheCharacteristics,
-        ITemperatureCurve,
-        IIngredient,
-        IChocolateIngredient,
-        ISugarIngredient,
-        IDairyIngredient,
-        IFatIngredient,
-        IAlcoholIngredient,
-        Ingredient,
-        IngredientCollectionEntry,
-        IngredientCollectionEntryInit,
-        IngredientCollectionValidator,
-        IngredientCollection,
-        IIngredientFileTreeSource,
-        IngredientsMergeSource,
-        IIngredientsLibraryParams,
-        IIngredientsLibraryAsyncParams,
-        IngredientsLibrary,
         isFillingEditJournalEntry,
         isConfectionEditJournalEntry,
         isFillingProductionJournalEntry,
@@ -2553,7 +2539,7 @@ interface IFrameDimensions {
 
 // @public
 interface IGanacheAnalysis {
-    readonly characteristics: IGanacheCharacteristics;
+    readonly characteristics: Ingredients_2.IGanacheCharacteristics;
     readonly fatToWaterRatio: number;
     readonly sugarToWaterRatio: number;
     readonly totalFat: Percentage;
@@ -3734,7 +3720,7 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
     //
     // (undocumented)
     readonly raw: IChocolateIngredient;
-    readonly temperatureCurve?: ITemperatureCurve;
+    readonly temperatureCurve?: Ingredients_2.ITemperatureCurve;
     readonly viscosityMcM?: DegreesMacMichael;
 }
 
@@ -3873,7 +3859,7 @@ interface IRuntimeIngredient {
     readonly category: IngredientCategory;
     readonly certifications?: ReadonlyArray<Certification>;
     readonly description?: string;
-    readonly ganacheCharacteristics: IGanacheCharacteristics;
+    readonly ganacheCharacteristics: Ingredients_2.IGanacheCharacteristics;
     readonly id: IngredientId;
     isAlcohol(): this is IRuntimeAlcoholIngredient;
     isChocolate(): this is IRuntimeChocolateIngredient;
@@ -5725,7 +5711,7 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
     get fluidityStars(): FluidityStars | undefined;
     get origins(): ReadonlyArray<string> | undefined;
     get raw(): IChocolateIngredient;
-    get temperatureCurve(): ITemperatureCurve | undefined;
+    get temperatureCurve(): Ingredients_2.ITemperatureCurve | undefined;
     get viscosityMcM(): DegreesMacMichael | undefined;
 }
 
@@ -5925,7 +5911,7 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
     // (undocumented)
     protected readonly _context: IIngredientContext;
     get description(): string | undefined;
-    get ganacheCharacteristics(): IGanacheCharacteristics;
+    get ganacheCharacteristics(): Ingredients_2.IGanacheCharacteristics;
     get id(): IngredientId;
     // (undocumented)
     protected readonly _id: IngredientId;

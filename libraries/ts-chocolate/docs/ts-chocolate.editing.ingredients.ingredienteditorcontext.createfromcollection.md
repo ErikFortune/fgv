@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;Ingredient, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->&gt;
+[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->&gt;
 
 
 </td><td>

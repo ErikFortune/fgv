@@ -42,7 +42,7 @@ import {
   TaskId
 } from '../../../packlets/common';
 
-import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/entities';
+import { Ingredients, IGanacheCharacteristics, IngredientsLibrary } from '../../../packlets/entities';
 
 import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
 
@@ -87,7 +87,7 @@ describe('ChocolateLibrary', () => {
     otherFats: 0 as Percentage
   };
 
-  const testIngredient: IIngredient = {
+  const testIngredient: Ingredients.Ingredient = {
     baseId: 'testChoco' as unknown as BaseIngredientId,
     name: 'Test Chocolate',
     category: 'chocolate',

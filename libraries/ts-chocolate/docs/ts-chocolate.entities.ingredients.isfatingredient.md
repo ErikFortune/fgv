@@ -37,7 +37,7 @@ ingredient
 
 </td><td>
 
-Ingredient
+[Ingredient](./ts-chocolate.entities.ingredient.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Ingredient to check
 
 **Returns:**
 
-ingredient is IFatIngredient
+ingredient is [IFatIngredient](./ts-chocolate.entities.ifatingredient.md)
 
 True if the ingredient is a fat ingredient
 

@@ -46,7 +46,7 @@ import {
   Confections as ConfectionsEntities,
   IGanacheCharacteristics,
   IChocolateIngredient,
-  IIngredient,
+  Ingredients,
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IProcedure, ProceduresLibrary, ConfectionsLibrary } from '../../../packlets/entities';
@@ -125,7 +125,7 @@ describe('RuntimeContext', () => {
     ganacheCharacteristics: testChars
   };
 
-  const cream: IIngredient = {
+  const cream: Ingredients.IIngredient = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',
@@ -1344,7 +1344,7 @@ describe('RuntimeContext', () => {
 
     test('returns context that returns ingredient density when specified', () => {
       // Create ingredient with density
-      const creamWithDensity: IIngredient = {
+      const creamWithDensity: Ingredients.IIngredient = {
         baseId: 'cream-with-density' as BaseIngredientId,
         name: 'Heavy Cream with Density',
         category: 'dairy',

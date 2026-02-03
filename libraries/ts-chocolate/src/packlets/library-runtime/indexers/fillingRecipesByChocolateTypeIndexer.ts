@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { ChocolateType, Converters as ChocolateConverters, FillingId, Helpers } from '../../common';
-import { isChocolateIngredient } from '../../entities';
+import { Ingredients } from '../../entities';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
@@ -108,7 +108,7 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
         const ingredientResult = ingredients.get(ingredientId);
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
-          if (isChocolateIngredient(ingredient)) {
+          if (Ingredients.isChocolateIngredient(ingredient)) {
             this._addToSetIndex(this._typeToRecipes, ingredient.chocolateType, recipeId as FillingId);
           }
         }

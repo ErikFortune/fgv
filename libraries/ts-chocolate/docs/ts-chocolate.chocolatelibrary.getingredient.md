@@ -50,7 +50,7 @@ The [id](./ts-chocolate.ingredientid.md) of the ingredient to retrieve.
 
 **Returns:**
 
-Result&lt;Ingredient&gt;
+Result&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->&gt;
 
 `Success` with ingredient, or `Failure` if not found
 

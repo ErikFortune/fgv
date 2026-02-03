@@ -34,7 +34,7 @@ import {
   IngredientId,
   Percentage
 } from '../../common';
-import { IChocolateIngredient, ITemperatureCurve } from '../../entities';
+import { Ingredients, IChocolateIngredient } from '../../entities';
 import { IIngredientContext, IRuntimeChocolateIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
@@ -121,7 +121,7 @@ export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements
   /**
    * Tempering temperature curve (optional)
    */
-  public get temperatureCurve(): ITemperatureCurve | undefined {
+  public get temperatureCurve(): Ingredients.ITemperatureCurve | undefined {
     return this._chocolateIngredient.temperatureCurve;
   }
 

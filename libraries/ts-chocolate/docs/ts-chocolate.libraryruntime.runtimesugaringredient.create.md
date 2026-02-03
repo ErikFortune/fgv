@@ -69,7 +69,7 @@ ingredient
 
 </td><td>
 
-ISugarIngredient
+[ISugarIngredient](./ts-chocolate.entities.isugaringredient.md)
 
 
 </td><td>

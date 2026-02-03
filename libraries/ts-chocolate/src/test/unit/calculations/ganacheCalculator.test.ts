@@ -31,7 +31,7 @@ import {
   FillingVersionSpec
 } from '../../../packlets/common';
 
-import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/entities';
+import { Ingredients, Ingredient } from '../../../packlets/entities';
 
 import { Fillings, IFillingRecipe, IFillingRecipeVersion } from '../../../packlets/entities';
 
@@ -46,7 +46,7 @@ describe('Ganache Calculator', () => {
   // Test Data
   // ============================================================================
 
-  const darkChocolateChars: IGanacheCharacteristics = {
+  const darkChocolateChars: Ingredients.IGanacheCharacteristics = {
     cacaoFat: 36 as Percentage,
     sugar: 34 as Percentage,
     milkFat: 0 as Percentage,
@@ -55,7 +55,7 @@ describe('Ganache Calculator', () => {
     otherFats: 0 as Percentage
   };
 
-  const creamChars: IGanacheCharacteristics = {
+  const creamChars: Ingredients.IGanacheCharacteristics = {
     cacaoFat: 0 as Percentage,
     sugar: 0 as Percentage,
     milkFat: 35 as Percentage,
@@ -73,7 +73,7 @@ describe('Ganache Calculator', () => {
     ganacheCharacteristics: darkChocolateChars
   };
 
-  const cream: IIngredient = {
+  const cream: Ingredients.IIngredient = {
     baseId: 'cream-35' as BaseIngredientId,
     name: 'Heavy Cream 35%',
     category: 'dairy',
@@ -150,7 +150,7 @@ describe('Ganache Calculator', () => {
     });
 
     test('handles zero water (Infinity ratios)', () => {
-      const noWaterIngredient: IIngredient = {
+      const noWaterIngredient: Ingredients.IIngredient = {
         baseId: 'no-water' as BaseIngredientId,
         name: 'No Water',
         category: 'other',
@@ -282,7 +282,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on high fat', () => {
       // High fat scenario
-      const highFatIngredient: IIngredient = {
+      const highFatIngredient: Ingredients.IIngredient = {
         baseId: 'highfat' as BaseIngredientId,
         name: 'High Fat',
         category: 'fat',
@@ -306,7 +306,7 @@ describe('Ganache Calculator', () => {
 
     test('errors on high water', () => {
       // High water scenario
-      const highWaterIngredient: IIngredient = {
+      const highWaterIngredient: Ingredients.IIngredient = {
         baseId: 'highwater' as BaseIngredientId,
         name: 'High Water',
         category: 'liquid',
@@ -331,7 +331,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on low water', () => {
       // Low water
-      const lowWaterIngredient: IIngredient = {
+      const lowWaterIngredient: Ingredients.IIngredient = {
         baseId: 'lowwater' as BaseIngredientId,
         name: 'Low Water',
         category: 'other',
@@ -355,7 +355,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on fat to water ratio issues', () => {
       // Very high fat to water ratio
-      const unbalanced: IIngredient = {
+      const unbalanced: Ingredients.IIngredient = {
         baseId: 'unbalanced' as BaseIngredientId,
         name: 'Unbalanced',
         category: 'other',
@@ -379,7 +379,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on low sugar to water ratio', () => {
       // Low sugar to water
-      const lowSugar: IIngredient = {
+      const lowSugar: Ingredients.IIngredient = {
         baseId: 'lowsugar' as BaseIngredientId,
         name: 'Low Sugar',
         category: 'other',

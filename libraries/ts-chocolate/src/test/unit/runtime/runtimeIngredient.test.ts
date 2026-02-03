@@ -40,7 +40,7 @@ import {
   ISugarIngredient,
   IFatIngredient,
   IAlcoholIngredient,
-  IIngredient,
+  Ingredients,
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
@@ -157,7 +157,7 @@ describe('RuntimeIngredient', () => {
   };
 
   // Generic ingredient categories (liquid, flavor, other)
-  const water: IIngredient = {
+  const water: Ingredients.IIngredient = {
     baseId: 'water' as BaseIngredientId,
     name: 'Water',
     category: 'liquid',
@@ -171,7 +171,7 @@ describe('RuntimeIngredient', () => {
     }
   };
 
-  const vanillaExtract: IIngredient = {
+  const vanillaExtract: Ingredients.IIngredient = {
     baseId: 'vanilla-extract' as BaseIngredientId,
     name: 'Vanilla Extract',
     category: 'flavor',
@@ -186,7 +186,7 @@ describe('RuntimeIngredient', () => {
     tags: ['natural', 'aroma']
   };
 
-  const lecithin: IIngredient = {
+  const lecithin: Ingredients.IIngredient = {
     baseId: 'lecithin' as BaseIngredientId,
     name: 'Soy Lecithin',
     category: 'other',

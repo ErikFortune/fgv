@@ -11,3 +11,5 @@ Discriminated union of all ingredient types
 ```typescript
 export type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IAlcoholIngredient | IIngredient;
 ```
+**References:** [IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)<!-- -->, [ISugarIngredient](./ts-chocolate.entities.isugaringredient.md)<!-- -->, [IDairyIngredient](./ts-chocolate.entities.idairyingredient.md)<!-- -->, [IFatIngredient](./ts-chocolate.entities.ifatingredient.md)<!-- -->, [IAlcoholIngredient](./ts-chocolate.entities.ialcoholingredient.md)<!-- -->, [IIngredient](./ts-chocolate.entities.iingredient.md)
+

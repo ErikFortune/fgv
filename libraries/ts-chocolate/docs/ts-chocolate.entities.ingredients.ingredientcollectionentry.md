@@ -11,5 +11,5 @@ A single entry in an ingredients collection.
 ```typescript
 export type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, Ingredient>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
 

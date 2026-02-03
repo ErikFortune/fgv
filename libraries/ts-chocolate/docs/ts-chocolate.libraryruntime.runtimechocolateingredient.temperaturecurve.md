@@ -9,5 +9,5 @@ Tempering temperature curve (optional)
 **Signature:**
 
 ```typescript
-get temperatureCurve(): ITemperatureCurve | undefined;
+get temperatureCurve(): Ingredients.ITemperatureCurve | undefined;
 ```

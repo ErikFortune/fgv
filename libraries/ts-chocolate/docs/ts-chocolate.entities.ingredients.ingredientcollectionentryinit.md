@@ -11,5 +11,5 @@ Initialization type for an IngredientsLibrary collection entry.
 ```typescript
 export type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, Ingredient>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
 
