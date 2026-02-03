@@ -33,9 +33,7 @@ import {
   IProducedBarTruffle,
   IProducedMoldedBonBon,
   IProducedRolledTruffle,
-  ISerializedEditingHistory,
-  isPersistedConfectionSession,
-  isPersistedFillingSession,
+  Session as SessionEntities,
   SessionLibrary
 } from '../entities';
 import {
@@ -113,11 +111,11 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     const persisted = persistedResult.value;
 
     // Dispatch to type-specific materialization
-    if (isPersistedFillingSession(persisted)) {
+    if (SessionEntities.isPersistedFillingSession(persisted)) {
       return this._materializeFillingSession(sessionId, persisted);
     }
 
-    if (isPersistedConfectionSession(persisted)) {
+    if (SessionEntities.isPersistedConfectionSession(persisted)) {
       return this._materializeConfectionSession(sessionId, persisted);
     }
 
@@ -265,7 +263,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     if (confection.isMoldedBonBon() && persisted.confectionType === ('moldedBonBon' as ConfectionType)) {
       return this._materializeMoldedBonBonSession(
         sessionId,
-        persisted.history as ISerializedEditingHistory<IProducedMoldedBonBon>,
+        persisted.history as SessionEntities.ISerializedEditingHistory<IProducedMoldedBonBon>,
         confection
       );
     }
@@ -273,7 +271,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     if (confection.isBarTruffle() && persisted.confectionType === ('barTruffle' as ConfectionType)) {
       return this._materializeBarTruffleSession(
         sessionId,
-        persisted.history as ISerializedEditingHistory<IProducedBarTruffle>,
+        persisted.history as SessionEntities.ISerializedEditingHistory<IProducedBarTruffle>,
         confection
       );
     }
@@ -281,7 +279,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     if (confection.isRolledTruffle() && persisted.confectionType === ('rolledTruffle' as ConfectionType)) {
       return this._materializeRolledTruffleSession(
         sessionId,
-        persisted.history as ISerializedEditingHistory<IProducedRolledTruffle>,
+        persisted.history as SessionEntities.ISerializedEditingHistory<IProducedRolledTruffle>,
         confection
       );
     }
@@ -295,7 +293,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    */
   private _materializeMoldedBonBonSession(
     sessionId: PersistedSessionId,
-    history: ISerializedEditingHistory<IProducedMoldedBonBon>,
+    history: SessionEntities.ISerializedEditingHistory<IProducedMoldedBonBon>,
     confection: IRuntimeConfection
   ): Result<Session.MoldedBonBonEditingSession> {
     return Session.MoldedBonBonEditingSession.fromPersistedState(
@@ -314,7 +312,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    */
   private _materializeBarTruffleSession(
     sessionId: PersistedSessionId,
-    history: ISerializedEditingHistory<IProducedBarTruffle>,
+    history: SessionEntities.ISerializedEditingHistory<IProducedBarTruffle>,
     confection: IRuntimeConfection
   ): Result<Session.BarTruffleEditingSession> {
     return Session.BarTruffleEditingSession.fromPersistedState(
@@ -333,7 +331,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    */
   private _materializeRolledTruffleSession(
     sessionId: PersistedSessionId,
-    history: ISerializedEditingHistory<IProducedRolledTruffle>,
+    history: SessionEntities.ISerializedEditingHistory<IProducedRolledTruffle>,
     confection: IRuntimeConfection
   ): Result<Session.RolledTruffleEditingSession> {
     return Session.RolledTruffleEditingSession.fromPersistedState(

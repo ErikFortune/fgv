@@ -53,7 +53,7 @@ session
 
 </td><td>
 
-[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)
+[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
 
 
 </td><td>

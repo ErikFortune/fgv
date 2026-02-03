@@ -234,7 +234,7 @@ class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBar
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create(baseConfection: RuntimeBarTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
-    static fromPersistedState(baseConfection: RuntimeBarTruffle, history: ISerializedEditingHistory<IProducedBarTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+    static fromPersistedState(baseConfection: RuntimeBarTruffle, history: Session.ISerializedEditingHistory<IProducedBarTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
 }
 
@@ -1221,6 +1221,11 @@ declare namespace Entities {
         IFillingProductionJournalEntry,
         IFillingEditJournalEntry,
         JournalEntryType,
+        SessionLibrary,
+        AnyPersistedSession,
+        IPersistedConfectionSession,
+        IPersistedFillingSession,
+        PersistedSessionStatus,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -1231,29 +1236,6 @@ declare namespace Entities {
         Procedures_2 as Procedures,
         Session,
         Tasks_2 as Tasks,
-        isPersistedFillingSession,
-        isPersistedConfectionSession,
-        PERSISTED_SESSION_SCHEMA_VERSION,
-        PersistedSessionSchemaVersion,
-        PersistedSessionType,
-        allPersistedSessionTypes,
-        PersistedSessionStatus,
-        allPersistedSessionStatuses,
-        IPersistedSessionDestination,
-        ISerializedEditingHistory,
-        IPersistedSessionBase,
-        IPersistedFillingSession,
-        IPersistedConfectionSession,
-        AnyPersistedSession,
-        SessionCollectionEntry,
-        SessionCollectionEntryInit,
-        SessionCollectionValidator,
-        SessionCollection,
-        ISessionFileTreeSource,
-        SessionsMergeSource,
-        ISessionLibraryParams,
-        ISessionLibraryAsyncParams,
-        SessionLibrary,
         isMoldInventoryEntry,
         isIngredientInventoryEntry,
         MoldInventoryEntryBaseId,
@@ -5067,7 +5049,7 @@ class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedM
     confirmMoldChange(): Result<undefined>;
     static create(baseConfection: RuntimeMoldedBonBon, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get currentMold(): IRuntimeMold;
-    static fromPersistedState(baseConfection: RuntimeMoldedBonBon, history: ISerializedEditingHistory<IProducedMoldedBonBon>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    static fromPersistedState(baseConfection: RuntimeMoldedBonBon, history: Session.ISerializedEditingHistory<IProducedMoldedBonBon>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
     setFrames(frames: number, bufferPercentage?: number): Result<Confections_2.IMoldedBonBonYield>;
@@ -5591,7 +5573,7 @@ class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProduced
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create(baseConfection: RuntimeRolledTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
-    static fromPersistedState(baseConfection: RuntimeRolledTruffle, history: ISerializedEditingHistory<IProducedRolledTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+    static fromPersistedState(baseConfection: RuntimeRolledTruffle, history: Session.ISerializedEditingHistory<IProducedRolledTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
 }
 
@@ -5997,7 +5979,7 @@ class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedB
     static fromSource(source: IRuntimeBarTruffleVersion): Result<RuntimeProducedBarTruffle>;
     // (undocumented)
     getChanges(original: IProducedBarTruffle): IConfectionChanges;
-    static restoreFromHistory(history: ISerializedEditingHistory<IProducedBarTruffle>): Result<RuntimeProducedBarTruffle>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedBarTruffle>): Result<RuntimeProducedBarTruffle>;
     setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
 }
 
@@ -6015,7 +5997,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
     protected abstract _deepCopy(confection: T): T;
     get fillings(): ReadonlyArray<Confections_2.AnyResolvedFillingSlot> | undefined;
     abstract getChanges(original: T): IConfectionChanges;
-    getSerializedHistory(original: T): ISerializedEditingHistory<T>;
+    getSerializedHistory(original: T): Session.ISerializedEditingHistory<T>;
     hasChanges(original: T): boolean;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedureId(): ProcedureId | undefined;
@@ -6051,12 +6033,12 @@ class RuntimeProducedFilling {
     createSnapshot(): IProducedFilling;
     static fromSource(source: IRuntimeFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
     getChanges(original: IProducedFilling): IFillingChanges;
-    getSerializedHistory(original: IProducedFilling): ISerializedEditingHistory<IProducedFilling>;
+    getSerializedHistory(original: IProducedFilling): Session.ISerializedEditingHistory<IProducedFilling>;
     hasChanges(original: IProducedFilling): boolean;
     get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredient>;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
-    static restoreFromHistory(history: ISerializedEditingHistory<IProducedFilling>): Result<RuntimeProducedFilling>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedFilling>): Result<RuntimeProducedFilling>;
     restoreSnapshot(snapshot: IProducedFilling): Result<void>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
@@ -6078,7 +6060,7 @@ class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProduce
     // (undocumented)
     getChanges(original: IProducedMoldedBonBon): IConfectionChanges;
     get moldId(): MoldId;
-    static restoreFromHistory(history: ISerializedEditingHistory<IProducedMoldedBonBon>): Result<RuntimeProducedMoldedBonBon>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedMoldedBonBon>): Result<RuntimeProducedMoldedBonBon>;
     get sealChocolateId(): IngredientId | undefined;
     setDecorationChocolate(chocolateId: IngredientId | undefined): Result<void>;
     setMold(moldId: MoldId): Result<void>;
@@ -6097,7 +6079,7 @@ class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProduc
     static fromSource(source: IRuntimeRolledTruffleVersion): Result<RuntimeProducedRolledTruffle>;
     // (undocumented)
     getChanges(original: IProducedRolledTruffle): IConfectionChanges;
-    static restoreFromHistory(history: ISerializedEditingHistory<IProducedRolledTruffle>): Result<RuntimeProducedRolledTruffle>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedRolledTruffle>): Result<RuntimeProducedRolledTruffle>;
     setCoating(coatingId: IngredientId | undefined): Result<void>;
     setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
 }

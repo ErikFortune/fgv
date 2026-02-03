@@ -37,7 +37,7 @@ status
 
 </td><td>
 
-[PersistedSessionStatus](./ts-chocolate.entities.session.persistedsessionstatus.md)
+[PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ The [status](./ts-chocolate.entities.session.persistedsessionstatus.md) to filte
 
 **Returns:**
 
-ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
 
 Array of sessions with that status (empty if none found)
 

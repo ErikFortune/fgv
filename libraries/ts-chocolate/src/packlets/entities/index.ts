@@ -73,8 +73,13 @@ export {
   JournalEntryType
 } from './journal';
 
-export * from './session/model';
-export * from './session/library';
+export {
+  SessionLibrary,
+  AnyPersistedSession,
+  IPersistedConfectionSession,
+  IPersistedFillingSession,
+  PersistedSessionStatus
+} from './session';
 
 export * from './inventory/model';
 export * from './inventory/collection';

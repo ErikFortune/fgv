@@ -50,7 +50,7 @@ _(Optional)_ [Async creation parameters](./ts-chocolate.entities.session.isessio
 
 **Returns:**
 
-Promise&lt;Result&lt;[SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)<!-- -->&gt;&gt;
+Promise&lt;Result&lt;[SessionLibrary](./ts-chocolate.entities.sessionlibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure
 

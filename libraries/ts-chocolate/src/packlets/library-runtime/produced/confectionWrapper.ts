@@ -37,11 +37,11 @@ import {
 } from '../../common';
 import {
   Confections,
+  Session,
   AnyProducedConfection,
   IProducedBarTruffle,
   IProducedMoldedBonBon,
-  IProducedRolledTruffle,
-  ISerializedEditingHistory
+  IProducedRolledTruffle
 } from '../../entities';
 import type {
   IRuntimeBarTruffleVersion,
@@ -199,7 +199,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * @returns Serialized editing history
    * @public
    */
-  public getSerializedHistory(original: T): ISerializedEditingHistory<T> {
+  public getSerializedHistory(original: T): Session.ISerializedEditingHistory<T> {
     return {
       current: this._deepCopy(this._current),
       original: this._deepCopy(original),
@@ -605,7 +605,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * @public
    */
   public static restoreFromHistory(
-    history: ISerializedEditingHistory<IProducedMoldedBonBon>
+    history: Session.ISerializedEditingHistory<IProducedMoldedBonBon>
   ): Result<RuntimeProducedMoldedBonBon> {
     const instance = new RuntimeProducedMoldedBonBon(history.current);
     instance._undoStack = [...history.undoStack];
@@ -894,7 +894,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * @public
    */
   public static restoreFromHistory(
-    history: ISerializedEditingHistory<IProducedBarTruffle>
+    history: Session.ISerializedEditingHistory<IProducedBarTruffle>
   ): Result<RuntimeProducedBarTruffle> {
     const instance = new RuntimeProducedBarTruffle(history.current);
     instance._undoStack = [...history.undoStack];
@@ -1088,7 +1088,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * @public
    */
   public static restoreFromHistory(
-    history: ISerializedEditingHistory<IProducedRolledTruffle>
+    history: Session.ISerializedEditingHistory<IProducedRolledTruffle>
   ): Result<RuntimeProducedRolledTruffle> {
     const instance = new RuntimeProducedRolledTruffle(history.current);
     instance._undoStack = [...history.undoStack];

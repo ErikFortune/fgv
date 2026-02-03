@@ -9,7 +9,7 @@ Gets the serialized editing history for persistence. Captures current state, ori
 **Signature:**
 
 ```typescript
-getSerializedHistory(original: T): ISerializedEditingHistory<T>;
+getSerializedHistory(original: T): Session.ISerializedEditingHistory<T>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The original state when session started
 
 **Returns:**
 
-[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;T&gt;
+[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;T&gt;
 
 Serialized editing history
 

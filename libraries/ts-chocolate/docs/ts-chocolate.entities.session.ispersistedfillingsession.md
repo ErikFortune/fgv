@@ -37,7 +37,7 @@ session
 
 </td><td>
 
-[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)
+[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Session to check
 
 **Returns:**
 
-session is [IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)
+session is [IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)
 
 True if the session is a filling session
 

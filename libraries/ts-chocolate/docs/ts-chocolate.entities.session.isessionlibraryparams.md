@@ -11,5 +11,5 @@ Parameters for creating a SessionLibrary instance synchronously.
 ```typescript
 export type ISessionLibraryParams = ISubLibraryParams<SessionLibrary, SessionCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)<!-- -->, [SessionCollectionEntryInit](./ts-chocolate.entities.session.sessioncollectionentryinit.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [SessionLibrary](./ts-chocolate.entities.sessionlibrary.md)<!-- -->, [SessionCollectionEntryInit](./ts-chocolate.entities.session.sessioncollectionentryinit.md)
 

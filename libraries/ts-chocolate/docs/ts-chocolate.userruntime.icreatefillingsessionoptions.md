@@ -89,7 +89,7 @@ _(Optional)_ Optional user-provided label
 
 </td><td>
 
-[PersistedSessionStatus](./ts-chocolate.entities.session.persistedsessionstatus.md)
+[PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)
 
 
 </td><td>

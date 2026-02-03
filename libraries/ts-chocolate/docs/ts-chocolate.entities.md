@@ -205,28 +205,6 @@ Type guard for IMoldInventoryEntry.
 </td></tr>
 <tr><td>
 
-[isPersistedConfectionSession(session)](./ts-chocolate.entities.ispersistedconfectionsession.md)
-
-
-</td><td>
-
-Type guard for IPersistedConfectionSession.
-
-
-</td></tr>
-<tr><td>
-
-[isPersistedFillingSession(session)](./ts-chocolate.entities.ispersistedfillingsession.md)
-
-
-</td><td>
-
-Type guard for IPersistedFillingSession.
-
-
-</td></tr>
-<tr><td>
-
 [isTaskRef(invocation)](./ts-chocolate.entities.istaskref.md)
 
 
@@ -547,28 +525,6 @@ Contains the complete undo/redo history so the session can be restored to its ex
 </td></tr>
 <tr><td>
 
-[IPersistedSessionBase](./ts-chocolate.entities.ipersistedsessionbase.md)
-
-
-</td><td>
-
-Common properties shared by all persisted session types.
-
-
-</td></tr>
-<tr><td>
-
-[IPersistedSessionDestination](./ts-chocolate.entities.ipersistedsessiondestination.md)
-
-
-</td><td>
-
-Destination collection configuration for persisting derived entities.
-
-
-</td></tr>
-<tr><td>
-
 [IProcedure](./ts-chocolate.entities.iprocedure.md)
 
 
@@ -674,17 +630,6 @@ Rolled truffle confection Hand-rolled ganache balls with various coatings
 </td><td>
 
 Version interface for rolled truffle confections. Includes enrobing and coating specifications.
-
-
-</td></tr>
-<tr><td>
-
-[ISerializedEditingHistory](./ts-chocolate.entities.iserializededitinghistory.md)
-
-
-</td><td>
-
-Serialized undo/redo history for any editable entity. Captures the full editing state for restoration.
 
 
 </td></tr>
@@ -887,28 +832,6 @@ All possible inventory types.
 </td></tr>
 <tr><td>
 
-[allPersistedSessionStatuses](./ts-chocolate.entities.allpersistedsessionstatuses.md)
-
-
-</td><td>
-
-All possible persisted session statuses.
-
-
-</td></tr>
-<tr><td>
-
-[allPersistedSessionTypes](./ts-chocolate.entities.allpersistedsessiontypes.md)
-
-
-</td><td>
-
-All possible persisted session types.
-
-
-</td></tr>
-<tr><td>
-
 [defaultRenderOptions](./ts-chocolate.entities.defaultrenderoptions.md)
 
 
@@ -926,17 +849,6 @@ Default render options
 </td><td>
 
 Current schema version for inventory entries.
-
-
-</td></tr>
-<tr><td>
-
-[PERSISTED\_SESSION\_SCHEMA\_VERSION](./ts-chocolate.entities.persisted_session_schema_version.md)
-
-
-</td><td>
-
-Current schema version for persisted sessions.
 
 
 </td></tr>
@@ -1309,39 +1221,6 @@ Parameters for creating a ProceduresLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
-[ISessionFileTreeSource](./ts-chocolate.entities.isessionfiletreesource.md)
-
-
-</td><td>
-
-File tree source for session data.
-
-
-</td></tr>
-<tr><td>
-
-[ISessionLibraryAsyncParams](./ts-chocolate.entities.isessionlibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a SessionLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[ISessionLibraryParams](./ts-chocolate.entities.isessionlibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a SessionLibrary instance synchronously.
-
-
-</td></tr>
-<tr><td>
-
 [ITaskFileTreeSource](./ts-chocolate.entities.itaskfiletreesource.md)
 
 
@@ -1529,34 +1408,12 @@ Specifies a molds library to merge into a new library.
 </td></tr>
 <tr><td>
 
-[PersistedSessionSchemaVersion](./ts-chocolate.entities.persistedsessionschemaversion.md)
-
-
-</td><td>
-
-Schema version discriminator type.
-
-
-</td></tr>
-<tr><td>
-
 [PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)
 
 
 </td><td>
 
 Persisted session lifecycle state. - `planning`<!-- -->: Session is being planned but not actively editing - `active`<!-- -->: Session is actively being edited - `committing`<!-- -->: Session is in the process of being committed - `committed`<!-- -->: Session has been committed to a journal entry - `abandoned`<!-- -->: Session was explicitly abandoned
-
-
-</td></tr>
-<tr><td>
-
-[PersistedSessionType](./ts-chocolate.entities.persistedsessiontype.md)
-
-
-</td><td>
-
-Persisted session type discriminator.
 
 
 </td></tr>
@@ -1612,61 +1469,6 @@ Validator type for ProceduresLibrary collections.
 </td><td>
 
 Specifies a procedures library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[SessionCollection](./ts-chocolate.entities.sessioncollection.md)
-
-
-</td><td>
-
-Type for the collections in a SessionLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[SessionCollectionEntry](./ts-chocolate.entities.sessioncollectionentry.md)
-
-
-</td><td>
-
-A single entry in a session collection.
-
-
-</td></tr>
-<tr><td>
-
-[SessionCollectionEntryInit](./ts-chocolate.entities.sessioncollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a SessionLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[SessionCollectionValidator](./ts-chocolate.entities.sessioncollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for SessionLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[SessionsMergeSource](./ts-chocolate.entities.sessionsmergesource.md)
-
-
-</td><td>
-
-Specifies a sessions library to merge into a new library.
 
 
 </td></tr>

@@ -11,5 +11,5 @@ Specifies a sessions library to merge into a new library.
 ```typescript
 export type SessionsMergeSource = SubLibraryMergeSource<SessionLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [SessionLibrary](./ts-chocolate.entities.session.sessionlibrary.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [SessionLibrary](./ts-chocolate.entities.sessionlibrary.md)
 

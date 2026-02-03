@@ -9,7 +9,7 @@ Restores a BarTruffleEditingSession from persisted state. Note: Child filling se
 **Signature:**
 
 ```typescript
-static fromPersistedState(baseConfection: RuntimeBarTruffle, history: ISerializedEditingHistory<IProducedBarTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+static fromPersistedState(baseConfection: RuntimeBarTruffle, history: Session.ISerializedEditingHistory<IProducedBarTruffle>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ history
 
 </td><td>
 
-[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)<!-- -->&gt;
+[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)<!-- -->&gt;
 
 
 </td><td>

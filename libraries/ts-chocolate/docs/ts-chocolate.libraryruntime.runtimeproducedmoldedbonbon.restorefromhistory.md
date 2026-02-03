@@ -9,7 +9,7 @@ Restores a RuntimeProducedMoldedBonBon from serialized editing history.
 **Signature:**
 
 ```typescript
-static restoreFromHistory(history: ISerializedEditingHistory<IProducedMoldedBonBon>): Result<RuntimeProducedMoldedBonBon>;
+static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedMoldedBonBon>): Result<RuntimeProducedMoldedBonBon>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ history
 
 </td><td>
 
-[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)<!-- -->&gt;
+[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)<!-- -->&gt;
 
 
 </td><td>

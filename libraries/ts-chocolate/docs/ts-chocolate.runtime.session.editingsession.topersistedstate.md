@@ -43,7 +43,7 @@ options
 
 </td><td>
 
-{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->; readonly status?: [PersistedSessionStatus](./ts-chocolate.entities.session.persistedsessionstatus.md)<!-- -->; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
+{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->; readonly status?: [PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)<!-- -->; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
 
 
 </td><td>
@@ -56,7 +56,7 @@ Persistence options including collection ID
 
 **Returns:**
 
-Result&lt;[IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)<!-- -->&gt;
+Result&lt;[IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)<!-- -->&gt;
 
 Result with persisted filling session
 

@@ -15,7 +15,7 @@ Provides: - Multi-collection storage with FileTree persistence - Cross-collectio
 ```typescript
 export declare class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBaseId, AnyPersistedSession> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[PersistedSessionId](./ts-chocolate.persistedsessionid.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[PersistedSessionId](./ts-chocolate.persistedsessionid.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
 
 ## Methods
 

@@ -35,7 +35,7 @@ import {
   Converters as CommonConverters,
   Model as CommonModel
 } from '../../common';
-import { Fillings, IProducedFilling, ISerializedEditingHistory } from '../../entities';
+import { Fillings, IProducedFilling, Session } from '../../entities';
 import type { IRuntimeFillingRecipeVersion } from '../model';
 
 /**
@@ -115,7 +115,7 @@ export class RuntimeProducedFilling {
    * @public
    */
   public static restoreFromHistory(
-    history: ISerializedEditingHistory<IProducedFilling>
+    history: Session.ISerializedEditingHistory<IProducedFilling>
   ): Result<RuntimeProducedFilling> {
     const instance = new RuntimeProducedFilling(history.current);
     // Restore undo/redo stacks
@@ -216,7 +216,9 @@ export class RuntimeProducedFilling {
    * @returns Serialized editing history
    * @public
    */
-  public getSerializedHistory(original: IProducedFilling): ISerializedEditingHistory<IProducedFilling> {
+  public getSerializedHistory(
+    original: IProducedFilling
+  ): Session.ISerializedEditingHistory<IProducedFilling> {
     return {
       current: this._deepCopy(this._current),
       original: this._deepCopy(original),

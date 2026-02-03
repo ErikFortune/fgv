@@ -13,7 +13,7 @@ getAllSessions(): ReadonlyArray<AnyPersistedSession>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
 
 Array of all sessions
 
