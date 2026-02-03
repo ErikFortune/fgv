@@ -20,21 +20,17 @@
 
 import '@fgv/ts-utils-jest';
 
-import {
-  Constants as CryptoConstants,
-  NodeCryptoProvider,
-  nodeCryptoProvider
-} from '../../../packlets/crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 
-describe('NodeCryptoProvider', () => {
-  const provider = nodeCryptoProvider;
+describe('Crypto.NodeCryptoProvider', () => {
+  const provider = Crypto.nodeCryptoProvider;
 
   describe('generateKey', () => {
     test('generates a 32-byte key', async () => {
       const result = await provider.generateKey();
       expect(result).toSucceedAndSatisfy((key) => {
         expect(key).toBeInstanceOf(Uint8Array);
-        expect(key.length).toBe(CryptoConstants.AES_256_KEY_SIZE);
+        expect(key.length).toBe(Crypto.AES_256_KEY_SIZE);
       });
     });
 
@@ -52,8 +48,8 @@ describe('NodeCryptoProvider', () => {
 
       const encryptResult = await provider.encrypt(plaintext, key);
       expect(encryptResult).toSucceedAndSatisfy((encrypted) => {
-        expect(encrypted.iv.length).toBe(CryptoConstants.GCM_IV_SIZE);
-        expect(encrypted.authTag.length).toBe(CryptoConstants.GCM_AUTH_TAG_SIZE);
+        expect(encrypted.iv.length).toBe(Crypto.GCM_IV_SIZE);
+        expect(encrypted.authTag.length).toBe(Crypto.GCM_AUTH_TAG_SIZE);
         expect(encrypted.encryptedData.length).toBeGreaterThan(0);
       });
 
@@ -204,7 +200,7 @@ describe('NodeCryptoProvider', () => {
       const result = await provider.deriveKey(password, salt, 1000);
       expect(result).toSucceedAndSatisfy((key) => {
         expect(key).toBeInstanceOf(Uint8Array);
-        expect(key.length).toBe(CryptoConstants.AES_256_KEY_SIZE);
+        expect(key.length).toBe(Crypto.AES_256_KEY_SIZE);
       });
     });
 
@@ -272,8 +268,8 @@ describe('NodeCryptoProvider', () => {
   });
 
   describe('singleton instance', () => {
-    test('nodeCryptoProvider is a NodeCryptoProvider instance', () => {
-      expect(nodeCryptoProvider).toBeInstanceOf(NodeCryptoProvider);
+    test('Crypto.nodeCryptoProvider is a Crypto.NodeCryptoProvider instance', () => {
+      expect(Crypto.nodeCryptoProvider).toBeInstanceOf(Crypto.NodeCryptoProvider);
     });
   });
 

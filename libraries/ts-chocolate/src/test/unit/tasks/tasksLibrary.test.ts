@@ -23,7 +23,7 @@ import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseTaskId, Minutes, SourceId, TaskId } from '../../../packlets/common';
 import { TasksLibrary, ITaskData, ITaskFileTreeSource } from '../../../packlets/entities';
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 
 describe('TasksLibrary', () => {
   // ============================================================================
@@ -268,7 +268,7 @@ describe('TasksLibrary.createAsync', () => {
   let testKey: Uint8Array;
 
   beforeAll(async () => {
-    testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+    testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
   });
 
   test('creates library with built-in tasks by default', async () => {
@@ -339,11 +339,11 @@ describe('TasksLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretTaskData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -367,7 +367,7 @@ describe('TasksLibrary.createAsync', () => {
       fileSources: fileSource,
       encryption: {
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       }
     });
 
@@ -391,11 +391,11 @@ describe('TasksLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretTaskData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 

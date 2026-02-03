@@ -31,7 +31,7 @@ import {
 
 import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/entities';
 
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 
@@ -256,7 +256,7 @@ describe('ProceduresLibrary.createAsync', () => {
   let testKey: Uint8Array;
 
   beforeAll(async () => {
-    testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+    testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
   });
 
   test('creates library with built-ins by default', async () => {
@@ -339,11 +339,11 @@ describe('ProceduresLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretProcedureData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -366,7 +366,7 @@ describe('ProceduresLibrary.createAsync', () => {
       fileSources: fileSource,
       encryption: {
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       }
     });
 
@@ -397,11 +397,11 @@ describe('ProceduresLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretProcedureData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 

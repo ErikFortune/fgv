@@ -31,7 +31,7 @@ import * as path from 'path';
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { KeyStore, nodeCryptoProvider } from '../crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 import { LibraryPaths } from '../library-data';
 import {
   Converters as SettingsConverters,
@@ -116,7 +116,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     const resolvedSettings = resolveSettings(common, device);
 
     return succeed({
-      cryptoProvider: nodeCryptoProvider,
+      cryptoProvider: Crypto.nodeCryptoProvider,
       userLibraryTree,
       externalLibraries: externalLibrariesResult.value,
       keyStoreFile: keyStoreFileResult.isSuccess() ? keyStoreFileResult.value : undefined,
@@ -326,7 +326,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
    * Loads the key store file if it exists.
    * @internal
    */
-  private _loadKeyStoreFile(keyStorePath: string): Result<KeyStore.IKeyStoreFile> {
+  private _loadKeyStoreFile(keyStorePath: string): Result<Crypto.KeyStore.IKeyStoreFile> {
     if (!fs.existsSync(keyStorePath)) {
       return fail(`Key store file not found: ${keyStorePath}`);
     }
@@ -335,7 +335,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
       const contents = fs.readFileSync(keyStorePath, 'utf8');
       return JSON.parse(contents) as unknown;
     }).onSuccess((json) => {
-      return KeyStore.Converters.keystoreFile
+      return Crypto.KeyStore.Converters.keystoreFile
         .convert(json)
         .withErrorFormat((e: string) => `${keyStorePath}: ${e}`);
     });

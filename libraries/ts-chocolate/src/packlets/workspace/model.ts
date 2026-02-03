@@ -31,7 +31,7 @@
 
 import { Logging, Result } from '@fgv/ts-utils';
 
-import { ICryptoProvider, KeyStore } from '../crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 import { JournalLibrary, SessionLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
 import { IChocolateLibraryCreateParams, IInstantiatedLibrarySource } from '../library-runtime';
@@ -92,7 +92,7 @@ export interface IWorkspace {
   /**
    * The key store for encryption key management, if configured.
    */
-  readonly keyStore: KeyStore.KeyStore | undefined;
+  readonly keyStore: Crypto.KeyStore.KeyStore | undefined;
 
   /**
    * The settings manager for workspace configuration.
@@ -147,12 +147,12 @@ export interface IWorkspaceKeyStoreConfig {
    * Existing key store file data to load.
    * If not provided, no key store will be configured.
    */
-  readonly file?: KeyStore.IKeyStoreFile;
+  readonly file?: Crypto.KeyStore.IKeyStoreFile;
 
   /**
    * The crypto provider for key store operations.
    */
-  readonly cryptoProvider: ICryptoProvider;
+  readonly cryptoProvider: Crypto.ICryptoProvider;
 }
 
 /**
@@ -238,7 +238,7 @@ export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'k
    * Key store file data to load.
    * The crypto provider will be supplied by the platform factory.
    */
-  readonly keyStoreFile?: KeyStore.IKeyStoreFile;
+  readonly keyStoreFile?: Crypto.KeyStore.IKeyStoreFile;
 }
 
 /**

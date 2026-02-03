@@ -69,11 +69,10 @@ export { Runtime };
 // SUPPORTING NAMESPACES
 // ============================================================================
 
-import * as CryptoUtils from './packlets/crypto-utils';
 import * as LibraryData from './packlets/library-data';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
 import * as UserLibrary from './packlets/user-library';
 import * as UserRuntime from './packlets/user-runtime';
 
-export { CryptoUtils, LibraryData, BuiltIn, Editing, UserLibrary, UserRuntime };
+export { LibraryData, BuiltIn, Editing, UserLibrary, UserRuntime };

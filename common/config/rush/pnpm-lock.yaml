@@ -250,6 +250,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../ts-web-extras
       js-yaml:
         specifier: ~4.1.1
         version: 4.1.1
@@ -1247,6 +1250,9 @@ importers:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
         version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base

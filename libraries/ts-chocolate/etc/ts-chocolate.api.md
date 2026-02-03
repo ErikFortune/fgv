@@ -7,11 +7,11 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_5 } from '@fgv/ts-utils';
+import { Converters as Converters_4 } from '@fgv/ts-utils';
+import { Crypto as Crypto_2 } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
-import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
@@ -25,9 +25,6 @@ export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 
 // @public
 const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
-
-// @public
-const AES_256_KEY_SIZE: number;
 
 // @public
 type AggregationMode = 'intersection' | 'union';
@@ -240,9 +237,6 @@ class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBar
 
 // @public
 const barTruffleVersion: Converter<IBarTruffleVersion>;
-
-// @public
-const base64String: Converter<string>;
 
 // @public
 const BASE_ID_PATTERN: RegExp;
@@ -845,16 +839,6 @@ const confectionVersionSpec_2: Validator<ConfectionVersionSpec>;
 // @public
 const confectionYield: Converter<IConfectionYield>;
 
-declare namespace Constants {
-    export {
-        ENCRYPTED_COLLECTION_FORMAT,
-        DEFAULT_ALGORITHM,
-        AES_256_KEY_SIZE,
-        GCM_IV_SIZE,
-        GCM_AUTH_TAG_SIZE
-    }
-}
-
 // @public
 function containsIgnoreCase<T>(text: string, getter: (item: T) => string | undefined): FilterPredicate<T>;
 
@@ -947,15 +931,6 @@ export { Converters }
 
 declare namespace Converters_2 {
     export {
-        keystoreFormat,
-        keystoreSecretEntryJson,
-        keystoreVaultContents,
-        keystoreFile
-    }
-}
-
-declare namespace Converters_3 {
-    export {
         Confections,
         Fillings,
         Ingredients,
@@ -966,7 +941,7 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_4 {
+declare namespace Converters_3 {
     export {
         moldInventoryEntryBaseId,
         moldInventoryEntryId,
@@ -983,7 +958,7 @@ declare namespace Converters_4 {
     }
 }
 
-declare namespace Converters_6 {
+declare namespace Converters_5 {
     export {
         persistedSessionType,
         persistedSessionStatus,
@@ -997,29 +972,16 @@ declare namespace Converters_6 {
     }
 }
 
-declare namespace Converters_7 {
-    export {
-        encryptionAlgorithm,
-        encryptedCollectionFormat,
-        encryptedCollectionErrorMode,
-        keyDerivationFunction,
-        keyDerivationParams,
-        base64String,
-        encryptedCollectionMetadata,
-        encryptedCollectionFile,
-        uint8ArrayFromBase64,
-        namedSecret
-    }
-}
-
-declare namespace Converters_8 {
+declare namespace Converters_6 {
     export {
         removeExtension,
         collectionSourceFile,
         collection,
         removeJsonExtension,
         collectionSourceMetadata,
-        ICollectionConverterParams
+        ICollectionConverterParams,
+        encryptedCollectionMetadata,
+        encryptedCollectionFile
     }
 }
 
@@ -1028,11 +990,6 @@ function createConfectionVersionId(parts: {
     collectionId: ConfectionId;
     itemId: ConfectionVersionSpec;
 }): Result<ConfectionVersionId>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function createEncryptedCollectionFile(params: ICreateEncryptedFileParams): Promise<Result<IEncryptedCollectionFile>>;
 
 // @public
 function createFillingId(sourceId: SourceId, baseId: BaseFillingId): FillingId;
@@ -1061,49 +1018,8 @@ export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Wo
 // @public
 function createPersistedSessionId(collectionId: SourceId, baseId: SessionBaseId): PersistedSessionId;
 
-declare namespace CryptoUtils {
-    export {
-        KeyStore,
-        Converters_7 as Converters,
-        NodeCryptoProvider,
-        nodeCryptoProvider,
-        createEncryptedCollectionFile,
-        decryptCollectionFile,
-        tryDecryptCollectionFile,
-        EncryptionHelper,
-        ICreateEncryptedFileParams,
-        isEncryptedCollectionFile,
-        EncryptionAlgorithm,
-        EncryptedCollectionFormat,
-        INamedSecret,
-        IEncryptionResult,
-        IEncryptedCollectionMetadata,
-        KeyDerivationFunction,
-        IKeyDerivationParams,
-        IEncryptedCollectionFile,
-        ICryptoProvider,
-        EncryptedCollectionErrorMode,
-        SecretProvider_2 as SecretProvider,
-        IEncryptionConfig_2 as IEncryptionConfig,
-        Constants
-    }
-}
-export { CryptoUtils }
-
 // @public
 const dairyIngredient: Converter<IDairyIngredient>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
-
-// @public
-const DEFAULT_ALGORITHM: EncryptionAlgorithm;
-
-// @public
-const DEFAULT_KEYSTORE_ITERATIONS: number;
 
 // @public
 export const DefaultNoteCategory: NoteCategory;
@@ -1253,30 +1169,14 @@ class EditorContextValidator<T, TBaseId extends string = string, TId extends str
 }
 
 // @public
-const ENCRYPTED_COLLECTION_FORMAT: EncryptedCollectionFormat;
+type EncryptedCollectionFile = Crypto_2.IEncryptedFile<IEncryptedCollectionMetadata>;
 
-// @public
-type EncryptedCollectionErrorMode = 'fail' | 'skip' | 'warn';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EncryptedCollectionFile"
 //
 // @public
-const encryptedCollectionErrorMode: Converter<EncryptedCollectionErrorMode>;
+const encryptedCollectionFile: Converter<EncryptedCollectionFile>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const encryptedCollectionFile: Converter<IEncryptedCollectionFile>;
-
-// @public
-type EncryptedCollectionFormat = 'encrypted-collection-v1';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const encryptedCollectionFormat: Converter<EncryptedCollectionFormat>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IEncryptedCollectionMetadata"
 //
 // @public
 const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
@@ -1284,32 +1184,9 @@ const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
 // @public
 type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 
-// @public
-type EncryptionAlgorithm = 'AES-256-GCM';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
-
-// @public
-class EncryptionHelper {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(cryptoProvider: ICryptoProvider);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get cryptoProvider(): ICryptoProvider;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    decrypt(tombstone: IEncryptedCollectionFile, key: Uint8Array): Promise<Result<JsonObject>>;
-    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata, keyDerivation?: IKeyDerivationParams): Promise<Result<IEncryptedCollectionFile>>;
-    generateKey(): Promise<Result<Uint8Array>>;
-    isEncrypted(json: unknown): boolean;
-}
-
 declare namespace Entities {
     export {
-        Converters_3 as Converters,
+        Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
         Ingredients_2 as Ingredients,
@@ -1952,12 +1829,6 @@ type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', Li
 const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
 
 // @public
-const GCM_AUTH_TAG_SIZE: number;
-
-// @public
-const GCM_IV_SIZE: number;
-
-// @public
 function generateJournalId(): Result<JournalBaseId>;
 
 // @public
@@ -2116,17 +1987,6 @@ export const HundredPercent: Percentage;
 interface IAdditionalChocolate {
     readonly chocolate: Model.IIdsWithPreferred<IngredientId>;
     readonly purpose: AdditionalChocolatePurpose;
-}
-
-// @public
-interface IAddSecretOptions {
-    readonly description?: string;
-}
-
-// @public
-interface IAddSecretResult {
-    readonly entry: IKeyStoreSecretEntry;
-    readonly replaced: boolean;
 }
 
 // @public
@@ -2466,37 +2326,11 @@ interface IConfectionYield {
     readonly weightPerPiece?: Measurement;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface ICreateEncryptedFileParams {
-    readonly content: JsonValue;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly cryptoProvider: ICryptoProvider;
-    readonly key: Uint8Array;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly keyDerivation?: IKeyDerivationParams;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly metadata?: IEncryptedCollectionMetadata;
-    readonly secretName: string;
-}
-
 // @public
 interface ICreateFillingSessionOptions {
     readonly collectionId: SourceId;
     readonly label?: string;
     readonly status?: PersistedSessionStatus;
-}
-
-// @public
-interface ICryptoProvider {
-    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
-    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
-    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
-    fromBase64(base64: string): Result<Uint8Array>;
-    generateKey(): Promise<Result<Uint8Array>>;
-    generateRandomBytes(length: number): Result<Uint8Array>;
-    toBase64(data: Uint8Array): string;
 }
 
 // @public
@@ -2591,18 +2425,6 @@ interface IEditorContextValidatorParams<T, TBaseId extends string = string, TId 
 }
 
 // @public
-interface IEncryptedCollectionFile {
-    readonly algorithm: EncryptionAlgorithm;
-    readonly authTag: string;
-    readonly encryptedData: string;
-    readonly format: EncryptedCollectionFormat;
-    readonly iv: string;
-    readonly keyDerivation?: IKeyDerivationParams;
-    readonly metadata?: IEncryptedCollectionMetadata;
-    readonly secretName: string;
-}
-
-// @public
 interface IEncryptedCollectionMetadata {
     readonly collectionId?: string;
     readonly description?: string;
@@ -2611,27 +2433,11 @@ interface IEncryptedCollectionMetadata {
 
 // @public
 interface IEncryptionConfig {
-    readonly cryptoProvider: ICryptoProvider;
-    readonly onDecryptionError?: EncryptedCollectionErrorMode;
-    readonly onMissingKey?: EncryptedCollectionErrorMode;
+    readonly cryptoProvider: Crypto_2.ICryptoProvider;
+    readonly onDecryptionError?: Crypto_2.EncryptedFileErrorMode;
+    readonly onMissingKey?: Crypto_2.EncryptedFileErrorMode;
     readonly secretProvider?: SecretProvider;
-    readonly secrets?: ReadonlyArray<INamedSecret>;
-}
-
-// @public
-interface IEncryptionConfig_2 {
-    readonly cryptoProvider: ICryptoProvider;
-    readonly onDecryptionError?: EncryptedCollectionErrorMode;
-    readonly onMissingKey?: EncryptedCollectionErrorMode;
-    readonly secretProvider?: SecretProvider_2;
-    readonly secrets?: ReadonlyArray<INamedSecret>;
-}
-
-// @public
-interface IEncryptionResult {
-    readonly authTag: Uint8Array;
-    readonly encryptedData: Uint8Array;
-    readonly iv: Uint8Array;
+    readonly secrets?: ReadonlyArray<Crypto_2.INamedSecret>;
 }
 
 // @public
@@ -2901,11 +2707,6 @@ interface IImportRootCandidate {
 }
 
 // @public
-interface IImportSecretOptions extends IAddSecretOptions {
-    readonly replace?: boolean;
-}
-
-// @public
 interface IIndexer<TEntity, TId, TConfig> {
     find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
     invalidate(): void;
@@ -3078,57 +2879,6 @@ type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, Journal
 type IJournalLibraryParams = ISubLibraryParams<JournalLibrary, JournalCollectionEntryInit>;
 
 // @public
-interface IKeyDerivationParams {
-    readonly iterations: number;
-    readonly kdf: KeyDerivationFunction;
-    readonly salt: string;
-}
-
-// @public
-interface IKeyStoreCreateParams {
-    readonly cryptoProvider: ICryptoProvider;
-    readonly iterations?: number;
-}
-
-// @public
-interface IKeyStoreFile {
-    readonly algorithm: EncryptionAlgorithm;
-    readonly authTag: string;
-    readonly encryptedData: string;
-    readonly format: KeyStoreFormat;
-    readonly iv: string;
-    readonly keyDerivation: IKeyDerivationParams;
-}
-
-// @public
-interface IKeyStoreOpenParams {
-    readonly cryptoProvider: ICryptoProvider;
-    readonly keystoreFile: IKeyStoreFile;
-}
-
-// @public
-interface IKeyStoreSecretEntry {
-    readonly createdAt: string;
-    readonly description?: string;
-    readonly key: Uint8Array;
-    readonly name: string;
-}
-
-// @public
-interface IKeyStoreSecretEntryJson {
-    readonly createdAt: string;
-    readonly description?: string;
-    readonly key: string;
-    readonly name: string;
-}
-
-// @public
-interface IKeyStoreVaultContents {
-    readonly secrets: Record<string, IKeyStoreSecretEntryJson>;
-    readonly version: KeyStoreFormat;
-}
-
-// @public
 interface ILibraryFileTreeSource {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly load?: FullLibraryLoadSpec;
@@ -3273,12 +3023,6 @@ type IMoldsLibraryParams = ISubLibraryParams<MoldsLibrary, MoldCollectionEntryIn
 
 // @public
 type ImportRootKind = 'canonical' | 'data-dir' | 'direct-subdir' | 'loose-files';
-
-// @public
-interface INamedSecret {
-    readonly key: Uint8Array;
-    readonly name: string;
-}
 
 // @public
 export type IndexerId = Brand<string, 'IndexerId'>;
@@ -3652,7 +3396,7 @@ interface INumericRange {
 
 declare namespace Inventory {
     export {
-        Converters_4 as Converters,
+        Converters_3 as Converters,
         MoldInventoryLibrary,
         IMoldInventoryFileTreeSource,
         MoldInventoryMergeSource,
@@ -3848,13 +3592,13 @@ interface IProtectedCollectionInfo<TCollectionId extends string = string> {
     readonly isBuiltIn: boolean;
     readonly isMutable: boolean;
     readonly itemCount?: number;
-    readonly keyDerivation?: IKeyDerivationParams;
+    readonly keyDerivation?: Crypto_2.IKeyDerivationParams;
     readonly secretName: string;
 }
 
 // @internal
 interface IProtectedCollectionInternal<TCollectionId extends string = string> {
-    readonly encryptedFile: IEncryptedCollectionFile;
+    readonly encryptedFile: EncryptedCollectionFile;
     readonly ref: IProtectedCollectionInfo<TCollectionId>;
 }
 
@@ -4642,9 +4386,6 @@ function isIngredientInventoryEntry(entry: AnyInventoryEntry): entry is IIngredi
 function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
 
 // @public
-function isKeyStoreFile(json: unknown): boolean;
-
-// @public
 function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
 
 // @public
@@ -4981,7 +4722,7 @@ interface IWeightContribution {
 export interface IWorkspace {
     readonly isReady: boolean;
     readonly journals: JournalLibrary;
-    readonly keyStore: KeyStore.KeyStore | undefined;
+    readonly keyStore: Crypto_2.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
     readonly runtime: RuntimeContext;
     readonly sessions: SessionLibrary;
@@ -5011,7 +4752,7 @@ export interface IWorkspaceCreateParams {
 
 // @public
 export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'keyStore'> {
-    readonly keyStoreFile?: KeyStore.IKeyStoreFile;
+    readonly keyStoreFile?: Crypto_2.KeyStore.IKeyStoreFile;
 }
 
 declare namespace Journal {
@@ -5148,97 +4889,13 @@ class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournal
 // @public
 type JournalsMergeSource = SubLibraryMergeSource<JournalLibrary>;
 
-// @public
-type KeyDerivationFunction = 'pbkdf2';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const keyDerivationFunction: Converter<KeyDerivationFunction>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const keyDerivationParams: Converter<IKeyDerivationParams>;
-
-declare namespace KeyStore {
-    export {
-        Converters_2 as Converters,
-        KeyStore_2 as KeyStore,
-        isKeyStoreFile,
-        KeyStoreFormat,
-        KEYSTORE_FORMAT,
-        DEFAULT_KEYSTORE_ITERATIONS,
-        MIN_SALT_LENGTH,
-        IKeyStoreSecretEntry,
-        IKeyStoreSecretEntryJson,
-        IKeyStoreVaultContents,
-        IKeyStoreFile,
-        KeyStoreLockState,
-        IKeyStoreCreateParams,
-        IKeyStoreOpenParams,
-        IAddSecretResult,
-        IAddSecretOptions,
-        IImportSecretOptions
-    }
-}
-
-// @public
-class KeyStore_2 {
-    addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
-    changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
-    static create(params: IKeyStoreCreateParams): Result<KeyStore_2>;
-    getEncryptionConfig(): Result<Pick<IEncryptionConfig_2, 'secretProvider' | 'cryptoProvider'>>;
-    getSecret(name: string): Result<IKeyStoreSecretEntry>;
-    getSecretProvider(): Result<SecretProvider_2>;
-    hasSecret(name: string): Result<boolean>;
-    importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
-    initialize(password: string): Promise<Result<KeyStore_2>>;
-    get isDirty(): boolean;
-    get isUnlocked(): boolean;
-    listSecrets(): Result<readonly string[]>;
-    lock(force?: boolean): Result<KeyStore_2>;
-    static open(params: IKeyStoreOpenParams): Result<KeyStore_2>;
-    removeSecret(name: string): Result<IKeyStoreSecretEntry>;
-    renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
-    save(password: string): Promise<Result<IKeyStoreFile>>;
-    get state(): KeyStoreLockState;
-    unlock(password: string): Promise<Result<KeyStore_2>>;
-}
-
-// @public
-const KEYSTORE_FORMAT: KeyStoreFormat;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const keystoreFile: Converter<IKeyStoreFile>;
-
-// @public
-type KeyStoreFormat = 'keystore-v1';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const keystoreFormat: Converter<KeyStoreFormat>;
-
-// @public
-type KeyStoreLockState = 'locked' | 'unlocked';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
-
 declare namespace LibraryData {
     export {
-        Converters_8 as Converters,
+        Converters_6 as Converters,
+        isEncryptedCollectionFile,
         resolveSubLibraryLoadSpec,
+        IEncryptedCollectionMetadata,
+        EncryptedCollectionFile,
         ICollectionSourceMetadata,
         ICollectionSourceFile,
         FilterPattern,
@@ -5578,9 +5235,6 @@ export type Millimeters = Brand<number, 'Millimeters'>;
 const millimeters: Converter<Millimeters>;
 
 // @public
-const MIN_SALT_LENGTH: number;
-
-// @public
 export type Minutes = Brand<number, 'Minutes'>;
 
 // @public
@@ -5767,11 +5421,6 @@ type MutabilitySpec = boolean | ReadonlyArray<string> | {
     readonly immutable: ReadonlyArray<string>;
 };
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const namedSecret: Converter<INamedSecret>;
-
 // @public
 function nameToBaseId(name: string): Result<string>;
 
@@ -5780,24 +5429,6 @@ function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<
 
 // @public
 function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class NodeCryptoProvider implements ICryptoProvider {
-    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
-    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
-    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
-    fromBase64(base64: string): Result<Uint8Array>;
-    generateKey(): Promise<Result<Uint8Array>>;
-    generateRandomBytes(length: number): Result<Uint8Array>;
-    toBase64(data: Uint8Array): string;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
 function normalizeFileSources<T extends {
@@ -5837,31 +5468,31 @@ function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'):
 function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
 
 // @public
-type ParsedConfectionId = Converters_5.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_4.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_5.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionVersionId = Converters_4.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 // @public
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_5.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_4.ICompositeId<SourceId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_5.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingVersionId = Converters_4.ICompositeId<FillingId, FillingVersionSpec>;
 
 // @public
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_5.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_4.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
@@ -5869,7 +5500,7 @@ const parsedIngredientId: Converter<ParsedIngredientId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ParsedIngredientInventoryEntryId = Converters_5.ICompositeId<SourceId, IngredientInventoryEntryBaseId>;
+type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, IngredientInventoryEntryBaseId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5877,13 +5508,13 @@ type ParsedIngredientInventoryEntryId = Converters_5.ICompositeId<SourceId, Ingr
 const parsedIngredientInventoryEntryId: Converter<ParsedIngredientInventoryEntryId>;
 
 // @public
-type ParsedJournalId = Converters_5.ICompositeId<SourceId, JournalBaseId>;
+type ParsedJournalId = Converters_4.ICompositeId<SourceId, JournalBaseId>;
 
 // @public
 const parsedJournalId: Converter<ParsedJournalId>;
 
 // @public
-type ParsedMoldId = Converters_5.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_4.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
@@ -5891,7 +5522,7 @@ const parsedMoldId: Converter<ParsedMoldId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ParsedMoldInventoryEntryId = Converters_5.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
+type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5899,19 +5530,19 @@ type ParsedMoldInventoryEntryId = Converters_5.ICompositeId<SourceId, MoldInvent
 const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId>;
 
 // @public
-type ParsedPersistedSessionId = Converters_5.ICompositeId<SourceId, SessionBaseId>;
+type ParsedPersistedSessionId = Converters_4.ICompositeId<SourceId, SessionBaseId>;
 
 // @public
 const parsedPersistedSessionId: Converter<ParsedPersistedSessionId>;
 
 // @public
-type ParsedProcedureId = Converters_5.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_4.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedTaskId = Converters_5.ICompositeId<SourceId, BaseTaskId>;
+type ParsedTaskId = Converters_4.ICompositeId<SourceId, BaseTaskId>;
 
 // @public
 const parsedTaskId: Converter<ParsedTaskId>;
@@ -6885,9 +6516,6 @@ const scalingSource: Converter<IScalingSource>;
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
 // @public
-type SecretProvider_2 = (secretName: string) => Promise<Result<Uint8Array>>;
-
-// @public
 function serializeCollection<T>(collection: ICollectionSourceFile<T>, format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
 
 // @public
@@ -6943,7 +6571,7 @@ declare namespace Session {
 
 declare namespace Session_2 {
     export {
-        Converters_6 as Converters,
+        Converters_5 as Converters,
         isPersistedFillingSession,
         isPersistedConfectionSession,
         PERSISTED_SESSION_SCHEMA_VERSION,
@@ -7295,15 +6923,6 @@ function toSourceId(from: unknown): Result<SourceId>;
 // @public
 function toUrlCategory(from: unknown): Result<UrlCategory>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
-
-// @public
-const uint8ArrayFromBase64: Converter<Uint8Array>;
-
 // @public
 class UnitScalerRegistry {
     constructor();
@@ -7601,7 +7220,7 @@ export class Workspace implements IWorkspace {
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
     get isReady(): boolean;
     get journals(): JournalLibrary;
-    get keyStore(): KeyStore.KeyStore | undefined;
+    get keyStore(): Crypto_2.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
     get runtime(): RuntimeContext;
     get sessions(): SessionLibrary;

@@ -104,6 +104,28 @@ Converter for collection source metadata. All fields are optional.
 </td></tr>
 <tr><td>
 
+[encryptedCollectionFile](./ts-chocolate.librarydata.converters.encryptedcollectionfile.md)
+
+
+</td><td>
+
+Converter for . Uses the factory from ts-extras with chocolate-specific metadata converter.
+
+
+</td></tr>
+<tr><td>
+
+[encryptedCollectionMetadata](./ts-chocolate.librarydata.converters.encryptedcollectionmetadata.md)
+
+
+</td><td>
+
+Converter for .
+
+
+</td></tr>
+<tr><td>
+
 [removeJsonExtension](./ts-chocolate.librarydata.converters.removejsonextension.md)
 
 

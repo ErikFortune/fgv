@@ -154,7 +154,7 @@ _(Optional)_ Optional item count from unencrypted metadata.
 
 </td><td>
 
-[IKeyDerivationParams](./ts-chocolate.cryptoutils.ikeyderivationparams.md)
+Crypto.IKeyDerivationParams
 
 
 </td><td>

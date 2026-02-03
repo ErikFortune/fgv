@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[ICryptoProvider](./ts-chocolate.cryptoutils.icryptoprovider.md)
+Crypto.ICryptoProvider
 
 
 </td><td>
@@ -68,7 +68,7 @@ The crypto provider to use for decryption. Use `nodeCryptoProvider` for Node.js 
 
 </td><td>
 
-[EncryptedCollectionErrorMode](./ts-chocolate.cryptoutils.encryptedcollectionerrormode.md)
+Crypto.EncryptedFileErrorMode
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_ How to handle decryption errors (e.g., wrong key, corrupted data). 
 
 </td><td>
 
-[EncryptedCollectionErrorMode](./ts-chocolate.cryptoutils.encryptedcollectionerrormode.md)
+Crypto.EncryptedFileErrorMode
 
 
 </td><td>
@@ -131,7 +131,7 @@ _(Optional)_ Optional function to dynamically provide keys by secret name. Calle
 
 </td><td>
 
-ReadonlyArray&lt;[INamedSecret](./ts-chocolate.cryptoutils.inamedsecret.md)<!-- -->&gt;
+ReadonlyArray&lt;Crypto.INamedSecret&gt;
 
 
 </td><td>

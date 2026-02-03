@@ -23,7 +23,8 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result, fail } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
-import { CryptoUtils } from '@fgv/ts-chocolate';
+import { Crypto } from '@fgv/ts-extras';
+import { LibraryData } from '@fgv/ts-chocolate';
 
 /**
  * Command-line options for the encrypt command
@@ -80,7 +81,7 @@ async function encryptFile(
   secretName: string,
   key: Uint8Array,
   includeMetadata: boolean,
-  keyDerivation?: CryptoUtils.IKeyDerivationParams
+  keyDerivation?: Crypto.IKeyDerivationParams
 ): Promise<Result<void>> {
   // Read and parse input file
   const jsonResult = readJsonFile(inputPath);
@@ -91,7 +92,7 @@ async function encryptFile(
   const content = jsonResult.value;
 
   // Build metadata if requested
-  const metadata: CryptoUtils.IEncryptedCollectionMetadata | undefined = includeMetadata
+  const metadata: LibraryData.IEncryptedCollectionMetadata | undefined = includeMetadata
     ? {
         collectionId: path.basename(inputPath, path.extname(inputPath)),
         itemCount: typeof content === 'object' && content !== null ? Object.keys(content).length : undefined
@@ -99,13 +100,13 @@ async function encryptFile(
     : undefined;
 
   // Encrypt the content
-  const encryptResult = await CryptoUtils.createEncryptedCollectionFile({
+  const encryptResult = await Crypto.createEncryptedFile({
     content,
     secretName,
     key,
     metadata,
     keyDerivation,
-    cryptoProvider: CryptoUtils.nodeCryptoProvider
+    cryptoProvider: Crypto.nodeCryptoProvider
   });
 
   if (encryptResult.isFailure()) {
@@ -145,7 +146,7 @@ export function createEncryptCommand(): Command {
       }
 
       // Build key derivation params if salt is provided
-      let keyDerivation: CryptoUtils.IKeyDerivationParams | undefined;
+      let keyDerivation: Crypto.IKeyDerivationParams | undefined;
       if (options.salt) {
         const iterations = options.iterations ? parseInt(options.iterations, 10) : 100000;
         if (isNaN(iterations) || iterations <= 0) {

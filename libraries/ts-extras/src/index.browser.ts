@@ -22,6 +22,8 @@
 
 /* c8 ignore start - Browser-specific export used conditionally in package.json */
 // eslint-disable-next-line @rushstack/packlets/mechanics
+import * as Crypto from './packlets/crypto/index.browser';
+// eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Csv from './packlets/csv/index.browser';
 import * as Experimental from './packlets/experimental';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -33,6 +35,7 @@ import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-// Browser-safe exports - Node.js crypto-based hash excluded (using CRC32 instead)
-export { Converters, Csv, Experimental, Hash, Mustache, RecordJar, ZipFileTree };
+// Browser-safe exports - Node.js crypto-based providers excluded
+// Use BrowserCryptoProvider from @fgv/ts-web-extras for browser crypto
+export { Converters, Crypto, Csv, Experimental, Hash, Mustache, RecordJar, ZipFileTree };
 /* c8 ignore stop */

@@ -4,15 +4,35 @@
 
 ```ts
 
+import { Crypto as Crypto_2 } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
+
+// Warning: (ae-forgotten-export) The symbol "ICryptoProvider" needs to be exported by the entry point index.d.ts
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "ICryptoProvider"
+//
+// @public
+export class BrowserCryptoProvider implements ICryptoProvider {
+    constructor(cryptoApi?: Crypto);
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    // Warning: (ae-forgotten-export) The symbol "IEncryptionResult" needs to be exported by the entry point index.d.ts
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
+}
 
 // @public
 export class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }
+
+// @public
+export function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
 // @public
 const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;

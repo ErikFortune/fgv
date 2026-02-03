@@ -9,5 +9,5 @@ Array of named secrets to use for decryption. Each secret has a name and a 32-by
 **Signature:**
 
 ```typescript
-readonly secrets?: ReadonlyArray<INamedSecret>;
+readonly secrets?: ReadonlyArray<Crypto.INamedSecret>;
 ```

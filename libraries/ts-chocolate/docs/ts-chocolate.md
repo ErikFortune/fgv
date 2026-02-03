@@ -171,15 +171,6 @@ Description
 </td></tr>
 <tr><td>
 
-[CryptoUtils](./ts-chocolate.cryptoutils.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [Editing](./ts-chocolate.editing.md)
 
 

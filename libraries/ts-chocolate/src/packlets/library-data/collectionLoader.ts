@@ -33,21 +33,18 @@ import { FileTree, type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 import * as yaml from 'js-yaml';
 import { CollectionFilter, ICollectionFilterInitParams, IFilterDirectoryParams } from './collectionFilter';
 import {
+  EncryptedCollectionFile,
   ICollection,
   ICollectionLoadResult,
   ICollectionSourceFile,
   IEncryptionConfig,
   IProtectedCollectionInternal,
   IRuntimeCollection,
+  isEncryptedCollectionFile,
   MutabilitySpec
 } from './model';
 import * as LibraryConverters from './converters';
-import {
-  decryptCollectionFile,
-  isEncryptedCollectionFile,
-  Converters as CryptoConverters,
-  IEncryptedCollectionFile
-} from '../crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 
 /**
  * Parameters used to initialize a {@link LibraryData.CollectionLoader | CollectionLoader}.
@@ -416,7 +413,7 @@ export class CollectionLoader<
     sourceItem: FileTree.FileTreeItem
   ): Promise<Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>> | undefined> {
     // Validate the encrypted file structure first (needed for both decrypt and capture)
-    const tombstoneResult = CryptoConverters.encryptedCollectionFile.convert(json);
+    const tombstoneResult = LibraryConverters.encryptedCollectionFile.convert(json);
     if (tombstoneResult.isFailure()) {
       return this._handleEncryptionError(
         `Invalid encrypted collection format for "${collectionName}": ${tombstoneResult.message}`,
@@ -455,11 +452,7 @@ export class CollectionLoader<
     }
 
     // Decrypt the collection
-    const decryptResult = await decryptCollectionFile(
-      encryptedFile,
-      keyResult.value,
-      encryption.cryptoProvider
-    );
+    const decryptResult = await Crypto.decryptFile(encryptedFile, keyResult.value, encryption.cryptoProvider);
     if (decryptResult.isFailure()) {
       return this._handleEncryptionError(
         `Decryption failed for collection "${collectionName}": ${decryptResult.message}`,
@@ -494,7 +487,7 @@ export class CollectionLoader<
   private _handleMissingKey(
     collectionName: TCOLLECTIONID,
     mutabilitySpec: MutabilitySpec,
-    encryptedFile: IEncryptedCollectionFile,
+    encryptedFile: EncryptedCollectionFile,
     onEncryptedFile: EncryptedFileHandling,
     protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
     message: string,
@@ -586,7 +579,7 @@ export class CollectionLoader<
     isBuiltIn: boolean
   ): Result<IProtectedCollectionInternal<TCOLLECTIONID>> {
     // Validate the encrypted file structure
-    return CryptoConverters.encryptedCollectionFile.convert(json).onSuccess((encryptedFile) => {
+    return LibraryConverters.encryptedCollectionFile.convert(json).onSuccess((encryptedFile) => {
       return succeed({
         ref: {
           collectionId: collectionName,

@@ -19,9 +19,7 @@
 // SOFTWARE.
 
 import { fail, Result } from '@fgv/ts-utils';
-
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Browser factory must use browser-specific crypto
-import { createBrowserCryptoProvider } from '../crypto-utils/index.browser';
+import { createBrowserCryptoProvider } from '@fgv/ts-web-extras';
 import { IWorkspaceFactoryParams } from './model';
 import { Workspace } from './workspace';
 

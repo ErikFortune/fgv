@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-[KeyStore.IKeyStoreFile](./ts-chocolate.cryptoutils.keystore.ikeystorefile.md)
+Crypto.KeyStore.IKeyStoreFile
 
 
 </td><td>

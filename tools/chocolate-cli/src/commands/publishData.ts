@@ -23,7 +23,7 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
-import { CryptoUtils } from '@fgv/ts-chocolate';
+import { Crypto } from '@fgv/ts-extras';
 import * as yaml from 'yaml';
 
 /**
@@ -48,7 +48,7 @@ interface ISecretEntry {
   /** Base64-encoded 32-byte key */
   key: string;
   /** Optional key derivation parameters (for password-based decryption) */
-  keyDerivation?: CryptoUtils.IKeyDerivationParams;
+  keyDerivation?: Crypto.IKeyDerivationParams;
 }
 
 /**
@@ -196,7 +196,7 @@ function getItemsFromSourceData(sourceData: JsonValue): JsonValue {
  */
 function extractSecretEntry(entry: string | ISecretEntry): {
   keyBase64: string;
-  keyDerivation?: CryptoUtils.IKeyDerivationParams;
+  keyDerivation?: Crypto.IKeyDerivationParams;
 } {
   if (typeof entry === 'string') {
     return { keyBase64: entry };
@@ -219,7 +219,7 @@ function resolveSecret(
   options: IPublishDataCommandOptions,
   secrets?: SecretsFile,
   metadataSecretName?: string
-): Result<{ secretName: string; key: Uint8Array; keyDerivation?: CryptoUtils.IKeyDerivationParams }> {
+): Result<{ secretName: string; key: Uint8Array; keyDerivation?: Crypto.IKeyDerivationParams }> {
   // If metadata specifies a secret name, use it (requires secrets file)
   if (metadataSecretName) {
     if (!options.secretsFile || !secrets) {
@@ -370,12 +370,12 @@ export function createPublishDataCommand(): Command {
         const contentToEncrypt = getItemsFromSourceData(dataResult.value);
 
         // Encrypt the content
-        const encryptResult = await CryptoUtils.createEncryptedCollectionFile({
+        const encryptResult = await Crypto.createEncryptedFile({
           content: contentToEncrypt,
           secretName,
           key,
           keyDerivation,
-          cryptoProvider: CryptoUtils.nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         });
 
         if (encryptResult.isFailure()) {

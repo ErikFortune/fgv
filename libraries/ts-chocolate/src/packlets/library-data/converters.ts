@@ -19,7 +19,14 @@
 // SOFTWARE.
 
 import { Converter, Converters, Failure, Result, Success, Validator } from '@fgv/ts-utils';
-import { ICollection, ICollectionSourceFile, ICollectionSourceMetadata } from './model';
+import { Crypto } from '@fgv/ts-extras';
+import {
+  EncryptedCollectionFile,
+  ICollection,
+  ICollectionSourceFile,
+  ICollectionSourceMetadata,
+  IEncryptedCollectionMetadata
+} from './model';
 
 /**
  * Returns a converter that removes one of the specified extensions from the end of a string.
@@ -119,3 +126,31 @@ export function collection<TCOLLECTIONID extends string, TITEMID extends string,
     { optionalFields: ['metadata'] }
   );
 }
+
+// ============================================================================
+// Encrypted Collection Converters
+// ============================================================================
+
+/**
+ * Converter for {@link IEncryptedCollectionMetadata | encrypted collection metadata}.
+ * @public
+ */
+export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata> =
+  Converters.object<IEncryptedCollectionMetadata>(
+    {
+      collectionId: Converters.string,
+      description: Converters.string,
+      itemCount: Converters.number
+    },
+    {
+      optionalFields: ['collectionId', 'description', 'itemCount']
+    }
+  );
+
+/**
+ * Converter for {@link EncryptedCollectionFile | encrypted collection files}.
+ * Uses the factory from ts-extras with chocolate-specific metadata converter.
+ * @public
+ */
+export const encryptedCollectionFile: Converter<EncryptedCollectionFile> =
+  Crypto.Converters.createEncryptedFileConverter(encryptedCollectionMetadata);

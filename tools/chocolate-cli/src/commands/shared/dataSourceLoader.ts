@@ -22,7 +22,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { CryptoUtils, Entities, LibraryData } from '@fgv/ts-chocolate';
+import { Crypto } from '@fgv/ts-extras';
+import { Entities, LibraryData } from '@fgv/ts-chocolate';
 import * as yaml from 'yaml';
 
 import { IDataSourceOptions } from './types';
@@ -79,7 +80,7 @@ export function buildEncryptionConfig(
   options: IDataSourceOptions,
   secrets?: SecretsFile
 ): Result<LibraryData.IEncryptionConfig> {
-  const namedSecrets: CryptoUtils.INamedSecret[] = [];
+  const namedSecrets: Crypto.INamedSecret[] = [];
 
   // Build secrets from secrets file
   if (secrets) {
@@ -110,7 +111,7 @@ export function buildEncryptionConfig(
   // collections when no keys are available
   return succeed({
     secrets: namedSecrets.length > 0 ? namedSecrets : undefined,
-    cryptoProvider: CryptoUtils.nodeCryptoProvider,
+    cryptoProvider: Crypto.nodeCryptoProvider,
     onMissingKey: 'skip' as const,
     onDecryptionError: 'warn' as const
   });

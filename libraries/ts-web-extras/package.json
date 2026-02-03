@@ -32,6 +32,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras#readme",
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
@@ -62,6 +63,7 @@
     "@types/react": "~19.2.8"
   },
   "peerDependencies": {
+    "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "react": ">=18 <20",

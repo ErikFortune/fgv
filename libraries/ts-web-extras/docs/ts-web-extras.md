@@ -23,6 +23,19 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[BrowserCryptoProvider](./ts-web-extras.browsercryptoprovider.md)
+
+
+</td><td>
+
+Browser implementation of  using the Web Crypto API. Uses AES-256-GCM for authenticated encryption.
+
+Note: This provider requires a browser environment with Web Crypto API support. In Node.js 15+, Web Crypto is available via globalThis.crypto or require('crypto').webcrypto.
+
+
+</td></tr>
+<tr><td>
+
 [BrowserHashProvider](./ts-web-extras.browserhashprovider.md)
 
 
@@ -85,6 +98,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[createBrowserCryptoProvider()](./ts-web-extras.createbrowsercryptoprovider.md)
+
+
+</td><td>
+
+Creates a [BrowserCryptoProvider](./ts-web-extras.browsercryptoprovider.md) if Web Crypto API is available.
+
+
+</td></tr>
+<tr><td>
 
 [exportAsJson(data, filename)](./ts-web-extras.exportasjson.md)
 

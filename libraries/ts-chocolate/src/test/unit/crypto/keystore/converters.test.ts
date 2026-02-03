@@ -20,20 +20,20 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Constants as CryptoConstants, KeyStore } from '../../../../packlets/crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 
 describe('Key Store Converters', () => {
   describe('keystoreFormat', () => {
     test('accepts valid format', () => {
-      expect(KeyStore.Converters.keystoreFormat.convert('keystore-v1')).toSucceedWith('keystore-v1');
+      expect(Crypto.KeyStore.Converters.keystoreFormat.convert('keystore-v1')).toSucceedWith('keystore-v1');
     });
 
     test('rejects invalid format', () => {
-      expect(KeyStore.Converters.keystoreFormat.convert('keystore-v2')).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreFormat.convert('keystore-v2')).toFail();
     });
 
     test('rejects non-string', () => {
-      expect(KeyStore.Converters.keystoreFormat.convert(123)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreFormat.convert(123)).toFail();
     });
   });
 
@@ -45,12 +45,14 @@ describe('Key Store Converters', () => {
         description: 'A test secret',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.name).toBe('my-secret');
-        expect(result.key).toBe('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
-        expect(result.description).toBe('A test secret');
-        expect(result.createdAt).toBe('2024-01-15T10:30:00Z');
-      });
+      expect(Crypto.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.name).toBe('my-secret');
+          expect(result.key).toBe('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
+          expect(result.description).toBe('A test secret');
+          expect(result.createdAt).toBe('2024-01-15T10:30:00Z');
+        }
+      );
     });
 
     test('accepts valid entry without description', () => {
@@ -59,10 +61,12 @@ describe('Key Store Converters', () => {
         key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.name).toBe('my-secret');
-        expect(result.description).toBeUndefined();
-      });
+      expect(Crypto.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.name).toBe('my-secret');
+          expect(result.description).toBeUndefined();
+        }
+      );
     });
 
     test('rejects missing name', () => {
@@ -70,7 +74,7 @@ describe('Key Store Converters', () => {
         key: 'AAAA',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
     });
 
     test('rejects missing key', () => {
@@ -78,7 +82,7 @@ describe('Key Store Converters', () => {
         name: 'my-secret',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
     });
 
     test('rejects missing createdAt', () => {
@@ -86,7 +90,7 @@ describe('Key Store Converters', () => {
         name: 'my-secret',
         key: 'AAAA'
       };
-      expect(KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
     });
 
     test('rejects invalid key format', () => {
@@ -95,14 +99,14 @@ describe('Key Store Converters', () => {
         key: 'not!valid!base64',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
     });
   });
 
   describe('keystoreVaultContents', () => {
     test('accepts valid vault with secrets', () => {
       const input = {
-        version: KeyStore.KEYSTORE_FORMAT,
+        version: Crypto.KeyStore.KEYSTORE_FORMAT,
         secrets: {
           secretOne: {
             name: 'secretOne',
@@ -117,23 +121,27 @@ describe('Key Store Converters', () => {
           }
         }
       };
-      expect(KeyStore.Converters.keystoreVaultContents.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.version).toBe(KeyStore.KEYSTORE_FORMAT);
-        expect(Object.keys(result.secrets)).toHaveLength(2);
-        expect(result.secrets.secretOne.name).toBe('secretOne');
-        expect(result.secrets.secretTwo.description).toBe('Another secret');
-      });
+      expect(Crypto.KeyStore.Converters.keystoreVaultContents.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.version).toBe(Crypto.KeyStore.KEYSTORE_FORMAT);
+          expect(Object.keys(result.secrets)).toHaveLength(2);
+          expect(result.secrets.secretOne.name).toBe('secretOne');
+          expect(result.secrets.secretTwo.description).toBe('Another secret');
+        }
+      );
     });
 
     test('accepts vault with empty secrets', () => {
       const input = {
-        version: KeyStore.KEYSTORE_FORMAT,
+        version: Crypto.KeyStore.KEYSTORE_FORMAT,
         secrets: {}
       };
-      expect(KeyStore.Converters.keystoreVaultContents.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.version).toBe(KeyStore.KEYSTORE_FORMAT);
-        expect(Object.keys(result.secrets)).toHaveLength(0);
-      });
+      expect(Crypto.KeyStore.Converters.keystoreVaultContents.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.version).toBe(Crypto.KeyStore.KEYSTORE_FORMAT);
+          expect(Object.keys(result.secrets)).toHaveLength(0);
+        }
+      );
     });
 
     test('rejects invalid version', () => {
@@ -141,28 +149,28 @@ describe('Key Store Converters', () => {
         version: 'keystore-v99',
         secrets: {}
       };
-      expect(KeyStore.Converters.keystoreVaultContents.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreVaultContents.convert(input)).toFail();
     });
 
     test('rejects missing version', () => {
       const input = {
         secrets: {}
       };
-      expect(KeyStore.Converters.keystoreVaultContents.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreVaultContents.convert(input)).toFail();
     });
 
     test('rejects missing secrets', () => {
       const input = {
-        version: KeyStore.KEYSTORE_FORMAT
+        version: Crypto.KeyStore.KEYSTORE_FORMAT
       };
-      expect(KeyStore.Converters.keystoreVaultContents.convert(input)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreVaultContents.convert(input)).toFail();
     });
   });
 
   describe('keystoreFile', () => {
     const validKeystoreFile = {
-      format: KeyStore.KEYSTORE_FORMAT,
-      algorithm: CryptoConstants.DEFAULT_ALGORITHM,
+      format: Crypto.KeyStore.KEYSTORE_FORMAT,
+      algorithm: Crypto.DEFAULT_ALGORITHM,
       iv: 'AAAAAAAAAAAAAAAA',
       authTag: 'AAAAAAAAAAAAAAAAAAAAAA==',
       encryptedData: 'SGVsbG8gV29ybGQ=',
@@ -174,57 +182,61 @@ describe('Key Store Converters', () => {
     };
 
     test('accepts valid key store file', () => {
-      expect(KeyStore.Converters.keystoreFile.convert(validKeystoreFile)).toSucceedAndSatisfy((result) => {
-        expect(result.format).toBe(KeyStore.KEYSTORE_FORMAT);
-        expect(result.algorithm).toBe(CryptoConstants.DEFAULT_ALGORITHM);
-        expect(result.keyDerivation.kdf).toBe('pbkdf2');
-        expect(result.keyDerivation.iterations).toBe(600000);
-      });
+      expect(Crypto.KeyStore.Converters.keystoreFile.convert(validKeystoreFile)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.format).toBe(Crypto.KeyStore.KEYSTORE_FORMAT);
+          expect(result.algorithm).toBe(Crypto.DEFAULT_ALGORITHM);
+          expect(result.keyDerivation.kdf).toBe('pbkdf2');
+          expect(result.keyDerivation.iterations).toBe(600000);
+        }
+      );
     });
 
     test('rejects missing format', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { format: _format, ...noFormat } = validKeystoreFile;
-      expect(KeyStore.Converters.keystoreFile.convert(noFormat)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreFile.convert(noFormat)).toFail();
     });
 
     test('rejects invalid format', () => {
-      expect(KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, format: 'invalid' })).toFail();
+      expect(
+        Crypto.KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, format: 'invalid' })
+      ).toFail();
     });
 
     test('rejects missing keyDerivation', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { keyDerivation: _keyDerivation, ...noKeyDerivation } = validKeystoreFile;
-      expect(KeyStore.Converters.keystoreFile.convert(noKeyDerivation)).toFail();
+      expect(Crypto.KeyStore.Converters.keystoreFile.convert(noKeyDerivation)).toFail();
     });
 
     test('rejects invalid algorithm', () => {
       expect(
-        KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, algorithm: 'AES-128-GCM' })
+        Crypto.KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, algorithm: 'AES-128-GCM' })
       ).toFail();
     });
 
     test('rejects invalid iv', () => {
       expect(
-        KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, iv: 'not!valid!base64' })
+        Crypto.KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, iv: 'not!valid!base64' })
       ).toFail();
     });
 
     test('rejects invalid authTag', () => {
       expect(
-        KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, authTag: 'invalid!' })
+        Crypto.KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, authTag: 'invalid!' })
       ).toFail();
     });
 
     test('rejects invalid encryptedData', () => {
       expect(
-        KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, encryptedData: '!!!' })
+        Crypto.KeyStore.Converters.keystoreFile.convert({ ...validKeystoreFile, encryptedData: '!!!' })
       ).toFail();
     });
 
     test('rejects invalid keyDerivation kdf', () => {
       expect(
-        KeyStore.Converters.keystoreFile.convert({
+        Crypto.KeyStore.Converters.keystoreFile.convert({
           ...validKeystoreFile,
           keyDerivation: { ...validKeystoreFile.keyDerivation, kdf: 'scrypt' }
         })
@@ -233,7 +245,7 @@ describe('Key Store Converters', () => {
 
     test('rejects invalid keyDerivation iterations type', () => {
       expect(
-        KeyStore.Converters.keystoreFile.convert({
+        Crypto.KeyStore.Converters.keystoreFile.convert({
           ...validKeystoreFile,
           keyDerivation: { ...validKeystoreFile.keyDerivation, iterations: 'many' }
         })
@@ -243,33 +255,33 @@ describe('Key Store Converters', () => {
 
   describe('isKeyStoreFile', () => {
     test('returns true for valid key store format', () => {
-      expect(KeyStore.isKeyStoreFile({ format: KeyStore.KEYSTORE_FORMAT })).toBe(true);
+      expect(Crypto.KeyStore.isKeyStoreFile({ format: Crypto.KeyStore.KEYSTORE_FORMAT })).toBe(true);
     });
 
     test('returns false for encrypted collection format', () => {
-      expect(KeyStore.isKeyStoreFile({ format: 'encrypted-collection-v1' })).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile({ format: 'encrypted-collection-v1' })).toBe(false);
     });
 
     test('returns false for wrong format value', () => {
-      expect(KeyStore.isKeyStoreFile({ format: 'something-else' })).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile({ format: 'something-else' })).toBe(false);
     });
 
     test('returns false for missing format', () => {
-      expect(KeyStore.isKeyStoreFile({ notFormat: 'value' })).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile({ notFormat: 'value' })).toBe(false);
     });
 
     test('returns false for null', () => {
-      expect(KeyStore.isKeyStoreFile(null)).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile(null)).toBe(false);
     });
 
     test('returns false for undefined', () => {
-      expect(KeyStore.isKeyStoreFile(undefined)).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile(undefined)).toBe(false);
     });
 
     test('returns false for non-object', () => {
-      expect(KeyStore.isKeyStoreFile('string')).toBe(false);
-      expect(KeyStore.isKeyStoreFile(123)).toBe(false);
-      expect(KeyStore.isKeyStoreFile(true)).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile('string')).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile(123)).toBe(false);
+      expect(Crypto.KeyStore.isKeyStoreFile(true)).toBe(false);
     });
   });
 });

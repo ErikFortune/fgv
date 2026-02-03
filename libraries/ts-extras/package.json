@@ -16,6 +16,21 @@
       },
       "types": "./dist/ts-extras.d.ts"
     },
+    "./crypto": {
+      "node": {
+        "import": "./lib/packlets/crypto/index.js",
+        "require": "./lib/packlets/crypto/index.js"
+      },
+      "default": {
+        "import": "./lib/packlets/crypto/index.browser.js",
+        "require": "./lib/packlets/crypto/index.browser.js"
+      }
+    },
+    "./crypto/keystore": {
+      "import": "./lib/packlets/crypto/keystore/index.js",
+      "require": "./lib/packlets/crypto/keystore/index.js",
+      "types": "./dist/ts-extras.d.ts"
+    },
     "./hash": {
       "node": {
         "import": "./lib/packlets/hash/index.node.js",

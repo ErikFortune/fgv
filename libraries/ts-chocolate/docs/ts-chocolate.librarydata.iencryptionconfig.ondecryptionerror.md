@@ -9,5 +9,5 @@ How to handle decryption errors (e.g., wrong key, corrupted data). - `'fail'` (d
 **Signature:**
 
 ```typescript
-readonly onDecryptionError?: EncryptedCollectionErrorMode;
+readonly onDecryptionError?: Crypto.EncryptedFileErrorMode;
 ```

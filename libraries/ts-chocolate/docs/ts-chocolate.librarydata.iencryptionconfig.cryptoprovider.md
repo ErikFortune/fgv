@@ -9,5 +9,5 @@ The crypto provider to use for decryption. Use `nodeCryptoProvider` for Node.js 
 **Signature:**
 
 ```typescript
-readonly cryptoProvider: ICryptoProvider;
+readonly cryptoProvider: Crypto.ICryptoProvider;
 ```

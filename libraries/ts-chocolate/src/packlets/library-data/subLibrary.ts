@@ -39,12 +39,12 @@ import {
   Success,
   Validator
 } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { collectionSourceMetadata as collectionSourceMetadataConverter } from './converters';
-import { decryptCollectionFile } from '../crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
 import {
@@ -1099,11 +1099,12 @@ export abstract class SubLibraryBase<
       return fail(keyResult.message);
     }
 
-    // Decrypt the collection
-    const decryptResult = await decryptCollectionFile(
+    // Decrypt the collection (expected payload is a record of items)
+    const decryptResult = await Crypto.decryptFile(
       internal.encryptedFile,
       keyResult.value,
-      encryption.cryptoProvider
+      encryption.cryptoProvider,
+      JsonConverters.jsonObject
     );
     if (decryptResult.isFailure()) {
       return fail(`Decryption failed: ${decryptResult.message}`);

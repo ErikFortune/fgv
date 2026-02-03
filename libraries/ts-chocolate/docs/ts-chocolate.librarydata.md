@@ -231,6 +231,17 @@ Gets the tasks directory from a library tree.
 </td></tr>
 <tr><td>
 
+[isEncryptedCollectionFile(json)](./ts-chocolate.librarydata.isencryptedcollectionfile.md)
+
+
+</td><td>
+
+Checks if a JSON object appears to be an encrypted collection file. Uses the format field as a discriminator.
+
+
+</td></tr>
+<tr><td>
+
 [isMergeLibrarySource(source)](./ts-chocolate.librarydata.ismergelibrarysource.md)
 
 
@@ -460,6 +471,17 @@ Structure of collection source files (YAML/JSON).
 </td><td>
 
 Optional metadata for collection source files. When present in source files, provides additional information about the collection.
+
+
+</td></tr>
+<tr><td>
+
+[IEncryptedCollectionMetadata](./ts-chocolate.librarydata.iencryptedcollectionmetadata.md)
+
+
+</td><td>
+
+Optional unencrypted metadata for encrypted collection files. Allows filtering/display without decryption.
 
 
 </td></tr>
@@ -763,6 +785,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[EncryptedCollectionFile](./ts-chocolate.librarydata.encryptedcollectionfile.md)
+
+
+</td><td>
+
+Encrypted collection file format - an encrypted file with collection-specific metadata.
+
+
+</td></tr>
+<tr><td>
 
 [EncryptedFileHandling](./ts-chocolate.librarydata.encryptedfilehandling.md)
 

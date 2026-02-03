@@ -24,11 +24,7 @@ import { Converters, fail, Failure, Logging, succeed, succeedWithDetail, Success
 import { FileTree, JsonObject, JsonValue } from '@fgv/ts-json-base';
 
 import { CollectionLoader } from '../../../packlets/library-data';
-import {
-  createEncryptedCollectionFile,
-  Constants as CryptoConstants,
-  nodeCryptoProvider
-} from '../../../packlets/crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 
 /**
  * Creates a mock logger that captures log messages for testing.
@@ -518,13 +514,13 @@ describe('CollectionLoader', () => {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'item-1': { name: 'Secret Item', value: 42 }
       };
-      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const key = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'test-secret',
           key,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -546,13 +542,13 @@ describe('CollectionLoader', () => {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'item-1': { name: 'Secret Item', value: 42 }
       };
-      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const key = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'test-secret',
           key,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -590,13 +586,13 @@ describe('CollectionLoader', () => {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'item-1': { name: 'Secret Item', value: 42 }
       };
-      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const key = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'test-secret',
           key,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -625,13 +621,13 @@ describe('CollectionLoader', () => {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'item-1': { name: 'Secret Item', value: 42 }
       };
-      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const key = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'test-secret',
           key,
-          cryptoProvider: nodeCryptoProvider,
+          cryptoProvider: Crypto.nodeCryptoProvider,
           metadata: { description: 'Test encrypted', itemCount: 1 }
         })
       ).orThrow();
@@ -764,7 +760,7 @@ describe('CollectionLoader', () => {
         collectionIdConverter: testCollectionIdConverter,
         itemIdConverter: testItemIdConverter
       });
-      testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+      testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
     });
 
     test('loads plain (non-encrypted) collections', async () => {
@@ -801,11 +797,11 @@ describe('CollectionLoader', () => {
       };
 
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'my-secret',
           key: testKey,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -818,7 +814,7 @@ describe('CollectionLoader', () => {
       const result = await loader.loadFromFileTreeAsync(dir, {
         encryption: {
           secrets: [{ name: 'my-secret', key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         }
       });
 
@@ -847,11 +843,11 @@ describe('CollectionLoader', () => {
       };
 
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: encryptedData,
           secretName: 'test-secret',
           key: testKey,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -865,7 +861,7 @@ describe('CollectionLoader', () => {
       const result = await loader.loadFromFileTreeAsync(dir, {
         encryption: {
           secrets: [{ name: 'test-secret', key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         }
       });
 
@@ -885,11 +881,11 @@ describe('CollectionLoader', () => {
       };
 
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'my-secret',
           key: testKey,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -916,11 +912,11 @@ describe('CollectionLoader', () => {
       };
 
       const encrypted = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: collectionData,
           secretName: 'my-secret',
           key: testKey,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -1040,11 +1036,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'unknown-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1057,7 +1053,7 @@ describe('CollectionLoader', () => {
         const result = await loader.loadFromFileTreeAsync(dir, {
           encryption: {
             secrets: [{ name: 'different-secret', key: testKey }],
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1076,11 +1072,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'unknown-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1094,7 +1090,7 @@ describe('CollectionLoader', () => {
           onEncryptedFile: 'fail',
           encryption: {
             secrets: [{ name: 'different-secret', key: testKey }],
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1115,11 +1111,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: encryptedData,
             secretName: 'unknown-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1134,7 +1130,7 @@ describe('CollectionLoader', () => {
           onEncryptedFile: 'skip',
           encryption: {
             secrets: [], // No secrets provided
-            cryptoProvider: nodeCryptoProvider,
+            cryptoProvider: Crypto.nodeCryptoProvider,
             onMissingKey: 'skip'
           }
         });
@@ -1160,11 +1156,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: encryptedData,
             secretName: 'unknown-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1189,7 +1185,7 @@ describe('CollectionLoader', () => {
           onEncryptedFile: 'warn',
           encryption: {
             secrets: [],
-            cryptoProvider: nodeCryptoProvider,
+            cryptoProvider: Crypto.nodeCryptoProvider,
             onMissingKey: 'warn'
           }
         });
@@ -1217,15 +1213,15 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'my-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
-        const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+        const wrongKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
 
         const files: FileTree.IInMemoryFile[] = [
           { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
@@ -1236,7 +1232,7 @@ describe('CollectionLoader', () => {
         const result = await loader.loadFromFileTreeAsync(dir, {
           encryption: {
             secrets: [{ name: 'my-secret', key: wrongKey }],
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1257,15 +1253,15 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: encryptedData,
             secretName: 'my-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
-        const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+        const wrongKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
 
         const files: FileTree.IInMemoryFile[] = [
           { path: '/collections/plain.json', contents: plainData },
@@ -1277,7 +1273,7 @@ describe('CollectionLoader', () => {
         const result = await loader.loadFromFileTreeAsync(dir, {
           encryption: {
             secrets: [{ name: 'my-secret', key: wrongKey }],
-            cryptoProvider: nodeCryptoProvider,
+            cryptoProvider: Crypto.nodeCryptoProvider,
             onDecryptionError: 'skip'
           }
         });
@@ -1302,15 +1298,15 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: encryptedData,
             secretName: 'my-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
-        const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+        const wrongKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
 
         const files: FileTree.IInMemoryFile[] = [
           { path: '/collections/plain.json', contents: plainData },
@@ -1332,7 +1328,7 @@ describe('CollectionLoader', () => {
         const result = await loaderWithLogger.loadFromFileTreeAsync(dir, {
           encryption: {
             secrets: [{ name: 'my-secret', key: wrongKey }],
-            cryptoProvider: nodeCryptoProvider,
+            cryptoProvider: Crypto.nodeCryptoProvider,
             onDecryptionError: 'warn'
           }
         });
@@ -1350,7 +1346,7 @@ describe('CollectionLoader', () => {
       test('handles invalid encrypted file format with onDecryptionError', async () => {
         // Create a malformed encrypted file (has format field but missing other required fields)
         const malformed = {
-          format: CryptoConstants.ENCRYPTED_COLLECTION_FORMAT,
+          format: Crypto.ENCRYPTED_FILE_FORMAT,
           secretName: 'test-secret'
           // Missing: algorithm, iv, authTag, encryptedData
         };
@@ -1364,7 +1360,7 @@ describe('CollectionLoader', () => {
         const result = await loader.loadFromFileTreeAsync(dir, {
           encryption: {
             secrets: [{ name: 'test-secret', key: testKey }],
-            cryptoProvider: nodeCryptoProvider,
+            cryptoProvider: Crypto.nodeCryptoProvider,
             onDecryptionError: 'skip'
           }
         });
@@ -1388,11 +1384,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'dynamic-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1408,7 +1404,7 @@ describe('CollectionLoader', () => {
         const result = await loader.loadFromFileTreeAsync(dir, {
           encryption: {
             secretProvider,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1427,11 +1423,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'known-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1448,7 +1444,7 @@ describe('CollectionLoader', () => {
           encryption: {
             secrets: [{ name: 'known-secret', key: testKey }],
             secretProvider,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1463,11 +1459,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'unknown-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1484,7 +1480,7 @@ describe('CollectionLoader', () => {
           onEncryptedFile: 'fail',
           encryption: {
             secretProvider,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1498,11 +1494,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'unknown-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1518,7 +1514,7 @@ describe('CollectionLoader', () => {
         const result = await loader.loadFromFileTreeAsync(dir, {
           encryption: {
             secretProvider,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 
@@ -1542,11 +1538,11 @@ describe('CollectionLoader', () => {
         };
 
         const encrypted = (
-          await createEncryptedCollectionFile({
+          await Crypto.createEncryptedFile({
             content: collectionData,
             secretName: 'my-secret',
             key: testKey,
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           })
         ).orThrow();
 
@@ -1560,7 +1556,7 @@ describe('CollectionLoader', () => {
           mutable: true,
           encryption: {
             secrets: [{ name: 'my-secret', key: testKey }],
-            cryptoProvider: nodeCryptoProvider
+            cryptoProvider: Crypto.nodeCryptoProvider
           }
         });
 

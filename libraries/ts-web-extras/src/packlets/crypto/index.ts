@@ -26,3 +26,4 @@
  */
 
 export * from './browserHashProvider';
+export * from './browserCryptoProvider';

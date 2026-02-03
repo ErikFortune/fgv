@@ -23,7 +23,8 @@ import * as path from 'path';
 import { Command } from 'commander';
 import { captureResult, Result } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
-import { CryptoUtils } from '@fgv/ts-chocolate';
+import { Crypto } from '@fgv/ts-extras';
+import { LibraryData } from '@fgv/ts-chocolate';
 
 /**
  * Command-line options for the decrypt command
@@ -73,7 +74,7 @@ function decodeKey(base64Key: string): Result<Uint8Array> {
  */
 async function deriveKeyFromPassword(
   password: string,
-  keyDerivation: CryptoUtils.IKeyDerivationParams
+  keyDerivation: Crypto.IKeyDerivationParams
 ): Promise<Result<Uint8Array>> {
   const saltResult = captureResult(() => Buffer.from(keyDerivation.salt, 'base64'));
   if (saltResult.isFailure()) {
@@ -81,7 +82,7 @@ async function deriveKeyFromPassword(
   }
 
   const salt = new Uint8Array(saltResult.value);
-  return CryptoUtils.nodeCryptoProvider.deriveKey(password, salt, keyDerivation.iterations);
+  return Crypto.nodeCryptoProvider.deriveKey(password, salt, keyDerivation.iterations);
 }
 
 /**
@@ -119,13 +120,13 @@ export function createDecryptCommand(): Command {
       const json = jsonResult.value;
 
       // Verify it's an encrypted collection file
-      if (!CryptoUtils.isEncryptedCollectionFile(json)) {
+      if (!LibraryData.isEncryptedCollectionFile(json)) {
         console.error(`Error: File "${input}" is not an encrypted collection file`);
         process.exit(1);
       }
 
       // Parse as encrypted collection file to get keyDerivation
-      const tombstoneResult = CryptoUtils.Converters.encryptedCollectionFile.convert(json);
+      const tombstoneResult = LibraryData.Converters.encryptedCollectionFile.convert(json);
       if (tombstoneResult.isFailure()) {
         console.error(`Error: Invalid encrypted file format: ${tombstoneResult.message}`);
         process.exit(1);
@@ -162,11 +163,7 @@ export function createDecryptCommand(): Command {
       }
 
       // Decrypt the content
-      const decryptResult = await CryptoUtils.decryptCollectionFile(
-        tombstone,
-        key,
-        CryptoUtils.nodeCryptoProvider
-      );
+      const decryptResult = await Crypto.decryptFile(tombstone, key, Crypto.nodeCryptoProvider);
 
       if (decryptResult.isFailure()) {
         console.error(`Error: Decryption failed: ${decryptResult.message}`);

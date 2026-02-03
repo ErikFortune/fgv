@@ -9,5 +9,5 @@ Optional key derivation parameters from the encrypted file. If present, allows p
 **Signature:**
 
 ```typescript
-readonly keyDerivation?: IKeyDerivationParams;
+readonly keyDerivation?: Crypto.IKeyDerivationParams;
 ```

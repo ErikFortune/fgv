@@ -37,7 +37,7 @@ import {
   isAlcoholIngredient
 } from '../../../packlets/entities';
 
-import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto-utils';
+import { Crypto } from '@fgv/ts-extras';
 
 describe('IngredientsLibrary', () => {
   // ============================================================================
@@ -1085,7 +1085,7 @@ describe('IngredientsLibrary.createAsync', () => {
   let testKey: Uint8Array;
 
   beforeAll(async () => {
-    testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+    testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
   });
 
   test('creates library with built-ins by default', async () => {
@@ -1166,11 +1166,11 @@ describe('IngredientsLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretIngredientData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -1193,7 +1193,7 @@ describe('IngredientsLibrary.createAsync', () => {
       fileSources: fileSource,
       encryption: {
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       }
     });
 
@@ -1224,11 +1224,11 @@ describe('IngredientsLibrary.createAsync', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretIngredientData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -1272,7 +1272,7 @@ describe('IngredientsLibrary protected collections', () => {
   let testKey: Uint8Array;
 
   beforeAll(async () => {
-    testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+    testKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
   });
 
   async function createLibraryWithProtectedCollections(): Promise<IngredientsLibrary> {
@@ -1294,11 +1294,11 @@ describe('IngredientsLibrary protected collections', () => {
     };
 
     const encryptedFile = (
-      await createEncryptedCollectionFile({
+      await Crypto.createEncryptedFile({
         content: secretIngredientData,
         secretName: TEST_SECRET_NAME,
         key: testKey,
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       })
     ).orThrow();
 
@@ -1348,7 +1348,7 @@ describe('IngredientsLibrary protected collections', () => {
 
       const result = await lib.loadProtectedCollectionAsync({
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       });
 
       expect(result).toSucceedAndSatisfy((loadedIds) => {
@@ -1370,7 +1370,7 @@ describe('IngredientsLibrary protected collections', () => {
       const lib = (await IngredientsLibrary.createAsync({ builtin: false })).orThrow();
       const result = await lib.loadProtectedCollectionAsync({
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       });
 
       expect(result).toSucceedWith([]);
@@ -1381,7 +1381,7 @@ describe('IngredientsLibrary protected collections', () => {
       const result = await lib.loadProtectedCollectionAsync(
         {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         },
         ['non-existent']
       );
@@ -1394,7 +1394,7 @@ describe('IngredientsLibrary protected collections', () => {
       const result = await lib.loadProtectedCollectionAsync(
         {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         },
         ['secret']
       );
@@ -1408,7 +1408,7 @@ describe('IngredientsLibrary protected collections', () => {
       const result = await lib.loadProtectedCollectionAsync(
         {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         },
         [TEST_SECRET_NAME]
       );
@@ -1421,7 +1421,7 @@ describe('IngredientsLibrary protected collections', () => {
       const result = await lib.loadProtectedCollectionAsync(
         {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         },
         [/^sec/]
       );
@@ -1434,7 +1434,7 @@ describe('IngredientsLibrary protected collections', () => {
       const result = await lib.loadProtectedCollectionAsync(
         {
           secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         },
         [/test-secret/]
       );
@@ -1446,7 +1446,7 @@ describe('IngredientsLibrary protected collections', () => {
       const lib = await createLibraryWithProtectedCollections();
       const result = await lib.loadProtectedCollectionAsync({
         secrets: [{ name: 'wrong-secret', key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       });
 
       expect(result).toFailWith(/no key available/i);
@@ -1455,7 +1455,7 @@ describe('IngredientsLibrary protected collections', () => {
     test('uses secretProvider when secret not in static list', async () => {
       const lib = await createLibraryWithProtectedCollections();
       const result = await lib.loadProtectedCollectionAsync({
-        cryptoProvider: nodeCryptoProvider,
+        cryptoProvider: Crypto.nodeCryptoProvider,
         secretProvider: async (name) => {
           if (name === TEST_SECRET_NAME) {
             return {
@@ -1477,10 +1477,10 @@ describe('IngredientsLibrary protected collections', () => {
 
     test('fails when decryption fails with wrong key', async () => {
       const lib = await createLibraryWithProtectedCollections();
-      const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+      const wrongKey = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
       const result = await lib.loadProtectedCollectionAsync({
         secrets: [{ name: TEST_SECRET_NAME, key: wrongKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       });
 
       expect(result).toFailWith(/decryption failed/i);
@@ -1506,11 +1506,11 @@ describe('IngredientsLibrary protected collections', () => {
       };
 
       const encryptedFile = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: secretIngredientData,
           secretName: TEST_SECRET_NAME,
           key: testKey,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -1573,7 +1573,7 @@ describe('IngredientsLibrary protected collections', () => {
       // Try to load the protected collection - should fail due to collision
       const result = await lib.loadProtectedCollectionAsync({
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       });
 
       expect(result).toFailWith(/already exists/i);
@@ -1615,23 +1615,23 @@ describe('IngredientsLibrary protected collections', () => {
         }
       };
 
-      const key2 = (await nodeCryptoProvider.generateKey()).orThrow();
+      const key2 = (await Crypto.nodeCryptoProvider.generateKey()).orThrow();
 
       const encryptedFile1 = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: secret1Data,
           secretName: TEST_SECRET_NAME,
           key: testKey,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
       const encryptedFile2 = (
-        await createEncryptedCollectionFile({
+        await Crypto.createEncryptedFile({
           content: secret2Data,
           secretName: 'other-secret',
           key: key2,
-          cryptoProvider: nodeCryptoProvider
+          cryptoProvider: Crypto.nodeCryptoProvider
         })
       ).orThrow();
 
@@ -1666,7 +1666,7 @@ describe('IngredientsLibrary protected collections', () => {
       // Only provide key for the first secret - second will fail but first should succeed
       const result = await lib.loadProtectedCollectionAsync({
         secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-        cryptoProvider: nodeCryptoProvider
+        cryptoProvider: Crypto.nodeCryptoProvider
       });
 
       // Should succeed with partial load - one collection loaded, one failed

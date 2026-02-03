@@ -9,5 +9,5 @@ How to handle encrypted files when the required secret is not available. - `'fai
 **Signature:**
 
 ```typescript
-readonly onMissingKey?: EncryptedCollectionErrorMode;
+readonly onMissingKey?: Crypto.EncryptedFileErrorMode;
 ```
