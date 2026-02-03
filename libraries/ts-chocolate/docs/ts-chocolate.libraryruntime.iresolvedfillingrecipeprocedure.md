@@ -110,7 +110,7 @@ The fully resolved procedure object.
 
 </td><td>
 
-IProcedureRef
+Fillings.IProcedureRef
 
 
 </td><td>

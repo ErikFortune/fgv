@@ -91,7 +91,7 @@ _(Optional)_ Optional mold being used for this recipe
 
 </td><td>
 
-IComputedScaledFillingRecipe
+Fillings.IComputedScaledFillingRecipe
 
 
 </td><td>

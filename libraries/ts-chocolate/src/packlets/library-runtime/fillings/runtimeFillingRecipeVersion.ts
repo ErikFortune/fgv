@@ -34,7 +34,7 @@ import {
   FillingVersionSpec,
   Model as CommonModel
 } from '../../common';
-import { IFillingRecipeVersion, IFillingRating } from '../../entities';
+import { IFillingRecipeVersion, Fillings } from '../../entities';
 import { calculateFromIngredients, validateGanache, scaleVersion, IVersionScaleOptions } from '../internal';
 import {
   ICategoryFilter,
@@ -222,7 +222,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   /**
    * Optional ratings for this version
    */
-  public get ratings(): ReadonlyArray<IFillingRating> {
+  public get ratings(): ReadonlyArray<Fillings.IFillingRating> {
     return this._version.ratings ?? [];
   }
 

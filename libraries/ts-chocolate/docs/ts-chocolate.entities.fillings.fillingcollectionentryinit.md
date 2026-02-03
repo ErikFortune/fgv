@@ -11,5 +11,5 @@ Initialization type for a FillingsLibrary collection entry.
 ```typescript
 export type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipe>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
 

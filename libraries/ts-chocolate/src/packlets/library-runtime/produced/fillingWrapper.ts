@@ -36,10 +36,9 @@ import {
   Model as CommonModel
 } from '../../common';
 import {
+  Fillings,
   IProducedFilling,
   IProducedFillingIngredient,
-  IIngredientModifiers,
-  IFillingIngredient,
   ISerializedEditingHistory
 } from '../../entities';
 import type { IRuntimeFillingRecipeVersion } from '../model';
@@ -167,7 +166,7 @@ export class RuntimeProducedFilling {
    * @internal
    */
   private static _convertIngredient(
-    ing: IFillingIngredient,
+    ing: Fillings.IFillingIngredient,
     scaleFactor: number
   ): Result<IProducedFillingIngredient> {
     // Use helper to get preferred ID
@@ -305,7 +304,7 @@ export class RuntimeProducedFilling {
     id: IngredientId,
     amount: Measurement,
     unit?: MeasurementUnit,
-    modifiers?: IIngredientModifiers
+    modifiers?: Fillings.IIngredientModifiers
   ): Result<void> {
     if (amount <= 0) {
       return fail(`Ingredient amount must be positive: ${amount}`);
@@ -624,7 +623,10 @@ export class RuntimeProducedFilling {
   /**
    * Compares two modifiers for equality.
    */
-  private _modifiersEqual(a: IIngredientModifiers | undefined, b: IIngredientModifiers | undefined): boolean {
+  private _modifiersEqual(
+    a: Fillings.IIngredientModifiers | undefined,
+    b: Fillings.IIngredientModifiers | undefined
+  ): boolean {
     if (a === undefined && b === undefined) {
       return true;
     }

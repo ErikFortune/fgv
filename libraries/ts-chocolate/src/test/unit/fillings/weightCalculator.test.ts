@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import { IngredientId, Measurement } from '../../../packlets/common';
-import { IFillingIngredient } from '../../../packlets/entities';
+import { Fillings } from '../../../packlets/entities';
 import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
 describe('WeightCalculator', () => {
@@ -51,7 +51,7 @@ describe('WeightCalculator', () => {
     baseId: string,
     amount: number,
     unit?: 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods'
-  ): IFillingIngredient => ({
+  ): Fillings.IFillingIngredient => ({
     ingredient: {
       ids: [`common.${baseId}` as IngredientId],
       preferredId: `common.${baseId}` as IngredientId
@@ -246,7 +246,7 @@ describe('WeightCalculator', () => {
 
     describe('with ingredient having multiple IDs', () => {
       test('uses preferredId when available', () => {
-        const ingredient: IFillingIngredient = {
+        const ingredient: Fillings.IFillingIngredient = {
           ingredient: {
             ids: ['alt.cream' as IngredientId, 'common.heavy-cream' as IngredientId],
             preferredId: 'common.heavy-cream' as IngredientId
@@ -261,7 +261,7 @@ describe('WeightCalculator', () => {
       });
 
       test('uses first ID when preferredId is not set', () => {
-        const ingredient: IFillingIngredient = {
+        const ingredient: Fillings.IFillingIngredient = {
           ingredient: {
             ids: ['common.water' as IngredientId, 'alt.water' as IngredientId]
           },

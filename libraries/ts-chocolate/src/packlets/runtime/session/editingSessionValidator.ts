@@ -32,7 +32,7 @@ import {
   MeasurementUnit,
   ProcedureId
 } from '../../common';
-import { IIngredientModifiers } from '../../entities';
+import { Fillings } from '../../entities';
 import { EditingSession } from './editingSession';
 
 // ============================================================================
@@ -73,7 +73,7 @@ export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidat
     id: string,
     amount: number,
     unit?: MeasurementUnit,
-    modifiers?: IIngredientModifiers
+    modifiers?: Fillings.IIngredientModifiers
   ): Result<void>;
 
   /**
@@ -158,7 +158,7 @@ export class EditingSessionValidator implements IEditingSessionValidator {
     id: string,
     amount: number,
     unit?: MeasurementUnit,
-    modifiers?: IIngredientModifiers
+    modifiers?: Fillings.IIngredientModifiers
   ): Result<void> {
     return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
       return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {

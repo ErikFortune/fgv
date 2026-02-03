@@ -11,5 +11,5 @@ A single entry in a fillings collection.
 ```typescript
 export type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipe>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
 

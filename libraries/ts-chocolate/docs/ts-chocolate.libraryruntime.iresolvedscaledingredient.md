@@ -152,7 +152,7 @@ Original amount before scaling
 
 </td><td>
 
-IScaledFillingIngredient
+Fillings.IScaledFillingIngredient
 
 
 </td><td>

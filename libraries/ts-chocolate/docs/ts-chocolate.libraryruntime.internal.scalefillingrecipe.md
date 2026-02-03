@@ -11,7 +11,7 @@ This function looks up a version by spec and delegates to [scaleVersion](./ts-ch
 **Signature:**
 
 ```typescript
-export declare function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
+export declare function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<Fillings.IComputedScaledFillingRecipe>;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ fillingRecipe
 
 </td><td>
 
-IFillingRecipe
+[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
 
 
 </td><td>
@@ -100,7 +100,7 @@ _(Optional)_ Optional [scaling options](./ts-chocolate.libraryruntime.internal.i
 
 **Returns:**
 
-Result&lt;IComputedScaledFillingRecipe&gt;
+Result&lt;Fillings.IComputedScaledFillingRecipe&gt;
 
 `Success` with computed scaled filling recipe, or `Failure` if invalid.
 

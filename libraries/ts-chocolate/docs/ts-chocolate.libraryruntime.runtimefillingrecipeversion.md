@@ -199,7 +199,7 @@ Resolved procedures associated with this version. Undefined if the version has n
 
 </td><td>
 
-ReadonlyArray&lt;IFillingRating&gt;
+ReadonlyArray&lt;[Fillings.IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>
@@ -220,7 +220,7 @@ Optional ratings for this version
 
 </td><td>
 
-IFillingRecipeVersion
+[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
 
 
 </td><td>
@@ -241,7 +241,7 @@ Gets the underlying raw version data
 
 </td><td>
 
-IFillingRecipeVersion
+[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
 
 
 </td><td>

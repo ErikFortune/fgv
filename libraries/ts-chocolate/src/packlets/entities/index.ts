@@ -26,10 +26,14 @@
 // Re-export models, collections, and libraries (not Converters which would conflict)
 
 export { ConfectionsLibrary, AnyConfectionVersion, AnyConfection } from './confections';
-export { FillingsLibrary, AnyFillingRecipeVersion } from './fillings';
-
-export * from './fillings/model';
-export * from './fillings/collection';
+export {
+  FillingsLibrary,
+  AnyFillingRecipeVersion,
+  FillingCategory,
+  IFillingRecipe,
+  IFillingRecipeVersion,
+  IFillingRating
+} from './fillings';
 
 export * from './ingredients/model';
 export * from './ingredients/collection';

@@ -62,7 +62,7 @@ import {
   RuntimeBarTruffle,
   RuntimeRolledTruffle
 } from '../../../packlets/library-runtime';
-import { Confections, IChocolateIngredient, IFillingRecipe, IProcedureRef } from '../../../packlets/entities';
+import { Confections, Fillings, IChocolateIngredient, IFillingRecipe } from '../../../packlets/entities';
 
 describe('RuntimeConfection', () => {
   // ============================================================================
@@ -379,7 +379,7 @@ describe('RuntimeConfection', () => {
       }));
     },
     resolveProcedures: (
-      procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+      procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined
     ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined => {
       if (!procedures || procedures.options.length === 0) return undefined;
       const options = procedures.options.map((ref) => ({

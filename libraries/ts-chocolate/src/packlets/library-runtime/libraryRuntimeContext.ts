@@ -36,7 +36,7 @@ import {
   FillingId,
   TaskId
 } from '../common';
-import { Confections, IComputedScaledFillingRecipe, IProcedure, IProcedureRef, ITaskData } from '../entities';
+import { Confections, Fillings, IProcedure, ITaskData } from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
 import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -451,7 +451,7 @@ export class LibraryRuntimeContext
    * @returns Resolved procedures, or undefined if none
    */
   public resolveProcedures(
-    procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined
   ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
     if (!procedures || procedures.options.length === 0) {
       return undefined;
@@ -650,7 +650,9 @@ export class LibraryRuntimeContext
    * @returns Success with the resolved source version, or Failure if not found
    * @internal
    */
-  public getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion> {
+  public getSourceVersion(
+    scaled: Fillings.IComputedScaledFillingRecipe
+  ): Result<IRuntimeFillingRecipeVersion> {
     // Parse the composite FillingVersionId to get fillingId and versionSpec
     return Helpers.parseFillingVersionId(scaled.scaledFrom.sourceVersionId).onSuccess((parsed) => {
       const fillingId = parsed.collectionId;

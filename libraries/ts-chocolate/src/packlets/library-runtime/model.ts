@@ -68,23 +68,18 @@ import {
 } from '../common';
 import {
   Confections,
+  Fillings,
   IAlcoholIngredient,
   IChocolateIngredient,
   IDairyIngredient,
   IFatIngredient,
+  IFillingRating,
+  IFillingRecipe,
+  IFillingRecipeVersion,
   IGanacheCharacteristics,
   Ingredient,
   ISugarIngredient,
   ITemperatureCurve
-} from '../entities';
-import {
-  IComputedScaledFillingRecipe,
-  IFillingIngredient,
-  IFillingRating,
-  IFillingRecipe,
-  IFillingRecipeVersion,
-  IProcedureRef,
-  IScaledFillingIngredient
 } from '../entities';
 import { IVersionScaleOptions } from './internal';
 import { IProcedure } from '../entities';
@@ -662,7 +657,7 @@ export interface IRuntimeScaledFillingRecipeVersion {
   /**
    * Gets the underlying raw scaled version data.
    */
-  readonly raw: IComputedScaledFillingRecipe;
+  readonly raw: Fillings.IComputedScaledFillingRecipe;
 }
 
 // ============================================================================
@@ -693,7 +688,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * The original raw procedure reference data.
    */
-  readonly raw: IProcedureRef;
+  readonly raw: Fillings.IProcedureRef;
 }
 
 /**
@@ -864,7 +859,7 @@ export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredie
   /**
    * The original raw ingredient reference data
    */
-  readonly raw: IFillingIngredient;
+  readonly raw: Fillings.IFillingIngredient;
 }
 
 /**
@@ -905,7 +900,7 @@ export interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredien
   /**
    * The original raw scaled ingredient reference data
    */
-  readonly raw: IScaledFillingIngredient;
+  readonly raw: Fillings.IScaledFillingIngredient;
 }
 
 // ============================================================================
@@ -1064,7 +1059,7 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
   /** Map of all ingredients, keyed by composite ID. */
   readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
   /** Gets the source version for a computed scaled recipe. */
-  getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
+  getSourceVersion(scaled: Fillings.IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
 }
 
 /**
@@ -1549,7 +1544,7 @@ export interface IResolvedConfectionProcedure {
   /** Optional notes specific to using this procedure */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw procedure reference data */
-  readonly raw: IProcedureRef;
+  readonly raw: Fillings.IProcedureRef;
 }
 
 // ============================================================================
@@ -1871,7 +1866,7 @@ export interface IConfectionContext {
    * @returns Resolved procedures, or undefined if none
    */
   resolveProcedures(
-    procedures: CommonModel.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined
   ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 

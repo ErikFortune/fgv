@@ -9,7 +9,7 @@ Calculate weight contributions for all ingredients. Returns detailed breakdown o
 **Signature:**
 
 ```typescript
-export declare function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
+export declare function calculateWeightContributions(ingredients: ReadonlyArray<Fillings.IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ ingredients
 
 </td><td>
 
-ReadonlyArray&lt;IFillingIngredient&gt;
+ReadonlyArray&lt;Fillings.IFillingIngredient&gt;
 
 
 </td><td>

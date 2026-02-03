@@ -114,7 +114,7 @@ _(Optional)_ Optional notes from the source version.
 
 </td><td>
 
-ReadonlyArray&lt;IFillingRating&gt;
+ReadonlyArray&lt;[IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>
@@ -135,7 +135,7 @@ Optional ratings from the source version.
 
 </td><td>
 
-IComputedScaledFillingRecipe
+Fillings.IComputedScaledFillingRecipe
 
 
 </td><td>

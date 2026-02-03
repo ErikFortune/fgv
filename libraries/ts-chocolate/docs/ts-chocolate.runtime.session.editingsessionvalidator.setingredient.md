@@ -9,7 +9,7 @@ Sets or updates an ingredient using weakly-typed inputs
 **Signature:**
 
 ```typescript
-setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
 ```
 
 ## Parameters
@@ -85,7 +85,7 @@ modifiers
 
 </td><td>
 
-IIngredientModifiers
+Fillings.IIngredientModifiers
 
 
 </td><td>

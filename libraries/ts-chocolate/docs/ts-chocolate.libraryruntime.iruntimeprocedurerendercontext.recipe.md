@@ -9,5 +9,5 @@ The specific scaled filling recipe this procedure is being rendered for
 **Signature:**
 
 ```typescript
-readonly recipe: IComputedScaledFillingRecipe;
+readonly recipe: Fillings.IComputedScaledFillingRecipe;
 ```

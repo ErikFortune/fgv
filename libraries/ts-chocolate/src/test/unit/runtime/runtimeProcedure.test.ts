@@ -31,7 +31,7 @@ import {
 } from '../../../packlets/common';
 import { IProcedure } from '../../../packlets/entities';
 import { ITaskData } from '../../../packlets/entities';
-import { IComputedScaledFillingRecipe, FillingCategory } from '../../../packlets/entities';
+import { Fillings, FillingCategory } from '../../../packlets/entities';
 import {
   RuntimeProcedure,
   IProcedureContext,
@@ -64,7 +64,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Mock recipe for render context
-  const mockRecipe: IComputedScaledFillingRecipe = {
+  const mockRecipe: Fillings.IComputedScaledFillingRecipe = {
     id: 'test.test-recipe' as string,
     name: 'Test Recipe',
     scaledFrom: {
@@ -78,7 +78,7 @@ describe('RuntimeProcedure', () => {
     targetYield: { amount: 200, unit: 'g' as string },
     scaleFactor: 2.0,
     computedIngredients: []
-  } as unknown as IComputedScaledFillingRecipe;
+  } as unknown as Fillings.IComputedScaledFillingRecipe;
 
   // Mock render context
   const mockRenderContext: IRuntimeProcedureRenderContext = {

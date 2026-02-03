@@ -38,9 +38,9 @@ import {
   Model as CommonModel
 } from '../../common';
 import {
+  Fillings,
   IFillingEditJournalEntry,
   IFillingProductionJournalEntry,
-  IIngredientModifiers,
   IPersistedFillingSession,
   IProducedFilling,
   PersistedSessionStatus
@@ -136,7 +136,7 @@ export class EditingSession {
     id: IngredientId,
     amount: Measurement,
     unit?: MeasurementUnit,
-    modifiers?: IIngredientModifiers
+    modifiers?: Fillings.IIngredientModifiers
   ): Result<void> {
     return this._produced.setIngredient(id, amount, unit, modifiers);
   }

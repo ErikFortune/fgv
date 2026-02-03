@@ -215,7 +215,7 @@ _(Optional)_ Optional categorized URLs for external resources (tutorials, videos
 
 </td><td>
 
-ReadonlyArray&lt;IFillingRecipeVersion&gt;
+ReadonlyArray&lt;[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)<!-- -->&gt;
 
 
 </td><td>

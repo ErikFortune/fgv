@@ -11,5 +11,5 @@ Type for the collections in a FillingsLibrary.
 ```typescript
 export type FillingCollection = SubLibraryCollection<BaseFillingId, IFillingRecipe>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
 

@@ -395,7 +395,7 @@ function calculateBaseWeight(version: IFillingRecipeVersion): Measurement;
 function calculateForFillingRecipe(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
 
 // @public
-function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<IFillingIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
+function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<Fillings_2.IFillingIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
@@ -404,13 +404,13 @@ function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIn
 function calculateGanache(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
 
 // @public
-function calculateIngredientWeight(ingredient: IFillingIngredient, context?: IWeightCalculationContext): IWeightContribution;
+function calculateIngredientWeight(ingredient: Fillings_2.IFillingIngredient, context?: IWeightCalculationContext): IWeightContribution;
 
 // @public
-function calculateTotalWeight(ingredients: ReadonlyArray<IFillingIngredient>, context?: IWeightCalculationContext): Measurement;
+function calculateTotalWeight(ingredients: ReadonlyArray<Fillings_2.IFillingIngredient>, context?: IWeightCalculationContext): Measurement;
 
 // @public
-function calculateWeightContributions(ingredients: ReadonlyArray<IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
+function calculateWeightContributions(ingredients: ReadonlyArray<Fillings_2.IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
 
 // @public
 function canScaleByFrames(confection: Confections_2.AnyConfection): confection is Confections_2.IMoldedBonBon;
@@ -1125,7 +1125,7 @@ class EditingSession {
     saveAsNewVersion(options: ISaveVersionOptions): Result<ISaveResult>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     get sessionId(): SessionId;
-    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
     get targetWeight(): Measurement;
@@ -1147,7 +1147,7 @@ class EditingSessionValidator implements IEditingSessionValidator {
     removeIngredient(id: string): Result<void>;
     scaleToTargetWeight(targetWeight: number): Result<Measurement>;
     get session(): EditingSession;
-    setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
     setProcedure(id: string | undefined): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
 }
@@ -1200,6 +1200,10 @@ declare namespace Entities {
         AnyConfection,
         FillingsLibrary,
         AnyFillingRecipeVersion,
+        FillingCategory_2 as FillingCategory,
+        IFillingRecipe,
+        IFillingRecipeVersion,
+        IFillingRating,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -1210,32 +1214,6 @@ declare namespace Entities {
         Procedures_2 as Procedures,
         Session,
         Tasks_2 as Tasks,
-        isScaledFillingRecipeVersion,
-        isFillingRecipeVersion,
-        IIngredientModifiers,
-        IFillingIngredient,
-        RatingCategory,
-        FillingCategory_2 as FillingCategory,
-        allFillingCategories_2 as allFillingCategories,
-        allRatingCategories,
-        IFillingRating,
-        IFillingUsage,
-        IFillingRecipeVersion,
-        IFillingDerivation,
-        IProcedureRef,
-        IFillingRecipe,
-        IScaledFillingIngredient,
-        IScalingRef,
-        IIngredientSnapshot,
-        IScaledFillingRecipeVersion,
-        IScalingSource,
-        IComputedScaledFillingRecipe,
-        IProducedFillingIngredient,
-        IProducedFilling,
-        FillingCollectionEntry,
-        FillingCollectionEntryInit,
-        FillingCollectionValidator,
-        FillingCollection,
         isChocolateIngredient,
         isSugarIngredient,
         isDairyIngredient,
@@ -1263,6 +1241,8 @@ declare namespace Entities {
         isConfectionEditJournalEntry,
         isFillingProductionJournalEntry,
         isConfectionProductionJournalEntry,
+        IProducedFilling,
+        IProducedFillingIngredient,
         AnyProducedConfection,
         IProducedBarTruffle,
         IProducedMoldedBonBon,
@@ -2186,7 +2166,7 @@ interface IConfectionContext {
     resolveCoatings(coatings: Confections_2.ICoatings): IResolvedCoatings;
     resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
     resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2335,7 +2315,7 @@ interface IEditableCollectionParams<T, TBaseId extends string = string> {
 interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
     removeIngredient(id: string): Result<void>;
     scaleToTargetWeight(targetWeight: number): Result<Measurement>;
-    setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setIngredient(id: string, amount: number, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
     setProcedure(id: string | undefined): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
 }
@@ -3635,7 +3615,7 @@ interface IResolvedConfectionProcedure {
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IRuntimeProcedure;
-    readonly raw: IProcedureRef;
+    readonly raw: Fillings_2.IProcedureRef;
 }
 
 // @public
@@ -3644,7 +3624,7 @@ interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IR
     readonly amount: Measurement;
     readonly ingredient: TIngredient;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IFillingIngredient;
+    readonly raw: Fillings_2.IFillingIngredient;
 }
 
 // @public
@@ -3655,7 +3635,7 @@ interface IResolvedFillingRecipeProcedure {
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IProcedure;
-    readonly raw: IProcedureRef;
+    readonly raw: Fillings_2.IProcedureRef;
 }
 
 // @public
@@ -3724,7 +3704,7 @@ interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRu
     readonly ingredient: TIngredient;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly originalAmount: Measurement;
-    readonly raw: IScaledFillingIngredient;
+    readonly raw: Fillings_2.IScaledFillingIngredient;
     readonly scaleFactor: number;
 }
 
@@ -4031,7 +4011,7 @@ interface IRuntimeProcedureRenderContext {
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     readonly context: IProcedureContext;
     readonly mold?: IMold;
-    readonly recipe: IComputedScaledFillingRecipe;
+    readonly recipe: Fillings_2.IComputedScaledFillingRecipe;
 }
 
 // @public
@@ -4078,7 +4058,7 @@ interface IRuntimeScaledFillingRecipeVersion {
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly ratings: ReadonlyArray<IFillingRating>;
-    readonly raw: IComputedScaledFillingRecipe;
+    readonly raw: Fillings_2.IComputedScaledFillingRecipe;
     readonly scaledFrom: IRuntimeScalingSource;
     readonly targetWeight: Measurement;
     readonly weightDifference: Measurement;
@@ -4219,7 +4199,7 @@ interface IScaledFillingRecipeVersion {
 
 // @internal
 interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-    getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
+    getSourceVersion(scaled: Fillings_2.IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
     readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
 }
 
@@ -5145,7 +5125,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
     // @internal
-    getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
+    getSourceVersion(scaled: Fillings_2.IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
     getTask(id: TaskId): Result<ITaskData>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
@@ -5160,7 +5140,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     resolveCoatings(coatings: Confections_2.ICoatings): IResolvedCoatings;
     resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot_2> | undefined;
     resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
     warmUp(): void;
 }
@@ -6032,7 +6012,7 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
-    get ratings(): ReadonlyArray<IFillingRating>;
+    get ratings(): ReadonlyArray<Fillings_2.IFillingRating>;
     get raw(): IFillingRecipeVersion;
     scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
     scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
@@ -6252,7 +6232,7 @@ class RuntimeProducedFilling {
     static restoreFromHistory(history: ISerializedEditingHistory<IProducedFilling>): Result<RuntimeProducedFilling>;
     restoreSnapshot(snapshot: IProducedFilling): Result<void>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
-    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
     get snapshot(): IProducedFilling;
@@ -6350,15 +6330,15 @@ class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingRecipeVe
     // Warning: (ae-forgotten-export) The symbol "ScaledVersionContext" needs to be exported by the entry point index.d.ts
     //
     // @internal
-    constructor(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe);
+    constructor(context: ScaledVersionContext, scaled: Fillings_2.IComputedScaledFillingRecipe);
     get baseWeight(): Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
+    static create(context: ScaledVersionContext, scaled: Fillings_2.IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
     get createdDate(): string;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
-    get raw(): IComputedScaledFillingRecipe;
+    get raw(): Fillings_2.IComputedScaledFillingRecipe;
     get scaledFrom(): IRuntimeScalingSource;
     get targetWeight(): Measurement;
     get weightDifference(): Measurement;
@@ -6439,14 +6419,14 @@ const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
+function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<Fillings_2.IComputedScaledFillingRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
+function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<Fillings_2.IComputedScaledFillingRecipe>;
 
 // Warning: (ae-forgotten-export) The symbol "IFrameScaleOptions" needs to be exported by the entry point index.d.ts
 //
@@ -6460,7 +6440,7 @@ function scaleMoldedBonBonVersionByFrames(confection: Confections_2.IMoldedBonBo
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<IComputedScaledFillingRecipe>;
+function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<Fillings_2.IComputedScaledFillingRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

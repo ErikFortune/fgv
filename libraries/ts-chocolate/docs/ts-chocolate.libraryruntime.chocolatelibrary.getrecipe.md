@@ -50,7 +50,7 @@ The [id](./ts-chocolate.fillingid.md) of the recipe to retrieve.
 
 **Returns:**
 
-Result&lt;IFillingRecipe&gt;
+Result&lt;[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)<!-- -->&gt;
 
 `Success` with recipe, or `Failure` if not found
 

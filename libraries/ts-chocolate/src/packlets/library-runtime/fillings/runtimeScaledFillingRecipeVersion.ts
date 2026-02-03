@@ -26,7 +26,7 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers, Model as CommonModel } from '../../common';
-import { IComputedScaledFillingRecipe, IFillingRating } from '../../entities';
+import { Fillings, IFillingRating } from '../../entities';
 import { calculateFromIngredients, validateGanache } from '../internal';
 import {
   ICategoryFilter,
@@ -95,7 +95,7 @@ function matchesFilter(
  */
 export class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingRecipeVersion {
   private readonly _context: ScaledVersionContext;
-  private readonly _scaled: IComputedScaledFillingRecipe;
+  private readonly _scaled: Fillings.IComputedScaledFillingRecipe;
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedScaledIngredient<AnyRuntimeIngredient>> | undefined;
@@ -107,7 +107,7 @@ export class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingR
    * Creates a RuntimeScaledFillingRecipeVersion.
    * @internal
    */
-  public constructor(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe) {
+  public constructor(context: ScaledVersionContext, scaled: Fillings.IComputedScaledFillingRecipe) {
     this._context = context;
     this._scaled = scaled;
   }
@@ -120,7 +120,7 @@ export class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingR
    */
   public static create(
     context: ScaledVersionContext,
-    scaled: IComputedScaledFillingRecipe
+    scaled: Fillings.IComputedScaledFillingRecipe
   ): Result<RuntimeScaledFillingRecipeVersion> {
     return Success.with(new RuntimeScaledFillingRecipeVersion(context, scaled));
   }
@@ -314,7 +314,7 @@ export class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingR
   /**
    * Gets the underlying raw scaled version data
    */
-  public get raw(): IComputedScaledFillingRecipe {
+  public get raw(): Fillings.IComputedScaledFillingRecipe {
     return this._scaled;
   }
 

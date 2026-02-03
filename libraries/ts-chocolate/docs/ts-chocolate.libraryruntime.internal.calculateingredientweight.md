@@ -11,7 +11,7 @@ Weight rules: - 'g': Added directly (amount in grams) - 'mL': Converted to grams
 **Signature:**
 
 ```typescript
-export declare function calculateIngredientWeight(ingredient: IFillingIngredient, context?: IWeightCalculationContext): IWeightContribution;
+export declare function calculateIngredientWeight(ingredient: Fillings.IFillingIngredient, context?: IWeightCalculationContext): IWeightContribution;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ ingredient
 
 </td><td>
 
-IFillingIngredient
+Fillings.IFillingIngredient
 
 
 </td><td>

@@ -11,5 +11,5 @@ Validator type for FillingsLibrary collections.
 ```typescript
 export type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipe>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
 

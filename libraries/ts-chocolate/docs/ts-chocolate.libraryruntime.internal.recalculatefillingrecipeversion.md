@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-IFillingRecipeVersion
+[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Filling recipe version to update
 
 **Returns:**
 
-IFillingRecipeVersion
+[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
 
 New filling recipe version with recalculated base weight
 

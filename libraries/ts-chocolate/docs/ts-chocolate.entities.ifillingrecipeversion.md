@@ -152,7 +152,7 @@ _(Optional)_ Optional procedures associated with this version. Contains applicab
 
 </td><td>
 
-ReadonlyArray&lt;IFillingRating&gt;
+ReadonlyArray&lt;[IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>

@@ -9,7 +9,7 @@ Scales a [filling recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by
 **Signature:**
 
 ```typescript
-export declare function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<IComputedScaledFillingRecipe>;
+export declare function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<Fillings.IComputedScaledFillingRecipe>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ fillingRecipe
 
 </td><td>
 
-IFillingRecipe
+[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
 
 
 </td><td>
@@ -98,7 +98,7 @@ _(Optional)_ Optional [scaling options](./ts-chocolate.libraryruntime.internal.i
 
 **Returns:**
 
-Result&lt;IComputedScaledFillingRecipe&gt;
+Result&lt;Fillings.IComputedScaledFillingRecipe&gt;
 
 `Success` with computed scaled filling recipe, or `Failure` if invalid.
 

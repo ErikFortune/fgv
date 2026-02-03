@@ -33,7 +33,7 @@ import {
 
 import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/entities';
 
-import { IFillingRecipe, IFillingRecipeVersion, IFillingIngredient } from '../../../packlets/entities';
+import { Fillings, IFillingRecipe, IFillingRecipeVersion } from '../../../packlets/entities';
 
 import {
   IngredientResolver,
@@ -178,7 +178,7 @@ describe('Ganache Calculator', () => {
 
   describe('calculateFromFillingRecipeIngredients', () => {
     test('resolves and calculates ingredients', () => {
-      const fillingIngredients: IFillingIngredient[] = [
+      const fillingIngredients: Fillings.IFillingIngredient[] = [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
         { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ];
@@ -191,7 +191,7 @@ describe('Ganache Calculator', () => {
     });
 
     test('fails when ingredient not found', () => {
-      const fillingIngredients: IFillingIngredient[] = [
+      const fillingIngredients: Fillings.IFillingIngredient[] = [
         { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Measurement }
       ];
 

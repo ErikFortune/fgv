@@ -9,5 +9,5 @@ Optional ratings for this version
 **Signature:**
 
 ```typescript
-get ratings(): ReadonlyArray<IFillingRating>;
+get ratings(): ReadonlyArray<Fillings.IFillingRating>;
 ```

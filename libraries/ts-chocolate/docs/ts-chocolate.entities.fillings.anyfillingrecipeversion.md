@@ -11,3 +11,5 @@ Union type for consumers who can work with either scaled or unscaled versions
 ```typescript
 export type AnyFillingRecipeVersion = IFillingRecipeVersion | IScaledFillingRecipeVersion;
 ```
+**References:** [IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+

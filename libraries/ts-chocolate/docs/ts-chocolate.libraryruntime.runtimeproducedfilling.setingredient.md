@@ -9,7 +9,7 @@ Sets or updates an ingredient. Pushes current state to undo before change, clear
 **Signature:**
 
 ```typescript
-setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<void>;
+setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
 ```
 
 ## Parameters
@@ -85,7 +85,7 @@ modifiers
 
 </td><td>
 
-IIngredientModifiers
+Fillings.IIngredientModifiers
 
 
 </td><td>

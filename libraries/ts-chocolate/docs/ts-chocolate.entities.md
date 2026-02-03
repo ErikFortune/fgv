@@ -282,17 +282,6 @@ Type guard for IFillingProductionJournalEntry
 </td></tr>
 <tr><td>
 
-[isFillingRecipeVersion(version)](./ts-chocolate.entities.isfillingrecipeversion.md)
-
-
-</td><td>
-
-Type guard to check if a version is a regular (unscaled) filling recipe version
-
-
-</td></tr>
-<tr><td>
-
 [isIngredientInventoryEntry(entry)](./ts-chocolate.entities.isingredientinventoryentry.md)
 
 
@@ -403,17 +392,6 @@ Type guard for IResolvedIngredientSlot
 </td></tr>
 <tr><td>
 
-[isScaledFillingRecipeVersion(version)](./ts-chocolate.entities.isscaledfillingrecipeversion.md)
-
-
-</td><td>
-
-Type guard to check if a version is a scaled filling recipe version
-
-
-</td></tr>
-<tr><td>
-
 [isSugarIngredient(ingredient)](./ts-chocolate.entities.issugaringredient.md)
 
 
@@ -495,17 +473,6 @@ Chocolate-specific ingredient
 </td></tr>
 <tr><td>
 
-[IComputedScaledFillingRecipe](./ts-chocolate.entities.icomputedscaledfillingrecipe.md)
-
-
-</td><td>
-
-A computed scaled filling recipe with full ingredient data. This is the output format from the scaler - a runtime object with all calculated values. Not intended for persistence - use IScaledFillingRecipeVersion for that.
-
-
-</td></tr>
-<tr><td>
-
 [IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)
 
 
@@ -550,34 +517,12 @@ Fat-specific ingredient
 </td></tr>
 <tr><td>
 
-[IFillingDerivation](./ts-chocolate.entities.ifillingderivation.md)
-
-
-</td><td>
-
-Reference to a source filling recipe+version from which a filling recipe was derived. Used to track lineage when a user edits a read-only filling recipe and creates a new filling recipe in a writable collection.
-
-
-</td></tr>
-<tr><td>
-
 [IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)
 
 
 </td><td>
 
 Journal entry for filling recipe edits.
-
-
-</td></tr>
-<tr><td>
-
-[IFillingIngredient](./ts-chocolate.entities.ifillingingredient.md)
-
-
-</td><td>
-
-Reference to an ingredient used in a filling recipe. Uses IIdsWithPreferred pattern - `ids` contains all valid ingredient options, `preferredId` indicates the default/recommended one.
 
 
 </td></tr>
@@ -627,17 +572,6 @@ Complete details for a single version of a filling recipe
 </td></tr>
 <tr><td>
 
-[IFillingUsage](./ts-chocolate.entities.ifillingusage.md)
-
-
-</td><td>
-
-Record of a filling recipe being used (for production tracking)
-
-
-</td></tr>
-<tr><td>
-
 [IGanacheCharacteristics](./ts-chocolate.entities.iganachecharacteristics.md)
 
 
@@ -668,28 +602,6 @@ Base ingredient interface All ingredients have these common properties
 Inventory entry for ingredients.
 
 The ingredientId is the full composite ID (e.g., 'builtin.cocoa-butter') identifying which specific ingredient from which collection is being inventoried.
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientModifiers](./ts-chocolate.entities.iingredientmodifiers.md)
-
-
-</td><td>
-
-Modifiers that qualify how an ingredient is measured or added. Groups measurement hints and qualifiers to avoid interface pollution.
-
-
-</td></tr>
-<tr><td>
-
-[IIngredientSnapshot](./ts-chocolate.entities.iingredientsnapshot.md)
-
-
-</td><td>
-
-Optional ingredient snapshot for archival purposes. Used when the source filling recipe might become unavailable.
 
 
 </td></tr>
@@ -921,50 +833,6 @@ Resolved slot with ingredient filling.
 </td></tr>
 <tr><td>
 
-[IScaledFillingIngredient](./ts-chocolate.entities.iscaledfillingingredient.md)
-
-
-</td><td>
-
-Scaled ingredient with original and scaled amounts. Used at runtime when computing scaled filling recipes; not typically persisted.
-
-
-</td></tr>
-<tr><td>
-
-[IScaledFillingRecipeVersion](./ts-chocolate.entities.iscaledfillingrecipeversion.md)
-
-
-</td><td>
-
-A scaled filling recipe version - reference-based by default. Scaling is primarily a runtime operation; this represents what gets persisted (e.g., in a journal record).
-
-
-</td></tr>
-<tr><td>
-
-[IScalingRef](./ts-chocolate.entities.iscalingref.md)
-
-
-</td><td>
-
-Lightweight scaling reference - the default storage format for scaled filling recipes. Stores only the reference and scale parameters, not ingredient snapshots.
-
-
-</td></tr>
-<tr><td>
-
-[IScalingSource](./ts-chocolate.entities.iscalingsource.md)
-
-
-</td><td>
-
-Information about the source of a scaled filling recipe. Used at runtime for computed scaled versions.
-
-
-</td></tr>
-<tr><td>
-
 [ISerializedEditingHistory](./ts-chocolate.entities.iserializededitinghistory.md)
 
 
@@ -1173,17 +1041,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[allFillingCategories](./ts-chocolate.entities.allfillingcategories.md)
-
-
-</td><td>
-
-All possible filling categories
-
-
-</td></tr>
-<tr><td>
-
 [allInventoryTypes](./ts-chocolate.entities.allinventorytypes.md)
 
 
@@ -1223,17 +1080,6 @@ All possible persisted session statuses.
 </td><td>
 
 All possible persisted session types.
-
-
-</td></tr>
-<tr><td>
-
-[allRatingCategories](./ts-chocolate.entities.allratingcategories.md)
-
-
-</td><td>
-
-All possible rating categories
 
 
 </td></tr>
@@ -1414,50 +1260,6 @@ Union of resolved filling slot types. Discriminated on the `slotType` field.
 </td><td>
 
 Categories for classifying filling recipes by type
-
-
-</td></tr>
-<tr><td>
-
-[FillingCollection](./ts-chocolate.entities.fillingcollection.md)
-
-
-</td><td>
-
-Type for the collections in a FillingsLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[FillingCollectionEntry](./ts-chocolate.entities.fillingcollectionentry.md)
-
-
-</td><td>
-
-A single entry in a fillings collection.
-
-
-</td></tr>
-<tr><td>
-
-[FillingCollectionEntryInit](./ts-chocolate.entities.fillingcollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a FillingsLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[FillingCollectionValidator](./ts-chocolate.entities.fillingcollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for FillingsLibrary collections.
 
 
 </td></tr>
@@ -1810,17 +1612,6 @@ Inventory entry type discriminator.
 </td><td>
 
 File tree source for procedure data.
-
-
-</td></tr>
-<tr><td>
-
-[IProcedureRef](./ts-chocolate.entities.iprocedureref.md)
-
-
-</td><td>
-
-Reference to a procedure that can be used with a filling recipe. Contains the procedure ID and optional notes.
 
 
 </td></tr>
@@ -2206,17 +1997,6 @@ Validator type for ProceduresLibrary collections.
 </td><td>
 
 Specifies a procedures library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[RatingCategory](./ts-chocolate.entities.ratingcategory.md)
-
-
-</td><td>
-
-Categories for rating a filling recipe version
 
 
 </td></tr>

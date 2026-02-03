@@ -131,7 +131,7 @@ _(Optional)_ Optional categorized notes from the source version
 
 </td><td>
 
-ReadonlyArray&lt;IFillingRating&gt;
+ReadonlyArray&lt;[IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>

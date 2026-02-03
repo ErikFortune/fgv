@@ -9,7 +9,7 @@ Factory method for creating a RuntimeScaledFillingRecipeVersion.
 **Signature:**
 
 ```typescript
-static create(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
+static create(context: ScaledVersionContext, scaled: Fillings.IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ scaled
 
 </td><td>
 
-IComputedScaledFillingRecipe
+Fillings.IComputedScaledFillingRecipe
 
 
 </td><td>

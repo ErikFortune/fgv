@@ -50,7 +50,7 @@ The version to check
 
 **Returns:**
 
-version is IFillingRecipeVersion
+version is [IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
 
 True if this is a regular filling recipe version
 

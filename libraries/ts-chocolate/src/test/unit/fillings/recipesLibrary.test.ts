@@ -30,17 +30,11 @@ import {
   FillingVersionSpec,
   Model as CommonModel,
   NoteCategory,
-  SourceId
+  SourceId,
+  FillingVersionId
 } from '../../../packlets/common';
 
-import {
-  Fillings,
-  IFillingRecipe,
-  IFillingRecipeVersion,
-  FillingsLibrary,
-  isScaledFillingRecipeVersion,
-  isFillingRecipeVersion
-} from '../../../packlets/entities';
+import { Fillings, IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
 import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
 import { CryptoUtils } from '@fgv/ts-extras';
@@ -960,7 +954,7 @@ describe('FillingsLibrary', () => {
 
 describe('Recipe scaling', () => {
   const testVersion: IFillingRecipeVersion = {
-    versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec,
+    versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
       { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Measurement },
@@ -974,10 +968,10 @@ describe('Recipe scaling', () => {
     name: 'Test' as FillingName,
     category: 'ganache',
     versions: [testVersion],
-    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec
+    goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec
   };
 
-  const testFillingId = 'source.test' as import('../../../packlets/common').FillingId;
+  const testFillingId = 'source.test' as FillingId;
 
   describe('scaleFillingRecipe', () => {
     test('scales ingredients proportionally', () => {
@@ -1054,7 +1048,7 @@ describe('Recipe scaling', () => {
     test('fails with invalid version ID', () => {
       expect(
         RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement, {
-          versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').FillingVersionSpec
+          versionSpec: '2026-12-31-99' as unknown as FillingVersionSpec
         })
       ).toFailWith(/not found/);
     });
@@ -1081,7 +1075,7 @@ describe('Recipe scaling', () => {
 
     test('scales ingredients with explicit unit', () => {
       const versionWithUnits: IFillingRecipeVersion = {
-        versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Measurement, unit: 'g' },
@@ -1129,7 +1123,7 @@ describe('Recipe scaling', () => {
     test('fails with invalid version ID', () => {
       expect(
         RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5, {
-          versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').FillingVersionSpec
+          versionSpec: '2026-12-31-99' as unknown as FillingVersionSpec
         })
       ).toFailWith(/not found/);
     });
@@ -1141,29 +1135,29 @@ describe('Recipe scaling', () => {
 
   describe('type guards', () => {
     test('isFillingRecipeVersion returns true for regular versions', () => {
-      expect(isFillingRecipeVersion(testVersion)).toBe(true);
-      expect(isScaledFillingRecipeVersion(testVersion)).toBe(false);
+      expect(Fillings.isFillingRecipeVersion(testVersion)).toBe(true);
+      expect(Fillings.isScaledFillingRecipeVersion(testVersion)).toBe(false);
     });
 
     test('isScaledFillingRecipeVersion returns true for persistence-format scaled versions', () => {
       // IScaledFillingRecipeVersion is the reference-based persistence format
-      const scaledVersion: import('../../../packlets/entities').IScaledFillingRecipeVersion = {
+      const scaledVersion: Fillings.IScaledFillingRecipeVersion = {
         scalingRef: {
-          sourceVersionId: 'source.test@2026-01-01-01' as import('../../../packlets/common').FillingVersionId,
+          sourceVersionId: 'source.test@2026-01-01-01' as FillingVersionId,
           scaleFactor: 2,
           targetWeight: 300 as Measurement,
           createdDate: '2026-01-15'
         }
       };
-      expect(isScaledFillingRecipeVersion(scaledVersion)).toBe(true);
-      expect(isFillingRecipeVersion(scaledVersion)).toBe(false);
+      expect(Fillings.isScaledFillingRecipeVersion(scaledVersion)).toBe(true);
+      expect(Fillings.isFillingRecipeVersion(scaledVersion)).toBe(false);
     });
   });
 
   describe('edge cases', () => {
     test('scaleFillingRecipe fails with zero baseWeight', () => {
       const zeroWeightVersion: IFillingRecipeVersion = {
-        versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [],
         baseWeight: 0 as Measurement
@@ -1173,9 +1167,9 @@ describe('Recipe scaling', () => {
         name: 'Zero' as FillingName,
         category: 'ganache',
         versions: [zeroWeightVersion],
-        goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec
+        goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec
       };
-      const zeroFillingId = 'source.zero' as import('../../../packlets/common').FillingId;
+      const zeroFillingId = 'source.zero' as FillingId;
       expect(
         RuntimeInternal.scaleFillingRecipe(zeroWeightRecipe, zeroFillingId, 100 as Measurement)
       ).toFailWith(/base weight must be greater than zero/);

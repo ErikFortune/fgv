@@ -33,14 +33,7 @@ import {
   Measurement,
   MeasurementUnit
 } from '../../common';
-import {
-  IComputedScaledFillingRecipe,
-  IFillingIngredient,
-  IFillingRecipe,
-  IFillingRecipeVersion,
-  IScaledFillingIngredient,
-  IScalingSource
-} from '../../entities';
+import { Fillings, IFillingRecipe, IFillingRecipeVersion } from '../../entities';
 import { IScaledAmount, scaleAmount } from './fillingUnitScaler';
 
 // ============================================================================
@@ -84,7 +77,7 @@ export interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
  * @internal
  */
 interface IScaleIngredientResult {
-  readonly scaled: IScaledFillingIngredient;
+  readonly scaled: Fillings.IScaledFillingIngredient;
   readonly scaledAmount: IScaledAmount;
 }
 
@@ -98,7 +91,7 @@ interface IScaleIngredientResult {
  * @internal
  */
 function scaleIngredient(
-  ingredient: IFillingIngredient,
+  ingredient: Fillings.IFillingIngredient,
   scaleFactor: number,
   options: IVersionScaleOptions
 ): IScaleIngredientResult {
@@ -165,7 +158,7 @@ export function scaleVersion(
   sourceVersionId: FillingVersionId,
   targetWeight: Measurement,
   options: IVersionScaleOptions = {}
-): Result<IComputedScaledFillingRecipe> {
+): Result<Fillings.IComputedScaledFillingRecipe> {
   // Validate inputs
   if (targetWeight <= 0) {
     return Failure.with('Target weight must be greater than zero');
@@ -184,7 +177,7 @@ export function scaleVersion(
   );
 
   // Build scaling source metadata
-  const scaledFrom: IScalingSource = {
+  const scaledFrom: Fillings.IScalingSource = {
     sourceVersionId,
     scaleFactor,
     targetWeight
@@ -219,7 +212,7 @@ export function scaleFillingRecipe(
   fillingId: FillingId,
   targetWeight: Measurement,
   options: IFillingRecipeScaleOptions = {}
-): Result<IComputedScaledFillingRecipe> {
+): Result<Fillings.IComputedScaledFillingRecipe> {
   // Get the version to scale (default to golden version)
   const versionSpec = options.versionSpec ?? fillingRecipe.goldenVersionSpec;
   const version = fillingRecipe.versions.find((v) => v.versionSpec === versionSpec);
@@ -246,7 +239,7 @@ export function scaleFillingRecipeByFactor(
   fillingId: FillingId,
   factor: number,
   options: IFillingRecipeScaleOptions = {}
-): Result<IComputedScaledFillingRecipe> {
+): Result<Fillings.IComputedScaledFillingRecipe> {
   if (factor <= 0) {
     return Failure.with('Scale factor must be greater than zero');
   }

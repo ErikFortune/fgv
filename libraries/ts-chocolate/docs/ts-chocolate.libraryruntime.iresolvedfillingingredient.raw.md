@@ -9,5 +9,5 @@ The original raw ingredient reference data
 **Signature:**
 
 ```typescript
-readonly raw: IFillingIngredient;
+readonly raw: Fillings.IFillingIngredient;
 ```

@@ -11,7 +11,7 @@ This is the core scaling function that operates directly on a version. Use this 
 **Signature:**
 
 ```typescript
-export declare function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<IComputedScaledFillingRecipe>;
+export declare function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<Fillings.IComputedScaledFillingRecipe>;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ version
 
 </td><td>
 
-IFillingRecipeVersion
+[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
 
 
 </td><td>
@@ -100,7 +100,7 @@ _(Optional)_ Optional [scaling options](./ts-chocolate.libraryruntime.internal.i
 
 **Returns:**
 
-Result&lt;IComputedScaledFillingRecipe&gt;
+Result&lt;Fillings.IComputedScaledFillingRecipe&gt;
 
 `Success` with computed scaled filling recipe, or `Failure` if invalid.
 

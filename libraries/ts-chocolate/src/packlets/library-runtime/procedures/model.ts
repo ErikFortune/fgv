@@ -35,9 +35,8 @@ import {
   ProcedureType,
   TaskId
 } from '../../common';
-import { IComputedScaledFillingRecipe } from '../../entities';
 import { IMold } from '../../entities';
-import { IProcedure, IProcedureStep } from '../../entities';
+import { Fillings, IProcedure, IProcedureStep } from '../../entities';
 import { ITaskData } from '../../entities';
 import { RuntimeTask } from '../tasks';
 
@@ -88,7 +87,7 @@ export interface IRuntimeProcedureRenderContext {
   /**
    * The specific scaled filling recipe this procedure is being rendered for
    */
-  readonly recipe: IComputedScaledFillingRecipe;
+  readonly recipe: Fillings.IComputedScaledFillingRecipe;
 
   /**
    * Optional mold being used for this recipe
