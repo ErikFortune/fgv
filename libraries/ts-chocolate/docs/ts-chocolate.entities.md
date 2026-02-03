@@ -1188,17 +1188,6 @@ Union type for filling journal entries (edit or production)
 </td></tr>
 <tr><td>
 
-[AnyFillingRecipeVersion](./ts-chocolate.entities.anyfillingrecipeversion.md)
-
-
-</td><td>
-
-Union type for consumers who can work with either scaled or unscaled versions
-
-
-</td></tr>
-<tr><td>
-
 [AnyInventoryEntry](./ts-chocolate.entities.anyinventoryentry.md)
 
 

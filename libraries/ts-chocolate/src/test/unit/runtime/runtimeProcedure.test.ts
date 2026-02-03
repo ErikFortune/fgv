@@ -24,14 +24,14 @@ import { fail, succeed } from '@fgv/ts-utils';
 import {
   BaseProcedureId,
   BaseTaskId,
+  FillingVersionId,
+  Measurement,
   Minutes,
   Model as CommonModel,
   ProcedureId,
   TaskId
 } from '../../../packlets/common';
-import { IProcedure } from '../../../packlets/entities';
-import { ITaskData } from '../../../packlets/entities';
-import { Fillings, FillingCategory } from '../../../packlets/entities';
+import { IProcedure, ITaskData, Fillings } from '../../../packlets/entities';
 import {
   RuntimeProcedure,
   IProcedureContext,
@@ -64,21 +64,12 @@ describe('RuntimeProcedure', () => {
   };
 
   // Mock recipe for render context
-  const mockRecipe: Fillings.IComputedScaledFillingRecipe = {
-    id: 'test.test-recipe' as string,
-    name: 'Test Recipe',
-    scaledFrom: {
-      sourceVersionId: 'test.test-recipe.v1' as string,
-      sourceVersion: { id: 'v1' as string, yields: { amount: 100, unit: 'g' as string } },
-      yields: { amount: 100, unit: 'g' as string }
-    },
-    ingredients: [],
-    category: 'ganache' as FillingCategory,
-    procedure: 'test.test-procedure' as ProcedureId,
-    targetYield: { amount: 200, unit: 'g' as string },
+  const mockRecipe: Fillings.IProducedFilling = {
+    versionId: 'test.test-recipe@v1' as FillingVersionId,
     scaleFactor: 2.0,
-    computedIngredients: []
-  } as unknown as Fillings.IComputedScaledFillingRecipe;
+    targetWeight: 200 as Measurement,
+    ingredients: []
+  };
 
   // Mock render context
   const mockRenderContext: IRuntimeProcedureRenderContext = {
@@ -127,7 +118,7 @@ describe('RuntimeProcedure', () => {
     baseId: 'multi-step' as BaseProcedureId,
     name: 'Multi-Step Procedure',
     description: 'A procedure with multiple steps',
-    category: 'ganache' as FillingCategory,
+    category: 'ganache' as Fillings.FillingCategory,
     steps: [
       {
         order: 1,

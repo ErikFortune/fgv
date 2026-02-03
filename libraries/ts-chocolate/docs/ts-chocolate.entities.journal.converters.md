@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[anyFillingRecipeVersion](./ts-chocolate.entities.journal.converters.anyfillingrecipeversion.md)
-
-
-</td><td>
-
-Converter for [AnyFillingRecipeVersion](./ts-chocolate.entities.fillings.anyfillingrecipeversion.md)<!-- -->. Uses presence of `scalingRef` to distinguish scaled from unscaled versions.
-
-
-</td></tr>
-<tr><td>
-
 [anyJournalEntry](./ts-chocolate.entities.journal.converters.anyjournalentry.md)
 
 

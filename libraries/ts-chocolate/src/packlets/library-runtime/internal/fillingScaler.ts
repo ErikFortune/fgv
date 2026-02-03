@@ -23,18 +23,8 @@
  * @packageDocumentation
  */
 
-import { Failure, Result, Success } from '@fgv/ts-utils';
-
-import {
-  FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
-  Helpers,
-  Measurement,
-  MeasurementUnit
-} from '../../common';
-import { Fillings, IFillingRecipe, IFillingRecipeVersion } from '../../entities';
-import { IScaledAmount, scaleAmount } from './fillingUnitScaler';
+import { FillingVersionSpec, Measurement } from '../../common';
+import { IFillingRecipeVersion } from '../../entities';
 
 // ============================================================================
 // Scaling Options
@@ -69,192 +59,13 @@ export interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
 }
 
 // ============================================================================
-// Scaling Functions
+// Utility Functions
 // ============================================================================
 
-/**
- * Result of scaling a single ingredient, including unit-aware display.
- * @internal
- */
-interface IScaleIngredientResult {
-  readonly scaled: Fillings.IScaledFillingIngredient;
-  readonly scaledAmount: IScaledAmount;
-}
-
-/**
- * Scales a single {@link Entities.Fillings.IFillingIngredient | filling recipe ingredient}.
- * Uses unit-aware scaling for proper display formatting.
- * @param ingredient - The {@link Entities.Fillings.IFillingIngredient | ingredient} to scale
- * @param scaleFactor - The scaling factor to apply
- * @param options - {@link LibraryRuntime.Internal.IVersionScaleOptions | Scaling options}
- * @returns Scaled ingredient with both original and scaled amounts, plus display info
- * @internal
- */
-function scaleIngredient(
-  ingredient: Fillings.IFillingIngredient,
-  scaleFactor: number,
-  options: IVersionScaleOptions
-): IScaleIngredientResult {
-  const unit: MeasurementUnit = ingredient.unit ?? 'g';
-  const minimumAmount = (options.minimumAmount ?? 0.1) as Measurement;
-
-  // Use unit-aware scaling for proper display formatting
-  const scaleResult = scaleAmount(ingredient.amount, unit, scaleFactor);
-
-  // Get the scaled amount - use unit scaler result if successful, otherwise fall back
-  let scaledAmount: IScaledAmount;
-  /* c8 ignore next 15 - defensive else branch: scaleAmount only fails for invalid units which can't occur with typed MeasurementUnit */
-  if (scaleResult.isSuccess()) {
-    scaledAmount = scaleResult.value;
-  } else {
-    // Fallback for edge cases (e.g., negative scale factor - shouldn't happen)
-    const rawScaledAmount = ingredient.amount * scaleFactor;
-    const precision = options.precision ?? 1;
-    const roundedAmount = Math.round(rawScaledAmount * Math.pow(10, precision)) / Math.pow(10, precision);
-    const finalAmount = Math.max(roundedAmount, minimumAmount) as Measurement;
-    scaledAmount = {
-      value: finalAmount,
-      unit,
-      displayValue: `${finalAmount}${unit === 'g' ? 'g' : ' ' + unit}`,
-      scalable: unit !== 'pinch'
-    };
-  }
-
-  // Ensure minimum amount is respected
-  const finalValue = Math.max(scaledAmount.value, minimumAmount) as Measurement;
-
-  return {
-    scaled: {
-      ingredient: ingredient.ingredient,
-      amount: finalValue,
-      unit: ingredient.unit,
-      modifiers: ingredient.modifiers,
-      notes: ingredient.notes,
-      originalAmount: ingredient.amount,
-      scaleFactor
-    },
-    scaledAmount: {
-      ...scaledAmount,
-      value: finalValue
-    }
-  };
-}
-
-/**
- * Scales a filling recipe version to a target weight.
- *
- * This is the core scaling function that operates directly on a version.
- * Use this when you already have the version object and its ID.
- *
- * @param version - The {@link Entities.Fillings.IFillingRecipeVersion | filling recipe version} to scale.
- * @param sourceVersionId - The full composite {@link FillingVersionId | version ID}
- * @param targetWeight - Target total weight in grams
- * @param options - Optional {@link LibraryRuntime.Internal.IVersionScaleOptions | scaling options}
- * @returns `Success` with computed scaled filling recipe, or `Failure` if invalid.
- * @public
- */
-export function scaleVersion(
-  version: IFillingRecipeVersion,
-  sourceVersionId: FillingVersionId,
-  targetWeight: Measurement,
-  options: IVersionScaleOptions = {}
-): Result<Fillings.IComputedScaledFillingRecipe> {
-  // Validate inputs
-  if (targetWeight <= 0) {
-    return Failure.with('Target weight must be greater than zero');
-  }
-
-  if (version.baseWeight <= 0) {
-    return Failure.with('Version base weight must be greater than zero');
-  }
-
-  // Calculate scale factor
-  const scaleFactor = targetWeight / version.baseWeight;
-
-  // Scale all ingredients (extract just the scaled ingredient, not the display info)
-  const scaledIngredients = version.ingredients.map(
-    (ingredient) => scaleIngredient(ingredient, scaleFactor, options).scaled
-  );
-
-  // Build scaling source metadata
-  const scaledFrom: Fillings.IScalingSource = {
-    sourceVersionId,
-    scaleFactor,
-    targetWeight
-  };
-
-  return Success.with({
-    scaledFrom,
-    createdDate: new Date().toISOString().split('T')[0],
-    ingredients: scaledIngredients,
-    baseWeight: targetWeight,
-    yield: version.yield,
-    notes: version.notes,
-    ratings: version.ratings
-  });
-}
-
-/**
- * Scales a filling recipe to a target weight.
- *
- * This function looks up a version by spec and delegates to {@link LibraryRuntime.Internal.scaleVersion | scaleVersion}.
- * Use this when you have a filling recipe and want to scale a specific version by spec.
- *
- * @param fillingRecipe - The {@link Entities.Fillings.IFillingRecipe | filling recipe} to scale.
- * @param fillingId - The full composite {@link FillingId | filling ID}
- * @param targetWeight - Target total weight in grams
- * @param options - Optional {@link LibraryRuntime.Internal.IFillingRecipeScaleOptions | scaling options}
- * @returns `Success` with computed scaled filling recipe, or `Failure` if invalid.
- * @public
- */
-export function scaleFillingRecipe(
-  fillingRecipe: IFillingRecipe,
-  fillingId: FillingId,
-  targetWeight: Measurement,
-  options: IFillingRecipeScaleOptions = {}
-): Result<Fillings.IComputedScaledFillingRecipe> {
-  // Get the version to scale (default to golden version)
-  const versionSpec = options.versionSpec ?? fillingRecipe.goldenVersionSpec;
-  const version = fillingRecipe.versions.find((v) => v.versionSpec === versionSpec);
-  if (!version) {
-    return Failure.with(`Version ${versionSpec} not found in filling recipe ${fillingRecipe.baseId}`);
-  }
-
-  const versionId = Helpers.createFillingVersionId(fillingId, versionSpec);
-  return scaleVersion(version, versionId, targetWeight, options);
-}
-
-/**
- * Scales a {@link Entities.Fillings.IFillingRecipe | filling recipe} by a supplied multiplier.
- *
- * @param fillingRecipe - The {@link Entities.Fillings.IFillingRecipe | filling recipe} to scale.
- * @param fillingId - The full composite {@link FillingId | filling ID}.
- * @param factor - Multiplicative factor (e.g., 2.0 for double, 0.5 for half).
- * @param options - Optional {@link LibraryRuntime.Internal.IFillingRecipeScaleOptions | scaling options}.
- * @returns `Success` with computed scaled filling recipe, or `Failure` if invalid.
- * @public
- */
-export function scaleFillingRecipeByFactor(
-  fillingRecipe: IFillingRecipe,
-  fillingId: FillingId,
-  factor: number,
-  options: IFillingRecipeScaleOptions = {}
-): Result<Fillings.IComputedScaledFillingRecipe> {
-  if (factor <= 0) {
-    return Failure.with('Scale factor must be greater than zero');
-  }
-
-  // Get the version to scale (default to golden version)
-  const versionSpec = options.versionSpec ?? fillingRecipe.goldenVersionSpec;
-  const version = fillingRecipe.versions.find((v) => v.versionSpec === versionSpec);
-  if (!version) {
-    return Failure.with(`Version ${versionSpec} not found in filling recipe ${fillingRecipe.baseId}`);
-  }
-
-  const targetWeight = (version.baseWeight * factor) as Measurement;
-
-  return scaleFillingRecipe(fillingRecipe, fillingId, targetWeight, options);
-}
+// NOTE: Scaling functions removed - use RuntimeProducedFilling.fromSource() instead
+// The scaleVersion, scaleFillingRecipe, and scaleFillingRecipeByFactor functions
+// have been removed as they returned IComputedScaledFillingRecipe which no longer exists.
+// Scaling is now handled by the produced entity wrappers.
 
 /**
  * Calculates the base weight from filling recipe version (sum of ingredient amounts)

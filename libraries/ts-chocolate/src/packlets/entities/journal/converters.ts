@@ -43,10 +43,9 @@ import {
 } from '../confections';
 import {
   fillingRecipeVersion as fillingRecipeVersionConverter,
-  ingredientModifiers as ingredientModifiersConverter,
-  scaledFillingRecipeVersion as scaledFillingRecipeVersionConverter
+  ingredientModifiers as ingredientModifiersConverter
 } from '../fillings/converters';
-import { AnyFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
+import { IProducedFilling, IProducedFillingIngredient } from '../fillings';
 import {
   allJournalEntryTypes,
   AnyJournalEntry,
@@ -60,17 +59,6 @@ import {
 // ============================================================================
 // Filling Recipe Version Converter
 // ============================================================================
-
-/**
- * Converter for {@link Entities.Fillings.AnyFillingRecipeVersion | AnyFillingRecipeVersion}.
- * Uses presence of `scalingRef` to distinguish scaled from unscaled versions.
- * @public
- */
-export const anyFillingRecipeVersion: Converter<AnyFillingRecipeVersion> =
-  Converters.oneOf<AnyFillingRecipeVersion>([
-    scaledFillingRecipeVersionConverter,
-    fillingRecipeVersionConverter
-  ]);
 
 // ============================================================================
 // Journal Entry Type Converters
@@ -235,8 +223,8 @@ export const fillingEditJournalEntry: Converter<IFillingEditJournalEntry> =
     baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
     versionId: CommonConverters.fillingVersionId,
-    recipe: anyFillingRecipeVersion,
-    updated: anyFillingRecipeVersion.optional(),
+    recipe: fillingRecipeVersionConverter,
+    updated: fillingRecipeVersionConverter.optional(),
     updatedId: CommonConverters.fillingVersionId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
@@ -267,8 +255,8 @@ export const fillingProductionJournalEntry: Converter<IFillingProductionJournalE
     baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
     versionId: CommonConverters.fillingVersionId,
-    recipe: anyFillingRecipeVersion,
-    updated: anyFillingRecipeVersion.optional(),
+    recipe: fillingRecipeVersionConverter,
+    updated: fillingRecipeVersionConverter.optional(),
     updatedId: CommonConverters.fillingVersionId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     yield: CommonConverters.measurement,

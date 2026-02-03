@@ -13,9 +13,9 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 **Signature:**
 
 ```typescript
-export declare class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext 
+export declare class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext 
 ```
-**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)
+**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)
 
 ## Constructors
 

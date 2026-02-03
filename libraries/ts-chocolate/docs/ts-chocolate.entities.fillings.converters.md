@@ -151,45 +151,12 @@ Converter for [RatingCategory](./ts-chocolate.entities.fillings.ratingcategory.m
 </td></tr>
 <tr><td>
 
-[scaledFillingIngredient](./ts-chocolate.entities.fillings.converters.scaledfillingingredient.md)
-
-
-</td><td>
-
-Converter for [IScaledFillingIngredient](./ts-chocolate.entities.fillings.iscaledfillingingredient.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
-
-
-</td></tr>
-<tr><td>
-
-[scaledFillingRecipeVersion](./ts-chocolate.entities.fillings.converters.scaledfillingrecipeversion.md)
-
-
-</td><td>
-
-Converter for [IScaledFillingRecipeVersion](./ts-chocolate.entities.fillings.iscaledfillingrecipeversion.md) (reference-based)
-
-
-</td></tr>
-<tr><td>
-
 [scalingRef](./ts-chocolate.entities.fillings.converters.scalingref.md)
 
 
 </td><td>
 
 Converter for [IScalingRef](./ts-chocolate.entities.fillings.iscalingref.md) (lightweight reference-based format)
-
-
-</td></tr>
-<tr><td>
-
-[scalingSource](./ts-chocolate.entities.fillings.converters.scalingsource.md)
-
-
-</td><td>
-
-Converter for [IScalingSource](./ts-chocolate.entities.fillings.iscalingsource.md) (runtime format with full ingredient data)
 
 
 </td></tr>

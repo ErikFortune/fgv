@@ -24,8 +24,8 @@ import {
   Converters,
   Entities,
   FillingId,
+  FillingVersionId,
   FillingVersionSpec,
-  LibraryRuntime,
   Measurement
 } from '@fgv/ts-chocolate';
 
@@ -33,7 +33,7 @@ import {
   IFillingShowOptions,
   loadFillingsLibrary,
   formatFilling,
-  formatScaledFilling,
+  formatProducedFilling,
   OutputFormat
 } from './shared';
 import { interactiveSelect, ISelectableItem } from '../shared';
@@ -199,7 +199,7 @@ export function createShowSubcommand(): Command {
 
         const format = (options.format ?? 'human') as OutputFormat;
 
-        // If scaling requested, show scaled filling
+        // If scaling requested, show produced filling
         if (localOptions.scale) {
           const targetResult = parseScaleTarget(localOptions.scale);
           if (targetResult.isFailure()) {
@@ -208,37 +208,52 @@ export function createShowSubcommand(): Command {
           }
           const target = targetResult.value;
 
-          // Build scale options
-          const precision = localOptions.precision ? parseInt(localOptions.precision, 10) : undefined;
-          const scaleOptions: LibraryRuntime.Internal.IFillingRecipeScaleOptions = {
-            versionSpec,
-            precision
-          };
+          // Get the version to scale
+          const sourceVersion = versionSpec
+            ? filling.versions.find((v) => v.versionSpec === versionSpec)
+            : filling.versions.find((v) => v.versionSpec === filling.goldenVersionSpec);
 
-          // Scale the filling
-          let scaledResult: Result<Entities.Fillings.IComputedScaledFillingRecipe>;
-          if (target.type === 'factor') {
-            scaledResult = LibraryRuntime.Internal.scaleFillingRecipeByFactor(
-              filling,
-              fillingId,
-              target.value,
-              scaleOptions
-            );
-          } else {
-            scaledResult = LibraryRuntime.Internal.scaleFillingRecipe(
-              filling,
-              fillingId,
-              target.value as Measurement,
-              scaleOptions
-            );
-          }
-
-          if (scaledResult.isFailure()) {
-            console.error(`Error scaling filling: ${scaledResult.message}`);
+          if (!sourceVersion) {
+            console.error(`Version not found`);
             process.exit(1);
           }
 
-          const output = formatScaledFilling(scaledResult.value, format);
+          // Calculate scale factor and target weight
+          const sourceWeight = sourceVersion.baseWeight;
+          let scaleFactor: number;
+          let targetWeight: Measurement;
+
+          if (target.type === 'factor') {
+            scaleFactor = target.value;
+            targetWeight = (sourceWeight * scaleFactor) as Measurement;
+          } else {
+            targetWeight = target.value as Measurement;
+            scaleFactor = targetWeight / sourceWeight;
+          }
+
+          // Create produced filling snapshot directly
+          const producedIngredients: Entities.Fillings.IProducedFillingIngredient[] =
+            sourceVersion.ingredients.map((ing) => {
+              const ingredientId = ing.ingredient.preferredId ?? ing.ingredient.ids[0];
+              return {
+                ingredientId,
+                amount: (ing.amount * scaleFactor) as Measurement,
+                notes: ing.notes
+              };
+            });
+
+          const versionId = `${fillingId}@${sourceVersion.versionSpec}`;
+          const producedFilling: Entities.Fillings.IProducedFilling = {
+            versionId: versionId as FillingVersionId,
+            scaleFactor,
+            targetWeight,
+            ingredients: producedIngredients,
+            procedureId: sourceVersion.procedures?.preferredId,
+            notes: sourceVersion.notes
+          };
+
+          const precision = localOptions.precision ? parseInt(localOptions.precision, 10) : undefined;
+          const output = formatProducedFilling(producedFilling, sourceVersion, format, precision);
           console.log(output);
         } else {
           // Show regular filling details

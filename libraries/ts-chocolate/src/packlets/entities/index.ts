@@ -28,7 +28,6 @@
 export { ConfectionsLibrary, AnyConfectionVersion, AnyConfection } from './confections';
 export {
   FillingsLibrary,
-  AnyFillingRecipeVersion,
   FillingCategory,
   IFillingRecipe,
   IFillingRecipeVersion,

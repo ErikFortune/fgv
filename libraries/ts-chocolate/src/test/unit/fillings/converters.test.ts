@@ -25,9 +25,7 @@ import {
   fillingIngredient,
   fillingRecipeVersion,
   fillingRecipe,
-  scaledFillingIngredient,
   scalingRef,
-  scaledFillingRecipeVersion,
   procedureRef,
   procedures
 } from '../../../packlets/entities/fillings/converters';
@@ -377,196 +375,121 @@ describe('Recipe Converters', () => {
       expect(procedures.convert(input)).toFailWith(/preferredId.*not found/i);
     });
   });
+});
 
-  // ============================================================================
-  // scaledFillingIngredient Converter
-  // ============================================================================
+// ============================================================================
+// Procedures Converter
+// ============================================================================
 
-  describe('scaledFillingIngredient', () => {
-    test('converts valid scaled recipe ingredient', () => {
-      const input = {
-        ingredient: { ids: ['source.chocolate'] },
-        amount: 200,
-        originalAmount: 100,
-        scaleFactor: 2
-      };
-      expect(scaledFillingIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredient.ids[0]).toBe('source.chocolate');
-        expect(result.amount).toBe(200);
-        expect(result.originalAmount).toBe(100);
-        expect(result.scaleFactor).toBe(2);
-      });
-    });
-
-    test('converts with optional notes', () => {
-      const input = {
-        ingredient: { ids: ['source.chocolate'] },
-        amount: 200,
-        originalAmount: 100,
-        scaleFactor: 2,
-        notes: [{ category: 'user', note: 'Tempered' }]
-      };
-      expect(scaledFillingIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toEqual([{ category: 'user', note: 'Tempered' }]);
-      });
+describe('procedures', () => {
+  test('converts valid procedures collection', () => {
+    const input = {
+      options: [{ id: 'common.ganache-cold-method' }, { id: 'common.ganache-hot-method' }]
+    };
+    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(result.options.length).toBe(2);
+      expect(result.options[0].id).toBe('common.ganache-cold-method');
+      expect(result.options[1].id).toBe('common.ganache-hot-method');
+      expect(result.preferredId).toBeUndefined();
     });
   });
 
-  // ============================================================================
-  // scalingRef Converter
-  // ============================================================================
-
-  describe('scalingRef', () => {
-    test('converts valid scaling ref', () => {
-      const input = {
-        sourceVersionId: 'source.test-recipe@2026-01-01-01',
-        scaleFactor: 2,
-        targetWeight: 300,
-        createdDate: '2026-01-15'
-      };
-      expect(scalingRef.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.sourceVersionId).toBe('source.test-recipe@2026-01-01-01');
-        expect(result.scaleFactor).toBe(2);
-        expect(result.targetWeight).toBe(300);
-        expect(result.createdDate).toBe('2026-01-15');
-      });
-    });
-
-    test('fails for invalid recipe version ID', () => {
-      const input = {
-        sourceVersionId: 'invalid',
-        scaleFactor: 2,
-        targetWeight: 300,
-        createdDate: '2026-01-15'
-      };
-      expect(scalingRef.convert(input)).toFail();
-    });
-
-    test('fails for invalid version spec in ID', () => {
-      const input = {
-        sourceVersionId: 'source.test-recipe@invalid',
-        scaleFactor: 2,
-        targetWeight: 300,
-        createdDate: '2026-01-15'
-      };
-      expect(scalingRef.convert(input)).toFail();
+  test('converts procedures with preferred ID', () => {
+    const input = {
+      options: [{ id: 'common.ganache-cold-method' }, { id: 'common.ganache-hot-method' }],
+      preferredId: 'common.ganache-cold-method'
+    };
+    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(result.options.length).toBe(2);
+      expect(result.preferredId).toBe('common.ganache-cold-method');
     });
   });
 
-  // ============================================================================
-  // scaledFillingRecipeVersion Converter (reference-based format)
-  // ============================================================================
+  test('converts procedures with notes on individual refs', () => {
+    const input = {
+      options: [
+        {
+          id: 'common.ganache-cold-method',
+          notes: [{ category: 'user', note: 'Preferred for dark chocolate' }]
+        },
+        { id: 'common.ganache-hot-method', notes: [{ category: 'user', note: 'Alternative method' }] }
+      ],
+      preferredId: 'common.ganache-cold-method'
+    };
+    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(result.options[0].notes).toEqual([{ category: 'user', note: 'Preferred for dark chocolate' }]);
+      expect(result.options[1].notes).toEqual([{ category: 'user', note: 'Alternative method' }]);
+    });
+  });
 
-  describe('scaledFillingRecipeVersion', () => {
-    const validScalingRef = {
+  test('succeeds for empty options array', () => {
+    const input = {
+      options: []
+    };
+    // Empty array is valid - no minimum requirement
+    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(result.options.length).toBe(0);
+    });
+  });
+
+  test('fails for invalid procedure ID in array', () => {
+    const input = {
+      options: [{ id: 'common.ganache-cold-method' }, { id: 'invalid' }]
+    };
+    expect(procedures.convert(input)).toFail();
+  });
+
+  test('fails for invalid preferred procedure ID', () => {
+    const input = {
+      options: [{ id: 'common.ganache-cold-method' }],
+      preferredId: 'invalid'
+    };
+    expect(procedures.convert(input)).toFail();
+  });
+
+  test('fails for missing options field', () => {
+    const input = {
+      preferredId: 'common.ganache-cold-method'
+    };
+    expect(procedures.convert(input)).toFail();
+  });
+
+  test('fails when preferredId is not in options', () => {
+    const input = {
+      options: [{ id: 'common.ganache-cold-method' }],
+      preferredId: 'common.ganache-hot-method'
+    };
+    expect(procedures.convert(input)).toFailWith(/preferredId.*not found/i);
+  });
+});
+
+// ============================================================================
+// scalingRef Converter
+// ============================================================================
+
+describe('scalingRef', () => {
+  test('converts valid scaling ref', () => {
+    const input = {
       sourceVersionId: 'source.test-recipe@2026-01-01-01',
       scaleFactor: 2,
       targetWeight: 300,
       createdDate: '2026-01-15'
     };
-
-    test('converts valid scaled recipe version', () => {
-      const input = {
-        scalingRef: validScalingRef
-      };
-      expect(scaledFillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.scalingRef.sourceVersionId).toBe('source.test-recipe@2026-01-01-01');
-        expect(result.scalingRef.scaleFactor).toBe(2);
-        expect(result.scalingRef.targetWeight).toBe(300);
-      });
-    });
-
-    test('converts with optional notes', () => {
-      const input = {
-        scalingRef: validScalingRef,
-        notes: [{ category: 'user', note: 'Scaled from original' }]
-      };
-      expect(scaledFillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toEqual([{ category: 'user', note: 'Scaled from original' }]);
-      });
-    });
-
-    test('converts with optional snapshot ingredients', () => {
-      const input = {
-        scalingRef: validScalingRef,
-        snapshotIngredients: [
-          {
-            ingredientId: 'source.chocolate',
-            originalAmount: 100,
-            scaledAmount: 200
-          }
-        ]
-      };
-      expect(scaledFillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.snapshotIngredients).toBeDefined();
-        expect(result.snapshotIngredients!.length).toBe(1);
-        expect(result.snapshotIngredients![0].ingredientId).toBe('source.chocolate');
-        expect(result.snapshotIngredients![0].originalAmount).toBe(100);
-        expect(result.snapshotIngredients![0].scaledAmount).toBe(200);
-      });
-    });
-
-    test('fails for invalid scaling ref', () => {
-      const input = {
-        scalingRef: {
-          ...validScalingRef,
-          sourceVersionId: 'invalid'
-        }
-      };
-      expect(scaledFillingRecipeVersion.convert(input)).toFail();
+    expect(scalingRef.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(result.sourceVersionId).toBe('source.test-recipe@2026-01-01-01');
+      expect(result.scaleFactor).toBe(2);
+      expect(result.targetWeight).toBe(300);
+      expect(result.createdDate).toBe('2026-01-15');
     });
   });
 
-  // ============================================================================
-  // Recipe Version Access Tests
-  // ============================================================================
-
-  describe('Recipe versions access', () => {
-    const version1 = {
-      versionSpec: '2026-01-01-01',
-      createdDate: '2026-01-01',
-      ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
-      baseWeight: 100
+  test('fails for invalid recipe version ID', () => {
+    const input = {
+      sourceVersionId: 'invalid',
+      scaleFactor: 2,
+      targetWeight: 300,
+      createdDate: '2026-01-15'
     };
-
-    const version2 = {
-      versionSpec: '2026-01-02-01',
-      createdDate: '2026-01-02',
-      ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 150 }],
-      baseWeight: 150
-    };
-
-    test('can find version by versionSpec', () => {
-      const recipeData = {
-        baseId: 'test-recipe',
-        name: 'Test Recipe',
-        category: 'ganache',
-        versions: [version1, version2],
-        goldenVersionSpec: '2026-01-01-01'
-      };
-
-      expect(fillingRecipe.convert(recipeData)).toSucceedAndSatisfy((result) => {
-        const foundVersion = result.versions.find((v) => v.versionSpec === '2026-01-02-01');
-        expect(foundVersion).toBeDefined();
-        expect(foundVersion?.versionSpec).toBe('2026-01-02-01');
-        expect(foundVersion?.baseWeight).toBe(150);
-      });
-    });
-
-    test('versions array contains all versions', () => {
-      const recipeData = {
-        baseId: 'test-recipe',
-        name: 'Test Recipe',
-        category: 'ganache',
-        versions: [version1, version2],
-        goldenVersionSpec: '2026-01-01-01'
-      };
-
-      expect(fillingRecipe.convert(recipeData)).toSucceedAndSatisfy((result) => {
-        expect(result.versions.length).toBe(2);
-        expect(result.versions[0].versionSpec).toBe('2026-01-01-01');
-        expect(result.versions[1].versionSpec).toBe('2026-01-02-01');
-      });
-    });
+    expect(scalingRef.convert(input)).toFail();
   });
 });

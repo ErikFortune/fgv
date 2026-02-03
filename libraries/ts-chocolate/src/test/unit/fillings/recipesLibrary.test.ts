@@ -28,14 +28,10 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  Model as CommonModel,
-  NoteCategory,
-  SourceId,
-  FillingVersionId
+  SourceId
 } from '../../../packlets/common';
 
 import { Fillings, IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
-import { Internal as RuntimeInternal } from '../../../packlets/library-runtime';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 
@@ -945,540 +941,296 @@ describe('FillingsLibrary', () => {
         });
       });
     });
-  });
-});
 
-// ============================================================================
-// Recipe Scaling Tests
-// ============================================================================
+    // ============================================================================
+    // Async Creation Tests (with encryption support)
+    // ============================================================================
 
-describe('Recipe scaling', () => {
-  const testVersion: IFillingRecipeVersion = {
-    versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
-    createdDate: '2026-01-01',
-    ingredients: [
-      { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Measurement },
-      { ingredient: { ids: ['source.cream' as IngredientId] }, amount: 50 as Measurement }
-    ],
-    baseWeight: 150 as Measurement
-  };
+    describe('createAsync', () => {
+      // Test secret for encryption tests (not a real secret - for testing only)
+      const TEST_SECRET_NAME = 'test-secret';
+      let testKey: Uint8Array;
 
-  const testRecipe: IFillingRecipe = {
-    baseId: 'test' as BaseFillingId,
-    name: 'Test' as FillingName,
-    category: 'ganache',
-    versions: [testVersion],
-    goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec
-  };
-
-  const testFillingId = 'source.test' as FillingId;
-
-  describe('scaleFillingRecipe', () => {
-    test('scales ingredients proportionally', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaledFrom.scaleFactor).toBe(2);
-        expect(scaled.scaledFrom.targetWeight).toBe(300);
-        expect(scaled.baseWeight).toBe(300);
-        expect(scaled.ingredients[0].amount).toBe(200);
-        expect(scaled.ingredients[1].amount).toBe(100);
-      });
-    });
-
-    test('preserves original amounts', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.ingredients[0].originalAmount).toBe(100);
-      });
-    });
-
-    test('includes scaling source information', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaledFrom.sourceVersionId).toBe('source.test@2026-01-01-01');
-        expect(scaled.scaledFrom.scaleFactor).toBe(2);
-        expect(scaled.scaledFrom.targetWeight).toBe(300);
-      });
-    });
-
-    test('includes createdDate', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement)
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.createdDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      });
-    });
-
-    test('preserves optional fields from source version', () => {
-      const testNotes: CommonModel.ICategorizedNote[] = [
-        { category: 'user' as NoteCategory, note: 'Test notes' }
-      ];
-      const versionWithNotes: IFillingRecipeVersion = {
-        ...testVersion,
-        notes: testNotes,
-        yield: '20 bonbons'
-      };
-      const recipeWithNotes: IFillingRecipe = {
-        ...testRecipe,
-        versions: [versionWithNotes]
-      };
-      expect(
-        RuntimeInternal.scaleFillingRecipe(recipeWithNotes, testFillingId, 300 as Measurement)
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.notes).toEqual(testNotes);
-        expect(scaled.yield).toBe('20 bonbons');
-      });
-    });
-
-    test('fails with zero target weight', () => {
-      expect(RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 0 as Measurement)).toFailWith(
-        /greater than zero/
-      );
-    });
-
-    test('fails with negative target weight', () => {
-      expect(RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, -100 as Measurement)).toFailWith(
-        /greater than zero/
-      );
-    });
-
-    test('fails with invalid version ID', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 300 as Measurement, {
-          versionSpec: '2026-12-31-99' as unknown as FillingVersionSpec
-        })
-      ).toFailWith(/not found/);
-    });
-
-    test('respects precision option', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 333 as Measurement, { precision: 0 })
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(Number.isInteger(scaled.ingredients[0].amount)).toBe(true);
-      });
-    });
-
-    test('respects minimumAmount option', () => {
-      // Scale to very small amount that would be below minimum
-      expect(
-        RuntimeInternal.scaleFillingRecipe(testRecipe, testFillingId, 15 as Measurement, {
-          minimumAmount: 5 as Measurement
-        })
-      ).toSucceedAndSatisfy((scaled) => {
-        // Scaled amount would be 10 * 0.1 = 1, but minimum is 5
-        expect(scaled.ingredients[0].amount).toBeGreaterThanOrEqual(5);
-      });
-    });
-
-    test('scales ingredients with explicit unit', () => {
-      const versionWithUnits: IFillingRecipeVersion = {
-        versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
-        createdDate: '2026-01-01',
-        ingredients: [
-          { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Measurement, unit: 'g' },
-          { ingredient: { ids: ['source.cream' as IngredientId] }, amount: 50 as Measurement, unit: 'mL' }
-        ],
-        baseWeight: 150 as Measurement
-      };
-      const recipeWithUnits: IFillingRecipe = {
-        ...testRecipe,
-        versions: [versionWithUnits]
-      };
-      expect(
-        RuntimeInternal.scaleFillingRecipe(recipeWithUnits, testFillingId, 300 as Measurement)
-      ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.ingredients[0].unit).toBe('g');
-        expect(scaled.ingredients[1].unit).toBe('mL');
-        expect(scaled.ingredients[0].amount).toBe(200);
-        expect(scaled.ingredients[1].amount).toBe(100);
-      });
-    });
-  });
-
-  describe('scaleFillingRecipeByFactor', () => {
-    test('scales by factor', () => {
-      expect(RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
-          expect(scaled.ingredients[0].amount).toBe(50);
-        }
-      );
-    });
-
-    test('fails with zero factor', () => {
-      expect(RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0)).toFailWith(
-        /greater than zero/
-      );
-    });
-
-    test('fails with negative factor', () => {
-      expect(RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, -1)).toFailWith(
-        /greater than zero/
-      );
-    });
-
-    test('fails with invalid version ID', () => {
-      expect(
-        RuntimeInternal.scaleFillingRecipeByFactor(testRecipe, testFillingId, 0.5, {
-          versionSpec: '2026-12-31-99' as unknown as FillingVersionSpec
-        })
-      ).toFailWith(/not found/);
-    });
-  });
-
-  // ============================================================================
-  // Type Guards Tests
-  // ============================================================================
-
-  describe('type guards', () => {
-    test('isFillingRecipeVersion returns true for regular versions', () => {
-      expect(Fillings.isFillingRecipeVersion(testVersion)).toBe(true);
-      expect(Fillings.isScaledFillingRecipeVersion(testVersion)).toBe(false);
-    });
-
-    test('isScaledFillingRecipeVersion returns true for persistence-format scaled versions', () => {
-      // IScaledFillingRecipeVersion is the reference-based persistence format
-      const scaledVersion: Fillings.IScaledFillingRecipeVersion = {
-        scalingRef: {
-          sourceVersionId: 'source.test@2026-01-01-01' as FillingVersionId,
-          scaleFactor: 2,
-          targetWeight: 300 as Measurement,
-          createdDate: '2026-01-15'
-        }
-      };
-      expect(Fillings.isScaledFillingRecipeVersion(scaledVersion)).toBe(true);
-      expect(Fillings.isFillingRecipeVersion(scaledVersion)).toBe(false);
-    });
-  });
-
-  describe('edge cases', () => {
-    test('scaleFillingRecipe fails with zero baseWeight', () => {
-      const zeroWeightVersion: IFillingRecipeVersion = {
-        versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
-        createdDate: '2026-01-01',
-        ingredients: [],
-        baseWeight: 0 as Measurement
-      };
-      const zeroWeightRecipe: IFillingRecipe = {
-        baseId: 'zero' as BaseFillingId,
-        name: 'Zero' as FillingName,
-        category: 'ganache',
-        versions: [zeroWeightVersion],
-        goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec
-      };
-      const zeroFillingId = 'source.zero' as FillingId;
-      expect(
-        RuntimeInternal.scaleFillingRecipe(zeroWeightRecipe, zeroFillingId, 100 as Measurement)
-      ).toFailWith(/base weight must be greater than zero/);
-    });
-  });
-
-  describe('calculateBaseWeight', () => {
-    test('sums ingredient amounts', () => {
-      expect(RuntimeInternal.calculateBaseWeight(testVersion)).toBe(150);
-    });
-  });
-
-  describe('recalculateFillingRecipeVersion', () => {
-    test('updates baseWeight from ingredients', () => {
-      const version: IFillingRecipeVersion = {
-        ...testVersion,
-        baseWeight: 999 as Measurement // Wrong value
-      };
-      const recalced = RuntimeInternal.recalculateFillingRecipeVersion(version);
-      expect(recalced.baseWeight).toBe(150);
-    });
-  });
-
-  // ============================================================================
-  // Async Creation Tests (with encryption support)
-  // ============================================================================
-
-  describe('createAsync', () => {
-    // Test secret for encryption tests (not a real secret - for testing only)
-    const TEST_SECRET_NAME = 'test-secret';
-    let testKey: Uint8Array;
-
-    beforeAll(async () => {
-      // Generate a test key for encryption tests
-      testKey = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
-    });
-
-    test('creates library with built-ins using onMissingKey skip mode', async () => {
-      // When loading built-ins with encrypted files but no key, use onMissingKey: 'skip'
-      const result = await FillingsLibrary.createAsync({
-        encryption: {
-          cryptoProvider: CryptoUtils.nodeCryptoProvider,
-          onMissingKey: 'skip' // Skip encrypted files that we don't have keys for
-        }
-      });
-      expect(result).toSucceedAndSatisfy((lib) => {
-        // Should have at least the common built-in collection (fgv is skipped since no key)
-        expect(lib.collections.has('common' as SourceId)).toBe(true);
-      });
-    });
-
-    test('captures encrypted built-ins when no encryption config provided', async () => {
-      // Without any encryption config, encrypted built-ins are captured (not decrypted)
-      // The library should succeed with the non-encrypted collections
-      const result = await FillingsLibrary.createAsync();
-      expect(result).toSucceedAndSatisfy((lib) => {
-        // Should have the common built-in collection (fgv is captured as protected)
-        expect(lib.collections.has('common' as SourceId)).toBe(true);
-      });
-    });
-
-    test('creates library without built-ins when builtin: false', async () => {
-      const result = await FillingsLibrary.createAsync({ builtin: false });
-      expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collections.size).toBe(0);
-      });
-    });
-
-    test('creates library with file sources', async () => {
-      const files: FileTree.IInMemoryFile[] = [
-        {
-          path: '/data/fillings/external.json',
-          contents: {
-            items: {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              'external-recipe': {
-                baseId: 'external-recipe',
-                name: 'External Recipe',
-                category: 'ganache',
-                versions: [
-                  {
-                    versionSpec: '2026-01-01-01',
-                    createdDate: '2026-01-01',
-                    ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 100 }],
-                    baseWeight: 100
-                  }
-                ],
-                goldenVersionSpec: '2026-01-01-01'
-              }
-            }
-          } as unknown as JsonObject
-        }
-      ];
-
-      const tree = FileTree.inMemory(files).orThrow();
-      const rootDir = tree.getItem('/').orThrow();
-      const fileSource: Fillings.IFillingFileTreeSource = {
-        directory: rootDir as FileTree.IFileTreeDirectoryItem,
-        mutable: true
-      };
-
-      const result = await FillingsLibrary.createAsync({
-        builtin: false,
-        fileSources: fileSource
+      beforeAll(async () => {
+        // Generate a test key for encryption tests
+        testKey = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
+        // Generate a test key for encryption tests
+        testKey = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
       });
 
-      expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collections.has('external' as SourceId)).toBe(true);
-        expect(lib.get('external.external-recipe' as FillingId)).toSucceed();
-      });
-    });
-
-    test('decrypts encrypted file sources with encryption config', async () => {
-      // Create encrypted recipe data
-      const secretRecipeData = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'secret-recipe': {
-          baseId: 'secret-recipe',
-          name: 'Secret Recipe',
-          category: 'ganache',
-          versions: [
-            {
-              versionSpec: '2026-01-01-01',
-              createdDate: '2026-01-01',
-              ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
-              baseWeight: 50
-            }
-          ],
-          goldenVersionSpec: '2026-01-01-01'
-        }
-      };
-
-      const encryptedFile = (
-        await CryptoUtils.createEncryptedFile({
-          content: secretRecipeData,
-          secretName: TEST_SECRET_NAME,
-          key: testKey,
-          cryptoProvider: CryptoUtils.nodeCryptoProvider
-        })
-      ).orThrow();
-
-      const files: FileTree.IInMemoryFile[] = [
-        {
-          path: '/data/fillings/secret.json',
-          contents: encryptedFile as unknown as JsonObject
-        }
-      ];
-
-      const tree = FileTree.inMemory(files).orThrow();
-      const rootDir = tree.getItem('/').orThrow();
-      const fileSource: Fillings.IFillingFileTreeSource = {
-        directory: rootDir as FileTree.IFileTreeDirectoryItem,
-        mutable: false
-      };
-
-      const result = await FillingsLibrary.createAsync({
-        builtin: false,
-        fileSources: fileSource,
-        encryption: {
-          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: CryptoUtils.nodeCryptoProvider
-        }
-      });
-
-      expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collections.has('secret' as SourceId)).toBe(true);
-        expect(lib.get('secret.secret-recipe' as FillingId)).toSucceedAndSatisfy((recipe) => {
-          expect(recipe.name).toBe('Secret Recipe');
+      test('creates library with built-ins using onMissingKey skip mode', async () => {
+        // When loading built-ins with encrypted files but no key, use onMissingKey: 'skip'
+        const result = await FillingsLibrary.createAsync({
+          encryption: {
+            cryptoProvider: CryptoUtils.nodeCryptoProvider,
+            onMissingKey: 'skip' // Skip encrypted files that we don't have keys for
+          }
+        });
+        expect(result).toSucceedAndSatisfy((lib) => {
+          // Should have at least the common built-in collection (fgv is skipped since no key)
+          expect(lib.collections.has('common' as SourceId)).toBe(true);
         });
       });
-    });
 
-    test('captures encrypted files when no encryption config provided', async () => {
-      const secretRecipeData = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'secret-recipe': {
-          baseId: 'secret-recipe',
-          name: 'Secret Recipe',
-          category: 'ganache',
-          versions: [
-            {
-              versionSpec: '2026-01-01-01',
-              createdDate: '2026-01-01',
-              ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
-              baseWeight: 50
-            }
-          ],
-          goldenVersionSpec: '2026-01-01-01'
-        }
-      };
-
-      const encryptedFile = (
-        await CryptoUtils.createEncryptedFile({
-          content: secretRecipeData,
-          secretName: TEST_SECRET_NAME,
-          key: testKey,
-          cryptoProvider: CryptoUtils.nodeCryptoProvider
-        })
-      ).orThrow();
-
-      const files: FileTree.IInMemoryFile[] = [
-        {
-          path: '/data/fillings/secret.json',
-          contents: encryptedFile as unknown as JsonObject
-        }
-      ];
-
-      const tree = FileTree.inMemory(files).orThrow();
-      const rootDir = tree.getItem('/').orThrow();
-      const fileSource: Fillings.IFillingFileTreeSource = {
-        directory: rootDir as FileTree.IFileTreeDirectoryItem,
-        mutable: false
-      };
-
-      // Without encryption config, encrypted files are captured (not decrypted)
-      const result = await FillingsLibrary.createAsync({
-        builtin: false,
-        fileSources: fileSource
+      test('captures encrypted built-ins when no encryption config provided', async () => {
+        // Without any encryption config, encrypted built-ins are captured (not decrypted)
+        // The library should succeed with the non-encrypted collections
+        const result = await FillingsLibrary.createAsync();
+        expect(result).toSucceedAndSatisfy((lib) => {
+          // Should have the common built-in collection (fgv is captured as protected)
+          expect(lib.collections.has('common' as SourceId)).toBe(true);
+        });
       });
 
-      // Should succeed with the encrypted file captured as a protected collection
-      expect(result).toSucceedAndSatisfy((lib) => {
-        // No decrypted collections since no encryption config
-        expect(lib.collections.size).toBe(0);
+      test('creates library without built-ins when builtin: false', async () => {
+        const result = await FillingsLibrary.createAsync({ builtin: false });
+        expect(result).toSucceedAndSatisfy((lib) => {
+          expect(lib.collections.size).toBe(0);
+        });
       });
-    });
 
-    test('handles mixed encrypted and plain files', async () => {
-      const plainRecipeData = {
-        items: {
+      test('creates library with file sources', async () => {
+        const files: FileTree.IInMemoryFile[] = [
+          {
+            path: '/data/fillings/external.json',
+            contents: {
+              items: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'external-recipe': {
+                  baseId: 'external-recipe',
+                  name: 'External Recipe',
+                  category: 'ganache',
+                  versions: [
+                    {
+                      versionSpec: '2026-01-01-01',
+                      createdDate: '2026-01-01',
+                      ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 100 }],
+                      baseWeight: 100
+                    }
+                  ],
+                  goldenVersionSpec: '2026-01-01-01'
+                }
+              }
+            } as unknown as JsonObject
+          }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        const fileSource: Fillings.IFillingFileTreeSource = {
+          directory: rootDir as FileTree.IFileTreeDirectoryItem,
+          mutable: true
+        };
+
+        const result = await FillingsLibrary.createAsync({
+          builtin: false,
+          fileSources: fileSource
+        });
+
+        expect(result).toSucceedAndSatisfy((lib) => {
+          expect(lib.collections.has('external' as SourceId)).toBe(true);
+          expect(lib.get('external.external-recipe' as FillingId)).toSucceed();
+        });
+      });
+
+      test('decrypts encrypted file sources with encryption config', async () => {
+        // Create encrypted recipe data
+        const secretRecipeData = {
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          'plain-recipe': {
-            baseId: 'plain-recipe',
-            name: 'Plain Recipe',
+          'secret-recipe': {
+            baseId: 'secret-recipe',
+            name: 'Secret Recipe',
             category: 'ganache',
             versions: [
               {
                 versionSpec: '2026-01-01-01',
                 createdDate: '2026-01-01',
-                ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 25 }],
-                baseWeight: 25
+                ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
+                baseWeight: 50
               }
             ],
             goldenVersionSpec: '2026-01-01-01'
           }
-        }
-      };
+        };
 
-      const secretRecipeData = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'secret-recipe': {
-          baseId: 'secret-recipe',
-          name: 'Secret Recipe',
-          category: 'ganache',
-          versions: [
-            {
-              versionSpec: '2026-01-01-01',
-              createdDate: '2026-01-01',
-              ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 75 }],
-              baseWeight: 75
-            }
-          ],
-          goldenVersionSpec: '2026-01-01-01'
-        }
-      };
+        const encryptedFile = (
+          await CryptoUtils.createEncryptedFile({
+            content: secretRecipeData,
+            secretName: TEST_SECRET_NAME,
+            key: testKey,
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          })
+        ).orThrow();
 
-      const encryptedFile = (
-        await CryptoUtils.createEncryptedFile({
-          content: secretRecipeData,
-          secretName: TEST_SECRET_NAME,
-          key: testKey,
-          cryptoProvider: CryptoUtils.nodeCryptoProvider
-        })
-      ).orThrow();
+        const files: FileTree.IInMemoryFile[] = [
+          {
+            path: '/data/fillings/secret.json',
+            contents: encryptedFile as unknown as JsonObject
+          }
+        ];
 
-      const files: FileTree.IInMemoryFile[] = [
-        {
-          path: '/data/fillings/plain.json',
-          contents: plainRecipeData as unknown as JsonObject
-        },
-        {
-          path: '/data/fillings/secret.json',
-          contents: encryptedFile as unknown as JsonObject
-        }
-      ];
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        const fileSource: Fillings.IFillingFileTreeSource = {
+          directory: rootDir as FileTree.IFileTreeDirectoryItem,
+          mutable: false
+        };
 
-      const tree = FileTree.inMemory(files).orThrow();
-      const rootDir = tree.getItem('/').orThrow();
-      const fileSource: Fillings.IFillingFileTreeSource = {
-        directory: rootDir as FileTree.IFileTreeDirectoryItem,
-        mutable: false
-      };
+        const result = await FillingsLibrary.createAsync({
+          builtin: false,
+          fileSources: fileSource,
+          encryption: {
+            secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          }
+        });
 
-      const result = await FillingsLibrary.createAsync({
-        builtin: false,
-        fileSources: fileSource,
-        encryption: {
-          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
-          cryptoProvider: CryptoUtils.nodeCryptoProvider
-        }
+        expect(result).toSucceedAndSatisfy((lib) => {
+          expect(lib.collections.has('secret' as SourceId)).toBe(true);
+          expect(lib.get('secret.secret-recipe' as FillingId)).toSucceedAndSatisfy((recipe) => {
+            expect(recipe.name).toBe('Secret Recipe');
+          });
+        });
       });
 
-      expect(result).toSucceedAndSatisfy((lib) => {
-        // Both collections should be loaded
-        expect(lib.collections.has('plain' as SourceId)).toBe(true);
-        expect(lib.collections.has('secret' as SourceId)).toBe(true);
-        expect(lib.get('plain.plain-recipe' as FillingId)).toSucceed();
-        expect(lib.get('secret.secret-recipe' as FillingId)).toSucceed();
+      test('captures encrypted files when no encryption config provided', async () => {
+        const secretRecipeData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'secret-recipe': {
+            baseId: 'secret-recipe',
+            name: 'Secret Recipe',
+            category: 'ganache',
+            versions: [
+              {
+                versionSpec: '2026-01-01-01',
+                createdDate: '2026-01-01',
+                ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
+                baseWeight: 50
+              }
+            ],
+            goldenVersionSpec: '2026-01-01-01'
+          }
+        };
+
+        const encryptedFile = (
+          await CryptoUtils.createEncryptedFile({
+            content: secretRecipeData,
+            secretName: TEST_SECRET_NAME,
+            key: testKey,
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          {
+            path: '/data/fillings/secret.json',
+            contents: encryptedFile as unknown as JsonObject
+          }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        const fileSource: Fillings.IFillingFileTreeSource = {
+          directory: rootDir as FileTree.IFileTreeDirectoryItem,
+          mutable: false
+        };
+
+        // Without encryption config, encrypted files are captured (not decrypted)
+        const result = await FillingsLibrary.createAsync({
+          builtin: false,
+          fileSources: fileSource
+        });
+
+        // Should succeed with the encrypted file captured as a protected collection
+        expect(result).toSucceedAndSatisfy((lib) => {
+          // No decrypted collections since no encryption config
+          expect(lib.collections.size).toBe(0);
+        });
+      });
+
+      test('handles mixed encrypted and plain files', async () => {
+        const plainRecipeData = {
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'plain-recipe': {
+              baseId: 'plain-recipe',
+              name: 'Plain Recipe',
+              category: 'ganache',
+              versions: [
+                {
+                  versionSpec: '2026-01-01-01',
+                  createdDate: '2026-01-01',
+                  ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 25 }],
+                  baseWeight: 25
+                }
+              ],
+              goldenVersionSpec: '2026-01-01-01'
+            }
+          }
+        };
+
+        const secretRecipeData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'secret-recipe': {
+            baseId: 'secret-recipe',
+            name: 'Secret Recipe',
+            category: 'ganache',
+            versions: [
+              {
+                versionSpec: '2026-01-01-01',
+                createdDate: '2026-01-01',
+                ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 75 }],
+                baseWeight: 75
+              }
+            ],
+            goldenVersionSpec: '2026-01-01-01'
+          }
+        };
+
+        const encryptedFile = (
+          await CryptoUtils.createEncryptedFile({
+            content: secretRecipeData,
+            secretName: TEST_SECRET_NAME,
+            key: testKey,
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          {
+            path: '/data/fillings/plain.json',
+            contents: plainRecipeData as unknown as JsonObject
+          },
+          {
+            path: '/data/fillings/secret.json',
+            contents: encryptedFile as unknown as JsonObject
+          }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const rootDir = tree.getItem('/').orThrow();
+        const fileSource: Fillings.IFillingFileTreeSource = {
+          directory: rootDir as FileTree.IFileTreeDirectoryItem,
+          mutable: false
+        };
+
+        const result = await FillingsLibrary.createAsync({
+          builtin: false,
+          fileSources: fileSource,
+          encryption: {
+            secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((lib) => {
+          // Both collections should be loaded
+          expect(lib.collections.has('plain' as SourceId)).toBe(true);
+          expect(lib.collections.has('secret' as SourceId)).toBe(true);
+          expect(lib.get('plain.plain-recipe' as FillingId)).toSucceed();
+          expect(lib.get('secret.secret-recipe' as FillingId)).toSucceed();
+        });
       });
     });
-  });
-});
+  }); // end describe('createAsync')
+}); // end describe('FillingsLibrary')

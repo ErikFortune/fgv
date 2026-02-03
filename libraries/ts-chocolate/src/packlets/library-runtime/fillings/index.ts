@@ -29,4 +29,3 @@
 
 export { RuntimeFillingRecipe } from './runtimeFillingRecipe';
 export { RuntimeFillingRecipeVersion } from './runtimeFillingRecipeVersion';
-export { RuntimeScaledFillingRecipeVersion } from './runtimeScaledFillingRecipeVersion';

@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.IRuntimeProcedureRenderContext.recipe property
 
-The specific scaled filling recipe this procedure is being rendered for
+The specific produced filling this procedure is being rendered for
 
 **Signature:**
 
 ```typescript
-readonly recipe: Fillings.IComputedScaledFillingRecipe;
+readonly recipe: Fillings.IProducedFilling;
 ```

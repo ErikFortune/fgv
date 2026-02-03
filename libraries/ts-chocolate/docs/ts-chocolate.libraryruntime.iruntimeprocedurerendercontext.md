@@ -91,12 +91,12 @@ _(Optional)_ Optional mold being used for this recipe
 
 </td><td>
 
-Fillings.IComputedScaledFillingRecipe
+Fillings.IProducedFilling
 
 
 </td><td>
 
-The specific scaled filling recipe this procedure is being rendered for
+The specific produced filling this procedure is being rendered for
 
 
 </td></tr>

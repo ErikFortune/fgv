@@ -85,9 +85,9 @@ export interface IRuntimeProcedureRenderContext {
   readonly context: IProcedureContext;
 
   /**
-   * The specific scaled filling recipe this procedure is being rendered for
+   * The specific produced filling this procedure is being rendered for
    */
-  readonly recipe: Fillings.IComputedScaledFillingRecipe;
+  readonly recipe: Fillings.IProducedFilling;
 
   /**
    * Optional mold being used for this recipe

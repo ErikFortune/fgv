@@ -48,7 +48,7 @@ import {
   isResolvedFillingSlot,
   isResolvedIngredientSlot
 } from '../confections';
-import { AnyFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
+import { IFillingRecipeVersion, IProducedFilling, IProducedFillingIngredient } from '../fillings';
 
 // ============================================================================
 // Re-export Produced Types from Their Home Modules
@@ -135,8 +135,7 @@ export interface IJournalEntryBase<TVersion, TVersionId> {
  * Journal entry for filling recipe edits.
  * @public
  */
-export interface IFillingEditJournalEntry
-  extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> {
+export interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
   readonly type: 'filling-edit';
 }
 
@@ -154,7 +153,7 @@ export interface IConfectionEditJournalEntry
  * @public
  */
 export interface IFillingProductionJournalEntry
-  extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> {
+  extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
   readonly type: 'filling-production';
   /** Total yield weight of this production run */
   readonly yield: Measurement;

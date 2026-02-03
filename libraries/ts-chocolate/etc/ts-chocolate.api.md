@@ -167,14 +167,6 @@ type AnyFillingOption = IRecipeFillingOption | IIngredientFillingOption;
 const anyFillingOption: Converter<AnyFillingOption>;
 
 // @public
-type AnyFillingRecipeVersion = IFillingRecipeVersion | IScaledFillingRecipeVersion;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const anyFillingRecipeVersion: Converter<AnyFillingRecipeVersion>;
-
-// @public
 type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -411,9 +403,6 @@ function calculateTotalWeight(ingredients: ReadonlyArray<Fillings_2.IFillingIngr
 
 // @public
 function calculateWeightContributions(ingredients: ReadonlyArray<Fillings_2.IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
-
-// @public
-function canScaleByFrames(confection: Confections_2.AnyConfection): confection is Confections_2.IMoldedBonBon;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1199,7 +1188,6 @@ declare namespace Entities {
         AnyConfectionVersion,
         AnyConfection,
         FillingsLibrary,
-        AnyFillingRecipeVersion,
         FillingCategory_2 as FillingCategory,
         IFillingRecipe,
         IFillingRecipeVersion,
@@ -1674,19 +1662,14 @@ declare namespace Fillings {
         fillingRecipeVersion,
         fillingRecipeData,
         fillingRecipe,
-        scaledFillingIngredient,
         scalingRef,
-        ingredientSnapshot,
-        scaledFillingRecipeVersion,
-        scalingSource
+        ingredientSnapshot
     }
 }
 
 declare namespace Fillings_2 {
     export {
         Fillings as Converters,
-        isScaledFillingRecipeVersion,
-        isFillingRecipeVersion,
         IIngredientModifiers,
         IFillingIngredient,
         RatingCategory,
@@ -1699,13 +1682,8 @@ declare namespace Fillings_2 {
         IFillingDerivation,
         IProcedureRef,
         IFillingRecipe,
-        IScaledFillingIngredient,
         IScalingRef,
         IIngredientSnapshot,
-        IScaledFillingRecipeVersion,
-        IScalingSource,
-        IComputedScaledFillingRecipe,
-        AnyFillingRecipeVersion,
         IProducedFillingIngredient,
         IProducedFilling,
         FillingCollectionEntry,
@@ -2117,17 +2095,6 @@ interface ICollectionSourceMetadata {
 }
 
 // @public
-interface IComputedScaledFillingRecipe {
-    readonly baseWeight: Measurement;
-    readonly createdDate: string;
-    readonly ingredients: ReadonlyArray<IScaledFillingIngredient>;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly ratings?: ReadonlyArray<IFillingRating>;
-    readonly scaledFrom: IScalingSource;
-    readonly yield?: string;
-}
-
-// @public
 interface IConfectionBase {
     readonly baseId: BaseConfectionId;
     readonly confectionType: ConfectionType;
@@ -2417,7 +2384,7 @@ interface IFillingDerivation {
 }
 
 // @public
-interface IFillingEditJournalEntry extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> {
+interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
     // (undocumented)
     readonly type: 'filling-edit';
 }
@@ -2435,7 +2402,7 @@ interface IFillingIngredient {
 }
 
 // @public
-interface IFillingProductionJournalEntry extends IJournalEntryBase<AnyFillingRecipeVersion, FillingVersionId> {
+interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
     readonly produced: IProducedFilling;
     // (undocumented)
     readonly type: 'filling-production';
@@ -3295,9 +3262,6 @@ declare namespace Internal {
         IWeightCalculationContext,
         IWeightContribution,
         defaultWeightContext,
-        scaleVersion,
-        scaleFillingRecipe,
-        scaleFillingRecipeByFactor,
         calculateBaseWeight,
         recalculateFillingRecipeVersion,
         IVersionScaleOptions,
@@ -3698,17 +3662,6 @@ interface IResolvedRecipeFillingOption {
 }
 
 // @public
-interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-    readonly alternates: ReadonlyArray<TIngredient>;
-    readonly amount: Measurement;
-    readonly ingredient: TIngredient;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly originalAmount: Measurement;
-    readonly raw: Fillings_2.IScaledFillingIngredient;
-    readonly scaleFactor: number;
-}
-
-// @public
 interface IResolvedSubLibrarySource {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly loadParams: ILoadCollectionFromFileTreeParams<string>;
@@ -3905,8 +3858,6 @@ interface IRuntimeFillingRecipeVersion {
     readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IFillingRating>;
     readonly raw: IFillingRecipeVersion;
-    scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
-    scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
     usesIngredient(ingredientId: IngredientId): boolean;
     readonly version: IFillingRecipeVersion;
     readonly versionId: FillingVersionId;
@@ -4011,7 +3962,7 @@ interface IRuntimeProcedureRenderContext {
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     readonly context: IProcedureContext;
     readonly mold?: IMold;
-    readonly recipe: Fillings_2.IComputedScaledFillingRecipe;
+    readonly recipe: Fillings_2.IProducedFilling;
 }
 
 // @public
@@ -4048,28 +3999,6 @@ interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionBase {
     readonly enrobingChocolate?: IResolvedChocolateSpec;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly raw: Confections_2.IRolledTruffleVersion;
-}
-
-// @public
-interface IRuntimeScaledFillingRecipeVersion {
-    readonly baseWeight: Measurement;
-    calculateGanache(): Result<IGanacheCalculation>;
-    readonly createdDate: string;
-    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly ratings: ReadonlyArray<IFillingRating>;
-    readonly raw: Fillings_2.IComputedScaledFillingRecipe;
-    readonly scaledFrom: IRuntimeScalingSource;
-    readonly targetWeight: Measurement;
-    readonly weightDifference: Measurement;
-    readonly yield?: string;
-}
-
-// @public
-interface IRuntimeScalingSource {
-    readonly scaleFactor: number;
-    readonly sourceVersion: IRuntimeFillingRecipeVersion;
-    readonly targetWeight: Measurement;
 }
 
 // @public
@@ -4185,34 +4114,8 @@ interface IScaledAmount {
 }
 
 // @public
-interface IScaledFillingIngredient extends IFillingIngredient {
-    readonly originalAmount: Measurement;
-    readonly scaleFactor: number;
-}
-
-// @public
-interface IScaledFillingRecipeVersion {
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly scalingRef: IScalingRef;
-    readonly snapshotIngredients?: ReadonlyArray<IIngredientSnapshot>;
-}
-
-// @internal
-interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-    getSourceVersion(scaled: Fillings_2.IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
-    readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
-}
-
-// @public
 interface IScalingRef {
     readonly createdDate: string;
-    readonly scaleFactor: number;
-    readonly sourceVersionId: FillingVersionId;
-    readonly targetWeight: Measurement;
-}
-
-// @public
-interface IScalingSource {
     readonly scaleFactor: number;
     readonly sourceVersionId: FillingVersionId;
     readonly targetWeight: Measurement;
@@ -4317,9 +4220,6 @@ function isFillingJournalEntry(entry: AnyJournalEntry): entry is AnyFillingJourn
 function isFillingProductionJournalEntry(entry: AnyJournalEntry): entry is IFillingProductionJournalEntry;
 
 // @public
-function isFillingRecipeVersion(version: AnyFillingRecipeVersion): version is IFillingRecipeVersion;
-
-// @public
 function isIngredientInventoryEntry(entry: AnyInventoryEntry): entry is IIngredientInventoryEntry;
 
 // @public
@@ -4374,9 +4274,6 @@ function isRolledTruffle(confection: AnyConfection): confection is IRolledTruffl
 
 // @public
 function isRolledTruffleVersion(version: AnyConfectionVersion): version is IRolledTruffleVersion;
-
-// @public
-function isScaledFillingRecipeVersion(version: AnyFillingRecipeVersion): version is IScaledFillingRecipeVersion;
 
 // @public
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
@@ -4633,9 +4530,10 @@ interface IValidationReport {
 }
 
 // @internal
-interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
+interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
     getProcedure(id: string): Result<IProcedure>;
+    readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
 }
 
 // @public
@@ -4697,7 +4595,6 @@ export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'k
 
 declare namespace Journal {
     export {
-        anyFillingRecipeVersion,
         journalEntryType,
         resolvedSlotType,
         resolvedFillingSlot,
@@ -4956,7 +4853,6 @@ declare namespace LibraryRuntime {
         AnyRuntimeIngredient,
         RuntimeFillingRecipe,
         RuntimeFillingRecipeVersion,
-        RuntimeScaledFillingRecipeVersion,
         RuntimeConfectionBase,
         RuntimeMoldedBonBon,
         RuntimeBarTruffle,
@@ -4967,14 +4863,6 @@ declare namespace LibraryRuntime {
         RuntimeMoldedBonBonVersion,
         RuntimeBarTruffleVersion,
         RuntimeRolledTruffleVersion,
-        scaleConfection,
-        scaleConfectionByFactor,
-        scaleConfectionToCount,
-        scaleConfectionVersionByFactor,
-        scaleConfectionVersionToCount,
-        scaleMoldedBonBonByFrames,
-        scaleMoldedBonBonVersionByFrames,
-        canScaleByFrames,
         Indexers,
         ITaskContext,
         IRuntimeTask,
@@ -5001,13 +4889,10 @@ declare namespace LibraryRuntime {
         ICategoryFilter,
         FillingRecipeIngredientsFilter,
         IRuntimeFillingRecipeVersion,
-        IRuntimeScalingSource,
-        IRuntimeScaledFillingRecipeVersion,
         IResolvedFillingRecipeProcedure,
         IResolvedProcedures,
         IRuntimeFillingRecipe,
         IResolvedFillingIngredient,
-        IResolvedScaledIngredient,
         ResolutionStatus,
         IIngredientResolutionResult,
         IQueryResult,
@@ -5016,7 +4901,6 @@ declare namespace LibraryRuntime {
         IIterationOptions,
         IIngredientQueryOptions,
         IIngredientUsageInfo,
-        IScaledVersionContext,
         IVersionContext,
         IIngredientContext,
         ILibraryRuntimeContext,
@@ -5076,14 +4960,12 @@ declare namespace LibraryRuntime {
 export { LibraryRuntime }
 
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
@@ -5091,7 +4973,7 @@ export { LibraryRuntime }
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 //
 // @public
-class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext {
+class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext {
     protected constructor(library: ChocolateLibrary, preWarm: boolean);
     get cachedConfectionCount(): number;
     get cachedIngredientCount(): number;
@@ -5124,8 +5006,6 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     getRuntimeMold(id: MoldId): Result<RuntimeMold>;
     getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    // @internal
-    getSourceVersion(scaled: Fillings_2.IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
     getTask(id: TaskId): Result<ITaskData>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
@@ -6012,10 +5892,8 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
-    get ratings(): ReadonlyArray<Fillings_2.IFillingRating>;
+    get ratings(): ReadonlyArray<IFillingRating>;
     get raw(): IFillingRecipeVersion;
-    scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
-    scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
     usesIngredient(ingredientId: IngredientId): boolean;
     get version(): IFillingRecipeVersion;
     get versionId(): FillingVersionId;
@@ -6326,26 +6204,6 @@ class RuntimeRolledTruffleVersion extends RuntimeConfectionVersionBase implement
 }
 
 // @public
-class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingRecipeVersion {
-    // Warning: (ae-forgotten-export) The symbol "ScaledVersionContext" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    constructor(context: ScaledVersionContext, scaled: Fillings_2.IComputedScaledFillingRecipe);
-    get baseWeight(): Measurement;
-    calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: ScaledVersionContext, scaled: Fillings_2.IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
-    get createdDate(): string;
-    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
-    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get ratings(): ReadonlyArray<IFillingRating>;
-    get raw(): Fillings_2.IComputedScaledFillingRecipe;
-    get scaledFrom(): IRuntimeScalingSource;
-    get targetWeight(): Measurement;
-    get weightDifference(): Measurement;
-    get yield(): string | undefined;
-}
-
-// @public
 class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSugarIngredient {
     // @internal
     protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredient);
@@ -6386,71 +6244,10 @@ class RuntimeTask implements IRuntimeTask {
 // @public
 function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
 
-// Warning: (ae-forgotten-export) The symbol "IConfectionScaleOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IScaledConfection" needs to be exported by the entry point index.d.ts
-//
-// @public
-function scaleConfection<T extends Confections_2.AnyConfection>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
-
-// @public
-function scaleConfectionByFactor<T extends Confections_2.AnyConfection>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
-
-// @public
-function scaleConfectionToCount<T extends Confections_2.AnyConfection>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
-
-// @public
-function scaleConfectionVersionByFactor<T extends Confections_2.AnyConfection>(confection: T, version: Confections_2.AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
-
-// @public
-function scaleConfectionVersionToCount<T extends Confections_2.AnyConfection>(confection: T, version: Confections_2.AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const scaledFillingIngredient: Converter<IScaledFillingIngredient>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function scaleFillingRecipe(fillingRecipe: IFillingRecipe, fillingId: FillingId, targetWeight: Measurement, options?: IFillingRecipeScaleOptions): Result<Fillings_2.IComputedScaledFillingRecipe>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function scaleFillingRecipeByFactor(fillingRecipe: IFillingRecipe, fillingId: FillingId, factor: number, options?: IFillingRecipeScaleOptions): Result<Fillings_2.IComputedScaledFillingRecipe>;
-
-// Warning: (ae-forgotten-export) The symbol "IFrameScaleOptions" needs to be exported by the entry point index.d.ts
-//
-// @public
-function scaleMoldedBonBonByFrames(confection: Confections_2.IMoldedBonBon, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<Confections_2.IMoldedBonBon>>;
-
-// @public
-function scaleMoldedBonBonVersionByFrames(confection: Confections_2.IMoldedBonBon, version: Confections_2.IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<Confections_2.IMoldedBonBon>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function scaleVersion(version: IFillingRecipeVersion, sourceVersionId: FillingVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<Fillings_2.IComputedScaledFillingRecipe>;
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const scalingRef: Converter<IScalingRef>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const scalingSource: Converter<IScalingSource>;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;

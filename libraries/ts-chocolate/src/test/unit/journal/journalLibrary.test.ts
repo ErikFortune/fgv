@@ -49,12 +49,6 @@ describe('JournalLibrary (Collection-Based)', () => {
     recipe: {
       versionSpec: '2026-01-01-01' as FillingVersionSpec,
       createdDate: '2026-01-01',
-      scalingRef: {
-        sourceVersionId: versionId as FillingVersionId,
-        scaleFactor: 1,
-        targetWeight: 300 as Measurement,
-        createdDate: '2026-01-01'
-      },
       ingredients: [],
       baseWeight: 300 as Measurement
     },

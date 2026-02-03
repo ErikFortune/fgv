@@ -273,17 +273,6 @@ A resolved view of a rolled truffle version with all references resolved.
 </td></tr>
 <tr><td>
 
-[RuntimeScaledFillingRecipeVersion](./ts-chocolate.libraryruntime.runtimescaledfillingrecipeversion.md)
-
-
-</td><td>
-
-A resolved view of a scaled recipe version with all ingredients resolved.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeSugarIngredient](./ts-chocolate.libraryruntime.runtimesugaringredient.md)
 
 
@@ -450,17 +439,6 @@ Creates a filter for maximum value (inclusive).
 </td></tr>
 <tr><td>
 
-[canScaleByFrames(confection)](./ts-chocolate.libraryruntime.canscalebyframes.md)
-
-
-</td><td>
-
-Type guard to check if a confection is a molded bonbon for frame-based scaling
-
-
-</td></tr>
-<tr><td>
-
 [collectionContains(value, getter)](./ts-chocolate.libraryruntime.collectioncontains.md)
 
 
@@ -577,93 +555,6 @@ Creates a filter that checks if value is one of the allowed values.
 </td><td>
 
 Combines multiple filters with OR logic.
-
-
-</td></tr>
-<tr><td>
-
-[scaleConfection(confection, factor, options)](./ts-chocolate.libraryruntime.scaleconfection.md)
-
-
-</td><td>
-
-Scales any confection, automatically choosing the appropriate method.
-
-For molded bonbons, if frameCount and cavitiesPerMold are provided, uses frame-based scaling. Otherwise, uses linear scaling by factor.
-
-
-</td></tr>
-<tr><td>
-
-[scaleConfectionByFactor(confection, factor, options)](./ts-chocolate.libraryruntime.scaleconfectionbyfactor.md)
-
-
-</td><td>
-
-Scales a confection by a factor using the golden version.
-
-This function applies a linear scale factor to the golden version's yield.
-
-
-</td></tr>
-<tr><td>
-
-[scaleConfectionToCount(confection, targetCount, options)](./ts-chocolate.libraryruntime.scaleconfectiontocount.md)
-
-
-</td><td>
-
-Scales a confection to a target count using the golden version.
-
-
-</td></tr>
-<tr><td>
-
-[scaleConfectionVersionByFactor(confection, version, factor, options)](./ts-chocolate.libraryruntime.scaleconfectionversionbyfactor.md)
-
-
-</td><td>
-
-Scales a confection version by a factor.
-
-This function applies a linear scale factor to the version's yield.
-
-
-</td></tr>
-<tr><td>
-
-[scaleConfectionVersionToCount(confection, version, targetCount, options)](./ts-chocolate.libraryruntime.scaleconfectionversiontocount.md)
-
-
-</td><td>
-
-Scales a confection version to a target count.
-
-
-</td></tr>
-<tr><td>
-
-[scaleMoldedBonBonByFrames(confection, frameCount, cavitiesPerMold, options)](./ts-chocolate.libraryruntime.scalemoldedbonbonbyframes.md)
-
-
-</td><td>
-
-Scales a molded bonbon confection by number of frames/molds using the golden version.
-
-For molded bonbons, this calculates the yield based on the number of frames and the cavities per mold. Requires the confection to have a recommended mold with known cavity count.
-
-
-</td></tr>
-<tr><td>
-
-[scaleMoldedBonBonVersionByFrames(confection, version, frameCount, cavitiesPerMold, options)](./ts-chocolate.libraryruntime.scalemoldedbonbonversionbyframes.md)
-
-
-</td><td>
-
-Scales a molded bonbon version by number of frames/molds.
-
-For molded bonbons, this calculates the yield based on the number of frames and the cavities per mold.
 
 
 </td></tr>
@@ -1035,17 +926,6 @@ Resolved recipe filling option.
 </td></tr>
 <tr><td>
 
-[IResolvedScaledIngredient](./ts-chocolate.libraryruntime.iresolvedscaledingredient.md)
-
-
-</td><td>
-
-A resolved scaled ingredient with both original and scaled amounts.
-
-
-</td></tr>
-<tr><td>
-
 [IRuntimeAlcoholIngredient](./ts-chocolate.libraryruntime.iruntimealcoholingredient.md)
 
 
@@ -1283,32 +1163,6 @@ Runtime confection narrowed to rolled truffle type.
 </td><td>
 
 Runtime confection version narrowed to rolled truffle type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeScaledFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimescaledfillingrecipeversion.md)
-
-
-</td><td>
-
-A resolved runtime view of a scaled recipe version.
-
-This interface provides runtime-layer access to scaled version data with: - Source recipe/version tracking - Resolved scaled ingredient access via flexible filtering - Scaling metadata - Ganache calculation using scaled amounts
-
-Note: Does not extend `IScaledRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeScalingSource](./ts-chocolate.libraryruntime.iruntimescalingsource.md)
-
-
-</td><td>
-
-Runtime-specific scaling source with resolved version reference. Extends the basic scaling info with a reference to the actual runtime version.
 
 
 </td></tr>

@@ -351,28 +351,6 @@ Gets ingredients, optionally filtered.
 </td></tr>
 <tr><td>
 
-[scale(targetWeight, options)](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.scale.md)
-
-
-</td><td>
-
-Scales this version to a target weight.
-
-
-</td></tr>
-<tr><td>
-
-[scaleByFactor(factor, options)](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.scalebyfactor.md)
-
-
-</td><td>
-
-Scales this version by a multiplicative factor.
-
-
-</td></tr>
-<tr><td>
-
 [usesIngredient(ingredientId)](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.usesingredient.md)
 
 

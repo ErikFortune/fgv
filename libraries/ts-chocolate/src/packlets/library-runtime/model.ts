@@ -81,7 +81,6 @@ import {
   ISugarIngredient,
   ITemperatureCurve
 } from '../entities';
-import { IVersionScaleOptions } from './internal';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
@@ -478,25 +477,6 @@ export interface IRuntimeFillingRecipeVersion {
   // ---- Operations ----
 
   /**
-   * Scales this version to a target weight.
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options (precision, minimum amount)
-   * @returns Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
-   */
-  scale(
-    targetWeight: Measurement,
-    options?: IVersionScaleOptions
-  ): Result<IRuntimeScaledFillingRecipeVersion>;
-
-  /**
-   * Scales this version by a multiplicative factor.
-   * @param factor - Multiplicative factor (e.g., 2.0 for double)
-   * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
-   */
-  scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
-
-  /**
    * Calculates ganache characteristics for this version.
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
@@ -521,143 +501,6 @@ export interface IRuntimeFillingRecipeVersion {
    * Gets the underlying raw version data.
    */
   readonly raw: IFillingRecipeVersion;
-}
-
-// ============================================================================
-// Scaled Recipe Version Types
-// ============================================================================
-
-/**
- * Runtime-specific scaling source with resolved version reference.
- * Extends the basic scaling info with a reference to the actual runtime version.
- * @public
- */
-export interface IRuntimeScalingSource {
-  /**
-   * The source version that was scaled - fully resolved.
-   */
-  readonly sourceVersion: IRuntimeFillingRecipeVersion;
-
-  /**
-   * The scaling factor applied.
-   */
-  readonly scaleFactor: number;
-
-  /**
-   * The target weight requested.
-   */
-  readonly targetWeight: Measurement;
-}
-
-/**
- * A resolved runtime view of a scaled recipe version.
- *
- * This interface provides runtime-layer access to scaled version data with:
- * - Source recipe/version tracking
- * - Resolved scaled ingredient access via flexible filtering
- * - Scaling metadata
- * - Ganache calculation using scaled amounts
- *
- * Note: Does not extend `IScaledRecipeVersion` because `ingredients` has a different
- * type (resolved vs raw references).
- *
- * @public
- */
-export interface IRuntimeScaledFillingRecipeVersion {
-  // ---- Scaling Info ----
-
-  /**
-   * Information about the source version and scaling parameters.
-   * Provides direct access to the resolved source version and scaling metadata.
-   */
-  readonly scaledFrom: IRuntimeScalingSource;
-  /**
-   * The target weight that was requested.
-   * Convenience accessor for scaledFrom.targetWeight.
-   */
-  readonly targetWeight: Measurement;
-
-  // ---- Version Properties (from IScaledRecipeVersion) ----
-
-  /**
-   * Date this scaled version was created (ISO 8601 format).
-   */
-  readonly createdDate: string;
-
-  /**
-   * Base weight of the scaled recipe (same as targetWeight).
-   */
-  readonly baseWeight: Measurement;
-
-  /**
-   * Optional yield description (may be scaled from original).
-   */
-  readonly yield?: string;
-
-  /**
-   * Optional notes from the source version.
-   */
-  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-
-  /**
-   * Optional ratings from the source version.
-   */
-  readonly ratings: ReadonlyArray<IFillingRating>;
-
-  // ---- Resolved ingredients ----
-
-  /**
-   * Gets ingredients, optionally filtered.
-   *
-   * @param filter - Optional array of filters (OR semantics)
-   *   - `undefined`/omitted: returns all ingredients
-   *   - Empty array `[]`: returns nothing (empty iterator)
-   *   - Non-empty array: returns ingredients matching at least one filter
-   *
-   * Filter types:
-   *   - `string`: Match ingredient ID exactly
-   *   - `RegExp`: Match ingredient ID by pattern
-   *   - `ICategoryFilter`: Match by category (literal or regex)
-   *
-   * @returns Success with matching ingredients iterator, or Failure if resolution fails
-   *
-   * @example
-   * ```typescript
-   * // All scaled ingredients
-   * for (const ri of scaled.getIngredients().orThrow()) {
-   *   console.log(`${ri.ingredient.name}: ${ri.originalAmount}g → ${ri.amount}g`);
-   * }
-   *
-   * // Chocolate ingredients only
-   * scaled.getIngredients([{ category: 'chocolate' }])
-   * ```
-   */
-  getIngredients(
-    filter?: FillingRecipeIngredientsFilter[]
-  ): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
-
-  // ---- Scaling info ----
-
-  /**
-   * Gets the total weight difference from the original.
-   */
-  readonly weightDifference: Measurement;
-
-  // ---- Operations ----
-
-  /**
-   * Calculates ganache characteristics for this scaled version.
-   * Uses the scaled amounts, not original amounts.
-   * @returns Success with ganache calculation, or Failure if calculation fails
-   */
-  calculateGanache(): Result<IGanacheCalculation>;
-
-  // ---- Raw access ----
-
-  /**
-   * Gets the underlying raw scaled version data.
-   */
-  readonly raw: Fillings.IComputedScaledFillingRecipe;
 }
 
 // ============================================================================
@@ -862,47 +705,6 @@ export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredie
   readonly raw: Fillings.IFillingIngredient;
 }
 
-/**
- * A resolved scaled ingredient with both original and scaled amounts.
- * @public
- */
-export interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-  /**
-   * The fully resolved ingredient object
-   */
-  readonly ingredient: TIngredient;
-
-  /**
-   * Scaled amount in grams (after applying scale factor)
-   */
-  readonly amount: Measurement;
-
-  /**
-   * Original amount before scaling
-   */
-  readonly originalAmount: Measurement;
-
-  /**
-   * The scale factor that was applied
-   */
-  readonly scaleFactor: number;
-
-  /**
-   * Optional notes for this ingredient usage
-   */
-  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-
-  /**
-   * Resolved alternate ingredients
-   */
-  readonly alternates: ReadonlyArray<TIngredient>;
-
-  /**
-   * The original raw scaled ingredient reference data
-   */
-  readonly raw: Fillings.IScaledFillingIngredient;
-}
-
 // ============================================================================
 // Resolution Status
 // ============================================================================
@@ -1049,22 +851,8 @@ export interface IIngredientUsageInfo {
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeScaledFillingRecipeVersion.
- * Provides only what a scaled version needs to resolve its dependencies.
- *
- * @typeParam TIngredient - The ingredient type returned by ingredients map
- * @internal
- */
-export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-  /** Map of all ingredients, keyed by composite ID. */
-  readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
-  /** Gets the source version for a computed scaled recipe. */
-  getSourceVersion(scaled: Fillings.IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
-}
-
-/**
  * Minimal context interface for RuntimeFillingRecipeVersion and RuntimeFillingRecipe.
- * Provides ingredient/recipe resolution and scaled version creation.
+ * Provides ingredient/recipe resolution.
  *
  * Generic type parameter allows internal implementations to use concrete types
  * (e.g., `AnyRuntimeIngredient`) while external consumers get abstract interfaces.
@@ -1072,8 +860,9 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
  * @typeParam TIngredient - The ingredient type returned by ingredients map
  * @internal
  */
-export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient>
-  extends IScaledVersionContext<TIngredient> {
+export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+  /** Map of all ingredients, keyed by composite ID. */
+  readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
   /** Map of all fillings, keyed by composite ID. */
   readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
   /** Gets a procedure by its composite ID. */

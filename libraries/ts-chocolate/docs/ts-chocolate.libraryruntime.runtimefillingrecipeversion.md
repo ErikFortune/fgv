@@ -199,7 +199,7 @@ Resolved procedures associated with this version. Undefined if the version has n
 
 </td><td>
 
-ReadonlyArray&lt;[Fillings.IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!-- -->&gt;
+ReadonlyArray&lt;[IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>
@@ -374,34 +374,6 @@ Factory method for creating a RuntimeFillingRecipeVersion.
 </td><td>
 
 Gets ingredients, optionally filtered.
-
-
-</td></tr>
-<tr><td>
-
-[scale(targetWeight, options)](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.scale.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales this version to a target weight.
-
-
-</td></tr>
-<tr><td>
-
-[scaleByFactor(factor, options)](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.scalebyfactor.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales this version by a multiplicative factor.
 
 
 </td></tr>

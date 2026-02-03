@@ -34,8 +34,8 @@ import {
   FillingVersionSpec,
   Model as CommonModel
 } from '../../common';
-import { IFillingRecipeVersion, Fillings } from '../../entities';
-import { calculateFromIngredients, validateGanache, scaleVersion, IVersionScaleOptions } from '../internal';
+import { IFillingRecipeVersion, IFillingRating } from '../../entities';
+import { calculateFromIngredients, validateGanache } from '../internal';
 import {
   ICategoryFilter,
   IGanacheCalculation,
@@ -45,12 +45,10 @@ import {
   IResolvedProcedures,
   IRuntimeFillingRecipe,
   IRuntimeFillingRecipeVersion,
-  IRuntimeScaledFillingRecipeVersion,
   IVersionContext,
   FillingRecipeIngredientsFilter
 } from '../model';
 import { AnyRuntimeIngredient } from '../ingredients';
-import { RuntimeScaledFillingRecipeVersion } from './runtimeScaledFillingRecipeVersion';
 
 // Specialize the context interface with concrete ingredient type
 type VersionContext = IVersionContext<AnyRuntimeIngredient>;
@@ -222,7 +220,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   /**
    * Optional ratings for this version
    */
-  public get ratings(): ReadonlyArray<Fillings.IFillingRating> {
+  public get ratings(): ReadonlyArray<IFillingRating> {
     return this._version.ratings ?? [];
   }
 
@@ -297,38 +295,6 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   // ============================================================================
   // Operations
   // ============================================================================
-
-  /**
-   * Scales this version to a target weight.
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options (precision, minimum amount)
-   * @returns Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
-   */
-  public scale(
-    targetWeight: Measurement,
-    options?: IVersionScaleOptions
-  ): Result<IRuntimeScaledFillingRecipeVersion> {
-    return scaleVersion(this._version, this.versionId, targetWeight, options).onSuccess((scaled) =>
-      RuntimeScaledFillingRecipeVersion.create(this._context, scaled)
-    );
-  }
-
-  /**
-   * Scales this version by a multiplicative factor.
-   * @param factor - Multiplicative factor (e.g., 2.0 for double)
-   * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledFillingRecipeVersion, or Failure if scaling fails
-   */
-  public scaleByFactor(
-    factor: number,
-    options?: IVersionScaleOptions
-  ): Result<IRuntimeScaledFillingRecipeVersion> {
-    if (factor <= 0) {
-      return Failure.with('Scale factor must be greater than zero');
-    }
-    const targetWeight = (this.baseWeight * factor) as Measurement;
-    return this.scale(targetWeight, options);
-  }
 
   /**
    * Calculates ganache characteristics for this version.

@@ -38,10 +38,7 @@ import {
   IIngredientModifiers,
   IIngredientSnapshot,
   IProcedureRef,
-  IScaledFillingIngredient,
-  IScaledFillingRecipeVersion,
   IScalingRef,
-  IScalingSource,
   RatingCategory
 } from './model';
 
@@ -173,22 +170,6 @@ export const fillingRecipe: Converter<IFillingRecipe> = Converters.generic<IFill
 );
 
 /**
- * Converter for {@link Entities.Fillings.IScaledFillingIngredient | IScaledFillingIngredient}.
- * Uses IIdsWithPreferred pattern for ingredient selection with validation.
- * @public
- */
-export const scaledFillingIngredient: Converter<IScaledFillingIngredient> =
-  Converters.object<IScaledFillingIngredient>({
-    ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'scaledFillingIngredient'),
-    amount: CommonConverters.measurement,
-    unit: CommonConverters.measurementUnit.optional(),
-    modifiers: ingredientModifiers.optional(),
-    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
-    originalAmount: CommonConverters.measurement,
-    scaleFactor: Converters.number
-  });
-
-/**
  * Converter for {@link Entities.Fillings.IScalingRef | IScalingRef} (lightweight reference-based format)
  * @public
  */
@@ -208,25 +189,4 @@ export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.obj
   originalAmount: CommonConverters.measurement,
   scaledAmount: CommonConverters.measurement,
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
-
-/**
- * Converter for {@link Entities.Fillings.IScaledFillingRecipeVersion | IScaledFillingRecipeVersion} (reference-based)
- * @public
- */
-export const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion> =
-  Converters.object<IScaledFillingRecipeVersion>({
-    scalingRef: scalingRef,
-    snapshotIngredients: Converters.arrayOf(ingredientSnapshot).optional(),
-    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-  });
-
-/**
- * Converter for {@link Entities.Fillings.IScalingSource | IScalingSource} (runtime format with full ingredient data)
- * @public
- */
-export const scalingSource: Converter<IScalingSource> = Converters.object<IScalingSource>({
-  sourceVersionId: CommonConverters.fillingVersionId,
-  scaleFactor: Converters.number,
-  targetWeight: CommonConverters.measurement
 });

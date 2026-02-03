@@ -358,41 +358,49 @@ export function formatFilling(
 }
 
 // ============================================================================
-// Scaled Filling Formatting
+// Produced Filling Formatting
 // ============================================================================
 
 /**
- * Formats a scaled filling for human-readable output
+ * Formats a produced filling for human-readable output
  */
-function formatScaledFillingHuman(scaled: Entities.Fillings.IComputedScaledFillingRecipe): string {
+function formatProducedFillingHuman(
+  produced: Entities.Fillings.IProducedFilling,
+  sourceVersion: Entities.Fillings.IFillingRecipeVersion,
+  precision?: number
+): string {
   const lines: string[] = [];
 
-  const sourceVersionId = scaled.scaledFrom.sourceVersionId;
-  const factor = scaled.scaledFrom.scaleFactor;
-  const targetWeight = scaled.scaledFrom.targetWeight;
+  const factor = produced.scaleFactor;
+  const targetWeight = produced.targetWeight;
+  const sourceWeight = sourceVersion.baseWeight;
 
-  lines.push(`Scaled Filling`);
-  lines.push(`Source: ${sourceVersionId}`);
+  lines.push(`Produced Filling`);
+  lines.push(`Source: ${produced.versionId}`);
   lines.push(`Scale Factor: ${formatNumber(factor, 2)}x`);
+  lines.push(`Source Weight: ${sourceWeight}g`);
   lines.push(`Target Weight: ${targetWeight}g`);
   lines.push('');
-
-  if (scaled.yield) {
-    lines.push(`Original Yield: ${scaled.yield}`);
-    lines.push('');
-  }
 
   lines.push('Ingredients:');
 
   // Find max ingredient ID length for alignment
-  const maxIdLen = Math.max(...scaled.ingredients.map((i) => getIngredientDisplayId(i).length));
+  const maxIdLen = Math.max(...produced.ingredients.map((i) => i.ingredientId.length));
 
-  for (const ingredient of scaled.ingredients) {
-    const displayId = getIngredientDisplayId(ingredient);
-    const pct = calculatePercentage(ingredient.amount, scaled.baseWeight);
-    const originalStr = `(was ${formatNumber(ingredient.originalAmount)}g)`;
+  for (const ingredient of produced.ingredients) {
+    const displayId = ingredient.ingredientId;
+    const amount = ingredient.amount;
+    const pct = calculatePercentage(amount, targetWeight);
+
+    // Find original amount from source version
+    const sourceIngredient = sourceVersion.ingredients.find((si) =>
+      si.ingredient.ids.includes(ingredient.ingredientId)
+    );
+    const originalAmount = sourceIngredient ? sourceIngredient.amount : 0;
+    const originalStr = `(was ${formatNumber(originalAmount, precision)}g)`;
+
     lines.push(
-      `  ${padRight(displayId, maxIdLen)}  ${padRight(formatNumber(ingredient.amount) + 'g', 10)}  ${padRight(
+      `  ${padRight(displayId, maxIdLen)}  ${padRight(formatNumber(amount, precision) + 'g', 10)}  ${padRight(
         originalStr,
         16
       )}  (${pct}%)`
@@ -400,34 +408,40 @@ function formatScaledFillingHuman(scaled: Entities.Fillings.IComputedScaledFilli
   }
 
   lines.push('');
-  lines.push(`Total: ${scaled.baseWeight}g`);
+  lines.push(`Total: ${targetWeight}g`);
 
   return lines.join('\n');
 }
 
 /**
- * Formats a scaled filling for table output (same as human)
+ * Formats a produced filling for table output (same as human)
  */
-function formatScaledFillingTable(scaled: Entities.Fillings.IComputedScaledFillingRecipe): string {
-  return formatScaledFillingHuman(scaled);
+function formatProducedFillingTable(
+  produced: Entities.Fillings.IProducedFilling,
+  sourceVersion: Entities.Fillings.IFillingRecipeVersion,
+  precision?: number
+): string {
+  return formatProducedFillingHuman(produced, sourceVersion, precision);
 }
 
 /**
- * Formats a scaled filling for output
+ * Formats a produced filling for output
  */
-export function formatScaledFilling(
-  scaled: Entities.Fillings.IComputedScaledFillingRecipe,
-  format: OutputFormat
+export function formatProducedFilling(
+  produced: Entities.Fillings.IProducedFilling,
+  sourceVersion: Entities.Fillings.IFillingRecipeVersion,
+  format: OutputFormat,
+  precision?: number
 ): string {
   switch (format) {
     case 'json':
-      return JSON.stringify(scaled, null, 2);
+      return JSON.stringify(produced, null, 2);
     case 'yaml':
-      return yaml.stringify(scaled);
+      return yaml.stringify(produced);
     case 'table':
-      return formatScaledFillingTable(scaled);
+      return formatProducedFillingTable(produced, sourceVersion, precision);
     case 'human':
     default:
-      return formatScaledFillingHuman(scaled);
+      return formatProducedFillingHuman(produced, sourceVersion, precision);
   }
 }

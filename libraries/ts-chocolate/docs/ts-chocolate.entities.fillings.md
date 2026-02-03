@@ -32,43 +32,6 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.classic
 </td></tr>
 </tbody></table>
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[isFillingRecipeVersion(version)](./ts-chocolate.entities.fillings.isfillingrecipeversion.md)
-
-
-</td><td>
-
-Type guard to check if a version is a regular (unscaled) filling recipe version
-
-
-</td></tr>
-<tr><td>
-
-[isScaledFillingRecipeVersion(version)](./ts-chocolate.entities.fillings.isscaledfillingrecipeversion.md)
-
-
-</td><td>
-
-Type guard to check if a version is a scaled filling recipe version
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -83,17 +46,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[IComputedScaledFillingRecipe](./ts-chocolate.entities.fillings.icomputedscaledfillingrecipe.md)
-
-
-</td><td>
-
-A computed scaled filling recipe with full ingredient data. This is the output format from the scaler - a runtime object with all calculated values. Not intended for persistence - use IScaledFillingRecipeVersion for that.
-
-
-</td></tr>
-<tr><td>
 
 [IFillingDerivation](./ts-chocolate.entities.fillings.ifillingderivation.md)
 
@@ -205,45 +157,12 @@ Resolved filling ingredient with concrete choice. Unlike IFillingIngredient whic
 </td></tr>
 <tr><td>
 
-[IScaledFillingIngredient](./ts-chocolate.entities.fillings.iscaledfillingingredient.md)
-
-
-</td><td>
-
-Scaled ingredient with original and scaled amounts. Used at runtime when computing scaled filling recipes; not typically persisted.
-
-
-</td></tr>
-<tr><td>
-
-[IScaledFillingRecipeVersion](./ts-chocolate.entities.fillings.iscaledfillingrecipeversion.md)
-
-
-</td><td>
-
-A scaled filling recipe version - reference-based by default. Scaling is primarily a runtime operation; this represents what gets persisted (e.g., in a journal record).
-
-
-</td></tr>
-<tr><td>
-
 [IScalingRef](./ts-chocolate.entities.fillings.iscalingref.md)
 
 
 </td><td>
 
 Lightweight scaling reference - the default storage format for scaled filling recipes. Stores only the reference and scale parameters, not ingredient snapshots.
-
-
-</td></tr>
-<tr><td>
-
-[IScalingSource](./ts-chocolate.entities.fillings.iscalingsource.md)
-
-
-</td><td>
-
-Information about the source of a scaled filling recipe. Used at runtime for computed scaled versions.
 
 
 </td></tr>
@@ -324,17 +243,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[AnyFillingRecipeVersion](./ts-chocolate.entities.fillings.anyfillingrecipeversion.md)
-
-
-</td><td>
-
-Union type for consumers who can work with either scaled or unscaled versions
-
-
-</td></tr>
-<tr><td>
 
 [FillingCategory](./ts-chocolate.entities.fillings.fillingcategory.md)
 

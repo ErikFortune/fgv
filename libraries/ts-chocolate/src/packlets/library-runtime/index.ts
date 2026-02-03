@@ -64,13 +64,9 @@ export {
 } from './ingredients';
 
 // Runtime filling recipe classes
-export {
-  RuntimeFillingRecipe,
-  RuntimeFillingRecipeVersion,
-  RuntimeScaledFillingRecipeVersion
-} from './fillings';
+export { RuntimeFillingRecipe, RuntimeFillingRecipeVersion } from './fillings';
 
-// Runtime confection classes and scaling
+// Runtime confection classes
 export {
   RuntimeConfectionBase,
   RuntimeMoldedBonBon,
@@ -81,16 +77,7 @@ export {
   RuntimeConfectionVersionBase,
   RuntimeMoldedBonBonVersion,
   RuntimeBarTruffleVersion,
-  RuntimeRolledTruffleVersion,
-  // Confection scaling
-  scaleConfection,
-  scaleConfectionByFactor,
-  scaleConfectionToCount,
-  scaleConfectionVersionByFactor,
-  scaleConfectionVersionToCount,
-  scaleMoldedBonBonByFrames,
-  scaleMoldedBonBonVersionByFrames,
-  canScaleByFrames
+  RuntimeRolledTruffleVersion
 } from './confections';
 
 // Query builders

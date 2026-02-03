@@ -214,43 +214,6 @@ Scale an ingredient amount using the appropriate scaler for the unit
 </td></tr>
 <tr><td>
 
-[scaleFillingRecipe(fillingRecipe, fillingId, targetWeight, options)](./ts-chocolate.libraryruntime.internal.scalefillingrecipe.md)
-
-
-</td><td>
-
-Scales a filling recipe to a target weight.
-
-This function looks up a version by spec and delegates to [scaleVersion](./ts-chocolate.libraryruntime.internal.scaleversion.md)<!-- -->. Use this when you have a filling recipe and want to scale a specific version by spec.
-
-
-</td></tr>
-<tr><td>
-
-[scaleFillingRecipeByFactor(fillingRecipe, fillingId, factor, options)](./ts-chocolate.libraryruntime.internal.scalefillingrecipebyfactor.md)
-
-
-</td><td>
-
-Scales a [filling recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by a supplied multiplier.
-
-
-</td></tr>
-<tr><td>
-
-[scaleVersion(version, sourceVersionId, targetWeight, options)](./ts-chocolate.libraryruntime.internal.scaleversion.md)
-
-
-</td><td>
-
-Scales a filling recipe version to a target weight.
-
-This is the core scaling function that operates directly on a version. Use this when you already have the version object and its ID.
-
-
-</td></tr>
-<tr><td>
-
 [supportsScaling(unit)](./ts-chocolate.libraryruntime.internal.supportsscaling.md)
 
 

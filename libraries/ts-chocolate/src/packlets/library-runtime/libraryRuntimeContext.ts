@@ -28,7 +28,6 @@ import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@
 import {
   ConfectionId,
   Converters,
-  Helpers,
   IngredientId,
   Model as CommonModel,
   MoldId,
@@ -56,8 +55,6 @@ import {
   IRuntimeChocolateIngredient,
   IRuntimeIngredient,
   IRuntimeFillingRecipe,
-  IRuntimeFillingRecipeVersion,
-  IScaledVersionContext,
   IVersionContext
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
@@ -113,7 +110,6 @@ export interface ILibraryRuntimeContextCreateParams {
 export class LibraryRuntimeContext
   implements
     IVersionContext<AnyRuntimeIngredient>,
-    IScaledVersionContext<AnyRuntimeIngredient>,
     IIngredientContext,
     ITaskContext,
     IProcedureContext,
@@ -641,24 +637,6 @@ export class LibraryRuntimeContext
    */
   public _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe> {
     return this._resolveFillingRecipes().onSuccess((lib) => lib.get(id).asResult);
-  }
-
-  /**
-   * Gets the source version for a computed scaled recipe.
-   * Used internally by RuntimeScaledFillingRecipeVersion to resolve the source reference.
-   * @param scaled - The computed scaled recipe containing source IDs
-   * @returns Success with the resolved source version, or Failure if not found
-   * @internal
-   */
-  public getSourceVersion(
-    scaled: Fillings.IComputedScaledFillingRecipe
-  ): Result<IRuntimeFillingRecipeVersion> {
-    // Parse the composite FillingVersionId to get fillingId and versionSpec
-    return Helpers.parseFillingVersionId(scaled.scaledFrom.sourceVersionId).onSuccess((parsed) => {
-      const fillingId = parsed.collectionId;
-      const versionSpec = parsed.itemId;
-      return this._getFillingRecipe(fillingId).onSuccess((recipe) => recipe.getVersion(versionSpec));
-    });
   }
 
   // ============================================================================
