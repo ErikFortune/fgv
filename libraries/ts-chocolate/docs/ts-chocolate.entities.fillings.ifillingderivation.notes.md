@@ -4,10 +4,10 @@
 
 ## Entities.Fillings.IFillingDerivation.notes property
 
-Optional notes about the derivation
+Optional categorized notes about the derivation
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

@@ -89,7 +89,7 @@ The filling ID (satisfies IHasId for IOptionsWithPreferred)
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

@@ -4,10 +4,10 @@
 
 ## Entities.Tasks.ITaskData.notes property
 
-Optional notes about the task
+Optional categorized notes about the task
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

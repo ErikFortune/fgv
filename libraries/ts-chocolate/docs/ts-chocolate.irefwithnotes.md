@@ -4,7 +4,7 @@
 
 ## IRefWithNotes interface
 
-Generic reference type with an ID and optional notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
+Generic reference type with an ID and optional categorized notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
 
 **Signature:**
 
@@ -69,12 +69,12 @@ The referenced entity's ID
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes specific to this reference
+_(Optional)_ Optional categorized notes specific to this reference
 
 
 </td></tr>

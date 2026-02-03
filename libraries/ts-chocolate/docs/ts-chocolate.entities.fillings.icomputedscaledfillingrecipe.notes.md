@@ -4,10 +4,10 @@
 
 ## Entities.Fillings.IComputedScaledFillingRecipe.notes property
 
-Optional notes from the source version
+Optional categorized notes from the source version
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

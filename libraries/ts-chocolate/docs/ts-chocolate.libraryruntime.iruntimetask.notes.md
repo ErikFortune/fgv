@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.IRuntimeTask.notes property
 
-Optional notes
+Optional categorized notes
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

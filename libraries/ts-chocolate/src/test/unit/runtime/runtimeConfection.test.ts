@@ -31,6 +31,7 @@ import {
   ConfectionVersionSpec,
   FillingName,
   FillingVersionSpec,
+  ICategorizedNote,
   IngredientCategory,
   IngredientId,
   Measurement,
@@ -95,7 +96,7 @@ describe('RuntimeConfection', () => {
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
         createdDate: '2026-01-01',
-        notes: 'Initial version',
+        notes: [{ category: 'user', note: 'Initial version' }] as ICategorizedNote[],
         yield: {
           count: 24,
           unit: 'pieces',
@@ -137,7 +138,7 @@ describe('RuntimeConfection', () => {
       {
         versionSpec: '2026-01-02-01' as ConfectionVersionSpec,
         createdDate: '2026-01-02',
-        notes: 'Updated recipe',
+        notes: [{ category: 'user', note: 'Updated recipe' }] as ICategorizedNote[],
         yield: {
           count: 24,
           unit: 'pieces',
@@ -494,13 +495,13 @@ describe('RuntimeConfection', () => {
     test('exposes version properties', () => {
       expect(runtime.goldenVersionSpec).toBe('2026-01-01-01');
       expect(runtime.goldenVersion.versionSpec).toBe('2026-01-01-01');
-      expect(runtime.goldenVersion.notes).toBe('Initial version');
+      expect(runtime.goldenVersion.notes).toEqual([{ category: 'user', note: 'Initial version' }]);
       expect(runtime.versions).toHaveLength(2);
     });
 
     test('getVersion returns version for valid spec', () => {
       expect(runtime.getVersion('2026-01-02-01' as ConfectionVersionSpec)).toSucceedAndSatisfy((version) => {
-        expect(version.notes).toBe('Updated recipe');
+        expect(version.notes).toEqual([{ category: 'user', note: 'Updated recipe' }]);
       });
     });
 
@@ -564,7 +565,7 @@ describe('RuntimeConfection', () => {
       expect(golden.yield.count).toBe(24);
       expect(golden.yield.unit).toBe('pieces');
       expect(golden.decorations).toHaveLength(2);
-      expect(golden.notes).toBe('Initial version');
+      expect(golden.notes).toEqual([{ category: 'user', note: 'Initial version' }]);
     });
 
     test('version exposes parent navigation', () => {

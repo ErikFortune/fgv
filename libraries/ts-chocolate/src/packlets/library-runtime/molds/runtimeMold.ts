@@ -28,6 +28,7 @@ import { Result, Success } from '@fgv/ts-utils';
 import {
   BaseMoldId,
   Converters,
+  ICategorizedNote,
   ICategorizedUrl,
   Measurement,
   MoldFormat,
@@ -176,9 +177,9 @@ export class RuntimeMold implements IRuntimeMold {
   }
 
   /**
-   * Optional notes
+   * Optional categorized notes
    */
-  public get notes(): string | undefined {
+  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
     return this._mold.notes;
   }
 

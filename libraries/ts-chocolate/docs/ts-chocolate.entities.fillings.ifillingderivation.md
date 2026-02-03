@@ -68,12 +68,12 @@ Date of derivation (ISO 8601 format)
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes about the derivation
+_(Optional)_ Optional categorized notes about the derivation
 
 
 </td></tr>

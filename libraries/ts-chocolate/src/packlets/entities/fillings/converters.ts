@@ -64,7 +64,7 @@ export const fillingIngredient: Converter<IFillingIngredient> = Converters.objec
   amount: CommonConverters.measurement,
   unit: CommonConverters.measurementUnit.optional(),
   modifiers: ingredientModifiers.optional(),
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });
 
 /**
@@ -86,7 +86,7 @@ export const fillingCategory: Converter<FillingCategory> = Converters.enumerated
 export const fillingRating: Converter<IFillingRating> = Converters.object<IFillingRating>({
   category: ratingCategory,
   score: CommonConverters.ratingScore,
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });
 
 /**
@@ -96,7 +96,7 @@ export const fillingRating: Converter<IFillingRating> = Converters.object<IFilli
 export const fillingDerivation: Converter<IFillingDerivation> = Converters.object<IFillingDerivation>({
   sourceVersionId: CommonConverters.fillingVersionId,
   derivedDate: Converters.string, // ISO 8601 date string
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });
 
 /**
@@ -126,7 +126,7 @@ export const fillingRecipeVersion: Converter<IFillingRecipeVersion> =
     ingredients: Converters.arrayOf(fillingIngredient),
     baseWeight: CommonConverters.measurement,
     yield: Converters.string.optional(),
-    notes: Converters.string.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     ratings: Converters.arrayOf(fillingRating).optional(),
     procedures: procedures.optional()
   });
@@ -183,7 +183,7 @@ export const scaledFillingIngredient: Converter<IScaledFillingIngredient> =
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
     modifiers: ingredientModifiers.optional(),
-    notes: Converters.string.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     originalAmount: CommonConverters.measurement,
     scaleFactor: Converters.number
   });
@@ -207,7 +207,7 @@ export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.obj
   ingredientId: CommonConverters.ingredientId,
   originalAmount: CommonConverters.measurement,
   scaledAmount: CommonConverters.measurement,
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });
 
 /**
@@ -218,7 +218,7 @@ export const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion> 
   Converters.object<IScaledFillingRecipeVersion>({
     scalingRef: scalingRef,
     snapshotIngredients: Converters.arrayOf(ingredientSnapshot).optional(),
-    notes: Converters.string.optional()
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
 /**

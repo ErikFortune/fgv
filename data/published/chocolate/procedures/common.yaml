@@ -330,7 +330,9 @@ items:
             template: Roll portions between palms quickly to form spheres
           params: {}
         activeTime: 15
-        notes: Work quickly to prevent melting from hand heat
+        notes:
+          - category: user
+            note: Work quickly to prevent melting from hand heat
       - order: 4
         task:
           task:

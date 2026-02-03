@@ -68,12 +68,12 @@ The ingredient ID
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes for this ingredient
+_(Optional)_ Optional categorized notes for this ingredient
 
 
 </td></tr>

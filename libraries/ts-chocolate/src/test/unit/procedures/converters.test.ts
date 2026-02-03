@@ -80,7 +80,7 @@ describe('Procedure Converters', () => {
         waitTime: 2,
         holdTime: 10,
         temperature: 45,
-        notes: 'Use double boiler'
+        notes: [{ category: 'user', note: 'Use double boiler' }]
       };
       expect(procedureStep.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.order).toBe(1);
@@ -89,7 +89,7 @@ describe('Procedure Converters', () => {
         expect(result.waitTime).toBe(2);
         expect(result.holdTime).toBe(10);
         expect(result.temperature).toBe(45);
-        expect(result.notes).toBe('Use double boiler');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Use double boiler' }]);
       });
     });
 
@@ -243,11 +243,11 @@ describe('Procedure Converters', () => {
       const input = {
         ...validProcedureData,
         description: 'A cold method for making ganache',
-        notes: 'Works best with dark chocolate'
+        notes: [{ category: 'user', note: 'Works best with dark chocolate' }]
       };
       expect(procedureData.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.description).toBe('A cold method for making ganache');
-        expect(result.notes).toBe('Works best with dark chocolate');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Works best with dark chocolate' }]);
       });
     });
 

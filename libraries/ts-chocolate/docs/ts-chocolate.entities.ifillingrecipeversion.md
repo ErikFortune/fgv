@@ -110,12 +110,12 @@ Ingredients used in this version of the filling recipe
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes about this version
+_(Optional)_ Optional categorized notes about this version
 
 
 </td></tr>

@@ -9,5 +9,5 @@ Optional notes specific to using this mold
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

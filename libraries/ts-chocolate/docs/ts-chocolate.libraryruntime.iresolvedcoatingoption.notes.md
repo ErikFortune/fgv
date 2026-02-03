@@ -9,5 +9,5 @@ Optional notes specific to this coating option
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

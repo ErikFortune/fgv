@@ -40,7 +40,7 @@ export const procedureStep: Converter<IProcedureStep> = Converters.object<IProce
   waitTime: CommonConverters.minutes.optional(),
   holdTime: CommonConverters.minutes.optional(),
   temperature: CommonConverters.celsius.optional(),
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });
 
 /**
@@ -54,5 +54,5 @@ export const procedureData: Converter<IProcedure> = Converters.object<IProcedure
   category: CommonConverters.procedureType.optional(),
   steps: Converters.arrayOf(procedureStep),
   tags: Converters.arrayOf(Converters.string).optional(),
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });

@@ -94,12 +94,12 @@ Date this scaled version was created (ISO 8601 format)
 
 </td><td>
 
-string \| undefined
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Optional notes from the source version
+Optional categorized notes from the source version
 
 
 </td></tr>

@@ -38,7 +38,7 @@ describe('TaskConverters', () => {
         defaultWaitTime: 10,
         defaultHoldTime: 2,
         defaultTemperature: 45,
-        notes: 'Use double boiler',
+        notes: [{ category: 'user', note: 'Use double boiler' }],
         tags: ['chocolate', 'melting']
       };
 
@@ -51,7 +51,7 @@ describe('TaskConverters', () => {
         expect(result.defaultWaitTime).toBe(10);
         expect(result.defaultHoldTime).toBe(2);
         expect(result.defaultTemperature).toBe(45);
-        expect(result.notes).toBe('Use double boiler');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Use double boiler' }]);
         expect(result.tags).toEqual(['chocolate', 'melting']);
       });
     });
@@ -229,7 +229,7 @@ describe('TaskConverters', () => {
           defaultWaitTime: 5,
           defaultHoldTime: 1,
           defaultTemperature: 35,
-          notes: 'Blend until smooth',
+          notes: [{ category: 'user', note: 'Blend until smooth' }],
           tags: ['mixing']
         },
         params: { ingredient: 'butter', temp: 35 }
@@ -243,7 +243,7 @@ describe('TaskConverters', () => {
         expect(result.task.defaultWaitTime).toBe(5);
         expect(result.task.defaultHoldTime).toBe(1);
         expect(result.task.defaultTemperature).toBe(35);
-        expect(result.task.notes).toBe('Blend until smooth');
+        expect(result.task.notes).toEqual([{ category: 'user', note: 'Blend until smooth' }]);
         expect(result.task.tags).toEqual(['mixing']);
         expect(result.params).toEqual({ ingredient: 'butter', temp: 35 });
       });

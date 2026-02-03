@@ -164,10 +164,10 @@ describe('Mold Converters', () => {
     test('converts mold data with notes', () => {
       const input = {
         ...validMoldData,
-        notes: 'Great for pralines'
+        notes: [{ category: 'user', note: 'Great for pralines' }]
       };
       expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toBe('Great for pralines');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Great for pralines' }]);
       });
     });
 

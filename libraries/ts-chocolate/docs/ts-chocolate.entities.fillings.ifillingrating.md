@@ -68,12 +68,12 @@ The category being rated
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes about the rating
+_(Optional)_ Optional categorized notes about the rating
 
 
 </td></tr>

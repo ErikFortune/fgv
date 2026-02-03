@@ -753,22 +753,6 @@ export function idsWithPreferred<TId extends string>(
   });
 }
 
-/**
- * Creates a converter for {@link IRefWithNotes | IRefWithNotes\<TId\>} objects.
- * A simple reference with an ID and optional notes.
- *
- * @typeParam TId - The ID type
- * @param idConverter - Converter for the ID type
- * @returns A converter that produces IRefWithNotes objects
- * @public
- */
-export function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>> {
-  return Converters.object<IRefWithNotes<TId>>({
-    id: idConverter,
-    notes: Converters.string.optional()
-  });
-}
-
 // ============================================================================
 // Note Converters
 // ============================================================================
@@ -787,6 +771,22 @@ export const categorizedNote: Converter<ICategorizedNote> = Converters.object<IC
   category: noteCategory,
   note: Converters.string
 });
+
+/**
+ * Creates a converter for {@link IRefWithNotes | IRefWithNotes\<TId\>} objects.
+ * A simple reference with an ID and optional notes.
+ *
+ * @typeParam TId - The ID type
+ * @param idConverter - Converter for the ID type
+ * @returns A converter that produces IRefWithNotes objects
+ * @public
+ */
+export function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>> {
+  return Converters.object<IRefWithNotes<TId>>({
+    id: idConverter,
+    notes: Converters.arrayOf(categorizedNote).optional()
+  });
+}
 
 // ============================================================================
 // URL Converters

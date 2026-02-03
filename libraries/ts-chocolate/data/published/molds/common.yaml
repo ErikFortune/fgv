@@ -22,7 +22,9 @@ items:
           depth: 12
     format: series-2000
     tags: [dome, hemisphere, truffle]
-    notes: Standard 25mm dome for truffles
+    notes:
+      - category: user
+        note: Standard 25mm dome for truffles
 
   dome-30mm:
     baseId: dome-30mm
@@ -40,7 +42,9 @@ items:
           depth: 15
     format: series-2000
     tags: [dome, hemisphere, truffle]
-    notes: Standard 30mm dome for larger truffles
+    notes:
+      - category: user
+        note: Standard 30mm dome for larger truffles
 
   bullet-28mm:
     baseId: bullet-28mm
@@ -58,7 +62,9 @@ items:
           depth: 18
     format: series-2000
     tags: [bullet, ogive, praline]
-    notes: Classic bullet shape for pralines
+    notes:
+      - category: user
+        note: Classic bullet shape for pralines
 
   square-25mm:
     baseId: square-25mm
@@ -76,4 +82,6 @@ items:
           depth: 16
     format: series-2000
     tags: [square, geometric]
-    notes: Simple square mold for ganache
+    notes:
+      - category: user
+        note: Simple square mold for ganache

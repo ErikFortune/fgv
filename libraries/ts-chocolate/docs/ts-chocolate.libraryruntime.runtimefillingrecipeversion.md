@@ -136,12 +136,12 @@ The parent filling recipe - resolved. Enables navigation: `version.fillingRecipe
 
 </td><td>
 
-string \| undefined
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Optional notes about this version
+Optional categorized notes about this version
 
 
 </td></tr>

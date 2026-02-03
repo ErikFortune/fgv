@@ -89,12 +89,12 @@ _(Optional)_ Time to hold at a temperature (overrides task default)
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes for this step
+_(Optional)_ Optional categorized notes for this step
 
 
 </td></tr>

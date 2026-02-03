@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseProcedureId, Celsius, Minutes, ProcedureType } from '../../common';
+import { BaseProcedureId, Celsius, ICategorizedNote, Minutes, ProcedureType } from '../../common';
 import { ITaskInvocation, TaskRefStatus } from '../tasks';
 
 /**
@@ -63,9 +63,9 @@ export interface IProcedureStep {
   readonly temperature?: Celsius;
 
   /**
-   * Optional notes for this step
+   * Optional categorized notes for this step
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -139,7 +139,7 @@ export interface IProcedure {
   readonly tags?: ReadonlyArray<string>;
 
   /**
-   * Optional notes about the procedure
+   * Optional categorized notes about the procedure
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }

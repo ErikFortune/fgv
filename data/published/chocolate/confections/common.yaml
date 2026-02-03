@@ -16,7 +16,9 @@ items:
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
-        notes: Basic dome bonbon with dark ganache filling
+        notes:
+          - category: user
+            note: Basic dome bonbon with dark ganache filling
         yield:
           count: 24
           unit: pieces
@@ -57,7 +59,9 @@ items:
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
-        notes: Standard 25mm square bar truffles
+        notes:
+          - category: user
+            note: Standard 25mm square bar truffles
         yield:
           count: 48
           unit: pieces
@@ -100,7 +104,9 @@ items:
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
-        notes: Traditional rolled truffle with cocoa coating
+        notes:
+          - category: user
+            note: Traditional rolled truffle with cocoa coating
         yield:
           count: 40
           unit: pieces

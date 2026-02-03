@@ -135,7 +135,7 @@ The parent filling recipe - resolved. Enables navigation: `version.fillingRecipe
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

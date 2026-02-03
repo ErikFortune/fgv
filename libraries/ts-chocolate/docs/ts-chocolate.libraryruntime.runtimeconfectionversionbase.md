@@ -283,12 +283,12 @@ Resolved filling slots for this version. Undefined if the version has no filling
 
 </td><td>
 
-string \| undefined
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Optional notes about this version.
+Optional categorized notes about this version.
 
 
 </td></tr>

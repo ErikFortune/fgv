@@ -33,7 +33,6 @@ import {
   ProcedureId,
   ICategorizedNote,
   Helpers,
-  DEFAULT_NOTE_CATEGORY,
   Converters as CommonConverters
 } from '../../common';
 import {
@@ -157,8 +156,6 @@ export class RuntimeProducedFilling {
             ingredients,
             procedureId: source.preferredProcedure?.id,
             notes: source.raw.notes
-              ? [{ category: DEFAULT_NOTE_CATEGORY, note: source.raw.notes }]
-              : undefined
           };
           return succeed(produced);
         });

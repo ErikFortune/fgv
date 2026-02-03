@@ -4,10 +4,10 @@
 
 ## Entities.IIngredientSnapshot.notes property
 
-Optional notes for this ingredient
+Optional categorized notes for this ingredient
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

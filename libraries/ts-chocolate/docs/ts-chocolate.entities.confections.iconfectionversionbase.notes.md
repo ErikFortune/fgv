@@ -4,10 +4,10 @@
 
 ## Entities.Confections.IConfectionVersionBase.notes property
 
-Optional notes about this version
+Optional categorized notes about this version
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

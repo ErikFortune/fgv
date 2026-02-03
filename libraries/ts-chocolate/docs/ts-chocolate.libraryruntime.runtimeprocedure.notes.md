@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.RuntimeProcedure.notes property
 
-Optional notes
+Optional categorized notes
 
 **Signature:**
 
 ```typescript
-get notes(): string | undefined;
+get notes(): ReadonlyArray<ICategorizedNote> | undefined;
 ```

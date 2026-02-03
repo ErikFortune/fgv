@@ -4,10 +4,10 @@
 
 ## Entities.IFillingRating.notes property
 
-Optional notes about the rating
+Optional categorized notes about the rating
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

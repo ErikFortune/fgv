@@ -25,7 +25,7 @@
 
 import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
-import { BaseProcedureId, Minutes, ProcedureId, ProcedureType, TaskId } from '../../common';
+import { BaseProcedureId, ICategorizedNote, Minutes, ProcedureId, ProcedureType, TaskId } from '../../common';
 import { IProcedure, IProcedureStep } from '../../entities';
 import { isInlineTask, isTaskRef } from '../../entities';
 import { RuntimeTask } from '../tasks';
@@ -138,9 +138,9 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   }
 
   /**
-   * Optional notes
+   * Optional categorized notes
    */
-  public get notes(): string | undefined {
+  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
     return this._procedure.notes;
   }
 

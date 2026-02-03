@@ -39,7 +39,7 @@ describe('Confections converters', () => {
       {
         versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        notes: 'Basic dome bonbon',
+        notes: [{ category: 'user', note: 'Basic dome bonbon' }],
         yield: {
           count: 24,
           unit: 'pieces',
@@ -77,7 +77,7 @@ describe('Confections converters', () => {
       {
         versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        notes: 'Standard bar truffles',
+        notes: [{ category: 'user', note: 'Standard bar truffles' }],
         yield: {
           count: 48,
           unit: 'pieces',
@@ -110,7 +110,7 @@ describe('Confections converters', () => {
       {
         versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        notes: 'Traditional rolled truffle',
+        notes: [{ category: 'user', note: 'Traditional rolled truffle' }],
         yield: {
           count: 40,
           unit: 'pieces',
@@ -238,13 +238,13 @@ describe('Confections converters', () => {
   describe('confectionMolds', () => {
     test('converts valid molds with preferredId', () => {
       const input = {
-        options: [{ id: 'common.dome-25mm', notes: 'Primary mold' }],
+        options: [{ id: 'common.dome-25mm', notes: [{ category: 'user', note: 'Primary mold' }] }],
         preferredId: 'common.dome-25mm'
       };
       expect(ConfectionConverters.confectionMolds.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options).toHaveLength(1);
         expect(result.options[0].id).toBe('common.dome-25mm');
-        expect(result.options[0].notes).toBe('Primary mold');
+        expect(result.options[0].notes).toEqual([{ category: 'user', note: 'Primary mold' }]);
         expect(result.preferredId).toBe('common.dome-25mm');
       });
     });
@@ -324,7 +324,7 @@ describe('Confections converters', () => {
       const input = {
         versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        notes: 'Initial version',
+        notes: [{ category: 'user', note: 'Initial version' }],
         yield: { count: 24 },
         molds: { options: [{ id: 'common.dome-25mm' }] },
         shellChocolate: { ids: ['common.chocolate-dark-64'] }
@@ -332,7 +332,7 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.anyConfectionVersion.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.createdDate).toBe('2026-01-01');
-        expect(result.notes).toBe('Initial version');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Initial version' }]);
       });
     });
 
@@ -523,12 +523,12 @@ describe('Confections converters', () => {
       const input = {
         type: 'recipe',
         id: 'common.dark-ganache-classic',
-        notes: 'Rich dark chocolate ganache'
+        notes: [{ category: 'user', note: 'Rich dark chocolate ganache' }]
       };
       expect(ConfectionConverters.recipeFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('recipe');
         expect(result.id).toBe('common.dark-ganache-classic');
-        expect(result.notes).toBe('Rich dark chocolate ganache');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Rich dark chocolate ganache' }]);
       });
     });
 
@@ -558,12 +558,12 @@ describe('Confections converters', () => {
       const input = {
         type: 'ingredient',
         id: 'common.praline-paste',
-        notes: 'Hazelnut praline'
+        notes: [{ category: 'user', note: 'Hazelnut praline' }]
       };
       expect(ConfectionConverters.ingredientFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('ingredient');
         expect(result.id).toBe('common.praline-paste');
-        expect(result.notes).toBe('Hazelnut praline');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Hazelnut praline' }]);
       });
     });
 

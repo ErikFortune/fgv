@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 import { fail } from '@fgv/ts-utils';
 
-import { BaseTaskId, TaskId, Minutes, Celsius } from '../../../packlets/common';
+import { BaseTaskId, ICategorizedNote, TaskId, Minutes, Celsius } from '../../../packlets/common';
 import { ITaskData } from '../../../packlets/entities';
 import { RuntimeTask, ITaskContext } from '../../../packlets/library-runtime';
 
@@ -48,7 +48,7 @@ describe('RuntimeTask', () => {
     defaultActiveTime: 15 as Minutes,
     defaultTemperature: 32 as Celsius,
     tags: ['tempering', 'chocolate'],
-    notes: 'Ensure accurate temperature control'
+    notes: [{ category: 'user', note: 'Ensure accurate temperature control' }] as ICategorizedNote[]
   };
 
   describe('create', () => {
@@ -78,7 +78,9 @@ describe('RuntimeTask', () => {
         expect(runtimeTask.defaultActiveTime).toBe(15);
         expect(runtimeTask.defaultTemperature).toBe(32);
         expect(runtimeTask.tags).toEqual(['tempering', 'chocolate']);
-        expect(runtimeTask.notes).toBe('Ensure accurate temperature control');
+        expect(runtimeTask.notes).toEqual([
+          { category: 'user', note: 'Ensure accurate temperature control' }
+        ]);
         expect(runtimeTask.defaults).toEqual({ method: 'seeding' });
       });
     });

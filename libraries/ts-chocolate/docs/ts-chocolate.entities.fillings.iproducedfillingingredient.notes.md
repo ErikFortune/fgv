@@ -4,10 +4,10 @@
 
 ## Entities.Fillings.IProducedFillingIngredient.notes property
 
-Optional notes about this ingredient usage
+Optional categorized notes about this ingredient usage
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

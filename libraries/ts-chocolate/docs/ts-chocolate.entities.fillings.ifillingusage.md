@@ -89,12 +89,12 @@ _(Optional)_ If modifications were made during this usage that created a new ver
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes about this usage
+_(Optional)_ Optional categorized notes about this usage
 
 
 </td></tr>

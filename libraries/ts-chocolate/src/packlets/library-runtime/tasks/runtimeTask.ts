@@ -26,7 +26,7 @@
 import { Result, succeed } from '@fgv/ts-utils';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
-import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
+import { BaseTaskId, Celsius, ICategorizedNote, Minutes, TaskId } from '../../common';
 import { ITaskData, ITaskRefValidation } from '../../entities';
 import { ITaskContext, IRuntimeTask } from './model';
 
@@ -155,9 +155,9 @@ export class RuntimeTask implements IRuntimeTask {
   }
 
   /**
-   * Optional notes
+   * Optional categorized notes
    */
-  public get notes(): string | undefined {
+  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
     return this._task.notes;
   }
 

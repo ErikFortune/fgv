@@ -69,7 +69,7 @@ export const taskData: Converter<ITaskData> = Converters.object<ITaskData>({
   defaultWaitTime: CommonConverters.minutes.optional(),
   defaultHoldTime: CommonConverters.minutes.optional(),
   defaultTemperature: CommonConverters.celsius.optional(),
-  notes: Converters.string.optional(),
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   defaults: params.optional()
 });

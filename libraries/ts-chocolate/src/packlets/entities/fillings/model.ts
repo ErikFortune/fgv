@@ -100,9 +100,9 @@ export interface IFillingIngredient {
   readonly modifiers?: IIngredientModifiers;
 
   /**
-   * Optional notes for this specific ingredient usage
+   * Optional categorized notes for this specific ingredient usage
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -152,9 +152,9 @@ export interface IFillingRating {
   readonly score: RatingScore;
 
   /**
-   * Optional notes about the rating
+   * Optional categorized notes about the rating
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -183,9 +183,9 @@ export interface IFillingUsage {
   readonly scaleFactor?: number;
 
   /**
-   * Optional notes about this usage
+   * Optional categorized notes about this usage
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * If modifications were made during this usage that created a new version,
@@ -225,9 +225,9 @@ export interface IFillingRecipeVersion {
   readonly yield?: string;
 
   /**
-   * Optional notes about this version
+   * Optional categorized notes about this version
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Optional ratings for this version
@@ -258,9 +258,9 @@ export interface IFillingDerivation {
   readonly derivedDate: string;
 
   /**
-   * Optional notes about the derivation
+   * Optional categorized notes about the derivation
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -388,9 +388,9 @@ export interface IIngredientSnapshot {
   readonly scaledAmount: Measurement;
 
   /**
-   * Optional notes for this ingredient
+   * Optional categorized notes for this ingredient
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -412,9 +412,9 @@ export interface IScaledFillingRecipeVersion {
   readonly snapshotIngredients?: ReadonlyArray<IIngredientSnapshot>;
 
   /**
-   * Optional notes
+   * Optional categorized notes
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -472,9 +472,9 @@ export interface IComputedScaledFillingRecipe {
   readonly yield?: string;
 
   /**
-   * Optional notes from the source version
+   * Optional categorized notes from the source version
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Optional ratings from the source version
@@ -529,8 +529,8 @@ export interface IProducedFillingIngredient {
   readonly unit?: MeasurementUnit;
   /** Measurement modifiers (spoonLevel, toTaste) - production metadata */
   readonly modifiers?: IIngredientModifiers;
-  /** Optional notes about this ingredient usage */
-  readonly notes?: string;
+  /** Optional categorized notes about this ingredient usage */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**

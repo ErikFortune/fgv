@@ -1312,12 +1312,22 @@ export const recipeCollections: Record<string, JsonObject> = {
                   preferredId: 'common.butter-82'
                 },
                 amount: 20,
-                notes: 'Added at 35°C for shine'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Added at 35°C for shine'
+                  }
+                ]
               }
             ],
             baseWeight: 620,
             yield: '~50 bonbons',
-            notes: 'Standard 2:1 ratio with butter finish',
+            notes: [
+              {
+                category: 'user',
+                note: 'Standard 2:1 ratio with butter finish'
+              }
+            ],
             procedures: {
               options: [
                 {
@@ -1362,12 +1372,22 @@ export const recipeCollections: Record<string, JsonObject> = {
                   preferredId: 'common.butter-82'
                 },
                 amount: 20,
-                notes: 'Added at 35°C for shine'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Added at 35°C for shine'
+                  }
+                ]
               }
             ],
             baseWeight: 570,
             yield: '~45 bonbons',
-            notes: '1.75:1 ratio for proper set with milk chocolate',
+            notes: [
+              {
+                category: 'user',
+                note: '1.75:1 ratio for proper set with milk chocolate'
+              }
+            ],
             procedures: {
               options: [
                 {
@@ -1412,12 +1432,22 @@ export const recipeCollections: Record<string, JsonObject> = {
                   preferredId: 'common.butter-82'
                 },
                 amount: 15,
-                notes: 'Added at 32°C for shine'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Added at 32°C for shine'
+                  }
+                ]
               }
             ],
             baseWeight: 715,
             yield: '~55 bonbons',
-            notes: '2.5:1 ratio essential for white chocolate emulsion',
+            notes: [
+              {
+                category: 'user',
+                note: '2.5:1 ratio essential for white chocolate emulsion'
+              }
+            ],
             procedures: {
               options: [
                 {
@@ -1453,12 +1483,30 @@ export const recipeCollections: Record<string, JsonObject> = {
                   ids: ['common.coconut-cream']
                 },
                 amount: 200,
-                notes: 'Use full-fat, refrigerate and use solid portion'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Use full-fat, refrigerate and use solid portion'
+                  }
+                ]
               }
             ],
             baseWeight: 600,
             yield: '~48 bonbons',
-            notes: 'Coconut cream provides fat and moisture similar to dairy cream'
+            notes: [
+              {
+                category: 'user',
+                note: 'Coconut cream provides fat and moisture similar to dairy cream'
+              }
+            ],
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ],
         goldenVersionSpec: '2026-01-01-01'
@@ -1488,7 +1536,12 @@ export const recipeCollections: Record<string, JsonObject> = {
                   preferredId: 'common.coconut-oil-deodorized'
                 },
                 amount: 150,
-                notes: 'Melted, at 35°C'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Melted, at 35°C'
+                  }
+                ]
               },
               {
                 ingredient: {
@@ -1496,12 +1549,30 @@ export const recipeCollections: Record<string, JsonObject> = {
                   preferredId: 'common.glucose-de43'
                 },
                 amount: 30,
-                notes: 'For texture and shelf life'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'For texture and shelf life'
+                  }
+                ]
               }
             ],
             baseWeight: 580,
             yield: '~46 bonbons',
-            notes: 'Oil-based method gives firmer set and neutral flavor'
+            notes: [
+              {
+                category: 'user',
+                note: 'Oil-based method gives firmer set and neutral flavor'
+              }
+            ],
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ],
         goldenVersionSpec: '2026-01-01-01'
@@ -1538,12 +1609,22 @@ export const recipeCollections: Record<string, JsonObject> = {
                   preferredId: 'common.butter-82'
                 },
                 amount: 20,
-                notes: 'Salted butter works beautifully here'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Salted butter works beautifully here'
+                  }
+                ]
               }
             ],
             baseWeight: 650,
             yield: '~52 bonbons',
-            notes: 'Slightly higher chocolate ratio for caramelized varieties',
+            notes: [
+              {
+                category: 'user',
+                note: 'Slightly higher chocolate ratio for caramelized varieties'
+              }
+            ],
             procedures: {
               options: [
                 {
@@ -1578,19 +1659,34 @@ export const recipeCollections: Record<string, JsonObject> = {
                   ids: ['common.hazelnut-paste']
                 },
                 amount: 200,
-                notes: '100% roasted hazelnuts, finely ground'
+                notes: [
+                  {
+                    category: 'user',
+                    note: '100% roasted hazelnuts, finely ground'
+                  }
+                ]
               },
               {
                 ingredient: {
                   ids: ['common.butter-82']
                 },
                 amount: 50,
-                notes: 'For smoothness'
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'For smoothness'
+                  }
+                ]
               }
             ],
             baseWeight: 550,
             yield: '~44 bonbons',
-            notes: 'Traditional 60:40 chocolate to hazelnut ratio',
+            notes: [
+              {
+                category: 'user',
+                note: 'Traditional 60:40 chocolate to hazelnut ratio'
+              }
+            ],
             procedures: {
               options: [
                 {
@@ -1651,7 +1747,12 @@ export const moldCollections: Record<string, JsonObject> = {
         },
         format: 'series-2000',
         tags: ['dome', 'hemisphere', 'truffle'],
-        notes: 'Standard 25mm dome for truffles'
+        notes: [
+          {
+            category: 'user',
+            note: 'Standard 25mm dome for truffles'
+          }
+        ]
       },
       'dome-30mm': {
         baseId: 'dome-30mm',
@@ -1672,7 +1773,12 @@ export const moldCollections: Record<string, JsonObject> = {
         },
         format: 'series-2000',
         tags: ['dome', 'hemisphere', 'truffle'],
-        notes: 'Standard 30mm dome for larger truffles'
+        notes: [
+          {
+            category: 'user',
+            note: 'Standard 30mm dome for larger truffles'
+          }
+        ]
       },
       'bullet-28mm': {
         baseId: 'bullet-28mm',
@@ -1693,7 +1799,12 @@ export const moldCollections: Record<string, JsonObject> = {
         },
         format: 'series-2000',
         tags: ['bullet', 'ogive', 'praline'],
-        notes: 'Classic bullet shape for pralines'
+        notes: [
+          {
+            category: 'user',
+            note: 'Classic bullet shape for pralines'
+          }
+        ]
       },
       'square-25mm': {
         baseId: 'square-25mm',
@@ -1714,7 +1825,12 @@ export const moldCollections: Record<string, JsonObject> = {
         },
         format: 'series-2000',
         tags: ['square', 'geometric'],
-        notes: 'Simple square mold for ganache'
+        notes: [
+          {
+            category: 'user',
+            note: 'Simple square mold for ganache'
+          }
+        ]
       }
     }
   },
@@ -1980,6 +2096,291 @@ export const procedureCollections: Record<string, JsonObject> = {
           }
         ],
         tags: ['gianduja', 'hazelnut', 'nut-paste']
+      },
+      'shell-bonbon-method': {
+        baseId: 'shell-bonbon-method',
+        name: 'Shell Bonbon Method',
+        category: 'molded-bonbon',
+        steps: [
+          {
+            order: 1,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-1',
+                name: 'Temper Chocolate',
+                template: 'Temper chocolate using preferred method'
+              },
+              params: {}
+            },
+            activeTime: 15,
+            temperature: 31
+          },
+          {
+            order: 2,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-2',
+                name: 'Fill Molds',
+                template: 'Fill molds completely with tempered chocolate'
+              },
+              params: {}
+            },
+            activeTime: 5
+          },
+          {
+            order: 3,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-3',
+                name: 'Invert and Drain',
+                template: 'Invert molds over bowl, tap to drain excess'
+              },
+              params: {}
+            },
+            activeTime: 3
+          },
+          {
+            order: 4,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-4',
+                name: 'Scrape and Chill',
+                template: 'Scrape excess from mold surface, refrigerate until set'
+              },
+              params: {}
+            },
+            activeTime: 2,
+            waitTime: 10,
+            temperature: 16
+          },
+          {
+            order: 5,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-5',
+                name: 'Pipe Filling',
+                template: 'Pipe ganache filling to 2mm below rim'
+              },
+              params: {}
+            },
+            activeTime: 10
+          },
+          {
+            order: 6,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-6',
+                name: 'Crystallize Filling',
+                template: 'Allow filling to crystallize at room temperature'
+              },
+              params: {}
+            },
+            waitTime: 60,
+            temperature: 18
+          },
+          {
+            order: 7,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-7',
+                name: 'Seal Bonbons',
+                template: 'Apply tempered chocolate to seal, scrape excess'
+              },
+              params: {}
+            },
+            activeTime: 5
+          },
+          {
+            order: 8,
+            task: {
+              task: {
+                baseId: 'shell-bonbon-step-8',
+                name: 'Final Set and Unmold',
+                template: 'Refrigerate briefly, then unmold by inverting'
+              },
+              params: {}
+            },
+            waitTime: 15,
+            temperature: 16
+          }
+        ],
+        tags: ['molded', 'bonbon', 'shell', 'confection']
+      },
+      'enrobe-truffle-method': {
+        baseId: 'enrobe-truffle-method',
+        name: 'Enrobe Truffle Method',
+        category: 'bar-truffle',
+        steps: [
+          {
+            order: 1,
+            task: {
+              task: {
+                baseId: 'enrobe-truffle-step-1',
+                name: 'Frame Ganache',
+                template: 'Pour ganache into frame at proper temperature'
+              },
+              params: {}
+            },
+            activeTime: 5,
+            temperature: 28
+          },
+          {
+            order: 2,
+            task: {
+              task: {
+                baseId: 'enrobe-truffle-step-2',
+                name: 'Level and Set',
+                template: 'Level surface with offset spatula, allow to crystallize'
+              },
+              params: {}
+            },
+            activeTime: 2,
+            waitTime: 120,
+            temperature: 18
+          },
+          {
+            order: 3,
+            task: {
+              task: {
+                baseId: 'enrobe-truffle-step-3',
+                name: 'Pre-coat Bottom',
+                template: 'Apply thin layer of tempered chocolate to bottom'
+              },
+              params: {}
+            },
+            activeTime: 5,
+            temperature: 31
+          },
+          {
+            order: 4,
+            task: {
+              task: {
+                baseId: 'enrobe-truffle-step-4',
+                name: 'Cut Pieces',
+                template: 'Cut ganache slab into uniform pieces with guitar cutter or knife'
+              },
+              params: {}
+            },
+            activeTime: 10
+          },
+          {
+            order: 5,
+            task: {
+              task: {
+                baseId: 'enrobe-truffle-step-5',
+                name: 'Enrobe',
+                template: 'Dip pieces in tempered chocolate using dipping fork'
+              },
+              params: {}
+            },
+            activeTime: 20,
+            temperature: 31
+          },
+          {
+            order: 6,
+            task: {
+              task: {
+                baseId: 'enrobe-truffle-step-6',
+                name: 'Decorate and Set',
+                template: 'Apply decoration while coating is wet, allow to set'
+              },
+              params: {}
+            },
+            activeTime: 5,
+            waitTime: 15,
+            temperature: 18
+          }
+        ],
+        tags: ['enrobed', 'truffle', 'bar', 'confection']
+      },
+      'roll-and-coat-method': {
+        baseId: 'roll-and-coat-method',
+        name: 'Roll and Coat Truffle Method',
+        category: 'rolled-truffle',
+        steps: [
+          {
+            order: 1,
+            task: {
+              task: {
+                baseId: 'roll-coat-step-1',
+                name: 'Chill Ganache',
+                template: 'Refrigerate ganache until firm but scoopable'
+              },
+              params: {}
+            },
+            waitTime: 60,
+            temperature: 14
+          },
+          {
+            order: 2,
+            task: {
+              task: {
+                baseId: 'roll-coat-step-2',
+                name: 'Portion Ganache',
+                template: 'Scoop uniform portions using small ice cream scoop or melon baller'
+              },
+              params: {}
+            },
+            activeTime: 15
+          },
+          {
+            order: 3,
+            task: {
+              task: {
+                baseId: 'roll-coat-step-3',
+                name: 'Roll into Balls',
+                template: 'Roll portions between palms quickly to form spheres'
+              },
+              params: {}
+            },
+            activeTime: 15,
+            notes: [
+              {
+                category: 'user',
+                note: 'Work quickly to prevent melting from hand heat'
+              }
+            ]
+          },
+          {
+            order: 4,
+            task: {
+              task: {
+                baseId: 'roll-coat-step-4',
+                name: 'Chill Balls',
+                template: 'Refrigerate rolled balls until firm'
+              },
+              params: {}
+            },
+            waitTime: 30,
+            temperature: 14
+          },
+          {
+            order: 5,
+            task: {
+              task: {
+                baseId: 'roll-coat-step-5',
+                name: 'Apply Coating',
+                template: 'Roll in coating (cocoa powder, nuts, etc.) to cover completely'
+              },
+              params: {}
+            },
+            activeTime: 10
+          },
+          {
+            order: 6,
+            task: {
+              task: {
+                baseId: 'roll-coat-step-6',
+                name: 'Final Rest',
+                template: 'Allow to temper at room temperature before serving'
+              },
+              params: {}
+            },
+            waitTime: 30,
+            temperature: 18
+          }
+        ],
+        tags: ['rolled', 'truffle', 'coated', 'confection']
       }
     }
   }
@@ -2137,7 +2538,12 @@ export const confectionCollections: Record<string, JsonObject> = {
           {
             versionSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
-            notes: 'Basic dome bonbon with dark ganache filling',
+            notes: [
+              {
+                category: 'user',
+                note: 'Basic dome bonbon with dark ganache filling'
+              }
+            ],
             yield: {
               count: 24,
               unit: 'pieces',
@@ -2168,7 +2574,24 @@ export const confectionCollections: Record<string, JsonObject> = {
             shellChocolate: {
               ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64'],
               preferredId: 'cacao-barry.guayaquil-64'
-            }
+            },
+            procedures: {
+              options: [
+                {
+                  id: 'common.shell-bonbon-method'
+                }
+              ],
+              preferredId: 'common.shell-bonbon-method'
+            },
+            decorations: [
+              {
+                description: 'Gold leaf accent on dome peak',
+                preferred: true
+              },
+              {
+                description: 'Cocoa butter transfer sheet design'
+              }
+            ]
           }
         ]
       },
@@ -2183,7 +2606,12 @@ export const confectionCollections: Record<string, JsonObject> = {
           {
             versionSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
-            notes: 'Standard 25mm square bar truffles',
+            notes: [
+              {
+                category: 'user',
+                note: 'Standard 25mm square bar truffles'
+              }
+            ],
             yield: {
               count: 48,
               unit: 'pieces',
@@ -2215,7 +2643,24 @@ export const confectionCollections: Record<string, JsonObject> = {
             enrobingChocolate: {
               ids: ['cacao-barry.guayaquil-64'],
               preferredId: 'cacao-barry.guayaquil-64'
-            }
+            },
+            procedures: {
+              options: [
+                {
+                  id: 'common.enrobe-truffle-method'
+                }
+              ],
+              preferredId: 'common.enrobe-truffle-method'
+            },
+            decorations: [
+              {
+                description: 'Dipping fork wave pattern',
+                preferred: true
+              },
+              {
+                description: 'Cocoa powder light dusting'
+              }
+            ]
           }
         ]
       },
@@ -2230,7 +2675,12 @@ export const confectionCollections: Record<string, JsonObject> = {
           {
             versionSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
-            notes: 'Traditional rolled truffle with cocoa coating',
+            notes: [
+              {
+                category: 'user',
+                note: 'Traditional rolled truffle with cocoa coating'
+              }
+            ],
             yield: {
               count: 40,
               unit: 'pieces',
@@ -2253,6 +2703,14 @@ export const confectionCollections: Record<string, JsonObject> = {
             coatings: {
               ids: ['common.cocoa-powder'],
               preferredId: 'common.cocoa-powder'
+            },
+            procedures: {
+              options: [
+                {
+                  id: 'common.roll-and-coat-method'
+                }
+              ],
+              preferredId: 'common.roll-and-coat-method'
             }
           }
         ]

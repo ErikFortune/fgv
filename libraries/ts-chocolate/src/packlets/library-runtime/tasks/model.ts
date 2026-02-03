@@ -27,7 +27,7 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
+import { BaseTaskId, Celsius, ICategorizedNote, Minutes, TaskId } from '../../common';
 import { ITaskData, ITaskRefValidation } from '../../entities';
 
 // ============================================================================
@@ -99,8 +99,8 @@ export interface IRuntimeTask {
   /** Optional default temperature */
   readonly defaultTemperature?: Celsius;
 
-  /** Optional notes */
-  readonly notes?: string;
+  /** Optional categorized notes */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;

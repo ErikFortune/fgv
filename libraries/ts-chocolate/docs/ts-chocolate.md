@@ -194,7 +194,7 @@ Collection of options (objects with IDs) with a preferred selection. Use when op
 
 </td><td>
 
-Generic reference type with an ID and optional notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
+Generic reference type with an ID and optional categorized notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
 
 
 </td></tr>

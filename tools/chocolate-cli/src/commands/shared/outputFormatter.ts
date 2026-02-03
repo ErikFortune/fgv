@@ -19,7 +19,13 @@
 // SOFTWARE.
 
 import * as yaml from 'yaml';
-import { ICategorizedUrl, IOptionsWithPreferred, IRefWithNotes, SourceId } from '@fgv/ts-chocolate';
+import {
+  ICategorizedNote,
+  ICategorizedUrl,
+  IOptionsWithPreferred,
+  IRefWithNotes,
+  SourceId
+} from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
 
@@ -37,6 +43,19 @@ const ID_SEPARATOR: string = '.';
  */
 export function formatNumber(value: number, precision: number = 1): string {
   return value.toFixed(precision);
+}
+
+/**
+ * Converts categorized notes to a single string for display
+ */
+export function formatCategorizedNotes(
+  notes: ReadonlyArray<ICategorizedNote> | undefined,
+  separator: string = '; '
+): string | undefined {
+  if (!notes || notes.length === 0) {
+    return undefined;
+  }
+  return notes.map((n) => n.note).join(separator);
 }
 
 /**

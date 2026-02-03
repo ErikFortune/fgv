@@ -29,6 +29,7 @@ import {
   BaseFillingId,
   ConfectionId,
   FillingVersionSpec,
+  ICategorizedNote,
   Measurement,
   IngredientId,
   Millimeters,
@@ -291,7 +292,7 @@ describe('ChocolateLibrary', () => {
       },
       format: 'series-2000',
       tags: ['test'],
-      notes: 'Test notes'
+      notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
     };
 
     let library: ChocolateLibrary;

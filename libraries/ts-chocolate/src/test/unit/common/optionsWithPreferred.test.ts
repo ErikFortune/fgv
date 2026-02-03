@@ -427,10 +427,10 @@ describe('optionsWithPreferred', () => {
     });
 
     test('converts valid data with id and notes', () => {
-      const input = { id: 'test-id', notes: 'Some notes about this ref' };
+      const input = { id: 'test-id', notes: [{ category: 'user', note: 'Some notes about this ref' }] };
       expect(converter.convert(input)).toSucceedAndSatisfy((result: IRefWithNotes<string>) => {
         expect(result.id).toBe('test-id');
-        expect(result.notes).toBe('Some notes about this ref');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Some notes about this ref' }]);
       });
     });
 
@@ -445,7 +445,7 @@ describe('optionsWithPreferred', () => {
     });
 
     test('fails when notes has wrong type', () => {
-      const input = { id: 'test-id', notes: 123 };
+      const input = { id: 'test-id', notes: 'not-an-array' };
       expect(converter.convert(input)).toFail();
     });
 

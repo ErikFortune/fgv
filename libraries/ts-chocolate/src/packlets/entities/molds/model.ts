@@ -23,7 +23,15 @@
  * @packageDocumentation
  */
 
-import { BaseMoldId, ICategorizedUrl, Measurement, Millimeters, MoldFormat, MoldId } from '../../common';
+import {
+  BaseMoldId,
+  ICategorizedNote,
+  ICategorizedUrl,
+  Measurement,
+  Millimeters,
+  MoldFormat,
+  MoldId
+} from '../../common';
 
 /**
  * Dimensions of a mold cavity in millimeters
@@ -112,9 +120,9 @@ export interface IMold {
   readonly related?: ReadonlyArray<MoldId>;
 
   /**
-   * Optional notes about the mold
+   * Optional categorized notes about the mold
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Optional categorized URLs for external resources (manufacturer page, purchase link, etc.)

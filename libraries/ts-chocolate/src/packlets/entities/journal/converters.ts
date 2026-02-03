@@ -138,7 +138,7 @@ export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
     modifiers: ingredientModifiersConverter.optional(),
-    notes: Converters.string.optional()
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
 /**

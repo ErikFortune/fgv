@@ -4,10 +4,10 @@
 
 ## Entities.IProcedureStep.notes property
 
-Optional notes for this step
+Optional categorized notes for this step
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

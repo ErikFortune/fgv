@@ -91,6 +91,6 @@ export const moldData: Converter<IMold> = Converters.object<IMold>({
   format: CommonConverters.moldFormat,
   tags: Converters.arrayOf(Converters.string).optional(),
   related: Converters.arrayOf(CommonConverters.moldId).optional(),
-  notes: Converters.string.optional(),
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 });

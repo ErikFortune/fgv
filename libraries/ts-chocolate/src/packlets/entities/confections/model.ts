@@ -136,8 +136,8 @@ export interface IRecipeFillingOption {
   readonly type: 'recipe';
   /** The filling recipe ID */
   readonly id: FillingId;
-  /** Optional notes specific to this filling option */
-  readonly notes?: string;
+  /** Optional categorized notes specific to this filling option */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -149,8 +149,8 @@ export interface IIngredientFillingOption {
   readonly type: 'ingredient';
   /** The ingredient ID */
   readonly id: IngredientId;
-  /** Optional notes specific to this filling option */
-  readonly notes?: string;
+  /** Optional categorized notes specific to this filling option */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 /**
@@ -271,8 +271,8 @@ export interface IConfectionVersionBase {
   readonly decorations?: ReadonlyArray<IConfectionDecoration>;
   /** Optional procedures with preferred selection */
   readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
-  /** Optional notes about this version */
-  readonly notes?: string;
+  /** Optional categorized notes about this version */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
   /** Additional tags (merged with base confection tags) */
   readonly additionalTags?: ReadonlyArray<string>;
   /** Additional URLs (merged with base confection URLs) */

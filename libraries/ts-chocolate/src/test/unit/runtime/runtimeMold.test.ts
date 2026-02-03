@@ -20,7 +20,14 @@
 
 import '@fgv/ts-utils-jest';
 
-import { BaseMoldId, Measurement, Millimeters, MoldFormat, MoldId } from '../../../packlets/common';
+import {
+  BaseMoldId,
+  ICategorizedNote,
+  Measurement,
+  Millimeters,
+  MoldFormat,
+  MoldId
+} from '../../../packlets/common';
 import { IMold } from '../../../packlets/entities';
 import { RuntimeMold, IMoldContext } from '../../../packlets/library-runtime';
 
@@ -48,7 +55,7 @@ describe('RuntimeMold', () => {
     },
     format: 'chocolate-world-275x135' as MoldFormat,
     tags: ['bar', 'rectangle'],
-    notes: 'Classic bar mold'
+    notes: [{ category: 'user', note: 'Classic bar mold' }] as ICategorizedNote[]
   };
 
   const moldWithoutWeight: IMold = {
@@ -103,7 +110,7 @@ describe('RuntimeMold', () => {
         });
         expect(runtimeMold.format).toBe('chocolate-world-275x135');
         expect(runtimeMold.tags).toEqual(['bar', 'rectangle']);
-        expect(runtimeMold.notes).toBe('Classic bar mold');
+        expect(runtimeMold.notes).toEqual([{ category: 'user', note: 'Classic bar mold' }]);
       });
     });
   });

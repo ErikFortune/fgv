@@ -9,5 +9,5 @@ Optional notes for this ingredient usage
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

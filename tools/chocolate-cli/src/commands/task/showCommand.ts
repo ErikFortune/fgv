@@ -28,7 +28,8 @@ import {
   ISelectableItem,
   OutputFormat,
   loadTasksLibrary,
-  interactiveSelect
+  interactiveSelect,
+  formatCategorizedNotes
 } from '../shared';
 
 /**
@@ -171,7 +172,7 @@ export function createShowSubcommand(): Command {
             selectableItems.push({
               id,
               name: t.name,
-              description: t.notes,
+              description: formatCategorizedNotes(t.notes),
               task: t
             });
           }

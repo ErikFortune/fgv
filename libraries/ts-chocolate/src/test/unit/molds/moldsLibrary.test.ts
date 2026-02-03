@@ -21,7 +21,14 @@
 import '@fgv/ts-utils-jest';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
-import { BaseMoldId, Measurement, Millimeters, MoldId, SourceId } from '../../../packlets/common';
+import {
+  BaseMoldId,
+  ICategorizedNote,
+  Measurement,
+  Millimeters,
+  MoldId,
+  SourceId
+} from '../../../packlets/common';
 
 import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/entities';
 
@@ -51,7 +58,7 @@ describe('MoldsLibrary', () => {
     },
     format: 'series-2000',
     tags: ['test', 'sample'],
-    notes: 'Test notes'
+    notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
   };
 
   // Create an IMold for mutation tests

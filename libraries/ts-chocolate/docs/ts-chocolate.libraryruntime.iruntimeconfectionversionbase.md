@@ -196,7 +196,7 @@ _(Optional)_ Resolved filling slots for this version. Undefined if the version h
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

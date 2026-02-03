@@ -2319,7 +2319,7 @@ interface IComputedScaledFillingRecipe {
     readonly baseWeight: Measurement;
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IScaledFillingIngredient>;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly ratings?: ReadonlyArray<IFillingRating>;
     readonly scaledFrom: IScalingSource;
     readonly yield?: string;
@@ -2444,7 +2444,7 @@ interface IConfectionVersionBase {
     readonly createdDate: string;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly fillings?: ReadonlyArray<IFillingSlot>;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly versionSpec: ConfectionVersionSpec;
     readonly yield: IConfectionYield;
@@ -2662,7 +2662,7 @@ interface IFillingChanges {
 // @public
 interface IFillingDerivation {
     readonly derivedDate: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly sourceVersionId: FillingVersionId;
 }
 
@@ -2680,7 +2680,7 @@ interface IFillingIngredient {
     readonly amount: Measurement;
     readonly ingredient: IIdsWithPreferred<IngredientId>;
     readonly modifiers?: IIngredientModifiers;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly unit?: MeasurementUnit;
 }
 
@@ -2695,7 +2695,7 @@ interface IFillingProductionJournalEntry extends IJournalEntryBase<AnyFillingRec
 // @public
 interface IFillingRating {
     readonly category: RatingCategory;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly score: RatingScore;
 }
 
@@ -2755,7 +2755,7 @@ interface IFillingRecipeVersion {
     readonly baseWeight: Measurement;
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IFillingIngredient>;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly ratings?: ReadonlyArray<IFillingRating>;
     readonly versionSpec: FillingVersionSpec;
@@ -2782,7 +2782,7 @@ interface IFillingSlot {
 interface IFillingUsage {
     readonly date: string;
     readonly modifiedVersionSpec?: FillingVersionSpec;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly scaledWeight: Measurement;
     readonly scaleFactor?: number;
     readonly versionSpec: FillingVersionSpec;
@@ -2935,7 +2935,7 @@ type IIngredientFileTreeSource = SubLibraryFileTreeSource;
 // @public
 interface IIngredientFillingOption {
     readonly id: IngredientId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly type: 'ingredient';
 }
 
@@ -2995,7 +2995,7 @@ type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, Ingredien
 // @public
 interface IIngredientSnapshot {
     readonly ingredientId: IngredientId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly originalAmount: Measurement;
     readonly scaledAmount: Measurement;
 }
@@ -3190,7 +3190,7 @@ interface IMold {
     readonly description?: string;
     readonly format: MoldFormat;
     readonly manufacturer: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly productNumber: string;
     // (undocumented)
     readonly related?: ReadonlyArray<MoldId>;
@@ -3741,7 +3741,7 @@ interface IProcedure {
     readonly category?: ProcedureType;
     readonly description?: string;
     readonly name: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly steps: ReadonlyArray<IProcedureStep>;
     readonly tags?: ReadonlyArray<string>;
 }
@@ -3768,7 +3768,7 @@ type IProceduresLibraryParams = ISubLibraryParams<ProceduresLibrary, ProcedureCo
 interface IProcedureStep {
     readonly activeTime?: Minutes;
     readonly holdTime?: Minutes;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly order: number;
     readonly task: ITaskInvocation;
     readonly temperature?: Celsius;
@@ -3812,7 +3812,7 @@ interface IProducedFillingIngredient {
     readonly amount: Measurement;
     readonly ingredientId: IngredientId;
     readonly modifiers?: IIngredientModifiers;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly unit?: MeasurementUnit;
 }
 
@@ -3869,14 +3869,14 @@ interface IReadOnlyValidatingLibrary<TK extends string, TV, TSpec> extends Colle
 // @public
 interface IRecipeFillingOption {
     readonly id: FillingId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly type: 'recipe';
 }
 
 // @public
 export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
     readonly id: TId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 // @public
@@ -3904,7 +3904,7 @@ interface IResolvedChocolateSpec {
 interface IResolvedCoatingOption {
     readonly id: IngredientId;
     readonly ingredient: IRuntimeIngredient;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 // @public
@@ -3918,14 +3918,14 @@ interface IResolvedCoatings {
 interface IResolvedConfectionMoldRef {
     readonly id: MoldId;
     readonly mold: IRuntimeMold;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly raw: IConfectionMoldRef;
 }
 
 // @public
 interface IResolvedConfectionProcedure {
     readonly id: ProcedureId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly procedure: IRuntimeProcedure;
     readonly raw: IProcedureRef;
 }
@@ -3935,7 +3935,7 @@ interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IR
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Measurement;
     readonly ingredient: TIngredient;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly raw: IFillingIngredient;
 }
 
@@ -3945,7 +3945,7 @@ type IResolvedFillingOption = IResolvedRecipeFillingOption | IResolvedIngredient
 // @public
 interface IResolvedFillingRecipeProcedure {
     readonly id: ProcedureId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly procedure: IProcedure;
     readonly raw: IProcedureRef;
 }
@@ -3982,7 +3982,7 @@ interface IResolvedIngredient {
 interface IResolvedIngredientFillingOption {
     readonly id: IngredientId;
     readonly ingredient: IRuntimeIngredient;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly raw: IIngredientFillingOption;
     readonly type: 'ingredient';
 }
@@ -4004,7 +4004,7 @@ interface IResolvedProcedures {
 interface IResolvedRecipeFillingOption {
     readonly filling: IRuntimeFillingRecipe;
     readonly id: FillingId;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly raw: IRecipeFillingOption;
     readonly type: 'recipe';
 }
@@ -4014,7 +4014,7 @@ interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRu
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Measurement;
     readonly ingredient: TIngredient;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly originalAmount: Measurement;
     readonly raw: IScaledFillingIngredient;
     readonly scaleFactor: number;
@@ -4142,7 +4142,7 @@ interface IRuntimeConfectionVersionBase {
     isBarTruffleVersion(): this is IRuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is IRuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is IRuntimeRolledTruffleVersion;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
     readonly raw: AnyConfectionVersion;
     readonly version: AnyConfectionVersion;
@@ -4212,7 +4212,7 @@ interface IRuntimeFillingRecipeVersion {
     readonly fillingId: FillingId;
     readonly fillingRecipe: IRuntimeFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
     readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IFillingRating>;
@@ -4264,7 +4264,7 @@ interface IRuntimeMold {
     readonly format: MoldFormat;
     readonly id: MoldId;
     readonly manufacturer: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly productNumber: string;
     readonly raw: IMold;
     readonly related?: ReadonlyArray<MoldId>;
@@ -4305,7 +4305,7 @@ interface IRuntimeProcedure {
     readonly id: ProcedureId;
     readonly isCategorySpecific: boolean;
     readonly name: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly raw: IProcedure;
     render(context: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
     readonly stepCount: number;
@@ -4368,7 +4368,7 @@ interface IRuntimeScaledFillingRecipeVersion {
     calculateGanache(): Result<IGanacheCalculation>;
     readonly createdDate: string;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly ratings: ReadonlyArray<IFillingRating>;
     readonly raw: IComputedScaledFillingRecipe;
     readonly scaledFrom: IRuntimeScalingSource;
@@ -4405,7 +4405,7 @@ interface IRuntimeTask {
     readonly defaultWaitTime?: Minutes;
     readonly id: TaskId;
     readonly name: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly raw: ITaskData;
     render(params: Record<string, unknown>): Result<string>;
     readonly requiredVariables: ReadonlyArray<string>;
@@ -4504,7 +4504,7 @@ interface IScaledFillingIngredient extends IFillingIngredient {
 
 // @public
 interface IScaledFillingRecipeVersion {
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly scalingRef: IScalingRef;
     readonly snapshotIngredients?: ReadonlyArray<IIngredientSnapshot>;
 }
@@ -4843,7 +4843,7 @@ interface ITaskData {
     readonly defaultTemperature?: Celsius;
     readonly defaultWaitTime?: Minutes;
     readonly name: string;
-    readonly notes?: string;
+    readonly notes?: ReadonlyArray<ICategorizedNote>;
     readonly tags?: ReadonlyArray<string>;
     readonly template: string;
 }
@@ -6339,7 +6339,7 @@ abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersion
     isBarTruffleVersion(): this is RuntimeBarTruffleVersion;
     isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion;
     isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion;
-    get notes(): string | undefined;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
     get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     abstract get raw(): AnyConfectionVersion;
     get version(): AnyConfectionVersion;
@@ -6421,7 +6421,7 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     get fillingId(): FillingId;
     get fillingRecipe(): IRuntimeFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
-    get notes(): string | undefined;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
@@ -6500,7 +6500,7 @@ class RuntimeMold implements IRuntimeMold {
     get format(): MoldFormat;
     get id(): MoldId;
     get manufacturer(): string;
-    get notes(): string | undefined;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
     get productNumber(): string;
     get raw(): IMold;
     // (undocumented)
@@ -6561,7 +6561,7 @@ class RuntimeProcedure implements IRuntimeProcedure {
     get id(): ProcedureId;
     get isCategorySpecific(): boolean;
     get name(): string;
-    get notes(): string | undefined;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
     get raw(): IProcedure;
     render(renderContext: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
     get stepCount(): number;
@@ -6748,7 +6748,7 @@ class RuntimeScaledFillingRecipeVersion implements IRuntimeScaledFillingRecipeVe
     static create(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe): Result<RuntimeScaledFillingRecipeVersion>;
     get createdDate(): string;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
-    get notes(): string | undefined;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
     get raw(): IComputedScaledFillingRecipe;
     get scaledFrom(): IRuntimeScalingSource;
@@ -6785,7 +6785,7 @@ class RuntimeTask implements IRuntimeTask {
     get defaultWaitTime(): Minutes | undefined;
     get id(): TaskId;
     get name(): string;
-    get notes(): string | undefined;
+    get notes(): ReadonlyArray<ICategorizedNote> | undefined;
     get raw(): ITaskData;
     render(params: Record<string, unknown>): Result<string>;
     get requiredVariables(): ReadonlyArray<string>;

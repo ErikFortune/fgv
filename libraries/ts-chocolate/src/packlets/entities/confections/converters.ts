@@ -124,7 +124,7 @@ const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOpti
 export const recipeFillingOption: Converter<IRecipeFillingOption> = Converters.object<IRecipeFillingOption>({
   type: Converters.literal('recipe'),
   id: CommonConverters.fillingId,
-  notes: Converters.string.optional()
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });
 
 /**
@@ -135,7 +135,7 @@ export const ingredientFillingOption: Converter<IIngredientFillingOption> =
   Converters.object<IIngredientFillingOption>({
     type: Converters.literal('ingredient'),
     id: CommonConverters.ingredientId,
-    notes: Converters.string.optional()
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
 /**
@@ -260,7 +260,7 @@ const commonVersionFields: Conversion.FieldConverters<IConfectionVersionBase> = 
   fillings: Converters.arrayOf(fillingSlot).optional(),
   decorations: Converters.arrayOf(confectionDecoration).optional(),
   procedures: RecipeConverters.procedures.optional(),
-  notes: Converters.string.optional(),
+  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
   additionalTags: Converters.arrayOf(Converters.string).optional(),
   additionalUrls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 };

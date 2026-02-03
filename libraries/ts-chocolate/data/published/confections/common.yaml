@@ -16,7 +16,9 @@ items:
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
-        notes: Basic dome bonbon with dark ganache filling
+        notes:
+          - category: user
+            note: Basic dome bonbon with dark ganache filling
         yield:
           count: 24
           unit: pieces
@@ -37,6 +39,14 @@ items:
             - cacao-barry.guayaquil-64
             - common.chocolate-dark-64
           preferredId: cacao-barry.guayaquil-64
+        procedures:
+          options:
+            - id: common.shell-bonbon-method
+          preferredId: common.shell-bonbon-method
+        decorations:
+          - description: Gold leaf accent on dome peak
+            preferred: true
+          - description: Cocoa butter transfer sheet design
 
   # Bar Truffle example
   dark-bar-truffle:
@@ -49,7 +59,9 @@ items:
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
-        notes: Standard 25mm square bar truffles
+        notes:
+          - category: user
+            note: Standard 25mm square bar truffles
         yield:
           count: 48
           unit: pieces
@@ -72,6 +84,14 @@ items:
           ids:
             - cacao-barry.guayaquil-64
           preferredId: cacao-barry.guayaquil-64
+        procedures:
+          options:
+            - id: common.enrobe-truffle-method
+          preferredId: common.enrobe-truffle-method
+        decorations:
+          - description: Dipping fork wave pattern
+            preferred: true
+          - description: Cocoa powder light dusting
 
   # Rolled Truffle example
   dark-cocoa-truffle:
@@ -84,7 +104,9 @@ items:
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
-        notes: Traditional rolled truffle with cocoa coating
+        notes:
+          - category: user
+            note: Traditional rolled truffle with cocoa coating
         yield:
           count: 40
           unit: pieces
@@ -100,3 +122,7 @@ items:
           ids:
             - common.cocoa-powder
           preferredId: common.cocoa-powder
+        procedures:
+          options:
+            - id: common.roll-and-coat-method
+          preferredId: common.roll-and-coat-method

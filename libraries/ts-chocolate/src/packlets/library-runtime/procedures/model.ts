@@ -27,7 +27,7 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { BaseProcedureId, Minutes, ProcedureId, ProcedureType, TaskId } from '../../common';
+import { BaseProcedureId, ICategorizedNote, Minutes, ProcedureId, ProcedureType, TaskId } from '../../common';
 import { IComputedScaledFillingRecipe } from '../../entities';
 import { IMold } from '../../entities';
 import { IProcedure, IProcedureStep } from '../../entities';
@@ -196,8 +196,8 @@ export interface IRuntimeProcedure {
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;
 
-  /** Optional notes */
-  readonly notes?: string;
+  /** Optional categorized notes */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   // ---- Computed Properties ----
 

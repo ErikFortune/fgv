@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.RuntimeScaledFillingRecipeVersion.notes property
 
-Optional notes from the source version
+Optional categorized notes from the source version
 
 **Signature:**
 
 ```typescript
-get notes(): string | undefined;
+get notes(): ReadonlyArray<ICategorizedNote> | undefined;
 ```

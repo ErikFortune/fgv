@@ -23,6 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseFillingId,
+  ICategorizedNote,
   Measurement,
   IngredientId,
   Percentage,
@@ -108,7 +109,7 @@ describe('EditingSession', () => {
       {
         versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
-        notes: 'Original recipe',
+        notes: [{ category: 'user', note: 'Original recipe' }] as ICategorizedNote[],
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }

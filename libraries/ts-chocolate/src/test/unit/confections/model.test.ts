@@ -38,6 +38,7 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
+  ICategorizedNote,
   IngredientId,
   MoldId,
   FillingId,
@@ -53,7 +54,7 @@ describe('Confections model', () => {
   const moldedBonBonVersion: IMoldedBonBonVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
-    notes: 'Basic dome bonbon with dark ganache filling',
+    notes: [{ category: 'user', note: 'Basic dome bonbon with dark ganache filling' }] as ICategorizedNote[],
     yield: {
       count: 24,
       unit: 'pieces',
@@ -91,7 +92,7 @@ describe('Confections model', () => {
   const barTruffleVersion: IBarTruffleVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
-    notes: 'Standard 25mm square bar truffles',
+    notes: [{ category: 'user', note: 'Standard 25mm square bar truffles' }] as ICategorizedNote[],
     yield: {
       count: 48,
       unit: 'pieces',
@@ -134,7 +135,9 @@ describe('Confections model', () => {
   const rolledTruffleVersion: IRolledTruffleVersion = {
     versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     createdDate: '2026-01-01',
-    notes: 'Traditional rolled truffle with cocoa coating',
+    notes: [
+      { category: 'user', note: 'Traditional rolled truffle with cocoa coating' }
+    ] as ICategorizedNote[],
     yield: {
       count: 40,
       unit: 'pieces',

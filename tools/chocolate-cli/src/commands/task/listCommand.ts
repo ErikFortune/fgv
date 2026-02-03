@@ -30,7 +30,8 @@ import {
   getSourceIdFromCompositeId,
   addCommonFilterOptions,
   IColumnConfig,
-  IGenericListItem
+  IGenericListItem,
+  formatCategorizedNotes
 } from '../shared';
 
 /**
@@ -152,7 +153,7 @@ export function createListSubcommand(): Command {
         id: taskId,
         name: task.name,
         sourceId,
-        description: task.notes,
+        description: formatCategorizedNotes(task.notes),
         tags: task.tags,
         requiredVariables: getRequiredVariableCount(task.template),
         hasDefaults: task.defaults !== undefined && Object.keys(task.defaults).length > 0

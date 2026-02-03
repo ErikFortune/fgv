@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes
+_(Optional)_ Optional categorized notes
 
 
 </td></tr>

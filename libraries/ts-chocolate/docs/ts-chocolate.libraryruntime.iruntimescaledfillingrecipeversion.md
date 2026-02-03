@@ -93,7 +93,7 @@ Date this scaled version was created (ISO 8601 format).
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

@@ -26,6 +26,7 @@
 import {
   ConfectionId,
   ConfectionVersionSpec,
+  ICategorizedNote,
   ICategorizedUrl,
   IOptionsWithPreferred,
   ProcedureId
@@ -162,9 +163,9 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   }
 
   /**
-   * Optional notes about this version.
+   * Optional categorized notes about this version.
    */
-  public get notes(): string | undefined {
+  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
     return this._version.notes;
   }
 

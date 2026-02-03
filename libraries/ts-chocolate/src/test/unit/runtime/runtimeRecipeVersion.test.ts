@@ -23,6 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseFillingId,
+  ICategorizedNote,
   Measurement,
   IngredientId,
   Percentage,
@@ -120,7 +121,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       {
         versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
-        notes: 'Original recipe',
+        notes: [{ category: 'user', note: 'Original recipe' }] as ICategorizedNote[],
         yield: '50 bonbons',
         ingredients: [
           {
@@ -129,17 +130,23 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
               preferredId: 'test.dark-chocolate' as IngredientId
             },
             amount: 200 as Measurement,
-            notes: 'Use couverture'
+            notes: [{ category: 'user', note: 'Use couverture' }] as ICategorizedNote[]
           },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
         baseWeight: 300 as Measurement,
-        ratings: [{ category: 'texture', score: 4 as RatingScore, notes: 'Good texture' }]
+        ratings: [
+          {
+            category: 'texture',
+            score: 4 as RatingScore,
+            notes: [{ category: 'user', note: 'Good texture' }] as ICategorizedNote[]
+          }
+        ]
       },
       {
         versionSpec: '2026-02-01-01' as FillingVersionSpec,
         createdDate: '2026-02-01',
-        notes: 'Revised with butter',
+        notes: [{ category: 'user', note: 'Revised with butter' }] as ICategorizedNote[],
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Measurement },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement },
@@ -415,7 +422,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       test('resolved ingredient includes notes', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
-        expect(ingredients[0].notes).toBe('Use couverture');
+        expect(ingredients[0].notes).toEqual([{ category: 'user', note: 'Use couverture' }]);
       });
 
       test('resolved ingredient includes alternates', () => {
@@ -470,7 +477,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
 
       test('provides notes', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(recipe.goldenVersion.notes).toBe('Original recipe');
+        expect(recipe.goldenVersion.notes).toEqual([{ category: 'user', note: 'Original recipe' }]);
       });
 
       test('provides ratings', () => {

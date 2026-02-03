@@ -110,12 +110,12 @@ Scaled ingredients with both original and scaled amounts
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes from the source version
+_(Optional)_ Optional categorized notes from the source version
 
 
 </td></tr>

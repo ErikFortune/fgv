@@ -35,10 +35,14 @@ items:
                 - common.butter-82
               preferredId: common.butter-82
             amount: 20
-            notes: Added at 35°C for shine
+            notes:
+              - category: user
+                note: Added at 35°C for shine
         baseWeight: 620
         yield: ~50 bonbons
-        notes: Standard 2:1 ratio with butter finish
+        notes:
+          - category: user
+            note: Standard 2:1 ratio with butter finish
         procedures:
           options:
             - id: common.ganache-cold-method
@@ -73,10 +77,14 @@ items:
                 - common.butter-82
               preferredId: common.butter-82
             amount: 20
-            notes: Added at 35°C for shine
+            notes:
+              - category: user
+                note: Added at 35°C for shine
         baseWeight: 570
         yield: ~45 bonbons
-        notes: 1.75:1 ratio for proper set with milk chocolate
+        notes:
+          - category: user
+            note: 1.75:1 ratio for proper set with milk chocolate
         procedures:
           options:
             - id: common.ganache-cold-method
@@ -113,10 +121,14 @@ items:
                 - common.butter-82
               preferredId: common.butter-82
             amount: 15
-            notes: Added at 32°C for shine
+            notes:
+              - category: user
+                note: Added at 32°C for shine
         baseWeight: 715
         yield: ~55 bonbons
-        notes: 2.5:1 ratio essential for white chocolate emulsion
+        notes:
+          - category: user
+            note: 2.5:1 ratio essential for white chocolate emulsion
         procedures:
           options:
             - id: common.ganache-cold-method
@@ -144,10 +156,18 @@ items:
               ids:
                 - common.coconut-cream
             amount: 200
-            notes: Use full-fat, refrigerate and use solid portion
+            notes:
+              - category: user
+                note: Use full-fat, refrigerate and use solid portion
         baseWeight: 600
         yield: ~48 bonbons
-        notes: Coconut cream provides fat and moisture similar to dairy cream
+        notes:
+          - category: user
+            note: Coconut cream provides fat and moisture similar to dairy cream
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+          preferredId: common.ganache-cold-method
     goldenVersionSpec: 2026-01-01-01
   vegan-ganache-coconut-oil:
     baseId: vegan-ganache-coconut-oil
@@ -173,16 +193,26 @@ items:
                 - common.coconut-oil-deodorized
               preferredId: common.coconut-oil-deodorized
             amount: 150
-            notes: Melted, at 35°C
+            notes:
+              - category: user
+                note: Melted, at 35°C
           - ingredient:
               ids:
                 - common.glucose-de43
               preferredId: common.glucose-de43
             amount: 30
-            notes: For texture and shelf life
+            notes:
+              - category: user
+                note: For texture and shelf life
         baseWeight: 580
         yield: ~46 bonbons
-        notes: Oil-based method gives firmer set and neutral flavor
+        notes:
+          - category: user
+            note: Oil-based method gives firmer set and neutral flavor
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+          preferredId: common.ganache-cold-method
     goldenVersionSpec: 2026-01-01-01
   caramelized-ganache:
     baseId: caramelized-ganache
@@ -214,10 +244,14 @@ items:
                 - common.butter-82
               preferredId: common.butter-82
             amount: 20
-            notes: Salted butter works beautifully here
+            notes:
+              - category: user
+                note: Salted butter works beautifully here
         baseWeight: 650
         yield: ~52 bonbons
-        notes: Slightly higher chocolate ratio for caramelized varieties
+        notes:
+          - category: user
+            note: Slightly higher chocolate ratio for caramelized varieties
         procedures:
           options:
             - id: common.ganache-cold-method
@@ -245,15 +279,21 @@ items:
               ids:
                 - common.hazelnut-paste
             amount: 200
-            notes: 100% roasted hazelnuts, finely ground
+            notes:
+              - category: user
+                note: 100% roasted hazelnuts, finely ground
           - ingredient:
               ids:
                 - common.butter-82
             amount: 50
-            notes: For smoothness
+            notes:
+              - category: user
+                note: For smoothness
         baseWeight: 550
         yield: ~44 bonbons
-        notes: Traditional 60:40 chocolate to hazelnut ratio
+        notes:
+          - category: user
+            note: Traditional 60:40 chocolate to hazelnut ratio
         procedures:
           options:
             - id: common.gianduja

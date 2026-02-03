@@ -4,10 +4,10 @@
 
 ## Entities.IMold.notes property
 
-Optional notes about the mold
+Optional categorized notes about the mold
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

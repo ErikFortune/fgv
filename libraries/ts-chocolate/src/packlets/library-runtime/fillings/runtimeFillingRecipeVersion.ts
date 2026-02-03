@@ -26,6 +26,7 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
+  ICategorizedNote,
   Measurement,
   Helpers,
   IngredientId,
@@ -212,9 +213,9 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   }
 
   /**
-   * Optional notes about this version
+   * Optional categorized notes about this version
    */
-  public get notes(): string | undefined {
+  public get notes(): ReadonlyArray<ICategorizedNote> | undefined {
     return this._version.notes;
   }
 

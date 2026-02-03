@@ -68,7 +68,7 @@ The procedure ID (for consistency with IResolvedConfectionProcedure).
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>

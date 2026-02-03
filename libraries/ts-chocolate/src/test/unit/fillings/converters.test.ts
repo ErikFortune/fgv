@@ -53,10 +53,10 @@ describe('Recipe Converters', () => {
       const input = {
         ingredient: { ids: ['source.ingredient'] },
         amount: 50,
-        notes: 'Melted first'
+        notes: [{ category: 'user', note: 'Melted first' }]
       };
       expect(fillingIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toBe('Melted first');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Melted first' }]);
       });
     });
 
@@ -107,11 +107,11 @@ describe('Recipe Converters', () => {
         ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
         baseWeight: 100,
         yield: '20 bonbons',
-        notes: 'First version'
+        notes: [{ category: 'user', note: 'First version' }]
       };
       expect(fillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.yield).toBe('20 bonbons');
-        expect(result.notes).toBe('First version');
+        expect(result.notes).toEqual([{ category: 'user', note: 'First version' }]);
       });
     });
   });
@@ -167,7 +167,7 @@ describe('Recipe Converters', () => {
         ...validVersion,
         procedures: {
           options: [
-            { id: 'common.ganache-cold-method', notes: 'Preferred' },
+            { id: 'common.ganache-cold-method', notes: [{ category: 'user', note: 'Preferred' }] },
             { id: 'common.ganache-hot-method' }
           ],
           preferredId: 'common.ganache-cold-method'
@@ -185,7 +185,9 @@ describe('Recipe Converters', () => {
         expect(goldenVersion?.procedures).toBeDefined();
         expect(goldenVersion?.procedures!.options.length).toBe(2);
         expect(goldenVersion?.procedures!.options[0].id).toBe('common.ganache-cold-method');
-        expect(goldenVersion?.procedures!.options[0].notes).toBe('Preferred');
+        expect(goldenVersion?.procedures!.options[0].notes).toEqual([
+          { category: 'user', note: 'Preferred' }
+        ]);
         expect(goldenVersion?.procedures!.preferredId).toBe('common.ganache-cold-method');
       });
     });
@@ -267,11 +269,11 @@ describe('Recipe Converters', () => {
     test('converts procedure reference with notes', () => {
       const input = {
         id: 'common.ganache-hot-method',
-        notes: 'Use for this specific chocolate'
+        notes: [{ category: 'user', note: 'Use for this specific chocolate' }]
       };
       expect(procedureRef.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.id).toBe('common.ganache-hot-method');
-        expect(result.notes).toBe('Use for this specific chocolate');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Use for this specific chocolate' }]);
       });
     });
 
@@ -284,7 +286,7 @@ describe('Recipe Converters', () => {
 
     test('fails for missing procedure ID', () => {
       const input = {
-        notes: 'Some notes'
+        notes: [{ category: 'user', note: 'Some notes' }]
       };
       expect(procedureRef.convert(input)).toFail();
     });
@@ -321,14 +323,17 @@ describe('Recipe Converters', () => {
     test('converts procedures with notes on individual refs', () => {
       const input = {
         options: [
-          { id: 'common.ganache-cold-method', notes: 'Preferred for dark chocolate' },
-          { id: 'common.ganache-hot-method', notes: 'Alternative method' }
+          {
+            id: 'common.ganache-cold-method',
+            notes: [{ category: 'user', note: 'Preferred for dark chocolate' }]
+          },
+          { id: 'common.ganache-hot-method', notes: [{ category: 'user', note: 'Alternative method' }] }
         ],
         preferredId: 'common.ganache-cold-method'
       };
       expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.options[0].notes).toBe('Preferred for dark chocolate');
-        expect(result.options[1].notes).toBe('Alternative method');
+        expect(result.options[0].notes).toEqual([{ category: 'user', note: 'Preferred for dark chocolate' }]);
+        expect(result.options[1].notes).toEqual([{ category: 'user', note: 'Alternative method' }]);
       });
     });
 
@@ -399,10 +404,10 @@ describe('Recipe Converters', () => {
         amount: 200,
         originalAmount: 100,
         scaleFactor: 2,
-        notes: 'Tempered'
+        notes: [{ category: 'user', note: 'Tempered' }]
       };
       expect(scaledFillingIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toBe('Tempered');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Tempered' }]);
       });
     });
   });
@@ -474,10 +479,10 @@ describe('Recipe Converters', () => {
     test('converts with optional notes', () => {
       const input = {
         scalingRef: validScalingRef,
-        notes: 'Scaled from original'
+        notes: [{ category: 'user', note: 'Scaled from original' }]
       };
       expect(scaledFillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.notes).toBe('Scaled from original');
+        expect(result.notes).toEqual([{ category: 'user', note: 'Scaled from original' }]);
       });
     });
 

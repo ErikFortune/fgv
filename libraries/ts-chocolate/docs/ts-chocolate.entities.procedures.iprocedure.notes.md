@@ -4,10 +4,10 @@
 
 ## Entities.Procedures.IProcedure.notes property
 
-Optional notes about the procedure
+Optional categorized notes about the procedure
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

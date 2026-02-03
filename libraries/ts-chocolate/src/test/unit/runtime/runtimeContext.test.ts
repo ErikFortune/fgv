@@ -28,6 +28,7 @@ import {
   BaseFillingId,
   Celsius,
   ConfectionId,
+  ICategorizedNote,
   Measurement,
   IngredientId,
   Minutes,
@@ -142,7 +143,7 @@ describe('RuntimeContext', () => {
       {
         versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
-        notes: 'Original version',
+        notes: [{ category: 'user', note: 'Original version' }] as ICategorizedNote[],
         ingredients: [
           {
             ingredient: {
@@ -158,7 +159,7 @@ describe('RuntimeContext', () => {
       {
         versionSpec: '2026-02-01-01' as FillingVersionSpec,
         createdDate: '2026-02-01',
-        notes: 'Revised version',
+        notes: [{ category: 'user', note: 'Revised version' }] as ICategorizedNote[],
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Measurement },
           { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 120 as Measurement }
@@ -241,7 +242,10 @@ describe('RuntimeContext', () => {
     baseWeight: 300 as Measurement,
     procedures: {
       options: [
-        { id: 'test.ganache-cold-method' as ProcedureId, notes: 'Preferred method for this recipe' },
+        {
+          id: 'test.ganache-cold-method' as ProcedureId,
+          notes: [{ category: 'user', note: 'Preferred method for this recipe' }] as ICategorizedNote[]
+        },
         { id: 'test.ganache-hot-method' as ProcedureId }
       ],
       preferredId: 'test.ganache-cold-method' as ProcedureId
@@ -734,7 +738,9 @@ describe('RuntimeContext', () => {
           // Check first procedure (cold method)
           const coldResolved = version.procedures!.procedures[0];
           expect(coldResolved.procedure.name).toBe('Ganache (Cold Method)');
-          expect(coldResolved.notes).toBe('Preferred method for this recipe');
+          expect(coldResolved.notes).toEqual([
+            { category: 'user', note: 'Preferred method for this recipe' }
+          ]);
           expect(coldResolved.raw.id).toBe('test.ganache-cold-method');
 
           // Check second procedure (hot method)
@@ -1165,7 +1171,10 @@ describe('RuntimeContext', () => {
         const ctx = RuntimeContext.create().orThrow();
         const molds = {
           options: [
-            { id: 'common.dome-25mm' as MoldId, notes: 'Primary mold' },
+            {
+              id: 'common.dome-25mm' as MoldId,
+              notes: [{ category: 'user', note: 'Primary mold' }] as ICategorizedNote[]
+            },
             { id: 'common.hemisphere-20mm' as MoldId }
           ],
           preferredId: 'common.dome-25mm' as MoldId
@@ -1287,7 +1296,12 @@ describe('RuntimeContext', () => {
       test('resolves procedure references', () => {
         const ctx = RuntimeContext.create().orThrow();
         const procedures = {
-          options: [{ id: 'common.ganache-cold-method' as ProcedureId, notes: 'Preferred method' }],
+          options: [
+            {
+              id: 'common.ganache-cold-method' as ProcedureId,
+              notes: [{ category: 'user', note: 'Preferred method' }] as ICategorizedNote[]
+            }
+          ],
           preferredId: 'common.ganache-cold-method' as ProcedureId
         };
 
@@ -1298,7 +1312,7 @@ describe('RuntimeContext', () => {
         expect(resolved!.preferredId).toBe('common.ganache-cold-method');
         expect(resolved!.options[0].procedure).toBeDefined();
         expect(resolved!.options[0].procedure.name).toBe('Ganache (Cold Method)');
-        expect(resolved!.options[0].notes).toBe('Preferred method');
+        expect(resolved!.options[0].notes).toEqual([{ category: 'user', note: 'Preferred method' }]);
       });
     });
   });

@@ -56,6 +56,7 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   FluidityStars,
+  ICategorizedNote,
   IngredientCategory,
   IngredientId,
   Measurement,
@@ -445,7 +446,7 @@ export interface IRuntimeFillingRecipeVersion {
   /**
    * Optional notes about this version.
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Optional ratings for this version.
@@ -622,7 +623,7 @@ export interface IRuntimeScaledFillingRecipeVersion {
   /**
    * Optional notes from the source version.
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Optional ratings from the source version.
@@ -708,7 +709,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * Optional notes specific to using this procedure with the recipe.
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * The original raw procedure reference data.
@@ -874,7 +875,7 @@ export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredie
   /**
    * Optional notes for this specific ingredient usage
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Resolved alternate ingredients that can substitute for the primary
@@ -915,7 +916,7 @@ export interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredien
   /**
    * Optional notes for this ingredient usage
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Resolved alternate ingredients
@@ -1467,7 +1468,7 @@ export interface IResolvedRecipeFillingOption {
   /** The resolved filling recipe object */
   readonly filling: IRuntimeFillingRecipe;
   /** Optional notes specific to this filling option */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
   /** The original raw recipe filling option data */
   readonly raw: IRecipeFillingOption;
 }
@@ -1484,7 +1485,7 @@ export interface IResolvedIngredientFillingOption {
   /** The resolved ingredient object */
   readonly ingredient: IRuntimeIngredient;
   /** Optional notes specific to this filling option */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
   /** The original raw ingredient filling option data */
   readonly raw: IIngredientFillingOption;
 }
@@ -1547,7 +1548,7 @@ export interface IResolvedConfectionMoldRef {
   /** The resolved mold object */
   readonly mold: IRuntimeMold;
   /** Optional notes specific to using this mold */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
   /** The original raw mold reference data */
   readonly raw: IConfectionMoldRef;
 }
@@ -1567,7 +1568,7 @@ export interface IResolvedConfectionProcedure {
   /** The resolved procedure object */
   readonly procedure: IRuntimeProcedure;
   /** Optional notes specific to using this procedure */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
   /** The original raw procedure reference data */
   readonly raw: IProcedureRef;
 }
@@ -1600,7 +1601,7 @@ export interface IResolvedCoatingOption {
   /** The resolved ingredient object */
   readonly ingredient: IRuntimeIngredient;
   /** Optional notes specific to this coating option */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }
 
 // ============================================================================
@@ -1663,7 +1664,7 @@ export interface IRuntimeConfectionVersionBase {
   /**
    * Optional notes about this version.
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   // ---- Resolved References ----
 

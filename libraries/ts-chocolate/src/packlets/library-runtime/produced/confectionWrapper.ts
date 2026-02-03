@@ -33,8 +33,7 @@ import {
   MoldId,
   ProcedureId,
   SlotId,
-  Helpers,
-  DEFAULT_NOTE_CATEGORY
+  Helpers
 } from '../../common';
 import {
   AnyProducedConfection,
@@ -643,7 +642,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
             ?.chocolate.chocolate.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
-          notes: source.raw.notes ? [{ category: DEFAULT_NOTE_CATEGORY, note: source.raw.notes }] : undefined
+          notes: source.raw.notes
         };
         return succeed(produced);
       });
@@ -927,7 +926,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
-          notes: source.raw.notes ? [{ category: DEFAULT_NOTE_CATEGORY, note: source.raw.notes }] : undefined
+          notes: source.raw.notes
         };
         return succeed(produced);
       });
@@ -1122,7 +1121,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
           coatingId: source.coatings?.preferred?.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
-          notes: source.raw.notes ? [{ category: DEFAULT_NOTE_CATEGORY, note: source.raw.notes }] : undefined
+          notes: source.raw.notes
         };
         return succeed(produced);
       });

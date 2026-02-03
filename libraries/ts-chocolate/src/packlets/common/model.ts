@@ -840,7 +840,7 @@ export interface IIdsWithPreferred<TId extends string> {
 }
 
 /**
- * Generic reference type with an ID and optional notes.
+ * Generic reference type with an ID and optional categorized notes.
  * Use as base for mold refs, procedure refs, etc.
  * Satisfies IHasId for use with IOptionsWithPreferred.
  *
@@ -850,6 +850,6 @@ export interface IIdsWithPreferred<TId extends string> {
 export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
   /** The referenced entity's ID */
   readonly id: TId;
-  /** Optional notes specific to this reference */
-  readonly notes?: string;
+  /** Optional categorized notes specific to this reference */
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 }

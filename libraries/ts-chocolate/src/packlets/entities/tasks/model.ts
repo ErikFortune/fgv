@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
+import { BaseTaskId, Celsius, ICategorizedNote, Minutes, TaskId } from '../../common';
 
 // ============================================================================
 // Task Interfaces
@@ -73,9 +73,9 @@ export interface ITaskData {
   readonly defaultTemperature?: Celsius;
 
   /**
-   * Optional notes about the task
+   * Optional categorized notes about the task
    */
-  readonly notes?: string;
+  readonly notes?: ReadonlyArray<ICategorizedNote>;
 
   /**
    * Optional tags for categorization and search

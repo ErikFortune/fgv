@@ -4,10 +4,10 @@
 
 ## IRefWithNotes.notes property
 
-Optional notes specific to this reference
+Optional categorized notes specific to this reference
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

@@ -23,11 +23,13 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import {
   BaseFillingId,
+  ICategorizedNote,
   Measurement,
   IngredientId,
   FillingId,
   FillingName,
   FillingVersionSpec,
+  NoteCategory,
   SourceId
 } from '../../../packlets/common';
 
@@ -1017,9 +1019,10 @@ describe('Recipe scaling', () => {
     });
 
     test('preserves optional fields from source version', () => {
+      const testNotes: ICategorizedNote[] = [{ category: 'user' as NoteCategory, note: 'Test notes' }];
       const versionWithNotes: IFillingRecipeVersion = {
         ...testVersion,
-        notes: 'Test notes',
+        notes: testNotes,
         yield: '20 bonbons'
       };
       const recipeWithNotes: IFillingRecipe = {
@@ -1029,7 +1032,7 @@ describe('Recipe scaling', () => {
       expect(
         RuntimeInternal.scaleFillingRecipe(recipeWithNotes, testFillingId, 300 as Measurement)
       ).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.notes).toBe('Test notes');
+        expect(scaled.notes).toEqual(testNotes);
         expect(scaled.yield).toBe('20 bonbons');
       });
     });

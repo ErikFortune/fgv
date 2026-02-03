@@ -110,12 +110,12 @@ _(Optional)_ Optional modifiers that qualify how the ingredient is measured or a
 
 </td><td>
 
-string
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional notes for this specific ingredient usage
+_(Optional)_ Optional categorized notes for this specific ingredient usage
 
 
 </td></tr>

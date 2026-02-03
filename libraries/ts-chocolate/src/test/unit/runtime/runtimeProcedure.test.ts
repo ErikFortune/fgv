@@ -21,7 +21,14 @@
 import '@fgv/ts-utils-jest';
 import { fail, succeed } from '@fgv/ts-utils';
 
-import { BaseProcedureId, BaseTaskId, Minutes, ProcedureId, TaskId } from '../../../packlets/common';
+import {
+  BaseProcedureId,
+  BaseTaskId,
+  ICategorizedNote,
+  Minutes,
+  ProcedureId,
+  TaskId
+} from '../../../packlets/common';
 import { IProcedure } from '../../../packlets/entities';
 import { ITaskData } from '../../../packlets/entities';
 import { IComputedScaledFillingRecipe, FillingCategory } from '../../../packlets/entities';
@@ -144,7 +151,7 @@ describe('RuntimeProcedure', () => {
       }
     ],
     tags: ['multi', 'test'],
-    notes: 'Test notes'
+    notes: [{ category: 'user', note: 'Test notes' }] as ICategorizedNote[]
   };
 
   // Procedure with all timing types (wait and hold)
@@ -211,7 +218,7 @@ describe('RuntimeProcedure', () => {
           expect(runtimeProcedure.category).toBe('ganache');
           expect(runtimeProcedure.steps.length).toBe(2);
           expect(runtimeProcedure.tags).toEqual(['multi', 'test']);
-          expect(runtimeProcedure.notes).toBe('Test notes');
+          expect(runtimeProcedure.notes).toEqual([{ category: 'user', note: 'Test notes' }]);
           expect(runtimeProcedure.stepCount).toBe(2);
           expect(runtimeProcedure.isCategorySpecific).toBe(true);
         }

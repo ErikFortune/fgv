@@ -4,10 +4,10 @@
 
 ## Entities.Fillings.IFillingUsage.notes property
 
-Optional notes about this usage
+Optional categorized notes about this usage
 
 **Signature:**
 
 ```typescript
-readonly notes?: string;
+readonly notes?: ReadonlyArray<ICategorizedNote>;
 ```

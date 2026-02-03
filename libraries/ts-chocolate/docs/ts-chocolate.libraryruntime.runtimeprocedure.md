@@ -178,12 +178,12 @@ Human-readable name of the procedure
 
 </td><td>
 
-string \| undefined
+ReadonlyArray&lt;[ICategorizedNote](./ts-chocolate.icategorizednote.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Optional notes
+Optional categorized notes
 
 
 </td></tr>
