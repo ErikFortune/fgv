@@ -4,7 +4,7 @@
 
 ## LibraryData.Converters.encryptedCollectionMetadata variable
 
-Converter for .
+Converter for [encrypted collection metadata](./ts-chocolate.librarydata.iencryptedcollectionmetadata.md)<!-- -->.
 
 **Signature:**
 

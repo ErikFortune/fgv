@@ -4,7 +4,7 @@
 
 ## LibraryData.Converters.encryptedCollectionFile variable
 
-Converter for . Uses the factory from ts-extras with chocolate-specific metadata converter.
+Converter for [encrypted collection files](./ts-chocolate.librarydata.encryptedcollectionfile.md)<!-- -->. Uses the factory from ts-extras with chocolate-specific metadata converter.
 
 **Signature:**
 

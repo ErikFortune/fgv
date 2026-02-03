@@ -109,7 +109,7 @@ Converter for collection source metadata. All fields are optional.
 
 </td><td>
 
-Converter for . Uses the factory from ts-extras with chocolate-specific metadata converter.
+Converter for [encrypted collection files](./ts-chocolate.librarydata.encryptedcollectionfile.md)<!-- -->. Uses the factory from ts-extras with chocolate-specific metadata converter.
 
 
 </td></tr>
@@ -120,7 +120,7 @@ Converter for . Uses the factory from ts-extras with chocolate-specific metadata
 
 </td><td>
 
-Converter for .
+Converter for [encrypted collection metadata](./ts-chocolate.librarydata.iencryptedcollectionmetadata.md)<!-- -->.
 
 
 </td></tr>

@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { CryptoUtils } from '@fgv/ts-extras';
+import * as CryptoUtils from '../../../../packlets/crypto-utils';
 
 describe('KeyStore', () => {
   const provider = CryptoUtils.nodeCryptoProvider;

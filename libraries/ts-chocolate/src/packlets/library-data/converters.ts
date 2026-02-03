@@ -132,7 +132,7 @@ export function collection<TCOLLECTIONID extends string, TITEMID extends string,
 // ============================================================================
 
 /**
- * Converter for {@link CryptoUtils.IEncryptedCollectionMetadata | encrypted collection metadata}.
+ * Converter for {@link LibraryData.IEncryptedCollectionMetadata | encrypted collection metadata}.
  * @public
  */
 export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata> =
@@ -148,7 +148,7 @@ export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata
   );
 
 /**
- * Converter for {@link CryptoUtils.EncryptedCollectionFile | encrypted collection files}.
+ * Converter for {@link LibraryData.EncryptedCollectionFile | encrypted collection files}.
  * Uses the factory from ts-extras with chocolate-specific metadata converter.
  * @public
  */

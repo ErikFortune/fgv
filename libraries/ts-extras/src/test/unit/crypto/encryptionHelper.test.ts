@@ -21,8 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import { JsonObject } from '@fgv/ts-json-base';
-import { CryptoUtils } from '@fgv/ts-extras';
-import { isEncryptedCollectionFile } from '../../../packlets/library-data';
+import * as CryptoUtils from '../../../packlets/crypto-utils';
 
 describe('Encryption Functions', () => {
   const provider = CryptoUtils.nodeCryptoProvider;
@@ -291,26 +290,6 @@ describe('Encryption Functions', () => {
 
       const decrypted = await CryptoUtils.decryptFile(encrypted, key, provider);
       expect(decrypted).toSucceedWith(content);
-    });
-  });
-
-  describe('isEncryptedCollectionFile function', () => {
-    test('returns true for encrypted file objects', async () => {
-      const key = (await provider.generateKey()).orThrow();
-      const encrypted = (
-        await CryptoUtils.createEncryptedFile({
-          content: { test: 'data' },
-          secretName: 'test',
-          key,
-          cryptoProvider: provider
-        })
-      ).orThrow();
-
-      expect(isEncryptedCollectionFile(encrypted)).toBe(true);
-    });
-
-    test('returns false for regular JSON', () => {
-      expect(isEncryptedCollectionFile({ test: 'data' })).toBe(false);
     });
   });
 });

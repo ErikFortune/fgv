@@ -1171,12 +1171,12 @@ class EditorContextValidator<T, TBaseId extends string = string, TId extends str
 // @public
 type EncryptedCollectionFile = CryptoUtils.IEncryptedFile<IEncryptedCollectionMetadata>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CryptoUtils"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const encryptedCollectionFile: Converter<EncryptedCollectionFile>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CryptoUtils"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
