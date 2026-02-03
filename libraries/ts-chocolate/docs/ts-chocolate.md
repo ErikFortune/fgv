@@ -101,17 +101,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)
-
-
-</td><td>
-
-Option wrapper for measurement units (for use with IOptionsWithPreferred). Wraps a MeasurementUnit to satisfy IHasId requirement.
-
-
-</td></tr>
-<tr><td>
-
 [IWorkspace](./ts-chocolate.iworkspace.md)
 
 

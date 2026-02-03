@@ -33,7 +33,6 @@ import {
   ChocolateType,
   DegreesMacMichael,
   FluidityStars,
-  IMeasurementUnitOption,
   IngredientCategory,
   IngredientPhase,
   MeasurementUnit,
@@ -119,7 +118,10 @@ export interface IIngredient {
   /** Physical phase - display hint for UI (e.g., "pour" vs "add") */
   readonly phase?: IngredientPhase;
   /** Preferred and acceptable measurement units for this ingredient */
-  readonly measurementUnits?: CommonModel.IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
+  readonly measurementUnits?: CommonModel.IOptionsWithPreferred<
+    CommonModel.IMeasurementUnitOption,
+    MeasurementUnit
+  >;
   /** Optional categorized URLs for external resources (manufacturer, product page, etc.) */
   readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 }

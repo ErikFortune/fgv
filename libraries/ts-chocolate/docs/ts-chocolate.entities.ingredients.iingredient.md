@@ -215,7 +215,7 @@ _(Optional)_ Optional manufacturer
 
 </td><td>
 
-[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->, [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->&gt;
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[CommonModel.IMeasurementUnitOption](./ts-chocolate.model.imeasurementunitoption.md)<!-- -->, [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->&gt;
 
 
 </td><td>

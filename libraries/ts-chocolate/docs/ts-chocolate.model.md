@@ -63,6 +63,17 @@ Collection of simple IDs with a preferred selection. Use when options are just I
 </td></tr>
 <tr><td>
 
+[IMeasurementUnitOption](./ts-chocolate.model.imeasurementunitoption.md)
+
+
+</td><td>
+
+Option wrapper for measurement units (for use with IOptionsWithPreferred). Wraps a MeasurementUnit to satisfy IHasId requirement.
+
+
+</td></tr>
+<tr><td>
+
 [IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)
 
 

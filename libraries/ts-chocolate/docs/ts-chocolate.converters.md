@@ -446,7 +446,7 @@ Converter for [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->.
 
 </td><td>
 
-Converter for [IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->.
+Converter for [IMeasurementUnitOption](./ts-chocolate.model.imeasurementunitoption.md)<!-- -->.
 
 
 </td></tr>

@@ -2919,7 +2919,7 @@ interface IIngredient {
     readonly description?: string;
     readonly ganacheCharacteristics: IGanacheCharacteristics;
     readonly manufacturer?: string;
-    readonly measurementUnits?: Model.IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
+    readonly measurementUnits?: Model.IOptionsWithPreferred<Model.IMeasurementUnitOption, MeasurementUnit>;
     readonly name: string;
     readonly phase?: IngredientPhase;
     readonly tags?: ReadonlyArray<string>;
@@ -3178,7 +3178,7 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
 }
 
 // @public
-export interface IMeasurementUnitOption {
+interface IMeasurementUnitOption {
     readonly id: MeasurementUnit;
 }
 
@@ -5578,6 +5578,8 @@ export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 
 // @public
 const measurementUnit: Converter<MeasurementUnit>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const measurementUnitOption: Converter<IMeasurementUnitOption>;
 
@@ -5598,6 +5600,7 @@ const minutes: Converter<Minutes>;
 
 declare namespace Model {
     export {
+        IMeasurementUnitOption,
         ICategorizedNote,
         ICategorizedUrl,
         ID_SEPARATOR,

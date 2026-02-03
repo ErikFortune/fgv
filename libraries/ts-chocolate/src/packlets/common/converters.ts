@@ -67,7 +67,6 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   FluidityStars,
-  IMeasurementUnitOption,
   IngredientCategory,
   IngredientId,
   IngredientPhase,
@@ -100,6 +99,7 @@ import {
   ID_SEPARATOR,
   IHasId,
   IIdsWithPreferred,
+  IMeasurementUnitOption,
   IOptionsWithPreferred,
   IRefWithNotes,
   VERSION_ID_SEPARATOR,
@@ -686,7 +686,7 @@ export const spoonLevel: Converter<SpoonLevel> = Converters.enumeratedValue(allS
 export const ingredientPhase: Converter<IngredientPhase> = Converters.enumeratedValue(allIngredientPhases);
 
 /**
- * Converter for {@link IMeasurementUnitOption | IMeasurementUnitOption}.
+ * Converter for {@link Model.IMeasurementUnitOption | IMeasurementUnitOption}.
  * @public
  */
 export const measurementUnitOption: Converter<IMeasurementUnitOption> =

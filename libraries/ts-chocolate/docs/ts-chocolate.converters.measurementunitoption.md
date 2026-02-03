@@ -4,7 +4,7 @@
 
 ## Converters.measurementUnitOption variable
 
-Converter for [IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->.
+Converter for [IMeasurementUnitOption](./ts-chocolate.model.imeasurementunitoption.md)<!-- -->.
 
 **Signature:**
 

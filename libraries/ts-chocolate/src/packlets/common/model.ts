@@ -23,7 +23,17 @@
  * @packageDocumentation
  */
 
-import { SlotId, NoteCategory, UrlCategory } from './ids';
+import { SlotId, NoteCategory, UrlCategory, MeasurementUnit } from './ids';
+
+/**
+ * Option wrapper for measurement units (for use with IOptionsWithPreferred).
+ * Wraps a MeasurementUnit to satisfy IHasId requirement.
+ * @public
+ */
+export interface IMeasurementUnitOption {
+  /** The measurement unit */
+  readonly id: MeasurementUnit;
+}
 
 // ============================================================================
 // Notes

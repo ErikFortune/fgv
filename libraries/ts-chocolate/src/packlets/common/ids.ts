@@ -496,16 +496,6 @@ export type IngredientPhase = 'solid' | 'liquid';
 export const allIngredientPhases: IngredientPhase[] = ['solid', 'liquid'];
 
 /**
- * Option wrapper for measurement units (for use with IOptionsWithPreferred).
- * Wraps a MeasurementUnit to satisfy IHasId requirement.
- * @public
- */
-export interface IMeasurementUnitOption {
-  /** The measurement unit */
-  readonly id: MeasurementUnit;
-}
-
-/**
  * Common allergens that may be present in ingredients
  * @public
  */
