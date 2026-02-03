@@ -31,14 +31,13 @@ import {
   succeed
 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { SourceId } from '../common';
+import { SourceId, Helpers as CommonHelpers } from '../common';
 import {
   ICollectionSourceFile,
   ICollectionSourceMetadata,
   SubLibraryBase,
   Converters as LibraryDataConverters
 } from '../library-data';
-import { serializeToYaml, serializeToJson } from './exportImport';
 import { IExportOptions } from './model';
 
 // ============================================================================
@@ -419,7 +418,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * @returns Result containing YAML string or failure
    */
   public serializeToYaml(options?: IExportOptions): Result<string> {
-    return this.export().onSuccess((sourceFile) => serializeToYaml(sourceFile, options));
+    return this.export().onSuccess((sourceFile) => CommonHelpers.serializeToYaml(sourceFile, options));
   }
 
   /**
@@ -428,7 +427,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * @returns Result containing JSON string or failure
    */
   public serializeToJson(options?: IExportOptions): Result<string> {
-    return this.export().onSuccess((sourceFile) => serializeToJson(sourceFile, options));
+    return this.export().onSuccess((sourceFile) => CommonHelpers.serializeToJson(sourceFile, options));
   }
 
   /**

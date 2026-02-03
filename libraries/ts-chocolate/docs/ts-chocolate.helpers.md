@@ -314,5 +314,53 @@ Parses a composite PersistedSessionId into its component parts
 
 
 </td></tr>
+<tr><td>
+
+[serializeToJson(data, options)](./ts-chocolate.helpers.serializetojson.md)
+
+
+</td><td>
+
+Serialize an object to JSON string.
+
+
+</td></tr>
+<tr><td>
+
+[serializeToYaml(data, options)](./ts-chocolate.helpers.serializetoyaml.md)
+
+
+</td><td>
+
+Serialize an object to YAML string.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ISerializationOptions](./ts-chocolate.helpers.iserializationoptions.md)
+
+
+</td><td>
+
+Options for serialization operations.
+
+
+</td></tr>
 </tbody></table>
 

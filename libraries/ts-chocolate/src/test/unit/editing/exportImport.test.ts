@@ -20,13 +20,8 @@
 
 import '@fgv/ts-utils-jest';
 import { Converters } from '@fgv/ts-utils';
-import {
-  serializeToYaml,
-  serializeToJson,
-  serializeCollection,
-  EditableCollection
-} from '../../../packlets/editing';
-import { ICollectionSourceFile, Converters as LibraryDataConverters } from '../../../packlets/library-data';
+import { EditableCollection } from '../../../packlets/editing';
+import { Converters as LibraryDataConverters } from '../../../packlets/library-data';
 
 interface TestItem {
   name: string;
@@ -36,143 +31,6 @@ interface TestItem {
 const testItemConverter = Converters.object<TestItem>({
   name: Converters.string,
   value: Converters.number
-});
-
-describe('serializeToYaml', () => {
-  const testCollection: ICollectionSourceFile<TestItem> = {
-    metadata: {
-      name: 'Test Collection',
-      description: 'A test collection'
-    },
-    items: {
-      item1: { name: 'Item 1', value: 10 },
-      item2: { name: 'Item 2', value: 20 }
-    }
-  };
-
-  test('should serialize collection to YAML with pretty print', () => {
-    expect(serializeToYaml(testCollection)).toSucceedAndSatisfy((yaml) => {
-      expect(yaml).toContain('metadata:');
-      expect(yaml).toContain('name: Test Collection');
-      expect(yaml).toContain('items:');
-      expect(yaml).toContain('item1:');
-      expect(yaml).toContain('name: Item 1');
-    });
-  });
-
-  test('should serialize collection to YAML without pretty print', () => {
-    expect(serializeToYaml(testCollection, { format: 'yaml', prettyPrint: false })).toSucceedAndSatisfy(
-      (yaml) => {
-        expect(yaml).toContain('metadata');
-        expect(yaml).toContain('items');
-      }
-    );
-  });
-
-  test('should serialize empty items', () => {
-    const emptyCollection: ICollectionSourceFile<TestItem> = {
-      metadata: { name: 'Empty' },
-      items: {}
-    };
-
-    expect(serializeToYaml(emptyCollection)).toSucceedAndSatisfy((yaml) => {
-      expect(yaml).toContain('metadata:');
-      expect(yaml).toContain('items:');
-    });
-  });
-
-  test('should handle special characters in values', () => {
-    const specialCollection: ICollectionSourceFile<TestItem> = {
-      metadata: { name: 'Test: Special & Chars' },
-      items: {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'item-1': { name: 'Item: 1 & More', value: 10 }
-      }
-    };
-
-    expect(serializeToYaml(specialCollection)).toSucceed();
-  });
-});
-
-describe('serializeToJson', () => {
-  const testCollection: ICollectionSourceFile<TestItem> = {
-    metadata: {
-      name: 'Test Collection',
-      description: 'A test collection'
-    },
-    items: {
-      item1: { name: 'Item 1', value: 10 },
-      item2: { name: 'Item 2', value: 20 }
-    }
-  };
-
-  test('should serialize collection to JSON with pretty print', () => {
-    expect(serializeToJson(testCollection)).toSucceedAndSatisfy((json) => {
-      expect(json).toContain('"metadata"');
-      expect(json).toContain('"name": "Test Collection"');
-      expect(json).toContain('"items"');
-      expect(json).toContain('"item1"');
-      expect(json).toContain('\n'); // Pretty print includes newlines
-    });
-  });
-
-  test('should serialize collection to JSON without pretty print', () => {
-    expect(serializeToJson(testCollection, { format: 'json', prettyPrint: false })).toSucceedAndSatisfy(
-      (json) => {
-        expect(json).toContain('"metadata"');
-        expect(json).toContain('"items"');
-        expect(json).not.toContain('\n  '); // No indentation
-      }
-    );
-  });
-
-  test('should serialize empty items', () => {
-    const emptyCollection: ICollectionSourceFile<TestItem> = {
-      metadata: { name: 'Empty' },
-      items: {}
-    };
-
-    expect(serializeToJson(emptyCollection)).toSucceedAndSatisfy((json) => {
-      const parsed = JSON.parse(json);
-      expect(parsed.items).toEqual({});
-    });
-  });
-
-  test('should handle special characters', () => {
-    const specialCollection: ICollectionSourceFile<TestItem> = {
-      metadata: { name: 'Test "quotes" & <tags>' },
-      items: {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'item-1': { name: 'Item "1"', value: 10 }
-      }
-    };
-
-    expect(serializeToJson(specialCollection)).toSucceedAndSatisfy((json) => {
-      const parsed = JSON.parse(json);
-      expect(parsed.metadata.name).toBe('Test "quotes" & <tags>');
-    });
-  });
-});
-
-describe('serializeCollection', () => {
-  const testCollection: ICollectionSourceFile<TestItem> = {
-    metadata: { name: 'Test' },
-    items: { item1: { name: 'Item 1', value: 10 } }
-  };
-
-  test('should serialize to YAML when format is yaml', () => {
-    expect(serializeCollection(testCollection, 'yaml')).toSucceedAndSatisfy((result) => {
-      expect(result).toContain('metadata:');
-      expect(result).toContain('items:');
-    });
-  });
-
-  test('should serialize to JSON when format is json', () => {
-    expect(serializeCollection(testCollection, 'json')).toSucceedAndSatisfy((result) => {
-      expect(result).toContain('"metadata"');
-      expect(result).toContain('"items"');
-    });
-  });
 });
 
 describe('collectionYamlConverter', () => {

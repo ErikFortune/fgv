@@ -36,9 +36,6 @@ export * from './editableCollection';
 // Collection manager (collection-level CRUD operations)
 export * from './collectionManager';
 
-// Export/import utilities
-export * from './exportImport';
-
 // Converter utilities
 import * as Helpers from './helpers';
 

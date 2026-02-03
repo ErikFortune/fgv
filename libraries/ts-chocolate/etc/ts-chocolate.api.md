@@ -1095,9 +1095,6 @@ declare namespace Editing {
         IEditableCollectionParams,
         EditableCollection,
         CollectionManager,
-        serializeToYaml,
-        serializeToJson,
-        serializeCollection,
         IEditorContextParams,
         EditorContext,
         IEditorContextValidatorParams,
@@ -1967,7 +1964,10 @@ declare namespace Helpers {
         getPreferred,
         getPreferredOrFirst,
         getPreferredId,
-        getPreferredIdOrFirst
+        getPreferredIdOrFirst,
+        serializeToYaml,
+        serializeToJson,
+        ISerializationOptions
     }
 }
 export { Helpers }
@@ -4311,6 +4311,11 @@ function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredie
 function isEncryptedCollectionFile(json: unknown): boolean;
 
 // @public
+interface ISerializationOptions {
+    readonly prettyPrint?: boolean;
+}
+
+// @public
 interface ISerializedEditingHistory<T> {
     readonly current: T;
     readonly original: T;
@@ -6513,19 +6518,16 @@ const scalingSource: Converter<IScalingSource>;
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
 // @public
-function serializeCollection<T>(collection: ICollectionSourceFile<T>, format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
-
-// @public
 const serializedConfectionHistory: Converter<ISerializedEditingHistory<AnyProducedConfection>>;
 
 // @public
 const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFilling>>;
 
 // @public
-function serializeToJson<T>(collection: ICollectionSourceFile<T>, options?: IExportOptions): Result<string>;
+function serializeToJson<T>(data: T, options?: ISerializationOptions): Result<string>;
 
 // @public
-function serializeToYaml<T>(collection: ICollectionSourceFile<T>, options?: IExportOptions): Result<string>;
+function serializeToYaml<T>(data: T, options?: ISerializationOptions): Result<string>;
 
 declare namespace Session {
     export {

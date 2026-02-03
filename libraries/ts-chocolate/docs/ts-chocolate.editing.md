@@ -122,39 +122,6 @@ Check if validation report indicates success. Convenience function for checking 
 
 
 </td></tr>
-<tr><td>
-
-[serializeCollection(collection, format, options)](./ts-chocolate.editing.serializecollection.md)
-
-
-</td><td>
-
-Serialize a collection to string based on format.
-
-
-</td></tr>
-<tr><td>
-
-[serializeToJson(collection, options)](./ts-chocolate.editing.serializetojson.md)
-
-
-</td><td>
-
-Serialize a collection to JSON string.
-
-
-</td></tr>
-<tr><td>
-
-[serializeToYaml(collection, options)](./ts-chocolate.editing.serializetoyaml.md)
-
-
-</td><td>
-
-Serialize a collection to YAML string.
-
-
-</td></tr>
 </tbody></table>
 
 ## Interfaces

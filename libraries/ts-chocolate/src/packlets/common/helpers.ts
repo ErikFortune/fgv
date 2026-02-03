@@ -19,11 +19,12 @@
 // SOFTWARE.
 
 /**
- * Helper functions for composite IDs
+ * Helper functions for composite IDs and serialization
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Result, captureResult } from '@fgv/ts-utils';
+import * as yaml from 'js-yaml';
 
 import {
   ID_SEPARATOR,
@@ -393,4 +394,55 @@ export function getPreferredIdOrFirst<TId extends string>(
   collection: IIdsWithPreferred<TId>
 ): TId | undefined {
   return getPreferredId(collection) ?? collection.ids[0];
+}
+
+// ============================================================================
+// Serialization Helpers
+// ============================================================================
+
+/**
+ * Options for serialization operations.
+ * @public
+ */
+export interface ISerializationOptions {
+  /**
+   * Whether to pretty-print the output (default: true)
+   */
+  readonly prettyPrint?: boolean;
+}
+
+/**
+ * Serialize an object to YAML string.
+ * @param data - Object to serialize
+ * @param options - Optional serialization options
+ * @returns Result containing YAML string or failure
+ * @public
+ */
+export function serializeToYaml<T>(data: T, options?: ISerializationOptions): Result<string> {
+  const prettyPrint = options?.prettyPrint ?? true;
+  return captureResult(() => {
+    return yaml.dump(data, {
+      indent: prettyPrint ? 2 : 0,
+      lineWidth: 120,
+      noRefs: true,
+      sortKeys: false
+    });
+  }).withErrorFormat((error: unknown) => `Failed to serialize to YAML: ${error}`);
+}
+
+/**
+ * Serialize an object to JSON string.
+ * @param data - Object to serialize
+ * @param options - Optional serialization options
+ * @returns Result containing JSON string or failure
+ * @public
+ */
+export function serializeToJson<T>(data: T, options?: ISerializationOptions): Result<string> {
+  const prettyPrint = options?.prettyPrint ?? true;
+  return captureResult(() => {
+    if (prettyPrint) {
+      return JSON.stringify(data, null, 2);
+    }
+    return JSON.stringify(data);
+  }).withErrorFormat((error: unknown) => `Failed to serialize to JSON: ${error}`);
 }
