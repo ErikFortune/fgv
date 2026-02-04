@@ -9,7 +9,7 @@ Union type for confection journal entries (edit or production)
 **Signature:**
 
 ```typescript
-export type AnyConfectionJournalEntry = IConfectionEditJournalEntry | IConfectionProductionJournalEntry;
+export type AnyConfectionJournalEntry = IConfectionEditJournalEntryEntity | IConfectionProductionJournalEntryEntity;
 ```
-**References:** [IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)<!-- -->, [IConfectionProductionJournalEntry](./ts-chocolate.entities.iconfectionproductionjournalentry.md)
+**References:** [IConfectionEditJournalEntryEntity](./ts-chocolate.entities.iconfectioneditjournalentryentity.md)<!-- -->, [IConfectionProductionJournalEntryEntity](./ts-chocolate.entities.iconfectionproductionjournalentryentity.md)
 

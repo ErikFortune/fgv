@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { journalEntryType, anyJournalEntry } from '../../../packlets/entities/journal/converters';
+import { journalEntryType, anyJournalEntryEntity } from '../../../packlets/entities/journal/converters';
 
 describe('Journal Converters', () => {
   // ============================================================================
@@ -62,7 +62,7 @@ describe('Journal Converters', () => {
         }
       };
 
-      expect(anyJournalEntry.convert(entry)).toSucceedAndSatisfy((result) => {
+      expect(anyJournalEntryEntity.convert(entry)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('filling-edit');
         expect(result.baseId).toBe('2024-01-01-100000-00000001');
       });
@@ -83,16 +83,16 @@ describe('Journal Converters', () => {
         }
       };
 
-      expect(anyJournalEntry.convert(entry)).toSucceedAndSatisfy((result) => {
+      expect(anyJournalEntryEntity.convert(entry)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('confection-edit');
         expect(result.baseId).toBe('2024-01-01-100000-00000002');
       });
     });
 
     test('fails for invalid entry', () => {
-      expect(anyJournalEntry.convert({})).toFail();
-      expect(anyJournalEntry.convert({ type: 'invalid' })).toFail();
-      expect(anyJournalEntry.convert(null)).toFail();
+      expect(anyJournalEntryEntity.convert({})).toFail();
+      expect(anyJournalEntryEntity.convert({ type: 'invalid' })).toFail();
+      expect(anyJournalEntryEntity.convert(null)).toFail();
     });
   });
 });

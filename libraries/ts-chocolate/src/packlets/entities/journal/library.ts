@@ -45,17 +45,17 @@ import {
 } from '../../library-data';
 import { BuiltInData } from '../../built-in';
 import {
-  AnyJournalEntry,
-  IConfectionEditJournalEntry,
-  IConfectionProductionJournalEntry,
-  IFillingEditJournalEntry,
-  IFillingProductionJournalEntry,
-  isConfectionEditJournalEntry,
-  isConfectionProductionJournalEntry,
-  isFillingEditJournalEntry,
-  isFillingProductionJournalEntry
+  AnyJournalEntryEntity,
+  IConfectionEditJournalEntryEntity,
+  IConfectionProductionJournalEntryEntity,
+  IFillingEditJournalEntryEntity,
+  IFillingProductionJournalEntryEntity,
+  isConfectionEditJournalEntryEntity,
+  isConfectionProductionJournalEntryEntity,
+  isFillingEditJournalEntryEntity,
+  isFillingProductionJournalEntryEntity
 } from './model';
-import { anyJournalEntry as anyJournalEntryConverter } from './converters';
+import { anyJournalEntryEntity as anyJournalEntryConverter } from './converters';
 import { JournalCollectionEntryInit } from './collection';
 
 // ============================================================================
@@ -77,13 +77,15 @@ export {
  * Union type for filling journal entries (edit or production)
  * @public
  */
-export type AnyFillingJournalEntry = IFillingEditJournalEntry | IFillingProductionJournalEntry;
+export type AnyFillingJournalEntry = IFillingEditJournalEntryEntity | IFillingProductionJournalEntryEntity;
 
 /**
  * Union type for confection journal entries (edit or production)
  * @public
  */
-export type AnyConfectionJournalEntry = IConfectionEditJournalEntry | IConfectionProductionJournalEntry;
+export type AnyConfectionJournalEntry =
+  | IConfectionEditJournalEntryEntity
+  | IConfectionProductionJournalEntryEntity;
 
 /**
  * Type guard for filling journal entries
@@ -91,8 +93,8 @@ export type AnyConfectionJournalEntry = IConfectionEditJournalEntry | IConfectio
  * @returns True if the entry is a filling journal entry (edit or production)
  * @public
  */
-export function isFillingJournalEntry(entry: AnyJournalEntry): entry is AnyFillingJournalEntry {
-  return isFillingEditJournalEntry(entry) || isFillingProductionJournalEntry(entry);
+export function isFillingJournalEntry(entry: AnyJournalEntryEntity): entry is AnyFillingJournalEntry {
+  return isFillingEditJournalEntryEntity(entry) || isFillingProductionJournalEntryEntity(entry);
 }
 
 /**
@@ -101,8 +103,8 @@ export function isFillingJournalEntry(entry: AnyJournalEntry): entry is AnyFilli
  * @returns True if the entry is a confection journal entry (edit or production)
  * @public
  */
-export function isConfectionJournalEntry(entry: AnyJournalEntry): entry is AnyConfectionJournalEntry {
-  return isConfectionEditJournalEntry(entry) || isConfectionProductionJournalEntry(entry);
+export function isConfectionJournalEntry(entry: AnyJournalEntryEntity): entry is AnyConfectionJournalEntry {
+  return isConfectionEditJournalEntryEntity(entry) || isConfectionProductionJournalEntryEntity(entry);
 }
 
 // ============================================================================
@@ -138,7 +140,7 @@ export type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, 
 // ============================================================================
 
 /**
- * A library for managing cooking {@link Entities.Journal.AnyJournalEntry | journal entries}.
+ * A library for managing cooking {@link Entities.Journal.AnyJournalEntryEntity | journal entries}.
  *
  * Journals are organized into user-defined collections (e.g., by person, location, time period).
  * The library provides cross-collection indexing for efficient queries by filling/confection.
@@ -153,7 +155,7 @@ export type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, 
  *
  * @public
  */
-export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntry> {
+export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntryEntity> {
   /**
    * Index from {@link FillingId | filling ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
@@ -221,7 +223,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, Any
   public static async createAsync(params?: IJournalLibraryAsyncParams): Promise<Result<JournalLibrary>> {
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<JournalLibrary, JournalBaseId, AnyJournalEntry> = {
+    const createParams: ISubLibraryCreateParams<JournalLibrary, JournalBaseId, AnyJournalEntryEntity> = {
       itemIdConverter: CommonConverters.journalBaseId,
       itemConverter: anyJournalEntryConverter,
       directoryNavigator: getJournalsDirectory,
@@ -282,7 +284,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, Any
   /**
    * Adds a journal to the appropriate indices based on its type
    */
-  private _addToIndices(journalId: JournalId, journal: AnyJournalEntry): void {
+  private _addToIndices(journalId: JournalId, journal: AnyJournalEntryEntity): void {
     if (isFillingJournalEntry(journal)) {
       this._addFillingJournalToIndices(journalId, journal);
     } else if (isConfectionJournalEntry(journal)) {
@@ -426,7 +428,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, Any
    * @returns Success with the journal entry, or Failure if not found
    * @public
    */
-  public getJournal(journalId: JournalId): Result<AnyJournalEntry> {
+  public getJournal(journalId: JournalId): Result<AnyJournalEntryEntity> {
     return this.get(journalId);
   }
 
@@ -435,7 +437,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, Any
    * @returns Array of all journal entries
    * @public
    */
-  public getAllJournals(): ReadonlyArray<AnyJournalEntry> {
+  public getAllJournals(): ReadonlyArray<AnyJournalEntryEntity> {
     return Array.from(this.values());
   }
 

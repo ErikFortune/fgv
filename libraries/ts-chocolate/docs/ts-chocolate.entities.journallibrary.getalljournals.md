@@ -9,11 +9,11 @@ Gets all journal entries across all collections
 **Signature:**
 
 ```typescript
-getAllJournals(): ReadonlyArray<AnyJournalEntry>;
+getAllJournals(): ReadonlyArray<AnyJournalEntryEntity>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)<!-- -->&gt;
 
 Array of all journal entries
 

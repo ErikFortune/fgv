@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../../library-data';
-import { AnyJournalEntry } from './model';
+import { AnyJournalEntryEntity } from './model';
 
 /**
  * A single entry in a journal collection.
  * @public
  */
-export type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntry>;
+export type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntryEntity>;
 
 /**
  * Initialization type for a JournalLibrary collection entry.
  * @public
  */
-export type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntry>;
+export type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntryEntity>;
 
 /**
  * Validator type for JournalLibrary collections.
  * @public
  */
-export type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntry>;
+export type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntryEntity>;
 
 /**
  * Type for the collections in a JournalLibrary.
  * @public
  */
-export type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntry>;
+export type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntryEntity>;

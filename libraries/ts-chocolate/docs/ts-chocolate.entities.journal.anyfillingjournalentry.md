@@ -9,7 +9,7 @@ Union type for filling journal entries (edit or production)
 **Signature:**
 
 ```typescript
-export type AnyFillingJournalEntry = IFillingEditJournalEntry | IFillingProductionJournalEntry;
+export type AnyFillingJournalEntry = IFillingEditJournalEntryEntity | IFillingProductionJournalEntryEntity;
 ```
-**References:** [IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)<!-- -->, [IFillingProductionJournalEntry](./ts-chocolate.entities.ifillingproductionjournalentry.md)
+**References:** [IFillingEditJournalEntryEntity](./ts-chocolate.entities.ifillingeditjournalentryentity.md)<!-- -->, [IFillingProductionJournalEntryEntity](./ts-chocolate.entities.ifillingproductionjournalentryentity.md)
 

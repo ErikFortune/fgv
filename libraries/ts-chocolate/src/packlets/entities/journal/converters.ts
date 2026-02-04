@@ -48,31 +48,19 @@ import {
 import { IProducedFillingEntity, IProducedFillingIngredientEntity } from '../fillings';
 import {
   allJournalEntryTypes,
-  AnyJournalEntry,
-  IConfectionEditJournalEntry,
-  IConfectionProductionJournalEntry,
-  IFillingEditJournalEntry,
-  IFillingProductionJournalEntry,
+  AnyJournalEntryEntity,
+  IConfectionEditJournalEntryEntity,
+  IConfectionProductionJournalEntryEntity,
+  IFillingEditJournalEntryEntity,
+  IFillingProductionJournalEntryEntity,
   JournalEntryType
 } from './model';
-
-// ============================================================================
-// Filling Recipe Version Converter
-// ============================================================================
-
-// ============================================================================
-// Journal Entry Type Converters
-// ============================================================================
 
 /**
  * Converter for {@link Entities.Journal.JournalEntryType | JournalEntryType}.
  * @public
  */
 export const journalEntryType: Converter<JournalEntryType> = Converters.enumeratedValue(allJournalEntryTypes);
-
-// ============================================================================
-// Resolved Slot Converters
-// ============================================================================
 
 /**
  * Converter for {@link Entities.Confections.ResolvedSlotType | ResolvedSlotType}.
@@ -217,11 +205,11 @@ export const anyProducedConfectionEntity: Converter<AnyProducedConfectionEntity>
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Journal.IFillingEditJournalEntry | IFillingEditJournalEntry}.
+ * Converter for {@link Entities.Journal.IFillingEditJournalEntryEntity | IFillingEditJournalEntryEntity}.
  * @public
  */
-export const fillingEditJournalEntry: Converter<IFillingEditJournalEntry> =
-  Converters.object<IFillingEditJournalEntry>({
+export const fillingEditJournalEntryEntity: Converter<IFillingEditJournalEntryEntity> =
+  Converters.object<IFillingEditJournalEntryEntity>({
     type: Converters.literal('filling-edit'),
     baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
@@ -233,11 +221,11 @@ export const fillingEditJournalEntry: Converter<IFillingEditJournalEntry> =
   });
 
 /**
- * Converter for {@link Entities.Journal.IConfectionEditJournalEntry | IConfectionEditJournalEntry}.
+ * Converter for {@link Entities.Journal.IConfectionEditJournalEntryEntity | IConfectionEditJournalEntryEntity}.
  * @public
  */
-export const confectionEditJournalEntry: Converter<IConfectionEditJournalEntry> =
-  Converters.object<IConfectionEditJournalEntry>({
+export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalEntryEntity> =
+  Converters.object<IConfectionEditJournalEntryEntity>({
     type: Converters.literal('confection-edit'),
     baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
@@ -249,11 +237,11 @@ export const confectionEditJournalEntry: Converter<IConfectionEditJournalEntry> 
   });
 
 /**
- * Converter for {@link Entities.Journal.IFillingProductionJournalEntry | IFillingProductionJournalEntry}.
+ * Converter for {@link Entities.Journal.IFillingProductionJournalEntryEntity | IFillingProductionJournalEntryEntity}.
  * @public
  */
-export const fillingProductionJournalEntry: Converter<IFillingProductionJournalEntry> =
-  Converters.object<IFillingProductionJournalEntry>({
+export const fillingProductionJournalEntryEntity: Converter<IFillingProductionJournalEntryEntity> =
+  Converters.object<IFillingProductionJournalEntryEntity>({
     type: Converters.literal('filling-production'),
     baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
@@ -267,11 +255,11 @@ export const fillingProductionJournalEntry: Converter<IFillingProductionJournalE
   });
 
 /**
- * Converter for {@link Entities.Journal.IConfectionProductionJournalEntry | IConfectionProductionJournalEntry}.
+ * Converter for {@link Entities.Journal.IConfectionProductionJournalEntryEntity | IConfectionProductionJournalEntryEntity}.
  * @public
  */
-export const confectionProductionJournalEntry: Converter<IConfectionProductionJournalEntry> =
-  Converters.object<IConfectionProductionJournalEntry>({
+export const confectionProductionJournalEntryEntity: Converter<IConfectionProductionJournalEntryEntity> =
+  Converters.object<IConfectionProductionJournalEntryEntity>({
     type: Converters.literal('confection-production'),
     baseId: CommonConverters.journalBaseId,
     timestamp: Converters.string,
@@ -285,19 +273,17 @@ export const confectionProductionJournalEntry: Converter<IConfectionProductionJo
   });
 
 /**
- * Converter for {@link Entities.Journal.AnyJournalEntry | AnyJournalEntry}.
+ * Converter for {@link Entities.Journal.AnyJournalEntryEntity | AnyJournalEntryEntity}.
  * Uses discriminated object pattern on `type` field.
  * Note: Kebab-case keys are intentional - they match the type discriminator values.
  * @public
  */
-export const anyJournalEntry: Converter<AnyJournalEntry> = Converters.discriminatedObject<AnyJournalEntry>(
-  'type',
-  {
+export const anyJournalEntryEntity: Converter<AnyJournalEntryEntity> =
+  Converters.discriminatedObject<AnyJournalEntryEntity>('type', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    'filling-edit': fillingEditJournalEntry,
-    'confection-edit': confectionEditJournalEntry,
-    'filling-production': fillingProductionJournalEntry,
-    'confection-production': confectionProductionJournalEntry
+    'filling-edit': fillingEditJournalEntryEntity,
+    'confection-edit': confectionEditJournalEntryEntity,
+    'filling-production': fillingProductionJournalEntryEntity,
+    'confection-production': confectionProductionJournalEntryEntity
     /* eslint-enable @typescript-eslint/naming-convention */
-  }
-);
+  });

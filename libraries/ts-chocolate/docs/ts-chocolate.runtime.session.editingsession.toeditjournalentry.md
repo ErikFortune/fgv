@@ -9,7 +9,7 @@ Creates an edit journal entry from this session. Records the original version an
 **Signature:**
 
 ```typescript
-toEditJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingEditJournalEntry>;
+toEditJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingEditJournalEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ _(Optional)_ Optional notes to include in the journal entry
 
 **Returns:**
 
-Result&lt;[IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)<!-- -->&gt;
+Result&lt;[IFillingEditJournalEntryEntity](./ts-chocolate.entities.ifillingeditjournalentryentity.md)<!-- -->&gt;
 
 Result with journal entry
 

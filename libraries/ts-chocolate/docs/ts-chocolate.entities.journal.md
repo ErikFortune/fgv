@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
+A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentryentity.md)<!-- -->.
 
 Journals are organized into user-defined collections (e.g., by person, location, time period). The library provides cross-collection indexing for efficient queries by filling/confection.
 
@@ -49,12 +49,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isConfectionEditJournalEntry(entry)](./ts-chocolate.entities.journal.isconfectioneditjournalentry.md)
+[isConfectionEditJournalEntryEntity(entry)](./ts-chocolate.entities.journal.isconfectioneditjournalentryentity.md)
 
 
 </td><td>
 
-Type guard for IConfectionEditJournalEntry
+Type guard for [IConfectionEditJournalEntryEntity](./ts-chocolate.entities.journal.iconfectioneditjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
@@ -71,23 +71,23 @@ Type guard for confection journal entries
 </td></tr>
 <tr><td>
 
-[isConfectionProductionJournalEntry(entry)](./ts-chocolate.entities.journal.isconfectionproductionjournalentry.md)
+[isConfectionProductionJournalEntryEntity(entry)](./ts-chocolate.entities.journal.isconfectionproductionjournalentryentity.md)
 
 
 </td><td>
 
-Type guard for IConfectionProductionJournalEntry
+Type guard for [IConfectionProductionJournalEntryEntity](./ts-chocolate.entities.journal.iconfectionproductionjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[isFillingEditJournalEntry(entry)](./ts-chocolate.entities.journal.isfillingeditjournalentry.md)
+[isFillingEditJournalEntryEntity(entry)](./ts-chocolate.entities.journal.isfillingeditjournalentryentity.md)
 
 
 </td><td>
 
-Type guard for IFillingEditJournalEntry
+Type guard for [IFillingEditJournalEntryEntity](./ts-chocolate.entities.journal.ifillingeditjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
@@ -104,12 +104,12 @@ Type guard for filling journal entries
 </td></tr>
 <tr><td>
 
-[isFillingProductionJournalEntry(entry)](./ts-chocolate.entities.journal.isfillingproductionjournalentry.md)
+[isFillingProductionJournalEntryEntity(entry)](./ts-chocolate.entities.journal.isfillingproductionjournalentryentity.md)
 
 
 </td><td>
 
-Type guard for IFillingProductionJournalEntry
+Type guard for [IFillingProductionJournalEntryEntity](./ts-chocolate.entities.journal.ifillingproductionjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
@@ -130,7 +130,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IConfectionEditJournalEntry](./ts-chocolate.entities.journal.iconfectioneditjournalentry.md)
+[IConfectionEditJournalEntryEntity](./ts-chocolate.entities.journal.iconfectioneditjournalentryentity.md)
 
 
 </td><td>
@@ -141,7 +141,7 @@ Journal entry for confection edits.
 </td></tr>
 <tr><td>
 
-[IConfectionProductionJournalEntry](./ts-chocolate.entities.journal.iconfectionproductionjournalentry.md)
+[IConfectionProductionJournalEntryEntity](./ts-chocolate.entities.journal.iconfectionproductionjournalentryentity.md)
 
 
 </td><td>
@@ -152,7 +152,7 @@ Journal entry for confection production sessions.
 </td></tr>
 <tr><td>
 
-[IFillingEditJournalEntry](./ts-chocolate.entities.journal.ifillingeditjournalentry.md)
+[IFillingEditJournalEntryEntity](./ts-chocolate.entities.journal.ifillingeditjournalentryentity.md)
 
 
 </td><td>
@@ -163,7 +163,7 @@ Journal entry for filling recipe edits.
 </td></tr>
 <tr><td>
 
-[IFillingProductionJournalEntry](./ts-chocolate.entities.journal.ifillingproductionjournalentry.md)
+[IFillingProductionJournalEntryEntity](./ts-chocolate.entities.journal.ifillingproductionjournalentryentity.md)
 
 
 </td><td>
@@ -174,7 +174,7 @@ Journal entry for filling production sessions.
 </td></tr>
 <tr><td>
 
-[IJournalEntryBase](./ts-chocolate.entities.journal.ijournalentrybase.md)
+[IJournalEntryEntityBase](./ts-chocolate.entities.journal.ijournalentryentitybase.md)
 
 
 </td><td>
@@ -272,7 +272,7 @@ Union type for filling journal entries (edit or production)
 </td></tr>
 <tr><td>
 
-[AnyJournalEntry](./ts-chocolate.entities.journal.anyjournalentry.md)
+[AnyJournalEntryEntity](./ts-chocolate.entities.journal.anyjournalentryentity.md)
 
 
 </td><td>

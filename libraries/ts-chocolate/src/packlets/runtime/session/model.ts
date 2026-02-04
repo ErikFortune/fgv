@@ -36,7 +36,11 @@ import {
   SessionId,
   SlotId
 } from '../../common';
-import { IFillingEditJournalEntry, IConfectionEditJournalEntry, Confections } from '../../entities';
+import {
+  IFillingEditJournalEntryEntity,
+  IConfectionEditJournalEntryEntity,
+  Confections
+} from '../../entities';
 import { IRuntimeConfection } from '../../library-runtime';
 
 // ============================================================================
@@ -224,7 +228,7 @@ export interface ISaveResult {
    * The full journal entry if one was created.
    * Callers can use this to persist the journal via `context.journals.addJournal(entry)`.
    */
-  readonly journalEntry?: IFillingEditJournalEntry | IConfectionEditJournalEntry;
+  readonly journalEntry?: IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity;
 
   /**
    * The new version spec if one was created
@@ -485,7 +489,7 @@ export interface IConfectionSaveResult {
   /**
    * The full journal entry if one was created
    */
-  readonly journalEntry?: IConfectionEditJournalEntry;
+  readonly journalEntry?: IConfectionEditJournalEntryEntity;
 
   /**
    * The new version spec if one was created

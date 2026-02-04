@@ -66,11 +66,11 @@ export {
   JournalLibrary,
   AnyConfectionJournalEntry,
   AnyFillingJournalEntry,
-  AnyJournalEntry,
-  IConfectionProductionJournalEntry,
-  IConfectionEditJournalEntry,
-  IFillingProductionJournalEntry,
-  IFillingEditJournalEntry,
+  AnyJournalEntryEntity,
+  IConfectionProductionJournalEntryEntity,
+  IConfectionEditJournalEntryEntity,
+  IFillingProductionJournalEntryEntity,
+  IFillingEditJournalEntryEntity,
   JournalEntryType
 } from './journal';
 

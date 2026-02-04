@@ -9,5 +9,5 @@ The full journal entry if one was created
 **Signature:**
 
 ```typescript
-readonly journalEntry?: IConfectionEditJournalEntry;
+readonly journalEntry?: IConfectionEditJournalEntryEntity;
 ```

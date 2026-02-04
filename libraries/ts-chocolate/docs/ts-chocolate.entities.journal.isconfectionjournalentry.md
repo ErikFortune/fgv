@@ -9,7 +9,7 @@ Type guard for confection journal entries
 **Signature:**
 
 ```typescript
-export declare function isConfectionJournalEntry(entry: AnyJournalEntry): entry is AnyConfectionJournalEntry;
+export declare function isConfectionJournalEntry(entry: AnyJournalEntryEntity): entry is AnyConfectionJournalEntry;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entry
 
 </td><td>
 
-[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
+[AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 
 
 </td><td>

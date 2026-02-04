@@ -39,8 +39,8 @@ import {
 } from '../../common';
 import {
   Fillings,
-  IFillingEditJournalEntry,
-  IFillingProductionJournalEntry,
+  IFillingEditJournalEntryEntity,
+  IFillingProductionJournalEntryEntity,
   IPersistedFillingSession,
   IProducedFillingEntity,
   PersistedSessionStatus
@@ -341,7 +341,7 @@ export class EditingSession {
    * @returns Result with journal entry
    * @public
    */
-  public toEditJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingEditJournalEntry> {
+  public toEditJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingEditJournalEntryEntity> {
     return this._createJournalEntry(undefined, notes);
   }
 
@@ -354,7 +354,7 @@ export class EditingSession {
    */
   public toProductionJournalEntry(
     notes?: CommonModel.ICategorizedNote[]
-  ): Result<IFillingProductionJournalEntry> {
+  ): Result<IFillingProductionJournalEntryEntity> {
     return generateJournalId().onSuccess((baseId) =>
       succeed({
         type: 'filling-production' as const,
@@ -490,7 +490,7 @@ export class EditingSession {
   private _createJournalEntry(
     updatedVersionSpec: string | undefined,
     notes: CommonModel.ICategorizedNote[] | undefined
-  ): Result<IFillingEditJournalEntry> {
+  ): Result<IFillingEditJournalEntryEntity> {
     return generateJournalId().onSuccess((baseId) => {
       // Create updated version ID if needed
       const updatedIdResult = updatedVersionSpec

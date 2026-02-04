@@ -78,7 +78,7 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "felchlin.mar
 
 </td><td>
 
-A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
+A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentryentity.md)<!-- -->.
 
 Journals are organized into user-defined collections (e.g., by person, location, time period). The library provides cross-collection indexing for efficient queries by filling/confection.
 
@@ -238,7 +238,7 @@ Chocolate-specific ingredient
 </td></tr>
 <tr><td>
 
-[IConfectionEditJournalEntry](./ts-chocolate.entities.iconfectioneditjournalentry.md)
+[IConfectionEditJournalEntryEntity](./ts-chocolate.entities.iconfectioneditjournalentryentity.md)
 
 
 </td><td>
@@ -249,7 +249,7 @@ Journal entry for confection edits.
 </td></tr>
 <tr><td>
 
-[IConfectionProductionJournalEntry](./ts-chocolate.entities.iconfectionproductionjournalentry.md)
+[IConfectionProductionJournalEntryEntity](./ts-chocolate.entities.iconfectionproductionjournalentryentity.md)
 
 
 </td><td>
@@ -293,7 +293,7 @@ Fat-specific ingredient
 </td></tr>
 <tr><td>
 
-[IFillingEditJournalEntry](./ts-chocolate.entities.ifillingeditjournalentry.md)
+[IFillingEditJournalEntryEntity](./ts-chocolate.entities.ifillingeditjournalentryentity.md)
 
 
 </td><td>
@@ -304,7 +304,7 @@ Journal entry for filling recipe edits.
 </td></tr>
 <tr><td>
 
-[IFillingProductionJournalEntry](./ts-chocolate.entities.ifillingproductionjournalentry.md)
+[IFillingProductionJournalEntryEntity](./ts-chocolate.entities.ifillingproductionjournalentryentity.md)
 
 
 </td><td>
@@ -762,7 +762,7 @@ Union type for filling journal entries (edit or production)
 </td></tr>
 <tr><td>
 
-[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
+[AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 
 
 </td><td>

@@ -30,7 +30,7 @@ import {
   Converters as CommonConverters,
   Helpers as CommonHelpers
 } from '../../../packlets/common';
-import type { AnyJournalEntry, IFillingProductionJournalEntry } from '../../../packlets/entities';
+import type { AnyJournalEntryEntity, IFillingProductionJournalEntryEntity } from '../../../packlets/entities';
 
 describe('JournalLibrary (Collection-Based)', () => {
   // ============================================================================
@@ -41,7 +41,7 @@ describe('JournalLibrary (Collection-Based)', () => {
     baseId: string,
     versionId: string,
     timestamp: string = '2026-01-15T10:00:00Z'
-  ): IFillingProductionJournalEntry => ({
+  ): IFillingProductionJournalEntryEntity => ({
     type: 'filling-production',
     baseId: CommonConverters.journalBaseId.convert(baseId).orThrow(),
     timestamp,
@@ -64,7 +64,7 @@ describe('JournalLibrary (Collection-Based)', () => {
   // Note: Confection journal tests omitted for brevity - filling journals
   // are sufficient to test the collection-based library functionality
 
-  const createLibraryWithJournals = (journals: AnyJournalEntry[]): JournalLibrary => {
+  const createLibraryWithJournals = (journals: AnyJournalEntryEntity[]): JournalLibrary => {
     // Create in-memory file tree with journal collection
     const items: Record<string, unknown> = {};
     for (const journal of journals) {
@@ -101,7 +101,7 @@ describe('JournalLibrary (Collection-Based)', () => {
   };
 
   const createLibraryWithCollections = (
-    collections: Array<{ id: string; journals: AnyJournalEntry[] }>
+    collections: Array<{ id: string; journals: AnyJournalEntryEntity[] }>
   ): JournalLibrary => {
     // Create in-memory file tree with multiple journal collections
     const files: Array<{ path: string; contents: unknown }> = [];

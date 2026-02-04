@@ -4,7 +4,7 @@
 
 ## Entities.JournalLibrary class
 
-A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->.
+A library for managing cooking [journal entries](./ts-chocolate.entities.journal.anyjournalentryentity.md)<!-- -->.
 
 Journals are organized into user-defined collections (e.g., by person, location, time period). The library provides cross-collection indexing for efficient queries by filling/confection.
 
@@ -13,9 +13,9 @@ Provides: - Multi-collection storage with FileTree persistence - Cross-collectio
 **Signature:**
 
 ```typescript
-export declare class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntry> 
+export declare class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntryEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)<!-- -->&gt;
 
 ## Methods
 

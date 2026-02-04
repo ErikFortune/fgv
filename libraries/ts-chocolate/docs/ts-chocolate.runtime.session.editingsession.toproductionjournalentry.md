@@ -9,7 +9,7 @@ Creates a production journal entry from this session. Records the produced filli
 **Signature:**
 
 ```typescript
-toProductionJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingProductionJournalEntry>;
+toProductionJournalEntry(notes?: CommonModel.ICategorizedNote[]): Result<IFillingProductionJournalEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ _(Optional)_ Optional notes to include in the journal entry
 
 **Returns:**
 
-Result&lt;[IFillingProductionJournalEntry](./ts-chocolate.entities.ifillingproductionjournalentry.md)<!-- -->&gt;
+Result&lt;[IFillingProductionJournalEntryEntity](./ts-chocolate.entities.ifillingproductionjournalentryentity.md)<!-- -->&gt;
 
 Result with production journal entry
 

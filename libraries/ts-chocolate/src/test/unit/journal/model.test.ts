@@ -24,11 +24,11 @@ import {
   Confections,
   Journal,
   JournalEntryType,
-  AnyJournalEntry,
-  IFillingEditJournalEntry,
-  IFillingProductionJournalEntry,
-  IConfectionEditJournalEntry,
-  IConfectionProductionJournalEntry,
+  AnyJournalEntryEntity,
+  IFillingEditJournalEntryEntity,
+  IFillingProductionJournalEntryEntity,
+  IConfectionEditJournalEntryEntity,
+  IConfectionProductionJournalEntryEntity,
   IFillingRecipeVersionEntity,
   IProducedFillingEntity,
   IProducedMoldedBonBonEntity
@@ -88,21 +88,21 @@ describe('Journal Model', () => {
       ingredients: []
     };
 
-    const fillingEditEntry: IFillingEditJournalEntry = {
+    const fillingEditEntry: IFillingEditJournalEntryEntity = {
       type: 'filling-edit',
-      baseId: '2026-01-15-100000-00000001' as IFillingEditJournalEntry['baseId'],
-      versionId: 'source.recipe@2026-01-01-01' as IFillingEditJournalEntry['versionId'],
+      baseId: '2026-01-15-100000-00000001' as IFillingEditJournalEntryEntity['baseId'],
+      versionId: 'source.recipe@2026-01-01-01' as IFillingEditJournalEntryEntity['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: fillingRecipe
     };
 
-    const fillingProductionEntry: IFillingProductionJournalEntry = {
+    const fillingProductionEntry: IFillingProductionJournalEntryEntity = {
       type: 'filling-production',
-      baseId: '2026-01-15-100000-00000002' as IFillingProductionJournalEntry['baseId'],
-      versionId: 'source.recipe@2026-01-01-01' as IFillingProductionJournalEntry['versionId'],
+      baseId: '2026-01-15-100000-00000002' as IFillingProductionJournalEntryEntity['baseId'],
+      versionId: 'source.recipe@2026-01-01-01' as IFillingProductionJournalEntryEntity['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: fillingRecipe,
-      yield: 300 as IFillingProductionJournalEntry['yield'],
+      yield: 300 as IFillingProductionJournalEntryEntity['yield'],
       produced: producedFilling
     };
 
@@ -127,18 +127,18 @@ describe('Journal Model', () => {
       shellChocolateId: 'choc-1' as IProducedMoldedBonBonEntity['shellChocolateId']
     };
 
-    const confectionEditEntry: IConfectionEditJournalEntry = {
+    const confectionEditEntry: IConfectionEditJournalEntryEntity = {
       type: 'confection-edit',
-      baseId: '2026-01-15-100000-00000003' as IConfectionEditJournalEntry['baseId'],
-      versionId: 'source.truffle@2026-01-01-01' as IConfectionEditJournalEntry['versionId'],
+      baseId: '2026-01-15-100000-00000003' as IConfectionEditJournalEntryEntity['baseId'],
+      versionId: 'source.truffle@2026-01-01-01' as IConfectionEditJournalEntryEntity['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe
     };
 
-    const confectionProductionEntry: IConfectionProductionJournalEntry = {
+    const confectionProductionEntry: IConfectionProductionJournalEntryEntity = {
       type: 'confection-production',
-      baseId: '2026-01-15-100000-00000004' as IConfectionProductionJournalEntry['baseId'],
-      versionId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntry['versionId'],
+      baseId: '2026-01-15-100000-00000004' as IConfectionProductionJournalEntryEntity['baseId'],
+      versionId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntryEntity['versionId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe,
       yield: { count: 24 },
@@ -147,18 +147,18 @@ describe('Journal Model', () => {
 
     describe('isFillingEditJournalEntry', () => {
       test('returns true for filling edit entries', () => {
-        expect(Journal.isFillingEditJournalEntry(fillingEditEntry)).toBe(true);
+        expect(Journal.isFillingEditJournalEntryEntity(fillingEditEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(Journal.isFillingEditJournalEntry(fillingProductionEntry)).toBe(false);
-        expect(Journal.isFillingEditJournalEntry(confectionEditEntry)).toBe(false);
-        expect(Journal.isFillingEditJournalEntry(confectionProductionEntry)).toBe(false);
+        expect(Journal.isFillingEditJournalEntryEntity(fillingProductionEntry)).toBe(false);
+        expect(Journal.isFillingEditJournalEntryEntity(confectionEditEntry)).toBe(false);
+        expect(Journal.isFillingEditJournalEntryEntity(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const entry: AnyJournalEntry = fillingEditEntry;
-        if (Journal.isFillingEditJournalEntry(entry)) {
+        const entry: AnyJournalEntryEntity = fillingEditEntry;
+        if (Journal.isFillingEditJournalEntryEntity(entry)) {
           expect(entry.type).toBe('filling-edit');
           expect(entry.versionId).toBe('source.recipe@2026-01-01-01');
         }
@@ -167,18 +167,18 @@ describe('Journal Model', () => {
 
     describe('isFillingProductionJournalEntry', () => {
       test('returns true for filling production entries', () => {
-        expect(Journal.isFillingProductionJournalEntry(fillingProductionEntry)).toBe(true);
+        expect(Journal.isFillingProductionJournalEntryEntity(fillingProductionEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(Journal.isFillingProductionJournalEntry(fillingEditEntry)).toBe(false);
-        expect(Journal.isFillingProductionJournalEntry(confectionEditEntry)).toBe(false);
-        expect(Journal.isFillingProductionJournalEntry(confectionProductionEntry)).toBe(false);
+        expect(Journal.isFillingProductionJournalEntryEntity(fillingEditEntry)).toBe(false);
+        expect(Journal.isFillingProductionJournalEntryEntity(confectionEditEntry)).toBe(false);
+        expect(Journal.isFillingProductionJournalEntryEntity(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const entry: AnyJournalEntry = fillingProductionEntry;
-        if (Journal.isFillingProductionJournalEntry(entry)) {
+        const entry: AnyJournalEntryEntity = fillingProductionEntry;
+        if (Journal.isFillingProductionJournalEntryEntity(entry)) {
           expect(entry.type).toBe('filling-production');
           expect(entry.yield).toBe(300);
         }
@@ -187,18 +187,18 @@ describe('Journal Model', () => {
 
     describe('isConfectionEditJournalEntry', () => {
       test('returns true for confection edit entries', () => {
-        expect(Journal.isConfectionEditJournalEntry(confectionEditEntry)).toBe(true);
+        expect(Journal.isConfectionEditJournalEntryEntity(confectionEditEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(Journal.isConfectionEditJournalEntry(fillingEditEntry)).toBe(false);
-        expect(Journal.isConfectionEditJournalEntry(fillingProductionEntry)).toBe(false);
-        expect(Journal.isConfectionEditJournalEntry(confectionProductionEntry)).toBe(false);
+        expect(Journal.isConfectionEditJournalEntryEntity(fillingEditEntry)).toBe(false);
+        expect(Journal.isConfectionEditJournalEntryEntity(fillingProductionEntry)).toBe(false);
+        expect(Journal.isConfectionEditJournalEntryEntity(confectionProductionEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const entry: AnyJournalEntry = confectionEditEntry;
-        if (Journal.isConfectionEditJournalEntry(entry)) {
+        const entry: AnyJournalEntryEntity = confectionEditEntry;
+        if (Journal.isConfectionEditJournalEntryEntity(entry)) {
           expect(entry.type).toBe('confection-edit');
           expect(entry.versionId).toBe('source.truffle@2026-01-01-01');
         }
@@ -207,18 +207,18 @@ describe('Journal Model', () => {
 
     describe('isConfectionProductionJournalEntry', () => {
       test('returns true for confection production entries', () => {
-        expect(Journal.isConfectionProductionJournalEntry(confectionProductionEntry)).toBe(true);
+        expect(Journal.isConfectionProductionJournalEntryEntity(confectionProductionEntry)).toBe(true);
       });
 
       test('returns false for other entry types', () => {
-        expect(Journal.isConfectionProductionJournalEntry(fillingEditEntry)).toBe(false);
-        expect(Journal.isConfectionProductionJournalEntry(fillingProductionEntry)).toBe(false);
-        expect(Journal.isConfectionProductionJournalEntry(confectionEditEntry)).toBe(false);
+        expect(Journal.isConfectionProductionJournalEntryEntity(fillingEditEntry)).toBe(false);
+        expect(Journal.isConfectionProductionJournalEntryEntity(fillingProductionEntry)).toBe(false);
+        expect(Journal.isConfectionProductionJournalEntryEntity(confectionEditEntry)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const entry: AnyJournalEntry = confectionProductionEntry;
-        if (Journal.isConfectionProductionJournalEntry(entry)) {
+        const entry: AnyJournalEntryEntity = confectionProductionEntry;
+        if (Journal.isConfectionProductionJournalEntryEntity(entry)) {
           expect(entry.type).toBe('confection-production');
           expect(entry.yield.count).toBe(24);
         }

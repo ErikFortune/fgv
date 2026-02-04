@@ -58,7 +58,7 @@ export const allJournalEntryTypes: JournalEntryType[] = [
  * Base interface for journal entries.
  * @public
  */
-export interface IJournalEntryBase<TVersion, TVersionId> {
+export interface IJournalEntryEntityBase<TVersion, TVersionId> {
   /** Entry type discriminator */
   readonly type: JournalEntryType;
   /** Base identifier within collection (no collection prefix) */
@@ -81,8 +81,8 @@ export interface IJournalEntryBase<TVersion, TVersionId> {
  * Journal entry for filling recipe edits.
  * @public
  */
-export interface IFillingEditJournalEntry
-  extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> {
+export interface IFillingEditJournalEntryEntity
+  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
   readonly type: 'filling-edit';
 }
 
@@ -90,8 +90,8 @@ export interface IFillingEditJournalEntry
  * Journal entry for confection edits.
  * @public
  */
-export interface IConfectionEditJournalEntry
-  extends IJournalEntryBase<AnyConfectionVersionEntity, ConfectionVersionId> {
+export interface IConfectionEditJournalEntryEntity
+  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
   readonly type: 'confection-edit';
 }
 
@@ -99,8 +99,8 @@ export interface IConfectionEditJournalEntry
  * Journal entry for filling production sessions.
  * @public
  */
-export interface IFillingProductionJournalEntry
-  extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> {
+export interface IFillingProductionJournalEntryEntity
+  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
   readonly type: 'filling-production';
   /** Total yield weight of this production run */
   readonly yield: Measurement;
@@ -112,8 +112,8 @@ export interface IFillingProductionJournalEntry
  * Journal entry for confection production sessions.
  * @public
  */
-export interface IConfectionProductionJournalEntry
-  extends IJournalEntryBase<AnyConfectionVersionEntity, ConfectionVersionId> {
+export interface IConfectionProductionJournalEntryEntity
+  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
   readonly type: 'confection-production';
   /** Yield specification for this production run */
   readonly yield: IConfectionYield;
@@ -130,56 +130,60 @@ export interface IConfectionProductionJournalEntry
  * Use type guards to narrow to specific types.
  * @public
  */
-export type AnyJournalEntry =
-  | IFillingEditJournalEntry
-  | IConfectionEditJournalEntry
-  | IFillingProductionJournalEntry
-  | IConfectionProductionJournalEntry;
+export type AnyJournalEntryEntity =
+  | IFillingEditJournalEntryEntity
+  | IConfectionEditJournalEntryEntity
+  | IFillingProductionJournalEntryEntity
+  | IConfectionProductionJournalEntryEntity;
 
 // ============================================================================
 // Journal Entry Type Guards
 // ============================================================================
 
 /**
- * Type guard for IFillingEditJournalEntry
+ * Type guard for {@link Entities.Journal.IFillingEditJournalEntryEntity | IFillingEditJournalEntryEntity}.
  * @param entry - Journal entry to check
  * @returns True if the entry is a filling edit journal entry
  * @public
  */
-export function isFillingEditJournalEntry(entry: AnyJournalEntry): entry is IFillingEditJournalEntry {
+export function isFillingEditJournalEntryEntity(
+  entry: AnyJournalEntryEntity
+): entry is IFillingEditJournalEntryEntity {
   return entry.type === 'filling-edit';
 }
 
 /**
- * Type guard for IConfectionEditJournalEntry
+ * Type guard for {@link Entities.Journal.IConfectionEditJournalEntryEntity | IConfectionEditJournalEntryEntity}.
  * @param entry - Journal entry to check
  * @returns True if the entry is a confection edit journal entry
  * @public
  */
-export function isConfectionEditJournalEntry(entry: AnyJournalEntry): entry is IConfectionEditJournalEntry {
+export function isConfectionEditJournalEntryEntity(
+  entry: AnyJournalEntryEntity
+): entry is IConfectionEditJournalEntryEntity {
   return entry.type === 'confection-edit';
 }
 
 /**
- * Type guard for IFillingProductionJournalEntry
+ * Type guard for {@link Entities.Journal.IFillingProductionJournalEntryEntity | IFillingProductionJournalEntryEntity}.
  * @param entry - Journal entry to check
  * @returns True if the entry is a filling production journal entry
  * @public
  */
-export function isFillingProductionJournalEntry(
-  entry: AnyJournalEntry
-): entry is IFillingProductionJournalEntry {
+export function isFillingProductionJournalEntryEntity(
+  entry: AnyJournalEntryEntity
+): entry is IFillingProductionJournalEntryEntity {
   return entry.type === 'filling-production';
 }
 
 /**
- * Type guard for IConfectionProductionJournalEntry
+ * Type guard for {@link Entities.Journal.IConfectionProductionJournalEntryEntity | IConfectionProductionJournalEntryEntity}.
  * @param entry - Journal entry to check
  * @returns True if the entry is a confection production journal entry
  * @public
  */
-export function isConfectionProductionJournalEntry(
-  entry: AnyJournalEntry
-): entry is IConfectionProductionJournalEntry {
+export function isConfectionProductionJournalEntryEntity(
+  entry: AnyJournalEntryEntity
+): entry is IConfectionProductionJournalEntryEntity {
   return entry.type === 'confection-production';
 }

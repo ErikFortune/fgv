@@ -9,7 +9,7 @@ Type guard for filling journal entries
 **Signature:**
 
 ```typescript
-export declare function isFillingJournalEntry(entry: AnyJournalEntry): entry is AnyFillingJournalEntry;
+export declare function isFillingJournalEntry(entry: AnyJournalEntryEntity): entry is AnyFillingJournalEntry;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entry
 
 </td><td>
 
-[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
+[AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 
 
 </td><td>

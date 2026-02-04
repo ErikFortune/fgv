@@ -9,7 +9,7 @@ Type for the collections in a JournalLibrary.
 **Signature:**
 
 ```typescript
-export type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntry>;
+export type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntryEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 

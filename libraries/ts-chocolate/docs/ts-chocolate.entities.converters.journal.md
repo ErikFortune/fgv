@@ -19,12 +19,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[anyJournalEntry](./ts-chocolate.entities.converters.journal.anyjournalentry.md)
+[anyJournalEntryEntity](./ts-chocolate.entities.converters.journal.anyjournalentryentity.md)
 
 
 </td><td>
 
-Converter for [AnyJournalEntry](./ts-chocolate.entities.journal.anyjournalentry.md)<!-- -->. Uses discriminated object pattern on `type` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
+Converter for [AnyJournalEntryEntity](./ts-chocolate.entities.journal.anyjournalentryentity.md)<!-- -->. Uses discriminated object pattern on `type` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 
 </td></tr>
@@ -52,45 +52,45 @@ Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.confections.anyre
 </td></tr>
 <tr><td>
 
-[confectionEditJournalEntry](./ts-chocolate.entities.converters.journal.confectioneditjournalentry.md)
+[confectionEditJournalEntryEntity](./ts-chocolate.entities.converters.journal.confectioneditjournalentryentity.md)
 
 
 </td><td>
 
-Converter for [IConfectionEditJournalEntry](./ts-chocolate.entities.journal.iconfectioneditjournalentry.md)<!-- -->.
+Converter for [IConfectionEditJournalEntryEntity](./ts-chocolate.entities.journal.iconfectioneditjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[confectionProductionJournalEntry](./ts-chocolate.entities.converters.journal.confectionproductionjournalentry.md)
+[confectionProductionJournalEntryEntity](./ts-chocolate.entities.converters.journal.confectionproductionjournalentryentity.md)
 
 
 </td><td>
 
-Converter for [IConfectionProductionJournalEntry](./ts-chocolate.entities.journal.iconfectionproductionjournalentry.md)<!-- -->.
+Converter for [IConfectionProductionJournalEntryEntity](./ts-chocolate.entities.journal.iconfectionproductionjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[fillingEditJournalEntry](./ts-chocolate.entities.converters.journal.fillingeditjournalentry.md)
+[fillingEditJournalEntryEntity](./ts-chocolate.entities.converters.journal.fillingeditjournalentryentity.md)
 
 
 </td><td>
 
-Converter for [IFillingEditJournalEntry](./ts-chocolate.entities.journal.ifillingeditjournalentry.md)<!-- -->.
+Converter for [IFillingEditJournalEntryEntity](./ts-chocolate.entities.journal.ifillingeditjournalentryentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[fillingProductionJournalEntry](./ts-chocolate.entities.converters.journal.fillingproductionjournalentry.md)
+[fillingProductionJournalEntryEntity](./ts-chocolate.entities.converters.journal.fillingproductionjournalentryentity.md)
 
 
 </td><td>
 
-Converter for [IFillingProductionJournalEntry](./ts-chocolate.entities.journal.ifillingproductionjournalentry.md)<!-- -->.
+Converter for [IFillingProductionJournalEntryEntity](./ts-chocolate.entities.journal.ifillingproductionjournalentryentity.md)<!-- -->.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Gets a journal entry by ID (searches all collections)
 **Signature:**
 
 ```typescript
-getJournal(journalId: JournalId): Result<AnyJournalEntry>;
+getJournal(journalId: JournalId): Result<AnyJournalEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The journal ID to look up
 
 **Returns:**
 
-Result&lt;[AnyJournalEntry](./ts-chocolate.entities.anyjournalentry.md)<!-- -->&gt;
+Result&lt;[AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)<!-- -->&gt;
 
 Success with the journal entry, or Failure if not found
 
