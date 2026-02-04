@@ -9,5 +9,5 @@ The task for this step - either a reference to a public task or an inline task d
 **Signature:**
 
 ```typescript
-readonly task: ITaskInvocation;
+readonly task: ITaskEntityInvocation;
 ```

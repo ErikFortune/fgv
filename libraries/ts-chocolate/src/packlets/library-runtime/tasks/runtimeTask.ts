@@ -27,7 +27,7 @@ import { Result, succeed } from '@fgv/ts-utils';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
 import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
-import { ITaskData, Tasks as TaskEntities } from '../../entities';
+import { IRawTaskEntity, Tasks as TaskEntities } from '../../entities';
 import { ITaskContext, IRuntimeTask } from './model';
 
 // ============================================================================
@@ -49,14 +49,14 @@ import { ITaskContext, IRuntimeTask } from './model';
 export class RuntimeTask implements IRuntimeTask {
   private readonly _context: ITaskContext;
   private readonly _id: TaskId;
-  private readonly _task: ITaskData;
+  private readonly _task: IRawTaskEntity;
   private readonly _parsedTemplate: MustacheModule.MustacheTemplate;
   private readonly _requiredVariables: ReadonlyArray<string>;
 
   private constructor(
     context: ITaskContext,
     id: TaskId,
-    task: ITaskData,
+    task: IRawTaskEntity,
     parsedTemplate: MustacheModule.MustacheTemplate
   ) {
     this._context = context;
@@ -74,7 +74,7 @@ export class RuntimeTask implements IRuntimeTask {
    * @param task - The raw task data
    * @returns Success with RuntimeTask, or Failure if template parsing fails
    */
-  public static create(context: ITaskContext, id: TaskId, task: ITaskData): Result<RuntimeTask> {
+  public static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<RuntimeTask> {
     return MustacheModule.MustacheTemplate.create(task.template).onSuccess((parsedTemplate) => {
       return succeed(new RuntimeTask(context, id, task, parsedTemplate));
     });
@@ -253,7 +253,7 @@ export class RuntimeTask implements IRuntimeTask {
   /**
    * Gets the underlying raw task data
    */
-  public get raw(): ITaskData {
+  public get raw(): IRawTaskEntity {
     return this._task;
   }
 

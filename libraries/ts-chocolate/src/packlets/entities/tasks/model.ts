@@ -34,9 +34,9 @@ import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../.
  * Does not include requiredVariables as those are extracted from the template at runtime.
  * @public
  */
-export interface ITaskData {
+export interface IRawTaskEntity {
   /**
-   * Base task identifier (unique within source)
+   * Base task identifier (unique within collection)
    * Pattern: /^[a-zA-Z0-9_-]+$/
    */
   readonly baseId: BaseTaskId;
@@ -94,7 +94,7 @@ export interface ITaskData {
  * Extends ITaskData with requiredVariables extracted from the template.
  * @public
  */
-export interface ITask extends ITaskData {
+export interface ITaskEntity extends IRawTaskEntity {
   /**
    * Required variables extracted from the template at runtime.
    * This is computed from parsing the Mustache template, not persisted.
@@ -110,9 +110,9 @@ export interface ITask extends ITaskData {
  * Represents a step's reference to a reusable task with parameter values.
  * @public
  */
-export interface ITaskRef {
+export interface ITaskRefEntity {
   /**
-   * Full task ID (sourceId.baseTaskId)
+   * Full task ID (collectionId.baseTaskId)
    */
   readonly taskId: TaskId;
 
@@ -173,11 +173,11 @@ export interface ITaskRefValidation {
  * plus params for rendering.
  * @public
  */
-export interface IInlineTask {
+export interface IInlineTaskEntity {
   /**
    * Full task definition with synthetic baseId (e.g., `procedureId.step-N`)
    */
-  readonly task: ITaskData;
+  readonly task: IRawTaskEntity;
 
   /**
    * Parameter values for rendering the template
@@ -194,7 +194,7 @@ export interface IInlineTask {
  * Discriminated by the presence of `task` (inline) vs `taskId` (ref).
  * @public
  */
-export type ITaskInvocation = IInlineTask | ITaskRef;
+export type ITaskEntityInvocation = IInlineTaskEntity | ITaskRefEntity;
 
 /**
  * Type guard for task ref - discriminates by presence of `taskId`
@@ -202,7 +202,7 @@ export type ITaskInvocation = IInlineTask | ITaskRef;
  * @returns True if the invocation is a task reference
  * @public
  */
-export function isTaskRef(invocation: ITaskInvocation): invocation is ITaskRef {
+export function isTaskRefEntity(invocation: ITaskEntityInvocation): invocation is ITaskRefEntity {
   return 'taskId' in invocation;
 }
 
@@ -212,7 +212,7 @@ export function isTaskRef(invocation: ITaskInvocation): invocation is ITaskRef {
  * @returns True if the invocation is an inline task
  * @public
  */
-export function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask {
+export function isInlineTaskEntity(invocation: ITaskEntityInvocation): invocation is IInlineTaskEntity {
   return 'task' in invocation;
 }
 

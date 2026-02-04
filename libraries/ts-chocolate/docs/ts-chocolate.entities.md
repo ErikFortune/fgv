@@ -409,7 +409,7 @@ The ingredientId is the full composite ID (e.g., 'builtin.cocoa-butter') identif
 </td></tr>
 <tr><td>
 
-[IInlineTask](./ts-chocolate.entities.iinlinetask.md)
+[IInlineTaskEntity](./ts-chocolate.entities.iinlinetaskentity.md)
 
 
 </td><td>
@@ -532,6 +532,17 @@ Produced rolled truffle with concrete choices.
 </td></tr>
 <tr><td>
 
+[IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)
+
+
+</td><td>
+
+Persisted task data - the data model stored in YAML/JSON files. Does not include requiredVariables as those are extracted from the template at runtime.
+
+
+</td></tr>
+<tr><td>
+
 [IRenderOptions](./ts-chocolate.entities.irenderoptions.md)
 
 
@@ -576,23 +587,12 @@ Sugar-specific ingredient
 </td></tr>
 <tr><td>
 
-[ITask](./ts-chocolate.entities.itask.md)
+[ITaskEntity](./ts-chocolate.entities.itaskentity.md)
 
 
 </td><td>
 
 A reusable task template with runtime-computed properties. Extends ITaskData with requiredVariables extracted from the template.
-
-
-</td></tr>
-<tr><td>
-
-[ITaskData](./ts-chocolate.entities.itaskdata.md)
-
-
-</td><td>
-
-Persisted task data - the data model stored in YAML/JSON files. Does not include requiredVariables as those are extracted from the template at runtime.
 
 
 </td></tr>
@@ -839,7 +839,7 @@ Inventory entry type discriminator.
 </td></tr>
 <tr><td>
 
-[ITaskInvocation](./ts-chocolate.entities.itaskinvocation.md)
+[ITaskEntityInvocation](./ts-chocolate.entities.itaskentityinvocation.md)
 
 
 </td><td>

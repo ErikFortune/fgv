@@ -9,7 +9,7 @@ Factory method for creating a RuntimeTask. Parses the Mustache template and extr
 **Signature:**
 
 ```typescript
-static create(context: ITaskContext, id: TaskId, task: ITaskData): Result<RuntimeTask>;
+static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<RuntimeTask>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ task
 
 </td><td>
 
-[ITaskData](./ts-chocolate.entities.itaskdata.md)
+[IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)
 
 
 </td><td>

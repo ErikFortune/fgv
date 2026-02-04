@@ -61,7 +61,7 @@ function formatStep(
   let description = '';
 
   // Get task description
-  if (Entities.Tasks.isTaskRef(step.task)) {
+  if (Entities.Tasks.isTaskRefEntity(step.task)) {
     const taskId = step.task.taskId;
     if (tasksLibrary) {
       const taskResult = tasksLibrary.get(taskId);

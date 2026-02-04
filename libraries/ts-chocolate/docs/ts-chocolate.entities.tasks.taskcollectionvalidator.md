@@ -9,7 +9,7 @@ Validator type for TasksLibrary collections.
 **Signature:**
 
 ```typescript
-export type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, ITaskData>;
+export type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, IRawTaskEntity>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [TaskId](./ts-chocolate.taskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [TaskId](./ts-chocolate.taskid.md)<!-- -->, [IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)
 

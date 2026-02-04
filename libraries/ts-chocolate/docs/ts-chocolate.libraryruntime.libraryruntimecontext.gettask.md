@@ -9,7 +9,7 @@ Gets a task by its composite ID. Used internally for task resolution.
 **Signature:**
 
 ```typescript
-getTask(id: TaskId): Result<ITaskData>;
+getTask(id: TaskId): Result<IRawTaskEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The task ID (composite format: sourceId.baseTaskId)
 
 **Returns:**
 
-Result&lt;[ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->&gt;
+Result&lt;[IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)<!-- -->&gt;
 
 Success with ITaskData, or Failure if not found
 

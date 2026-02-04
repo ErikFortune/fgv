@@ -24,13 +24,13 @@ import '@fgv/ts-utils-jest';
 import { procedureStepEntity, procedureEntity } from '../../../packlets/entities/procedures/converters';
 
 import { BaseTaskId } from '../../../packlets/common';
-import { ITaskInvocation } from '../../../packlets/entities';
+import { ITaskEntityInvocation } from '../../../packlets/entities';
 
 /**
  * Helper to create an inline task for test data.
  * Creates a synthetic baseId from the template for testing purposes.
  */
-function inlineTask(template: string): ITaskInvocation {
+function inlineTask(template: string): ITaskEntityInvocation {
   const baseId = `test-inline-${template.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}` as BaseTaskId;
   return {
     task: {

@@ -31,7 +31,7 @@ import {
   ProcedureId,
   TaskId
 } from '../../../packlets/common';
-import { IProcedureEntity, ITaskData, Fillings } from '../../../packlets/entities';
+import { IProcedureEntity, IRawTaskEntity, Fillings } from '../../../packlets/entities';
 import {
   RuntimeProcedure,
   IProcedureContext,
@@ -41,7 +41,7 @@ import {
 
 describe('RuntimeProcedure', () => {
   // Sample task for testing (now just ITaskData, no Task class)
-  const meltChocolateTaskData: ITaskData = {
+  const meltChocolateTaskData: IRawTaskEntity = {
     baseId: 'melt-chocolate' as BaseTaskId,
     name: 'Melt Chocolate',
     template: 'Melt {{amount}}g of chocolate at {{temp}}°C'

@@ -24,7 +24,7 @@
  */
 
 import { BaseProcedureId, Celsius, Minutes, Model as CommonModel, ProcedureType } from '../../common';
-import { ITaskInvocation, TaskRefStatus } from '../tasks';
+import { ITaskEntityInvocation, TaskRefStatus } from '../tasks';
 
 /**
  * A single step in a procedure (persisted data model).
@@ -40,7 +40,7 @@ export interface IProcedureStepEntity {
   /**
    * The task for this step - either a reference to a public task or an inline task definition
    */
-  readonly task: ITaskInvocation;
+  readonly task: ITaskEntityInvocation;
 
   /**
    * Time actively working on this step (overrides task default)

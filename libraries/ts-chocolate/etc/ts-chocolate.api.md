@@ -519,7 +519,7 @@ export class ChocolateLibrary {
     getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
     getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
     getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
-    getEditableTasks(collectionId: CollectionId): Result<EditableCollection<ITaskData, BaseTaskId>>;
+    getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<IngredientEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -529,7 +529,7 @@ export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: FillingId): Result<IFillingRecipeEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getTask(id: TaskId): Result<ITaskData>;
+    getTask(id: TaskId): Result<IRawTaskEntity>;
     hasConfection(id: ConfectionId): boolean;
     hasIngredient(id: IngredientId): boolean;
     hasMold(id: MoldId): boolean;
@@ -1305,11 +1305,11 @@ declare namespace Entities {
         IProcedureEntity,
         IProcedureStepEntity,
         TasksLibrary,
-        ITask,
-        ITaskData,
-        IInlineTask,
+        ITaskEntity,
+        IRawTaskEntity,
+        IInlineTaskEntity,
         IRenderOptions,
-        ITaskInvocation,
+        ITaskEntityInvocation,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -2698,9 +2698,9 @@ interface IIngredientUsageInfo {
 }
 
 // @public
-interface IInlineTask {
+interface IInlineTaskEntity {
     readonly params: Record<string, unknown>;
-    readonly task: ITaskData;
+    readonly task: IRawTaskEntity;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3219,8 +3219,10 @@ const ingredientSnapshotEntity: Converter<IIngredientSnapshotEntity>;
 // @public
 type IngredientUsageType = 'primary' | 'alternate' | 'any';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const inlineTask: Converter<IInlineTask>;
+const inlineTaskEntity: Converter<IInlineTaskEntity>;
 
 // @public
 interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
@@ -3333,7 +3335,7 @@ interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>
 // @internal
 interface IProcedureContext {
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    getTask(id: TaskId): Result<ITaskData>;
+    getTask(id: TaskId): Result<IRawTaskEntity>;
 }
 
 // @public
@@ -3365,7 +3367,7 @@ interface IProcedureStepEntity {
     readonly holdTime?: Minutes;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly order: number;
-    readonly task: ITaskInvocation;
+    readonly task: ITaskEntityInvocation;
     readonly temperature?: Celsius;
     readonly waitTime?: Minutes;
 }
@@ -3449,6 +3451,20 @@ interface IQueryResult<T> {
     readonly hasMore: boolean;
     readonly items: ReadonlyArray<T>;
     readonly totalCount: number;
+}
+
+// @public
+interface IRawTaskEntity {
+    readonly baseId: BaseTaskId;
+    readonly defaultActiveTime?: Minutes;
+    readonly defaultHoldTime?: Minutes;
+    readonly defaults?: Readonly<Record<string, unknown>>;
+    readonly defaultTemperature?: Celsius;
+    readonly defaultWaitTime?: Minutes;
+    readonly name: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly template: string;
 }
 
 // @public
@@ -3966,7 +3982,7 @@ interface IRuntimeTask {
     readonly id: TaskId;
     readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: ITaskData;
+    readonly raw: IRawTaskEntity;
     render(params: Record<string, unknown>): Result<string>;
     readonly requiredVariables: ReadonlyArray<string>;
     readonly tags?: ReadonlyArray<string>;
@@ -4210,7 +4226,7 @@ function isFillingSessionEntity(session: AnySessionEntity): session is IFillingS
 function isIngredientInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IIngredientInventoryEntryEntity;
 
 // @public
-function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
+function isInlineTaskEntity(invocation: ITaskEntityInvocation): invocation is IInlineTaskEntity;
 
 // @public
 function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
@@ -4262,7 +4278,7 @@ function isRolledTruffleVersionEntity(version: AnyConfectionVersionEntity): vers
 function isSugarIngredientEntity(ingredient: IngredientEntity): ingredient is ISugarIngredientEntity;
 
 // @public
-function isTaskRef(invocation: ITaskInvocation): invocation is ITaskRef;
+function isTaskRefEntity(invocation: ITaskEntityInvocation): invocation is ITaskRefEntity;
 
 // @public
 interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
@@ -4394,38 +4410,24 @@ function isValidUrlCategory(from: unknown): from is UrlCategory;
 // @public
 function isWeightExcluded(unit: MeasurementUnit): unit is WeightExcludedUnit;
 
+// @internal
+interface ITaskContext {
+    getTask(id: TaskId): Result<IRawTaskEntity>;
+}
+
 // @public
-interface ITask extends ITaskData {
+interface ITaskEntity extends IRawTaskEntity {
     readonly requiredVariables: ReadonlyArray<string>;
 }
 
-// @internal
-interface ITaskContext {
-    getTask(id: TaskId): Result<ITaskData>;
-}
-
 // @public
-interface ITaskData {
-    readonly baseId: BaseTaskId;
-    readonly defaultActiveTime?: Minutes;
-    readonly defaultHoldTime?: Minutes;
-    readonly defaults?: Readonly<Record<string, unknown>>;
-    readonly defaultTemperature?: Celsius;
-    readonly defaultWaitTime?: Minutes;
-    readonly name: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly tags?: ReadonlyArray<string>;
-    readonly template: string;
-}
+type ITaskEntityInvocation = IInlineTaskEntity | ITaskRefEntity;
 
 // @public
 type ITaskFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-type ITaskInvocation = IInlineTask | ITaskRef;
-
-// @public
-interface ITaskRef {
+interface ITaskRefEntity {
     readonly params: Record<string, unknown>;
     readonly taskId: TaskId;
 }
@@ -4961,7 +4963,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, II
     getRuntimeMold(id: MoldId): Result<RuntimeMold>;
     getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    getTask(id: TaskId): Result<ITaskData>;
+    getTask(id: TaskId): Result<IRawTaskEntity>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
@@ -5509,6 +5511,11 @@ export type RatingScore = Brand<number, 'RatingScore'>;
 
 // @public
 const ratingScore: Converter<RatingScore>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const rawTaskEntity: Converter<IRawTaskEntity>;
 
 // @public
 function recalculateFillingRecipeVersion(version: IFillingRecipeVersionEntity): IFillingRecipeVersionEntity;
@@ -6164,7 +6171,7 @@ class RuntimeTask implements IRuntimeTask {
     protected get context(): ITaskContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-    static create(context: ITaskContext, id: TaskId, task: ITaskData): Result<RuntimeTask>;
+    static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<RuntimeTask>;
     get defaultActiveTime(): Minutes | undefined;
     get defaultHoldTime(): Minutes | undefined;
     get defaults(): Readonly<Record<string, unknown>> | undefined;
@@ -6173,7 +6180,7 @@ class RuntimeTask implements IRuntimeTask {
     get id(): TaskId;
     get name(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get raw(): ITaskData;
+    get raw(): IRawTaskEntity;
     render(params: Record<string, unknown>): Result<string>;
     get requiredVariables(): ReadonlyArray<string>;
     get tags(): ReadonlyArray<string> | undefined;
@@ -6421,22 +6428,26 @@ const sugarIngredientEntity: Converter<ISugarIngredientEntity>;
 function supportsScaling(unit: MeasurementUnit): boolean;
 
 // @public
-type TaskCollection = SubLibraryCollection<BaseTaskId, ITaskData>;
+type TaskCollection = SubLibraryCollection<BaseTaskId, IRawTaskEntity>;
 
 // @public
-type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, ITaskData>;
+type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, IRawTaskEntity>;
 
 // @public
-type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, ITaskData>;
+type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, IRawTaskEntity>;
 
 // @public
 const taskCollections: Record<string, JsonObject>;
 
 // @public
-type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, ITaskData>;
+type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, IRawTaskEntity>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const taskData: Converter<ITaskData>;
+const taskEntityInvocation: Converter<ITaskEntityInvocation>;
 
 // @public
 export type TaskId = Brand<string, 'TaskId'>;
@@ -6447,25 +6458,26 @@ const taskId: Converter<TaskId>;
 // @public
 const taskId_2: Validator<TaskId>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const taskInvocation: Converter<ITaskInvocation>;
-
-// @public
-const taskRef: Converter<ITaskRef>;
+const taskRefEntity: Converter<ITaskRefEntity>;
 
 // @public
 type TaskRefStatus = 'valid' | 'task-not-found' | 'missing-variables' | 'invalid-params';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const taskRefStatus: Converter<TaskRefStatus>;
 
 declare namespace Tasks {
     export {
-        taskData,
-        taskRef,
+        rawTaskEntity,
+        taskRefEntity,
         taskRefStatus,
-        inlineTask,
-        taskInvocation,
+        inlineTaskEntity,
+        taskEntityInvocation,
         validationBehavior,
         renderOptions
     }
@@ -6474,15 +6486,15 @@ declare namespace Tasks {
 declare namespace Tasks_2 {
     export {
         Tasks as Converters,
-        isTaskRef,
-        isInlineTask,
-        ITaskData,
-        ITask,
-        ITaskRef,
+        isTaskRefEntity,
+        isInlineTaskEntity,
+        IRawTaskEntity,
+        ITaskEntity,
+        ITaskRefEntity,
         TaskRefStatus,
         ITaskRefValidation,
-        IInlineTask,
-        ITaskInvocation,
+        IInlineTaskEntity,
+        ITaskEntityInvocation,
         ValidationBehavior,
         IRenderOptions,
         defaultRenderOptions,
@@ -6499,7 +6511,7 @@ declare namespace Tasks_2 {
 }
 
 // @public
-class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> {
+class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, IRawTaskEntity> {
     static create(params?: ITasksLibraryParams): Result<TasksLibrary>;
     static createAsync(params?: ITasksLibraryAsyncParams): Promise<Result<TasksLibrary>>;
 }

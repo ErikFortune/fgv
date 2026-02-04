@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isInlineTask(invocation)](./ts-chocolate.entities.tasks.isinlinetask.md)
+[isInlineTaskEntity(invocation)](./ts-chocolate.entities.tasks.isinlinetaskentity.md)
 
 
 </td><td>
@@ -58,7 +58,7 @@ Type guard for inline task - discriminates by presence of `task`
 </td></tr>
 <tr><td>
 
-[isTaskRef(invocation)](./ts-chocolate.entities.tasks.istaskref.md)
+[isTaskRefEntity(invocation)](./ts-chocolate.entities.tasks.istaskrefentity.md)
 
 
 </td><td>
@@ -84,12 +84,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IInlineTask](./ts-chocolate.entities.tasks.iinlinetask.md)
+[IInlineTaskEntity](./ts-chocolate.entities.tasks.iinlinetaskentity.md)
 
 
 </td><td>
 
 An inline task defined directly in a procedure step. Contains a full ITaskData definition with a synthetic baseId (derived from procedure/step) plus params for rendering.
+
+
+</td></tr>
+<tr><td>
+
+[IRawTaskEntity](./ts-chocolate.entities.tasks.irawtaskentity.md)
+
+
+</td><td>
+
+Persisted task data - the data model stored in YAML/JSON files. Does not include requiredVariables as those are extracted from the template at runtime.
 
 
 </td></tr>
@@ -106,7 +117,7 @@ Options for rendering procedure steps.
 </td></tr>
 <tr><td>
 
-[ITask](./ts-chocolate.entities.tasks.itask.md)
+[ITaskEntity](./ts-chocolate.entities.tasks.itaskentity.md)
 
 
 </td><td>
@@ -117,18 +128,7 @@ A reusable task template with runtime-computed properties. Extends ITaskData wit
 </td></tr>
 <tr><td>
 
-[ITaskData](./ts-chocolate.entities.tasks.itaskdata.md)
-
-
-</td><td>
-
-Persisted task data - the data model stored in YAML/JSON files. Does not include requiredVariables as those are extracted from the template at runtime.
-
-
-</td></tr>
-<tr><td>
-
-[ITaskRef](./ts-chocolate.entities.tasks.itaskref.md)
+[ITaskRefEntity](./ts-chocolate.entities.tasks.itaskrefentity.md)
 
 
 </td><td>
@@ -215,23 +215,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ITaskEntityInvocation](./ts-chocolate.entities.tasks.itaskentityinvocation.md)
+
+
+</td><td>
+
+A task invocation - either a reference to a library task or an inline task definition. Discriminated by the presence of `task` (inline) vs `taskId` (ref).
+
+
+</td></tr>
+<tr><td>
+
 [ITaskFileTreeSource](./ts-chocolate.entities.tasks.itaskfiletreesource.md)
 
 
 </td><td>
 
 File tree source for task data.
-
-
-</td></tr>
-<tr><td>
-
-[ITaskInvocation](./ts-chocolate.entities.tasks.itaskinvocation.md)
-
-
-</td><td>
-
-A task invocation - either a reference to a library task or an inline task definition. Discriminated by the presence of `task` (inline) vs `taskId` (ref).
 
 
 </td></tr>

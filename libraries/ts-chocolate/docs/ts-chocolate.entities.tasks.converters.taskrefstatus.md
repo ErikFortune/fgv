@@ -4,7 +4,7 @@
 
 ## Entities.Tasks.Converters.taskRefStatus variable
 
-Converter for TaskRefStatus
+Converter for [TaskRefStatus](./ts-chocolate.entities.tasks.taskrefstatus.md)
 
 **Signature:**
 

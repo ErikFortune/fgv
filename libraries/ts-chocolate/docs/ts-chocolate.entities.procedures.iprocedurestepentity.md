@@ -131,7 +131,7 @@ Order number of this step (1-based)
 
 </td><td>
 
-[ITaskInvocation](./ts-chocolate.entities.itaskinvocation.md)
+[ITaskEntityInvocation](./ts-chocolate.entities.itaskentityinvocation.md)
 
 
 </td><td>

@@ -19,12 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[inlineTask](./ts-chocolate.entities.converters.tasks.inlinetask.md)
+[inlineTaskEntity](./ts-chocolate.entities.converters.tasks.inlinetaskentity.md)
 
 
 </td><td>
 
-Converter for IInlineTask (embedded task with full ITaskData definition).
+Converter for [IInlineTaskEntity](./ts-chocolate.entities.tasks.iinlinetaskentity.md) (embedded task with full ITaskData definition).
+
+
+</td></tr>
+<tr><td>
+
+[rawTaskEntity](./ts-chocolate.entities.converters.tasks.rawtaskentity.md)
+
+
+</td><td>
+
+Converter for [IRawTaskEntity](./ts-chocolate.entities.tasks.irawtaskentity.md) (persisted format from YAML/JSON). Does not include requiredVariables as those are extracted from the template at runtime.
 
 
 </td></tr>
@@ -41,34 +52,23 @@ Converter for IRenderOptions
 </td></tr>
 <tr><td>
 
-[taskData](./ts-chocolate.entities.converters.tasks.taskdata.md)
+[taskEntityInvocation](./ts-chocolate.entities.converters.tasks.taskentityinvocation.md)
 
 
 </td><td>
 
-Converter for ITaskData (persisted format from YAML/JSON). Does not include requiredVariables as those are extracted from the template at runtime.
+Converter for [ITaskEntityInvocation](./ts-chocolate.entities.tasks.itaskentityinvocation.md) (union of [IInlineTaskEntity](./ts-chocolate.entities.tasks.iinlinetaskentity.md) or [ITaskRefEntity](./ts-chocolate.entities.tasks.itaskrefentity.md)<!-- -->). Discriminates by the presence of `task` (inline) vs `taskId` (ref).
 
 
 </td></tr>
 <tr><td>
 
-[taskInvocation](./ts-chocolate.entities.converters.tasks.taskinvocation.md)
+[taskRefEntity](./ts-chocolate.entities.converters.tasks.taskrefentity.md)
 
 
 </td><td>
 
-Converter for ITaskInvocation (union of IInlineTask or ITaskRef). Discriminates by the presence of `task` (inline) vs `taskId` (ref).
-
-
-</td></tr>
-<tr><td>
-
-[taskRef](./ts-chocolate.entities.converters.tasks.taskref.md)
-
-
-</td><td>
-
-Converter for ITaskRef (reference to a public task)
+Converter for [ITaskRefEntity](./ts-chocolate.entities.tasks.itaskrefentity.md) (reference to a public task)
 
 
 </td></tr>
@@ -79,7 +79,7 @@ Converter for ITaskRef (reference to a public task)
 
 </td><td>
 
-Converter for TaskRefStatus
+Converter for [TaskRefStatus](./ts-chocolate.entities.tasks.taskrefstatus.md)
 
 
 </td></tr>

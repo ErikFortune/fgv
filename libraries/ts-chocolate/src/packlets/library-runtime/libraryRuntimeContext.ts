@@ -35,7 +35,7 @@ import {
   FillingId,
   TaskId
 } from '../common';
-import { Confections, Fillings, IProcedureEntity, ITaskData } from '../entities';
+import { Confections, Fillings, IProcedureEntity, IRawTaskEntity } from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
 import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -692,7 +692,7 @@ export class LibraryRuntimeContext
    * @param id - The task ID (composite format: sourceId.baseTaskId)
    * @returns Success with ITaskData, or Failure if not found
    */
-  public getTask(id: TaskId): Result<ITaskData> {
+  public getTask(id: TaskId): Result<IRawTaskEntity> {
     return this._library.getTask(id);
   }
 

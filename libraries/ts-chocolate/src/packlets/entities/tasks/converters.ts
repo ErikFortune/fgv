@@ -26,11 +26,11 @@
 import { Converter, Converters, succeed } from '@fgv/ts-utils';
 import { Converters as CommonConverters } from '../../common';
 import {
-  IInlineTask,
+  IInlineTaskEntity,
   IRenderOptions,
-  ITaskData,
-  ITaskInvocation,
-  ITaskRef,
+  IRawTaskEntity,
+  ITaskEntityInvocation,
+  ITaskRefEntity,
   TaskRefStatus,
   ValidationBehavior
 } from './model';
@@ -57,11 +57,11 @@ const params: Converter<Record<string, unknown>> = Converters.recordOf<unknown>(
 // ============================================================================
 
 /**
- * Converter for ITaskData (persisted format from YAML/JSON).
+ * Converter for {@link Entities.Tasks.IRawTaskEntity | IRawTaskEntity} (persisted format from YAML/JSON).
  * Does not include requiredVariables as those are extracted from the template at runtime.
  * @public
  */
-export const taskData: Converter<ITaskData> = Converters.object<ITaskData>({
+export const rawTaskEntity: Converter<IRawTaskEntity> = Converters.object<IRawTaskEntity>({
   baseId: CommonConverters.baseTaskId,
   name: Converters.string,
   template: Converters.string,
@@ -79,16 +79,16 @@ export const taskData: Converter<ITaskData> = Converters.object<ITaskData>({
 // ============================================================================
 
 /**
- * Converter for ITaskRef (reference to a public task)
+ * Converter for {@link Entities.Tasks.ITaskRefEntity | ITaskRefEntity} (reference to a public task)
  * @public
  */
-export const taskRef: Converter<ITaskRef> = Converters.object<ITaskRef>({
+export const taskRefEntity: Converter<ITaskRefEntity> = Converters.object<ITaskRefEntity>({
   taskId: CommonConverters.taskId,
   params: params
 });
 
 /**
- * Converter for TaskRefStatus
+ * Converter for {@link Entities.Tasks.TaskRefStatus | TaskRefStatus}
  * @public
  */
 export const taskRefStatus: Converter<TaskRefStatus> = Converters.enumeratedValue<TaskRefStatus>([
@@ -103,11 +103,11 @@ export const taskRefStatus: Converter<TaskRefStatus> = Converters.enumeratedValu
 // ============================================================================
 
 /**
- * Converter for IInlineTask (embedded task with full ITaskData definition).
+ * Converter for {@link Entities.Tasks.IInlineTaskEntity | IInlineTaskEntity} (embedded task with full ITaskData definition).
  * @public
  */
-export const inlineTask: Converter<IInlineTask> = Converters.object<IInlineTask>({
-  task: taskData,
+export const inlineTaskEntity: Converter<IInlineTaskEntity> = Converters.object<IInlineTaskEntity>({
+  task: rawTaskEntity,
   params: params
 });
 
@@ -116,14 +116,15 @@ export const inlineTask: Converter<IInlineTask> = Converters.object<IInlineTask>
 // ============================================================================
 
 /**
- * Converter for ITaskInvocation (union of IInlineTask or ITaskRef).
+ * Converter for {@link Entities.Tasks.ITaskEntityInvocation | ITaskEntityInvocation}
+ * (union of {@link Entities.Tasks.IInlineTaskEntity | IInlineTaskEntity}
+ * or {@link Entities.Tasks.ITaskRefEntity | ITaskRefEntity}).
  * Discriminates by the presence of `task` (inline) vs `taskId` (ref).
  * @public
  */
-export const taskInvocation: Converter<ITaskInvocation> = Converters.oneOf<ITaskInvocation>([
-  inlineTask,
-  taskRef
-]).withFormattedError(() => 'Task invocation must have either task (inline) or taskId (ref).');
+export const taskEntityInvocation: Converter<ITaskEntityInvocation> = Converters.oneOf<ITaskEntityInvocation>(
+  [inlineTaskEntity, taskRefEntity]
+).withFormattedError(() => 'Task entity invocation must have either task (inline) or taskId (ref).');
 
 // ============================================================================
 // Render Options Converters

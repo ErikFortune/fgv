@@ -9,7 +9,7 @@ Get an editable tasks collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableTasks(collectionId: CollectionId): Result<EditableCollection<ITaskData, BaseTaskId>>;
+getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

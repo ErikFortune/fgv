@@ -28,7 +28,7 @@
 import { Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
-import { Tasks as TaskEntities, ITaskData } from '../../entities';
+import { Tasks as TaskEntities, IRawTaskEntity } from '../../entities';
 
 // ============================================================================
 // Runtime Task Context
@@ -45,7 +45,7 @@ export interface ITaskContext {
    * @param id - The task ID (composite format: sourceId.baseTaskId)
    * @returns Success with ITaskData, or Failure if not found
    */
-  getTask(id: TaskId): Result<ITaskData>;
+  getTask(id: TaskId): Result<IRawTaskEntity>;
 }
 
 // ============================================================================
@@ -136,5 +136,5 @@ export interface IRuntimeTask {
   /**
    * Gets the underlying raw task data.
    */
-  readonly raw: ITaskData;
+  readonly raw: IRawTaskEntity;
 }

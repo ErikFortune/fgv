@@ -57,14 +57,14 @@ import {
 } from '../../../packlets/entities';
 import { ChocolateLibrary } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
-import { ITaskInvocation } from '../../../packlets/entities';
+import { ITaskEntityInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 
 /**
  * Helper to create an inline task from a description string.
  * Creates a synthetic baseId from the template for testing purposes.
  */
-function inlineTask(template: string): ITaskInvocation {
+function inlineTask(template: string): ITaskEntityInvocation {
   const baseId = `test-inline-${template.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}` as BaseTaskId;
   return {
     task: {

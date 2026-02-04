@@ -46,7 +46,7 @@ interface ITaskShowOptions extends IEntityBaseOptions {
  */
 interface ITaskSelectableItem extends ISelectableItem {
   id: TaskId;
-  task: Entities.Tasks.ITaskData;
+  task: Entities.Tasks.IRawTaskEntity;
 }
 
 /**
@@ -64,7 +64,7 @@ function getRequiredVariables(template: string): string[] {
  * Formats a task for human-readable output
  */
 export function formatTaskHuman(
-  task: Entities.Tasks.ITaskData,
+  task: Entities.Tasks.IRawTaskEntity,
   taskId: TaskId,
   renderedDescription?: string
 ): string {
@@ -158,7 +158,7 @@ export function createShowSubcommand(): Command {
 
         // Determine task ID - either from argument or interactive selection
         let taskId: TaskId;
-        let task: Entities.Tasks.ITaskData;
+        let task: Entities.Tasks.IRawTaskEntity;
 
         if (localOptions.interactive || !taskIdArg) {
           if (!localOptions.interactive && !taskIdArg) {

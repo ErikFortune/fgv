@@ -255,7 +255,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   ): Result<IRuntimeRenderedStep> {
     const invocation = step.task;
 
-    if (Tasks.isTaskRef(invocation)) {
+    if (Tasks.isTaskRefEntity(invocation)) {
       // KEY FIX: Actually resolve the task reference using the context
       // This is what the data-layer couldn't do (returned placeholder instead)
       return renderContext.context
@@ -273,7 +273,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
     }
 
     // TODO: can we lazy initialize and cache this task
-    if (Tasks.isInlineTask(invocation)) {
+    if (Tasks.isInlineTaskEntity(invocation)) {
       // For inline tasks, create a RuntimeTask with a synthetic ID
       const syntheticId = `${this._id}.inline-${step.order}` as TaskId;
       return RuntimeTask.create(renderContext.context, syntheticId, invocation.task).onSuccess(

@@ -58,7 +58,7 @@ function getRequiredVariableCount(template: string): number {
  * Checks if a task matches the specified filters
  */
 function matchesFilters(
-  task: Entities.Tasks.ITaskData,
+  task: Entities.Tasks.IRawTaskEntity,
   taskId: TaskId,
   collectionId: CollectionId,
   options: IEntityListOptions

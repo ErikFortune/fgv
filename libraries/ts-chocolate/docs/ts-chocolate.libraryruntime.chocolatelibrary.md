@@ -426,7 +426,7 @@ Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) by its
 
 </td><td>
 
-Gets a [task](./ts-chocolate.entities.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
+Gets a [task](./ts-chocolate.entities.tasks.irawtaskentity.md) by its [composite ID](./ts-chocolate.taskid.md)
 
 
 </td></tr>

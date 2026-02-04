@@ -11,9 +11,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "common.melt-
 **Signature:**
 
 ```typescript
-export declare class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> 
+export declare class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, IRawTaskEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[TaskId](./ts-chocolate.taskid.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[TaskId](./ts-chocolate.taskid.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)<!-- -->&gt;
 
 ## Methods
 

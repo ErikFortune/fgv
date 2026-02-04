@@ -37,7 +37,7 @@ import {
 } from '../../common';
 import { IMoldEntity } from '../../entities';
 import { Fillings, IProcedureEntity, IProcedureStepEntity } from '../../entities';
-import { ITaskData } from '../../entities';
+import { IRawTaskEntity } from '../../entities';
 import { RuntimeTask } from '../tasks';
 
 // ============================================================================
@@ -55,7 +55,7 @@ export interface IProcedureContext {
    * @param id - The task ID (composite format: sourceId.baseTaskId)
    * @returns Success with ITaskData, or Failure if not found
    */
-  getTask(id: TaskId): Result<ITaskData>;
+  getTask(id: TaskId): Result<IRawTaskEntity>;
 
   /**
    * Gets a runtime task by its composite ID.

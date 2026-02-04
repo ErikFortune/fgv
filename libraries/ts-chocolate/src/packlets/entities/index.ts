@@ -94,7 +94,14 @@ export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } 
 
 export { ProceduresLibrary, IProcedureEntity, IProcedureStepEntity } from './procedures';
 
-export { TasksLibrary, ITask, ITaskData, IInlineTask, IRenderOptions, ITaskInvocation } from './tasks';
+export {
+  TasksLibrary,
+  ITaskEntity,
+  IRawTaskEntity,
+  IInlineTaskEntity,
+  IRenderOptions,
+  ITaskEntityInvocation
+} from './tasks';
 
 // Export aggregated converters namespace
 import * as Converters from './converters';

@@ -48,7 +48,7 @@ import { IFillingRecipeEntity, FillingsLibrary } from '../entities';
 import { Converters as EntityConverters } from '../entities';
 import { IMoldEntity, MoldsLibrary } from '../entities';
 import { IProcedureEntity, ProceduresLibrary } from '../entities';
-import { ITaskData, TasksLibrary } from '../entities';
+import { IRawTaskEntity, TasksLibrary } from '../entities';
 import { IGanacheCalculation, IngredientResolver } from './model';
 import { calculateGanache } from './internal';
 import { EditableCollection } from '../editing';
@@ -405,11 +405,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Entities.Tasks.ITaskData | task} by its {@link TaskId | composite ID}
+   * Gets a {@link Entities.Tasks.IRawTaskEntity | task} by its {@link TaskId | composite ID}
    * @param id - The {@link TaskId | id} of the task to retrieve.
    * @returns `Success` with task data, or `Failure` if not found
    */
-  public getTask(id: TaskId): Result<ITaskData> {
+  public getTask(id: TaskId): Result<IRawTaskEntity> {
     return this._tasks.get(id);
   }
 
@@ -556,12 +556,14 @@ export class ChocolateLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableTasks(collectionId: CollectionId): Result<EditableCollection<ITaskData, BaseTaskId>> {
+  public getEditableTasks(
+    collectionId: CollectionId
+  ): Result<EditableCollection<IRawTaskEntity, BaseTaskId>> {
     return EditableCollection.fromLibrary(
       this.tasks,
       collectionId,
       CommonConverters.baseTaskId,
-      EntityConverters.Tasks.taskData
+      EntityConverters.Tasks.rawTaskEntity
     );
   }
 

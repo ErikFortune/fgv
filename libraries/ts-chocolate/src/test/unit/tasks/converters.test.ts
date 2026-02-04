@@ -21,8 +21,15 @@
 import '@fgv/ts-utils-jest';
 import { Converters } from '../../../packlets/entities';
 
-const { taskData, taskRef, taskRefStatus, inlineTask, taskInvocation, validationBehavior, renderOptions } =
-  Converters.Tasks;
+const {
+  rawTaskEntity: taskData,
+  taskRefEntity: taskRef,
+  taskRefStatus,
+  inlineTaskEntity: inlineTask,
+  taskEntityInvocation: taskInvocation,
+  validationBehavior,
+  renderOptions
+} = Converters.Tasks;
 
 describe('TaskConverters', () => {
   // ============================================================================

@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 import { fail } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, TaskId, Minutes, Model as CommonModel } from '../../../packlets/common';
-import { ITaskData } from '../../../packlets/entities';
+import { IRawTaskEntity } from '../../../packlets/entities';
 import { RuntimeTask, ITaskContext } from '../../../packlets/library-runtime';
 
 describe('RuntimeTask', () => {
@@ -32,13 +32,13 @@ describe('RuntimeTask', () => {
   };
 
   // Sample task data
-  const simpleTaskData: ITaskData = {
+  const simpleTaskData: IRawTaskEntity = {
     baseId: 'melt-chocolate' as BaseTaskId,
     name: 'Melt Chocolate',
     template: 'Melt {{amount}}g of {{type}} chocolate at {{temp}}°C'
   };
 
-  const taskWithDefaults: ITaskData = {
+  const taskWithDefaults: IRawTaskEntity = {
     baseId: 'temper-chocolate' as BaseTaskId,
     name: 'Temper Chocolate',
     template: 'Temper chocolate to {{temp}}°C using {{method}} method',

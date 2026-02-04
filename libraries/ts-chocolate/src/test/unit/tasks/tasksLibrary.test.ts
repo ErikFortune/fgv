@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseTaskId, Minutes, CollectionId, TaskId } from '../../../packlets/common';
-import { TasksLibrary, ITaskData, Tasks } from '../../../packlets/entities';
+import { TasksLibrary, IRawTaskEntity, Tasks } from '../../../packlets/entities';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 describe('TasksLibrary', () => {
@@ -31,14 +31,14 @@ describe('TasksLibrary', () => {
   // ============================================================================
 
   // ITaskData is the persisted format - requiredVariables is extracted from template at runtime
-  const testTaskData: ITaskData = {
+  const testTaskData: IRawTaskEntity = {
     baseId: 'test-task' as BaseTaskId,
     name: 'Test Task',
     template: 'Do {{action}}',
     defaultActiveTime: 5 as Minutes
   };
 
-  const createTestTask = (): ITaskData => testTaskData;
+  const createTestTask = (): IRawTaskEntity => testTaskData;
 
   // ============================================================================
   // Creation Tests
@@ -240,7 +240,7 @@ describe('TasksLibrary', () => {
       expect(library.set(id, createTestTask())).toSucceed();
       expect(library.has(id)).toBe(true);
 
-      const updatedTask: ITaskData = {
+      const updatedTask: IRawTaskEntity = {
         ...testTaskData,
         name: 'Updated Task'
       };

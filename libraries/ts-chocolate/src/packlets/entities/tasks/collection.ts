@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../../library-data';
-import { ITaskData } from './model';
+import { IRawTaskEntity } from './model';
 
 /**
  * A single entry in a tasks collection.
  * @public
  */
-export type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, ITaskData>;
+export type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, IRawTaskEntity>;
 
 /**
  * Initialization type for a TasksLibrary collection entry.
  * @public
  */
-export type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, ITaskData>;
+export type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, IRawTaskEntity>;
 
 /**
  * Validator type for TasksLibrary collections.
  * @public
  */
-export type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, ITaskData>;
+export type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, IRawTaskEntity>;
 
 /**
  * Type for the collections in a TasksLibrary.
  * @public
  */
-export type TaskCollection = SubLibraryCollection<BaseTaskId, ITaskData>;
+export type TaskCollection = SubLibraryCollection<BaseTaskId, IRawTaskEntity>;

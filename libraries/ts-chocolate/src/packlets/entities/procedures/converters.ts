@@ -35,7 +35,7 @@ import { IProcedureEntity, IProcedureStepEntity } from './model';
  */
 export const procedureStepEntity: Converter<IProcedureStepEntity> = Converters.object<IProcedureStepEntity>({
   order: Converters.number,
-  task: TaskConverters.taskInvocation,
+  task: TaskConverters.taskEntityInvocation,
   activeTime: CommonConverters.minutes.optional(),
   waitTime: CommonConverters.minutes.optional(),
   holdTime: CommonConverters.minutes.optional(),

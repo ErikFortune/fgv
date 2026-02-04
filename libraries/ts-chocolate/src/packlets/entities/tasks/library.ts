@@ -27,8 +27,8 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, TaskId } from '../../common';
 import { Converters as CommonConverters } from '../../common';
-import { ITaskData } from './model';
-import { taskData as taskConverter } from './converters';
+import { IRawTaskEntity } from './model';
+import { rawTaskEntity as taskConverter } from './converters';
 import { TaskCollectionEntryInit } from './collection';
 import {
   getTasksDirectory,
@@ -87,7 +87,7 @@ export type ITasksLibraryAsyncParams = ISubLibraryAsyncParams<TasksLibrary, Task
  *
  * @public
  */
-export class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> {
+export class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, IRawTaskEntity> {
   private constructor(params?: ITasksLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseTaskId,
@@ -122,7 +122,7 @@ export class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> 
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<TasksLibrary, BaseTaskId, ITaskData> = {
+    const createParams: ISubLibraryCreateParams<TasksLibrary, BaseTaskId, IRawTaskEntity> = {
       itemIdConverter: CommonConverters.baseTaskId,
       itemConverter: taskConverter,
       directoryNavigator: getTasksDirectory,

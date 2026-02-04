@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.ChocolateLibrary.getTask() method
 
-Gets a [task](./ts-chocolate.entities.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
+Gets a [task](./ts-chocolate.entities.tasks.irawtaskentity.md) by its [composite ID](./ts-chocolate.taskid.md)
 
 **Signature:**
 
 ```typescript
-getTask(id: TaskId): Result<ITaskData>;
+getTask(id: TaskId): Result<IRawTaskEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.taskid.md) of the task to retrieve.
 
 **Returns:**
 
-Result&lt;[ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->&gt;
+Result&lt;[IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)<!-- -->&gt;
 
 `Success` with task data, or `Failure` if not found
 
