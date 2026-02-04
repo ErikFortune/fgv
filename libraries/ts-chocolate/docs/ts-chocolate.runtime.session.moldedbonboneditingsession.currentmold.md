@@ -9,5 +9,5 @@ Gets the current mold.
 **Signature:**
 
 ```typescript
-get currentMold(): IRuntimeMold;
+get currentMold(): IMold;
 ```

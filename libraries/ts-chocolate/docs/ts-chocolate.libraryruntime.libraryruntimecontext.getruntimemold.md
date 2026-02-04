@@ -9,7 +9,7 @@ Gets a runtime mold by its composite ID (with caching).
 **Signature:**
 
 ```typescript
-getRuntimeMold(id: MoldId): Result<RuntimeMold>;
+getRuntimeMold(id: MoldId): Result<Mold>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The mold ID (composite format: collectionId.baseMoldId)
 
 **Returns:**
 
-Result&lt;[RuntimeMold](./ts-chocolate.libraryruntime.runtimemold.md)<!-- -->&gt;
+Result&lt;[Mold](./ts-chocolate.libraryruntime.mold.md)<!-- -->&gt;
 
 Success with RuntimeMold, or Failure if not found
 

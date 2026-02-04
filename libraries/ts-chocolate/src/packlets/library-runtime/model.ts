@@ -32,7 +32,7 @@ import { Collections, Result } from '@fgv/ts-utils';
 
 import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import { IReadOnlyValidatingLibrary } from './validatingLibrary';
-import type { IRuntimeMold } from './molds/model';
+import type { IMold } from './molds/model';
 import type { IRuntimeProcedure } from './procedures/model';
 
 import {
@@ -1306,7 +1306,7 @@ export interface IResolvedConfectionMoldRef {
   /** The mold ID (for IOptionsWithPreferred compatibility) */
   readonly id: MoldId;
   /** The resolved mold object */
-  readonly mold: IRuntimeMold;
+  readonly mold: IMold;
   /** Optional notes specific to using this mold */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original mold entity reference data */
@@ -1579,7 +1579,7 @@ export interface IConfectionContext {
    * Gets a runtime mold by ID.
    * Used for resolving mold references.
    */
-  getRuntimeMold(id: MoldId): Result<IRuntimeMold>;
+  getRuntimeMold(id: MoldId): Result<IMold>;
 
   /**
    * Gets a runtime procedure by ID.

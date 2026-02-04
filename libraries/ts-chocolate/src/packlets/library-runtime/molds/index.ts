@@ -23,5 +23,5 @@
  * @packageDocumentation
  */
 
-export { IMoldContext, IRuntimeMold } from './model';
-export { RuntimeMold } from './mold';
+export { IMoldContext, IMold } from './model';
+export { Mold } from './mold';

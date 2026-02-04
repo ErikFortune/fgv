@@ -27,7 +27,7 @@ import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts
 
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedMoldedBonBonEntity, Session } from '../../entities';
-import { MoldedBonBon, IRuntimeMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
+import { MoldedBonBon, IMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -47,7 +47,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
   IProducedMoldedBonBonEntity,
   MoldedBonBon
 > {
-  private _currentMold: IRuntimeMold;
+  private _currentMold: IMold;
   private _pendingMoldChange?: IMoldChangeAnalysis;
 
   /**
@@ -305,7 +305,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Total weight in grams
    * @internal
    */
-  private _computeTotalCavityWeight(mold: IRuntimeMold): Measurement {
+  private _computeTotalCavityWeight(mold: IMold): Measurement {
     const currentYield = this._produced.yield;
 
     let frames: number;
@@ -351,7 +351,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * Loads the current mold from the produced confection.
    * @internal
    */
-  private _loadCurrentMold(): Result<IRuntimeMold> {
+  private _loadCurrentMold(): Result<IMold> {
     const moldId = this._produced.current.moldId;
     return this._loadMold(moldId);
   }
@@ -362,7 +362,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with mold, or Failure
    * @internal
    */
-  private _loadMold(moldId: MoldId): Result<IRuntimeMold> {
+  private _loadMold(moldId: MoldId): Result<IMold> {
     return this._context.getRuntimeMold(moldId);
   }
 
@@ -374,7 +374,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * Gets the current mold.
    * @public
    */
-  public get currentMold(): IRuntimeMold {
+  public get currentMold(): IMold {
     return this._currentMold;
   }
 }

@@ -157,6 +157,19 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 </td></tr>
 <tr><td>
 
+[Mold](./ts-chocolate.libraryruntime.mold.md)
+
+
+</td><td>
+
+A resolved view of a mold with computed properties.
+
+Mold wraps a data-layer Mold and provides: - Composite identity (MoldId) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
+
+
+</td></tr>
+<tr><td>
+
 [MoldedBonBon](./ts-chocolate.libraryruntime.moldedbonbon.md)
 
 
@@ -196,19 +209,6 @@ A resolved view of a rolled truffle confection with navigation capabilities. Imm
 </td><td>
 
 A resolved view of a rolled truffle version with all references resolved.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeMold](./ts-chocolate.libraryruntime.runtimemold.md)
-
-
-</td><td>
-
-A resolved view of a mold with computed properties.
-
-RuntimeMold wraps a data-layer Mold and provides: - Composite identity (MoldId) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
 
 
 </td></tr>
@@ -887,6 +887,19 @@ Parameters for creating a LibraryRuntimeContext with a new library
 </td></tr>
 <tr><td>
 
+[IMold](./ts-chocolate.libraryruntime.imold.md)
+
+
+</td><td>
+
+A resolved runtime view of a mold with computed properties.
+
+This interface provides runtime-layer access to mold data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
+
+
+</td></tr>
+<tr><td>
+
 [IMoldedBonBon](./ts-chocolate.libraryruntime.imoldedbonbon.md)
 
 
@@ -1102,19 +1115,6 @@ Runtime confection narrowed to rolled truffle type.
 </td><td>
 
 Runtime confection version narrowed to rolled truffle type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeMold](./ts-chocolate.libraryruntime.iruntimemold.md)
-
-
-</td><td>
-
-A resolved runtime view of a mold with computed properties.
-
-This interface provides runtime-layer access to mold data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
 
 
 </td></tr>

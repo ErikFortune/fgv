@@ -52,7 +52,7 @@ Description
 
 </td><td>
 
-[IRuntimeMold](./ts-chocolate.libraryruntime.iruntimemold.md)
+[IMold](./ts-chocolate.libraryruntime.imold.md)
 
 
 </td><td>

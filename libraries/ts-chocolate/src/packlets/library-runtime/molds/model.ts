@@ -62,7 +62,7 @@ export interface IMoldContext {
  *
  * @public
  */
-export interface IRuntimeMold {
+export interface IMold {
   // ---- Composite Identity ----
 
   /**
@@ -72,9 +72,9 @@ export interface IRuntimeMold {
   readonly id: MoldId;
 
   /**
-   * The source ID part of the composite ID.
+   * The collection ID part of the composite ID.
    */
-  readonly sourceId: CollectionId;
+  readonly collectionId: CollectionId;
 
   /**
    * The base mold ID within the source.
@@ -138,5 +138,5 @@ export interface IRuntimeMold {
   /**
    * Gets the underlying raw mold data.
    */
-  readonly raw: IMoldEntity;
+  readonly entity: IMoldEntity;
 }

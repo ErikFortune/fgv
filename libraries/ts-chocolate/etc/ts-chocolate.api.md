@@ -2392,7 +2392,7 @@ interface IConfectionContext {
     getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
     getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
-    getRuntimeMold(id: MoldId): Result<IRuntimeMold>;
+    getRuntimeMold(id: MoldId): Result<IMold>;
     getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
     resolveAdditionalChocolates(additional: ReadonlyArray<Confections_2.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     resolveChocolateSpec(spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
@@ -3248,6 +3248,28 @@ interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
 }
 
 // @public
+interface IMold {
+    readonly baseId: BaseMoldId;
+    readonly cavities: ICavities;
+    readonly cavityCount: number;
+    readonly cavityDimensions?: ICavityDimensions;
+    readonly cavityWeight?: Measurement;
+    readonly collectionId: CollectionId;
+    readonly description?: string;
+    readonly displayName: string;
+    readonly entity: IMoldEntity;
+    readonly format: MoldFormat;
+    readonly id: MoldId;
+    readonly manufacturer: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly productNumber: string;
+    readonly related?: ReadonlyArray<MoldId>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly totalCapacity: Measurement | undefined;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
+}
+
+// @public
 interface IMoldChangeAnalysis {
     readonly fillingSessionsAffected: ReadonlyArray<SlotId>;
     readonly newMoldId: MoldId;
@@ -4026,7 +4048,7 @@ interface IResolvedCoatings {
 interface IResolvedConfectionMoldRef {
     readonly entity: Confections_2.IConfectionMoldRef;
     readonly id: MoldId;
-    readonly mold: IRuntimeMold;
+    readonly mold: IMold;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
@@ -4182,28 +4204,6 @@ interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext {
 interface IRuntimeContextCreateParams {
     readonly libraryParams?: IChocolateLibraryCreateParams;
     readonly preWarm?: boolean;
-}
-
-// @public
-interface IRuntimeMold {
-    readonly baseId: BaseMoldId;
-    readonly cavities: ICavities;
-    readonly cavityCount: number;
-    readonly cavityDimensions?: ICavityDimensions;
-    readonly cavityWeight?: Measurement;
-    readonly description?: string;
-    readonly displayName: string;
-    readonly format: MoldFormat;
-    readonly id: MoldId;
-    readonly manufacturer: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly productNumber: string;
-    readonly raw: IMoldEntity;
-    readonly related?: ReadonlyArray<MoldId>;
-    readonly sourceId: CollectionId;
-    readonly tags?: ReadonlyArray<string>;
-    readonly totalCapacity: Measurement | undefined;
-    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
 }
 
 // @public
@@ -5122,8 +5122,8 @@ declare namespace LibraryRuntime {
         IRuntimeRenderedStep,
         RuntimeProcedure,
         IMoldContext,
-        IRuntimeMold,
-        RuntimeMold,
+        IMold,
+        Mold,
         Internal,
         IInstantiatedLibrarySource,
         IChocolateLibraryCreateParams,
@@ -5252,7 +5252,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
-    getRuntimeMold(id: MoldId): Result<RuntimeMold>;
+    getRuntimeMold(id: MoldId): Result<Mold>;
     getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
     getTask(id: TaskId): Result<IRawTaskEntity>;
@@ -5339,6 +5339,34 @@ declare namespace Model {
 }
 
 // @public
+class Mold implements IMold {
+    get baseId(): BaseMoldId;
+    get cavities(): ICavities;
+    get cavityCount(): number;
+    get cavityDimensions(): ICavityDimensions | undefined;
+    get cavityWeight(): Measurement | undefined;
+    get collectionId(): CollectionId;
+    // @internal
+    protected get context(): IMoldContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+    static create(context: IMoldContext, id: MoldId, mold: IMoldEntity): Result<Mold>;
+    get description(): string | undefined;
+    get displayName(): string;
+    get entity(): IMoldEntity;
+    get format(): MoldFormat;
+    get id(): MoldId;
+    get manufacturer(): string;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    get productNumber(): string;
+    // (undocumented)
+    get related(): ReadonlyArray<MoldId> | undefined;
+    get tags(): ReadonlyArray<string> | undefined;
+    get totalCapacity(): Measurement | undefined;
+    get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
+}
+
+// @public
 type MoldCollection = SubLibraryCollection<BaseMoldId, IMoldEntity>;
 
 // @public
@@ -5379,7 +5407,7 @@ class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedM
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     confirmMoldChange(): Result<undefined>;
     static create(baseConfection: MoldedBonBon, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
-    get currentMold(): IRuntimeMold;
+    get currentMold(): IMold;
     static fromPersistedState(baseConfection: MoldedBonBon, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
@@ -5979,34 +6007,6 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
-}
-
-// @public
-class RuntimeMold implements IRuntimeMold {
-    get baseId(): BaseMoldId;
-    get cavities(): ICavities;
-    get cavityCount(): number;
-    get cavityDimensions(): ICavityDimensions | undefined;
-    get cavityWeight(): Measurement | undefined;
-    // @internal
-    protected get context(): IMoldContext;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
-    static create(context: IMoldContext, id: MoldId, mold: IMoldEntity): Result<RuntimeMold>;
-    get description(): string | undefined;
-    get displayName(): string;
-    get format(): MoldFormat;
-    get id(): MoldId;
-    get manufacturer(): string;
-    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get productNumber(): string;
-    get raw(): IMoldEntity;
-    // (undocumented)
-    get related(): ReadonlyArray<MoldId> | undefined;
-    get sourceId(): CollectionId;
-    get tags(): ReadonlyArray<string> | undefined;
-    get totalCapacity(): Measurement | undefined;
-    get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
 }
 
 // @public

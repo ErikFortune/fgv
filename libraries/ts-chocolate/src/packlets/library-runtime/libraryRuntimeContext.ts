@@ -69,7 +69,7 @@ import {
 import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibrary';
 import { ITaskContext, RuntimeTask } from './tasks';
 import { IProcedureContext, RuntimeProcedure } from './procedures';
-import { IMoldContext, RuntimeMold } from './molds';
+import { IMoldContext, Mold } from './molds';
 
 // ============================================================================
 // LibraryRuntimeContext Parameters
@@ -141,7 +141,7 @@ export class LibraryRuntimeContext
   // Cached runtime wrappers for tasks, procedures, molds, and confections
   private readonly _runtimeTasks: Map<TaskId, RuntimeTask> = new Map();
   private readonly _runtimeProcedures: Map<ProcedureId, RuntimeProcedure> = new Map();
-  private readonly _runtimeMolds: Map<MoldId, RuntimeMold> = new Map();
+  private readonly _runtimeMolds: Map<MoldId, Mold> = new Map();
   private _runtimeConfections: Map<ConfectionId, AnyConfection> | undefined;
 
   protected constructor(library: ChocolateLibrary, preWarm: boolean) {
@@ -735,7 +735,7 @@ export class LibraryRuntimeContext
    * @param id - The mold ID (composite format: collectionId.baseMoldId)
    * @returns Success with RuntimeMold, or Failure if not found
    */
-  public getRuntimeMold(id: MoldId): Result<RuntimeMold> {
+  public getRuntimeMold(id: MoldId): Result<Mold> {
     // Check cache first
     const cached = this._runtimeMolds.get(id);
     /* c8 ignore next 3 - cache hit path tested via integration */
@@ -746,7 +746,7 @@ export class LibraryRuntimeContext
     // Resolve from library and cache
     return this._library.getMold(id).onSuccess((mold) => {
       /* c8 ignore next 4 - cache population tested via integration */
-      return RuntimeMold.create(this, id, mold).onSuccess((runtimeMold) => {
+      return Mold.create(this, id, mold).onSuccess((runtimeMold) => {
         this._runtimeMolds.set(id, runtimeMold);
         return succeed(runtimeMold);
       });

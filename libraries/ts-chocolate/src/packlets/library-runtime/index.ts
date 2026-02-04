@@ -101,7 +101,7 @@ export {
 } from './procedures';
 
 // Runtime molds
-export { IMoldContext, IRuntimeMold, RuntimeMold } from './molds';
+export { IMoldContext, IMold, Mold } from './molds';
 
 // Produced wrappers (mutable editing containers)
 export * from './produced';

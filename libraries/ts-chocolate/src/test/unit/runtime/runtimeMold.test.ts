@@ -29,7 +29,7 @@ import {
   MoldId
 } from '../../../packlets/common';
 import { IMoldEntity } from '../../../packlets/entities';
-import { RuntimeMold, IMoldContext } from '../../../packlets/library-runtime';
+import { Mold, IMoldContext } from '../../../packlets/library-runtime';
 
 describe('RuntimeMold', () => {
   // Mock mold context (currently empty, reserved for future use)
@@ -87,9 +87,9 @@ describe('RuntimeMold', () => {
     test('should create RuntimeMold from IMold', () => {
       const moldId = 'cw.cw-2227' as MoldId;
 
-      expect(RuntimeMold.create(mockContext, moldId, simpleMold)).toSucceedAndSatisfy((runtimeMold) => {
+      expect(Mold.create(mockContext, moldId, simpleMold)).toSucceedAndSatisfy((runtimeMold) => {
         expect(runtimeMold.id).toBe(moldId);
-        expect(runtimeMold.sourceId).toBe('cw');
+        expect(runtimeMold.collectionId).toBe('cw');
         expect(runtimeMold.baseId).toBe('cw-2227');
         expect(runtimeMold.manufacturer).toBe('Chocolate World');
         expect(runtimeMold.productNumber).toBe('CW 2227');
@@ -99,7 +99,7 @@ describe('RuntimeMold', () => {
     test('should expose all mold properties', () => {
       const moldId = 'cw.cw-2227' as MoldId;
 
-      expect(RuntimeMold.create(mockContext, moldId, simpleMold)).toSucceedAndSatisfy((runtimeMold) => {
+      expect(Mold.create(mockContext, moldId, simpleMold)).toSucceedAndSatisfy((runtimeMold) => {
         expect(runtimeMold.description).toBe('Rectangle bar mold');
         expect(runtimeMold.cavityCount).toBe(8);
         expect(runtimeMold.cavityWeight).toBe(10);
@@ -119,7 +119,7 @@ describe('RuntimeMold', () => {
     describe('displayName', () => {
       test('should return description with manufacturer + product number', () => {
         const moldId = 'cw.cw-2227' as MoldId;
-        const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
+        const runtimeMold = Mold.create(mockContext, moldId, simpleMold).orThrow();
 
         expect(runtimeMold.displayName).toBe('Rectangle bar mold (Chocolate World CW 2227)');
       });
@@ -127,7 +127,7 @@ describe('RuntimeMold', () => {
       test('should fall back to manufacturer + product number when no description', () => {
         const moldId = 'cw.cw-2227' as MoldId;
         const moldWithoutDescription = { ...simpleMold, description: undefined };
-        const runtimeMold = RuntimeMold.create(mockContext, moldId, moldWithoutDescription).orThrow();
+        const runtimeMold = Mold.create(mockContext, moldId, moldWithoutDescription).orThrow();
 
         expect(runtimeMold.displayName).toBe('Chocolate World CW 2227');
       });
@@ -136,7 +136,7 @@ describe('RuntimeMold', () => {
     describe('totalCapacity', () => {
       test('should calculate total capacity from cavity weight and count', () => {
         const moldId = 'cw.cw-2227' as MoldId;
-        const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
+        const runtimeMold = Mold.create(mockContext, moldId, simpleMold).orThrow();
 
         // 8 cavities * 10g each = 80g
         expect(runtimeMold.totalCapacity).toBe(80);
@@ -144,7 +144,7 @@ describe('RuntimeMold', () => {
 
       test('should return undefined when cavity weight is not set', () => {
         const moldId = 'custom.custom-mold' as MoldId;
-        const runtimeMold = RuntimeMold.create(mockContext, moldId, moldWithoutWeight).orThrow();
+        const runtimeMold = Mold.create(mockContext, moldId, moldWithoutWeight).orThrow();
 
         expect(runtimeMold.totalCapacity).toBeUndefined();
       });
@@ -154,9 +154,9 @@ describe('RuntimeMold', () => {
   describe('raw', () => {
     test('should expose underlying IMold', () => {
       const moldId = 'cw.cw-2227' as MoldId;
-      const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
+      const runtimeMold = Mold.create(mockContext, moldId, simpleMold).orThrow();
 
-      expect(runtimeMold.raw).toBe(simpleMold);
+      expect(runtimeMold.entity).toBe(simpleMold);
     });
   });
 
@@ -164,23 +164,21 @@ describe('RuntimeMold', () => {
     test('should handle mold with minimal properties', () => {
       const moldId = 'custom.custom-mold' as MoldId;
 
-      expect(RuntimeMold.create(mockContext, moldId, moldWithoutWeight)).toSucceedAndSatisfy(
-        (runtimeMold) => {
-          expect(runtimeMold.description).toBeUndefined();
-          expect(runtimeMold.cavityWeight).toBeUndefined();
-          expect(runtimeMold.cavityDimensions).toBeUndefined();
-          expect(runtimeMold.tags).toBeUndefined();
-          expect(runtimeMold.notes).toBeUndefined();
-          expect(runtimeMold.related).toBeUndefined();
-        }
-      );
+      expect(Mold.create(mockContext, moldId, moldWithoutWeight)).toSucceedAndSatisfy((runtimeMold) => {
+        expect(runtimeMold.description).toBeUndefined();
+        expect(runtimeMold.cavityWeight).toBeUndefined();
+        expect(runtimeMold.cavityDimensions).toBeUndefined();
+        expect(runtimeMold.tags).toBeUndefined();
+        expect(runtimeMold.notes).toBeUndefined();
+        expect(runtimeMold.related).toBeUndefined();
+      });
     });
   });
 
   describe('cavities', () => {
     test('should expose cavities definition directly', () => {
       const moldId = 'cw.cw-2227' as MoldId;
-      const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
+      const runtimeMold = Mold.create(mockContext, moldId, simpleMold).orThrow();
 
       expect(runtimeMold.cavities).toBe(simpleMold.cavities);
       expect(runtimeMold.cavities.kind).toBe('count');
@@ -190,7 +188,7 @@ describe('RuntimeMold', () => {
   describe('grid mold support', () => {
     test('should calculate cavityCount for grid-type molds', () => {
       const moldId = 'pc.grid-mold' as MoldId;
-      const runtimeMold = RuntimeMold.create(mockContext, moldId, gridMold).orThrow();
+      const runtimeMold = Mold.create(mockContext, moldId, gridMold).orThrow();
 
       // 4 columns * 3 rows = 12 cavities
       expect(runtimeMold.cavityCount).toBe(12);
@@ -198,7 +196,7 @@ describe('RuntimeMold', () => {
 
     test('should calculate totalCapacity for grid-type molds', () => {
       const moldId = 'pc.grid-mold' as MoldId;
-      const runtimeMold = RuntimeMold.create(mockContext, moldId, gridMold).orThrow();
+      const runtimeMold = Mold.create(mockContext, moldId, gridMold).orThrow();
 
       // 12 cavities * 5g each = 60g
       expect(runtimeMold.totalCapacity).toBe(60);
@@ -206,7 +204,7 @@ describe('RuntimeMold', () => {
 
     test('should expose related molds', () => {
       const moldId = 'pc.grid-mold' as MoldId;
-      const runtimeMold = RuntimeMold.create(mockContext, moldId, gridMold).orThrow();
+      const runtimeMold = Mold.create(mockContext, moldId, gridMold).orThrow();
 
       expect(runtimeMold.related).toEqual(['cw.cw-2227', 'cw.cw-2228']);
     });

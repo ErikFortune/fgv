@@ -9,5 +9,5 @@ The resolved mold object
 **Signature:**
 
 ```typescript
-readonly mold: IRuntimeMold;
+readonly mold: IMold;
 ```

@@ -55,7 +55,7 @@ import {
   IChocolateIngredient,
   IConfectionBase,
   IFillingRecipe,
-  IRuntimeMold,
+  IMold,
   IRuntimeProcedure,
   Confection,
   MoldedBonBon,
@@ -244,7 +244,7 @@ describe('RuntimeConfection', () => {
         id,
         name: 'Mock Mold',
         dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 10 as Millimeters }
-      } as unknown as IRuntimeMold);
+      } as unknown as IMold);
     },
     getRuntimeProcedure: (id: ProcedureId) => {
       // Return a minimal mock procedure

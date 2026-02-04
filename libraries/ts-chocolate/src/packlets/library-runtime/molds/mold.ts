@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeMold - resolved mold view with computed properties
+ * Mold - resolved mold view with computed properties
  * @packageDocumentation
  */
 
@@ -35,23 +35,23 @@ import {
   CollectionId
 } from '../../common';
 import { ICavities, ICavityDimensions, IMoldEntity } from '../../entities';
-import { IMoldContext, IRuntimeMold } from './model';
+import { IMoldContext, IMold } from './model';
 
 // ============================================================================
-// RuntimeMold Class
+// Mold Class
 // ============================================================================
 
 /**
  * A resolved view of a mold with computed properties.
  *
- * RuntimeMold wraps a data-layer Mold and provides:
+ * Mold wraps a data-layer Mold and provides:
  * - Composite identity (MoldId) for cross-source references
  * - Computed properties (totalCapacity, displayName)
  * - Future navigation capabilities
  *
  * @public
  */
-export class RuntimeMold implements IRuntimeMold {
+export class Mold implements IMold {
   private readonly _context: IMoldContext;
   private readonly _id: MoldId;
   private readonly _mold: IMoldEntity;
@@ -66,14 +66,14 @@ export class RuntimeMold implements IRuntimeMold {
   }
 
   /**
-   * Factory method for creating a RuntimeMold.
+   * Factory method for creating a Mold.
    * @param context - The runtime context (reserved for future use)
    * @param id - The composite mold ID
    * @param mold - The mold data
-   * @returns Success with RuntimeMold
+   * @returns Success with Mold
    */
-  public static create(context: IMoldContext, id: MoldId, mold: IMoldEntity): Result<RuntimeMold> {
-    return Success.with(new RuntimeMold(context, id, mold));
+  public static create(context: IMoldContext, id: MoldId, mold: IMoldEntity): Result<Mold> {
+    return Success.with(new Mold(context, id, mold));
   }
 
   // ============================================================================
@@ -90,7 +90,7 @@ export class RuntimeMold implements IRuntimeMold {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): CollectionId {
+  public get collectionId(): CollectionId {
     return this._sourceId;
   }
 
@@ -187,7 +187,7 @@ export class RuntimeMold implements IRuntimeMold {
    */
   /* c8 ignore next 3 - simple getter, tested via Mold class */
   public get urls(): ReadonlyArray<CommonModel.ICategorizedUrl> | undefined {
-    return this.raw.urls;
+    return this.entity.urls;
   }
 
   // ============================================================================
@@ -219,14 +219,10 @@ export class RuntimeMold implements IRuntimeMold {
     return manufacturerModel;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw mold data
+   * Gets the underlying mold data entity.
    */
-  public get raw(): IMoldEntity {
+  public get entity(): IMoldEntity {
     return this._mold;
   }
 
