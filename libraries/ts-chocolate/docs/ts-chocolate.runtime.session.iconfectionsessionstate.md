@@ -173,7 +173,7 @@ _(Optional)_ Current procedure selection (if applicable)
 
 </td><td>
 
-[SessionId](./ts-chocolate.sessionid.md)
+[SessionSpec](./ts-chocolate.sessionspec.md)
 
 
 </td><td>

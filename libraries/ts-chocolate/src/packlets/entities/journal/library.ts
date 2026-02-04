@@ -30,7 +30,7 @@ import {
   ConfectionVersionId,
   FillingId,
   FillingVersionId,
-  JournalBaseId,
+  BaseJournalId,
   JournalId,
   Converters as CommonConverters
 } from '../../common';
@@ -155,7 +155,7 @@ export type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, 
  *
  * @public
  */
-export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntryEntity> {
+export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, AnyJournalEntryEntity> {
   /**
    * Index from {@link FillingId | filling ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
@@ -188,7 +188,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, Any
 
   private constructor(params?: IJournalLibraryParams) {
     super({
-      itemIdConverter: CommonConverters.journalBaseId,
+      itemIdConverter: CommonConverters.baseJournalId,
       itemConverter: anyJournalEntryConverter,
       directoryNavigator: getJournalsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
@@ -223,8 +223,8 @@ export class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, Any
   public static async createAsync(params?: IJournalLibraryAsyncParams): Promise<Result<JournalLibrary>> {
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<JournalLibrary, JournalBaseId, AnyJournalEntryEntity> = {
-      itemIdConverter: CommonConverters.journalBaseId,
+    const createParams: ISubLibraryCreateParams<JournalLibrary, BaseJournalId, AnyJournalEntryEntity> = {
+      itemIdConverter: CommonConverters.baseJournalId,
       itemConverter: anyJournalEntryConverter,
       directoryNavigator: getJournalsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,

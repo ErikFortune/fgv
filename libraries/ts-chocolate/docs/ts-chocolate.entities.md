@@ -134,7 +134,7 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "common.ganac
 
 </td><td>
 
-A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->.
+A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anysessionentity.md)<!-- -->.
 
 Sessions are organized into user-defined collections. The library provides cross-collection indexing for efficient queries by filling/confection and status.
 
@@ -260,6 +260,19 @@ Journal entry for confection production sessions.
 </td></tr>
 <tr><td>
 
+[IConfectionSessionEntity](./ts-chocolate.entities.iconfectionsessionentity.md)
+
+
+</td><td>
+
+Persisted confection editing session with full editing state.
+
+Contains the complete undo/redo history so the session can be restored to its exact editing state. References child filling sessions by their persisted session IDs.
+
+
+</td></tr>
+<tr><td>
+
 [IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
@@ -343,6 +356,19 @@ Complete filling recipe with version history
 </td><td>
 
 Complete details for a single version of a filling recipe
+
+
+</td></tr>
+<tr><td>
+
+[IFillingSessionEntity](./ts-chocolate.entities.ifillingsessionentity.md)
+
+
+</td><td>
+
+Persisted filling editing session with full editing state.
+
+Contains the complete undo/redo history so the session can be restored to its exact editing state.
 
 
 </td></tr>
@@ -435,32 +461,6 @@ Represents a chocolate mold
 Inventory entry for molds.
 
 The moldId is the full composite ID (e.g., 'builtin.silicone-round') identifying which specific mold from which collection is being inventoried.
-
-
-</td></tr>
-<tr><td>
-
-[IPersistedConfectionSession](./ts-chocolate.entities.ipersistedconfectionsession.md)
-
-
-</td><td>
-
-Persisted confection editing session with full editing state.
-
-Contains the complete undo/redo history so the session can be restored to its exact editing state. References child filling sessions by their persisted session IDs.
-
-
-</td></tr>
-<tr><td>
-
-[IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)
-
-
-</td><td>
-
-Persisted filling editing session with full editing state.
-
-Contains the complete undo/redo history so the session can be restored to its exact editing state.
 
 
 </td></tr>
@@ -773,23 +773,23 @@ Discriminated union of all journal entry types. Use type guards to narrow to spe
 </td></tr>
 <tr><td>
 
-[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
-
-
-</td><td>
-
-Discriminated union of all persisted session types. Use type guards to narrow to specific types.
-
-
-</td></tr>
-<tr><td>
-
 [AnyProducedConfectionEntity](./ts-chocolate.entities.anyproducedconfectionentity.md)
 
 
 </td><td>
 
 Discriminated union of produced confection types. Discriminated on the `confectionType` field.
+
+
+</td></tr>
+<tr><td>
+
+[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)
+
+
+</td><td>
+
+Discriminated union of all persisted session types. Use type guards to narrow to specific types.
 
 
 </td></tr>

@@ -33,7 +33,7 @@ import {
   IngredientId,
   MoldId,
   ProcedureId,
-  SessionId,
+  SessionSpec,
   SlotId
 } from '../../common';
 import {
@@ -378,7 +378,7 @@ export interface IConfectionEditingSessionParams {
   /**
    * Optional session ID (generated if not provided)
    */
-  readonly sessionId?: SessionId;
+  readonly sessionId?: SessionSpec;
 
   /**
    * Initial yield specification (defaults to golden version yield)
@@ -398,7 +398,7 @@ export interface IConfectionSessionState {
   /**
    * Unique session identifier
    */
-  readonly sessionId: SessionId;
+  readonly sessionId: SessionSpec;
 
   /**
    * Source confection being edited

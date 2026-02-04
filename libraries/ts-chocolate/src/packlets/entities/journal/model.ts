@@ -26,7 +26,7 @@
 import {
   ConfectionVersionId,
   FillingVersionId,
-  JournalBaseId,
+  BaseJournalId,
   Measurement,
   Model as CommonModel
 } from '../../common';
@@ -62,7 +62,7 @@ export interface IJournalEntryEntityBase<TVersion, TVersionId> {
   /** Entry type discriminator */
   readonly type: JournalEntryType;
   /** Base identifier within collection (no collection prefix) */
-  readonly baseId: JournalBaseId;
+  readonly baseId: BaseJournalId;
   /** Timestamp when this entry was created (ISO 8601 format) */
   readonly timestamp: string;
   /** Source version ID for indexing and lookup */

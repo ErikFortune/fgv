@@ -100,7 +100,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   public static fromPersistedState(
     baseConfection: RuntimeBarTruffle,
-    history: Session.ISerializedEditingHistory<IProducedBarTruffleEntity>,
+    history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {

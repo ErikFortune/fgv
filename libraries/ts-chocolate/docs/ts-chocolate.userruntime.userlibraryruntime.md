@@ -50,7 +50,7 @@ Description
 
 </td><td>
 
-ReadonlyMap&lt;[PersistedSessionId](./ts-chocolate.persistedsessionid.md)<!-- -->, [AnyMaterializedSession](./ts-chocolate.userruntime.anymaterializedsession.md)<!-- -->&gt;
+ReadonlyMap&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->, [AnyMaterializedSession](./ts-chocolate.userruntime.anymaterializedsession.md)<!-- -->&gt;
 
 
 </td><td>

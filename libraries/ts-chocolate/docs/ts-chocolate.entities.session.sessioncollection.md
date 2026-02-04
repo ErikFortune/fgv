@@ -9,7 +9,7 @@ Type for the collections in a SessionLibrary.
 **Signature:**
 
 ```typescript
-export type SessionCollection = SubLibraryCollection<SessionBaseId, AnyPersistedSession>;
+export type SessionCollection = SubLibraryCollection<BaseSessionId, AnySessionEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->, [AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)
 

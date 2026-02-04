@@ -52,6 +52,17 @@ In-place `Validator` for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<
 </td></tr>
 <tr><td>
 
+[baseJournalId](./ts-chocolate.validators.basejournalid.md)
+
+
+</td><td>
+
+In-place `Validator` for [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [baseMoldId](./ts-chocolate.validators.basemoldid.md)
 
 
@@ -69,6 +80,17 @@ In-place `Validator` for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 </td><td>
 
 In-place `Validator` for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[baseSessionId](./ts-chocolate.validators.basesessionid.md)
+
+
+</td><td>
+
+In-place `Validator` for [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -162,17 +184,6 @@ In-place `Validator` for [IngredientId](./ts-chocolate.ingredientid.md) (composi
 </td></tr>
 <tr><td>
 
-[journalBaseId](./ts-chocolate.validators.journalbaseid.md)
-
-
-</td><td>
-
-In-place `Validator` for [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [journalId](./ts-chocolate.validators.journalid.md)
 
 
@@ -195,17 +206,6 @@ In-place `Validator` for [MoldId](./ts-chocolate.moldid.md) (composite string).
 </td></tr>
 <tr><td>
 
-[persistedSessionId](./ts-chocolate.validators.persistedsessionid.md)
-
-
-</td><td>
-
-In-place `Validator` for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite string).
-
-
-</td></tr>
-<tr><td>
-
 [procedureId](./ts-chocolate.validators.procedureid.md)
 
 
@@ -217,12 +217,12 @@ In-place `Validator` for [ProcedureId](./ts-chocolate.procedureid.md) (composite
 </td></tr>
 <tr><td>
 
-[sessionBaseId](./ts-chocolate.validators.sessionbaseid.md)
+[sessionId](./ts-chocolate.validators.sessionid.md)
 
 
 </td><td>
 
-In-place `Validator` for [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
+In-place `Validator` for [PersistedSessionId](./ts-chocolate.sessionid.md) (composite string).
 
 
 </td></tr>

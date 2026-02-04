@@ -106,7 +106,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   public static fromPersistedState(
     baseConfection: RuntimeRolledTruffle,
-    history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>,
+    history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {

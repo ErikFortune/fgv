@@ -9,7 +9,7 @@ Validator type for SessionLibrary collections.
 **Signature:**
 
 ```typescript
-export type SessionCollectionValidator = SubLibraryCollectionValidator<SessionBaseId, AnyPersistedSession>;
+export type SessionCollectionValidator = SubLibraryCollectionValidator<BaseSessionId, AnySessionEntity>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->, [AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)
 

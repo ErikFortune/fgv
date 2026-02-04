@@ -4,7 +4,7 @@
 
 ## Validation.isValidSessionId() function
 
-Type guard for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Type guard for [SessionId](./ts-chocolate.sessionid.md) (composite).
 
 **Signature:**
 
@@ -52,5 +52,5 @@ Value to check
 
 from is [SessionId](./ts-chocolate.sessionid.md)
 
-`true` if the value is a valid [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+`true` if the value is a valid [SessionId](./ts-chocolate.sessionid.md)
 

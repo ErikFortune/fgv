@@ -9,5 +9,5 @@ Unique session identifier
 **Signature:**
 
 ```typescript
-readonly sessionId: SessionId;
+readonly sessionId: SessionSpec;
 ```

@@ -4,7 +4,7 @@
 
 ## Model.SESSION\_ID\_PATTERN variable
 
-Pattern for valid session IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+Pattern for valid composite session IDs Format: collectionId.baseSessionId Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
 
 **Signature:**
 

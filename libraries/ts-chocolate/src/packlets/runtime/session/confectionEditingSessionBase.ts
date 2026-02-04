@@ -25,7 +25,7 @@
 
 import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
-import { FillingId, IngredientId, Measurement, SessionId, SlotId } from '../../common';
+import { FillingId, IngredientId, Measurement, SessionSpec, SlotId } from '../../common';
 import { Confections, AnyProducedConfectionEntity } from '../../entities';
 import { AnyRuntimeConfection, RuntimeProducedConfectionBase } from '../../library-runtime';
 import { ISessionContext } from '../model';
@@ -57,7 +57,7 @@ export abstract class ConfectionEditingSessionBase<
   protected readonly _context: ISessionContext;
   protected readonly _produced: RuntimeProducedConfectionBase<T>;
   protected readonly _originalSnapshot: T;
-  protected readonly _sessionId: SessionId;
+  protected readonly _sessionId: SessionSpec;
   protected readonly _fillingSessions: Map<SlotId, EditingSession>;
 
   /**
@@ -289,7 +289,7 @@ export abstract class ConfectionEditingSessionBase<
    * Gets the session ID.
    * @public
    */
-  public get sessionId(): SessionId {
+  public get sessionId(): SessionSpec {
     return this._sessionId;
   }
 

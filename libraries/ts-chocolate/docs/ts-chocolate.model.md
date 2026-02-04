@@ -146,6 +146,28 @@ Pattern for valid base IDs (no dots allowed)
 </td></tr>
 <tr><td>
 
+[BASE\_JOURNAL\_ID\_PATTERN](./ts-chocolate.model.base_journal_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid journal base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
+[BASE\_SESSION\_ID\_PATTERN](./ts-chocolate.model.base_session_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid base session IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
 [COMPOSITE\_ID\_PATTERN](./ts-chocolate.model.composite_id_pattern.md)
 
 
@@ -212,17 +234,6 @@ Separator character used in composite IDs
 </td></tr>
 <tr><td>
 
-[JOURNAL\_BASE\_ID\_PATTERN](./ts-chocolate.model.journal_base_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid journal base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
 [JOURNAL\_ID\_PATTERN](./ts-chocolate.model.journal_id_pattern.md)
 
 
@@ -234,34 +245,23 @@ Pattern for valid composite journal IDs Format: collectionId.baseJournalId Examp
 </td></tr>
 <tr><td>
 
-[PERSISTED\_SESSION\_ID\_PATTERN](./ts-chocolate.model.persisted_session_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid composite persisted session IDs Format: collectionId.baseSessionId Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
-[SESSION\_BASE\_ID\_PATTERN](./ts-chocolate.model.session_base_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid session base IDs (within a collection) Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
-
-
-</td></tr>
-<tr><td>
-
 [SESSION\_ID\_PATTERN](./ts-chocolate.model.session_id_pattern.md)
 
 
 </td><td>
 
-Pattern for valid session IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+Pattern for valid composite session IDs Format: collectionId.baseSessionId Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
+[SESSION\_SPEC\_PATTERN](./ts-chocolate.model.session_spec_pattern.md)
+
+
+</td><td>
+
+Pattern for valid session specs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
 
 
 </td></tr>

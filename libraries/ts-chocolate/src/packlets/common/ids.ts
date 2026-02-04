@@ -160,7 +160,7 @@ export type FillingVersionId = Brand<string, 'FillingVersionId'>;
  * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")
  * @public
  */
-export type JournalBaseId = Brand<string, 'JournalBaseId'>;
+export type BaseJournalId = Brand<string, 'BaseJournalId'>;
 
 /**
  * Globally unique journal identifier (composite)
@@ -214,14 +214,14 @@ export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
  * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx
  * @public
  */
-export type SessionId = Brand<string, 'SessionId'>;
+export type SessionSpec = Brand<string, 'SessionSpec'>;
 
 /**
  * Session identifier within a single collection (user library session storage).
- * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (same as SessionId)
+ * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (same as SessionSpec)
  * @public
  */
-export type SessionBaseId = Brand<string, 'SessionBaseId'>;
+export type BaseSessionId = Brand<string, 'BaseSessionId'>;
 
 /**
  * Globally unique persisted session identifier (composite).
@@ -229,7 +229,7 @@ export type SessionBaseId = Brand<string, 'SessionBaseId'>;
  * Must contain exactly one dot separator.
  * @public
  */
-export type PersistedSessionId = Brand<string, 'PersistedSessionId'>;
+export type SessionId = Brand<string, 'SessionId'>;
 
 /**
  * Unique identifier for a filling slot within a confection or recipe

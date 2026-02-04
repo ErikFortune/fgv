@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _sessionId: SessionId;
+protected readonly _sessionId: SessionSpec;
 ```

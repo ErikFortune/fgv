@@ -43,7 +43,7 @@ describe('JournalLibrary (Collection-Based)', () => {
     timestamp: string = '2026-01-15T10:00:00Z'
   ): IFillingProductionJournalEntryEntity => ({
     type: 'filling-production',
-    baseId: CommonConverters.journalBaseId.convert(baseId).orThrow(),
+    baseId: CommonConverters.baseJournalId.convert(baseId).orThrow(),
     timestamp,
     versionId: CommonConverters.fillingVersionId.convert(versionId).orThrow(),
     recipe: {
@@ -264,7 +264,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       const lib = JournalLibrary.create({ builtin: false }).orThrow();
       const unknownId = CommonHelpers.createJournalId(
         CommonConverters.sourceId.convert('test-collection').orThrow(),
-        CommonConverters.journalBaseId.convert('2099-12-31-999999-99999999').orThrow()
+        CommonConverters.baseJournalId.convert('2099-12-31-999999-99999999').orThrow()
       );
       expect(lib.getJournal(unknownId)).toFail();
     });
@@ -286,7 +286,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       const lib = JournalLibrary.create({ builtin: false }).orThrow();
       const unknownId = CommonHelpers.createJournalId(
         CommonConverters.sourceId.convert('unknown').orThrow(),
-        CommonConverters.journalBaseId.convert('2099-12-31-999999-99999999').orThrow()
+        CommonConverters.baseJournalId.convert('2099-12-31-999999-99999999').orThrow()
       );
       expect(lib.hasJournal(unknownId)).toBe(false);
     });

@@ -9,5 +9,5 @@ Optional session ID (generated if not provided)
 **Signature:**
 
 ```typescript
-readonly sessionId?: SessionId;
+readonly sessionId?: SessionSpec;
 ```

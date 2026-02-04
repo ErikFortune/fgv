@@ -11,11 +11,11 @@ Creates a persisted session state from this editing session. Captures the comple
 ```typescript
 toPersistedState(options: {
         readonly collectionId: SourceId;
-        readonly baseId?: SessionBaseId;
+        readonly baseId?: BaseSessionId;
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
         readonly notes?: CommonModel.ICategorizedNote[];
-    }): Result<IPersistedFillingSession>;
+    }): Result<IFillingSessionEntity>;
 ```
 
 ## Parameters
@@ -43,7 +43,7 @@ options
 
 </td><td>
 
-{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->; readonly status?: [PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)<!-- -->; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
+{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->; readonly status?: [PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)<!-- -->; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
 
 
 </td><td>
@@ -56,7 +56,7 @@ Persistence options including collection ID
 
 **Returns:**
 
-Result&lt;[IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)<!-- -->&gt;
+Result&lt;[IFillingSessionEntity](./ts-chocolate.entities.ifillingsessionentity.md)<!-- -->&gt;
 
 Result with persisted filling session
 

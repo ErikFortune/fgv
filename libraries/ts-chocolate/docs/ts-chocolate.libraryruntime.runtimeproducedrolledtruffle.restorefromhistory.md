@@ -9,7 +9,7 @@ Restores a RuntimeProducedRolledTruffle from serialized editing history.
 **Signature:**
 
 ```typescript
-static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>): Result<RuntimeProducedRolledTruffle>;
+static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>): Result<RuntimeProducedRolledTruffle>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ history
 
 </td><td>
 
-[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)<!-- -->&gt;
+[Session.ISerializedEditingHistoryEntity](./ts-chocolate.entities.session.iserializededitinghistoryentity.md)<!-- -->&lt;[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)<!-- -->&gt;
 
 
 </td><td>

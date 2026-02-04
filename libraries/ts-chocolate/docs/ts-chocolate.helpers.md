@@ -85,12 +85,12 @@ Creates a composite JournalId from collection ID and base journal ID
 </td></tr>
 <tr><td>
 
-[createPersistedSessionId(collectionId, baseId)](./ts-chocolate.helpers.createpersistedsessionid.md)
+[createSessionId(collectionId, baseId)](./ts-chocolate.helpers.createsessionid.md)
 
 
 </td><td>
 
-Creates a composite PersistedSessionId from collection ID and base session ID
+Creates a composite [SessionId](./ts-chocolate.sessionid.md) from [collection ID](./ts-chocolate.sourceid.md) and [base session ID](./ts-chocolate.basesessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -113,6 +113,28 @@ Generate a unique base ID by appending a counter if needed.
 </td><td>
 
 Generate a unique base ID from a name. Combines nameToBaseId and generateUniqueBaseId.
+
+
+</td></tr>
+<tr><td>
+
+[getBaseIdFromSessionId(id)](./ts-chocolate.helpers.getbaseidfromsessionid.md)
+
+
+</td><td>
+
+Gets the base ID from a composite [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[getCollectionIdFromSessionId(id)](./ts-chocolate.helpers.getcollectionidfromsessionid.md)
+
+
+</td><td>
+
+Gets the collection ID from a composite [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -201,28 +223,6 @@ Gets the base ID from a composite JournalId
 </td><td>
 
 Gets the collection ID from a composite JournalId
-
-
-</td></tr>
-<tr><td>
-
-[getPersistedSessionBaseId(id)](./ts-chocolate.helpers.getpersistedsessionbaseid.md)
-
-
-</td><td>
-
-Gets the base ID from a composite PersistedSessionId
-
-
-</td></tr>
-<tr><td>
-
-[getPersistedSessionCollectionId(id)](./ts-chocolate.helpers.getpersistedsessioncollectionid.md)
-
-
-</td><td>
-
-Gets the collection ID from a composite PersistedSessionId
 
 
 </td></tr>
@@ -338,12 +338,12 @@ Parses a composite JournalId into its component parts
 </td></tr>
 <tr><td>
 
-[parsePersistedSessionId(id)](./ts-chocolate.helpers.parsepersistedsessionid.md)
+[parseSessionId(id)](./ts-chocolate.helpers.parsesessionid.md)
 
 
 </td><td>
 
-Parses a composite PersistedSessionId into its component parts
+Parses a composite [SessionId](./ts-chocolate.sessionid.md) into its component parts
 
 
 </td></tr>

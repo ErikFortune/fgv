@@ -25,7 +25,7 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { JournalBaseId, SessionBaseId, SessionId, Converters as CommonConverters } from '../../common';
+import { BaseJournalId, BaseSessionId, SessionSpec, Converters as CommonConverters } from '../../common';
 
 // ============================================================================
 // ID Generators
@@ -36,7 +36,7 @@ import { JournalBaseId, SessionBaseId, SessionId, Converters as CommonConverters
  * @returns Result with a valid SessionId
  * @public
  */
-export function generateSessionId(): Result<SessionId> {
+export function generateSessionId(): Result<SessionSpec> {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -45,7 +45,9 @@ export function generateSessionId(): Result<SessionId> {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
   const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
-  return CommonConverters.sessionId.convert(`${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`);
+  return CommonConverters.sessionSpec.convert(
+    `${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`
+  );
 }
 
 /**
@@ -53,7 +55,7 @@ export function generateSessionId(): Result<SessionId> {
  * @returns Result with a valid JournalBaseId
  * @public
  */
-export function generateJournalId(): Result<JournalBaseId> {
+export function generateJournalId(): Result<BaseJournalId> {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -62,7 +64,7 @@ export function generateJournalId(): Result<JournalBaseId> {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
   const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
-  return CommonConverters.journalBaseId.convert(
+  return CommonConverters.baseJournalId.convert(
     `${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`
   );
 }
@@ -73,7 +75,7 @@ export function generateJournalId(): Result<JournalBaseId> {
  * @returns Result with a valid SessionBaseId
  * @public
  */
-export function generateSessionBaseId(now?: Date): Result<SessionBaseId> {
+export function generateSessionBaseId(now?: Date): Result<BaseSessionId> {
   now = now ?? new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');

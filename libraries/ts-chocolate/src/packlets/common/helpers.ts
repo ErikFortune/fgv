@@ -43,10 +43,10 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   IngredientId,
-  JournalBaseId,
+  BaseJournalId,
   JournalId,
-  PersistedSessionId,
-  SessionBaseId,
+  SessionId,
+  BaseSessionId,
   SourceId
 } from './ids';
 import {
@@ -57,14 +57,15 @@ import {
   ParsedFillingVersionId,
   ParsedIngredientId,
   ParsedJournalId,
-  ParsedPersistedSessionId,
+  ParsedSessionId,
   parsedConfectionVersionId,
   parsedFillingId,
   parsedFillingVersionId,
   parsedIngredientId,
   parsedJournalId,
-  parsedPersistedSessionId
+  parsedSessionId
 } from './converters';
+import { sessionId } from './validators';
 
 // ============================================================================
 // Composite ID Helpers
@@ -163,7 +164,7 @@ export function getFillingBaseId(id: FillingId): BaseFillingId {
  * @returns Composite journal ID in format "collectionId.baseJournalId"
  * @public
  */
-export function createJournalId(collectionId: SourceId, baseId: JournalBaseId): JournalId {
+export function createJournalId(collectionId: SourceId, baseId: BaseJournalId): JournalId {
   return `${collectionId}${ID_SEPARATOR}${baseId}` as JournalId;
 }
 
@@ -193,53 +194,54 @@ export function getJournalCollectionId(id: JournalId): SourceId {
  * @returns The base journal ID portion
  * @public
  */
-export function getJournalBaseId(id: JournalId): JournalBaseId {
+export function getJournalBaseId(id: JournalId): BaseJournalId {
   return parsedJournalId.convert(id).orThrow().itemId;
 }
 
 // ============================================================================
-// Persisted Session ID Helpers
+// Session ID Helpers
 // ============================================================================
 
 /**
- * Creates a composite PersistedSessionId from collection ID and base session ID
+ * Creates a composite {@link SessionId | SessionId} from {@link SourceId | collection ID} and
+ * {@link BaseSessionId | base session ID}.
  * @param collectionId - The collection identifier (e.g., "user-sessions")
  * @param baseId - The base session identifier
- * @returns Composite persisted session ID in format "collectionId.baseSessionId"
+ * @returns Composite session ID in format "collectionId.baseSessionId"
  * @public
  */
-export function createPersistedSessionId(collectionId: SourceId, baseId: SessionBaseId): PersistedSessionId {
-  return `${collectionId}${ID_SEPARATOR}${baseId}` as PersistedSessionId;
+export function createSessionId(collectionId: SourceId, baseId: BaseSessionId): SessionId {
+  return sessionId.convert(`${collectionId}${ID_SEPARATOR}${baseId}`).orThrow();
 }
 
 /**
- * Parses a composite PersistedSessionId into its component parts
- * @param id - The composite persisted session ID to parse
+ * Parses a composite {@link SessionId | SessionId} into its component parts
+ * @param id - The composite session ID to parse
  * @returns Result with parsed composite ID or error
  * @public
  */
-export function parsePersistedSessionId(id: PersistedSessionId): Result<ParsedPersistedSessionId> {
-  return parsedPersistedSessionId.convert(id);
+export function parseSessionId(id: SessionId): Result<ParsedSessionId> {
+  return parsedSessionId.convert(id);
 }
 
 /**
- * Gets the collection ID from a composite PersistedSessionId
- * @param id - The composite persisted session ID
+ * Gets the collection ID from a composite {@link SessionId | SessionId}.
+ * @param id - The composite session ID
  * @returns The collection ID portion
  * @public
  */
-export function getPersistedSessionCollectionId(id: PersistedSessionId): SourceId {
-  return parsedPersistedSessionId.convert(id).orThrow().collectionId;
+export function getCollectionIdFromSessionId(id: SessionId): SourceId {
+  return parsedSessionId.convert(id).orThrow().collectionId;
 }
 
 /**
- * Gets the base ID from a composite PersistedSessionId
- * @param id - The composite persisted session ID
+ * Gets the base ID from a composite {@link SessionId | SessionId}.
+ * @param id - The composite session ID
  * @returns The base session ID portion
  * @public
  */
-export function getPersistedSessionBaseId(id: PersistedSessionId): SessionBaseId {
-  return parsedPersistedSessionId.convert(id).orThrow().itemId;
+export function getBaseIdFromSessionId(id: SessionId): BaseSessionId {
+  return parsedSessionId.convert(id).orThrow().itemId;
 }
 
 // ============================================================================

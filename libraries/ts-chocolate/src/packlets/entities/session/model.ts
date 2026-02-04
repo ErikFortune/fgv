@@ -33,8 +33,8 @@ import {
   ConfectionVersionId,
   FillingVersionId,
   Model as CommonModel,
-  PersistedSessionId,
-  SessionBaseId,
+  SessionId,
+  BaseSessionId,
   SlotId,
   SourceId
 } from '../../common';
@@ -100,7 +100,7 @@ export const allPersistedSessionStatuses: ReadonlyArray<PersistedSessionStatus> 
  * Destination collection configuration for persisting derived entities.
  * @public
  */
-export interface IPersistedSessionDestination {
+export interface ISessionDestinationEntity {
   /** Default collection ID from tool configuration */
   readonly defaultCollectionId?: SourceId;
   /** User-selected override collection ID */
@@ -117,7 +117,7 @@ export interface IPersistedSessionDestination {
  * @typeParam T - The type of the state being tracked
  * @public
  */
-export interface ISerializedEditingHistory<T> {
+export interface ISerializedEditingHistoryEntity<T> {
   /** Current editing state */
   readonly current: T;
   /** Original state when session started (for change detection) */
@@ -136,9 +136,9 @@ export interface ISerializedEditingHistory<T> {
  * Common properties shared by all persisted session types.
  * @public
  */
-export interface IPersistedSessionBase {
+export interface ISessionEntityBase {
   /** Base identifier within the collection (no collection prefix) */
-  readonly baseId: SessionBaseId;
+  readonly baseId: BaseSessionId;
   /** Session type discriminator */
   readonly sessionType: PersistedSessionType;
   /** Current lifecycle status */
@@ -152,7 +152,7 @@ export interface IPersistedSessionBase {
   /** Optional categorized notes */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** Destination configuration for saving derived entities */
-  readonly destination?: IPersistedSessionDestination;
+  readonly destination?: ISessionDestinationEntity;
 }
 
 // ============================================================================
@@ -166,12 +166,12 @@ export interface IPersistedSessionBase {
  * restored to its exact editing state.
  * @public
  */
-export interface IPersistedFillingSession extends IPersistedSessionBase {
+export interface IFillingSessionEntity extends ISessionEntityBase {
   readonly sessionType: 'filling';
   /** Source filling version being edited */
   readonly sourceVersionId: FillingVersionId;
   /** Full editing history including undo/redo stacks */
-  readonly history: ISerializedEditingHistory<IProducedFillingEntity>;
+  readonly history: ISerializedEditingHistoryEntity<IProducedFillingEntity>;
 }
 
 // ============================================================================
@@ -187,16 +187,16 @@ export interface IPersistedFillingSession extends IPersistedSessionBase {
  *
  * @public
  */
-export interface IPersistedConfectionSession extends IPersistedSessionBase {
+export interface IConfectionSessionEntity extends ISessionEntityBase {
   readonly sessionType: 'confection';
   /** Confection type discriminator (for type-specific restoration) */
   readonly confectionType: ConfectionType;
   /** Source confection version being edited */
   readonly sourceVersionId: ConfectionVersionId;
   /** Full editing history including undo/redo stacks */
-  readonly history: ISerializedEditingHistory<AnyProducedConfectionEntity>;
+  readonly history: ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>;
   /** Map of slot ID to child filling session ID */
-  readonly childSessionIds: Readonly<Record<SlotId, PersistedSessionId>>;
+  readonly childSessionIds: Readonly<Record<SlotId, SessionId>>;
 }
 
 // ============================================================================
@@ -208,30 +208,28 @@ export interface IPersistedConfectionSession extends IPersistedSessionBase {
  * Use type guards to narrow to specific types.
  * @public
  */
-export type AnyPersistedSession = IPersistedFillingSession | IPersistedConfectionSession;
+export type AnySessionEntity = IFillingSessionEntity | IConfectionSessionEntity;
 
 // ============================================================================
 // Type Guards
 // ============================================================================
 
 /**
- * Type guard for IPersistedFillingSession.
+ * Type guard for {@link Entities.Session.IFillingSessionEntity | IFillingSessionEntity}.
  * @param session - Session to check
  * @returns True if the session is a filling session
  * @public
  */
-export function isPersistedFillingSession(session: AnyPersistedSession): session is IPersistedFillingSession {
+export function isFillingSessionEntity(session: AnySessionEntity): session is IFillingSessionEntity {
   return session.sessionType === 'filling';
 }
 
 /**
- * Type guard for IPersistedConfectionSession.
+ * Type guard for {@link Entities.Session.IConfectionSessionEntity | IConfectionSessionEntity}.
  * @param session - Session to check
  * @returns True if the session is a confection session
  * @public
  */
-export function isPersistedConfectionSession(
-  session: AnyPersistedSession
-): session is IPersistedConfectionSession {
+export function isConfectionSessionEntity(session: AnySessionEntity): session is IConfectionSessionEntity {
   return session.sessionType === 'confection';
 }

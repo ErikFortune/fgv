@@ -9,5 +9,5 @@ All currently materialized sessions.
 **Signature:**
 
 ```typescript
-get materializedSessions(): ReadonlyMap<PersistedSessionId, AnyMaterializedSession>;
+get materializedSessions(): ReadonlyMap<SessionId, AnyMaterializedSession>;
 ```

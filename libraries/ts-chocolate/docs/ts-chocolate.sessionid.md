@@ -4,7 +4,7 @@
 
 ## SessionId type
 
-Unique identifier for an editing session Format: YYYY-MM-DD-HHMMSS-xxxxxxxx
+Globally unique persisted session identifier (composite). Format: "collectionId.baseSessionId" Must contain exactly one dot separator.
 
 **Signature:**
 

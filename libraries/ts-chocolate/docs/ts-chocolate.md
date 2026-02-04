@@ -410,6 +410,17 @@ Ingredient identifier within a single source Character restrictions: alphanumeri
 </td></tr>
 <tr><td>
 
+[BaseJournalId](./ts-chocolate.basejournalid.md)
+
+
+</td><td>
+
+Journal identifier within a single collection Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")
+
+
+</td></tr>
+<tr><td>
+
 [BaseMoldId](./ts-chocolate.basemoldid.md)
 
 
@@ -427,6 +438,17 @@ Mold identifier within a single source Character restrictions: alphanumeric, das
 </td><td>
 
 Procedure identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[BaseSessionId](./ts-chocolate.basesessionid.md)
+
+
+</td><td>
+
+Session identifier within a single collection (user library session storage). Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (same as SessionSpec)
 
 
 </td></tr>
@@ -696,17 +718,6 @@ Physical phase of an ingredient - display hint for UI. Used to determine action 
 </td></tr>
 <tr><td>
 
-[JournalBaseId](./ts-chocolate.journalbaseid.md)
-
-
-</td><td>
-
-Journal identifier within a single collection Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")
-
-
-</td></tr>
-<tr><td>
-
 [JournalId](./ts-chocolate.journalid.md)
 
 
@@ -806,17 +817,6 @@ Percentage value (0-100)
 </td></tr>
 <tr><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
-
-
-</td><td>
-
-Globally unique persisted session identifier (composite). Format: "collectionId.baseSessionId" Must contain exactly one dot separator.
-
-
-</td></tr>
-<tr><td>
-
 [ProcedureId](./ts-chocolate.procedureid.md)
 
 
@@ -850,18 +850,18 @@ Rating score (1-5 scale)
 </td></tr>
 <tr><td>
 
-[SessionBaseId](./ts-chocolate.sessionbaseid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>
 
-Session identifier within a single collection (user library session storage). Format: YYYY-MM-DD-HHMMSS-xxxxxxxx (same as SessionId)
+Globally unique persisted session identifier (composite). Format: "collectionId.baseSessionId" Must contain exactly one dot separator.
 
 
 </td></tr>
 <tr><td>
 
-[SessionId](./ts-chocolate.sessionid.md)
+[SessionSpec](./ts-chocolate.sessionspec.md)
 
 
 </td><td>

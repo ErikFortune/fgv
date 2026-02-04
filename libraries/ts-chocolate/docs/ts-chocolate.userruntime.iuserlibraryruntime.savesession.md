@@ -9,7 +9,7 @@ Saves an active session back to the library.
 **Signature:**
 
 ```typescript
-saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+saveSession(sessionId: SessionId): Result<AnySessionEntity>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sessionId
 
 </td><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Session to save
 
 **Returns:**
 
-Result&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+Result&lt;[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 Result with the updated persisted session
 

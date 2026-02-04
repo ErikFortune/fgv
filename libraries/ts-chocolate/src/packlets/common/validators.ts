@@ -49,12 +49,12 @@ import {
   FillingVersionId,
   FillingVersionSpec,
   IngredientId,
-  JournalBaseId,
+  BaseJournalId,
   JournalId,
   MoldId,
-  PersistedSessionId,
+  SessionId,
   ProcedureId,
-  SessionBaseId,
+  BaseSessionId,
   SourceId,
   TaskId
 } from './ids';
@@ -69,8 +69,8 @@ import {
   isValidBaseTaskId,
   isValidConfectionVersionSpec,
   isValidFillingVersionSpec,
-  isValidJournalBaseId,
-  isValidSessionBaseId,
+  isValidBaseJournalId,
+  isValidBaseSessionId,
   isValidSourceId
 } from './validation';
 
@@ -133,21 +133,21 @@ export const baseConfectionId: Validator<BaseConfectionId> = Validators.isA<Base
 );
 
 /**
- * In-place `Validator` for {@link JournalBaseId | JournalBaseId}.
+ * In-place `Validator` for {@link BaseJournalId | BaseJournalId}.
  * @public
  */
-export const journalBaseId: Validator<JournalBaseId> = Validators.isA<JournalBaseId>(
+export const baseJournalId: Validator<BaseJournalId> = Validators.isA<BaseJournalId>(
   'JournalBaseId',
-  isValidJournalBaseId
+  isValidBaseJournalId
 );
 
 /**
- * In-place `Validator` for {@link SessionBaseId | SessionBaseId}.
+ * In-place `Validator` for {@link BaseSessionId | BaseSessionId}.
  * @public
  */
-export const sessionBaseId: Validator<SessionBaseId> = Validators.isA<SessionBaseId>(
-  'SessionBaseId',
-  isValidSessionBaseId
+export const baseSessionId: Validator<BaseSessionId> = Validators.isA<BaseSessionId>(
+  'BaseSessionId',
+  isValidBaseSessionId
 );
 
 // ============================================================================
@@ -230,24 +230,20 @@ export const confectionId: Validator<ConfectionId> = Validators.compositeId<
  * In-place `Validator` for {@link JournalId | JournalId} (composite string).
  * @public
  */
-export const journalId: Validator<JournalId> = Validators.compositeId<JournalId, SourceId, JournalBaseId>({
+export const journalId: Validator<JournalId> = Validators.compositeId<JournalId, SourceId, BaseJournalId>({
   collectionId: sourceId,
   separator: ID_SEPARATOR,
-  itemId: journalBaseId
+  itemId: baseJournalId
 });
 
 /**
- * In-place `Validator` for {@link PersistedSessionId | PersistedSessionId} (composite string).
+ * In-place `Validator` for {@link SessionId | PersistedSessionId} (composite string).
  * @public
  */
-export const persistedSessionId: Validator<PersistedSessionId> = Validators.compositeId<
-  PersistedSessionId,
-  SourceId,
-  SessionBaseId
->({
+export const sessionId: Validator<SessionId> = Validators.compositeId<SessionId, SourceId, BaseSessionId>({
   collectionId: sourceId,
   separator: ID_SEPARATOR,
-  itemId: sessionBaseId
+  itemId: baseSessionId
 });
 
 // ============================================================================

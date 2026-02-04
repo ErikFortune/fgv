@@ -9,5 +9,5 @@ Converter for child session IDs mapping (SlotId to PersistedSessionId).
 **Signature:**
 
 ```typescript
-childSessionIds: Converter<Readonly<Record<SlotId, PersistedSessionId>>>
+childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>>
 ```

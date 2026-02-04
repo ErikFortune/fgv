@@ -9,7 +9,7 @@ Initialization type for a JournalLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntryEntity>;
+export type JournalCollectionEntryInit = SubLibraryEntryInit<BaseJournalId, AnyJournalEntryEntity>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 

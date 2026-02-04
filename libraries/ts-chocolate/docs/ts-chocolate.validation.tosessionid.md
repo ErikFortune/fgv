@@ -4,7 +4,7 @@
 
 ## Validation.toSessionId() function
 
-Validates unknown value is a [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Validates unknown value is a [SessionId](./ts-chocolate.sessionid.md) (composite).
 
 **Signature:**
 

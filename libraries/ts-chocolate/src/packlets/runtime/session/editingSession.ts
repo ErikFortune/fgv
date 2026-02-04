@@ -30,8 +30,8 @@ import {
   Measurement,
   MeasurementUnit,
   ProcedureId,
-  SessionBaseId,
-  SessionId,
+  BaseSessionId,
+  SessionSpec,
   SourceId,
   Helpers as CommonHelpers,
   Converters as CommonConverters,
@@ -41,7 +41,7 @@ import {
   Fillings,
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
-  IPersistedFillingSession,
+  IFillingSessionEntity,
   IProducedFillingEntity,
   PersistedSessionStatus
 } from '../../entities';
@@ -75,7 +75,7 @@ export class EditingSession {
   private readonly _baseRecipe: IRuntimeFillingRecipeVersion;
   private readonly _produced: RuntimeProducedFilling;
   private readonly _originalSnapshot: IProducedFillingEntity;
-  private readonly _sessionId: SessionId;
+  private readonly _sessionId: SessionSpec;
 
   /**
    * Creates an EditingSession.
@@ -89,7 +89,7 @@ export class EditingSession {
   private constructor(
     baseRecipe: IRuntimeFillingRecipeVersion,
     produced: RuntimeProducedFilling,
-    sessionId?: SessionId,
+    sessionId?: SessionSpec,
     originalSnapshot?: IProducedFillingEntity
   ) {
     this._baseRecipe = baseRecipe;
@@ -382,16 +382,16 @@ export class EditingSession {
    */
   public toPersistedState(options: {
     readonly collectionId: SourceId;
-    readonly baseId?: SessionBaseId;
+    readonly baseId?: BaseSessionId;
     readonly status?: PersistedSessionStatus;
     readonly label?: string;
     readonly notes?: CommonModel.ICategorizedNote[];
-  }): Result<IPersistedFillingSession> {
+  }): Result<IFillingSessionEntity> {
     const baseIdResult = options.baseId ? succeed(options.baseId) : generateSessionBaseId();
 
     return baseIdResult.onSuccess((baseId) => {
       const now = getCurrentTimestamp();
-      const session: IPersistedFillingSession = {
+      const session: IFillingSessionEntity = {
         baseId,
         sessionType: 'filling',
         status: options.status ?? 'active',
@@ -418,7 +418,7 @@ export class EditingSession {
    * @public
    */
   public static fromPersistedState(
-    data: IPersistedFillingSession,
+    data: IFillingSessionEntity,
     baseRecipe: IRuntimeFillingRecipeVersion
   ): Result<EditingSession> {
     // Validate that the persisted state matches the base recipe
@@ -444,7 +444,7 @@ export class EditingSession {
    * Unique session identifier.
    * @public
    */
-  public get sessionId(): SessionId {
+  public get sessionId(): SessionSpec {
     return this._sessionId;
   }
 

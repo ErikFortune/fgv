@@ -116,7 +116,7 @@ The produced filling wrapper with undo/redo support.
 
 </td><td>
 
-[SessionId](./ts-chocolate.sessionid.md)
+[SessionSpec](./ts-chocolate.sessionspec.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Gets a session by ID (searches all collections)
 **Signature:**
 
 ```typescript
-getSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+getSession(sessionId: SessionId): Result<AnySessionEntity>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sessionId
 
 </td><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ The session ID to look up
 
 **Returns:**
 
-Result&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+Result&lt;[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 Success with the session, or Failure if not found
 

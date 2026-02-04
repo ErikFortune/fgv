@@ -4,10 +4,10 @@
 
 ## Converters.sessionBaseId variable
 
-Converter for [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
+Converter for [SessionBaseId](./ts-chocolate.basesessionid.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-sessionBaseId: Converter<SessionBaseId>
+sessionBaseId: Converter<BaseSessionId>
 ```

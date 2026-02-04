@@ -9,11 +9,11 @@ Generates a JournalBaseId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
 **Signature:**
 
 ```typescript
-export declare function generateJournalId(): Result<JournalBaseId>;
+export declare function generateJournalId(): Result<BaseJournalId>;
 ```
 **Returns:**
 
-Result&lt;[JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->&gt;
+Result&lt;[BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->&gt;
 
 Result with a valid JournalBaseId
 

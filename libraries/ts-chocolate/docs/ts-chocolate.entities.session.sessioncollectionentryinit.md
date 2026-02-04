@@ -9,7 +9,7 @@ Initialization type for a SessionLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type SessionCollectionEntryInit = SubLibraryEntryInit<SessionBaseId, AnyPersistedSession>;
+export type SessionCollectionEntryInit = SubLibraryEntryInit<BaseSessionId, AnySessionEntity>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->, [AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)
 

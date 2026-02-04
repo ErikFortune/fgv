@@ -9,11 +9,11 @@ Generates a SessionId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
 **Signature:**
 
 ```typescript
-export declare function generateSessionId(): Result<SessionId>;
+export declare function generateSessionId(): Result<SessionSpec>;
 ```
 **Returns:**
 
-Result&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->&gt;
+Result&lt;[SessionSpec](./ts-chocolate.sessionspec.md)<!-- -->&gt;
 
 Result with a valid SessionId
 

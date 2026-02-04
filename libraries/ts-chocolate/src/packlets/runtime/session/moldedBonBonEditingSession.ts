@@ -106,7 +106,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    */
   public static fromPersistedState(
     baseConfection: RuntimeMoldedBonBon,
-    history: Session.ISerializedEditingHistory<IProducedMoldedBonBonEntity>,
+    history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {

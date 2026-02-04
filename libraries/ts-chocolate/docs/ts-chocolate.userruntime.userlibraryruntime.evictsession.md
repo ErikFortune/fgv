@@ -9,7 +9,7 @@ Evicts a materialized session from the cache. The persisted session remains in t
 **Signature:**
 
 ```typescript
-evictSession(sessionId: PersistedSessionId): boolean;
+evictSession(sessionId: SessionId): boolean;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sessionId
 
 </td><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>

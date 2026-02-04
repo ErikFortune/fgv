@@ -76,9 +76,9 @@ export {
 
 export {
   SessionLibrary,
-  AnyPersistedSession,
-  IPersistedConfectionSession,
-  IPersistedFillingSession,
+  AnySessionEntity,
+  IConfectionSessionEntity,
+  IFillingSessionEntity,
   PersistedSessionStatus
 } from './session';
 

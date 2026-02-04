@@ -9,7 +9,7 @@ Creates a new persisted filling session from a filling version. The session is c
 **Signature:**
 
 ```typescript
-createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IPersistedFillingSession>;
+createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ Creation options including target collection
 
 **Returns:**
 
-Result&lt;[IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)<!-- -->&gt;
+Result&lt;[IFillingSessionEntity](./ts-chocolate.entities.ifillingsessionentity.md)<!-- -->&gt;
 
 Result with the created persisted session
 

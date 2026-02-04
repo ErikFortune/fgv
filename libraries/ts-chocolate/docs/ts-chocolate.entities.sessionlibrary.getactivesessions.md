@@ -9,11 +9,11 @@ Gets all active sessions (status === 'active') across all collections
 **Signature:**
 
 ```typescript
-getActiveSessions(): ReadonlyArray<AnyPersistedSession>;
+getActiveSessions(): ReadonlyArray<AnySessionEntity>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 Array of active sessions
 

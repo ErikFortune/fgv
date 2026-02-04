@@ -4,7 +4,7 @@
 
 ## Entities.SessionLibrary class
 
-A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->.
+A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anysessionentity.md)<!-- -->.
 
 Sessions are organized into user-defined collections. The library provides cross-collection indexing for efficient queries by filling/confection and status.
 
@@ -13,9 +13,9 @@ Provides: - Multi-collection storage with FileTree persistence - Cross-collectio
 **Signature:**
 
 ```typescript
-export declare class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBaseId, AnyPersistedSession> 
+export declare class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySessionEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[PersistedSessionId](./ts-chocolate.persistedsessionid.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->, [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->, [AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 ## Methods
 

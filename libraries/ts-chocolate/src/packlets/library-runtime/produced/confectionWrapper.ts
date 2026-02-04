@@ -199,7 +199,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * @returns Serialized editing history
    * @public
    */
-  public getSerializedHistory(original: T): Session.ISerializedEditingHistory<T> {
+  public getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T> {
     return {
       current: this._deepCopy(this._current),
       original: this._deepCopy(original),
@@ -605,7 +605,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedMoldedBonBonEntity>
+    history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>
   ): Result<RuntimeProducedMoldedBonBon> {
     const instance = new RuntimeProducedMoldedBonBon(history.current);
     instance._undoStack = [...history.undoStack];
@@ -898,7 +898,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedBarTruffleEntity>
+    history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>
   ): Result<RuntimeProducedBarTruffle> {
     const instance = new RuntimeProducedBarTruffle(history.current);
     instance._undoStack = [...history.undoStack];
@@ -1094,7 +1094,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>
+    history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>
   ): Result<RuntimeProducedRolledTruffle> {
     const instance = new RuntimeProducedRolledTruffle(history.current);
     instance._undoStack = [...history.undoStack];

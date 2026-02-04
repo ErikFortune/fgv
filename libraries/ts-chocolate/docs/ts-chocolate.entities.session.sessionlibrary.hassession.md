@@ -9,7 +9,7 @@ Checks if a session with the given ID exists (searches all collections)
 **Signature:**
 
 ```typescript
-hasSession(sessionId: PersistedSessionId): boolean;
+hasSession(sessionId: SessionId): boolean;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sessionId
 
 </td><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>

@@ -68,7 +68,7 @@ _(Optional)_ Initial yield specification (defaults to golden version yield)
 
 </td><td>
 
-[SessionId](./ts-chocolate.sessionid.md)
+[SessionSpec](./ts-chocolate.sessionspec.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ A single entry in a journal collection.
 **Signature:**
 
 ```typescript
-export type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntryEntity>;
+export type JournalCollectionEntry = SubLibraryCollectionEntry<BaseJournalId, AnyJournalEntryEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 

@@ -211,7 +211,7 @@ export const anyProducedConfectionEntity: Converter<AnyProducedConfectionEntity>
 export const fillingEditJournalEntryEntity: Converter<IFillingEditJournalEntryEntity> =
   Converters.object<IFillingEditJournalEntryEntity>({
     type: Converters.literal('filling-edit'),
-    baseId: CommonConverters.journalBaseId,
+    baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
     versionId: CommonConverters.fillingVersionId,
     recipe: fillingRecipeVersionConverter,
@@ -227,7 +227,7 @@ export const fillingEditJournalEntryEntity: Converter<IFillingEditJournalEntryEn
 export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalEntryEntity> =
   Converters.object<IConfectionEditJournalEntryEntity>({
     type: Converters.literal('confection-edit'),
-    baseId: CommonConverters.journalBaseId,
+    baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
     versionId: CommonConverters.confectionVersionId,
     recipe: anyConfectionVersionConverter,
@@ -243,7 +243,7 @@ export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalE
 export const fillingProductionJournalEntryEntity: Converter<IFillingProductionJournalEntryEntity> =
   Converters.object<IFillingProductionJournalEntryEntity>({
     type: Converters.literal('filling-production'),
-    baseId: CommonConverters.journalBaseId,
+    baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
     versionId: CommonConverters.fillingVersionId,
     recipe: fillingRecipeVersionConverter,
@@ -261,7 +261,7 @@ export const fillingProductionJournalEntryEntity: Converter<IFillingProductionJo
 export const confectionProductionJournalEntryEntity: Converter<IConfectionProductionJournalEntryEntity> =
   Converters.object<IConfectionProductionJournalEntryEntity>({
     type: Converters.literal('confection-production'),
-    baseId: CommonConverters.journalBaseId,
+    baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
     versionId: CommonConverters.confectionVersionId,
     recipe: anyConfectionVersionConverter,

@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->.
+A library for managing persisted [editing sessions](./ts-chocolate.entities.session.anysessionentity.md)<!-- -->.
 
 Sessions are organized into user-defined collections. The library provides cross-collection indexing for efficient queries by filling/confection and status.
 
@@ -49,23 +49,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isPersistedConfectionSession(session)](./ts-chocolate.entities.session.ispersistedconfectionsession.md)
+[isConfectionSessionEntity(session)](./ts-chocolate.entities.session.isconfectionsessionentity.md)
 
 
 </td><td>
 
-Type guard for IPersistedConfectionSession.
+Type guard for [IConfectionSessionEntity](./ts-chocolate.entities.session.iconfectionsessionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[isPersistedFillingSession(session)](./ts-chocolate.entities.session.ispersistedfillingsession.md)
+[isFillingSessionEntity(session)](./ts-chocolate.entities.session.isfillingsessionentity.md)
 
 
 </td><td>
 
-Type guard for IPersistedFillingSession.
+Type guard for [IFillingSessionEntity](./ts-chocolate.entities.session.ifillingsessionentity.md)<!-- -->.
 
 
 </td></tr>
@@ -86,7 +86,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IPersistedConfectionSession](./ts-chocolate.entities.session.ipersistedconfectionsession.md)
+[IConfectionSessionEntity](./ts-chocolate.entities.session.iconfectionsessionentity.md)
 
 
 </td><td>
@@ -99,7 +99,7 @@ Contains the complete undo/redo history so the session can be restored to its ex
 </td></tr>
 <tr><td>
 
-[IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)
+[IFillingSessionEntity](./ts-chocolate.entities.session.ifillingsessionentity.md)
 
 
 </td><td>
@@ -112,18 +112,18 @@ Contains the complete undo/redo history so the session can be restored to its ex
 </td></tr>
 <tr><td>
 
-[IPersistedSessionBase](./ts-chocolate.entities.session.ipersistedsessionbase.md)
+[ISerializedEditingHistoryEntity](./ts-chocolate.entities.session.iserializededitinghistoryentity.md)
 
 
 </td><td>
 
-Common properties shared by all persisted session types.
+Serialized undo/redo history for any editable entity. Captures the full editing state for restoration.
 
 
 </td></tr>
 <tr><td>
 
-[IPersistedSessionDestination](./ts-chocolate.entities.session.ipersistedsessiondestination.md)
+[ISessionDestinationEntity](./ts-chocolate.entities.session.isessiondestinationentity.md)
 
 
 </td><td>
@@ -134,12 +134,12 @@ Destination collection configuration for persisting derived entities.
 </td></tr>
 <tr><td>
 
-[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)
+[ISessionEntityBase](./ts-chocolate.entities.session.isessionentitybase.md)
 
 
 </td><td>
 
-Serialized undo/redo history for any editable entity. Captures the full editing state for restoration.
+Common properties shared by all persisted session types.
 
 
 </td></tr>
@@ -232,7 +232,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)
+[AnySessionEntity](./ts-chocolate.entities.session.anysessionentity.md)
 
 
 </td><td>

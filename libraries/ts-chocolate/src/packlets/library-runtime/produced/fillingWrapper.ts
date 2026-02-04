@@ -115,7 +115,7 @@ export class RuntimeProducedFilling {
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedFillingEntity>
+    history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>
   ): Result<RuntimeProducedFilling> {
     const instance = new RuntimeProducedFilling(history.current);
     // Restore undo/redo stacks
@@ -218,7 +218,7 @@ export class RuntimeProducedFilling {
    */
   public getSerializedHistory(
     original: IProducedFillingEntity
-  ): Session.ISerializedEditingHistory<IProducedFillingEntity> {
+  ): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity> {
     return {
       current: this._deepCopy(this._current),
       original: this._deepCopy(original),

@@ -37,12 +37,12 @@ import {
   FillingId,
   FillingVersionId,
   FillingVersionSpec,
-  SessionId,
+  SessionSpec,
   SlotId,
   SourceId,
   UrlCategory,
   Validation,
-  JournalBaseId
+  BaseJournalId
 } from '../../../packlets/common';
 
 const {
@@ -53,8 +53,8 @@ const {
   isValidBaseFillingId,
   isValidFillingName,
   isValidFillingVersionSpec,
-  isValidSessionId,
-  isValidJournalBaseId,
+  isValidSessionSpec,
+  isValidBaseJournalId,
   isValidRatingScore,
   isValidMeasurement,
   isValidPercentage,
@@ -68,8 +68,8 @@ const {
   toBaseFillingId,
   toFillingName,
   toFillingVersionSpec,
-  toSessionId,
-  toJournalBaseId,
+  toSessionSpec,
+  toBaseJournalId,
   isValidSlotId,
   toSlotId,
   toRatingScore,
@@ -376,15 +376,15 @@ describe('Common validation', () => {
   // SessionId Validation
   // ============================================================================
 
-  describe('SessionId validation', () => {
-    const validSessionIds: [string, string][] = [
+  describe('SessionSpec validation', () => {
+    const validSessionSpecs: [string, string][] = [
       ['basic format', '2026-01-15-143025-a1b2c3d4'],
       ['midnight', '2026-01-01-000000-00000000'],
       ['end of day', '2026-12-31-235959-ffffffff'],
       ['hex digits', '2026-06-15-120030-abcdef12']
     ];
 
-    const invalidSessionIds: [string, unknown][] = [
+    const invalidSessionSpecs: [string, unknown][] = [
       ['empty string', ''],
       ['missing random part', '2026-01-15-143025'],
       ['wrong date format', '26-01-15-143025-a1b2c3d4'],
@@ -399,23 +399,23 @@ describe('Common validation', () => {
       ['old format', 'l1234567-abc12345']
     ];
 
-    describe('isValidSessionId', () => {
-      test.each(validSessionIds)('returns true for %s', (_desc, value) => {
-        expect(isValidSessionId(value)).toBe(true);
+    describe('isValidSessionSpec', () => {
+      test.each(validSessionSpecs)('returns true for %s', (_desc, value) => {
+        expect(isValidSessionSpec(value)).toBe(true);
       });
 
-      test.each(invalidSessionIds)('returns false for %s', (_desc, value) => {
-        expect(isValidSessionId(value)).toBe(false);
+      test.each(invalidSessionSpecs)('returns false for %s', (_desc, value) => {
+        expect(isValidSessionSpec(value)).toBe(false);
       });
     });
 
-    describe('toSessionId', () => {
-      test.each(validSessionIds)('succeeds with %s', (_desc, value) => {
-        expect(toSessionId(value)).toSucceedWith(value as SessionId);
+    describe('toSessionSpec', () => {
+      test.each(validSessionSpecs)('succeeds with %s', (_desc, value) => {
+        expect(toSessionSpec(value)).toSucceedWith(value as SessionSpec);
       });
 
-      test.each(invalidSessionIds)('fails with %s', (_desc, value) => {
-        expect(toSessionId(value)).toFailWith(/Invalid SessionId/);
+      test.each(invalidSessionSpecs)('fails with %s', (_desc, value) => {
+        expect(toSessionSpec(value)).toFailWith(/Invalid SessionSpec/);
       });
     });
   });
@@ -447,23 +447,23 @@ describe('Common validation', () => {
       ['old format', 'journal-l1234567-abc12345']
     ];
 
-    describe('isValidJournalBaseId', () => {
+    describe('isValidBaseJournalId', () => {
       test.each(validJournalIds)('returns true for %s', (_desc, value) => {
-        expect(isValidJournalBaseId(value)).toBe(true);
+        expect(isValidBaseJournalId(value)).toBe(true);
       });
 
       test.each(invalidJournalIds)('returns false for %s', (_desc, value) => {
-        expect(isValidJournalBaseId(value)).toBe(false);
+        expect(isValidBaseJournalId(value)).toBe(false);
       });
     });
 
-    describe('toJournalBaseId', () => {
+    describe('toBaseJournalId', () => {
       test.each(validJournalIds)('succeeds with %s', (_desc, value) => {
-        expect(toJournalBaseId(value)).toSucceedWith(value as JournalBaseId);
+        expect(toBaseJournalId(value)).toSucceedWith(value as BaseJournalId);
       });
 
       test.each(invalidJournalIds)('fails with %s', (_desc, value) => {
-        expect(toJournalBaseId(value)).toFailWith(/Invalid JournalBaseId/);
+        expect(toBaseJournalId(value)).toFailWith(/Invalid BaseJournalId/);
       });
     });
   });

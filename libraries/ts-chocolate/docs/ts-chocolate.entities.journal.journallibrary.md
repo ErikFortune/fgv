@@ -13,9 +13,9 @@ Provides: - Multi-collection storage with FileTree persistence - Cross-collectio
 **Signature:**
 
 ```typescript
-export declare class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntryEntity> 
+export declare class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, AnyJournalEntryEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[JournalId](./ts-chocolate.journalid.md)<!-- -->, [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)<!-- -->&gt;
 
 ## Methods
 

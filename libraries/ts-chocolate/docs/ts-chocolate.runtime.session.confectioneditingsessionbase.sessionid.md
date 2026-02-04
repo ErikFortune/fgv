@@ -9,5 +9,5 @@ Gets the session ID.
 **Signature:**
 
 ```typescript
-get sessionId(): SessionId;
+get sessionId(): SessionSpec;
 ```

@@ -9,7 +9,7 @@ Gets all filling sessions for a filling (across all versions and collections)
 **Signature:**
 
 ```typescript
-getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IPersistedFillingSession>;
+getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IFillingSessionEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [filling ID](./ts-chocolate.fillingid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;[IPersistedFillingSession](./ts-chocolate.entities.ipersistedfillingsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[IFillingSessionEntity](./ts-chocolate.entities.ifillingsessionentity.md)<!-- -->&gt;
 
 Array of filling sessions (empty if none found)
 

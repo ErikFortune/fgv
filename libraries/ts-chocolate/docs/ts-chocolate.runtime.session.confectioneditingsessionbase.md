@@ -160,7 +160,7 @@ T
 
 </td><td>
 
-[SessionId](./ts-chocolate.sessionid.md)
+[SessionSpec](./ts-chocolate.sessionspec.md)
 
 
 </td><td>
@@ -263,7 +263,7 @@ Gets the produced confection wrapper.
 
 </td><td>
 
-[SessionId](./ts-chocolate.sessionid.md)
+[SessionSpec](./ts-chocolate.sessionspec.md)
 
 
 </td><td>

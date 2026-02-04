@@ -9,7 +9,7 @@ Gets all confection sessions for a confection (across all versions and collectio
 **Signature:**
 
 ```typescript
-getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IPersistedConfectionSession>;
+getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionSessionEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [confection ID](./ts-chocolate.confectionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;[IPersistedConfectionSession](./ts-chocolate.entities.ipersistedconfectionsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[IConfectionSessionEntity](./ts-chocolate.entities.iconfectionsessionentity.md)<!-- -->&gt;
 
 Array of confection sessions (empty if none found)
 

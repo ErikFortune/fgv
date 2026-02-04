@@ -25,7 +25,7 @@
 
 import { Converter, Converters } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, SlotId, PersistedSessionId } from '../../common';
+import { Converters as CommonConverters, SlotId, SessionId } from '../../common';
 import {
   anyProducedConfectionEntity as anyProducedConfectionConverter,
   producedFillingEntity as producedFillingConverter
@@ -35,11 +35,11 @@ import { IProducedFillingEntity } from '../fillings';
 import {
   allPersistedSessionStatuses,
   allPersistedSessionTypes,
-  AnyPersistedSession,
-  IPersistedConfectionSession,
-  IPersistedFillingSession,
-  IPersistedSessionDestination,
-  ISerializedEditingHistory,
+  AnySessionEntity,
+  IConfectionSessionEntity,
+  IFillingSessionEntity,
+  ISessionDestinationEntity,
+  ISerializedEditingHistoryEntity,
   PersistedSessionStatus,
   PersistedSessionType
 } from './model';
@@ -67,11 +67,11 @@ export const persistedSessionStatus: Converter<PersistedSessionStatus> =
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Session.IPersistedSessionDestination | IPersistedSessionDestination}.
+ * Converter for {@link Entities.Session.ISessionDestinationEntity | ISessionDestinationEntity}.
  * @public
  */
-export const persistedSessionDestination: Converter<IPersistedSessionDestination> =
-  Converters.object<IPersistedSessionDestination>({
+export const persistedSessionDestinationEntity: Converter<ISessionDestinationEntity> =
+  Converters.object<ISessionDestinationEntity>({
     defaultCollectionId: CommonConverters.sourceId.optional(),
     overrideCollectionId: CommonConverters.sourceId.optional()
   });
@@ -84,53 +84,47 @@ export const persistedSessionDestination: Converter<IPersistedSessionDestination
  * Converter for serialized filling editing history.
  * @public
  */
-export const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFillingEntity>> =
-  Converters.object<ISerializedEditingHistory<IProducedFillingEntity>>({
-    current: producedFillingConverter,
-    original: producedFillingConverter,
-    undoStack: Converters.arrayOf(producedFillingConverter),
-    redoStack: Converters.arrayOf(producedFillingConverter)
-  });
+export const serializedFillingHistoryEntity: Converter<
+  ISerializedEditingHistoryEntity<IProducedFillingEntity>
+> = Converters.object<ISerializedEditingHistoryEntity<IProducedFillingEntity>>({
+  current: producedFillingConverter,
+  original: producedFillingConverter,
+  undoStack: Converters.arrayOf(producedFillingConverter),
+  redoStack: Converters.arrayOf(producedFillingConverter)
+});
 
 /**
  * Converter for serialized confection editing history.
  * @public
  */
-export const serializedConfectionHistory: Converter<ISerializedEditingHistory<AnyProducedConfectionEntity>> =
-  Converters.object<ISerializedEditingHistory<AnyProducedConfectionEntity>>({
-    current: anyProducedConfectionConverter,
-    original: anyProducedConfectionConverter,
-    undoStack: Converters.arrayOf(anyProducedConfectionConverter),
-    redoStack: Converters.arrayOf(anyProducedConfectionConverter)
-  });
-
-// ============================================================================
-// Confection Production Converter
-// ============================================================================
-
-// ============================================================================
-// Child Session IDs Converter
-// ============================================================================
+export const serializedConfectionHistoryEntity: Converter<
+  ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>
+> = Converters.object<ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>>({
+  current: anyProducedConfectionConverter,
+  original: anyProducedConfectionConverter,
+  undoStack: Converters.arrayOf(anyProducedConfectionConverter),
+  redoStack: Converters.arrayOf(anyProducedConfectionConverter)
+});
 
 /**
  * Converter for child session IDs mapping (SlotId to PersistedSessionId).
  * @public
  */
-export const childSessionIds: Converter<Readonly<Record<SlotId, PersistedSessionId>>> = Converters.recordOf(
+export const childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>> = Converters.recordOf(
   CommonConverters.persistedSessionId,
   { keyConverter: CommonConverters.slotId }
-) as Converter<Readonly<Record<SlotId, PersistedSessionId>>>;
+) as Converter<Readonly<Record<SlotId, SessionId>>>;
 
 // ============================================================================
 // Session Converters
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Session.IPersistedFillingSession | IPersistedFillingSession}.
+ * Converter for {@link Entities.Session.IFillingSessionEntity | IFillingSessionEntity}.
  * @public
  */
-export const persistedFillingSession: Converter<IPersistedFillingSession> =
-  Converters.object<IPersistedFillingSession>({
+export const fillingSessionEntity: Converter<IFillingSessionEntity> =
+  Converters.object<IFillingSessionEntity>({
     baseId: CommonConverters.sessionBaseId,
     sessionType: Converters.literal('filling'),
     status: persistedSessionStatus,
@@ -138,17 +132,17 @@ export const persistedFillingSession: Converter<IPersistedFillingSession> =
     updatedAt: Converters.string,
     label: Converters.string.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
-    destination: persistedSessionDestination.optional(),
+    destination: persistedSessionDestinationEntity.optional(),
     sourceVersionId: CommonConverters.fillingVersionId,
-    history: serializedFillingHistory
+    history: serializedFillingHistoryEntity
   });
 
 /**
- * Converter for {@link Entities.Session.IPersistedConfectionSession | IPersistedConfectionSession}.
+ * Converter for {@link Entities.Session.IConfectionSessionEntity | IConfectionSessionEntity}.
  * @public
  */
-export const persistedConfectionSession: Converter<IPersistedConfectionSession> =
-  Converters.object<IPersistedConfectionSession>({
+export const confectionSessionEntity: Converter<IConfectionSessionEntity> =
+  Converters.object<IConfectionSessionEntity>({
     baseId: CommonConverters.sessionBaseId,
     sessionType: Converters.literal('confection'),
     status: persistedSessionStatus,
@@ -156,20 +150,22 @@ export const persistedConfectionSession: Converter<IPersistedConfectionSession> 
     updatedAt: Converters.string,
     label: Converters.string.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
-    destination: persistedSessionDestination.optional(),
+    destination: persistedSessionDestinationEntity.optional(),
     confectionType: CommonConverters.confectionType,
     sourceVersionId: CommonConverters.confectionVersionId,
-    history: serializedConfectionHistory,
+    history: serializedConfectionHistoryEntity,
     childSessionIds
   });
 
 /**
- * Converter for {@link Entities.Session.AnyPersistedSession | AnyPersistedSession}.
+ * Converter for {@link Entities.Session.AnySessionEntity | AnySessionEntity}.
  * Uses discriminated object pattern on `sessionType` field.
  * @public
  */
-export const anyPersistedSession: Converter<AnyPersistedSession> =
-  Converters.discriminatedObject<AnyPersistedSession>('sessionType', {
-    filling: persistedFillingSession,
-    confection: persistedConfectionSession
-  });
+export const anySessionEntity: Converter<AnySessionEntity> = Converters.discriminatedObject<AnySessionEntity>(
+  'sessionType',
+  {
+    filling: fillingSessionEntity,
+    confection: confectionSessionEntity
+  }
+);

@@ -9,7 +9,7 @@ Removes a session from its collection.
 **Signature:**
 
 ```typescript
-removeSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+removeSession(sessionId: SessionId): Result<AnySessionEntity>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sessionId
 
 </td><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ The composite session ID to remove
 
 **Returns:**
 
-Result&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+Result&lt;[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 Success with the removed session, or Failure if not found or remove fails
 

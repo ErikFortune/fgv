@@ -9,7 +9,7 @@ A single entry in a session collection.
 **Signature:**
 
 ```typescript
-export type SessionCollectionEntry = SubLibraryCollectionEntry<SessionBaseId, AnyPersistedSession>;
+export type SessionCollectionEntry = SubLibraryCollectionEntry<BaseSessionId, AnySessionEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->, [AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)
 

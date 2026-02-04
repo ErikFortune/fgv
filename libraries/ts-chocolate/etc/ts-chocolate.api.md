@@ -194,14 +194,6 @@ const anyJournalEntryEntity: Converter<AnyJournalEntryEntity>;
 type AnyMaterializedSession = Session_2.EditingSession | Session_2.AnyConfectionEditingSession;
 
 // @public
-type AnyPersistedSession = IPersistedFillingSession | IPersistedConfectionSession;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const anyPersistedSession: Converter<AnyPersistedSession>;
-
-// @public
 type AnyProducedConfectionEntity = IProducedMoldedBonBonEntity | IProducedBarTruffleEntity | IProducedRolledTruffleEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -229,6 +221,14 @@ type AnyRuntimeConfectionVersion = IRuntimeMoldedBonBonVersion | IRuntimeBarTruf
 type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
 
 // @public
+type AnySessionEntity = IFillingSessionEntity | IConfectionSessionEntity;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const anySessionEntity: Converter<AnySessionEntity>;
+
+// @public
 function atLeast<T>(min: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
@@ -239,7 +239,7 @@ class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBar
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create(baseConfection: RuntimeBarTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
-    static fromPersistedState(baseConfection: RuntimeBarTruffle, history: Session.ISerializedEditingHistory<IProducedBarTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+    static fromPersistedState(baseConfection: RuntimeBarTruffle, history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
 }
 
@@ -255,6 +255,12 @@ const barTruffleVersionEntity: Converter<IBarTruffleVersionEntity>;
 
 // @public
 const BASE_ID_PATTERN: RegExp;
+
+// @public
+const BASE_JOURNAL_ID_PATTERN: RegExp;
+
+// @public
+const BASE_SESSION_ID_PATTERN: RegExp;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -333,6 +339,15 @@ const baseIngredientId: Converter<BaseIngredientId>;
 const baseIngredientId_2: Validator<BaseIngredientId>;
 
 // @public
+export type BaseJournalId = Brand<string, 'BaseJournalId'>;
+
+// @public
+const baseJournalId: Converter<BaseJournalId>;
+
+// @public
+const baseJournalId_2: Validator<BaseJournalId>;
+
+// @public
 export type BaseMoldId = Brand<string, 'BaseMoldId'>;
 
 // @public
@@ -349,6 +364,12 @@ const baseProcedureId: Converter<BaseProcedureId>;
 
 // @public
 const baseProcedureId_2: Validator<BaseProcedureId>;
+
+// @public
+export type BaseSessionId = Brand<string, 'BaseSessionId'>;
+
+// @public
+const baseSessionId: Validator<BaseSessionId>;
 
 // @public
 export type BaseTaskId = Brand<string, 'BaseTaskId'>;
@@ -463,7 +484,7 @@ const certification: Converter<Certification>;
 function checkForCollisionIds<TCollectionId extends string>(collectionSets: ReadonlyArray<ICollectionSet<TCollectionId>>): Result<true>;
 
 // @public
-const childSessionIds: Converter<Readonly<Record<SlotId, PersistedSessionId>>>;
+const childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>>;
 
 // @public
 export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cremeux' | 'drinks' | 'enrobing' | 'frozen-desserts' | 'ganache' | 'glazes' | 'ice-cream' | 'molding' | 'mousse' | 'pralines' | 'sauces' | 'sorbet';
@@ -678,9 +699,9 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     // @internal
     protected _scaleFillingToWeight(slotId: SlotId, targetWeight: Measurement): Result<Measurement | undefined>;
     abstract scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
-    get sessionId(): SessionId;
+    get sessionId(): SessionSpec;
     // (undocumented)
-    protected readonly _sessionId: SessionId;
+    protected readonly _sessionId: SessionSpec;
     setFillingSlot(slotId: SlotId, choice: {
         type: 'recipe';
         fillingId: FillingId;
@@ -820,6 +841,11 @@ declare namespace Confections_2 {
 // @public
 type ConfectionSelectionStatus = 'original' | 'modified';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const confectionSessionEntity: Converter<IConfectionSessionEntity>;
+
 // @public
 class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, AnyConfectionEntity> {
     static create(params?: IConfectionsLibraryParams): Result<ConfectionsLibrary>;
@@ -879,7 +905,7 @@ declare namespace Converters {
         baseProcedureId,
         baseTaskId,
         baseConfectionId,
-        journalBaseId,
+        baseJournalId,
         ingredientId,
         fillingId,
         moldId,
@@ -904,11 +930,11 @@ declare namespace Converters {
         fillingVersionId,
         ParsedFillingVersionId,
         parsedFillingVersionId,
-        sessionId,
+        sessionSpec,
         sessionBaseId,
         persistedSessionId,
-        ParsedPersistedSessionId,
-        parsedPersistedSessionId,
+        ParsedSessionId,
+        parsedSessionId,
         slotId,
         ParsedConfectionId,
         parsedConfectionId,
@@ -985,13 +1011,13 @@ declare namespace Converters_5 {
     export {
         persistedSessionType,
         persistedSessionStatus,
-        persistedSessionDestination,
-        serializedFillingHistory,
-        serializedConfectionHistory,
+        persistedSessionDestinationEntity,
+        serializedFillingHistoryEntity,
+        serializedConfectionHistoryEntity,
         childSessionIds,
-        persistedFillingSession,
-        persistedConfectionSession,
-        anyPersistedSession
+        fillingSessionEntity,
+        confectionSessionEntity,
+        anySessionEntity
     }
 }
 
@@ -1035,13 +1061,13 @@ function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryL
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
 
 // @public
-function createJournalId(collectionId: SourceId, baseId: JournalBaseId): JournalId;
+function createJournalId(collectionId: SourceId, baseId: BaseJournalId): JournalId;
 
 // @public
 export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace>;
 
 // @public
-function createPersistedSessionId(collectionId: SourceId, baseId: SessionBaseId): PersistedSessionId;
+function createSessionId(collectionId: SourceId, baseId: BaseSessionId): SessionId;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1130,7 +1156,7 @@ class EditingSession {
     canRedo(): boolean;
     canUndo(): boolean;
     static create(baseRecipe: IRuntimeFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
-    static fromPersistedState(data: IPersistedFillingSession, baseRecipe: IRuntimeFillingRecipeVersion): Result<EditingSession>;
+    static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IRuntimeFillingRecipeVersion): Result<EditingSession>;
     get hasChanges(): boolean;
     get produced(): RuntimeProducedFilling;
     redo(): Result<boolean>;
@@ -1139,7 +1165,7 @@ class EditingSession {
     saveAsNewRecipe(options: ISaveNewRecipeOptions): Result<ISaveResult>;
     saveAsNewVersion(options: ISaveVersionOptions): Result<ISaveResult>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
-    get sessionId(): SessionId;
+    get sessionId(): SessionSpec;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
@@ -1147,11 +1173,11 @@ class EditingSession {
     toEditJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingEditJournalEntryEntity>;
     toPersistedState(options: {
         readonly collectionId: SourceId;
-        readonly baseId?: SessionBaseId;
+        readonly baseId?: BaseSessionId;
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
         readonly notes?: Model.ICategorizedNote[];
-    }): Result<IPersistedFillingSession>;
+    }): Result<IFillingSessionEntity>;
     toProductionJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingProductionJournalEntryEntity>;
     undo(): Result<boolean>;
 }
@@ -1249,9 +1275,9 @@ declare namespace Entities {
         IFillingEditJournalEntryEntity,
         JournalEntryType,
         SessionLibrary,
-        AnyPersistedSession,
-        IPersistedConfectionSession,
-        IPersistedFillingSession,
+        AnySessionEntity,
+        IConfectionSessionEntity,
+        IFillingSessionEntity,
         PersistedSessionStatus,
         IngredientInventoryLibrary,
         MoldInventoryLibrary,
@@ -1614,6 +1640,11 @@ declare namespace Fillings_2 {
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const fillingSessionEntity: Converter<IFillingSessionEntity>;
+
 // @public
 class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipeEntity> {
     static create(params?: IFillingsLibraryParams): Result<FillingsLibrary>;
@@ -1670,16 +1701,22 @@ type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', Li
 const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
 
 // @public
-function generateJournalId(): Result<JournalBaseId>;
+function generateJournalId(): Result<BaseJournalId>;
 
 // @public
-function generateSessionId(): Result<SessionId>;
+function generateSessionId(): Result<SessionSpec>;
 
 // @public
 function generateUniqueBaseId(baseId: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
 
 // @public
 function generateUniqueBaseIdFromName(name: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
+
+// @public
+function getBaseIdFromSessionId(id: SessionId): BaseSessionId;
+
+// @public
+function getCollectionIdFromSessionId(id: SessionId): SourceId;
 
 // @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -1718,7 +1755,7 @@ function getIngredientsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.I
 function getIngredientSourceId(id: IngredientId): SourceId;
 
 // @public
-function getJournalBaseId(id: JournalId): JournalBaseId;
+function getJournalBaseId(id: JournalId): BaseJournalId;
 
 // @public
 function getJournalCollectionId(id: JournalId): SourceId;
@@ -1731,12 +1768,6 @@ function getMoldInventoryDirectory(tree: FileTree.FileTreeItem): Result<FileTree
 
 // @public
 function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
-
-// @public
-function getPersistedSessionBaseId(id: PersistedSessionId): SessionBaseId;
-
-// @public
-function getPersistedSessionCollectionId(id: PersistedSessionId): SourceId;
 
 // @public
 function getPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
@@ -1785,10 +1816,10 @@ declare namespace Helpers {
         parseJournalId,
         getJournalCollectionId,
         getJournalBaseId,
-        createPersistedSessionId,
-        parsePersistedSessionId,
-        getPersistedSessionCollectionId,
-        getPersistedSessionBaseId,
+        createSessionId,
+        parseSessionId,
+        getCollectionIdFromSessionId,
+        getBaseIdFromSessionId,
         createFillingVersionId,
         parseFillingVersionId,
         getFillingVersionFillingId,
@@ -2053,7 +2084,7 @@ interface IConfectionDecoration {
 // @public
 interface IConfectionEditingSessionParams {
     readonly initialYield?: Confections_2.AnyConfectionYield;
-    readonly sessionId?: SessionId;
+    readonly sessionId?: SessionSpec;
 }
 
 // @public
@@ -2106,6 +2137,16 @@ interface IConfectionSaveResult {
 }
 
 // @public
+interface IConfectionSessionEntity extends ISessionEntityBase {
+    readonly childSessionIds: Readonly<Record<SlotId, SessionId>>;
+    readonly confectionType: ConfectionType;
+    readonly history: ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>;
+    // (undocumented)
+    readonly sessionType: 'confection';
+    readonly sourceVersionId: ConfectionVersionId;
+}
+
+// @public
 interface IConfectionSessionState {
     readonly chocolates: ReadonlyMap<ChocolateRole, ISessionChocolate>;
     readonly coating?: ISessionCoating;
@@ -2113,7 +2154,7 @@ interface IConfectionSessionState {
     readonly isJournalingEnabled: boolean;
     readonly mold?: ISessionMold;
     readonly procedure?: ISessionProcedure;
-    readonly sessionId: SessionId;
+    readonly sessionId: SessionSpec;
     readonly sourceConfection: IRuntimeConfection;
     readonly yield: ISessionYield;
 }
@@ -2398,6 +2439,14 @@ interface IFillingRecipeVersionEntity {
 }
 
 // @public
+interface IFillingSessionEntity extends ISessionEntityBase {
+    readonly history: ISerializedEditingHistoryEntity<IProducedFillingEntity>;
+    // (undocumented)
+    readonly sessionType: 'filling';
+    readonly sourceVersionId: FillingVersionId;
+}
+
+// @public
 type IFillingSessionMap = Map<SlotId, EditingSession>;
 
 // @public
@@ -2679,7 +2728,7 @@ interface IIterationOptions {
 
 // @public
 interface IJournalEntryEntityBase<TVersion, TVersionId> {
-    readonly baseId: JournalBaseId;
+    readonly baseId: BaseJournalId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly recipe: TVersion;
     readonly timestamp: string;
@@ -3267,42 +3316,6 @@ const inventoryType: Converter<InventoryType>;
 interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
     readonly options: ReadonlyArray<TOption>;
     readonly preferredId?: TId;
-}
-
-// @public
-interface IPersistedConfectionSession extends IPersistedSessionBase {
-    readonly childSessionIds: Readonly<Record<SlotId, PersistedSessionId>>;
-    readonly confectionType: ConfectionType;
-    readonly history: ISerializedEditingHistory<AnyProducedConfectionEntity>;
-    // (undocumented)
-    readonly sessionType: 'confection';
-    readonly sourceVersionId: ConfectionVersionId;
-}
-
-// @public
-interface IPersistedFillingSession extends IPersistedSessionBase {
-    readonly history: ISerializedEditingHistory<IProducedFillingEntity>;
-    // (undocumented)
-    readonly sessionType: 'filling';
-    readonly sourceVersionId: FillingVersionId;
-}
-
-// @public
-interface IPersistedSessionBase {
-    readonly baseId: SessionBaseId;
-    readonly createdAt: string;
-    readonly destination?: IPersistedSessionDestination;
-    readonly label?: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly sessionType: PersistedSessionType;
-    readonly status: PersistedSessionStatus;
-    readonly updatedAt: string;
-}
-
-// @public
-interface IPersistedSessionDestination {
-    readonly defaultCollectionId?: SourceId;
-    readonly overrideCollectionId?: SourceId;
 }
 
 // @internal
@@ -4062,6 +4075,11 @@ function isConfectionProductionJournalEntryEntity(entry: AnyJournalEntryEntity):
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function isConfectionSessionEntity(session: AnySessionEntity): session is IConfectionSessionEntity;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 function isDairyIngredientEntity(ingredient: IngredientEntity): ingredient is IDairyIngredientEntity;
 
 // @public
@@ -4073,7 +4091,7 @@ interface ISerializationOptions {
 }
 
 // @public
-interface ISerializedEditingHistory<T> {
+interface ISerializedEditingHistoryEntity<T> {
     readonly current: T;
     readonly original: T;
     readonly redoStack: ReadonlyArray<T>;
@@ -4101,6 +4119,24 @@ interface ISessionCoating {
 // @public
 interface ISessionContext extends IConfectionContext {
     createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
+}
+
+// @public
+interface ISessionDestinationEntity {
+    readonly defaultCollectionId?: SourceId;
+    readonly overrideCollectionId?: SourceId;
+}
+
+// @public
+interface ISessionEntityBase {
+    readonly baseId: BaseSessionId;
+    readonly createdAt: string;
+    readonly destination?: ISessionDestinationEntity;
+    readonly label?: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly sessionType: PersistedSessionType;
+    readonly status: PersistedSessionStatus;
+    readonly updatedAt: string;
 }
 
 // @public
@@ -4153,6 +4189,11 @@ function isFillingJournalEntry(entry: AnyJournalEntryEntity): entry is AnyFillin
 // @public
 function isFillingProductionJournalEntryEntity(entry: AnyJournalEntryEntity): entry is IFillingProductionJournalEntryEntity;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isFillingSessionEntity(session: AnySessionEntity): session is IFillingSessionEntity;
+
 // @public
 function isIngredientInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IIngredientInventoryEntryEntity;
 
@@ -4175,12 +4216,6 @@ function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMolde
 
 // @public
 function isMoldInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IMoldInventoryEntryEntity;
-
-// @public
-function isPersistedConfectionSession(session: AnyPersistedSession): session is IPersistedConfectionSession;
-
-// @public
-function isPersistedFillingSession(session: AnyPersistedSession): session is IPersistedFillingSession;
 
 // @public
 interface ISpoonScalerOptions {
@@ -4274,10 +4309,16 @@ function isValidBaseFillingId(from: unknown): from is BaseFillingId;
 function isValidBaseIngredientId(from: unknown): from is BaseIngredientId;
 
 // @public
+function isValidBaseJournalId(from: unknown): from is BaseJournalId;
+
+// @public
 function isValidBaseMoldId(from: unknown): from is BaseMoldId;
 
 // @public
 function isValidBaseProcedureId(from: unknown): from is BaseProcedureId;
+
+// @public
+function isValidBaseSessionId(from: unknown): from is BaseSessionId;
 
 // @public
 function isValidBaseTaskId(from: unknown): from is BaseTaskId;
@@ -4301,9 +4342,6 @@ function isValidFillingName(from: unknown): from is FillingName;
 function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec;
 
 // @public
-function isValidJournalBaseId(from: unknown): from is JournalBaseId;
-
-// @public
 function isValidJournalId(from: unknown): from is JournalId;
 
 // @public
@@ -4322,16 +4360,13 @@ function isValidNoteCategory(from: unknown): from is NoteCategory;
 function isValidPercentage(from: unknown): from is Percentage;
 
 // @public
-function isValidPersistedSessionId(from: unknown): from is PersistedSessionId;
-
-// @public
 function isValidRatingScore(from: unknown): from is RatingScore;
 
 // @public
-function isValidSessionBaseId(from: unknown): from is SessionBaseId;
+function isValidSessionId(from: unknown): from is SessionId;
 
 // @public
-function isValidSessionId(from: unknown): from is SessionId;
+function isValidSessionSpec(from: unknown): from is SessionSpec;
 
 // @public
 function isValidSlotId(from: unknown): from is SlotId;
@@ -4430,11 +4465,11 @@ interface IUserLibraryCreateParams {
 
 // @public
 interface IUserLibraryRuntime {
-    createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IPersistedFillingSession>;
-    evictSession(sessionId: PersistedSessionId): boolean;
-    getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession>;
-    readonly materializedSessions: ReadonlyMap<PersistedSessionId, AnyMaterializedSession>;
-    saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+    createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    evictSession(sessionId: SessionId): boolean;
+    getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession>;
+    readonly materializedSessions: ReadonlyMap<SessionId, AnyMaterializedSession>;
+    saveSession(sessionId: SessionId): Result<AnySessionEntity>;
 }
 
 // @public
@@ -4582,31 +4617,19 @@ declare namespace Journal_2 {
 }
 
 // @public
-const JOURNAL_BASE_ID_PATTERN: RegExp;
-
-// @public
 const JOURNAL_ID_PATTERN: RegExp;
 
 // @public
-export type JournalBaseId = Brand<string, 'JournalBaseId'>;
+type JournalCollection = SubLibraryCollection<BaseJournalId, AnyJournalEntryEntity>;
 
 // @public
-const journalBaseId: Converter<JournalBaseId>;
+type JournalCollectionEntry = SubLibraryCollectionEntry<BaseJournalId, AnyJournalEntryEntity>;
 
 // @public
-const journalBaseId_2: Validator<JournalBaseId>;
+type JournalCollectionEntryInit = SubLibraryEntryInit<BaseJournalId, AnyJournalEntryEntity>;
 
 // @public
-type JournalCollection = SubLibraryCollection<JournalBaseId, AnyJournalEntryEntity>;
-
-// @public
-type JournalCollectionEntry = SubLibraryCollectionEntry<JournalBaseId, AnyJournalEntryEntity>;
-
-// @public
-type JournalCollectionEntryInit = SubLibraryEntryInit<JournalBaseId, AnyJournalEntryEntity>;
-
-// @public
-type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntryEntity>;
+type JournalCollectionValidator = SubLibraryCollectionValidator<BaseJournalId, AnyJournalEntryEntity>;
 
 // @public
 type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit';
@@ -4628,7 +4651,7 @@ const journalId_2: Validator<JournalId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class JournalLibrary extends SubLibraryBase<JournalId, JournalBaseId, AnyJournalEntryEntity> {
+class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, AnyJournalEntryEntity> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
@@ -4995,10 +5018,10 @@ declare namespace Model {
         FILLING_VERSION_SPEC_PATTERN,
         VERSION_ID_SEPARATOR,
         FILLING_VERSION_ID_PATTERN,
+        SESSION_SPEC_PATTERN,
+        BASE_SESSION_ID_PATTERN,
         SESSION_ID_PATTERN,
-        SESSION_BASE_ID_PATTERN,
-        PERSISTED_SESSION_ID_PATTERN,
-        JOURNAL_BASE_ID_PATTERN,
+        BASE_JOURNAL_ID_PATTERN,
         JOURNAL_ID_PATTERN,
         CONFECTION_VERSION_SPEC_PATTERN,
         CONFECTION_VERSION_ID_PATTERN,
@@ -5030,7 +5053,7 @@ class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedM
     confirmMoldChange(): Result<undefined>;
     static create(baseConfection: RuntimeMoldedBonBon, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get currentMold(): IRuntimeMold;
-    static fromPersistedState(baseConfection: RuntimeMoldedBonBon, history: Session.ISerializedEditingHistory<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    static fromPersistedState(baseConfection: RuntimeMoldedBonBon, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
     setFrames(frames: number, bufferPercentage?: number): Result<Confections_2.IMoldedBonBonYield>;
@@ -5255,7 +5278,7 @@ type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, Ingr
 const parsedIngredientInventoryEntryId: Converter<ParsedIngredientInventoryEntryId>;
 
 // @public
-type ParsedJournalId = Converters_4.ICompositeId<SourceId, JournalBaseId>;
+type ParsedJournalId = Converters_4.ICompositeId<SourceId, BaseJournalId>;
 
 // @public
 const parsedJournalId: Converter<ParsedJournalId>;
@@ -5277,16 +5300,16 @@ type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInvent
 const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId>;
 
 // @public
-type ParsedPersistedSessionId = Converters_4.ICompositeId<SourceId, SessionBaseId>;
-
-// @public
-const parsedPersistedSessionId: Converter<ParsedPersistedSessionId>;
-
-// @public
 type ParsedProcedureId = Converters_4.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
+
+// @public
+type ParsedSessionId = Converters_4.ICompositeId<SourceId, BaseSessionId>;
+
+// @public
+const parsedSessionId: Converter<ParsedSessionId>;
 
 // @public
 type ParsedTaskId = Converters_4.ICompositeId<SourceId, BaseTaskId>;
@@ -5307,7 +5330,7 @@ function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
 function parseJournalId(id: JournalId): Result<ParsedJournalId>;
 
 // @public
-function parsePersistedSessionId(id: PersistedSessionId): Result<ParsedPersistedSessionId>;
+function parseSessionId(id: SessionId): Result<ParsedSessionId>;
 
 // @public
 export type Percentage = Brand<number, 'Percentage'>;
@@ -5316,34 +5339,15 @@ export type Percentage = Brand<number, 'Percentage'>;
 const percentage: Converter<Percentage>;
 
 // @public
-const PERSISTED_SESSION_ID_PATTERN: RegExp;
-
-// @public
 const PERSISTED_SESSION_SCHEMA_VERSION: 1;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const persistedConfectionSession: Converter<IPersistedConfectionSession>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const persistedFillingSession: Converter<IPersistedFillingSession>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const persistedSessionDestination: Converter<IPersistedSessionDestination>;
+const persistedSessionDestinationEntity: Converter<ISessionDestinationEntity>;
 
 // @public
-export type PersistedSessionId = Brand<string, 'PersistedSessionId'>;
-
-// @public
-const persistedSessionId: Converter<PersistedSessionId>;
-
-// @public
-const persistedSessionId_2: Validator<PersistedSessionId>;
+const persistedSessionId: Converter<SessionId>;
 
 // @public
 type PersistedSessionSchemaVersion = typeof PERSISTED_SESSION_SCHEMA_VERSION;
@@ -5563,7 +5567,7 @@ class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProduced
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create(baseConfection: RuntimeRolledTruffle, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
-    static fromPersistedState(baseConfection: RuntimeRolledTruffle, history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+    static fromPersistedState(baseConfection: RuntimeRolledTruffle, history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
     scaleToYield(yieldSpec: Confections_2.AnyConfectionYield): Result<Confections_2.IConfectionYield>;
 }
 
@@ -5976,7 +5980,7 @@ class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedB
     static fromSource(source: IRuntimeBarTruffleVersion): Result<RuntimeProducedBarTruffle>;
     // (undocumented)
     getChanges(original: IProducedBarTruffleEntity): IConfectionChanges;
-    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedBarTruffleEntity>): Result<RuntimeProducedBarTruffle>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>): Result<RuntimeProducedBarTruffle>;
     setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
 }
 
@@ -5994,7 +5998,7 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfectionEnti
     protected abstract _deepCopy(confection: T): T;
     get fillings(): ReadonlyArray<Confections_2.AnyResolvedFillingSlotEntity> | undefined;
     abstract getChanges(original: T): IConfectionChanges;
-    getSerializedHistory(original: T): Session.ISerializedEditingHistory<T>;
+    getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T>;
     hasChanges(original: T): boolean;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedureId(): ProcedureId | undefined;
@@ -6030,12 +6034,12 @@ class RuntimeProducedFilling {
     createSnapshot(): IProducedFillingEntity;
     static fromSource(source: IRuntimeFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
     getChanges(original: IProducedFillingEntity): IFillingChanges;
-    getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistory<IProducedFillingEntity>;
+    getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>;
     hasChanges(original: IProducedFillingEntity): boolean;
     get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredientEntity>;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
-    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedFillingEntity>): Result<RuntimeProducedFilling>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>): Result<RuntimeProducedFilling>;
     restoreSnapshot(snapshot: IProducedFillingEntity): Result<void>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
@@ -6057,7 +6061,7 @@ class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProduce
     // (undocumented)
     getChanges(original: IProducedMoldedBonBonEntity): IConfectionChanges;
     get moldId(): MoldId;
-    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedMoldedBonBonEntity>): Result<RuntimeProducedMoldedBonBon>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>): Result<RuntimeProducedMoldedBonBon>;
     get sealChocolateId(): IngredientId | undefined;
     setDecorationChocolate(chocolateId: IngredientId | undefined): Result<void>;
     setMold(moldId: MoldId): Result<void>;
@@ -6076,7 +6080,7 @@ class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProduc
     static fromSource(source: IRuntimeRolledTruffleVersion): Result<RuntimeProducedRolledTruffle>;
     // (undocumented)
     getChanges(original: IProducedRolledTruffleEntity): IConfectionChanges;
-    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>): Result<RuntimeProducedRolledTruffle>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>): Result<RuntimeProducedRolledTruffle>;
     setCoating(coatingId: IngredientId | undefined): Result<void>;
     setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
 }
@@ -6181,10 +6185,10 @@ const scalingRefEntity: Converter<IScalingRefEntity>;
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
 // @public
-const serializedConfectionHistory: Converter<ISerializedEditingHistory<AnyProducedConfectionEntity>>;
+const serializedConfectionHistoryEntity: Converter<ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>>;
 
 // @public
-const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFillingEntity>>;
+const serializedFillingHistoryEntity: Converter<ISerializedEditingHistoryEntity<IProducedFillingEntity>>;
 
 // @public
 function serializeToJson<T>(data: T, options?: ISerializationOptions): Result<string>;
@@ -6195,20 +6199,20 @@ function serializeToYaml<T>(data: T, options?: ISerializationOptions): Result<st
 declare namespace Session {
     export {
         Converters_5 as Converters,
-        isPersistedFillingSession,
-        isPersistedConfectionSession,
+        isFillingSessionEntity,
+        isConfectionSessionEntity,
         PERSISTED_SESSION_SCHEMA_VERSION,
         PersistedSessionSchemaVersion,
         PersistedSessionType,
         allPersistedSessionTypes,
         PersistedSessionStatus,
         allPersistedSessionStatuses,
-        IPersistedSessionDestination,
-        ISerializedEditingHistory,
-        IPersistedSessionBase,
-        IPersistedFillingSession,
-        IPersistedConfectionSession,
-        AnyPersistedSession,
+        ISessionDestinationEntity,
+        ISerializedEditingHistoryEntity,
+        ISessionEntityBase,
+        IFillingSessionEntity,
+        IConfectionSessionEntity,
+        AnySessionEntity,
         SessionCollectionEntry,
         SessionCollectionEntryInit,
         SessionCollectionValidator,
@@ -6261,65 +6265,65 @@ declare namespace Session_2 {
 }
 
 // @public
-const SESSION_BASE_ID_PATTERN: RegExp;
-
-// @public
 const SESSION_ID_PATTERN: RegExp;
 
 // @public
-export type SessionBaseId = Brand<string, 'SessionBaseId'>;
+const SESSION_SPEC_PATTERN: RegExp;
 
 // @public
-const sessionBaseId: Converter<SessionBaseId>;
+const sessionBaseId: Converter<BaseSessionId>;
 
 // @public
-const sessionBaseId_2: Validator<SessionBaseId>;
+type SessionCollection = SubLibraryCollection<BaseSessionId, AnySessionEntity>;
 
 // @public
-type SessionCollection = SubLibraryCollection<SessionBaseId, AnyPersistedSession>;
+type SessionCollectionEntry = SubLibraryCollectionEntry<BaseSessionId, AnySessionEntity>;
 
 // @public
-type SessionCollectionEntry = SubLibraryCollectionEntry<SessionBaseId, AnyPersistedSession>;
+type SessionCollectionEntryInit = SubLibraryEntryInit<BaseSessionId, AnySessionEntity>;
 
 // @public
-type SessionCollectionEntryInit = SubLibraryEntryInit<SessionBaseId, AnyPersistedSession>;
-
-// @public
-type SessionCollectionValidator = SubLibraryCollectionValidator<SessionBaseId, AnyPersistedSession>;
+type SessionCollectionValidator = SubLibraryCollectionValidator<BaseSessionId, AnySessionEntity>;
 
 // @public
 export type SessionId = Brand<string, 'SessionId'>;
 
 // @public
-const sessionId: Converter<SessionId>;
+const sessionId: Validator<SessionId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBaseId, AnyPersistedSession> {
-    addSession(collectionId: SourceId, session: AnyPersistedSession): Result<PersistedSessionId>;
+class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySessionEntity> {
+    addSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: ISessionLibraryParams): Result<SessionLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: ISessionLibraryAsyncParams): Promise<Result<SessionLibrary>>;
     createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
-    getActiveSessions(): ReadonlyArray<AnyPersistedSession>;
-    getAllSessions(): ReadonlyArray<AnyPersistedSession>;
-    getSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+    getActiveSessions(): ReadonlyArray<AnySessionEntity>;
+    getAllSessions(): ReadonlyArray<AnySessionEntity>;
+    getSession(sessionId: SessionId): Result<AnySessionEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnyPersistedSession>;
-    getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IPersistedConfectionSession>;
-    getSessionsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<IPersistedConfectionSession>;
-    getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IPersistedFillingSession>;
-    getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IPersistedFillingSession>;
-    hasSession(sessionId: PersistedSessionId): boolean;
-    removeSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
-    upsertSession(collectionId: SourceId, session: AnyPersistedSession): Result<PersistedSessionId>;
+    getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnySessionEntity>;
+    getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionSessionEntity>;
+    getSessionsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<IConfectionSessionEntity>;
+    getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IFillingSessionEntity>;
+    getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingSessionEntity>;
+    hasSession(sessionId: SessionId): boolean;
+    removeSession(sessionId: SessionId): Result<AnySessionEntity>;
+    upsertSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId>;
 }
 
 // @public
 type SessionsMergeSource = SubLibraryMergeSource<SessionLibrary>;
+
+// @public
+export type SessionSpec = Brand<string, 'SessionSpec'>;
+
+// @public
+const sessionSpec: Converter<SessionSpec>;
 
 // @public
 export type SlotId = Brand<string, 'SlotId'>;
@@ -6516,10 +6520,16 @@ function toBaseFillingId(from: unknown): Result<BaseFillingId>;
 function toBaseIngredientId(from: unknown): Result<BaseIngredientId>;
 
 // @public
+function toBaseJournalId(from: unknown): Result<BaseJournalId>;
+
+// @public
 function toBaseMoldId(from: unknown): Result<BaseMoldId>;
 
 // @public
 function toBaseProcedureId(from: unknown): Result<BaseProcedureId>;
+
+// @public
+function toBaseSessionId(from: unknown): Result<BaseSessionId>;
 
 // @public
 function toBaseTaskId(from: unknown): Result<BaseTaskId>;
@@ -6543,9 +6553,6 @@ function toFillingName(from: unknown): Result<FillingName>;
 function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec>;
 
 // @public
-function toJournalBaseId(from: unknown): Result<JournalBaseId>;
-
-// @public
 function toJournalId(from: unknown): Result<JournalId>;
 
 // @public
@@ -6567,16 +6574,13 @@ function toNoteCategory(from: unknown): Result<NoteCategory>;
 function toPercentage(from: unknown): Result<Percentage>;
 
 // @public
-function toPersistedSessionId(from: unknown): Result<PersistedSessionId>;
-
-// @public
 function toRatingScore(from: unknown): Result<RatingScore>;
 
 // @public
-function toSessionBaseId(from: unknown): Result<SessionBaseId>;
+function toSessionId(from: unknown): Result<SessionId>;
 
 // @public
-function toSessionId(from: unknown): Result<SessionId>;
+function toSessionSpec(from: unknown): Result<SessionSpec>;
 
 // @public
 function toSlotId(from: unknown): Result<SlotId>;
@@ -6641,23 +6645,23 @@ class UserLibraryRuntime implements IUserLibraryRuntime {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IPersistedFillingSession>;
+    createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    evictSession(sessionId: PersistedSessionId): boolean;
+    evictSession(sessionId: SessionId): boolean;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession>;
+    getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    get materializedSessions(): ReadonlyMap<PersistedSessionId, AnyMaterializedSession>;
+    get materializedSessions(): ReadonlyMap<SessionId, AnyMaterializedSession>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+    saveSession(sessionId: SessionId): Result<AnySessionEntity>;
 }
 
 declare namespace UserRuntime {
@@ -6761,12 +6765,12 @@ declare namespace Validation {
         toFillingVersionSpec,
         isValidConfectionVersionSpec,
         toConfectionVersionSpec,
+        isValidSessionSpec,
+        toSessionSpec,
+        isValidBaseSessionId,
+        toBaseSessionId,
         isValidSessionId,
         toSessionId,
-        isValidSessionBaseId,
-        toSessionBaseId,
-        isValidPersistedSessionId,
-        toPersistedSessionId,
         isValidMeasurement,
         toMeasurement,
         isValidPercentage,
@@ -6781,8 +6785,8 @@ declare namespace Validation {
         toMinutes,
         isValidMillimeters,
         toMillimeters,
-        isValidJournalBaseId,
-        toJournalBaseId,
+        isValidBaseJournalId,
+        toBaseJournalId,
         isValidJournalId,
         toJournalId,
         isValidSlotId,
@@ -6837,8 +6841,8 @@ declare namespace Validators {
         baseProcedureId_2 as baseProcedureId,
         baseTaskId_2 as baseTaskId,
         baseConfectionId_2 as baseConfectionId,
-        journalBaseId_2 as journalBaseId,
-        sessionBaseId_2 as sessionBaseId,
+        baseJournalId_2 as baseJournalId,
+        baseSessionId,
         ingredientId_2 as ingredientId,
         fillingId_2 as fillingId,
         moldId_2 as moldId,
@@ -6846,7 +6850,7 @@ declare namespace Validators {
         taskId_2 as taskId,
         confectionId_2 as confectionId,
         journalId_2 as journalId,
-        persistedSessionId_2 as persistedSessionId,
+        sessionId,
         fillingVersionSpec_2 as fillingVersionSpec,
         confectionVersionSpec_2 as confectionVersionSpec,
         fillingVersionId_2 as fillingVersionId,

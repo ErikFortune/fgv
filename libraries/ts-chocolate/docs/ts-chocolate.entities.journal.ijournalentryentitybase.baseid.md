@@ -9,5 +9,5 @@ Base identifier within collection (no collection prefix)
 **Signature:**
 
 ```typescript
-readonly baseId: JournalBaseId;
+readonly baseId: BaseJournalId;
 ```

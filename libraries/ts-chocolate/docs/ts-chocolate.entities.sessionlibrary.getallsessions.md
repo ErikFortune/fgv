@@ -9,11 +9,11 @@ Gets all sessions across all collections
 **Signature:**
 
 ```typescript
-getAllSessions(): ReadonlyArray<AnyPersistedSession>;
+getAllSessions(): ReadonlyArray<AnySessionEntity>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 Array of all sessions
 

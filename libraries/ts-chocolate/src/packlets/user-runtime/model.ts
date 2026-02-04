@@ -25,8 +25,8 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { FillingVersionId, PersistedSessionId, SourceId } from '../common';
-import { AnyPersistedSession, IPersistedFillingSession, PersistedSessionStatus } from '../entities';
+import { FillingVersionId, SessionId, SourceId } from '../common';
+import { AnySessionEntity, IFillingSessionEntity, PersistedSessionStatus } from '../entities';
 import { Session } from '../runtime';
 
 /**
@@ -65,7 +65,7 @@ export interface IUserLibraryRuntime {
    * @param sessionId - Full persisted session ID (collectionId.baseId)
    * @returns Result with the materialized editing session (filling or confection)
    */
-  getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession>;
+  getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession>;
 
   /**
    * Creates a new persisted filling session from a filling version.
@@ -77,14 +77,14 @@ export interface IUserLibraryRuntime {
   createFillingSession(
     versionId: FillingVersionId,
     options: ICreateFillingSessionOptions
-  ): Result<IPersistedFillingSession>;
+  ): Result<IFillingSessionEntity>;
 
   /**
    * Saves an active session back to the library.
    * @param sessionId - Session to save
    * @returns Result with the updated persisted session
    */
-  saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession>;
+  saveSession(sessionId: SessionId): Result<AnySessionEntity>;
 
   /**
    * Evicts a materialized session from the cache.
@@ -92,10 +92,10 @@ export interface IUserLibraryRuntime {
    * @param sessionId - Session to evict
    * @returns True if session was cached and evicted
    */
-  evictSession(sessionId: PersistedSessionId): boolean;
+  evictSession(sessionId: SessionId): boolean;
 
   /**
    * All currently materialized sessions.
    */
-  readonly materializedSessions: ReadonlyMap<PersistedSessionId, AnyMaterializedSession>;
+  readonly materializedSessions: ReadonlyMap<SessionId, AnyMaterializedSession>;
 }

@@ -30,8 +30,8 @@ import {
   ConfectionVersionId,
   FillingId,
   FillingVersionId,
-  PersistedSessionId,
-  SessionBaseId,
+  SessionId,
+  BaseSessionId,
   SourceId,
   Converters as CommonConverters
 } from '../../common';
@@ -47,14 +47,14 @@ import {
 } from '../../library-data';
 import { BuiltInData } from '../../built-in';
 import {
-  AnyPersistedSession,
-  IPersistedConfectionSession,
-  IPersistedFillingSession,
-  isPersistedConfectionSession,
-  isPersistedFillingSession,
+  AnySessionEntity,
+  IConfectionSessionEntity,
+  IFillingSessionEntity,
+  isConfectionSessionEntity,
+  isFillingSessionEntity,
   PersistedSessionStatus
 } from './model';
-import { anyPersistedSession as anyPersistedSessionConverter } from './converters';
+import { anySessionEntity as anyPersistedSessionConverter } from './converters';
 import { SessionCollectionEntryInit } from './collection';
 
 // ============================================================================
@@ -101,7 +101,7 @@ export type ISessionLibraryAsyncParams = ISubLibraryAsyncParams<SessionLibrary, 
 // ============================================================================
 
 /**
- * A library for managing persisted {@link Entities.Session.AnyPersistedSession | editing sessions}.
+ * A library for managing persisted {@link Entities.Session.AnySessionEntity | editing sessions}.
  *
  * Sessions are organized into user-defined collections. The library provides
  * cross-collection indexing for efficient queries by filling/confection and status.
@@ -117,36 +117,36 @@ export type ISessionLibraryAsyncParams = ISubLibraryAsyncParams<SessionLibrary, 
  *
  * @public
  */
-export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBaseId, AnyPersistedSession> {
+export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySessionEntity> {
   /**
-   * Index from {@link FillingId | filling ID} to {@link PersistedSessionId | session IDs}
+   * Index from {@link FillingId | filling ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byFillingId: Map<FillingId, Set<PersistedSessionId>>;
+  private readonly _byFillingId: Map<FillingId, Set<SessionId>>;
 
   /**
-   * Index from {@link FillingVersionId | filling version ID} to {@link PersistedSessionId | session IDs}
+   * Index from {@link FillingVersionId | filling version ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byFillingVersionId: Map<FillingVersionId, Set<PersistedSessionId>>;
+  private readonly _byFillingVersionId: Map<FillingVersionId, Set<SessionId>>;
 
   /**
-   * Index from {@link ConfectionId | confection ID} to {@link PersistedSessionId | session IDs}
+   * Index from {@link ConfectionId | confection ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byConfectionId: Map<ConfectionId, Set<PersistedSessionId>>;
+  private readonly _byConfectionId: Map<ConfectionId, Set<SessionId>>;
 
   /**
-   * Index from {@link ConfectionVersionId | confection version ID} to {@link PersistedSessionId | session IDs}
+   * Index from {@link ConfectionVersionId | confection version ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byConfectionVersionId: Map<ConfectionVersionId, Set<PersistedSessionId>>;
+  private readonly _byConfectionVersionId: Map<ConfectionVersionId, Set<SessionId>>;
 
   /**
-   * Index from {@link PersistedSessionStatus | status} to {@link PersistedSessionId | session IDs}
+   * Index from {@link PersistedSessionStatus | status} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byStatus: Map<PersistedSessionStatus, Set<PersistedSessionId>>;
+  private readonly _byStatus: Map<PersistedSessionStatus, Set<SessionId>>;
 
   /**
    * Flag indicating whether indices are valid
@@ -192,7 +192,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
   public static async createAsync(params?: ISessionLibraryAsyncParams): Promise<Result<SessionLibrary>> {
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<SessionLibrary, SessionBaseId, AnyPersistedSession> = {
+    const createParams: ISubLibraryCreateParams<SessionLibrary, BaseSessionId, AnySessionEntity> = {
       itemIdConverter: CommonConverters.sessionBaseId,
       itemConverter: anyPersistedSessionConverter,
       directoryNavigator: getSessionsDirectory,
@@ -253,13 +253,13 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
   /**
    * Adds a session to the appropriate indices based on its type
    */
-  private _addToIndices(sessionId: PersistedSessionId, session: AnyPersistedSession): void {
+  private _addToIndices(sessionId: SessionId, session: AnySessionEntity): void {
     // Add to status index
     this._addToStatusIndex(sessionId, session);
 
-    if (isPersistedFillingSession(session)) {
+    if (isFillingSessionEntity(session)) {
       this._addFillingSessionToIndices(sessionId, session);
-    } else if (isPersistedConfectionSession(session)) {
+    } else if (isConfectionSessionEntity(session)) {
       this._addConfectionSessionToIndices(sessionId, session);
     }
   }
@@ -267,7 +267,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
   /**
    * Adds a session to the status index
    */
-  private _addToStatusIndex(sessionId: PersistedSessionId, session: AnyPersistedSession): void {
+  private _addToStatusIndex(sessionId: SessionId, session: AnySessionEntity): void {
     let statusSessions = this._byStatus.get(session.status);
     if (!statusSessions) {
       statusSessions = new Set();
@@ -279,10 +279,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
   /**
    * Adds a filling session to the filling-specific indices
    */
-  private _addFillingSessionToIndices(
-    sessionId: PersistedSessionId,
-    session: IPersistedFillingSession
-  ): void {
+  private _addFillingSessionToIndices(sessionId: SessionId, session: IFillingSessionEntity): void {
     const fillingId = this._extractFillingId(session.sourceVersionId);
 
     let fillingSessions = this._byFillingId.get(fillingId);
@@ -303,10 +300,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
   /**
    * Adds a confection session to the confection-specific indices
    */
-  private _addConfectionSessionToIndices(
-    sessionId: PersistedSessionId,
-    session: IPersistedConfectionSession
-  ): void {
+  private _addConfectionSessionToIndices(sessionId: SessionId, session: IConfectionSessionEntity): void {
     const confectionId = this._extractConfectionId(session.sourceVersionId);
 
     let confectionSessions = this._byConfectionId.get(confectionId);
@@ -348,7 +342,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Array of filling sessions (empty if none found)
    * @public
    */
-  public getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IPersistedFillingSession> {
+  public getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IFillingSessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byFillingId.get(fillingId);
     if (!sessionIds) {
@@ -356,7 +350,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
     }
     return Array.from(sessionIds)
       .map((id) => this.get(id).value)
-      .filter((s): s is IPersistedFillingSession => s !== undefined && isPersistedFillingSession(s));
+      .filter((s): s is IFillingSessionEntity => s !== undefined && isFillingSessionEntity(s));
   }
 
   /**
@@ -365,7 +359,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Array of filling sessions (empty if none found)
    * @public
    */
-  public getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IPersistedFillingSession> {
+  public getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingSessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byFillingVersionId.get(versionId);
     if (!sessionIds) {
@@ -373,7 +367,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
     }
     return Array.from(sessionIds)
       .map((id) => this.get(id).value)
-      .filter((s): s is IPersistedFillingSession => s !== undefined && isPersistedFillingSession(s));
+      .filter((s): s is IFillingSessionEntity => s !== undefined && isFillingSessionEntity(s));
   }
 
   /**
@@ -382,7 +376,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Array of confection sessions (empty if none found)
    * @public
    */
-  public getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IPersistedConfectionSession> {
+  public getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionSessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byConfectionId.get(confectionId);
     if (!sessionIds) {
@@ -390,7 +384,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
     }
     return Array.from(sessionIds)
       .map((id) => this.get(id).value)
-      .filter((s): s is IPersistedConfectionSession => s !== undefined && isPersistedConfectionSession(s));
+      .filter((s): s is IConfectionSessionEntity => s !== undefined && isConfectionSessionEntity(s));
   }
 
   /**
@@ -401,7 +395,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    */
   public getSessionsForConfectionVersion(
     versionId: ConfectionVersionId
-  ): ReadonlyArray<IPersistedConfectionSession> {
+  ): ReadonlyArray<IConfectionSessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byConfectionVersionId.get(versionId);
     if (!sessionIds) {
@@ -409,7 +403,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
     }
     return Array.from(sessionIds)
       .map((id) => this.get(id).value)
-      .filter((s): s is IPersistedConfectionSession => s !== undefined && isPersistedConfectionSession(s));
+      .filter((s): s is IConfectionSessionEntity => s !== undefined && isConfectionSessionEntity(s));
   }
 
   /**
@@ -418,7 +412,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Array of sessions with that status (empty if none found)
    * @public
    */
-  public getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnyPersistedSession> {
+  public getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnySessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byStatus.get(status);
     if (!sessionIds) {
@@ -426,7 +420,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
     }
     return Array.from(sessionIds)
       .map((id) => this.get(id).value)
-      .filter((s): s is AnyPersistedSession => s !== undefined);
+      .filter((s): s is AnySessionEntity => s !== undefined);
   }
 
   /**
@@ -434,7 +428,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Array of active sessions
    * @public
    */
-  public getActiveSessions(): ReadonlyArray<AnyPersistedSession> {
+  public getActiveSessions(): ReadonlyArray<AnySessionEntity> {
     return this.getSessionsByStatus('active');
   }
 
@@ -444,7 +438,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Success with the session, or Failure if not found
    * @public
    */
-  public getSession(sessionId: PersistedSessionId): Result<AnyPersistedSession> {
+  public getSession(sessionId: SessionId): Result<AnySessionEntity> {
     return this.get(sessionId);
   }
 
@@ -453,7 +447,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Array of all sessions
    * @public
    */
-  public getAllSessions(): ReadonlyArray<AnyPersistedSession> {
+  public getAllSessions(): ReadonlyArray<AnySessionEntity> {
     return Array.from(this.values());
   }
 
@@ -463,7 +457,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns `true` if the session exists
    * @public
    */
-  public hasSession(sessionId: PersistedSessionId): boolean {
+  public hasSession(sessionId: SessionId): boolean {
     return this.has(sessionId);
   }
 
@@ -479,7 +473,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Success with the composite session ID, or Failure if add fails
    * @public
    */
-  public addSession(collectionId: SourceId, session: AnyPersistedSession): Result<PersistedSessionId> {
+  public addSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId> {
     return this.addToCollection(collectionId, session.baseId, session)
       .asResult.withErrorFormat((msg) => `Failed to add session ${session.baseId} to ${collectionId}: ${msg}`)
       .onSuccess(() => {
@@ -496,7 +490,7 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Success with the composite session ID, or Failure if upsert fails
    * @public
    */
-  public upsertSession(collectionId: SourceId, session: AnyPersistedSession): Result<PersistedSessionId> {
+  public upsertSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId> {
     return this.setInCollection(collectionId, session.baseId, session)
       .asResult.withErrorFormat(
         (msg) => `Failed to upsert session ${session.baseId} in ${collectionId}: ${msg}`
@@ -513,13 +507,11 @@ export class SessionLibrary extends SubLibraryBase<PersistedSessionId, SessionBa
    * @returns Success with the removed session, or Failure if not found or remove fails
    * @public
    */
-  public removeSession(sessionId: PersistedSessionId): Result<AnyPersistedSession> {
+  public removeSession(sessionId: SessionId): Result<AnySessionEntity> {
     return this.get(sessionId)
       .asResult.withErrorFormat((msg) => `Session ${sessionId} not found: ${msg}`)
       .onSuccess((session) => {
-        const collectionId = CommonConverters.parsedPersistedSessionId
-          .convert(sessionId)
-          .orThrow().collectionId;
+        const collectionId = CommonConverters.parsedSessionId.convert(sessionId).orThrow().collectionId;
         return this.collections
           .get(collectionId)
           .asResult.withErrorFormat((msg) => `Collection ${collectionId} not found: ${msg}`)

@@ -32,11 +32,11 @@ import {
   IHasId,
   IIdsWithPreferred,
   IOptionsWithPreferred,
-  JOURNAL_BASE_ID_PATTERN,
+  BASE_JOURNAL_ID_PATTERN,
   JOURNAL_ID_PATTERN,
-  PERSISTED_SESSION_ID_PATTERN,
-  SESSION_BASE_ID_PATTERN,
-  SESSION_ID_PATTERN
+  SESSION_ID_PATTERN,
+  BASE_SESSION_ID_PATTERN,
+  SESSION_SPEC_PATTERN
 } from './model';
 import {
   BaseConfectionId,
@@ -51,16 +51,16 @@ import {
   DegreesMacMichael,
   FillingName,
   FillingVersionSpec,
-  JournalBaseId,
+  BaseJournalId,
   JournalId,
   Measurement,
   Millimeters,
   Minutes,
   Percentage,
-  PersistedSessionId,
-  RatingScore,
-  SessionBaseId,
   SessionId,
+  RatingScore,
+  BaseSessionId,
+  SessionSpec,
   SlotId,
   SourceId,
   UrlCategory,
@@ -402,9 +402,61 @@ export function toConfectionVersionSpec(from: unknown): Result<ConfectionVersion
 }
 
 /**
- * Type guard for {@link SessionId | SessionId}.
+ * Type guard for {@link SessionSpec | SessionSpec}.
  * @param from - Value to check
- * @returns `true` if the value is a valid {@link SessionId | SessionId}.
+ * @returns `true` if the value is a valid {@link SessionSpec | SessionSpec}.
+ * @public
+ */
+export function isValidSessionSpec(from: unknown): from is SessionSpec {
+  return typeof from === 'string' && SESSION_SPEC_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link SessionSpec | SessionSpec}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link SessionSpec | SessionSpec} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toSessionSpec(from: unknown): Result<SessionSpec> {
+  if (isValidSessionSpec(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `${from}: Invalid SessionSpec: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
+/**
+ * Type guard for {@link BaseSessionId | BaseSessionId}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link BaseSessionId | BaseSessionId}.
+ * @public
+ */
+export function isValidBaseSessionId(from: unknown): from is BaseSessionId {
+  return typeof from === 'string' && BASE_SESSION_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link BaseSessionId | BaseSessionId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseSessionId | BaseSessionId} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toBaseSessionId(from: unknown): Result<BaseSessionId> {
+  if (isValidBaseSessionId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `Invalid BaseSessionId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
+/**
+ * Type guard for {@link SessionId | SessionId} (composite).
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link SessionId | SessionId}
  * @public
  */
 export function isValidSessionId(from: unknown): from is SessionId {
@@ -412,7 +464,7 @@ export function isValidSessionId(from: unknown): from is SessionId {
 }
 
 /**
- * Validates unknown value is a {@link SessionId | SessionId}.
+ * Validates unknown value is a {@link SessionId | SessionId} (composite).
  * @param from - Value to validate
  * @returns `Success` with {@link SessionId | SessionId} or `Failure` with an error
  * message if validation fails.
@@ -423,59 +475,7 @@ export function toSessionId(from: unknown): Result<SessionId> {
     return Success.with(from);
   }
   return Failure.with(
-    `${from}: Invalid SessionId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
-  );
-}
-
-/**
- * Type guard for {@link SessionBaseId | SessionBaseId}.
- * @param from - Value to check
- * @returns `true` if the value is a valid {@link SessionBaseId | SessionBaseId}.
- * @public
- */
-export function isValidSessionBaseId(from: unknown): from is SessionBaseId {
-  return typeof from === 'string' && SESSION_BASE_ID_PATTERN.test(from);
-}
-
-/**
- * Validates unknown value is a {@link SessionBaseId | SessionBaseId}.
- * @param from - Value to validate
- * @returns `Success` with {@link SessionBaseId | SessionBaseId} or `Failure` with an error
- * message if validation fails.
- * @public
- */
-export function toSessionBaseId(from: unknown): Result<SessionBaseId> {
-  if (isValidSessionBaseId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    `Invalid SessionBaseId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
-  );
-}
-
-/**
- * Type guard for {@link PersistedSessionId | PersistedSessionId} (composite).
- * @param from - Value to check
- * @returns `true` if the value is a valid {@link PersistedSessionId | PersistedSessionId}
- * @public
- */
-export function isValidPersistedSessionId(from: unknown): from is PersistedSessionId {
-  return typeof from === 'string' && PERSISTED_SESSION_ID_PATTERN.test(from);
-}
-
-/**
- * Validates unknown value is a {@link PersistedSessionId | PersistedSessionId} (composite).
- * @param from - Value to validate
- * @returns `Success` with {@link PersistedSessionId | PersistedSessionId} or `Failure` with an error
- * message if validation fails.
- * @public
- */
-export function toPersistedSessionId(from: unknown): Result<PersistedSessionId> {
-  if (isValidPersistedSessionId(from)) {
-    return Success.with(from);
-  }
-  return Failure.with(
-    `Invalid PersistedSessionId: must be in format collectionId.baseSessionId (e.g., "user-sessions.2026-01-15-143025-a1b2c3d4")`
+    `Invalid SessionId: must be in format collectionId.baseSessionId (e.g., "user-sessions.2026-01-15-143025-a1b2c3d4")`
   );
 }
 
@@ -656,28 +656,28 @@ export function toMillimeters(from: unknown): Result<Millimeters> {
 // ============================================================================
 
 /**
- * Type guard for {@link JournalBaseId | JournalBaseId}.
+ * Type guard for {@link BaseJournalId | BaseJournalId}.
  * @param from - Value to check
- * @returns `true` if the value is a valid {@link JournalBaseId | JournalBaseId}
+ * @returns `true` if the value is a valid {@link BaseJournalId | JournalBaseId}
  * @public
  */
-export function isValidJournalBaseId(from: unknown): from is JournalBaseId {
-  return typeof from === 'string' && JOURNAL_BASE_ID_PATTERN.test(from);
+export function isValidBaseJournalId(from: unknown): from is BaseJournalId {
+  return typeof from === 'string' && BASE_JOURNAL_ID_PATTERN.test(from);
 }
 
 /**
- * Validates unknown value is a {@link JournalBaseId | JournalBaseId}.
+ * Validates unknown value is a {@link BaseJournalId | JournalBaseId}.
  * @param from - Value to validate
- * @returns `Success` with {@link JournalBaseId | JournalBaseId} or `Failure` with an error
+ * @returns `Success` with {@link BaseJournalId | JournalBaseId} or `Failure` with an error
  * message if validation fails.
  * @public
  */
-export function toJournalBaseId(from: unknown): Result<JournalBaseId> {
-  if (isValidJournalBaseId(from)) {
+export function toBaseJournalId(from: unknown): Result<BaseJournalId> {
+  if (isValidBaseJournalId(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    `Invalid JournalBaseId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+    `Invalid BaseJournalId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
   );
 }
 

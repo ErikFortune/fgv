@@ -9,7 +9,7 @@ Validator type for JournalLibrary collections.
 **Signature:**
 
 ```typescript
-export type JournalCollectionValidator = SubLibraryCollectionValidator<JournalBaseId, AnyJournalEntryEntity>;
+export type JournalCollectionValidator = SubLibraryCollectionValidator<BaseJournalId, AnyJournalEntryEntity>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->, [AnyJournalEntryEntity](./ts-chocolate.entities.anyjournalentryentity.md)
 

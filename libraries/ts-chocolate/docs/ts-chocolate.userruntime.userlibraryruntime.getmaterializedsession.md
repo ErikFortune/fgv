@@ -9,7 +9,7 @@ Gets a materialized editing session from a persisted session. Returns cached ses
 **Signature:**
 
 ```typescript
-getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession>;
+getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sessionId
 
 </td><td>
 
-[PersistedSessionId](./ts-chocolate.persistedsessionid.md)
+[SessionId](./ts-chocolate.sessionid.md)
 
 
 </td><td>

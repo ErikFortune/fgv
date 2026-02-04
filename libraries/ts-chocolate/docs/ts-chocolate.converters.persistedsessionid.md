@@ -4,10 +4,10 @@
 
 ## Converters.persistedSessionId variable
 
-Converter for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite string). Accepts either a [PersistedSessionId](./ts-chocolate.persistedsessionid.md) string or a `CompositeId` object representation.
+Converter for [PersistedSessionId](./ts-chocolate.sessionid.md) (composite string). Accepts either a [PersistedSessionId](./ts-chocolate.sessionid.md) string or a `CompositeId` object representation.
 
 **Signature:**
 
 ```typescript
-persistedSessionId: Converter<PersistedSessionId>
+persistedSessionId: Converter<SessionId>
 ```

@@ -9,7 +9,7 @@ Gets the base ID from a composite JournalId
 **Signature:**
 
 ```typescript
-export declare function getJournalBaseId(id: JournalId): JournalBaseId;
+export declare function getJournalBaseId(id: JournalId): BaseJournalId;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The composite journal ID
 
 **Returns:**
 
-[JournalBaseId](./ts-chocolate.journalbaseid.md)
+[BaseJournalId](./ts-chocolate.basejournalid.md)
 
 The base journal ID portion
 

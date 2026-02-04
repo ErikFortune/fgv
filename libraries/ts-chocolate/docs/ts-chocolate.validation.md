@@ -63,6 +63,17 @@ Type guard for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[isValidBaseJournalId(from)](./ts-chocolate.validation.isvalidbasejournalid.md)
+
+
+</td><td>
+
+Type guard for [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isValidBaseMoldId(from)](./ts-chocolate.validation.isvalidbasemoldid.md)
 
 
@@ -80,6 +91,17 @@ Type guard for [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 </td><td>
 
 Type guard for [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[isValidBaseSessionId(from)](./ts-chocolate.validation.isvalidbasesessionid.md)
+
+
+</td><td>
+
+Type guard for [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -162,17 +184,6 @@ Type guard for [FillingVersionSpec](./ts-chocolate.fillingversionspec.md)<!-- --
 </td></tr>
 <tr><td>
 
-[isValidJournalBaseId(from)](./ts-chocolate.validation.isvalidjournalbaseid.md)
-
-
-</td><td>
-
-Type guard for [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [isValidJournalId(from)](./ts-chocolate.validation.isvalidjournalid.md)
 
 
@@ -239,17 +250,6 @@ Type guard for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 </td></tr>
 <tr><td>
 
-[isValidPersistedSessionId(from)](./ts-chocolate.validation.isvalidpersistedsessionid.md)
-
-
-</td><td>
-
-Type guard for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite).
-
-
-</td></tr>
-<tr><td>
-
 [isValidRatingScore(from)](./ts-chocolate.validation.isvalidratingscore.md)
 
 
@@ -261,23 +261,23 @@ Type guard for [RatingScore](./ts-chocolate.ratingscore.md)<!-- -->.
 </td></tr>
 <tr><td>
 
-[isValidSessionBaseId(from)](./ts-chocolate.validation.isvalidsessionbaseid.md)
-
-
-</td><td>
-
-Type guard for [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [isValidSessionId(from)](./ts-chocolate.validation.isvalidsessionid.md)
 
 
 </td><td>
 
-Type guard for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Type guard for [SessionId](./ts-chocolate.sessionid.md) (composite).
+
+
+</td></tr>
+<tr><td>
+
+[isValidSessionSpec(from)](./ts-chocolate.validation.isvalidsessionspec.md)
+
+
+</td><td>
+
+Type guard for [SessionSpec](./ts-chocolate.sessionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -349,6 +349,17 @@ Validates unknown value is a [BaseIngredientId](./ts-chocolate.baseingredientid.
 </td></tr>
 <tr><td>
 
+[toBaseJournalId(from)](./ts-chocolate.validation.tobasejournalid.md)
+
+
+</td><td>
+
+Validates unknown value is a [JournalBaseId](./ts-chocolate.basejournalid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [toBaseMoldId(from)](./ts-chocolate.validation.tobasemoldid.md)
 
 
@@ -366,6 +377,17 @@ Validates unknown value is a [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->.
 </td><td>
 
 Validates unknown value is a [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toBaseSessionId(from)](./ts-chocolate.validation.tobasesessionid.md)
+
+
+</td><td>
+
+Validates unknown value is a [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -448,17 +470,6 @@ Validates unknown value is a [FillingVersionSpec](./ts-chocolate.fillingversions
 </td></tr>
 <tr><td>
 
-[toJournalBaseId(from)](./ts-chocolate.validation.tojournalbaseid.md)
-
-
-</td><td>
-
-Validates unknown value is a [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [toJournalId(from)](./ts-chocolate.validation.tojournalid.md)
 
 
@@ -525,17 +536,6 @@ Validates unknown value is a [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 </td></tr>
 <tr><td>
 
-[toPersistedSessionId(from)](./ts-chocolate.validation.topersistedsessionid.md)
-
-
-</td><td>
-
-Validates unknown value is a [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite).
-
-
-</td></tr>
-<tr><td>
-
 [toRatingScore(from)](./ts-chocolate.validation.toratingscore.md)
 
 
@@ -547,23 +547,23 @@ Validates unknown value is a [RatingScore](./ts-chocolate.ratingscore.md)<!-- --
 </td></tr>
 <tr><td>
 
-[toSessionBaseId(from)](./ts-chocolate.validation.tosessionbaseid.md)
-
-
-</td><td>
-
-Validates unknown value is a [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [toSessionId(from)](./ts-chocolate.validation.tosessionid.md)
 
 
 </td><td>
 
-Validates unknown value is a [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Validates unknown value is a [SessionId](./ts-chocolate.sessionid.md) (composite).
+
+
+</td></tr>
+<tr><td>
+
+[toSessionSpec(from)](./ts-chocolate.validation.tosessionspec.md)
+
+
+</td><td>
+
+Validates unknown value is a [SessionSpec](./ts-chocolate.sessionspec.md)<!-- -->.
 
 
 </td></tr>

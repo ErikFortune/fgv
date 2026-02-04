@@ -32,7 +32,7 @@ import {
   Model as CommonModel,
   NoteCategory,
   ProcedureId,
-  SessionBaseId,
+  BaseSessionId,
   SourceId
 } from '../../../../packlets/common';
 import {
@@ -40,7 +40,7 @@ import {
   IChocolateIngredientEntity,
   IIngredientEntity,
   IngredientsLibrary,
-  IPersistedFillingSession
+  IFillingSessionEntity
 } from '../../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/entities';
 import { ChocolateLibrary } from '../../../../packlets/library-runtime';
@@ -592,7 +592,7 @@ describe('EditingSession', () => {
       expect(
         session.toPersistedState({
           collectionId: 'user' as SourceId,
-          baseId: '2026-01-15-120000-12345678' as SessionBaseId
+          baseId: '2026-01-15-120000-12345678' as BaseSessionId
         })
       ).toSucceedAndSatisfy((persisted) => {
         expect(persisted.baseId).toBe('2026-01-15-120000-12345678');
@@ -693,7 +693,7 @@ describe('EditingSession', () => {
       const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
 
       // Create a fake persisted state with wrong version ID
-      const wrongPersisted: IPersistedFillingSession = {
+      const wrongPersisted: IFillingSessionEntity = {
         ...persisted,
         sourceVersionId: 'wrong.wrong@2026-01-01-01' as unknown as typeof persisted.sourceVersionId
       };

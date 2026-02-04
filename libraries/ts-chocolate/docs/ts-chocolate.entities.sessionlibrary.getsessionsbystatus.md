@@ -9,7 +9,7 @@ Gets all sessions with a specific status (across all collections)
 **Signature:**
 
 ```typescript
-getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnyPersistedSession>;
+getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnySessionEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [status](./ts-chocolate.entities.session.persistedsessionstatus.md) to filte
 
 **Returns:**
 
-ReadonlyArray&lt;[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)<!-- -->&gt;
 
 Array of sessions with that status (empty if none found)
 

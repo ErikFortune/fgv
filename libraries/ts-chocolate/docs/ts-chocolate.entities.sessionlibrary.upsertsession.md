@@ -9,7 +9,7 @@ Adds or updates a session in a collection. If a session with the same baseId exi
 **Signature:**
 
 ```typescript
-upsertSession(collectionId: SourceId, session: AnyPersistedSession): Result<PersistedSessionId>;
+upsertSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ session
 
 </td><td>
 
-[AnyPersistedSession](./ts-chocolate.entities.anypersistedsession.md)
+[AnySessionEntity](./ts-chocolate.entities.anysessionentity.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ The session to add or update
 
 **Returns:**
 
-Result&lt;[PersistedSessionId](./ts-chocolate.persistedsessionid.md)<!-- -->&gt;
+Result&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->&gt;
 
 Success with the composite session ID, or Failure if upsert fails
 

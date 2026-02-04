@@ -25,11 +25,11 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { ConfectionType, FillingVersionId, Helpers, PersistedSessionId } from '../common';
+import { ConfectionType, FillingVersionId, Helpers, SessionId } from '../common';
 import {
-  AnyPersistedSession,
-  IPersistedConfectionSession,
-  IPersistedFillingSession,
+  AnySessionEntity,
+  IConfectionSessionEntity,
+  IFillingSessionEntity,
   IProducedBarTruffleEntity,
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
@@ -59,7 +59,7 @@ import { AnyMaterializedSession, ICreateFillingSessionOptions, IUserLibraryRunti
 export class UserLibraryRuntime implements IUserLibraryRuntime {
   private readonly _userLibrary: IUserLibrary;
   private readonly _sessionContext: ISessionContext;
-  private readonly _materializedSessions: Map<PersistedSessionId, AnyMaterializedSession>;
+  private readonly _materializedSessions: Map<SessionId, AnyMaterializedSession>;
 
   private constructor(userLibrary: IUserLibrary, sessionContext: ISessionContext) {
     this._userLibrary = userLibrary;
@@ -95,7 +95,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   /**
    * {@inheritDoc UserRuntime.IUserLibraryRuntime.getMaterializedSession}
    */
-  public getMaterializedSession(sessionId: PersistedSessionId): Result<AnyMaterializedSession> {
+  public getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession> {
     // Check cache first
     const cached = this._materializedSessions.get(sessionId);
     if (cached !== undefined) {
@@ -111,11 +111,11 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     const persisted = persistedResult.value;
 
     // Dispatch to type-specific materialization
-    if (SessionEntities.isPersistedFillingSession(persisted)) {
+    if (SessionEntities.isFillingSessionEntity(persisted)) {
       return this._materializeFillingSession(sessionId, persisted);
     }
 
-    if (SessionEntities.isPersistedConfectionSession(persisted)) {
+    if (SessionEntities.isConfectionSessionEntity(persisted)) {
       return this._materializeConfectionSession(sessionId, persisted);
     }
 
@@ -128,7 +128,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   public createFillingSession(
     versionId: FillingVersionId,
     options: ICreateFillingSessionOptions
-  ): Result<IPersistedFillingSession> {
+  ): Result<IFillingSessionEntity> {
     // Get the filling version from the session context
     const fillingId = Helpers.getFillingVersionFillingId(versionId);
     return this._sessionContext.getRuntimeFilling(fillingId).onSuccess((filling) => {
@@ -151,7 +151,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   /**
    * {@inheritDoc UserRuntime.IUserLibraryRuntime.saveSession}
    */
-  public saveSession(sessionId: PersistedSessionId): Result<AnyPersistedSession> {
+  public saveSession(sessionId: SessionId): Result<AnySessionEntity> {
     // Get the materialized session
     const session = this._materializedSessions.get(sessionId);
     if (session === undefined) {
@@ -172,8 +172,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     }
 
     const existing = existingResult.value;
-    const collectionId = Helpers.getPersistedSessionCollectionId(sessionId);
-    const baseId = Helpers.getPersistedSessionBaseId(sessionId);
+    const collectionId = Helpers.getCollectionIdFromSessionId(sessionId);
+    const baseId = Helpers.getBaseIdFromSessionId(sessionId);
 
     // Create updated persisted state (only EditingSession has toPersistedState for now)
     const fillingSession = session as Session.EditingSession;
@@ -188,7 +188,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
       .onSuccess((persisted) => {
         // Persist to the library
         return this._sessions.upsertSession(collectionId, persisted).onSuccess(() => {
-          return succeed(persisted as AnyPersistedSession);
+          return succeed(persisted as AnySessionEntity);
         });
       });
   }
@@ -196,14 +196,14 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   /**
    * {@inheritDoc UserRuntime.IUserLibraryRuntime.evictSession}
    */
-  public evictSession(sessionId: PersistedSessionId): boolean {
+  public evictSession(sessionId: SessionId): boolean {
     return this._materializedSessions.delete(sessionId);
   }
 
   /**
    * {@inheritDoc UserRuntime.IUserLibraryRuntime.materializedSessions}
    */
-  public get materializedSessions(): ReadonlyMap<PersistedSessionId, AnyMaterializedSession> {
+  public get materializedSessions(): ReadonlyMap<SessionId, AnyMaterializedSession> {
     return this._materializedSessions;
   }
 
@@ -215,8 +215,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * Materializes a filling session from persisted state.
    */
   private _materializeFillingSession(
-    sessionId: PersistedSessionId,
-    persisted: IPersistedFillingSession
+    sessionId: SessionId,
+    persisted: IFillingSessionEntity
   ): Result<Session.EditingSession> {
     // Get the base recipe version from session context
     const fillingId = Helpers.getFillingVersionFillingId(persisted.sourceVersionId);
@@ -237,8 +237,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * Materializes a confection session from persisted state.
    */
   private _materializeConfectionSession(
-    sessionId: PersistedSessionId,
-    persisted: IPersistedConfectionSession
+    sessionId: SessionId,
+    persisted: IConfectionSessionEntity
   ): Result<Session.AnyConfectionEditingSession> {
     // Parse the confection version ID to get confection ID and version spec
     return Helpers.parseConfectionVersionId(persisted.sourceVersionId).onSuccess((parsed) => {
@@ -254,8 +254,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * Dispatches to type-specific confection session materialization.
    */
   private _materializeTypedConfectionSession(
-    sessionId: PersistedSessionId,
-    persisted: IPersistedConfectionSession,
+    sessionId: SessionId,
+    persisted: IConfectionSessionEntity,
     confection: IRuntimeConfection,
     _versionSpec: string
   ): Result<Session.AnyConfectionEditingSession> {
@@ -263,7 +263,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     if (confection.isMoldedBonBon() && persisted.confectionType === ('moldedBonBon' as ConfectionType)) {
       return this._materializeMoldedBonBonSession(
         sessionId,
-        persisted.history as SessionEntities.ISerializedEditingHistory<IProducedMoldedBonBonEntity>,
+        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
         confection
       );
     }
@@ -271,7 +271,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     if (confection.isBarTruffle() && persisted.confectionType === ('barTruffle' as ConfectionType)) {
       return this._materializeBarTruffleSession(
         sessionId,
-        persisted.history as SessionEntities.ISerializedEditingHistory<IProducedBarTruffleEntity>,
+        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
         confection
       );
     }
@@ -279,7 +279,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     if (confection.isRolledTruffle() && persisted.confectionType === ('rolledTruffle' as ConfectionType)) {
       return this._materializeRolledTruffleSession(
         sessionId,
-        persisted.history as SessionEntities.ISerializedEditingHistory<IProducedRolledTruffleEntity>,
+        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
         confection
       );
     }
@@ -292,8 +292,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * Note: Type assertion is safe because isMoldedBonBon() ensures the runtime type is RuntimeMoldedBonBon.
    */
   private _materializeMoldedBonBonSession(
-    sessionId: PersistedSessionId,
-    history: SessionEntities.ISerializedEditingHistory<IProducedMoldedBonBonEntity>,
+    sessionId: SessionId,
+    history: SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
     confection: IRuntimeConfection
   ): Result<Session.MoldedBonBonEditingSession> {
     return Session.MoldedBonBonEditingSession.fromPersistedState(
@@ -311,8 +311,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * Note: Type assertion is safe because isBarTruffle() ensures the runtime type is RuntimeBarTruffle.
    */
   private _materializeBarTruffleSession(
-    sessionId: PersistedSessionId,
-    history: SessionEntities.ISerializedEditingHistory<IProducedBarTruffleEntity>,
+    sessionId: SessionId,
+    history: SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
     confection: IRuntimeConfection
   ): Result<Session.BarTruffleEditingSession> {
     return Session.BarTruffleEditingSession.fromPersistedState(
@@ -330,8 +330,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * Note: Type assertion is safe because isRolledTruffle() ensures the runtime type is RuntimeRolledTruffle.
    */
   private _materializeRolledTruffleSession(
-    sessionId: PersistedSessionId,
-    history: SessionEntities.ISerializedEditingHistory<IProducedRolledTruffleEntity>,
+    sessionId: SessionId,
+    history: SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
     confection: IRuntimeConfection
   ): Result<Session.RolledTruffleEditingSession> {
     return Session.RolledTruffleEditingSession.fromPersistedState(

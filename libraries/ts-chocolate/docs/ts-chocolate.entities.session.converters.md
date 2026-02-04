@@ -19,12 +19,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[anyPersistedSession](./ts-chocolate.entities.session.converters.anypersistedsession.md)
+[anySessionEntity](./ts-chocolate.entities.session.converters.anysessionentity.md)
 
 
 </td><td>
 
-Converter for [AnyPersistedSession](./ts-chocolate.entities.session.anypersistedsession.md)<!-- -->. Uses discriminated object pattern on `sessionType` field.
+Converter for [AnySessionEntity](./ts-chocolate.entities.session.anysessionentity.md)<!-- -->. Uses discriminated object pattern on `sessionType` field.
 
 
 </td></tr>
@@ -41,34 +41,34 @@ Converter for child session IDs mapping (SlotId to PersistedSessionId).
 </td></tr>
 <tr><td>
 
-[persistedConfectionSession](./ts-chocolate.entities.session.converters.persistedconfectionsession.md)
+[confectionSessionEntity](./ts-chocolate.entities.session.converters.confectionsessionentity.md)
 
 
 </td><td>
 
-Converter for [IPersistedConfectionSession](./ts-chocolate.entities.session.ipersistedconfectionsession.md)<!-- -->.
+Converter for [IConfectionSessionEntity](./ts-chocolate.entities.session.iconfectionsessionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[persistedFillingSession](./ts-chocolate.entities.session.converters.persistedfillingsession.md)
+[fillingSessionEntity](./ts-chocolate.entities.session.converters.fillingsessionentity.md)
 
 
 </td><td>
 
-Converter for [IPersistedFillingSession](./ts-chocolate.entities.session.ipersistedfillingsession.md)<!-- -->.
+Converter for [IFillingSessionEntity](./ts-chocolate.entities.session.ifillingsessionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[persistedSessionDestination](./ts-chocolate.entities.session.converters.persistedsessiondestination.md)
+[persistedSessionDestinationEntity](./ts-chocolate.entities.session.converters.persistedsessiondestinationentity.md)
 
 
 </td><td>
 
-Converter for [IPersistedSessionDestination](./ts-chocolate.entities.session.ipersistedsessiondestination.md)<!-- -->.
+Converter for [ISessionDestinationEntity](./ts-chocolate.entities.session.isessiondestinationentity.md)<!-- -->.
 
 
 </td></tr>
@@ -96,7 +96,7 @@ Converter for [PersistedSessionType](./ts-chocolate.entities.session.persistedse
 </td></tr>
 <tr><td>
 
-[serializedConfectionHistory](./ts-chocolate.entities.session.converters.serializedconfectionhistory.md)
+[serializedConfectionHistoryEntity](./ts-chocolate.entities.session.converters.serializedconfectionhistoryentity.md)
 
 
 </td><td>
@@ -107,7 +107,7 @@ Converter for serialized confection editing history.
 </td></tr>
 <tr><td>
 
-[serializedFillingHistory](./ts-chocolate.entities.session.converters.serializedfillinghistory.md)
+[serializedFillingHistoryEntity](./ts-chocolate.entities.session.converters.serializedfillinghistoryentity.md)
 
 
 </td><td>

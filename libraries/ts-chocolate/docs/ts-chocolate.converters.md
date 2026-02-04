@@ -133,6 +133,17 @@ Converter for [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[baseJournalId](./ts-chocolate.converters.basejournalid.md)
+
+
+</td><td>
+
+Converter for [JournalBaseId](./ts-chocolate.basejournalid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [baseMoldId](./ts-chocolate.converters.basemoldid.md)
 
 
@@ -408,17 +419,6 @@ Converter for IngredientPhase
 </td></tr>
 <tr><td>
 
-[journalBaseId](./ts-chocolate.converters.journalbaseid.md)
-
-
-</td><td>
-
-Converter for [JournalBaseId](./ts-chocolate.journalbaseid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [journalId](./ts-chocolate.converters.journalid.md)
 
 
@@ -617,23 +617,23 @@ Converter that parses a [MoldId](./ts-chocolate.moldid.md) string into its compo
 </td></tr>
 <tr><td>
 
-[parsedPersistedSessionId](./ts-chocolate.converters.parsedpersistedsessionid.md)
-
-
-</td><td>
-
-Converter that parses a [PersistedSessionId](./ts-chocolate.persistedsessionid.md) string into its component parts or validates a `CompositeId` object representation.
-
-
-</td></tr>
-<tr><td>
-
 [parsedProcedureId](./ts-chocolate.converters.parsedprocedureid.md)
 
 
 </td><td>
 
 Converter that parses a [ProcedureId](./ts-chocolate.procedureid.md) string into its component parts or validates a `CompositeId` object representation.
+
+
+</td></tr>
+<tr><td>
+
+[parsedSessionId](./ts-chocolate.converters.parsedsessionid.md)
+
+
+</td><td>
+
+Converter that parses a [PersistedSessionId](./ts-chocolate.sessionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 
 </td></tr>
@@ -666,7 +666,7 @@ Converter for [Percentage](./ts-chocolate.percentage.md)<!-- -->.
 
 </td><td>
 
-Converter for [PersistedSessionId](./ts-chocolate.persistedsessionid.md) (composite string). Accepts either a [PersistedSessionId](./ts-chocolate.persistedsessionid.md) string or a `CompositeId` object representation.
+Converter for [PersistedSessionId](./ts-chocolate.sessionid.md) (composite string). Accepts either a [PersistedSessionId](./ts-chocolate.sessionid.md) string or a `CompositeId` object representation.
 
 
 </td></tr>
@@ -721,18 +721,18 @@ Converter for [RatingScore](./ts-chocolate.ratingscore.md) (1-5)
 
 </td><td>
 
-Converter for [SessionBaseId](./ts-chocolate.sessionbaseid.md)<!-- -->.
+Converter for [SessionBaseId](./ts-chocolate.basesessionid.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[sessionId](./ts-chocolate.converters.sessionid.md)
+[sessionSpec](./ts-chocolate.converters.sessionspec.md)
 
 
 </td><td>
 
-Converter for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+Converter for [SessionSpec](./ts-chocolate.sessionspec.md)<!-- -->.
 
 
 </td></tr>
@@ -896,23 +896,23 @@ Type alias for parsed [MoldId](./ts-chocolate.moldid.md) components.
 </td></tr>
 <tr><td>
 
-[ParsedPersistedSessionId](./ts-chocolate.converters.parsedpersistedsessionid.md)
-
-
-</td><td>
-
-Type alias for parsed [PersistedSessionId](./ts-chocolate.persistedsessionid.md) components.
-
-
-</td></tr>
-<tr><td>
-
 [ParsedProcedureId](./ts-chocolate.converters.parsedprocedureid.md)
 
 
 </td><td>
 
 Type alias for parsed [ProcedureId](./ts-chocolate.procedureid.md) components.
+
+
+</td></tr>
+<tr><td>
+
+[ParsedSessionId](./ts-chocolate.converters.parsedsessionid.md)
+
+
+</td><td>
+
+Type alias for parsed [PersistedSessionId](./ts-chocolate.sessionid.md) components.
 
 
 </td></tr>

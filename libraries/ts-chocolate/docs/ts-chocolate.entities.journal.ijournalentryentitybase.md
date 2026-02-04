@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[JournalBaseId](./ts-chocolate.journalbaseid.md)
+[BaseJournalId](./ts-chocolate.basejournalid.md)
 
 
 </td><td>

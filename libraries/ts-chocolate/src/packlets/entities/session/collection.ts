@@ -22,35 +22,35 @@
 // Type aliases for Session Collection types
 // ============================================================================
 
-import { SessionBaseId } from '../../common';
+import { BaseSessionId } from '../../common';
 import {
   SubLibraryCollection,
   SubLibraryCollectionEntry,
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../../library-data';
-import { AnyPersistedSession } from './model';
+import { AnySessionEntity } from './model';
 
 /**
  * A single entry in a session collection.
  * @public
  */
-export type SessionCollectionEntry = SubLibraryCollectionEntry<SessionBaseId, AnyPersistedSession>;
+export type SessionCollectionEntry = SubLibraryCollectionEntry<BaseSessionId, AnySessionEntity>;
 
 /**
  * Initialization type for a SessionLibrary collection entry.
  * @public
  */
-export type SessionCollectionEntryInit = SubLibraryEntryInit<SessionBaseId, AnyPersistedSession>;
+export type SessionCollectionEntryInit = SubLibraryEntryInit<BaseSessionId, AnySessionEntity>;
 
 /**
  * Validator type for SessionLibrary collections.
  * @public
  */
-export type SessionCollectionValidator = SubLibraryCollectionValidator<SessionBaseId, AnyPersistedSession>;
+export type SessionCollectionValidator = SubLibraryCollectionValidator<BaseSessionId, AnySessionEntity>;
 
 /**
  * Type for the collections in a SessionLibrary.
  * @public
  */
-export type SessionCollection = SubLibraryCollection<SessionBaseId, AnyPersistedSession>;
+export type SessionCollection = SubLibraryCollection<BaseSessionId, AnySessionEntity>;
