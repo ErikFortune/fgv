@@ -27,7 +27,7 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId } from '../../common';
 import { ISugarIngredientEntity } from '../../entities';
-import { IIngredientContext, IRuntimeSugarIngredient } from '../model';
+import { IIngredientContext, ISugarIngredient } from '../model';
 import { RuntimeIngredientBase } from './ingredientBase';
 
 // ============================================================================
@@ -39,7 +39,7 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSugarIngredient {
+export class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISugarIngredient {
   private readonly _sugarIngredient: ISugarIngredientEntity;
 
   /**

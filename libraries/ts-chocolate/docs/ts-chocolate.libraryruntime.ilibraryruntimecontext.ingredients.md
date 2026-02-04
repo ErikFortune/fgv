@@ -9,5 +9,5 @@ A searchable library of all ingredients, keyed by composite ID. Ingredients are 
 **Signature:**
 
 ```typescript
-readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
+readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IIngredient, IIngredientQuerySpec>;
 ```

@@ -9,5 +9,5 @@ The resolved filling recipe object
 **Signature:**
 
 ```typescript
-readonly filling: IRuntimeFillingRecipe;
+readonly filling: IFillingRecipe;
 ```

@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedMoldedBonBon from a source version.
 **Signature:**
 
 ```typescript
-static fromSource(source: IRuntimeMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon>;
+static fromSource(source: IMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ source
 
 </td><td>
 
-[IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)
+[IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)
 
 
 </td><td>

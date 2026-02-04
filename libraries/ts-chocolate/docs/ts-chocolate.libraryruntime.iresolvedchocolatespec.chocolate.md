@@ -9,5 +9,5 @@ The preferred/primary chocolate ingredient (always chocolate category)
 **Signature:**
 
 ```typescript
-readonly chocolate: IRuntimeChocolateIngredient;
+readonly chocolate: IChocolateIngredient;
 ```

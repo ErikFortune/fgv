@@ -68,7 +68,7 @@ The coating ingredient ID
 
 </td><td>
 
-[IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)
+[IIngredient](./ts-chocolate.libraryruntime.iingredient.md)
 
 
 </td><td>

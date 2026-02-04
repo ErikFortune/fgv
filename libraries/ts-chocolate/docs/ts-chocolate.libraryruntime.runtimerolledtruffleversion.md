@@ -9,11 +9,11 @@ A resolved view of a rolled truffle version with all references resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeRolledTruffleVersion extends RuntimeConfectionVersionBase implements IRuntimeRolledTruffleVersion 
+export declare class RuntimeRolledTruffleVersion extends RuntimeConfectionVersionBase implements IRolledTruffleVersion 
 ```
 **Extends:** [RuntimeConfectionVersionBase](./ts-chocolate.libraryruntime.runtimeconfectionversionbase.md)
 
-**Implements:** [IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)
+**Implements:** [IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)
 
 ## Remarks
 
@@ -75,7 +75,7 @@ Resolved coatings specification (lazy-loaded).
 
 </td><td>
 
-[IRuntimeRolledTruffle](./ts-chocolate.libraryruntime.iruntimerolledtruffle.md)
+[IRolledTruffle](./ts-chocolate.libraryruntime.irolledtruffle.md)
 
 
 </td><td>

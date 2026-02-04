@@ -27,7 +27,7 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import { Celsius, IngredientId } from '../../common';
 import { IFatIngredientEntity } from '../../entities';
-import { IIngredientContext, IRuntimeFatIngredient } from '../model';
+import { IIngredientContext, IFatIngredient } from '../model';
 import { RuntimeIngredientBase } from './ingredientBase';
 
 // ============================================================================
@@ -39,7 +39,7 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatIngredient {
+export class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatIngredient {
   private readonly _fatIngredient: IFatIngredientEntity;
 
   /**

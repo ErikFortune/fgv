@@ -31,8 +31,8 @@ import {
   IConfectionContext,
   IResolvedChocolateSpec,
   IResolvedConfectionProcedure,
-  IRuntimeBarTruffle,
-  IRuntimeBarTruffleVersion
+  IBarTruffle,
+  IBarTruffleVersion
 } from '../../model';
 import { RuntimeConfectionVersionBase } from './confectionVersionBase';
 
@@ -44,10 +44,7 @@ import { RuntimeConfectionVersionBase } from './confectionVersionBase';
  * A resolved view of a bar truffle version with all references resolved.
  * @public
  */
-export class RuntimeBarTruffleVersion
-  extends RuntimeConfectionVersionBase
-  implements IRuntimeBarTruffleVersion
-{
+export class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements IBarTruffleVersion {
   private readonly _barTruffleVersion: Confections.IBarTruffleVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
@@ -89,8 +86,8 @@ export class RuntimeBarTruffleVersion
   /**
    * Parent confection narrowed to bar truffle type.
    */
-  public override get confection(): IRuntimeBarTruffle {
-    return super.confection as IRuntimeBarTruffle;
+  public override get confection(): IBarTruffle {
+    return super.confection as IBarTruffle;
   }
 
   // ============================================================================

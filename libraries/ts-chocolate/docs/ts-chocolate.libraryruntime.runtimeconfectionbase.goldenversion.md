@@ -9,5 +9,5 @@ The golden (default) version - resolved. Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-get goldenVersion(): AnyRuntimeConfectionVersion;
+get goldenVersion(): AnyConfectionVersion;
 ```

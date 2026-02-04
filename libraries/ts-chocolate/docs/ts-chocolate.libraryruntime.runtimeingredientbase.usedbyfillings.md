@@ -9,9 +9,9 @@ Gets all filling recipes that use this ingredient (primary or alternate).
 **Signature:**
 
 ```typescript
-usedByFillings(): IRuntimeFillingRecipe[];
+usedByFillings(): IFillingRecipe[];
 ```
 **Returns:**
 
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)<!-- -->\[\]
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->\[\]
 

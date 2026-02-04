@@ -575,12 +575,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IAlcoholIngredient](./ts-chocolate.libraryruntime.ialcoholingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to alcohol type.
+
+
+</td></tr>
+<tr><td>
+
+[IBarTruffle](./ts-chocolate.libraryruntime.ibartruffle.md)
+
+
+</td><td>
+
+Runtime confection narrowed to bar truffle type.
+
+
+</td></tr>
+<tr><td>
+
+[IBarTruffleVersion](./ts-chocolate.libraryruntime.ibartruffleversion.md)
+
+
+</td><td>
+
+Runtime confection version narrowed to bar truffle type.
+
+
+</td></tr>
+<tr><td>
+
 [ICategoryFilter](./ts-chocolate.libraryruntime.icategoryfilter.md)
 
 
 </td><td>
 
 Filter by ingredient category.
+
+
+</td></tr>
+<tr><td>
+
+[IChocolateIngredient](./ts-chocolate.libraryruntime.ichocolateingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to chocolate type.
 
 
 </td></tr>
@@ -601,6 +645,19 @@ When multiple sources provide the same collection ID within a sub-library, an er
 </td></tr>
 <tr><td>
 
+[IConfectionBase](./ts-chocolate.libraryruntime.iconfectionbase.md)
+
+
+</td><td>
+
+A resolved runtime view of a confection with navigation capabilities.
+
+This interface includes all properties from the data layer `IConfectionEntityBase` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `collectionId`<!-- -->) for cross-source references - Version navigation with typed versions - Effective tags/urls (merged from base + version) - Type narrowing methods for discriminated access - Raw access to underlying data
+
+
+</td></tr>
+<tr><td>
+
 [IConfectionChanges](./ts-chocolate.libraryruntime.iconfectionchanges.md)
 
 
@@ -612,12 +669,77 @@ Structure describing what changed between two produced confections
 </td></tr>
 <tr><td>
 
+[IConfectionVersionBase](./ts-chocolate.libraryruntime.iconfectionversionbase.md)
+
+
+</td><td>
+
+A resolved runtime view of a confection version with resolved references.
+
+This interface provides runtime-layer access to version data with: - Parent confection reference (ID and resolved object) - Resolved filling slots and procedures - Effective tags/urls (merged from base confection + version) - Raw access to underlying version data
+
+
+</td></tr>
+<tr><td>
+
+[IDairyIngredient](./ts-chocolate.libraryruntime.idairyingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to dairy type.
+
+
+</td></tr>
+<tr><td>
+
+[IFatIngredient](./ts-chocolate.libraryruntime.ifatingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to fat type.
+
+
+</td></tr>
+<tr><td>
+
 [IFillingChanges](./ts-chocolate.libraryruntime.ifillingchanges.md)
 
 
 </td><td>
 
 Structure describing what changed between two produced fillings
+
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
+
+
+</td><td>
+
+A resolved runtime view of a recipe with navigation and version access.
+
+This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `collectionId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
+
+Note: Does not extend [IFillingRecipeEntity](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) directly because `versions` has a different type (resolved vs raw versions).
+
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipeVersion](./ts-chocolate.libraryruntime.ifillingrecipeversion.md)
+
+
+</td><td>
+
+A resolved runtime view of a recipe version with resolved ingredients.
+
+This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
+
+Note: Does not extend `IFillingRecipeVersionEntity` because `ingredients` has a different type (resolved vs raw references).
 
 
 </td></tr>
@@ -662,6 +784,21 @@ Complete ganache calculation result
 </td><td>
 
 Validation result for ganache ratios
+
+
+</td></tr>
+<tr><td>
+
+[IIngredient](./ts-chocolate.libraryruntime.iingredient.md)
+
+
+</td><td>
+
+A resolved runtime view of an ingredient with navigation capabilities.
+
+This interface includes all properties from the data layer `IIngredientEntity` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Navigation to recipes that use this ingredient - Type narrowing methods for discriminated access - Raw access to underlying data
+
+Note: Does not extend `IIngredientEntity` directly because the class implementation provides the same shape but with additional runtime behavior.
 
 
 </td></tr>
@@ -745,6 +882,28 @@ Note: For session creation capabilities, use IRuntimeContext from the runtime pa
 </td><td>
 
 Parameters for creating a LibraryRuntimeContext with a new library
+
+
+</td></tr>
+<tr><td>
+
+[IMoldedBonBon](./ts-chocolate.libraryruntime.imoldedbonbon.md)
+
+
+</td><td>
+
+Runtime confection narrowed to molded bonbon type.
+
+
+</td></tr>
+<tr><td>
+
+[IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)
+
+
+</td><td>
+
+Runtime confection version narrowed to molded bonbon type.
 
 
 </td></tr>
@@ -926,138 +1085,23 @@ Resolved recipe filling option.
 </td></tr>
 <tr><td>
 
-[IRuntimeAlcoholIngredient](./ts-chocolate.libraryruntime.iruntimealcoholingredient.md)
+[IRolledTruffle](./ts-chocolate.libraryruntime.irolledtruffle.md)
 
 
 </td><td>
 
-Runtime ingredient narrowed to alcohol type.
+Runtime confection narrowed to rolled truffle type.
 
 
 </td></tr>
 <tr><td>
 
-[IRuntimeBarTruffle](./ts-chocolate.libraryruntime.iruntimebartruffle.md)
+[IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)
 
 
 </td><td>
 
-Runtime confection narrowed to bar truffle type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)
-
-
-</td><td>
-
-Runtime confection version narrowed to bar truffle type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeChocolateIngredient](./ts-chocolate.libraryruntime.iruntimechocolateingredient.md)
-
-
-</td><td>
-
-Runtime ingredient narrowed to chocolate type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)
-
-
-</td><td>
-
-A resolved runtime view of a confection with navigation capabilities.
-
-This interface includes all properties from the data layer `IConfectionBase` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Version navigation with typed versions - Effective tags/urls (merged from base + version) - Type narrowing methods for discriminated access - Raw access to underlying data
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeConfectionVersionBase](./ts-chocolate.libraryruntime.iruntimeconfectionversionbase.md)
-
-
-</td><td>
-
-A resolved runtime view of a confection version with resolved references.
-
-This interface provides runtime-layer access to version data with: - Parent confection reference (ID and resolved object) - Resolved filling slots and procedures - Effective tags/urls (merged from base confection + version) - Raw access to underlying version data
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeDairyIngredient](./ts-chocolate.libraryruntime.iruntimedairyingredient.md)
-
-
-</td><td>
-
-Runtime ingredient narrowed to dairy type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeFatIngredient](./ts-chocolate.libraryruntime.iruntimefatingredient.md)
-
-
-</td><td>
-
-Runtime ingredient narrowed to fat type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)
-
-
-</td><td>
-
-A resolved runtime view of a recipe with navigation and version access.
-
-This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
-
-Note: Does not extend `IFillingRecipe` because `versions` has a different type (resolved vs raw versions).
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
-
-
-</td><td>
-
-A resolved runtime view of a recipe version with resolved ingredients.
-
-This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
-
-Note: Does not extend `IFillingRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)
-
-
-</td><td>
-
-A resolved runtime view of an ingredient with navigation capabilities.
-
-This interface includes all properties from the data layer `IIngredient` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Navigation to recipes that use this ingredient - Type narrowing methods for discriminated access - Raw access to underlying data
-
-Note: Does not extend `IIngredient` directly because the class implementation provides the same shape but with additional runtime behavior.
+Runtime confection version narrowed to rolled truffle type.
 
 
 </td></tr>
@@ -1071,28 +1115,6 @@ Note: Does not extend `IIngredient` directly because the class implementation pr
 A resolved runtime view of a mold with computed properties.
 
 This interface provides runtime-layer access to mold data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeMoldedBonBon](./ts-chocolate.libraryruntime.iruntimemoldedbonbon.md)
-
-
-</td><td>
-
-Runtime confection narrowed to molded bonbon type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)
-
-
-</td><td>
-
-Runtime confection version narrowed to molded bonbon type.
 
 
 </td></tr>
@@ -1146,39 +1168,6 @@ A rendered procedure step with resolved template values.
 </td></tr>
 <tr><td>
 
-[IRuntimeRolledTruffle](./ts-chocolate.libraryruntime.iruntimerolledtruffle.md)
-
-
-</td><td>
-
-Runtime confection narrowed to rolled truffle type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)
-
-
-</td><td>
-
-Runtime confection version narrowed to rolled truffle type.
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeSugarIngredient](./ts-chocolate.libraryruntime.iruntimesugaringredient.md)
-
-
-</td><td>
-
-Runtime ingredient narrowed to sugar type.
-
-
-</td></tr>
-<tr><td>
-
 [IRuntimeTask](./ts-chocolate.libraryruntime.iruntimetask.md)
 
 
@@ -1187,6 +1176,17 @@ Runtime ingredient narrowed to sugar type.
 A resolved runtime view of a task with rendering capabilities.
 
 This interface provides runtime-layer access to task data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Rendering with library context - Parameter validation
+
+
+</td></tr>
+<tr><td>
+
+[ISugarIngredient](./ts-chocolate.libraryruntime.isugaringredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to sugar type.
 
 
 </td></tr>
@@ -1251,23 +1251,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AnyConfectionVersion](./ts-chocolate.libraryruntime.anyconfectionversion.md)
+
+
+</td><td>
+
+Union type for all runtime confection version types.
+
+
+</td></tr>
+<tr><td>
+
 [AnyRuntimeConfection](./ts-chocolate.libraryruntime.anyruntimeconfection.md)
 
 
 </td><td>
 
 Union type of all concrete runtime confection classes. Use this type when you need to work with any runtime confection.
-
-
-</td></tr>
-<tr><td>
-
-[AnyRuntimeConfectionVersion](./ts-chocolate.libraryruntime.anyruntimeconfectionversion.md)
-
-
-</td><td>
-
-Union type for all runtime confection version types.
 
 
 </td></tr>

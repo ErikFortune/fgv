@@ -9,5 +9,5 @@ Golden version typed as IRuntimeMoldedBonBonVersion.
 **Signature:**
 
 ```typescript
-get goldenVersion(): IRuntimeMoldedBonBonVersion;
+get goldenVersion(): IMoldedBonBonVersion;
 ```

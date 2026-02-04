@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IRuntimeChocolateIngredient](./ts-chocolate.libraryruntime.iruntimechocolateingredient.md)<!-- -->&gt;
+ReadonlyArray&lt;[IChocolateIngredient](./ts-chocolate.libraryruntime.ichocolateingredient.md)<!-- -->&gt;
 
 
 </td><td>
@@ -68,7 +68,7 @@ Alternate chocolate options (all chocolate category)
 
 </td><td>
 
-[IRuntimeChocolateIngredient](./ts-chocolate.libraryruntime.iruntimechocolateingredient.md)
+[IChocolateIngredient](./ts-chocolate.libraryruntime.ichocolateingredient.md)
 
 
 </td><td>

@@ -9,5 +9,5 @@ The parent filling recipe - resolved. Enables navigation: `version.fillingRecipe
 **Signature:**
 
 ```typescript
-get fillingRecipe(): IRuntimeFillingRecipe;
+get fillingRecipe(): IFillingRecipe;
 ```

@@ -9,9 +9,9 @@ Abstract base class for runtime ingredients. Provides common properties and navi
 **Signature:**
 
 ```typescript
-export declare abstract class RuntimeIngredientBase implements IRuntimeIngredient 
+export declare abstract class RuntimeIngredientBase implements IIngredient 
 ```
-**Implements:** [IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)
+**Implements:** [IIngredient](./ts-chocolate.libraryruntime.iingredient.md)
 
 ## Remarks
 
@@ -233,6 +233,27 @@ Certifications the ingredient has
 </td></tr>
 <tr><td>
 
+[collectionId](./ts-chocolate.libraryruntime.runtimeingredientbase.collectionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[CollectionId](./ts-chocolate.collectionid.md)
+
+
+</td><td>
+
+The source ID part of the composite ID
+
+
+</td></tr>
+<tr><td>
+
 [description](./ts-chocolate.libraryruntime.runtimeingredientbase.description.md)
 
 
@@ -356,27 +377,6 @@ Display name of the ingredient
 </td><td>
 
 Gets the underlying raw ingredient data (read-only)
-
-
-</td></tr>
-<tr><td>
-
-[sourceId](./ts-chocolate.libraryruntime.runtimeingredientbase.sourceid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[CollectionId](./ts-chocolate.collectionid.md)
-
-
-</td><td>
-
-The source ID part of the composite ID
 
 
 </td></tr>

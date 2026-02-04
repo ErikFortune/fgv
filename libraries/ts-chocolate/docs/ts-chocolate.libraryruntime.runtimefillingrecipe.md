@@ -9,9 +9,9 @@ A resolved view of a recipe with navigation and version access. Immutable - does
 **Signature:**
 
 ```typescript
-export declare class RuntimeFillingRecipe implements IRuntimeFillingRecipe 
+export declare class RuntimeFillingRecipe implements IFillingRecipe 
 ```
-**Implements:** [IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)
+**Implements:** [IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
 
 ## Remarks
 
@@ -58,6 +58,27 @@ Description
 </td><td>
 
 The base recipe ID within the source
+
+
+</td></tr>
+<tr><td>
+
+[collectionId](./ts-chocolate.libraryruntime.runtimefillingrecipe.collectionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[CollectionId](./ts-chocolate.collectionid.md)
+
+
+</td><td>
+
+The source ID part of the composite ID
 
 
 </td></tr>
@@ -205,27 +226,6 @@ Human-readable recipe name
 </td><td>
 
 Gets the underlying raw recipe data
-
-
-</td></tr>
-<tr><td>
-
-[sourceId](./ts-chocolate.libraryruntime.runtimefillingrecipe.sourceid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[CollectionId](./ts-chocolate.collectionid.md)
-
-
-</td><td>
-
-The source ID part of the composite ID
 
 
 </td></tr>

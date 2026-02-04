@@ -9,11 +9,11 @@ A resolved view of a bar truffle confection with navigation capabilities. Immuta
 **Signature:**
 
 ```typescript
-export declare class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle 
+export declare class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruffle 
 ```
 **Extends:** [RuntimeConfectionBase](./ts-chocolate.libraryruntime.runtimeconfectionbase.md)
 
-**Implements:** [IRuntimeBarTruffle](./ts-chocolate.libraryruntime.iruntimebartruffle.md)
+**Implements:** [IBarTruffle](./ts-chocolate.libraryruntime.ibartruffle.md)
 
 ## Remarks
 
@@ -138,7 +138,7 @@ Frame dimensions for ganache slab (from golden version).
 
 </td><td>
 
-[IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)
+[IBarTruffleVersion](./ts-chocolate.libraryruntime.ibartruffleversion.md)
 
 
 </td><td>
@@ -222,7 +222,7 @@ Single bonbon dimensions for cutting (from golden version).
 
 </td><td>
 
-ReadonlyArray&lt;[IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)<!-- -->&gt;
+ReadonlyArray&lt;[IBarTruffleVersion](./ts-chocolate.libraryruntime.ibartruffleversion.md)<!-- -->&gt;
 
 
 </td><td>

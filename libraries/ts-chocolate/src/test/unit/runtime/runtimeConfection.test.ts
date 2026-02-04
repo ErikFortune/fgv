@@ -52,9 +52,9 @@ import {
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeChocolateIngredient,
-  IRuntimeConfection,
-  IRuntimeFillingRecipe,
+  IChocolateIngredient,
+  IConfectionBase,
+  IFillingRecipe,
   IRuntimeMold,
   IRuntimeProcedure,
   RuntimeConfection,
@@ -225,7 +225,7 @@ describe('RuntimeConfection', () => {
         usedByFillings: () => [],
         primaryInFillings: () => [],
         alternateInFillings: () => []
-      } as unknown as IRuntimeChocolateIngredient);
+      } as unknown as IChocolateIngredient);
     },
     getRuntimeFilling: (id: FillingId) => {
       // Return a minimal mock filling recipe
@@ -236,7 +236,7 @@ describe('RuntimeConfection', () => {
         name: 'Mock Ganache' as FillingName,
         goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
         raw: {} as IFillingRecipeEntity
-      } as unknown as IRuntimeFillingRecipe);
+      } as unknown as IFillingRecipe);
     },
     getRuntimeMold: (id: MoldId) => {
       // Return a minimal mock mold
@@ -263,7 +263,7 @@ describe('RuntimeConfection', () => {
           confectionType: 'molded-bonbon',
           tags: ['test', 'bonbon'],
           urls: [{ url: 'https://example.com/bonbon', category: 'Reference' }]
-        } as unknown as IRuntimeConfection);
+        } as unknown as IConfectionBase);
       }
       if (id === 'test.test-bar') {
         return Success.with({
@@ -272,7 +272,7 @@ describe('RuntimeConfection', () => {
           confectionType: 'bar-truffle',
           tags: undefined,
           urls: undefined
-        } as unknown as IRuntimeConfection);
+        } as unknown as IConfectionBase);
       }
       if (id === 'test.test-rolled') {
         return Success.with({
@@ -281,7 +281,7 @@ describe('RuntimeConfection', () => {
           confectionType: 'rolled-truffle',
           tags: undefined,
           urls: undefined
-        } as unknown as IRuntimeConfection);
+        } as unknown as IConfectionBase);
       }
       if (id === 'test.minimal') {
         return Success.with({
@@ -290,14 +290,14 @@ describe('RuntimeConfection', () => {
           confectionType: 'molded-bonbon',
           tags: undefined,
           urls: undefined
-        } as unknown as IRuntimeConfection);
+        } as unknown as IConfectionBase);
       }
       return Success.with({
         id,
         name: 'Mock Confection',
         tags: undefined,
         urls: undefined
-      } as unknown as IRuntimeConfection);
+      } as unknown as IConfectionBase);
     },
     // Resolution helpers - these delegate to the mock getRuntime* methods
     resolveChocolateSpec: (
@@ -305,11 +305,11 @@ describe('RuntimeConfection', () => {
       confectionId: ConfectionId
     ): IResolvedChocolateSpec => {
       const primaryId = spec.preferredId ?? spec.ids[0];
-      const chocolate = mockContext.getRuntimeIngredient(primaryId).value as IRuntimeChocolateIngredient;
+      const chocolate = mockContext.getRuntimeIngredient(primaryId).value as IChocolateIngredient;
       // Populate alternates from all IDs except the primary
       const alternates = spec.ids
         .filter((id) => id !== primaryId)
-        .map((id) => mockContext.getRuntimeIngredient(id).value as IRuntimeChocolateIngredient);
+        .map((id) => mockContext.getRuntimeIngredient(id).value as IChocolateIngredient);
       return {
         chocolate,
         alternates,
@@ -450,7 +450,7 @@ describe('RuntimeConfection', () => {
 
     test('exposes identity properties', () => {
       expect(runtime.id).toBe('test.test-bonbon');
-      expect(runtime.sourceId).toBe('test');
+      expect(runtime.collectionId).toBe('test');
       expect(runtime.baseId).toBe('test-bonbon');
     });
 
@@ -660,7 +660,7 @@ describe('RuntimeConfection', () => {
 
     test('exposes identity properties', () => {
       expect(runtime.id).toBe('test.test-bar');
-      expect(runtime.sourceId).toBe('test');
+      expect(runtime.collectionId).toBe('test');
       expect(runtime.baseId).toBe('test-bar');
     });
 
@@ -758,7 +758,7 @@ describe('RuntimeConfection', () => {
 
     test('exposes identity properties', () => {
       expect(runtime.id).toBe('test.test-rolled');
-      expect(runtime.sourceId).toBe('test');
+      expect(runtime.collectionId).toBe('test');
       expect(runtime.baseId).toBe('test-rolled');
     });
 

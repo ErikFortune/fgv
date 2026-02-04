@@ -33,8 +33,8 @@ import {
   IResolvedChocolateSpec,
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
-  IRuntimeMoldedBonBon,
-  IRuntimeMoldedBonBonVersion
+  IMoldedBonBon,
+  IMoldedBonBonVersion
 } from '../../model';
 import { RuntimeConfectionVersionBase } from './confectionVersionBase';
 
@@ -46,10 +46,7 @@ import { RuntimeConfectionVersionBase } from './confectionVersionBase';
  * A resolved view of a molded bonbon version with all references resolved.
  * @public
  */
-export class RuntimeMoldedBonBonVersion
-  extends RuntimeConfectionVersionBase
-  implements IRuntimeMoldedBonBonVersion
-{
+export class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements IMoldedBonBonVersion {
   private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved)
@@ -93,8 +90,8 @@ export class RuntimeMoldedBonBonVersion
   /**
    * Parent confection narrowed to molded bonbon type.
    */
-  public override get confection(): IRuntimeMoldedBonBon {
-    return super.confection as IRuntimeMoldedBonBon;
+  public override get confection(): IMoldedBonBon {
+    return super.confection as IMoldedBonBon;
   }
 
   // ============================================================================

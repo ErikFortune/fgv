@@ -73,7 +73,7 @@ Gets the number of cached confections.
 
 </td><td>
 
-ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)<!-- -->&gt;
+ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [IConfectionBase](./ts-chocolate.libraryruntime.iconfectionbase.md)<!-- -->&gt;
 
 
 </td><td>

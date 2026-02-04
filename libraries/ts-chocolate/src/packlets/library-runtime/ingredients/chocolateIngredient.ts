@@ -35,7 +35,7 @@ import {
   Percentage
 } from '../../common';
 import { Ingredients, IChocolateIngredientEntity } from '../../entities';
-import { IIngredientContext, IRuntimeChocolateIngredient } from '../model';
+import { IIngredientContext, IChocolateIngredient } from '../model';
 import { RuntimeIngredientBase } from './ingredientBase';
 
 // ============================================================================
@@ -47,7 +47,7 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRuntimeChocolateIngredient {
+export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IChocolateIngredient {
   private readonly _chocolateIngredient: IChocolateIngredientEntity;
 
   /**

@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedRolledTruffle from a source version
 **Signature:**
 
 ```typescript
-static fromSource(source: IRuntimeRolledTruffleVersion): Result<RuntimeProducedRolledTruffle>;
+static fromSource(source: IRolledTruffleVersion): Result<RuntimeProducedRolledTruffle>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ source
 
 </td><td>
 
-[IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)
+[IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Gets a specific version by version specifier.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion>;
+getVersion(versionSpec: ConfectionVersionSpec): Result<IRolledTruffleVersion>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The version specifier to find
 
 **Returns:**
 
-Result&lt;[IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)<!-- -->&gt;
+Result&lt;[IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)<!-- -->&gt;
 
 Success with typed runtime version, or Failure if not found
 

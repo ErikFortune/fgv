@@ -43,8 +43,8 @@ import {
   IResolvedFillingRecipeProcedure,
   IResolvedIngredient,
   IResolvedProcedures,
-  IRuntimeFillingRecipe,
-  IRuntimeFillingRecipeVersion,
+  IFillingRecipe,
+  IFillingRecipeVersion,
   IVersionContext,
   FillingRecipeIngredientsFilter
 } from '../model';
@@ -103,7 +103,7 @@ function matchesFilter(
  * A resolved view of a recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
+export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
   private readonly _context: VersionContext;
   private readonly _fillingId: FillingId;
   private readonly _version: IFillingRecipeVersionEntity;
@@ -111,7 +111,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyRuntimeIngredient>> | undefined;
   private _resolutionError: string | undefined;
-  private _recipe: IRuntimeFillingRecipe | undefined;
+  private _recipe: IFillingRecipe | undefined;
   private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
 
   /**
@@ -176,7 +176,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
    * The parent filling recipe - resolved.
    * Enables navigation: `version.fillingRecipe.name`
    */
-  public get fillingRecipe(): IRuntimeFillingRecipe {
+  public get fillingRecipe(): IFillingRecipe {
     if (this._recipe === undefined) {
       // orThrow is safe - version was created from a valid recipe
       this._recipe = this._context.fillings.get(this._fillingId).value;

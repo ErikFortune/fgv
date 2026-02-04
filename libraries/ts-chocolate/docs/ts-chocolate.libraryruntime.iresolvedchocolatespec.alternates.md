@@ -9,5 +9,5 @@ Alternate chocolate options (all chocolate category)
 **Signature:**
 
 ```typescript
-readonly alternates: ReadonlyArray<IRuntimeChocolateIngredient>;
+readonly alternates: ReadonlyArray<IChocolateIngredient>;
 ```

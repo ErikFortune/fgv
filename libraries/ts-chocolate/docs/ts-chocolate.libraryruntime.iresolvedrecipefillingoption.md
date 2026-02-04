@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
 
 
 </td><td>

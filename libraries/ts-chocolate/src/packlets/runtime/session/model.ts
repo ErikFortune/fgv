@@ -41,7 +41,7 @@ import {
   IConfectionEditJournalEntryEntity,
   Confections
 } from '../../entities';
-import { IRuntimeConfection } from '../../library-runtime';
+import { IConfectionBase } from '../../library-runtime';
 
 // ============================================================================
 // Save Analysis
@@ -403,7 +403,7 @@ export interface IConfectionSessionState {
   /**
    * Source confection being edited
    */
-  readonly sourceConfection: IRuntimeConfection;
+  readonly sourceConfection: IConfectionBase;
 
   /**
    * Current mold selection (for molded bonbons)

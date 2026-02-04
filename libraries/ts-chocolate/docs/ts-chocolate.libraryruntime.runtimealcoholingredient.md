@@ -9,11 +9,11 @@ A resolved view of an alcohol ingredient with navigation capabilities. Immutable
 **Signature:**
 
 ```typescript
-export declare class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntimeAlcoholIngredient 
+export declare class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IAlcoholIngredient 
 ```
 **Extends:** [RuntimeIngredientBase](./ts-chocolate.libraryruntime.runtimeingredientbase.md)
 
-**Implements:** [IRuntimeAlcoholIngredient](./ts-chocolate.libraryruntime.iruntimealcoholingredient.md)
+**Implements:** [IAlcoholIngredient](./ts-chocolate.libraryruntime.ialcoholingredient.md)
 
 ## Remarks
 

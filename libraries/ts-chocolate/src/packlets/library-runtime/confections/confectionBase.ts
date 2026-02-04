@@ -38,11 +38,11 @@ import {
 } from '../../common';
 import { Confections } from '../../entities';
 import {
-  AnyRuntimeConfectionVersion,
+  AnyConfectionVersion,
   IConfectionContext,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeConfection
+  IConfectionBase
 } from '../model';
 
 // Forward declarations to avoid circular imports
@@ -59,7 +59,7 @@ import type { RuntimeRolledTruffle } from './rolledTruffle';
  * Provides common properties and version navigation shared by all confection types.
  * @public
  */
-export abstract class RuntimeConfectionBase implements IRuntimeConfection {
+export abstract class RuntimeConfectionBase implements IConfectionBase {
   protected readonly _context: IConfectionContext;
   protected readonly _id: ConfectionId;
   protected readonly _confection: Confections.AnyConfectionEntity;
@@ -68,9 +68,9 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected readonly _rawGoldenVersion: Confections.AnyConfectionVersionEntity;
 
   // Lazy-resolved version caches (undefined = not yet resolved)
-  private _resolvedGoldenVersion: AnyRuntimeConfectionVersion | undefined;
-  private _resolvedVersions: ReadonlyArray<AnyRuntimeConfectionVersion> | undefined;
-  private _versionCache: Map<ConfectionVersionSpec, AnyRuntimeConfectionVersion> | undefined;
+  private _resolvedGoldenVersion: AnyConfectionVersion | undefined;
+  private _resolvedVersions: ReadonlyArray<AnyConfectionVersion> | undefined;
+  private _versionCache: Map<ConfectionVersionSpec, AnyConfectionVersion> | undefined;
 
   /**
    * Creates a RuntimeConfectionBase.
@@ -115,7 +115,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): CollectionId {
+  public get collectionId(): CollectionId {
     return this._sourceId;
   }
 
@@ -209,7 +209,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Resolved lazily on first access.
    */
   /* c8 ignore next 6 - base class getter overridden by all concrete subclasses */
-  public get goldenVersion(): AnyRuntimeConfectionVersion {
+  public get goldenVersion(): AnyConfectionVersion {
     if (this._resolvedGoldenVersion === undefined) {
       this._resolvedGoldenVersion = this._createVersion(this._rawGoldenVersion);
     }
@@ -221,7 +221,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Resolved lazily on first access.
    */
   /* c8 ignore next 6 - base class getter overridden by all concrete subclasses */
-  public get versions(): ReadonlyArray<AnyRuntimeConfectionVersion> {
+  public get versions(): ReadonlyArray<AnyConfectionVersion> {
     if (this._resolvedVersions === undefined) {
       this._resolvedVersions = this._confection.versions.map((v) => this._getOrCreateVersion(v));
     }
@@ -233,7 +233,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @param versionSpec - The version specifier to find
    * @returns Success with runtime version, or Failure if not found
    */
-  public getVersion(versionSpec: ConfectionVersionSpec): Result<AnyRuntimeConfectionVersion> {
+  public getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion> {
     const rawVersion = this._confection.versions.find((v) => v.versionSpec === versionSpec);
     if (!rawVersion) {
       return Failure.with(`Version ${versionSpec} not found in confection ${this._id}`);
@@ -247,9 +247,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @returns The runtime version (from cache or newly created)
    * @internal
    */
-  private _getOrCreateVersion(
-    rawVersion: Confections.AnyConfectionVersionEntity
-  ): AnyRuntimeConfectionVersion {
+  private _getOrCreateVersion(rawVersion: Confections.AnyConfectionVersionEntity): AnyConfectionVersion {
     // Initialize cache if needed
     if (this._versionCache === undefined) {
       this._versionCache = new Map();
@@ -274,9 +272,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @returns The runtime version
    * @internal
    */
-  protected abstract _createVersion(
-    rawVersion: Confections.AnyConfectionVersionEntity
-  ): AnyRuntimeConfectionVersion;
+  protected abstract _createVersion(rawVersion: Confections.AnyConfectionVersionEntity): AnyConfectionVersion;
 
   // ============================================================================
   // Effective Tags/URLs (merged from base + version)

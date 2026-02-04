@@ -9,5 +9,5 @@ All versions typed as IRuntimeMoldedBonBonVersion.
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion>;
+get versions(): ReadonlyArray<IMoldedBonBonVersion>;
 ```

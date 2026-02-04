@@ -9,5 +9,5 @@ The resolved ingredient object
 **Signature:**
 
 ```typescript
-readonly ingredient: IRuntimeIngredient;
+readonly ingredient: IIngredient;
 ```

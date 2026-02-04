@@ -43,8 +43,8 @@ import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/enti
 import {
   ChocolateLibrary,
   Indexers,
-  IRuntimeFillingRecipe,
-  IRuntimeIngredient
+  IFillingRecipe,
+  IIngredient
 } from '../../../../packlets/library-runtime';
 
 // Destructure the Indexers namespace for convenient access
@@ -522,12 +522,12 @@ describe('Indexers', () => {
 
   describe('FillingRecipeIndexerOrchestrator', () => {
     // Mock recipe resolver that just returns ID as "resolved"
-    const mockRecipeResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
+    const mockRecipeResolver = (id: FillingId): Result<IFillingRecipe> => {
       // Create a minimal mock recipe - in real usage this would come from RuntimeContext
       return Success.with({
         id,
         name: `Recipe ${id}` as FillingName
-      } as unknown as IRuntimeFillingRecipe);
+      } as unknown as IFillingRecipe);
     };
 
     let orchestrator: InstanceType<typeof FillingRecipeIndexerOrchestrator>;
@@ -649,11 +649,11 @@ describe('Indexers', () => {
   // ============================================================================
 
   describe('IngredientIndexerOrchestrator', () => {
-    const mockIngredientResolver = (id: IngredientId): Result<IRuntimeIngredient> => {
+    const mockIngredientResolver = (id: IngredientId): Result<IIngredient> => {
       return Success.with({
         id,
         name: `Ingredient ${id}`
-      } as unknown as IRuntimeIngredient);
+      } as unknown as IIngredient);
     };
 
     test('finds ingredients with single indexer', () => {
@@ -725,11 +725,11 @@ describe('Indexers', () => {
     describe('intersection logic', () => {
       test('intersection removes items not in all sets', () => {
         // Create a resolver that works for all IDs
-        const mockRecipeResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
+        const mockRecipeResolver = (id: FillingId): Result<IFillingRecipe> => {
           return Success.with({
             id,
             name: `Recipe ${id}` as FillingName
-          } as unknown as IRuntimeFillingRecipe);
+          } as unknown as IFillingRecipe);
         };
 
         const orchestrator = new FillingRecipeIndexerOrchestrator(library, mockRecipeResolver);
@@ -750,7 +750,7 @@ describe('Indexers', () => {
     describe('entity resolution failures', () => {
       test('fails when recipe resolver returns failure', () => {
         // Create a resolver that always fails
-        const failingResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
+        const failingResolver = (id: FillingId): Result<IFillingRecipe> => {
           return Failure.with(`Cannot resolve recipe: ${id}`);
         };
 
@@ -765,7 +765,7 @@ describe('Indexers', () => {
 
       test('fails when ingredient resolver returns failure', () => {
         // Create a resolver that always fails
-        const failingResolver = (id: IngredientId): Result<IRuntimeIngredient> => {
+        const failingResolver = (id: IngredientId): Result<IIngredient> => {
           return Failure.with(`Cannot resolve ingredient: ${id}`);
         };
 
@@ -780,7 +780,7 @@ describe('Indexers', () => {
 
       test('aggregates multiple resolution failures', () => {
         // Create a resolver that fails for all IDs
-        const failingResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
+        const failingResolver = (id: FillingId): Result<IFillingRecipe> => {
           return Failure.with(`Not found: ${id}`);
         };
 

@@ -32,11 +32,11 @@ import { Result } from '@fgv/ts-utils';
 import { ConfectionId, Measurement } from '../common';
 import type { EditingSession } from './session/editingSession';
 import {
-  AnyRuntimeConfectionVersion,
+  AnyConfectionVersion,
   IConfectionContext,
   ILibraryRuntimeContext,
-  IRuntimeConfection,
-  IRuntimeFillingRecipe
+  IConfectionBase,
+  IFillingRecipe
 } from '../library-runtime';
 
 // ============================================================================
@@ -59,7 +59,7 @@ export interface ISessionContext extends IConfectionContext {
    * @param targetWeight - Target weight for the filling in grams
    * @returns Success with EditingSession, or Failure if creation fails
    */
-  createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
+  createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
 }
 
 // ============================================================================
@@ -90,14 +90,14 @@ export interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext
    * Gets all runtime confections as an iterable map.
    * Confections are resolved lazily and cached on first access.
    */
-  readonly runtimeConfections: ReadonlyMap<ConfectionId, IRuntimeConfection>;
+  readonly runtimeConfections: ReadonlyMap<ConfectionId, IConfectionBase>;
 
   /**
    * Gets a runtime confection by ID (with lazy resolution and caching).
    * @param id - The confection ID
    * @returns Success with runtime confection, or Failure if not found
    */
-  getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
+  getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
 
   /**
    * Gets all unique tags used across confections.
@@ -106,4 +106,4 @@ export interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext
 }
 
 // Re-export confection version type for convenience
-export type { AnyRuntimeConfectionVersion };
+export type { AnyConfectionVersion as AnyRuntimeConfectionVersion };

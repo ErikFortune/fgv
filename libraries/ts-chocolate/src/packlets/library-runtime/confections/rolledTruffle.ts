@@ -33,8 +33,8 @@ import {
   IResolvedCoatings,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeRolledTruffle,
-  IRuntimeRolledTruffleVersion
+  IRolledTruffle,
+  IRolledTruffleVersion
 } from '../model';
 import { RuntimeConfectionBase } from './confectionBase';
 import { RuntimeRolledTruffleVersion } from './versions';
@@ -48,7 +48,7 @@ import { RuntimeRolledTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
+export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRolledTruffle {
   private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
 
   /**
@@ -98,15 +98,15 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   /**
    * Golden version typed as IRuntimeRolledTruffleVersion.
    */
-  public override get goldenVersion(): IRuntimeRolledTruffleVersion {
-    return super.goldenVersion as IRuntimeRolledTruffleVersion;
+  public override get goldenVersion(): IRolledTruffleVersion {
+    return super.goldenVersion as IRolledTruffleVersion;
   }
 
   /**
    * All versions typed as IRuntimeRolledTruffleVersion.
    */
-  public override get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion> {
-    return super.versions as ReadonlyArray<IRuntimeRolledTruffleVersion>;
+  public override get versions(): ReadonlyArray<IRolledTruffleVersion> {
+    return super.versions as ReadonlyArray<IRolledTruffleVersion>;
   }
 
   /**
@@ -114,8 +114,8 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
    * @param versionSpec - The version specifier to find
    * @returns Success with typed runtime version, or Failure if not found
    */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion> {
-    return super.getVersion(versionSpec) as Result<IRuntimeRolledTruffleVersion>;
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRolledTruffleVersion> {
+    return super.getVersion(versionSpec) as Result<IRolledTruffleVersion>;
   }
 
   /**
@@ -126,7 +126,7 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
    */
   protected override _createVersion(
     rawVersion: Confections.AnyConfectionVersionEntity
-  ): IRuntimeRolledTruffleVersion {
+  ): IRolledTruffleVersion {
     return RuntimeRolledTruffleVersion.create(
       this._context,
       this._id,

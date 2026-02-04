@@ -33,7 +33,7 @@ import {
   CollectionId
 } from '../../common';
 import { Ingredients, IngredientEntity } from '../../entities';
-import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
+import { IIngredientContext, IIngredient, IFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
 import type { RuntimeChocolateIngredient } from './chocolateIngredient';
@@ -51,7 +51,7 @@ import type { RuntimeAlcoholIngredient } from './alcoholIngredient';
  * Provides common properties and navigation shared by all ingredient types.
  * @public
  */
-export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
+export abstract class RuntimeIngredientBase implements IIngredient {
   protected readonly _context: IIngredientContext;
   protected readonly _id: IngredientId;
   protected readonly _ingredient: IngredientEntity;
@@ -89,7 +89,7 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): CollectionId {
+  public get collectionId(): CollectionId {
     return this._sourceId;
   }
 
@@ -219,21 +219,21 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   /**
    * Gets all filling recipes that use this ingredient (primary or alternate).
    */
-  public usedByFillings(): IRuntimeFillingRecipe[] {
+  public usedByFillings(): IFillingRecipe[] {
     return this._context.getFillingsUsingIngredient(this._id);
   }
 
   /**
    * Gets filling recipes where this ingredient is the primary choice.
    */
-  public primaryInFillings(): IRuntimeFillingRecipe[] {
+  public primaryInFillings(): IFillingRecipe[] {
     return this._context.getFillingsWithPrimaryIngredient(this._id);
   }
 
   /**
    * Gets filling recipes where this ingredient is listed as an alternate.
    */
-  public alternateInFillings(): IRuntimeFillingRecipe[] {
+  public alternateInFillings(): IFillingRecipe[] {
     return this._context.getFillingsWithAlternateIngredient(this._id);
   }
 

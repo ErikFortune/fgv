@@ -29,7 +29,7 @@ import { Measurement } from '../common';
 import {
   ChocolateLibrary,
   IChocolateLibraryCreateParams,
-  IRuntimeFillingRecipe,
+  IFillingRecipe,
   LibraryRuntimeContext
 } from '../library-runtime';
 import { EditingSession } from './session/editingSession';
@@ -113,10 +113,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
    * @param targetWeight - Target weight for the filling in grams
    * @returns Success with EditingSession, or Failure if creation fails
    */
-  public createFillingSession(
-    filling: IRuntimeFillingRecipe,
-    targetWeight: Measurement
-  ): Result<EditingSession> {
+  public createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession> {
     // Get the golden version (now safe - no cast needed)
     const version = filling.goldenVersion;
 

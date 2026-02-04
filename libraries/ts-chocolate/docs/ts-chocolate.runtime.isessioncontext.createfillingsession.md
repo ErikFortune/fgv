@@ -9,7 +9,7 @@ Creates an editing session for a filling recipe at a target weight. Used by conf
 **Signature:**
 
 ```typescript
-createFillingSession(filling: IRuntimeFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
+createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ filling
 
 </td><td>
 
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Ingredient resolver function type. Provided by RuntimeContext to resolve ingredi
 **Signature:**
 
 ```typescript
-export type IngredientResolver = (id: IngredientId) => Result<IRuntimeIngredient>;
+export type IngredientResolver = (id: IngredientId) => Result<IIngredient>;
 ```
-**References:** [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)
+**References:** [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IIngredient](./ts-chocolate.libraryruntime.iingredient.md)
 

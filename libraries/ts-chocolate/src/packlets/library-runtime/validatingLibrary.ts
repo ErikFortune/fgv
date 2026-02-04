@@ -82,7 +82,7 @@ export interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEnt
   /**
    * The orchestrator that provides find functionality.
    * The orchestrator's entity type (TOrchEntity) may be a supertype of TV
-   * (e.g., IRuntimeIngredient when TV is AnyRuntimeIngredient).
+   * (e.g., IIngredient when TV is AnyIngredient).
    */
   orchestrator: IFindOrchestrator<TOrchEntity, TSpec>;
 }

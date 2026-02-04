@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedBarTruffle from a source version.
 **Signature:**
 
 ```typescript
-static fromSource(source: IRuntimeBarTruffleVersion): Result<RuntimeProducedBarTruffle>;
+static fromSource(source: IBarTruffleVersion): Result<RuntimeProducedBarTruffle>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ source
 
 </td><td>
 
-[IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)
+[IBarTruffleVersion](./ts-chocolate.libraryruntime.ibartruffleversion.md)
 
 
 </td><td>

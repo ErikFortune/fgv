@@ -281,7 +281,7 @@ export class IngredientQuery {
    * @param sourceId - Source ID to filter by
    */
   public fromSource(sourceId: CollectionId): IngredientQuery {
-    return this._addFilter(equals(sourceId, (i) => i.sourceId));
+    return this._addFilter(equals(sourceId, (i) => i.collectionId));
   }
 
   // ============================================================================

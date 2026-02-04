@@ -9,7 +9,7 @@ Gets a runtime confection by ID (with lazy resolution and caching).
 **Signature:**
 
 ```typescript
-getRuntimeConfection(id: ConfectionId): Result<IRuntimeConfection>;
+getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The confection ID
 
 **Returns:**
 
-Result&lt;[IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)<!-- -->&gt;
+Result&lt;[IConfectionBase](./ts-chocolate.libraryruntime.iconfectionbase.md)<!-- -->&gt;
 
 Success with runtime confection, or Failure if not found
 

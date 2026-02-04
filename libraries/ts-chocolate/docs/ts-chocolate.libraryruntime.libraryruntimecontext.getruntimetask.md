@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-The task ID (composite format: sourceId.baseTaskId)
+The task ID (composite format: collectionId.baseTaskId)
 
 
 </td></tr>

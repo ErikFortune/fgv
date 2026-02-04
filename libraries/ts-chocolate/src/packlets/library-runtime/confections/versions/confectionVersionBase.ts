@@ -29,8 +29,8 @@ import {
   IConfectionContext,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeConfection,
-  IRuntimeConfectionVersionBase
+  IConfectionBase,
+  IConfectionVersionBase
 } from '../../model';
 
 // Forward declarations to avoid circular imports
@@ -47,13 +47,13 @@ import type { RuntimeRolledTruffleVersion } from './rolledTruffleVersion';
  * Provides common properties and resolution logic shared by all confection version types.
  * @public
  */
-export abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersionBase {
+export abstract class RuntimeConfectionVersionBase implements IConfectionVersionBase {
   protected readonly _context: IConfectionContext;
   protected readonly _confectionId: ConfectionId;
   protected readonly _version: Confections.AnyConfectionVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
-  private _confection: IRuntimeConfection | undefined;
+  private _confection: IConfectionBase | undefined;
   private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined | null;
   private _resolvedProcedures:
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
@@ -106,7 +106,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
    * The parent confection - resolved.
    * Enables navigation: `version.confection.name`
    */
-  public get confection(): IRuntimeConfection {
+  public get confection(): IConfectionBase {
     if (this._confection === undefined) {
       // orThrow is safe - version was created from a valid confection
       this._confection = this._context.getRuntimeConfection(this._confectionId).value;

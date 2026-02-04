@@ -9,11 +9,11 @@ A resolved view of a fat ingredient with navigation capabilities. Immutable - do
 **Signature:**
 
 ```typescript
-export declare class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatIngredient 
+export declare class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatIngredient 
 ```
 **Extends:** [RuntimeIngredientBase](./ts-chocolate.libraryruntime.runtimeingredientbase.md)
 
-**Implements:** [IRuntimeFatIngredient](./ts-chocolate.libraryruntime.iruntimefatingredient.md)
+**Implements:** [IFatIngredient](./ts-chocolate.libraryruntime.ifatingredient.md)
 
 ## Remarks
 

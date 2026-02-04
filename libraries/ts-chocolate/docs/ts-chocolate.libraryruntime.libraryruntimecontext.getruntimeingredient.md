@@ -9,7 +9,7 @@ Gets a runtime ingredient by ID. Implements IConfectionContext interface.
 **Signature:**
 
 ```typescript
-getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
+getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-The ingredient ID (composite format: sourceId.baseIngredientId)
+The ingredient ID (composite format: collectionId.baseIngredientId)
 
 
 </td></tr>
@@ -50,7 +50,7 @@ The ingredient ID (composite format: sourceId.baseIngredientId)
 
 **Returns:**
 
-Result&lt;[IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)<!-- -->&gt;
+Result&lt;[IIngredient](./ts-chocolate.libraryruntime.iingredient.md)<!-- -->&gt;
 
-Success with IRuntimeIngredient, or Failure if not found
+Success with [IIngredient](./ts-chocolate.libraryruntime.iingredient.md)<!-- -->, or Failure if not found.
 

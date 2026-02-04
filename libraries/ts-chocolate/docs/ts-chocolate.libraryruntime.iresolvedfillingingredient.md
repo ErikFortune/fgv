@@ -9,7 +9,7 @@ A resolved ingredient reference with full ingredient data and alternates. This i
 **Signature:**
 
 ```typescript
-export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> 
+export interface IResolvedFillingIngredient<TIngredient extends IIngredient = IIngredient> 
 ```
 
 ## Properties

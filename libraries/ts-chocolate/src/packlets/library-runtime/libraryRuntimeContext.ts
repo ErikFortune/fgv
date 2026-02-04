@@ -52,9 +52,9 @@ import {
   IResolvedConfectionProcedure,
   IResolvedFillingOption,
   IResolvedFillingSlot,
-  IRuntimeChocolateIngredient,
-  IRuntimeIngredient,
-  IRuntimeFillingRecipe,
+  IChocolateIngredient,
+  IIngredient,
+  IFillingRecipe,
   IVersionContext
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
@@ -128,10 +128,10 @@ export class LibraryRuntimeContext
   // Lazily-populated libraries with integrated find support
   // The fourth type parameter is the orchestrator's entity type (interface type)
   private _ingredients:
-    | ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IRuntimeIngredient>
+    | ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IIngredient>
     | undefined;
   private _recipes:
-    | ValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec, IRuntimeFillingRecipe>
+    | ValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
     | undefined;
 
   // Extensible indexer orchestrators
@@ -325,7 +325,7 @@ export class LibraryRuntimeContext
     const chocolate = primaryResult.value;
 
     // Resolve alternates (excluding primary)
-    const alternates: IRuntimeChocolateIngredient[] = [];
+    const alternates: IChocolateIngredient[] = [];
     for (const id of spec.ids) {
       /* c8 ignore next 6 - defensive: skip alternates that fail to resolve or aren't chocolate */
       if (id !== primaryId) {
@@ -570,7 +570,7 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveIngredients(): Result<
-    ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IRuntimeIngredient>
+    ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IIngredient>
   > {
     if (this._ingredients === undefined) {
       this._ingredients = new ValidatingLibrary({
@@ -603,7 +603,7 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveFillingRecipes(): Result<
-    ValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec, IRuntimeFillingRecipe>
+    ValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
   > {
     if (this._recipes === undefined) {
       this._recipes = new ValidatingLibrary({
@@ -645,13 +645,13 @@ export class LibraryRuntimeContext
   }
 
   // ============================================================================
-  // Procedure Lookups (for RuntimeFillingRecipe procedure resolution)
+  // Procedure Lookups (for FillingRecipe procedure resolution)
   // ============================================================================
 
   /**
    * Gets a procedure by its composite ID.
    * Used internally by RuntimeFillingRecipe for procedure resolution.
-   * @param id - The procedure ID (composite format: sourceId.baseProcedureId)
+   * @param id - The procedure ID (composite format: collectionId.baseProcedureId)
    * @returns Success with IProcedure, or Failure if not found
    */
   public getProcedure(id: string): Result<IProcedureEntity> {
@@ -665,20 +665,21 @@ export class LibraryRuntimeContext
   /**
    * Gets a runtime ingredient by ID.
    * Implements IConfectionContext interface.
-   * @param id - The ingredient ID (composite format: sourceId.baseIngredientId)
-   * @returns Success with IRuntimeIngredient, or Failure if not found
+   * @param id - The ingredient ID (composite format: collectionId.baseIngredientId)
+   * @returns Success with {@link LibraryRuntime.IIngredient | IIngredient},
+   * or Failure if not found.
    */
-  public getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient> {
+  public getRuntimeIngredient(id: IngredientId): Result<IIngredient> {
     return this._getIngredient(id);
   }
 
   /**
    * Gets a runtime filling recipe by ID.
    * Implements IConfectionContext interface.
-   * @param id - The filling ID (composite format: sourceId.baseFillingId)
+   * @param id - The filling ID (composite format: collectionId.baseFillingId)
    * @returns Success with IRuntimeFillingRecipe, or Failure if not found
    */
-  public getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe> {
+  public getRuntimeFilling(id: FillingId): Result<IFillingRecipe> {
     return this._getFillingRecipe(id);
   }
 
@@ -689,7 +690,7 @@ export class LibraryRuntimeContext
   /**
    * Gets a task by its composite ID.
    * Used internally for task resolution.
-   * @param id - The task ID (composite format: sourceId.baseTaskId)
+   * @param id - The task ID (composite format: collectionId.baseTaskId)
    * @returns Success with ITaskData, or Failure if not found
    */
   public getTask(id: TaskId): Result<IRawTaskEntity> {
@@ -699,7 +700,7 @@ export class LibraryRuntimeContext
   /**
    * Gets a runtime task by its composite ID (with caching).
    * Implements ITaskContext interface.
-   * @param id - The task ID (composite format: sourceId.baseTaskId)
+   * @param id - The task ID (composite format: collectionId.baseTaskId)
    * @returns Success with RuntimeTask, or Failure if not found
    */
   public getRuntimeTask(id: TaskId): Result<RuntimeTask> {
@@ -720,7 +721,7 @@ export class LibraryRuntimeContext
 
   /**
    * Gets a runtime procedure by its composite ID (with caching).
-   * @param id - The procedure ID (composite format: sourceId.baseProcedureId)
+   * @param id - The procedure ID (composite format: collectionId.baseProcedureId)
    * @returns Success with RuntimeProcedure, or Failure if not found
    */
   public getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure> {
@@ -741,7 +742,7 @@ export class LibraryRuntimeContext
 
   /**
    * Gets a runtime mold by its composite ID (with caching).
-   * @param id - The mold ID (composite format: sourceId.baseMoldId)
+   * @param id - The mold ID (composite format: collectionId.baseMoldId)
    * @returns Success with RuntimeMold, or Failure if not found
    */
   public getRuntimeMold(id: MoldId): Result<RuntimeMold> {

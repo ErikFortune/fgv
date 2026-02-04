@@ -34,8 +34,8 @@ import {
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeMoldedBonBon,
-  IRuntimeMoldedBonBonVersion
+  IMoldedBonBon,
+  IMoldedBonBonVersion
 } from '../model';
 import { RuntimeConfectionBase } from './confectionBase';
 import { RuntimeMoldedBonBonVersion } from './versions';
@@ -49,7 +49,7 @@ import { RuntimeMoldedBonBonVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
+export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMoldedBonBon {
   private readonly _moldedBonBon: Confections.IMoldedBonBonEntity;
 
   /**
@@ -99,15 +99,15 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   /**
    * Golden version typed as IRuntimeMoldedBonBonVersion.
    */
-  public override get goldenVersion(): IRuntimeMoldedBonBonVersion {
-    return super.goldenVersion as IRuntimeMoldedBonBonVersion;
+  public override get goldenVersion(): IMoldedBonBonVersion {
+    return super.goldenVersion as IMoldedBonBonVersion;
   }
 
   /**
    * All versions typed as IRuntimeMoldedBonBonVersion.
    */
-  public override get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion> {
-    return super.versions as ReadonlyArray<IRuntimeMoldedBonBonVersion>;
+  public override get versions(): ReadonlyArray<IMoldedBonBonVersion> {
+    return super.versions as ReadonlyArray<IMoldedBonBonVersion>;
   }
 
   /**
@@ -115,8 +115,8 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
    * @param versionSpec - The version specifier to find
    * @returns Success with typed runtime version, or Failure if not found
    */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion> {
-    return super.getVersion(versionSpec) as Result<IRuntimeMoldedBonBonVersion>;
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IMoldedBonBonVersion> {
+    return super.getVersion(versionSpec) as Result<IMoldedBonBonVersion>;
   }
 
   /**
@@ -127,7 +127,7 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
    */
   protected override _createVersion(
     rawVersion: Confections.AnyConfectionVersionEntity
-  ): IRuntimeMoldedBonBonVersion {
+  ): IMoldedBonBonVersion {
     return RuntimeMoldedBonBonVersion.create(
       this._context,
       this._id,

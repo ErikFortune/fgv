@@ -9,5 +9,5 @@ All versions typed as IRuntimeBarTruffleVersion.
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<IRuntimeBarTruffleVersion>;
+get versions(): ReadonlyArray<IBarTruffleVersion>;
 ```

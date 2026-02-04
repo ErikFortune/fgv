@@ -9,7 +9,7 @@ Restores an editing session from a persisted state. Restores the complete editin
 **Signature:**
 
 ```typescript
-static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IRuntimeFillingRecipeVersion): Result<EditingSession>;
+static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IFillingRecipeVersion): Result<EditingSession>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ baseRecipe
 
 </td><td>
 
-[IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
+[IFillingRecipeVersion](./ts-chocolate.libraryruntime.ifillingrecipeversion.md)
 
 
 </td><td>

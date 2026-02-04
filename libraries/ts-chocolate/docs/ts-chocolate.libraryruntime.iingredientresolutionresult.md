@@ -9,7 +9,7 @@ Result of attempting to resolve an ingredient reference. Used when partial resol
 **Signature:**
 
 ```typescript
-export interface IIngredientResolutionResult<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> 
+export interface IIngredientResolutionResult<TIngredient extends IIngredient = IIngredient> 
 ```
 
 ## Properties

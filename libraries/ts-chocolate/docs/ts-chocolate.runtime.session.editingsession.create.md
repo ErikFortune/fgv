@@ -9,7 +9,7 @@ Creates a new EditingSession from a base recipe version.
 **Signature:**
 
 ```typescript
-static create(baseRecipe: IRuntimeFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
+static create(baseRecipe: IFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseRecipe
 
 </td><td>
 
-[IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
+[IFillingRecipeVersion](./ts-chocolate.libraryruntime.ifillingrecipeversion.md)
 
 
 </td><td>

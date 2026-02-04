@@ -9,9 +9,9 @@ Gets filling recipes where this ingredient is the primary choice.
 **Signature:**
 
 ```typescript
-primaryInFillings(): IRuntimeFillingRecipe[];
+primaryInFillings(): IFillingRecipe[];
 ```
 **Returns:**
 
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)<!-- -->\[\]
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->\[\]
 

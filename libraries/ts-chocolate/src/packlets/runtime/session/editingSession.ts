@@ -45,7 +45,7 @@ import {
   IProducedFillingEntity,
   PersistedSessionStatus
 } from '../../entities';
-import { IRuntimeFillingRecipeVersion, RuntimeProducedFilling } from '../../library-runtime';
+import { IFillingRecipeVersion, RuntimeProducedFilling } from '../../library-runtime';
 import {
   ISaveAnalysis,
   ISaveVersionOptions,
@@ -72,7 +72,7 @@ import {
  * @public
  */
 export class EditingSession {
-  private readonly _baseRecipe: IRuntimeFillingRecipeVersion;
+  private readonly _baseRecipe: IFillingRecipeVersion;
   private readonly _produced: RuntimeProducedFilling;
   private readonly _originalSnapshot: IProducedFillingEntity;
   private readonly _sessionId: SessionSpec;
@@ -87,7 +87,7 @@ export class EditingSession {
    * @internal
    */
   private constructor(
-    baseRecipe: IRuntimeFillingRecipeVersion,
+    baseRecipe: IFillingRecipeVersion,
     produced: RuntimeProducedFilling,
     sessionId?: SessionSpec,
     originalSnapshot?: IProducedFillingEntity
@@ -105,10 +105,7 @@ export class EditingSession {
    * @returns Result with new EditingSession or error
    * @public
    */
-  public static create(
-    baseRecipe: IRuntimeFillingRecipeVersion,
-    initialScale?: number
-  ): Result<EditingSession> {
+  public static create(baseRecipe: IFillingRecipeVersion, initialScale?: number): Result<EditingSession> {
     const scaleFactor = initialScale ?? 1.0;
     if (scaleFactor <= 0) {
       return fail('Scale factor must be positive');
@@ -419,7 +416,7 @@ export class EditingSession {
    */
   public static fromPersistedState(
     data: IFillingSessionEntity,
-    baseRecipe: IRuntimeFillingRecipeVersion
+    baseRecipe: IFillingRecipeVersion
   ): Result<EditingSession> {
     // Validate that the persisted state matches the base recipe
     if (data.sourceVersionId !== baseRecipe.versionId) {
@@ -452,7 +449,7 @@ export class EditingSession {
    * The base recipe version being edited.
    * @public
    */
-  public get baseRecipe(): IRuntimeFillingRecipeVersion {
+  public get baseRecipe(): IFillingRecipeVersion {
     return this._baseRecipe;
   }
 

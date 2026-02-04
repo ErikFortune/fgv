@@ -9,5 +9,5 @@ Source confection being edited
 **Signature:**
 
 ```typescript
-readonly sourceConfection: IRuntimeConfection;
+readonly sourceConfection: IConfectionBase;
 ```

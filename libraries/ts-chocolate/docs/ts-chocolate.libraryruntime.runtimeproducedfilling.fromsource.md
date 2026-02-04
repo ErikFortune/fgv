@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedFilling from a source recipe versio
 **Signature:**
 
 ```typescript
-static fromSource(source: IRuntimeFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
+static fromSource(source: IFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ source
 
 </td><td>
 
-[IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
+[IFillingRecipeVersion](./ts-chocolate.libraryruntime.ifillingrecipeversion.md)
 
 
 </td><td>

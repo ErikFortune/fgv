@@ -44,9 +44,9 @@ import {
   IProducedRolledTruffleEntity
 } from '../../entities';
 import type {
-  IRuntimeBarTruffleVersion,
-  IRuntimeMoldedBonBonVersion,
-  IRuntimeRolledTruffleVersion,
+  IBarTruffleVersion,
+  IMoldedBonBonVersion,
+  IRolledTruffleVersion,
   IResolvedFillingSlot as IRuntimeResolvedFillingSlot
 } from '../model';
 
@@ -592,7 +592,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * @returns Result containing RuntimeProducedMoldedBonBon or error
    * @public
    */
-  public static fromSource(source: IRuntimeMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon> {
+  public static fromSource(source: IMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon> {
     return RuntimeProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
       RuntimeProducedMoldedBonBon.create(produced)
     );
@@ -618,9 +618,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(
-    source: IRuntimeMoldedBonBonVersion
-  ): Result<IProducedMoldedBonBonEntity> {
+  private static _convertFromSource(source: IMoldedBonBonVersion): Result<IProducedMoldedBonBonEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionVersionId({
       collectionId: source.confectionId,
@@ -885,7 +883,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * @returns Result containing RuntimeProducedBarTruffle or error
    * @public
    */
-  public static fromSource(source: IRuntimeBarTruffleVersion): Result<RuntimeProducedBarTruffle> {
+  public static fromSource(source: IBarTruffleVersion): Result<RuntimeProducedBarTruffle> {
     return RuntimeProducedBarTruffle._convertFromSource(source).onSuccess((produced) =>
       RuntimeProducedBarTruffle.create(produced)
     );
@@ -911,7 +909,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IRuntimeBarTruffleVersion): Result<IProducedBarTruffleEntity> {
+  private static _convertFromSource(source: IBarTruffleVersion): Result<IProducedBarTruffleEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionVersionId({
       collectionId: source.confectionId,
@@ -1081,7 +1079,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * @returns Result containing RuntimeProducedRolledTruffle or error
    * @public
    */
-  public static fromSource(source: IRuntimeRolledTruffleVersion): Result<RuntimeProducedRolledTruffle> {
+  public static fromSource(source: IRolledTruffleVersion): Result<RuntimeProducedRolledTruffle> {
     return RuntimeProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
       RuntimeProducedRolledTruffle.create(produced)
     );
@@ -1107,9 +1105,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(
-    source: IRuntimeRolledTruffleVersion
-  ): Result<IProducedRolledTruffleEntity> {
+  private static _convertFromSource(source: IRolledTruffleVersion): Result<IProducedRolledTruffleEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionVersionId({
       collectionId: source.confectionId,

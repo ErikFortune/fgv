@@ -116,7 +116,7 @@ The confections library for accessing confection data. Use `.get(id)` for ID-bas
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
@@ -137,7 +137,7 @@ A searchable library of all fillings, keyed by composite ID. Fillings are resolv
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IIngredient](./ts-chocolate.libraryruntime.iingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>

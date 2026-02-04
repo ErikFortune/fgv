@@ -37,7 +37,7 @@ import {
   SessionLibrary
 } from '../entities';
 import {
-  IRuntimeConfection,
+  IConfectionBase,
   RuntimeBarTruffle,
   RuntimeMoldedBonBon,
   RuntimeRolledTruffle
@@ -256,7 +256,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _materializeTypedConfectionSession(
     sessionId: SessionId,
     persisted: IConfectionSessionEntity,
-    confection: IRuntimeConfection,
+    confection: IConfectionBase,
     _versionSpec: string
   ): Result<Session.AnyConfectionEditingSession> {
     // Narrow the confection type and history type together
@@ -294,7 +294,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _materializeMoldedBonBonSession(
     sessionId: SessionId,
     history: SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
-    confection: IRuntimeConfection
+    confection: IConfectionBase
   ): Result<Session.MoldedBonBonEditingSession> {
     return Session.MoldedBonBonEditingSession.fromPersistedState(
       confection as unknown as RuntimeMoldedBonBon,
@@ -313,7 +313,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _materializeBarTruffleSession(
     sessionId: SessionId,
     history: SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
-    confection: IRuntimeConfection
+    confection: IConfectionBase
   ): Result<Session.BarTruffleEditingSession> {
     return Session.BarTruffleEditingSession.fromPersistedState(
       confection as unknown as RuntimeBarTruffle,
@@ -332,7 +332,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _materializeRolledTruffleSession(
     sessionId: SessionId,
     history: SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
-    confection: IRuntimeConfection
+    confection: IConfectionBase
   ): Result<Session.RolledTruffleEditingSession> {
     return Session.RolledTruffleEditingSession.fromPersistedState(
       confection as unknown as RuntimeRolledTruffle,

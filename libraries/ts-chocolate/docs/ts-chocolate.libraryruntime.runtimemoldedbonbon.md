@@ -9,11 +9,11 @@ A resolved view of a molded bonbon confection with navigation capabilities. Immu
 **Signature:**
 
 ```typescript
-export declare class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon 
+export declare class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMoldedBonBon 
 ```
 **Extends:** [RuntimeConfectionBase](./ts-chocolate.libraryruntime.runtimeconfectionbase.md)
 
-**Implements:** [IRuntimeMoldedBonBon](./ts-chocolate.libraryruntime.iruntimemoldedbonbon.md)
+**Implements:** [IMoldedBonBon](./ts-chocolate.libraryruntime.imoldedbonbon.md)
 
 ## Remarks
 
@@ -117,7 +117,7 @@ Resolved filling slots from the golden version.
 
 </td><td>
 
-[IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)
+[IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)
 
 
 </td><td>
@@ -222,7 +222,7 @@ Resolved shell chocolate specification (from golden version).
 
 </td><td>
 
-ReadonlyArray&lt;[IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)<!-- -->&gt;
+ReadonlyArray&lt;[IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)<!-- -->&gt;
 
 
 </td><td>

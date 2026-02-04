@@ -9,11 +9,11 @@ A resolved view of a bar truffle version with all references resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements IRuntimeBarTruffleVersion 
+export declare class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements IBarTruffleVersion 
 ```
 **Extends:** [RuntimeConfectionVersionBase](./ts-chocolate.libraryruntime.runtimeconfectionversionbase.md)
 
-**Implements:** [IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)
+**Implements:** [IBarTruffleVersion](./ts-chocolate.libraryruntime.ibartruffleversion.md)
 
 ## Remarks
 
@@ -54,7 +54,7 @@ Description
 
 </td><td>
 
-[IRuntimeBarTruffle](./ts-chocolate.libraryruntime.iruntimebartruffle.md)
+[IBarTruffle](./ts-chocolate.libraryruntime.ibartruffle.md)
 
 
 </td><td>

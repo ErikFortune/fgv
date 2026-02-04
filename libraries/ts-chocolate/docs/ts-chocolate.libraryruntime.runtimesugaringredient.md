@@ -9,11 +9,11 @@ A resolved view of a sugar ingredient with navigation capabilities. Immutable - 
 **Signature:**
 
 ```typescript
-export declare class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSugarIngredient 
+export declare class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISugarIngredient 
 ```
 **Extends:** [RuntimeIngredientBase](./ts-chocolate.libraryruntime.runtimeingredientbase.md)
 
-**Implements:** [IRuntimeSugarIngredient](./ts-chocolate.libraryruntime.iruntimesugaringredient.md)
+**Implements:** [ISugarIngredient](./ts-chocolate.libraryruntime.isugaringredient.md)
 
 ## Remarks
 

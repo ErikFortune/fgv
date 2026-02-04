@@ -68,7 +68,7 @@ The ingredient ID (satisfies IHasId for IOptionsWithPreferred)
 
 </td><td>
 
-[IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)
+[IIngredient](./ts-chocolate.libraryruntime.iingredient.md)
 
 
 </td><td>

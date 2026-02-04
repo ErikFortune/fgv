@@ -9,7 +9,7 @@ Union type for all runtime confection version types.
 **Signature:**
 
 ```typescript
-export type AnyRuntimeConfectionVersion = IRuntimeMoldedBonBonVersion | IRuntimeBarTruffleVersion | IRuntimeRolledTruffleVersion;
+export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
 ```
-**References:** [IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)<!-- -->, [IRuntimeBarTruffleVersion](./ts-chocolate.libraryruntime.iruntimebartruffleversion.md)<!-- -->, [IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)
+**References:** [IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)<!-- -->, [IBarTruffleVersion](./ts-chocolate.libraryruntime.ibartruffleversion.md)<!-- -->, [IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)
 

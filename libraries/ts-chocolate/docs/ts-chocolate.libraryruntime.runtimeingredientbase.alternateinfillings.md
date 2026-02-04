@@ -9,9 +9,9 @@ Gets filling recipes where this ingredient is listed as an alternate.
 **Signature:**
 
 ```typescript
-alternateInFillings(): IRuntimeFillingRecipe[];
+alternateInFillings(): IFillingRecipe[];
 ```
 **Returns:**
 
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)<!-- -->\[\]
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->\[\]
 

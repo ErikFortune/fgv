@@ -9,11 +9,11 @@ A resolved view of a dairy ingredient with navigation capabilities. Immutable - 
 **Signature:**
 
 ```typescript
-export declare class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRuntimeDairyIngredient 
+export declare class RuntimeDairyIngredient extends RuntimeIngredientBase implements IDairyIngredient 
 ```
 **Extends:** [RuntimeIngredientBase](./ts-chocolate.libraryruntime.runtimeingredientbase.md)
 
-**Implements:** [IRuntimeDairyIngredient](./ts-chocolate.libraryruntime.iruntimedairyingredient.md)
+**Implements:** [IDairyIngredient](./ts-chocolate.libraryruntime.idairyingredient.md)
 
 ## Remarks
 

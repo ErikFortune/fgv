@@ -9,11 +9,11 @@ A resolved view of a rolled truffle confection with navigation capabilities. Imm
 **Signature:**
 
 ```typescript
-export declare class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle 
+export declare class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRolledTruffle 
 ```
 **Extends:** [RuntimeConfectionBase](./ts-chocolate.libraryruntime.runtimeconfectionbase.md)
 
-**Implements:** [IRuntimeRolledTruffle](./ts-chocolate.libraryruntime.iruntimerolledtruffle.md)
+**Implements:** [IRolledTruffle](./ts-chocolate.libraryruntime.irolledtruffle.md)
 
 ## Remarks
 
@@ -138,7 +138,7 @@ Resolved filling slots from the golden version.
 
 </td><td>
 
-[IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)
+[IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)
 
 
 </td><td>
@@ -201,7 +201,7 @@ Gets the underlying raw rolled truffle data
 
 </td><td>
 
-ReadonlyArray&lt;[IRuntimeRolledTruffleVersion](./ts-chocolate.libraryruntime.iruntimerolledtruffleversion.md)<!-- -->&gt;
+ReadonlyArray&lt;[IRolledTruffleVersion](./ts-chocolate.libraryruntime.irolledtruffleversion.md)<!-- -->&gt;
 
 
 </td><td>

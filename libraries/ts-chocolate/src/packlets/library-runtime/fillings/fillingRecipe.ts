@@ -36,7 +36,7 @@ import {
   CollectionId
 } from '../../common';
 import { IFillingRecipeEntity } from '../../entities';
-import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from '../model';
+import { IIngredientQueryOptions, IFillingRecipe, IVersionContext } from '../model';
 import { RuntimeFillingRecipeVersion } from './fillingRecipeVersion';
 import { AnyRuntimeIngredient } from '../ingredients';
 
@@ -52,7 +52,7 @@ type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
+export class RuntimeFillingRecipe implements IFillingRecipe {
   private readonly _context: RecipeContext;
   private readonly _id: FillingId;
   private readonly _recipe: IFillingRecipeEntity;
@@ -110,7 +110,7 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): CollectionId {
+  public get collectionId(): CollectionId {
     return this._sourceId;
   }
 

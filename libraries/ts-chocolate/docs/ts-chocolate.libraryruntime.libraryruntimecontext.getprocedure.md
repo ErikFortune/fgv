@@ -42,7 +42,7 @@ string
 
 </td><td>
 
-The procedure ID (composite format: sourceId.baseProcedureId)
+The procedure ID (composite format: collectionId.baseProcedureId)
 
 
 </td></tr>

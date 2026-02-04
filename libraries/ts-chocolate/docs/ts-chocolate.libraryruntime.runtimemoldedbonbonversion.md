@@ -9,11 +9,11 @@ A resolved view of a molded bonbon version with all references resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements IRuntimeMoldedBonBonVersion 
+export declare class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements IMoldedBonBonVersion 
 ```
 **Extends:** [RuntimeConfectionVersionBase](./ts-chocolate.libraryruntime.runtimeconfectionversionbase.md)
 
-**Implements:** [IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)
+**Implements:** [IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)
 
 ## Remarks
 
@@ -75,7 +75,7 @@ Resolved additional chocolates (lazy-loaded).
 
 </td><td>
 
-[IRuntimeMoldedBonBon](./ts-chocolate.libraryruntime.iruntimemoldedbonbon.md)
+[IMoldedBonBon](./ts-chocolate.libraryruntime.imoldedbonbon.md)
 
 
 </td><td>

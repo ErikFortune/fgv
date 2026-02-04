@@ -232,7 +232,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
 
       test('provides source ID', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(recipe.sourceId).toBe('test');
+        expect(recipe.collectionId).toBe('test');
       });
 
       test('provides base ID', () => {

@@ -9,9 +9,9 @@ Abstract base class for runtime confection versions. Provides common properties 
 **Signature:**
 
 ```typescript
-export declare abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersionBase 
+export declare abstract class RuntimeConfectionVersionBase implements IConfectionVersionBase 
 ```
-**Implements:** [IRuntimeConfectionVersionBase](./ts-chocolate.libraryruntime.iruntimeconfectionversionbase.md)
+**Implements:** [IConfectionVersionBase](./ts-chocolate.libraryruntime.iconfectionversionbase.md)
 
 ## Remarks
 
@@ -115,7 +115,7 @@ IConfectionContext
 
 </td><td>
 
-[IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)
+[IConfectionBase](./ts-chocolate.libraryruntime.iconfectionbase.md)
 
 
 </td><td>

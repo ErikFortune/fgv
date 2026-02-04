@@ -27,7 +27,7 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId, Percentage } from '../../common';
 import { IAlcoholIngredientEntity } from '../../entities';
-import { IIngredientContext, IRuntimeAlcoholIngredient } from '../model';
+import { IIngredientContext, IAlcoholIngredient } from '../model';
 import { RuntimeIngredientBase } from './ingredientBase';
 
 // ============================================================================
@@ -39,7 +39,7 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntimeAlcoholIngredient {
+export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IAlcoholIngredient {
   private readonly _alcoholIngredient: IAlcoholIngredientEntity;
 
   /**

@@ -9,5 +9,5 @@ A searchable library of all fillings, keyed by composite ID. Fillings are resolv
 **Signature:**
 
 ```typescript
-readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
+readonly fillings: IReadOnlyValidatingLibrary<FillingId, IFillingRecipe, IFillingRecipeQuerySpec>;
 ```

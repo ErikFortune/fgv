@@ -9,5 +9,5 @@ Golden version typed as IRuntimeRolledTruffleVersion.
 **Signature:**
 
 ```typescript
-get goldenVersion(): IRuntimeRolledTruffleVersion;
+get goldenVersion(): IRolledTruffleVersion;
 ```

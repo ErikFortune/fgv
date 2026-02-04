@@ -9,7 +9,7 @@ Gets a runtime filling recipe by ID. Implements IConfectionContext interface.
 **Signature:**
 
 ```typescript
-getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
+getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-The filling ID (composite format: sourceId.baseFillingId)
+The filling ID (composite format: collectionId.baseFillingId)
 
 
 </td></tr>
@@ -50,7 +50,7 @@ The filling ID (composite format: sourceId.baseFillingId)
 
 **Returns:**
 
-Result&lt;[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)<!-- -->&gt;
+Result&lt;[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->&gt;
 
 Success with IRuntimeFillingRecipe, or Failure if not found
 

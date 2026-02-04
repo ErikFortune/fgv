@@ -9,5 +9,5 @@ The parent confection - resolved. Enables navigation: `version.confection.name`
 **Signature:**
 
 ```typescript
-get confection(): IRuntimeConfection;
+get confection(): IConfectionBase;
 ```

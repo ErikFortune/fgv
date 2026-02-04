@@ -9,5 +9,5 @@ Parent confection narrowed to rolled truffle type.
 **Signature:**
 
 ```typescript
-get confection(): IRuntimeRolledTruffle;
+get confection(): IRolledTruffle;
 ```

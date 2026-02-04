@@ -395,7 +395,7 @@ describe('RuntimeContext', () => {
         expect(ing.id).toBe('test.dark-chocolate');
         expect(ing.name).toBe('Dark Chocolate 70%');
         expect(ing.category).toBe('chocolate');
-        expect(ing.sourceId).toBe('test');
+        expect(ing.collectionId).toBe('test');
         expect(ing.baseId).toBe('dark-chocolate');
       });
     });
@@ -434,7 +434,7 @@ describe('RuntimeContext', () => {
       expect(ctx.fillings.get('test.dark-ganache' as FillingId)).toSucceedAndSatisfy((recipe) => {
         expect(recipe.id).toBe('test.dark-ganache');
         expect(recipe.name).toBe('Dark Ganache');
-        expect(recipe.sourceId).toBe('test');
+        expect(recipe.collectionId).toBe('test');
         expect(recipe.baseId).toBe('dark-ganache');
       });
     });

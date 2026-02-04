@@ -9,5 +9,5 @@ All versions - resolved. Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<AnyRuntimeConfectionVersion>;
+get versions(): ReadonlyArray<AnyConfectionVersion>;
 ```

@@ -178,7 +178,7 @@ export class FillingRecipeQuery {
    * @param sourceId - Source ID to filter by
    */
   public fromSource(sourceId: CollectionId): FillingRecipeQuery {
-    return this._addFilter(equals(sourceId, (r) => r.sourceId));
+    return this._addFilter(equals(sourceId, (r) => r.collectionId));
   }
 
   // ============================================================================

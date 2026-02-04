@@ -26,7 +26,7 @@
 import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { FillingId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeFillingRecipe } from '../model';
+import { IFillingRecipe } from '../model';
 import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 import { AggregationMode, IFindOptions } from './model';
 import {
@@ -85,7 +85,7 @@ export const fillingRecipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec>
  * Provided by RuntimeContext to resolve filling recipe IDs to entities.
  * @public
  */
-export type FillingRecipeResolver = (id: FillingId) => Result<IRuntimeFillingRecipe>;
+export type FillingRecipeResolver = (id: FillingId) => Result<IFillingRecipe>;
 
 /**
  * Orchestrator for filling recipe indexers.
@@ -96,10 +96,7 @@ export type FillingRecipeResolver = (id: FillingId) => Result<IRuntimeFillingRec
  *
  * @public
  */
-export class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<
-  IRuntimeFillingRecipe,
-  FillingId
-> {
+export class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IFillingRecipe, FillingId> {
   private readonly _indexers: {
     byTag: FillingRecipesByTagIndexer;
     byIngredient: FillingRecipesByIngredientIndexer;
@@ -132,14 +129,11 @@ export class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching recipes
    */
-  public find(
-    spec: IFillingRecipeQuerySpec,
-    options?: IFindOptions
-  ): Result<ReadonlyArray<IRuntimeFillingRecipe>> {
+  public find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IFillingRecipe>> {
     const aggregation: AggregationMode = options?.aggregation ?? 'intersection';
 
     // Collect results from each specified indexer
-    const indexerResults: Array<Set<FillingId | IRuntimeFillingRecipe>> = [];
+    const indexerResults: Array<Set<FillingId | IFillingRecipe>> = [];
     const errors = new MessageAggregator();
 
     if (spec.byTag !== undefined) {
@@ -183,7 +177,7 @@ export class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<
     }
 
     // Aggregate results
-    let aggregatedSet: Set<FillingId | IRuntimeFillingRecipe>;
+    let aggregatedSet: Set<FillingId | IFillingRecipe>;
     if (aggregation === 'intersection') {
       aggregatedSet = this._intersect(indexerResults);
     } else {

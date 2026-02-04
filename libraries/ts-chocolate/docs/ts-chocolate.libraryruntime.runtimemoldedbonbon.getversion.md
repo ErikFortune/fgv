@@ -9,7 +9,7 @@ Gets a specific version by version specifier.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion>;
+getVersion(versionSpec: ConfectionVersionSpec): Result<IMoldedBonBonVersion>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The version specifier to find
 
 **Returns:**
 
-Result&lt;[IRuntimeMoldedBonBonVersion](./ts-chocolate.libraryruntime.iruntimemoldedbonbonversion.md)<!-- -->&gt;
+Result&lt;[IMoldedBonBonVersion](./ts-chocolate.libraryruntime.imoldedbonbonversion.md)<!-- -->&gt;
 
 Success with typed runtime version, or Failure if not found
 

@@ -9,5 +9,5 @@ Parent confection narrowed to molded bonbon type.
 **Signature:**
 
 ```typescript
-get confection(): IRuntimeMoldedBonBon;
+get confection(): IMoldedBonBon;
 ```

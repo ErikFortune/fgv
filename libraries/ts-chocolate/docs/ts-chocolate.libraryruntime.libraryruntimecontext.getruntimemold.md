@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-The mold ID (composite format: sourceId.baseMoldId)
+The mold ID (composite format: collectionId.baseMoldId)
 
 
 </td></tr>

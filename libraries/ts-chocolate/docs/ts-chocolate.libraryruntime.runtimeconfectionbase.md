@@ -9,9 +9,9 @@ Abstract base class for runtime confections. Provides common properties and vers
 **Signature:**
 
 ```typescript
-export declare abstract class RuntimeConfectionBase implements IRuntimeConfection 
+export declare abstract class RuntimeConfectionBase implements IConfectionBase 
 ```
-**Implements:** [IRuntimeConfection](./ts-chocolate.libraryruntime.iruntimeconfection.md)
+**Implements:** [IConfectionBase](./ts-chocolate.libraryruntime.iconfectionbase.md)
 
 ## Remarks
 
@@ -189,6 +189,27 @@ The base confection ID within the source
 </td></tr>
 <tr><td>
 
+[collectionId](./ts-chocolate.libraryruntime.runtimeconfectionbase.collectionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[CollectionId](./ts-chocolate.collectionid.md)
+
+
+</td><td>
+
+The source ID part of the composite ID
+
+
+</td></tr>
+<tr><td>
+
 [confectionType](./ts-chocolate.libraryruntime.runtimeconfectionbase.confectiontype.md)
 
 
@@ -329,7 +350,7 @@ Resolved filling slots from the golden version (lazy-loaded)
 
 </td><td>
 
-[AnyRuntimeConfectionVersion](./ts-chocolate.libraryruntime.anyruntimeconfectionversion.md)
+[AnyConfectionVersion](./ts-chocolate.libraryruntime.anyconfectionversion.md)
 
 
 </td><td>
@@ -449,27 +470,6 @@ Gets the underlying raw confection data (read-only)
 </td></tr>
 <tr><td>
 
-[sourceId](./ts-chocolate.libraryruntime.runtimeconfectionbase.sourceid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[CollectionId](./ts-chocolate.collectionid.md)
-
-
-</td><td>
-
-The source ID part of the composite ID
-
-
-</td></tr>
-<tr><td>
-
 [tags](./ts-chocolate.libraryruntime.runtimeconfectionbase.tags.md)
 
 
@@ -522,7 +522,7 @@ Base URLs (version may add more via additionalUrls)
 
 </td><td>
 
-ReadonlyArray&lt;[AnyRuntimeConfectionVersion](./ts-chocolate.libraryruntime.anyruntimeconfectionversion.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyConfectionVersion](./ts-chocolate.libraryruntime.anyconfectionversion.md)<!-- -->&gt;
 
 
 </td><td>

@@ -31,8 +31,8 @@ import {
   IConfectionContext,
   IResolvedChocolateSpec,
   IResolvedFillingSlot,
-  IRuntimeBarTruffle,
-  IRuntimeBarTruffleVersion,
+  IBarTruffle,
+  IBarTruffleVersion,
   IResolvedConfectionProcedure
 } from '../model';
 import { RuntimeConfectionBase } from './confectionBase';
@@ -47,7 +47,7 @@ import { RuntimeBarTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
+export class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruffle {
   private readonly _barTruffle: Confections.IBarTruffleEntity;
 
   /**
@@ -97,15 +97,15 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   /**
    * Golden version typed as IRuntimeBarTruffleVersion.
    */
-  public override get goldenVersion(): IRuntimeBarTruffleVersion {
-    return super.goldenVersion as IRuntimeBarTruffleVersion;
+  public override get goldenVersion(): IBarTruffleVersion {
+    return super.goldenVersion as IBarTruffleVersion;
   }
 
   /**
    * All versions typed as IRuntimeBarTruffleVersion.
    */
-  public override get versions(): ReadonlyArray<IRuntimeBarTruffleVersion> {
-    return super.versions as ReadonlyArray<IRuntimeBarTruffleVersion>;
+  public override get versions(): ReadonlyArray<IBarTruffleVersion> {
+    return super.versions as ReadonlyArray<IBarTruffleVersion>;
   }
 
   /**
@@ -113,8 +113,8 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
    * @param versionSpec - The version specifier to find
    * @returns Success with typed runtime version, or Failure if not found
    */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion> {
-    return super.getVersion(versionSpec) as Result<IRuntimeBarTruffleVersion>;
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IBarTruffleVersion> {
+    return super.getVersion(versionSpec) as Result<IBarTruffleVersion>;
   }
 
   /**
@@ -123,9 +123,7 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(
-    rawVersion: Confections.AnyConfectionVersionEntity
-  ): IRuntimeBarTruffleVersion {
+  protected override _createVersion(rawVersion: Confections.AnyConfectionVersionEntity): IBarTruffleVersion {
     return RuntimeBarTruffleVersion.create(
       this._context,
       this._id,

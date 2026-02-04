@@ -9,9 +9,9 @@ Indexer that finds recipes with a specific tag. Tag matching is case-insensitive
 **Signature:**
 
 ```typescript
-export declare class FillingRecipesByTagIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IFillingRecipesByTagConfig> 
+export declare class FillingRecipesByTagIndexer extends BaseIndexer<IFillingRecipe, FillingId, IFillingRecipesByTagConfig> 
 ```
-**Extends:** [BaseIndexer](./ts-chocolate.libraryruntime.indexers.baseindexer.md)<!-- -->&lt;[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipesByTagConfig](./ts-chocolate.libraryruntime.indexers.ifillingrecipesbytagconfig.md)<!-- -->&gt;
+**Extends:** [BaseIndexer](./ts-chocolate.libraryruntime.indexers.baseindexer.md)<!-- -->&lt;[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipesByTagConfig](./ts-chocolate.libraryruntime.indexers.ifillingrecipesbytagconfig.md)<!-- -->&gt;
 
 ## Constructors
 

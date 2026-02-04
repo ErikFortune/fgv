@@ -287,7 +287,7 @@ describe('RuntimeIngredient', () => {
 
     test('provides source ID', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      expect(ingredient.sourceId).toBe('test');
+      expect(ingredient.collectionId).toBe('test');
     });
 
     test('provides base ID', () => {

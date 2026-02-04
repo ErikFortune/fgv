@@ -9,7 +9,7 @@ Finds ingredients matching a query specification.
 **Signature:**
 
 ```typescript
-find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>>;
+find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IIngredient>>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional find options (aggregation mode)
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[IRuntimeIngredient](./ts-chocolate.libraryruntime.iruntimeingredient.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[IIngredient](./ts-chocolate.libraryruntime.iingredient.md)<!-- -->&gt;&gt;
 
 Array of matching ingredients
 

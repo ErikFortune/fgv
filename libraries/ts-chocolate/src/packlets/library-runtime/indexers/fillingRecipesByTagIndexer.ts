@@ -26,7 +26,7 @@
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { FillingId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeFillingRecipe } from '../model';
+import { IFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -72,7 +72,7 @@ export const fillingRecipesByTagConfigConverter: Converter<IFillingRecipesByTagC
  * @public
  */
 export class FillingRecipesByTagIndexer extends BaseIndexer<
-  IRuntimeFillingRecipe,
+  IFillingRecipe,
   FillingId,
   IFillingRecipesByTagConfig
 > {
@@ -119,7 +119,7 @@ export class FillingRecipesByTagIndexer extends BaseIndexer<
   /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(
     config: IFillingRecipesByTagConfig
-  ): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>> {
+  ): Result<ReadonlyArray<IFillingRecipe | FillingId>> {
     const recipeIds = this._getFromSetIndex(this._tagToRecipes!, config.tag.toLowerCase());
     return Success.with(recipeIds);
   }

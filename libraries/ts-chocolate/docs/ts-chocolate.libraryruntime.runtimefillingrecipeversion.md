@@ -9,9 +9,9 @@ A resolved view of a recipe version with all ingredients resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion 
+export declare class RuntimeFillingRecipeVersion implements IFillingRecipeVersion 
 ```
-**Implements:** [IRuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.iruntimefillingrecipeversion.md)
+**Implements:** [IFillingRecipeVersion](./ts-chocolate.libraryruntime.ifillingrecipeversion.md)
 
 ## Remarks
 
@@ -115,7 +115,7 @@ The parent filling ID
 
 </td><td>
 
-[IRuntimeFillingRecipe](./ts-chocolate.libraryruntime.iruntimefillingrecipe.md)
+[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
 
 
 </td><td>

@@ -9,11 +9,11 @@ A resolved view of a chocolate ingredient with navigation capabilities. Immutabl
 **Signature:**
 
 ```typescript
-export declare class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRuntimeChocolateIngredient 
+export declare class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IChocolateIngredient 
 ```
 **Extends:** [RuntimeIngredientBase](./ts-chocolate.libraryruntime.runtimeingredientbase.md)
 
-**Implements:** [IRuntimeChocolateIngredient](./ts-chocolate.libraryruntime.iruntimechocolateingredient.md)
+**Implements:** [IChocolateIngredient](./ts-chocolate.libraryruntime.ichocolateingredient.md)
 
 ## Remarks
 

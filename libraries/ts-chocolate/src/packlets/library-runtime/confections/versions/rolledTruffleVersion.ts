@@ -32,8 +32,8 @@ import {
   IResolvedChocolateSpec,
   IResolvedCoatings,
   IResolvedConfectionProcedure,
-  IRuntimeRolledTruffle,
-  IRuntimeRolledTruffleVersion
+  IRolledTruffle,
+  IRolledTruffleVersion
 } from '../../model';
 import { RuntimeConfectionVersionBase } from './confectionVersionBase';
 
@@ -47,7 +47,7 @@ import { RuntimeConfectionVersionBase } from './confectionVersionBase';
  */
 export class RuntimeRolledTruffleVersion
   extends RuntimeConfectionVersionBase
-  implements IRuntimeRolledTruffleVersion
+  implements IRolledTruffleVersion
 {
   private readonly _rolledTruffleVersion: Confections.IRolledTruffleVersionEntity;
 
@@ -91,8 +91,8 @@ export class RuntimeRolledTruffleVersion
   /**
    * Parent confection narrowed to rolled truffle type.
    */
-  public override get confection(): IRuntimeRolledTruffle {
-    return super.confection as IRuntimeRolledTruffle;
+  public override get confection(): IRolledTruffle {
+    return super.confection as IRolledTruffle;
   }
 
   // ============================================================================
