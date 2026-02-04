@@ -33,7 +33,7 @@ import { Collections, Result } from '@fgv/ts-utils';
 import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import { IReadOnlyValidatingLibrary } from './validatingLibrary';
 import type { IMold } from './molds/model';
-import type { IRuntimeProcedure } from './procedures/model';
+import type { IProcedure } from './procedures/model';
 
 import {
   AdditionalChocolatePurpose,
@@ -1326,7 +1326,7 @@ export interface IResolvedConfectionProcedure {
   /** The procedure ID (for IOptionsWithPreferred compatibility) */
   readonly id: ProcedureId;
   /** The resolved procedure object */
-  readonly procedure: IRuntimeProcedure;
+  readonly procedure: IProcedure;
   /** Optional notes specific to using this procedure */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original procedure reference entity data */
@@ -1585,7 +1585,7 @@ export interface IConfectionContext {
    * Gets a runtime procedure by ID.
    * Used for resolving procedure references.
    */
-  getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
+  getRuntimeProcedure(id: ProcedureId): Result<IProcedure>;
 
   /**
    * Gets a runtime confection by ID.

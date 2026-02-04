@@ -56,7 +56,7 @@ import {
   IConfectionBase,
   IFillingRecipe,
   IMold,
-  IRuntimeProcedure,
+  IProcedure,
   Confection,
   MoldedBonBon,
   BarTruffle,
@@ -252,7 +252,7 @@ describe('RuntimeConfection', () => {
         id,
         name: 'Mock Procedure',
         steps: []
-      } as unknown as IRuntimeProcedure);
+      } as unknown as IProcedure);
     },
     getRuntimeConfection: (id: ConfectionId) => {
       // Return confection data based on ID for proper parent navigation testing

@@ -2393,7 +2393,7 @@ interface IConfectionContext {
     getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
     getRuntimeMold(id: MoldId): Result<IMold>;
-    getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
+    getRuntimeProcedure(id: ProcedureId): Result<IProcedure>;
     resolveAdditionalChocolates(additional: ReadonlyArray<Confections_2.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     resolveChocolateSpec(spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
     resolveCoatings(coatings: Confections_2.ICoatingsEntity): IResolvedCoatings;
@@ -3851,10 +3851,30 @@ interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>
     readonly preferredId?: TId;
 }
 
+// @public
+interface IProcedure {
+    readonly baseId: BaseProcedureId;
+    readonly category?: ProcedureType;
+    readonly description?: string;
+    readonly entity: IProcedureEntity;
+    readonly id: ProcedureId;
+    readonly isCategorySpecific: boolean;
+    readonly name: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
+    readonly stepCount: number;
+    readonly steps: ReadonlyArray<IProcedureStepEntity>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly totalActiveTime: Minutes | undefined;
+    readonly totalHoldTime: Minutes | undefined;
+    readonly totalTime: Minutes | undefined;
+    readonly totalWaitTime: Minutes | undefined;
+}
+
 // @internal
 interface IProcedureContext {
-    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    getTask(id: TaskId): Result<IRawTaskEntity>;
+    getTask(id: TaskId): Result<RuntimeTask>;
+    getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
 }
 
 // @public
@@ -3873,6 +3893,15 @@ type IProcedureFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
 type IProcedureRefEntity = Model.IRefWithNotes<ProcedureId>;
+
+// @public
+interface IProcedureRenderContext {
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    readonly context: IProcedureContext;
+    readonly mold?: IMoldEntity;
+    readonly recipe: Fillings_2.IProducedFillingEntity;
+}
 
 // @public
 type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
@@ -4010,6 +4039,22 @@ interface IRefWithNotes<TId extends string> extends IHasId<TId> {
 }
 
 // @public
+interface IRenderedProcedure {
+    readonly description?: string;
+    readonly name: string;
+    readonly steps: ReadonlyArray<IRenderedStep>;
+    readonly totalActiveTime?: Minutes;
+    readonly totalHoldTime?: Minutes;
+    readonly totalWaitTime?: Minutes;
+}
+
+// @public
+interface IRenderedStep extends IProcedureStepEntity {
+    readonly renderedDescription: string;
+    readonly resolvedTask?: RuntimeTask;
+}
+
+// @public
 interface IRenderOptions {
     readonly additionalContext?: Record<string, unknown>;
     readonly onInvalidTaskRef?: ValidationBehavior;
@@ -4057,7 +4102,7 @@ interface IResolvedConfectionProcedure {
     readonly entity: Fillings_2.IProcedureRefEntity;
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly procedure: IRuntimeProcedure;
+    readonly procedure: IProcedure;
 }
 
 // @public
@@ -4204,51 +4249,6 @@ interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext {
 interface IRuntimeContextCreateParams {
     readonly libraryParams?: IChocolateLibraryCreateParams;
     readonly preWarm?: boolean;
-}
-
-// @public
-interface IRuntimeProcedure {
-    readonly baseId: BaseProcedureId;
-    readonly category?: ProcedureType;
-    readonly description?: string;
-    readonly id: ProcedureId;
-    readonly isCategorySpecific: boolean;
-    readonly name: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IProcedureEntity;
-    render(context: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
-    readonly stepCount: number;
-    readonly steps: ReadonlyArray<IProcedureStepEntity>;
-    readonly tags?: ReadonlyArray<string>;
-    readonly totalActiveTime: Minutes | undefined;
-    readonly totalHoldTime: Minutes | undefined;
-    readonly totalTime: Minutes | undefined;
-    readonly totalWaitTime: Minutes | undefined;
-}
-
-// @public
-interface IRuntimeProcedureRenderContext {
-    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-    readonly context: IProcedureContext;
-    readonly mold?: IMoldEntity;
-    readonly recipe: Fillings_2.IProducedFillingEntity;
-}
-
-// @public
-interface IRuntimeRenderedProcedure {
-    readonly description?: string;
-    readonly name: string;
-    readonly steps: ReadonlyArray<IRuntimeRenderedStep>;
-    readonly totalActiveTime?: Minutes;
-    readonly totalHoldTime?: Minutes;
-    readonly totalWaitTime?: Minutes;
-}
-
-// @public
-interface IRuntimeRenderedStep extends IProcedureStepEntity {
-    readonly renderedDescription: string;
-    readonly resolvedTask?: RuntimeTask;
 }
 
 // @public
@@ -5116,11 +5116,11 @@ declare namespace LibraryRuntime {
         IRuntimeTask,
         RuntimeTask,
         IProcedureContext,
-        IRuntimeProcedure,
-        IRuntimeProcedureRenderContext,
-        IRuntimeRenderedProcedure,
-        IRuntimeRenderedStep,
-        RuntimeProcedure,
+        IProcedure,
+        IProcedureRenderContext,
+        IRenderedProcedure,
+        IRenderedStep,
+        Procedure,
         IMoldContext,
         IMold,
         Mold,
@@ -5253,9 +5253,9 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
     getRuntimeMold(id: MoldId): Result<Mold>;
-    getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
-    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    getTask(id: TaskId): Result<IRawTaskEntity>;
+    getRuntimeProcedure(id: ProcedureId): Result<Procedure>;
+    getTask(id: TaskId): Result<RuntimeTask>;
+    getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
@@ -5748,6 +5748,31 @@ class PinchScaler implements IUnitScaler {
 const positiveNumber: Converter<number>;
 
 // @public
+class Procedure implements IProcedure {
+    get baseId(): BaseProcedureId;
+    get category(): ProcedureType | undefined;
+    // @internal
+    protected get context(): IProcedureContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity): Result<Procedure>;
+    get description(): string | undefined;
+    get entity(): IProcedureEntity;
+    get id(): ProcedureId;
+    get isCategorySpecific(): boolean;
+    get name(): string;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
+    get stepCount(): number;
+    get steps(): ReadonlyArray<IProcedureStepEntity>;
+    get tags(): ReadonlyArray<string> | undefined;
+    get totalActiveTime(): Minutes | undefined;
+    get totalHoldTime(): Minutes | undefined;
+    get totalTime(): Minutes | undefined;
+    get totalWaitTime(): Minutes | undefined;
+}
+
+// @public
 type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedureEntity>;
 
 // @public
@@ -6007,31 +6032,6 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
-}
-
-// @public
-class RuntimeProcedure implements IRuntimeProcedure {
-    get baseId(): BaseProcedureId;
-    get category(): ProcedureType | undefined;
-    // @internal
-    protected get context(): IProcedureContext;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-    static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity): Result<RuntimeProcedure>;
-    get description(): string | undefined;
-    get id(): ProcedureId;
-    get isCategorySpecific(): boolean;
-    get name(): string;
-    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get raw(): IProcedureEntity;
-    render(renderContext: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
-    get stepCount(): number;
-    get steps(): ReadonlyArray<IProcedureStepEntity>;
-    get tags(): ReadonlyArray<string> | undefined;
-    get totalActiveTime(): Minutes | undefined;
-    get totalHoldTime(): Minutes | undefined;
-    get totalTime(): Minutes | undefined;
-    get totalWaitTime(): Minutes | undefined;
 }
 
 // @public

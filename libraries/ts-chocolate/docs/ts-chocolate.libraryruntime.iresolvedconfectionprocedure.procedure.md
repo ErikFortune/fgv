@@ -9,5 +9,5 @@ The resolved procedure object
 **Signature:**
 
 ```typescript
-readonly procedure: IRuntimeProcedure;
+readonly procedure: IProcedure;
 ```

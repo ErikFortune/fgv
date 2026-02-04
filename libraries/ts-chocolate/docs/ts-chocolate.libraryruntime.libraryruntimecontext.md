@@ -500,7 +500,7 @@ Gets a runtime procedure by its composite ID (with caching).
 </td></tr>
 <tr><td>
 
-[getRuntimeTask(id)](./ts-chocolate.libraryruntime.libraryruntimecontext.getruntimetask.md)
+[getTask(id)](./ts-chocolate.libraryruntime.libraryruntimecontext.gettask.md)
 
 
 </td><td>
@@ -514,7 +514,7 @@ Gets a runtime task by its composite ID (with caching). Implements ITaskContext 
 </td></tr>
 <tr><td>
 
-[getTask(id)](./ts-chocolate.libraryruntime.libraryruntimecontext.gettask.md)
+[getTaskEntity(id)](./ts-chocolate.libraryruntime.libraryruntimecontext.gettaskentity.md)
 
 
 </td><td>

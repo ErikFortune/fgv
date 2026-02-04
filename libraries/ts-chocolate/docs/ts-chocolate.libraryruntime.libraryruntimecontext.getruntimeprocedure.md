@@ -9,7 +9,7 @@ Gets a runtime procedure by its composite ID (with caching).
 **Signature:**
 
 ```typescript
-getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
+getRuntimeProcedure(id: ProcedureId): Result<Procedure>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The procedure ID (composite format: collectionId.baseProcedureId)
 
 **Returns:**
 
-Result&lt;[RuntimeProcedure](./ts-chocolate.libraryruntime.runtimeprocedure.md)<!-- -->&gt;
+Result&lt;[Procedure](./ts-chocolate.libraryruntime.procedure.md)<!-- -->&gt;
 
 Success with RuntimeProcedure, or Failure if not found
 

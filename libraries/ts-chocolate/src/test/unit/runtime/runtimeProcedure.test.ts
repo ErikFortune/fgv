@@ -33,9 +33,9 @@ import {
 } from '../../../packlets/common';
 import { IProcedureEntity, IRawTaskEntity, Fillings } from '../../../packlets/entities';
 import {
-  RuntimeProcedure,
+  Procedure,
   IProcedureContext,
-  IRuntimeProcedureRenderContext,
+  IProcedureRenderContext,
   RuntimeTask
 } from '../../../packlets/library-runtime';
 
@@ -49,13 +49,13 @@ describe('RuntimeProcedure', () => {
 
   // Mock procedure context that can resolve tasks
   const mockContext: IProcedureContext = {
-    getTask: (id: TaskId) => {
+    getTaskEntity: (id: TaskId) => {
       if (id === ('common.melt-chocolate' as TaskId)) {
         return succeed(meltChocolateTaskData);
       }
       return fail(`Task not found: ${id}`);
     },
-    getRuntimeTask: (id: TaskId) => {
+    getTask: (id: TaskId) => {
       if (id === ('common.melt-chocolate' as TaskId)) {
         return RuntimeTask.create(mockContext, id, meltChocolateTaskData);
       }
@@ -72,7 +72,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Mock render context
-  const mockRenderContext: IRuntimeProcedureRenderContext = {
+  const mockRenderContext: IProcedureRenderContext = {
     context: mockContext,
     recipe: mockRecipe
   };
@@ -191,7 +191,7 @@ describe('RuntimeProcedure', () => {
     test('should create RuntimeProcedure from IProcedure', () => {
       const procedureId = 'test.test-inline' as ProcedureId;
 
-      expect(RuntimeProcedure.create(mockContext, procedureId, inlineTaskProcedure)).toSucceedAndSatisfy(
+      expect(Procedure.create(mockContext, procedureId, inlineTaskProcedure)).toSucceedAndSatisfy(
         (runtimeProcedure) => {
           expect(runtimeProcedure.id).toBe(procedureId);
           expect(runtimeProcedure.baseId).toBe('test-inline');
@@ -203,7 +203,7 @@ describe('RuntimeProcedure', () => {
     test('should expose all procedure properties', () => {
       const procedureId = 'test.multi-step' as ProcedureId;
 
-      expect(RuntimeProcedure.create(mockContext, procedureId, multiStepProcedure)).toSucceedAndSatisfy(
+      expect(Procedure.create(mockContext, procedureId, multiStepProcedure)).toSucceedAndSatisfy(
         (runtimeProcedure) => {
           expect(runtimeProcedure.description).toBe('A procedure with multiple steps');
           expect(runtimeProcedure.category).toBe('ganache');
@@ -219,7 +219,7 @@ describe('RuntimeProcedure', () => {
     test('should compute total times', () => {
       const procedureId = 'test.multi-step' as ProcedureId;
 
-      expect(RuntimeProcedure.create(mockContext, procedureId, multiStepProcedure)).toSucceedAndSatisfy(
+      expect(Procedure.create(mockContext, procedureId, multiStepProcedure)).toSucceedAndSatisfy(
         (runtimeProcedure) => {
           expect(runtimeProcedure.totalActiveTime).toBe(15);
           expect(runtimeProcedure.totalWaitTime).toBeUndefined();
@@ -232,7 +232,7 @@ describe('RuntimeProcedure', () => {
     test('should compute all timing types (active, wait, hold)', () => {
       const procedureId = 'test.all-timing' as ProcedureId;
 
-      expect(RuntimeProcedure.create(mockContext, procedureId, allTimingProcedure)).toSucceedAndSatisfy(
+      expect(Procedure.create(mockContext, procedureId, allTimingProcedure)).toSucceedAndSatisfy(
         (runtimeProcedure) => {
           expect(runtimeProcedure.totalActiveTime).toBe(5);
           expect(runtimeProcedure.totalWaitTime).toBe(10);
@@ -245,7 +245,7 @@ describe('RuntimeProcedure', () => {
     test('should return undefined for all times when no timing data', () => {
       const procedureId = 'test.no-timing' as ProcedureId;
 
-      expect(RuntimeProcedure.create(mockContext, procedureId, noTimingProcedure)).toSucceedAndSatisfy(
+      expect(Procedure.create(mockContext, procedureId, noTimingProcedure)).toSucceedAndSatisfy(
         (runtimeProcedure) => {
           expect(runtimeProcedure.totalActiveTime).toBeUndefined();
           expect(runtimeProcedure.totalWaitTime).toBeUndefined();
@@ -259,11 +259,7 @@ describe('RuntimeProcedure', () => {
   describe('render', () => {
     test('should render inline task steps', () => {
       const procedureId = 'test.test-inline' as ProcedureId;
-      const runtimeProcedure = RuntimeProcedure.create(
-        mockContext,
-        procedureId,
-        inlineTaskProcedure
-      ).orThrow();
+      const runtimeProcedure = Procedure.create(mockContext, procedureId, inlineTaskProcedure).orThrow();
 
       expect(runtimeProcedure.render(mockRenderContext)).toSucceedAndSatisfy((rendered) => {
         expect(rendered.steps.length).toBe(1);
@@ -276,7 +272,7 @@ describe('RuntimeProcedure', () => {
       // THIS IS THE KEY TEST - verifying that task refs are actually resolved,
       // not returned as placeholders like the data-layer Procedure.render()
       const procedureId = 'test.test-ref' as ProcedureId;
-      const runtimeProcedure = RuntimeProcedure.create(mockContext, procedureId, taskRefProcedure).orThrow();
+      const runtimeProcedure = Procedure.create(mockContext, procedureId, taskRefProcedure).orThrow();
 
       expect(runtimeProcedure.render(mockRenderContext)).toSucceedAndSatisfy((rendered) => {
         expect(rendered.steps.length).toBe(1);
@@ -290,11 +286,7 @@ describe('RuntimeProcedure', () => {
 
     test('should render multiple steps with mixed task types', () => {
       const procedureId = 'test.multi-step' as ProcedureId;
-      const runtimeProcedure = RuntimeProcedure.create(
-        mockContext,
-        procedureId,
-        multiStepProcedure
-      ).orThrow();
+      const runtimeProcedure = Procedure.create(mockContext, procedureId, multiStepProcedure).orThrow();
 
       expect(runtimeProcedure.render(mockRenderContext)).toSucceedAndSatisfy((rendered) => {
         expect(rendered.name).toBe('Multi-Step Procedure');
@@ -330,11 +322,7 @@ describe('RuntimeProcedure', () => {
       };
 
       const procedureId = 'test.test-unknown' as ProcedureId;
-      const runtimeProcedure = RuntimeProcedure.create(
-        mockContext,
-        procedureId,
-        unknownRefProcedure
-      ).orThrow();
+      const runtimeProcedure = Procedure.create(mockContext, procedureId, unknownRefProcedure).orThrow();
 
       expect(runtimeProcedure.render(mockRenderContext)).toFailWith(/unknown\.task.*not found/i);
     });
@@ -343,13 +331,9 @@ describe('RuntimeProcedure', () => {
   describe('raw', () => {
     test('should expose underlying IProcedure', () => {
       const procedureId = 'test.test-inline' as ProcedureId;
-      const runtimeProcedure = RuntimeProcedure.create(
-        mockContext,
-        procedureId,
-        inlineTaskProcedure
-      ).orThrow();
+      const runtimeProcedure = Procedure.create(mockContext, procedureId, inlineTaskProcedure).orThrow();
 
-      expect(runtimeProcedure.raw).toBe(inlineTaskProcedure);
+      expect(runtimeProcedure.entity).toBe(inlineTaskProcedure);
     });
   });
 });

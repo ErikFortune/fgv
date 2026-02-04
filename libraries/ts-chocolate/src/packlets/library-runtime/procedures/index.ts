@@ -25,9 +25,9 @@
 
 export {
   IProcedureContext,
-  IRuntimeProcedure,
-  IRuntimeProcedureRenderContext,
-  IRuntimeRenderedProcedure,
-  IRuntimeRenderedStep
+  IProcedure,
+  IProcedureRenderContext,
+  IRenderedProcedure,
+  IRenderedStep
 } from './model';
-export { RuntimeProcedure } from './procedure';
+export { Procedure } from './procedure';

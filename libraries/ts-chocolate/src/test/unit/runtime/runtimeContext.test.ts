@@ -862,32 +862,32 @@ describe('RuntimeContext', () => {
 
     describe('getTask', () => {
       test('returns task for valid ID', () => {
-        expect(ctx.getTask('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((task) => {
+        expect(ctx.getTaskEntity('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((task) => {
           expect(task.name).toBe('Melt Chocolate');
         });
       });
 
       test('fails for non-existent ID', () => {
-        expect(ctx.getTask('common.nonexistent' as TaskId)).toFail();
+        expect(ctx.getTaskEntity('common.nonexistent' as TaskId)).toFail();
       });
     });
 
     describe('getRuntimeTask', () => {
       test('returns RuntimeTask for valid ID', () => {
-        expect(ctx.getRuntimeTask('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((runtimeTask) => {
+        expect(ctx.getTask('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((runtimeTask) => {
           expect(runtimeTask.id).toBe('common.melt-chocolate');
           expect(runtimeTask.name).toBe('Melt Chocolate');
         });
       });
 
       test('caches runtime tasks', () => {
-        const result1 = ctx.getRuntimeTask('common.melt-chocolate' as TaskId).orThrow();
-        const result2 = ctx.getRuntimeTask('common.melt-chocolate' as TaskId).orThrow();
+        const result1 = ctx.getTask('common.melt-chocolate' as TaskId).orThrow();
+        const result2 = ctx.getTask('common.melt-chocolate' as TaskId).orThrow();
         expect(result1).toBe(result2); // Same instance
       });
 
       test('fails for non-existent ID', () => {
-        expect(ctx.getRuntimeTask('common.nonexistent' as TaskId)).toFail();
+        expect(ctx.getTask('common.nonexistent' as TaskId)).toFail();
       });
     });
 

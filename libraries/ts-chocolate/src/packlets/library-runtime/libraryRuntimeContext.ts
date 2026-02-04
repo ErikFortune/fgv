@@ -68,7 +68,7 @@ import {
 } from './indexers';
 import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibrary';
 import { ITaskContext, RuntimeTask } from './tasks';
-import { IProcedureContext, RuntimeProcedure } from './procedures';
+import { IProcedureContext, Procedure } from './procedures';
 import { IMoldContext, Mold } from './molds';
 
 // ============================================================================
@@ -140,7 +140,7 @@ export class LibraryRuntimeContext
 
   // Cached runtime wrappers for tasks, procedures, molds, and confections
   private readonly _runtimeTasks: Map<TaskId, RuntimeTask> = new Map();
-  private readonly _runtimeProcedures: Map<ProcedureId, RuntimeProcedure> = new Map();
+  private readonly _runtimeProcedures: Map<ProcedureId, Procedure> = new Map();
   private readonly _runtimeMolds: Map<MoldId, Mold> = new Map();
   private _runtimeConfections: Map<ConfectionId, AnyConfection> | undefined;
 
@@ -683,7 +683,7 @@ export class LibraryRuntimeContext
    * @param id - The task ID (composite format: collectionId.baseTaskId)
    * @returns Success with ITaskData, or Failure if not found
    */
-  public getTask(id: TaskId): Result<IRawTaskEntity> {
+  public getTaskEntity(id: TaskId): Result<IRawTaskEntity> {
     return this._library.getTask(id);
   }
 
@@ -693,7 +693,7 @@ export class LibraryRuntimeContext
    * @param id - The task ID (composite format: collectionId.baseTaskId)
    * @returns Success with RuntimeTask, or Failure if not found
    */
-  public getRuntimeTask(id: TaskId): Result<RuntimeTask> {
+  public getTask(id: TaskId): Result<RuntimeTask> {
     // Check cache first
     const cached = this._runtimeTasks.get(id);
     if (cached) {
@@ -714,7 +714,7 @@ export class LibraryRuntimeContext
    * @param id - The procedure ID (composite format: collectionId.baseProcedureId)
    * @returns Success with RuntimeProcedure, or Failure if not found
    */
-  public getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure> {
+  public getRuntimeProcedure(id: ProcedureId): Result<Procedure> {
     // Check cache first
     const cached = this._runtimeProcedures.get(id);
     if (cached) {
@@ -723,7 +723,7 @@ export class LibraryRuntimeContext
 
     // Resolve from library and cache
     return this._library.getProcedure(id).onSuccess((procedure) => {
-      return RuntimeProcedure.create(this, id, procedure).onSuccess((runtimeProcedure) => {
+      return Procedure.create(this, id, procedure).onSuccess((runtimeProcedure) => {
         this._runtimeProcedures.set(id, runtimeProcedure);
         return succeed(runtimeProcedure);
       });

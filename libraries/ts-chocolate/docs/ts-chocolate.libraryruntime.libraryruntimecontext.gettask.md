@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.LibraryRuntimeContext.getTask() method
 
-Gets a task by its composite ID. Used internally for task resolution.
+Gets a runtime task by its composite ID (with caching). Implements ITaskContext interface.
 
 **Signature:**
 
 ```typescript
-getTask(id: TaskId): Result<IRawTaskEntity>;
+getTask(id: TaskId): Result<RuntimeTask>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The task ID (composite format: collectionId.baseTaskId)
 
 **Returns:**
 
-Result&lt;[IRawTaskEntity](./ts-chocolate.entities.irawtaskentity.md)<!-- -->&gt;
+Result&lt;[RuntimeTask](./ts-chocolate.libraryruntime.runtimetask.md)<!-- -->&gt;
 
-Success with ITaskData, or Failure if not found
+Success with RuntimeTask, or Failure if not found
 

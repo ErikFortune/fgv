@@ -110,7 +110,7 @@ _(Optional)_ Optional notes specific to using this procedure
 
 </td><td>
 
-[IRuntimeProcedure](./ts-chocolate.libraryruntime.iruntimeprocedure.md)
+[IProcedure](./ts-chocolate.libraryruntime.iprocedure.md)
 
 
 </td><td>

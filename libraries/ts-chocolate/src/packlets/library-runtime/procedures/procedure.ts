@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeProcedure - resolved procedure view with proper task resolution
+ * Procedure - resolved procedure view with proper task resolution
  * @packageDocumentation
  */
 
@@ -37,30 +37,30 @@ import { IProcedureEntity, IProcedureStepEntity, Tasks } from '../../entities';
 import { RuntimeTask } from '../tasks';
 import {
   IProcedureContext,
-  IRuntimeProcedure,
-  IRuntimeProcedureRenderContext,
-  IRuntimeRenderedProcedure,
-  IRuntimeRenderedStep
+  IProcedure,
+  IProcedureRenderContext,
+  IRenderedProcedure,
+  IRenderedStep
 } from './model';
 
 // ============================================================================
-// RuntimeProcedure Class
+// Procedure Class
 // ============================================================================
 
 /**
  * A resolved view of a procedure with proper task resolution.
  *
- * RuntimeProcedure wraps a data-layer Procedure and provides:
+ * Procedure wraps a data-layer Procedure and provides:
  * - Composite identity (ProcedureId) for cross-source references
  * - Proper task resolution (not placeholders like the data-layer)
  * - Computed timing properties
  *
  * Unlike the data-layer Procedure.render() which returns `[Task: taskId]` placeholders,
- * RuntimeProcedure.render() actually resolves task references and renders their templates.
+ * Procedure.render() actually resolves task references and renders their templates.
  *
  * @public
  */
-export class RuntimeProcedure implements IRuntimeProcedure {
+export class Procedure implements IProcedure {
   private readonly _context: IProcedureContext;
   private readonly _id: ProcedureId;
   private readonly _procedure: IProcedureEntity;
@@ -72,18 +72,18 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   }
 
   /**
-   * Factory method for creating a RuntimeProcedure.
+   * Factory method for creating a Procedure.
    * @param context - The runtime context for task resolution
    * @param id - The composite procedure ID
    * @param procedure - The procedure data
-   * @returns Success with RuntimeProcedure
+   * @returns Success with Procedure
    */
   public static create(
     context: IProcedureContext,
     id: ProcedureId,
     procedure: IProcedureEntity
-  ): Result<RuntimeProcedure> {
-    return Success.with(new RuntimeProcedure(context, id, procedure));
+  ): Result<Procedure> {
+    return Success.with(new Procedure(context, id, procedure));
   }
 
   // ============================================================================
@@ -218,8 +218,8 @@ export class RuntimeProcedure implements IRuntimeProcedure {
    * @param renderContext - The render context with recipe and library access
    * @returns Success with rendered procedure, or Failure if rendering fails
    */
-  public render(renderContext: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure> {
-    const renderedStepsResults: Result<IRuntimeRenderedStep>[] = this._procedure.steps.map((step) =>
+  public render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure> {
+    const renderedStepsResults: Result<IRenderedStep>[] = this._procedure.steps.map((step) =>
       this._renderStep(renderContext, step)
     );
 
@@ -229,7 +229,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
       return fail(`Failed to render procedure steps: ${failures.map((f) => f.message).join('; ')}`);
     }
 
-    const renderedSteps = renderedStepsResults.map((r) => r.value as IRuntimeRenderedStep);
+    const renderedSteps = renderedStepsResults.map((r) => r.value as IRenderedStep);
 
     return succeed({
       name: this.name,
@@ -250,16 +250,16 @@ export class RuntimeProcedure implements IRuntimeProcedure {
    * @returns Success with rendered step, or Failure if rendering fails
    */
   private _renderStep(
-    renderContext: IRuntimeProcedureRenderContext,
+    renderContext: IProcedureRenderContext,
     step: IProcedureStepEntity
-  ): Result<IRuntimeRenderedStep> {
+  ): Result<IRenderedStep> {
     const invocation = step.task;
 
     if (Tasks.isTaskRefEntity(invocation)) {
       // KEY FIX: Actually resolve the task reference using the context
       // This is what the data-layer couldn't do (returned placeholder instead)
       return renderContext.context
-        .getRuntimeTask(invocation.taskId as TaskId)
+        .getTask(invocation.taskId as TaskId)
         .onSuccess((runtimeTask) => {
           return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
             return succeed({
@@ -292,14 +292,10 @@ export class RuntimeProcedure implements IRuntimeProcedure {
     return fail('Step has invalid task structure');
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw procedure data
+   * Gets the underlying procedure data entity
    */
-  public get raw(): IProcedureEntity {
+  public get entity(): IProcedureEntity {
     return this._procedure;
   }
 

@@ -41,32 +41,32 @@ import { IRawTaskEntity } from '../../entities';
 import { RuntimeTask } from '../tasks';
 
 // ============================================================================
-// Runtime Procedure Context
+// Procedure Context
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeProcedure.
+ * Minimal context interface for Procedure.
  * Provides task resolution capabilities.
  * @internal
  */
 export interface IProcedureContext {
   /**
    * Gets a task by its composite ID.
-   * @param id - The task ID (composite format: sourceId.baseTaskId)
-   * @returns Success with ITaskData, or Failure if not found
+   * @param id - The task ID (composite format: collectionId.baseTaskId)
+   * @returns Success with IRawTaskEntity, or Failure if not found
    */
-  getTask(id: TaskId): Result<IRawTaskEntity>;
+  getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
 
   /**
    * Gets a runtime task by its composite ID.
-   * @param id - The task ID (composite format: sourceId.baseTaskId)
-   * @returns Success with RuntimeTask, or Failure if not found
+   * @param id - The task ID (composite format: collectionId.baseTaskId)
+   * @returns Success with the task, or Failure if not found
    */
-  getRuntimeTask(id: TaskId): Result<RuntimeTask>;
+  getTask(id: TaskId): Result<RuntimeTask>;
 }
 
 // ============================================================================
-// Runtime Procedure Render Context
+// Procedure Render Context
 // ============================================================================
 
 /**
@@ -77,7 +77,7 @@ export interface IProcedureContext {
  *
  * @public
  */
-export interface IRuntimeProcedureRenderContext {
+export interface IProcedureRenderContext {
   /**
    * The procedure context for task resolution.
    * This provides type-safe access to tasks, unlike the data-layer's `unknown` library.
@@ -96,14 +96,14 @@ export interface IRuntimeProcedureRenderContext {
 }
 
 // ============================================================================
-// Runtime Rendered Step
+// Rendered Step
 // ============================================================================
 
 /**
  * A rendered procedure step with resolved template values.
  * @public
  */
-export interface IRuntimeRenderedStep extends IProcedureStepEntity {
+export interface IRenderedStep extends IProcedureStepEntity {
   /**
    * The rendered description with all template values resolved.
    * Unlike the data-layer placeholder, this contains actual rendered content.
@@ -118,14 +118,14 @@ export interface IRuntimeRenderedStep extends IProcedureStepEntity {
 }
 
 // ============================================================================
-// Runtime Rendered Procedure
+// Rendered Procedure
 // ============================================================================
 
 /**
  * A rendered procedure with all template values resolved.
  * @public
  */
-export interface IRuntimeRenderedProcedure {
+export interface IRenderedProcedure {
   /**
    * Name of the procedure
    */
@@ -139,7 +139,7 @@ export interface IRuntimeRenderedProcedure {
   /**
    * Rendered steps with resolved task templates
    */
-  readonly steps: ReadonlyArray<IRuntimeRenderedStep>;
+  readonly steps: ReadonlyArray<IRenderedStep>;
 
   /**
    * Total active time for all steps
@@ -158,20 +158,20 @@ export interface IRuntimeRenderedProcedure {
 }
 
 // ============================================================================
-// Runtime Procedure Interface
+// Procedure Interface
 // ============================================================================
 
 /**
  * A resolved runtime view of a procedure with rendering capabilities.
  *
  * This interface provides runtime-layer access to procedure data with:
- * - Composite identity (`id`, `sourceId`) for cross-source references
+ * - Composite identity (`id`, `collectionId`) for cross-source references
  * - Proper task resolution (not placeholders)
  * - Computed timing properties
  *
  * @public
  */
-export interface IRuntimeProcedure {
+export interface IProcedure {
   // ---- Composite Identity ----
 
   /**
@@ -233,12 +233,10 @@ export interface IRuntimeProcedure {
    * @param context - The render context with recipe and library access
    * @returns Success with rendered procedure, or Failure if rendering fails
    */
-  render(context: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
-
-  // ---- Raw Access ----
+  render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
 
   /**
-   * Gets the underlying raw procedure data.
+   * Gets the underlying procedure data entity
    */
-  readonly raw: IProcedureEntity;
+  readonly entity: IProcedureEntity;
 }

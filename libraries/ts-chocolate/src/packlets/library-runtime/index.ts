@@ -51,7 +51,7 @@ export {
   ValidatingLibrary
 } from './validatingLibrary';
 
-// Runtime ingredient classes
+// Ingredient classes
 export {
   IngredientBase,
   ChocolateIngredient,
@@ -63,10 +63,10 @@ export {
   AnyIngredient
 } from './ingredients';
 
-// Runtime filling recipe classes
+// Filling recipe classes
 export { FillingRecipe, FillingRecipeVersion } from './fillings';
 
-// Runtime confection classes
+// Confection classes
 export {
   ConfectionBase,
   MoldedBonBon,
@@ -90,17 +90,17 @@ export { Indexers };
 // Runtime tasks
 export { ITaskContext, IRuntimeTask, RuntimeTask } from './tasks';
 
-// Runtime procedures
+// Procedures
 export {
   IProcedureContext,
-  IRuntimeProcedure,
-  IRuntimeProcedureRenderContext,
-  IRuntimeRenderedProcedure,
-  IRuntimeRenderedStep,
-  RuntimeProcedure
+  IProcedure,
+  IProcedureRenderContext,
+  IRenderedProcedure,
+  IRenderedStep,
+  Procedure
 } from './procedures';
 
-// Runtime molds
+// Molds
 export { IMoldContext, IMold, Mold } from './molds';
 
 // Produced wrappers (mutable editing containers)
