@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeFatIngredient - concrete fat ingredient implementation
+ * FatIngredient - concrete fat ingredient implementation
  * @packageDocumentation
  */
 
@@ -28,10 +28,10 @@ import { Result, Success } from '@fgv/ts-utils';
 import { Celsius, IngredientId } from '../../common';
 import { IFatIngredientEntity } from '../../entities';
 import { IIngredientContext, IFatIngredient } from '../model';
-import { RuntimeIngredientBase } from './ingredientBase';
+import { IngredientBase } from './ingredientBase';
 
 // ============================================================================
-// RuntimeFatIngredient Class
+// FatIngredient Class
 // ============================================================================
 
 /**
@@ -39,12 +39,12 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatIngredient {
+export class FatIngredient extends IngredientBase implements IFatIngredient {
   private readonly _fatIngredient: IFatIngredientEntity;
 
   /**
-   * Creates a RuntimeFatIngredient.
-   * Use RuntimeIngredient.create() or RuntimeFatIngredient.create() instead.
+   * Creates a FatIngredient.
+   * Use Ingredient.create() or FatIngredient.create() instead.
    * @internal
    */
   protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity) {
@@ -53,18 +53,18 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatI
   }
 
   /**
-   * Factory method for creating a RuntimeFatIngredient.
+   * Factory method for creating a FatIngredient.
    * @param context - The runtime context
    * @param id - The ingredient ID
-   * @param ingredient - The raw fat ingredient data
-   * @returns Success with RuntimeFatIngredient
+   * @param ingredient - The fat ingredient data entity
+   * @returns Success with FatIngredient
    */
   public static create(
     context: IIngredientContext,
     id: IngredientId,
     ingredient: IFatIngredientEntity
-  ): Result<RuntimeFatIngredient> {
-    return Success.with(new RuntimeFatIngredient(context, id, ingredient));
+  ): Result<FatIngredient> {
+    return Success.with(new FatIngredient(context, id, ingredient));
   }
 
   // ============================================================================
@@ -89,12 +89,8 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatI
     return this._fatIngredient.meltingPoint;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw fat ingredient data
+   * Gets the underlying fat ingredient data entity
    */
   public get entity(): IFatIngredientEntity {
     return this._fatIngredient;

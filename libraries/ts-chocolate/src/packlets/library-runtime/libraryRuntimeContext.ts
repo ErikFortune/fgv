@@ -58,7 +58,7 @@ import {
   IVersionContext
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
-import { RuntimeIngredient, AnyIngredient } from './ingredients';
+import { Ingredient, AnyIngredient } from './ingredients';
 import { FillingRecipe } from './fillings';
 import {
   IIngredientQuerySpec,
@@ -570,15 +570,13 @@ export class LibraryRuntimeContext
           key: (from: unknown) => Converters.ingredientId.convert(from),
           /* c8 ignore next 4 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
-            from instanceof RuntimeIngredient
-              ? succeed(from as AnyIngredient)
-              : fail('not a runtime ingredient')
+            from instanceof Ingredient ? succeed(from as AnyIngredient) : fail('not a runtime ingredient')
         }),
         orchestrator: this._ingredientOrchestrator
       });
       // Populate from library - report and fail on any creation errors
       for (const [id, ingredient] of this._library.ingredients.entries()) {
-        const createResult = RuntimeIngredient.create(this, id, ingredient).report(this.logger);
+        const createResult = Ingredient.create(this, id, ingredient).report(this.logger);
         /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
         if (createResult.isFailure()) {
           return Failure.with(`Failed to resolve ingredient ${id}: ${createResult.message}`);

@@ -47,15 +47,15 @@ import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entitie
 import { ChocolateLibrary } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
 import {
-  RuntimeIngredient,
-  RuntimeChocolateIngredient,
-  RuntimeDairyIngredient,
-  RuntimeSugarIngredient,
-  RuntimeFatIngredient,
-  RuntimeAlcoholIngredient
+  Ingredient,
+  ChocolateIngredient,
+  DairyIngredient,
+  SugarIngredient,
+  FatIngredient,
+  AlcoholIngredient
 } from '../../../packlets/library-runtime';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { RuntimeGenericIngredient } from '../../../packlets/library-runtime/ingredients/genericIngredient';
+import { GenericIngredient } from '../../../packlets/library-runtime/ingredients/genericIngredient';
 
 describe('RuntimeIngredient', () => {
   // ============================================================================
@@ -271,7 +271,7 @@ describe('RuntimeIngredient', () => {
   describe('create', () => {
     test('create factory method succeeds', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      expect(RuntimeIngredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
+      expect(Ingredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
     });
   });
 
@@ -469,7 +469,7 @@ describe('RuntimeIngredient', () => {
 
     test('returns RuntimeChocolateIngredient instance', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      expect(ingredient).toBeInstanceOf(RuntimeChocolateIngredient);
+      expect(ingredient).toBeInstanceOf(ChocolateIngredient);
     });
   });
 
@@ -499,7 +499,7 @@ describe('RuntimeIngredient', () => {
 
     test('returns RuntimeDairyIngredient instance', () => {
       const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
-      expect(ingredient).toBeInstanceOf(RuntimeDairyIngredient);
+      expect(ingredient).toBeInstanceOf(DairyIngredient);
     });
   });
 
@@ -525,7 +525,7 @@ describe('RuntimeIngredient', () => {
 
     test('returns RuntimeSugarIngredient instance', () => {
       const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
-      expect(ingredient).toBeInstanceOf(RuntimeSugarIngredient);
+      expect(ingredient).toBeInstanceOf(SugarIngredient);
     });
 
     test('provides raw access to underlying sugar ingredient', () => {
@@ -552,7 +552,7 @@ describe('RuntimeIngredient', () => {
 
     test('returns RuntimeFatIngredient instance', () => {
       const ingredient = ctx.ingredients.get('test.butter' as IngredientId).orThrow();
-      expect(ingredient).toBeInstanceOf(RuntimeFatIngredient);
+      expect(ingredient).toBeInstanceOf(FatIngredient);
     });
 
     test('provides raw access to underlying fat ingredient', () => {
@@ -586,7 +586,7 @@ describe('RuntimeIngredient', () => {
 
     test('returns RuntimeAlcoholIngredient instance', () => {
       const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
-      expect(ingredient).toBeInstanceOf(RuntimeAlcoholIngredient);
+      expect(ingredient).toBeInstanceOf(AlcoholIngredient);
     });
 
     test('provides raw access to underlying alcohol ingredient', () => {
@@ -642,7 +642,7 @@ describe('RuntimeIngredient', () => {
     describe('liquid category', () => {
       test('creates RuntimeGenericIngredient for liquid category', () => {
         const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
-        expect(ingredient).toBeInstanceOf(RuntimeGenericIngredient);
+        expect(ingredient).toBeInstanceOf(GenericIngredient);
         expect(ingredient.category).toBe('liquid');
       });
 
@@ -656,7 +656,7 @@ describe('RuntimeIngredient', () => {
     describe('flavor category', () => {
       test('creates RuntimeGenericIngredient for flavor category', () => {
         const ingredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
-        expect(ingredient).toBeInstanceOf(RuntimeGenericIngredient);
+        expect(ingredient).toBeInstanceOf(GenericIngredient);
         expect(ingredient.category).toBe('flavor');
       });
 
@@ -671,7 +671,7 @@ describe('RuntimeIngredient', () => {
     describe('other category', () => {
       test('creates RuntimeGenericIngredient for other category', () => {
         const ingredient = ctx.ingredients.get('test.lecithin' as IngredientId).orThrow();
-        expect(ingredient).toBeInstanceOf(RuntimeGenericIngredient);
+        expect(ingredient).toBeInstanceOf(GenericIngredient);
         expect(ingredient.category).toBe('other');
       });
 
@@ -686,13 +686,13 @@ describe('RuntimeIngredient', () => {
     describe('RuntimeGenericIngredient factory', () => {
       test('create succeeds with valid parameters', () => {
         const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
-        expect(RuntimeGenericIngredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
+        expect(GenericIngredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
       });
 
       test('created instance has correct category and raw access', () => {
         const originalIngredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
         expect(
-          RuntimeGenericIngredient.create(ctx as never, originalIngredient.id, originalIngredient.entity)
+          GenericIngredient.create(ctx as never, originalIngredient.id, originalIngredient.entity)
         ).toSucceedAndSatisfy((newIngredient) => {
           expect(newIngredient.category).toBe('flavor');
           expect(newIngredient.entity.name).toBe('Vanilla Extract');

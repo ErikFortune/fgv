@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeAlcoholIngredient - concrete alcohol ingredient implementation
+ * AlcoholIngredient - concrete alcohol ingredient implementation
  * @packageDocumentation
  */
 
@@ -28,10 +28,10 @@ import { Result, Success } from '@fgv/ts-utils';
 import { IngredientId, Percentage } from '../../common';
 import { IAlcoholIngredientEntity } from '../../entities';
 import { IIngredientContext, IAlcoholIngredient } from '../model';
-import { RuntimeIngredientBase } from './ingredientBase';
+import { IngredientBase } from './ingredientBase';
 
 // ============================================================================
-// RuntimeAlcoholIngredient Class
+// AlcoholIngredient Class
 // ============================================================================
 
 /**
@@ -39,12 +39,12 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IAlcoholIngredient {
+export class AlcoholIngredient extends IngredientBase implements IAlcoholIngredient {
   private readonly _alcoholIngredient: IAlcoholIngredientEntity;
 
   /**
-   * Creates a RuntimeAlcoholIngredient.
-   * Use RuntimeIngredient.create() or RuntimeAlcoholIngredient.create() instead.
+   * Creates a AlcoholIngredient.
+   * Use Ingredient.create() or AlcoholIngredient.create() instead.
    * @internal
    */
   protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity) {
@@ -53,18 +53,18 @@ export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements I
   }
 
   /**
-   * Factory method for creating a RuntimeAlcoholIngredient.
+   * Factory method for creating a AlcoholIngredient.
    * @param context - The runtime context
    * @param id - The ingredient ID
-   * @param ingredient - The raw alcohol ingredient data
-   * @returns Success with RuntimeAlcoholIngredient
+   * @param ingredient - The raw alcohol ingredient data entity
+   * @returns Success with AlcoholIngredient
    */
   public static create(
     context: IIngredientContext,
     id: IngredientId,
     ingredient: IAlcoholIngredientEntity
-  ): Result<RuntimeAlcoholIngredient> {
-    return Success.with(new RuntimeAlcoholIngredient(context, id, ingredient));
+  ): Result<AlcoholIngredient> {
+    return Success.with(new AlcoholIngredient(context, id, ingredient));
   }
 
   // ============================================================================
@@ -96,12 +96,8 @@ export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements I
     return this._alcoholIngredient.flavorProfile;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw alcohol ingredient data
+   * Gets the underlying alcohol ingredient data entity
    */
   public get entity(): IAlcoholIngredientEntity {
     return this._alcoholIngredient;

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeIngredientBase - abstract base class for runtime ingredients
+ * IngredientBase - abstract base class for runtime ingredients
  * @packageDocumentation
  */
 
@@ -36,14 +36,14 @@ import { Ingredients, IngredientEntity } from '../../entities';
 import { IIngredientContext, IIngredient, IFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
-import type { RuntimeChocolateIngredient } from './chocolateIngredient';
-import type { RuntimeDairyIngredient } from './dairyIngredient';
-import type { RuntimeSugarIngredient } from './sugarIngredient';
-import type { RuntimeFatIngredient } from './fatIngredient';
-import type { RuntimeAlcoholIngredient } from './alcoholIngredient';
+import type { ChocolateIngredient } from './chocolateIngredient';
+import type { DairyIngredient } from './dairyIngredient';
+import type { SugarIngredient } from './sugarIngredient';
+import type { FatIngredient } from './fatIngredient';
+import type { AlcoholIngredient } from './alcoholIngredient';
 
 // ============================================================================
-// RuntimeIngredientBase Abstract Class
+// IngredientBase Abstract Class
 // ============================================================================
 
 /**
@@ -51,7 +51,7 @@ import type { RuntimeAlcoholIngredient } from './alcoholIngredient';
  * Provides common properties and navigation shared by all ingredient types.
  * @public
  */
-export abstract class RuntimeIngredientBase implements IIngredient {
+export abstract class IngredientBase implements IIngredient {
   protected readonly _context: IIngredientContext;
   protected readonly _id: IngredientId;
   protected readonly _ingredient: IngredientEntity;
@@ -59,10 +59,10 @@ export abstract class RuntimeIngredientBase implements IIngredient {
   protected readonly _baseId: BaseIngredientId;
 
   /**
-   * Creates a RuntimeIngredientBase.
+   * Creates a IngredientBase.
    * @param context - The runtime context for navigation
    * @param id - The composite ingredient ID
-   * @param ingredient - The raw ingredient data
+   * @param ingredient - The ingredient data entity
    * @internal
    */
   protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity) {
@@ -180,35 +180,35 @@ export abstract class RuntimeIngredientBase implements IIngredient {
   /**
    * Returns true if this is a chocolate ingredient.
    */
-  public isChocolate(): this is RuntimeChocolateIngredient {
+  public isChocolate(): this is ChocolateIngredient {
     return Ingredients.isChocolateIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is a dairy ingredient.
    */
-  public isDairy(): this is RuntimeDairyIngredient {
+  public isDairy(): this is DairyIngredient {
     return Ingredients.isDairyIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is a sugar ingredient.
    */
-  public isSugar(): this is RuntimeSugarIngredient {
+  public isSugar(): this is SugarIngredient {
     return Ingredients.isSugarIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is a fat ingredient.
    */
-  public isFat(): this is RuntimeFatIngredient {
+  public isFat(): this is FatIngredient {
     return Ingredients.isFatIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is an alcohol ingredient.
    */
-  public isAlcohol(): this is RuntimeAlcoholIngredient {
+  public isAlcohol(): this is AlcoholIngredient {
     return Ingredients.isAlcoholIngredientEntity(this._ingredient);
   }
 
@@ -237,12 +237,8 @@ export abstract class RuntimeIngredientBase implements IIngredient {
     return this._context.getFillingsWithAlternateIngredient(this._id);
   }
 
-  // ============================================================================
-  // Raw Access - must be overridden by subclasses to return typed data
-  // ============================================================================
-
   /**
-   * Gets the underlying raw ingredient data (read-only)
+   * Gets the underlying ingredient data entity (read-only)
    */
   public abstract get entity(): IngredientEntity;
 }

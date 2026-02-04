@@ -53,21 +53,18 @@ export {
 
 // Runtime ingredient classes
 export {
-  RuntimeIngredientBase,
-  RuntimeChocolateIngredient,
-  RuntimeDairyIngredient,
-  RuntimeSugarIngredient,
-  RuntimeFatIngredient,
-  RuntimeAlcoholIngredient,
-  RuntimeIngredient,
-  AnyIngredient as AnyRuntimeIngredient
+  IngredientBase,
+  ChocolateIngredient,
+  DairyIngredient,
+  SugarIngredient,
+  FatIngredient,
+  AlcoholIngredient,
+  Ingredient,
+  AnyIngredient
 } from './ingredients';
 
 // Runtime filling recipe classes
-export {
-  FillingRecipe as RuntimeFillingRecipe,
-  FillingRecipeVersion as RuntimeFillingRecipeVersion
-} from './fillings';
+export { FillingRecipe, FillingRecipeVersion } from './fillings';
 
 // Runtime confection classes
 export {

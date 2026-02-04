@@ -15,7 +15,7 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 ```typescript
 export declare class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext 
 ```
-**Implements:** IVersionContext&lt;AnyIngredient&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)
+**Implements:** IVersionContext&lt;[AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)
 
 ## Constructors
 
@@ -172,7 +172,7 @@ The confections library for accessing confection data.
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, FillingRecipe, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
@@ -193,7 +193,7 @@ A searchable library of all fillings, keyed by composite ID. Fillings are resolv
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, AnyIngredient, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>

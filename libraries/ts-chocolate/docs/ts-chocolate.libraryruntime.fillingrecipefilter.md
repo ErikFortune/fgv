@@ -11,5 +11,5 @@ Filter for RuntimeFillingRecipe
 ```typescript
 export type FillingRecipeFilter = FilterPredicate<FillingRecipe>;
 ```
-**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)
+**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)<!-- -->, [FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)
 

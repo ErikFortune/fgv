@@ -32,7 +32,7 @@ import {
   Percentage,
   CollectionId
 } from '../../common';
-import { AnyIngredient, RuntimeChocolateIngredient } from '../ingredients';
+import { AnyIngredient, ChocolateIngredient } from '../ingredients';
 import { LibraryRuntimeContext } from '../libraryRuntimeContext';
 import {
   IngredientFilter,
@@ -127,9 +127,7 @@ export class IngredientQuery {
    * @param type - The chocolate type to filter by
    */
   public chocolateType(type: ChocolateType): IngredientQuery {
-    return this._addFilter(
-      (i) => i.isChocolate() && (i as RuntimeChocolateIngredient).chocolateType === type
-    );
+    return this._addFilter((i) => i.isChocolate() && (i as ChocolateIngredient).chocolateType === type);
   }
 
   /**
@@ -140,7 +138,7 @@ export class IngredientQuery {
   public minCacao(percentage: Percentage): IngredientQuery {
     return this._addFilter((i) => {
       if (!i.isChocolate()) return false;
-      return (i as RuntimeChocolateIngredient).cacaoPercentage >= percentage;
+      return (i as ChocolateIngredient).cacaoPercentage >= percentage;
     });
   }
 
@@ -151,7 +149,7 @@ export class IngredientQuery {
   public maxCacao(percentage: Percentage): IngredientQuery {
     return this._addFilter((i) => {
       if (!i.isChocolate()) return false;
-      return (i as RuntimeChocolateIngredient).cacaoPercentage <= percentage;
+      return (i as ChocolateIngredient).cacaoPercentage <= percentage;
     });
   }
 
@@ -163,7 +161,7 @@ export class IngredientQuery {
   public cacaoRange(min: Percentage, max: Percentage): IngredientQuery {
     return this._addFilter((i) => {
       if (!i.isChocolate()) return false;
-      const pct = (i as RuntimeChocolateIngredient).cacaoPercentage;
+      const pct = (i as ChocolateIngredient).cacaoPercentage;
       return pct >= min && pct <= max;
     });
   }
@@ -175,7 +173,7 @@ export class IngredientQuery {
   public forApplication(application: ChocolateApplication): IngredientQuery {
     return this._addFilter((i) => {
       if (!i.isChocolate()) return false;
-      const apps = (i as RuntimeChocolateIngredient).applications;
+      const apps = (i as ChocolateIngredient).applications;
       return apps !== undefined && apps.includes(application);
     });
   }

@@ -41,11 +41,7 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
-import {
-  ChocolateLibrary,
-  RuntimeFillingRecipe,
-  RuntimeFillingRecipeVersion
-} from '../../../packlets/library-runtime';
+import { ChocolateLibrary, FillingRecipe, FillingRecipeVersion } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
@@ -373,7 +369,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     describe('create factory', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(RuntimeFillingRecipe.create(ctx as never, recipe.id, recipe.entity)).toSucceed();
+        expect(FillingRecipe.create(ctx as never, recipe.id, recipe.entity)).toSucceed();
       });
     });
   });
@@ -593,9 +589,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     describe('create factory', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(
-          RuntimeFillingRecipeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.entity)
-        ).toSucceed();
+        expect(FillingRecipeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.entity)).toSucceed();
       });
     });
   });

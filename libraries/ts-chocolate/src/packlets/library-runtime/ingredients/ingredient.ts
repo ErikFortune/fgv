@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeIngredient - static factory for creating runtime ingredients
+ * Ingredient - static factory for creating runtime ingredients
  * @packageDocumentation
  */
 
@@ -35,16 +35,12 @@ import {
   ISugarIngredientEntity
 } from '../../entities';
 import { IIngredientContext } from '../model';
-import { RuntimeChocolateIngredient } from './chocolateIngredient';
-import { RuntimeDairyIngredient } from './dairyIngredient';
-import { RuntimeSugarIngredient } from './sugarIngredient';
-import { RuntimeFatIngredient } from './fatIngredient';
-import { RuntimeAlcoholIngredient } from './alcoholIngredient';
-import { RuntimeGenericIngredient } from './genericIngredient';
-
-// ============================================================================
-// AnyRuntimeIngredient Union Type
-// ============================================================================
+import { ChocolateIngredient } from './chocolateIngredient';
+import { DairyIngredient } from './dairyIngredient';
+import { SugarIngredient } from './sugarIngredient';
+import { FatIngredient } from './fatIngredient';
+import { AlcoholIngredient } from './alcoholIngredient';
+import { GenericIngredient } from './genericIngredient';
 
 /**
  * Union type of all concrete runtime ingredient classes.
@@ -52,16 +48,12 @@ import { RuntimeGenericIngredient } from './genericIngredient';
  * @public
  */
 export type AnyIngredient =
-  | RuntimeChocolateIngredient
-  | RuntimeDairyIngredient
-  | RuntimeSugarIngredient
-  | RuntimeFatIngredient
-  | RuntimeAlcoholIngredient
-  | RuntimeGenericIngredient;
-
-// ============================================================================
-// RuntimeIngredient Static Factory
-// ============================================================================
+  | ChocolateIngredient
+  | DairyIngredient
+  | SugarIngredient
+  | FatIngredient
+  | AlcoholIngredient
+  | GenericIngredient;
 
 /**
  * Static factory for creating runtime ingredients.
@@ -69,18 +61,18 @@ export type AnyIngredient =
  *
  * @example
  * ```typescript
- * const result = RuntimeIngredient.create(context, id, ingredient);
+ * const result = Ingredient.create(context, id, ingredient);
  * if (result.isSuccess()) {
- *   const runtimeIngredient = result.value;
- *   if (runtimeIngredient.isChocolate()) {
- *     console.log(runtimeIngredient.chocolateType);
+ *   const ingredient = result.value;
+ *   if (ingredient.isChocolate()) {
+ *     console.log(ingredient.chocolateType);
  *   }
  * }
  * ```
  *
  * @public
  */
-export abstract class RuntimeIngredient {
+export abstract class Ingredient {
   // Cannot be instantiated
   /* c8 ignore next 2 - abstract class cannot be instantiated */
   private constructor() {}
@@ -89,8 +81,8 @@ export abstract class RuntimeIngredient {
    * Factory method that auto-detects ingredient type and returns appropriate concrete class.
    * @param context - The runtime context for navigation
    * @param id - The ingredient ID
-   * @param ingredient - The raw ingredient data
-   * @returns Success with the appropriate concrete RuntimeIngredient subclass, or Failure for unknown category
+   * @param ingredient - The ingredient data entity
+   * @returns Success with the appropriate concrete Ingredient subclass, or Failure for unknown category
    */
   public static create(
     context: IIngredientContext,
@@ -99,19 +91,19 @@ export abstract class RuntimeIngredient {
   ): Result<AnyIngredient> {
     switch (ingredient.category) {
       case 'chocolate':
-        return RuntimeChocolateIngredient.create(context, id, ingredient as IChocolateIngredientEntity);
+        return ChocolateIngredient.create(context, id, ingredient as IChocolateIngredientEntity);
       case 'dairy':
-        return RuntimeDairyIngredient.create(context, id, ingredient as IDairyIngredientEntity);
+        return DairyIngredient.create(context, id, ingredient as IDairyIngredientEntity);
       case 'sugar':
-        return RuntimeSugarIngredient.create(context, id, ingredient as ISugarIngredientEntity);
+        return SugarIngredient.create(context, id, ingredient as ISugarIngredientEntity);
       case 'fat':
-        return RuntimeFatIngredient.create(context, id, ingredient as IFatIngredientEntity);
+        return FatIngredient.create(context, id, ingredient as IFatIngredientEntity);
       case 'alcohol':
-        return RuntimeAlcoholIngredient.create(context, id, ingredient as IAlcoholIngredientEntity);
+        return AlcoholIngredient.create(context, id, ingredient as IAlcoholIngredientEntity);
       case 'liquid':
       case 'flavor':
       case 'other':
-        return RuntimeGenericIngredient.create(context, id, ingredient);
+        return GenericIngredient.create(context, id, ingredient);
       /* c8 ignore next 4 - defensive coding: Ingredient union type ensures all categories are handled */
       default:
         return Failure.with(

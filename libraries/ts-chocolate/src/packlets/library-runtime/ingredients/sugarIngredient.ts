@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeSugarIngredient - concrete sugar ingredient implementation
+ * SugarIngredient - concrete sugar ingredient implementation
  * @packageDocumentation
  */
 
@@ -28,10 +28,10 @@ import { Result, Success } from '@fgv/ts-utils';
 import { IngredientId } from '../../common';
 import { ISugarIngredientEntity } from '../../entities';
 import { IIngredientContext, ISugarIngredient } from '../model';
-import { RuntimeIngredientBase } from './ingredientBase';
+import { IngredientBase } from './ingredientBase';
 
 // ============================================================================
-// RuntimeSugarIngredient Class
+// SugarIngredient Class
 // ============================================================================
 
 /**
@@ -39,12 +39,12 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISugarIngredient {
+export class SugarIngredient extends IngredientBase implements ISugarIngredient {
   private readonly _sugarIngredient: ISugarIngredientEntity;
 
   /**
-   * Creates a RuntimeSugarIngredient.
-   * Use RuntimeIngredient.create() or RuntimeSugarIngredient.create() instead.
+   * Creates a SugarIngredient.
+   * Use Ingredient.create() or SugarIngredient.create() instead.
    * @internal
    */
   protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity) {
@@ -53,18 +53,18 @@ export class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISu
   }
 
   /**
-   * Factory method for creating a RuntimeSugarIngredient.
+   * Factory method for creating a SugarIngredient.
    * @param context - The runtime context
    * @param id - The ingredient ID
-   * @param ingredient - The raw sugar ingredient data
-   * @returns Success with RuntimeSugarIngredient
+   * @param ingredient - The sugar ingredient data entity
+   * @returns Success with SugarIngredient
    */
   public static create(
     context: IIngredientContext,
     id: IngredientId,
     ingredient: ISugarIngredientEntity
-  ): Result<RuntimeSugarIngredient> {
-    return Success.with(new RuntimeSugarIngredient(context, id, ingredient));
+  ): Result<SugarIngredient> {
+    return Success.with(new SugarIngredient(context, id, ingredient));
   }
 
   // ============================================================================
@@ -96,12 +96,8 @@ export class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISu
     return this._sugarIngredient.sweetnessPotency;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw sugar ingredient data
+   * Gets the underlying sugar ingredient data entity
    */
   public get entity(): ISugarIngredientEntity {
     return this._sugarIngredient;

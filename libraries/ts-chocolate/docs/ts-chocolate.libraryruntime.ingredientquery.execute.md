@@ -13,5 +13,5 @@ execute(): ReadonlyArray<AnyIngredient>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;AnyIngredient&gt;
+ReadonlyArray&lt;[AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)<!-- -->&gt;
 

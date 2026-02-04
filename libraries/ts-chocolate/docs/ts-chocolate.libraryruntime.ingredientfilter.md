@@ -11,5 +11,5 @@ Filter for RuntimeIngredient
 ```typescript
 export type IngredientFilter = FilterPredicate<AnyIngredient>;
 ```
-**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)
+**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)<!-- -->, [AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)
 

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeDairyIngredient - concrete dairy ingredient implementation
+ * DairyIngredient - concrete dairy ingredient implementation
  * @packageDocumentation
  */
 
@@ -28,10 +28,10 @@ import { Result, Success } from '@fgv/ts-utils';
 import { IngredientId, Percentage } from '../../common';
 import { IDairyIngredientEntity } from '../../entities';
 import { IIngredientContext, IDairyIngredient } from '../model';
-import { RuntimeIngredientBase } from './ingredientBase';
+import { IngredientBase } from './ingredientBase';
 
 // ============================================================================
-// RuntimeDairyIngredient Class
+// DairyIngredient Class
 // ============================================================================
 
 /**
@@ -39,12 +39,12 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IDairyIngredient {
+export class DairyIngredient extends IngredientBase implements IDairyIngredient {
   private readonly _dairyIngredient: IDairyIngredientEntity;
 
   /**
-   * Creates a RuntimeDairyIngredient.
-   * Use RuntimeIngredient.create() or RuntimeDairyIngredient.create() instead.
+   * Creates a DairyIngredient.
+   * Use Ingredient.create() or DairyIngredient.create() instead.
    * @internal
    */
   protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity) {
@@ -53,18 +53,18 @@ export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IDa
   }
 
   /**
-   * Factory method for creating a RuntimeDairyIngredient.
+   * Factory method for creating a DairyIngredient.
    * @param context - The runtime context
    * @param id - The ingredient ID
-   * @param ingredient - The raw dairy ingredient data
-   * @returns Success with RuntimeDairyIngredient
+   * @param ingredient - The dairy ingredient data entity
+   * @returns Success with DairyIngredient
    */
   public static create(
     context: IIngredientContext,
     id: IngredientId,
     ingredient: IDairyIngredientEntity
-  ): Result<RuntimeDairyIngredient> {
-    return Success.with(new RuntimeDairyIngredient(context, id, ingredient));
+  ): Result<DairyIngredient> {
+    return Success.with(new DairyIngredient(context, id, ingredient));
   }
 
   // ============================================================================
@@ -96,12 +96,8 @@ export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IDa
     return this._dairyIngredient.waterContent;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw dairy ingredient data
+   * Gets the underlying dairy ingredient data entity
    */
   public get entity(): IDairyIngredientEntity {
     return this._dairyIngredient;

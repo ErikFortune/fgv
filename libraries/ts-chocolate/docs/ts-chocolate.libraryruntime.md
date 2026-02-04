@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AlcoholIngredient](./ts-chocolate.libraryruntime.alcoholingredient.md)
+
+
+</td><td>
+
+A resolved view of an alcohol ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
 [BarTruffle](./ts-chocolate.libraryruntime.bartruffle.md)
 
 
@@ -41,6 +52,17 @@ A resolved view of a bar truffle version with all references resolved.
 </td></tr>
 <tr><td>
 
+[ChocolateIngredient](./ts-chocolate.libraryruntime.chocolateingredient.md)
+
+
+</td><td>
+
+A resolved view of a chocolate ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./ts-chocolate.libraryruntime.chocolatelibrary.md)
 
 
@@ -54,12 +76,56 @@ Provides unified access to: - Ingredient management (multi-source with built-ins
 </td></tr>
 <tr><td>
 
+[DairyIngredient](./ts-chocolate.libraryruntime.dairyingredient.md)
+
+
+</td><td>
+
+A resolved view of a dairy ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[FatIngredient](./ts-chocolate.libraryruntime.fatingredient.md)
+
+
+</td><td>
+
+A resolved view of a fat ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)
+
+
+</td><td>
+
+A resolved view of a recipe with navigation and version access. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
 [FillingRecipeQuery](./ts-chocolate.libraryruntime.fillingrecipequery.md)
 
 
 </td><td>
 
 Fluent query builder for recipes. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
+[FillingRecipeVersion](./ts-chocolate.libraryruntime.fillingrecipeversion.md)
+
+
+</td><td>
+
+A resolved view of a recipe version with all ingredients resolved.
 
 
 </td></tr>
@@ -130,72 +196,6 @@ A resolved view of a rolled truffle confection with navigation capabilities. Imm
 </td><td>
 
 A resolved view of a rolled truffle version with all references resolved.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeAlcoholIngredient](./ts-chocolate.libraryruntime.runtimealcoholingredient.md)
-
-
-</td><td>
-
-A resolved view of an alcohol ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeChocolateIngredient](./ts-chocolate.libraryruntime.runtimechocolateingredient.md)
-
-
-</td><td>
-
-A resolved view of a chocolate ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeDairyIngredient](./ts-chocolate.libraryruntime.runtimedairyingredient.md)
-
-
-</td><td>
-
-A resolved view of a dairy ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeFatIngredient](./ts-chocolate.libraryruntime.runtimefatingredient.md)
-
-
-</td><td>
-
-A resolved view of a fat ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md)
-
-
-</td><td>
-
-A resolved view of a recipe with navigation and version access. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.md)
-
-
-</td><td>
-
-A resolved view of a recipe version with all ingredients resolved.
 
 
 </td></tr>
@@ -273,17 +273,6 @@ Mutable wrapper for IProducedRolledTruffle with undo/redo support. Provides roll
 </td></tr>
 <tr><td>
 
-[RuntimeSugarIngredient](./ts-chocolate.libraryruntime.runtimesugaringredient.md)
-
-
-</td><td>
-
-A resolved view of a sugar ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeTask](./ts-chocolate.libraryruntime.runtimetask.md)
 
 
@@ -292,6 +281,17 @@ A resolved view of a sugar ingredient with navigation capabilities. Immutable - 
 A resolved view of a task with rendering capabilities.
 
 RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Template parsing and required variable extraction - Parameter validation - Template rendering - Context access for resolving task references (future use)
+
+
+</td></tr>
+<tr><td>
+
+[SugarIngredient](./ts-chocolate.libraryruntime.sugaringredient.md)
+
+
+</td><td>
+
+A resolved view of a sugar ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
 
 
 </td></tr>
@@ -358,7 +358,7 @@ Abstract base class for runtime confection versions. Provides common properties 
 </td></tr>
 <tr><td>
 
-[RuntimeIngredient](./ts-chocolate.libraryruntime.runtimeingredient.md)
+[Ingredient](./ts-chocolate.libraryruntime.ingredient.md)
 
 
 </td><td>
@@ -369,7 +369,7 @@ Static factory for creating runtime ingredients. This class cannot be instantiat
 </td></tr>
 <tr><td>
 
-[RuntimeIngredientBase](./ts-chocolate.libraryruntime.runtimeingredientbase.md)
+[IngredientBase](./ts-chocolate.libraryruntime.ingredientbase.md)
 
 
 </td><td>
@@ -1273,7 +1273,7 @@ Union type for all runtime confection version types.
 </td></tr>
 <tr><td>
 
-[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)
+[AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)
 
 
 </td><td>

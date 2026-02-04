@@ -13,5 +13,5 @@ first(): AnyIngredient | undefined;
 ```
 **Returns:**
 
-AnyIngredient \| undefined
+[AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md) \| undefined
 

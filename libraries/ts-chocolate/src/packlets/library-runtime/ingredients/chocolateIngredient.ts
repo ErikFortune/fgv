@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeChocolateIngredient - concrete chocolate ingredient implementation
+ * ChocolateIngredient - concrete chocolate ingredient implementation
  * @packageDocumentation
  */
 
@@ -36,10 +36,10 @@ import {
 } from '../../common';
 import { Ingredients, IChocolateIngredientEntity } from '../../entities';
 import { IIngredientContext, IChocolateIngredient } from '../model';
-import { RuntimeIngredientBase } from './ingredientBase';
+import { IngredientBase } from './ingredientBase';
 
 // ============================================================================
-// RuntimeChocolateIngredient Class
+// ChocolateIngredient Class
 // ============================================================================
 
 /**
@@ -47,12 +47,12 @@ import { RuntimeIngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IChocolateIngredient {
+export class ChocolateIngredient extends IngredientBase implements IChocolateIngredient {
   private readonly _chocolateIngredient: IChocolateIngredientEntity;
 
   /**
-   * Creates a RuntimeChocolateIngredient.
-   * Use RuntimeIngredient.create() or RuntimeChocolateIngredient.create() instead.
+   * Creates a ChocolateIngredient.
+   * Use Ingredient.create() or ChocolateIngredient.create() instead.
    * @internal
    */
   protected constructor(
@@ -65,18 +65,18 @@ export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements
   }
 
   /**
-   * Factory method for creating a RuntimeChocolateIngredient.
+   * Factory method for creating a ChocolateIngredient.
    * @param context - The runtime context
    * @param id - The ingredient ID
-   * @param ingredient - The raw chocolate ingredient data
-   * @returns Success with RuntimeChocolateIngredient
+   * @param ingredient - The chocolate ingredient data entity
+   * @returns Success with ChocolateIngredient
    */
   public static create(
     context: IIngredientContext,
     id: IngredientId,
     ingredient: IChocolateIngredientEntity
-  ): Result<RuntimeChocolateIngredient> {
-    return Success.with(new RuntimeChocolateIngredient(context, id, ingredient));
+  ): Result<ChocolateIngredient> {
+    return Success.with(new ChocolateIngredient(context, id, ingredient));
   }
 
   // ============================================================================
@@ -150,12 +150,8 @@ export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements
     return this._chocolateIngredient.origins;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw chocolate ingredient data
+   * Gets the underlying chocolate ingredient data entity
    */
   public get entity(): IChocolateIngredientEntity {
     return this._chocolateIngredient;

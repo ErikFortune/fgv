@@ -31,6 +31,19 @@ const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
 // @public
 type AggregationMode = 'intersection' | 'union';
 
+// @public
+class AlcoholIngredient extends IngredientBase implements IAlcoholIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity);
+    get alcoholByVolume(): Percentage | undefined;
+    get category(): 'alcohol';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity): Result<AlcoholIngredient>;
+    get entity(): IAlcoholIngredientEntity;
+    get flavorProfile(): string | undefined;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -180,10 +193,10 @@ type AnyFillingOptionEntity = IRecipeFillingOptionEntity | IIngredientFillingOpt
 // @public
 const anyFillingOptionEntity: Converter<AnyFillingOptionEntity>;
 
-// Warning: (ae-forgotten-export) The symbol "RuntimeGenericIngredient" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "GenericIngredient" needs to be exported by the entry point index.d.ts
 //
 // @public
-type AnyIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
+type AnyIngredient = ChocolateIngredient | DairyIngredient | SugarIngredient | FatIngredient | AlcoholIngredient | GenericIngredient;
 
 // @public
 type AnyInventoryEntryEntity = IMoldInventoryEntryEntity | IIngredientInventoryEntryEntity;
@@ -537,6 +550,25 @@ export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cre
 
 // @public
 const chocolateApplication: Converter<ChocolateApplication>;
+
+// @public
+class ChocolateIngredient extends IngredientBase implements IChocolateIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity);
+    get applications(): ReadonlyArray<ChocolateApplication> | undefined;
+    get beanVarieties(): ReadonlyArray<CacaoVariety> | undefined;
+    get cacaoPercentage(): Percentage;
+    get category(): 'chocolate';
+    get chocolateType(): ChocolateType;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity): Result<ChocolateIngredient>;
+    get entity(): IChocolateIngredientEntity;
+    get fluidityStars(): FluidityStars | undefined;
+    get origins(): ReadonlyArray<string> | undefined;
+    get temperatureCurve(): Ingredients_2.ITemperatureCurve | undefined;
+    get viscosityMcM(): DegreesMacMichael | undefined;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1212,6 +1244,19 @@ export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Wo
 // @public
 function createSessionId(collectionId: CollectionId, baseId: BaseSessionId): SessionId;
 
+// @public
+class DairyIngredient extends IngredientBase implements IDairyIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity);
+    get category(): 'dairy';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity): Result<DairyIngredient>;
+    get entity(): IDairyIngredientEntity;
+    get fatContent(): Percentage | undefined;
+    get waterContent(): Percentage | undefined;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1481,6 +1526,18 @@ declare namespace Enums {
 
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
+
+// @public
+class FatIngredient extends IngredientBase implements IFatIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity);
+    get category(): 'fat';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity): Result<FatIngredient>;
+    get entity(): IFatIngredientEntity;
+    get meltingPoint(): Celsius | undefined;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3341,6 +3398,54 @@ declare namespace Indexers {
 }
 
 // @public
+abstract class Ingredient {
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyIngredient>;
+}
+
+// @public
+abstract class IngredientBase implements IIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity);
+    get allergens(): ReadonlyArray<Allergen>;
+    alternateInFillings(): IFillingRecipe[];
+    get baseId(): BaseIngredientId;
+    // (undocumented)
+    protected readonly _baseId: BaseIngredientId;
+    abstract get category(): IngredientCategory;
+    get certifications(): ReadonlyArray<Certification>;
+    get collectionId(): CollectionId;
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    //
+    // (undocumented)
+    protected readonly _context: IIngredientContext;
+    get description(): string | undefined;
+    abstract get entity(): IngredientEntity;
+    get ganacheCharacteristics(): Ingredients_2.IGanacheCharacteristics;
+    get id(): IngredientId;
+    // (undocumented)
+    protected readonly _id: IngredientId;
+    // (undocumented)
+    protected readonly _ingredient: IngredientEntity;
+    isAlcohol(): this is AlcoholIngredient;
+    isChocolate(): this is ChocolateIngredient;
+    isDairy(): this is DairyIngredient;
+    isFat(): this is FatIngredient;
+    isSugar(): this is SugarIngredient;
+    get manufacturer(): string | undefined;
+    get name(): string;
+    primaryInFillings(): IFillingRecipe[];
+    // (undocumented)
+    protected readonly _sourceId: CollectionId;
+    get tags(): ReadonlyArray<string>;
+    get traceAllergens(): ReadonlyArray<Allergen>;
+    usedByFillings(): IFillingRecipe[];
+    get vegan(): boolean | undefined;
+}
+
+// @public
 export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'alcohol' | 'other';
 
 // @public
@@ -4986,16 +5091,16 @@ declare namespace LibraryRuntime {
         IReadOnlyValidatingLibrary,
         IValidatingLibraryParams,
         ValidatingLibrary,
-        RuntimeIngredientBase,
-        RuntimeChocolateIngredient,
-        RuntimeDairyIngredient,
-        RuntimeSugarIngredient,
-        RuntimeFatIngredient,
-        RuntimeAlcoholIngredient,
-        RuntimeIngredient,
-        AnyIngredient as AnyRuntimeIngredient,
-        FillingRecipe as RuntimeFillingRecipe,
-        FillingRecipeVersion as RuntimeFillingRecipeVersion,
+        IngredientBase,
+        ChocolateIngredient,
+        DairyIngredient,
+        SugarIngredient,
+        FatIngredient,
+        AlcoholIngredient,
+        Ingredient,
+        AnyIngredient,
+        FillingRecipe,
+        FillingRecipeVersion,
         ConfectionBase,
         MoldedBonBon,
         BarTruffle,
@@ -5868,117 +5973,12 @@ declare namespace Runtime {
 export { Runtime }
 
 // @public
-class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IAlcoholIngredient {
-    // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity);
-    get alcoholByVolume(): Percentage | undefined;
-    get category(): 'alcohol';
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity): Result<RuntimeAlcoholIngredient>;
-    get entity(): IAlcoholIngredientEntity;
-    get flavorProfile(): string | undefined;
-}
-
-// @public
-class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IChocolateIngredient {
-    // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity);
-    get applications(): ReadonlyArray<ChocolateApplication> | undefined;
-    get beanVarieties(): ReadonlyArray<CacaoVariety> | undefined;
-    get cacaoPercentage(): Percentage;
-    get category(): 'chocolate';
-    get chocolateType(): ChocolateType;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity): Result<RuntimeChocolateIngredient>;
-    get entity(): IChocolateIngredientEntity;
-    get fluidityStars(): FluidityStars | undefined;
-    get origins(): ReadonlyArray<string> | undefined;
-    get temperatureCurve(): Ingredients_2.ITemperatureCurve | undefined;
-    get viscosityMcM(): DegreesMacMichael | undefined;
-}
-
-// @public
 export class RuntimeContext extends LibraryRuntimeContext implements ISessionContext, IRuntimeContext {
     // @internal
     protected constructor(library: ChocolateLibrary, preWarm: boolean);
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
-}
-
-// @public
-class RuntimeDairyIngredient extends RuntimeIngredientBase implements IDairyIngredient {
-    // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity);
-    get category(): 'dairy';
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity): Result<RuntimeDairyIngredient>;
-    get entity(): IDairyIngredientEntity;
-    get fatContent(): Percentage | undefined;
-    get waterContent(): Percentage | undefined;
-}
-
-// @public
-class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatIngredient {
-    // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity);
-    get category(): 'fat';
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity): Result<RuntimeFatIngredient>;
-    get entity(): IFatIngredientEntity;
-    get meltingPoint(): Celsius | undefined;
-}
-
-// @public
-abstract class RuntimeIngredient {
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyIngredient>;
-}
-
-// @public
-abstract class RuntimeIngredientBase implements IIngredient {
-    // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity);
-    get allergens(): ReadonlyArray<Allergen>;
-    alternateInFillings(): IFillingRecipe[];
-    get baseId(): BaseIngredientId;
-    // (undocumented)
-    protected readonly _baseId: BaseIngredientId;
-    abstract get category(): IngredientCategory;
-    get certifications(): ReadonlyArray<Certification>;
-    get collectionId(): CollectionId;
-    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    //
-    // (undocumented)
-    protected readonly _context: IIngredientContext;
-    get description(): string | undefined;
-    abstract get entity(): IngredientEntity;
-    get ganacheCharacteristics(): Ingredients_2.IGanacheCharacteristics;
-    get id(): IngredientId;
-    // (undocumented)
-    protected readonly _id: IngredientId;
-    // (undocumented)
-    protected readonly _ingredient: IngredientEntity;
-    isAlcohol(): this is RuntimeAlcoholIngredient;
-    isChocolate(): this is RuntimeChocolateIngredient;
-    isDairy(): this is RuntimeDairyIngredient;
-    isFat(): this is RuntimeFatIngredient;
-    isSugar(): this is RuntimeSugarIngredient;
-    get manufacturer(): string | undefined;
-    get name(): string;
-    primaryInFillings(): IFillingRecipe[];
-    // (undocumented)
-    protected readonly _sourceId: CollectionId;
-    get tags(): ReadonlyArray<string>;
-    get traceAllergens(): ReadonlyArray<Allergen>;
-    usedByFillings(): IFillingRecipe[];
-    get vegan(): boolean | undefined;
 }
 
 // @public
@@ -6162,19 +6162,6 @@ class RuntimeReverseIndex {
     getIngredientUsage(ingredientId: IngredientId): ReadonlyArray<IIngredientUsageInfo>;
     invalidate(): void;
     warmUp(): void;
-}
-
-// @public
-class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISugarIngredient {
-    // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity);
-    get category(): 'sugar';
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity): Result<RuntimeSugarIngredient>;
-    get entity(): ISugarIngredientEntity;
-    get hydrationNumber(): number | undefined;
-    get sweetnessPotency(): number | undefined;
 }
 
 // @public
@@ -6431,6 +6418,19 @@ type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedu
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, CollectionId>;
+
+// @public
+class SugarIngredient extends IngredientBase implements ISugarIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity);
+    get category(): 'sugar';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity): Result<SugarIngredient>;
+    get entity(): ISugarIngredientEntity;
+    get hydrationNumber(): number | undefined;
+    get sweetnessPotency(): number | undefined;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

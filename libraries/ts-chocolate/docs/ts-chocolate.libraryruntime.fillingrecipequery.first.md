@@ -13,5 +13,5 @@ first(): FillingRecipe | undefined;
 ```
 **Returns:**
 
-FillingRecipe \| undefined
+[FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md) \| undefined
 
