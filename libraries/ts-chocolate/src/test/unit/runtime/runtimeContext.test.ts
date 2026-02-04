@@ -45,7 +45,7 @@ import {
 import {
   Confections as ConfectionsEntities,
   IGanacheCharacteristics,
-  IChocolateIngredient,
+  IChocolateIngredientEntity,
   Ingredients,
   IngredientsLibrary
 } from '../../../packlets/entities';
@@ -99,7 +99,7 @@ describe('RuntimeContext', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: IChocolateIngredient = {
+  const darkChocolate: IChocolateIngredientEntity = {
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate 70%',
     category: 'chocolate',
@@ -110,7 +110,7 @@ describe('RuntimeContext', () => {
     manufacturer: 'Test Manufacturer'
   };
 
-  const milkChocolate: IChocolateIngredient = {
+  const milkChocolate: IChocolateIngredientEntity = {
     baseId: 'milk-chocolate' as BaseIngredientId,
     name: 'Milk Chocolate 40%',
     category: 'chocolate',
@@ -120,7 +120,7 @@ describe('RuntimeContext', () => {
     tags: ['classic']
   };
 
-  const altChocolate: IChocolateIngredient = {
+  const altChocolate: IChocolateIngredientEntity = {
     baseId: 'alt-chocolate' as BaseIngredientId,
     name: 'Alternative Dark Chocolate',
     category: 'chocolate',
@@ -129,7 +129,7 @@ describe('RuntimeContext', () => {
     ganacheCharacteristics: testChars
   };
 
-  const cream: Ingredients.IIngredient = {
+  const cream: Ingredients.IIngredientEntity = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',
@@ -1348,7 +1348,7 @@ describe('RuntimeContext', () => {
 
     test('returns context that returns ingredient density when specified', () => {
       // Create ingredient with density
-      const creamWithDensity: Ingredients.IIngredient = {
+      const creamWithDensity: Ingredients.IIngredientEntity = {
         baseId: 'cream-with-density' as BaseIngredientId,
         name: 'Heavy Cream with Density',
         category: 'dairy',

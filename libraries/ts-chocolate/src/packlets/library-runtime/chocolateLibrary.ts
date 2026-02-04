@@ -43,7 +43,7 @@ import {
   BaseConfectionId
 } from '../common';
 import * as Entities from '../entities';
-import { Ingredient, IngredientsLibrary } from '../entities';
+import { IngredientEntity, IngredientsLibrary } from '../entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../entities';
 import { Converters as EntityConverters } from '../entities';
 import { IMold, MoldsLibrary } from '../entities';
@@ -333,11 +333,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets an {@link Entities.Ingredients.Ingredient | ingredient} by its {@link IngredientId | composite ID}
+   * Gets an {@link Entities.Ingredients.IngredientEntity | ingredient} by its {@link IngredientId | composite ID}
    * @param id - The {@link IngredientId | id} of the ingredient to retrieve.
    * @returns `Success` with ingredient, or `Failure` if not found
    */
-  public getIngredient(id: IngredientId): Result<Ingredient> {
+  public getIngredient(id: IngredientId): Result<IngredientEntity> {
     return this._ingredients.get(id);
   }
 
@@ -449,7 +449,7 @@ export class ChocolateLibrary {
    * @returns Ingredient resolver function
    */
   public createIngredientResolver(): IngredientResolver {
-    return (id: IngredientId): Result<Ingredient> => this.getIngredient(id);
+    return (id: IngredientId): Result<IngredientEntity> => this.getIngredient(id);
   }
 
   /**
@@ -492,12 +492,12 @@ export class ChocolateLibrary {
    */
   public getEditableIngredients(
     collectionId: SourceId
-  ): Result<EditableCollection<Ingredient, BaseIngredientId>> {
+  ): Result<EditableCollection<IngredientEntity, BaseIngredientId>> {
     return EditableCollection.fromLibrary(
       this.ingredients,
       collectionId,
       CommonConverters.baseIngredientId,
-      EntityConverters.Ingredients.ingredient
+      EntityConverters.Ingredients.ingredientEntity
     );
   }
 

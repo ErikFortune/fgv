@@ -27,12 +27,12 @@ import { Failure, Result } from '@fgv/ts-utils';
 
 import { IngredientId } from '../../common';
 import {
-  IAlcoholIngredient,
-  IChocolateIngredient,
-  IDairyIngredient,
-  IFatIngredient,
-  Ingredient,
-  ISugarIngredient
+  IAlcoholIngredientEntity,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  IFatIngredientEntity,
+  IngredientEntity,
+  ISugarIngredientEntity
 } from '../../entities';
 import { IIngredientContext } from '../model';
 import { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
@@ -95,19 +95,19 @@ export abstract class RuntimeIngredient {
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: Ingredient
+    ingredient: IngredientEntity
   ): Result<AnyRuntimeIngredient> {
     switch (ingredient.category) {
       case 'chocolate':
-        return RuntimeChocolateIngredient.create(context, id, ingredient as IChocolateIngredient);
+        return RuntimeChocolateIngredient.create(context, id, ingredient as IChocolateIngredientEntity);
       case 'dairy':
-        return RuntimeDairyIngredient.create(context, id, ingredient as IDairyIngredient);
+        return RuntimeDairyIngredient.create(context, id, ingredient as IDairyIngredientEntity);
       case 'sugar':
-        return RuntimeSugarIngredient.create(context, id, ingredient as ISugarIngredient);
+        return RuntimeSugarIngredient.create(context, id, ingredient as ISugarIngredientEntity);
       case 'fat':
-        return RuntimeFatIngredient.create(context, id, ingredient as IFatIngredient);
+        return RuntimeFatIngredient.create(context, id, ingredient as IFatIngredientEntity);
       case 'alcohol':
-        return RuntimeAlcoholIngredient.create(context, id, ingredient as IAlcoholIngredient);
+        return RuntimeAlcoholIngredient.create(context, id, ingredient as IAlcoholIngredientEntity);
       case 'liquid':
       case 'flavor':
       case 'other':

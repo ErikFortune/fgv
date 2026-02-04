@@ -9,5 +9,5 @@ Gets the underlying raw dairy ingredient data
 **Signature:**
 
 ```typescript
-get raw(): IDairyIngredient;
+get raw(): IDairyIngredientEntity;
 ```

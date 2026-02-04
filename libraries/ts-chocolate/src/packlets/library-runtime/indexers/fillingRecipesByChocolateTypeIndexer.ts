@@ -108,7 +108,7 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
         const ingredientResult = ingredients.get(ingredientId);
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
-          if (Ingredients.isChocolateIngredient(ingredient)) {
+          if (Ingredients.isChocolateIngredientEntity(ingredient)) {
             this._addToSetIndex(this._typeToRecipes, ingredient.chocolateType, recipeId as FillingId);
           }
         }

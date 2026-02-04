@@ -316,7 +316,7 @@ export class RuntimeReverseIndex {
         const ingredientResult = ingredients.get(ingredientId);
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
-          if (Ingredients.isChocolateIngredient(ingredient)) {
+          if (Ingredients.isChocolateIngredientEntity(ingredient)) {
             this._addToIndex(this._chocolateTypeToFillings, ingredient.chocolateType, fillingId as FillingId);
           }
         }

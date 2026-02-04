@@ -9,7 +9,7 @@ Factory method for creating a RuntimeDairyIngredient.
 **Signature:**
 
 ```typescript
-static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient): Result<RuntimeDairyIngredient>;
+static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity): Result<RuntimeDairyIngredient>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ ingredient
 
 </td><td>
 
-[IDairyIngredient](./ts-chocolate.entities.idairyingredient.md)
+[IDairyIngredientEntity](./ts-chocolate.entities.idairyingrediententity.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Function type for resolving an ingredient ID to its full ingredient data
 **Signature:**
 
 ```typescript
-export type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
+export type IngredientResolver = (id: IngredientId) => Result<IngredientEntity>;
 ```
-**References:** [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
+**References:** [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 

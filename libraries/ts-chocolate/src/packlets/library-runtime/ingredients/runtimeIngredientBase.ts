@@ -32,7 +32,7 @@ import {
   IngredientId,
   SourceId
 } from '../../common';
-import { Ingredients, Ingredient } from '../../entities';
+import { Ingredients, IngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
@@ -54,7 +54,7 @@ import type { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
 export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   protected readonly _context: IIngredientContext;
   protected readonly _id: IngredientId;
-  protected readonly _ingredient: Ingredient;
+  protected readonly _ingredient: IngredientEntity;
   protected readonly _sourceId: SourceId;
   protected readonly _baseId: BaseIngredientId;
 
@@ -65,7 +65,7 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
    * @param ingredient - The raw ingredient data
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: Ingredient) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity) {
     this._context = context;
     this._id = id;
     this._ingredient = ingredient;
@@ -181,35 +181,35 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
    * Returns true if this is a chocolate ingredient.
    */
   public isChocolate(): this is RuntimeChocolateIngredient {
-    return Ingredients.isChocolateIngredient(this._ingredient);
+    return Ingredients.isChocolateIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is a dairy ingredient.
    */
   public isDairy(): this is RuntimeDairyIngredient {
-    return Ingredients.isDairyIngredient(this._ingredient);
+    return Ingredients.isDairyIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is a sugar ingredient.
    */
   public isSugar(): this is RuntimeSugarIngredient {
-    return Ingredients.isSugarIngredient(this._ingredient);
+    return Ingredients.isSugarIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is a fat ingredient.
    */
   public isFat(): this is RuntimeFatIngredient {
-    return Ingredients.isFatIngredient(this._ingredient);
+    return Ingredients.isFatIngredientEntity(this._ingredient);
   }
 
   /**
    * Returns true if this is an alcohol ingredient.
    */
   public isAlcohol(): this is RuntimeAlcoholIngredient {
-    return Ingredients.isAlcoholIngredient(this._ingredient);
+    return Ingredients.isAlcoholIngredientEntity(this._ingredient);
   }
 
   // ============================================================================
@@ -244,5 +244,5 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   /**
    * Gets the underlying raw ingredient data (read-only)
    */
-  public abstract get raw(): Ingredient;
+  public abstract get raw(): IngredientEntity;
 }

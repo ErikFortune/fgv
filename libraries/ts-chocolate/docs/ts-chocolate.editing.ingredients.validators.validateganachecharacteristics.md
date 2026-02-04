@@ -9,7 +9,7 @@ Validate ganache characteristics percentages. Ensures all values are 0-100 and t
 **Signature:**
 
 ```typescript
-export declare function validateGanacheCharacteristics(entity: Ingredient): Result<true>;
+export declare function validateGanacheCharacteristics(entity: IngredientEntity): Result<true>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entity
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

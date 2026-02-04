@@ -51,14 +51,14 @@ export {
 } from './fillings';
 
 export {
-  IIngredient,
-  Ingredient,
+  IIngredientEntity,
+  IngredientEntity,
   IngredientsLibrary,
-  IAlcoholIngredient,
-  IDairyIngredient,
-  IChocolateIngredient,
-  IFatIngredient,
-  ISugarIngredient,
+  IAlcoholIngredientEntity,
+  IDairyIngredientEntity,
+  IChocolateIngredientEntity,
+  IFatIngredientEntity,
+  ISugarIngredientEntity,
   IGanacheCharacteristics
 } from './ingredients';
 

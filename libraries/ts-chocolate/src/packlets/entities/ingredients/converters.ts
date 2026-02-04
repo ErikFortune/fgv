@@ -27,15 +27,15 @@ import { Conversion, Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as IngredientConverters } from '../../common';
 import {
-  IAlcoholIngredient,
-  IChocolateIngredient,
-  IDairyIngredient,
-  IFatIngredient,
+  IAlcoholIngredientEntity,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  IFatIngredientEntity,
   IGanacheCharacteristics,
-  IIngredient,
-  ISugarIngredient,
+  IIngredientEntity,
+  ISugarIngredientEntity,
   ITemperatureCurve,
-  Ingredient
+  IngredientEntity
 } from './model';
 
 // ============================================================================
@@ -74,7 +74,7 @@ export const temperatureCurve: Converter<ITemperatureCurve> = Converters.object<
 // Base Ingredient Converter
 // ============================================================================
 
-const commonIngredientFields: Conversion.FieldConverters<Omit<IIngredient, 'category'>> = {
+const commonIngredientEntityFields: Conversion.FieldConverters<Omit<IIngredientEntity, 'category'>> = {
   baseId: IngredientConverters.baseIngredientId,
   name: Converters.string.withConstraint((s) => s.length >= 1 && s.length <= 200, {
     description: 'must be 1-200 characters'
@@ -104,11 +104,11 @@ const commonIngredientFields: Conversion.FieldConverters<Omit<IIngredient, 'cate
 };
 
 /**
- * Converter for base IIngredient properties
+ * Converter for base {@link Entities.Ingredients.IIngredientEntity | IIngredientEntity} properties.
  * @public
  */
-export const baseIngredient: Converter<IIngredient> = Converters.object<IIngredient>({
-  ...commonIngredientFields,
+export const baseIngredientEntity: Converter<IIngredientEntity> = Converters.object<IIngredientEntity>({
+  ...commonIngredientEntityFields,
   category: IngredientConverters.ingredientCategory
 });
 
@@ -117,80 +117,80 @@ export const baseIngredient: Converter<IIngredient> = Converters.object<IIngredi
 // ============================================================================
 
 /**
- * Converter for IChocolateIngredient
+ * Converter for {@link Entities.Ingredients.IChocolateIngredientEntity | IChocolateIngredientEntity}.
  * @public
  */
-export const chocolateIngredient: Converter<IChocolateIngredient> = Converters.object<IChocolateIngredient>({
-  ...commonIngredientFields,
-  category: Converters.literal('chocolate'),
-  chocolateType: IngredientConverters.chocolateType,
-  cacaoPercentage: IngredientConverters.percentage,
-  fluidityStars: IngredientConverters.fluidityStars.optional(),
-  viscosityMcM: IngredientConverters.degreesMacMichael.optional(),
-  temperatureCurve: temperatureCurve.optional(),
-  origins: Converters.arrayOf(Converters.string).optional(),
-  beanVarieties: Converters.arrayOf(IngredientConverters.cacaoVariety).optional(),
-  applications: Converters.arrayOf(IngredientConverters.chocolateApplication).optional()
-});
+export const chocolateIngredientEntity: Converter<IChocolateIngredientEntity> =
+  Converters.object<IChocolateIngredientEntity>({
+    ...commonIngredientEntityFields,
+    category: Converters.literal('chocolate'),
+    chocolateType: IngredientConverters.chocolateType,
+    cacaoPercentage: IngredientConverters.percentage,
+    fluidityStars: IngredientConverters.fluidityStars.optional(),
+    viscosityMcM: IngredientConverters.degreesMacMichael.optional(),
+    temperatureCurve: temperatureCurve.optional(),
+    origins: Converters.arrayOf(Converters.string).optional(),
+    beanVarieties: Converters.arrayOf(IngredientConverters.cacaoVariety).optional(),
+    applications: Converters.arrayOf(IngredientConverters.chocolateApplication).optional()
+  });
 
 /**
- * Converter for ISugarIngredient
+ * Converter for {@link Entities.Ingredients.ISugarIngredientEntity | ISugarIngredientEntity}.
  * @public
  */
-export const sugarIngredient: Converter<ISugarIngredient> = Converters.object<ISugarIngredient>({
-  ...commonIngredientFields,
-  category: Converters.literal('sugar'),
-  hydrationNumber: Converters.number.optional(),
-  sweetnessPotency: Converters.number.optional()
-});
+export const sugarIngredientEntity: Converter<ISugarIngredientEntity> =
+  Converters.object<ISugarIngredientEntity>({
+    ...commonIngredientEntityFields,
+    category: Converters.literal('sugar'),
+    hydrationNumber: Converters.number.optional(),
+    sweetnessPotency: Converters.number.optional()
+  });
 
 /**
- * Converter for IDairyIngredient
+ * Converter for {@link Entities.Ingredients.IDairyIngredientEntity | IDairyIngredientEntity}.
  * @public
  */
-export const dairyIngredient: Converter<IDairyIngredient> = Converters.object<IDairyIngredient>({
-  ...commonIngredientFields,
-  category: Converters.literal('dairy'),
-  fatContent: IngredientConverters.percentage.optional(),
-  waterContent: IngredientConverters.percentage.optional()
-});
+export const dairyIngredientEntity: Converter<IDairyIngredientEntity> =
+  Converters.object<IDairyIngredientEntity>({
+    ...commonIngredientEntityFields,
+    category: Converters.literal('dairy'),
+    fatContent: IngredientConverters.percentage.optional(),
+    waterContent: IngredientConverters.percentage.optional()
+  });
 
 /**
- * Converter for IFatIngredient
+ * Converter for {@link Entities.Ingredients.IFatIngredientEntity | IFatIngredientEntity}.
  * @public
  */
-export const fatIngredient: Converter<IFatIngredient> = Converters.object<IFatIngredient>({
-  ...commonIngredientFields,
+export const fatIngredientEntity: Converter<IFatIngredientEntity> = Converters.object<IFatIngredientEntity>({
+  ...commonIngredientEntityFields,
   category: Converters.literal('fat'),
   ganacheCharacteristics,
   meltingPoint: IngredientConverters.celsius.optional()
 });
 
 /**
- * Converter for IAlcoholIngredient
+ * Converter for {@link Entities.Ingredients.IAlcoholIngredientEntity | IAlcoholIngredientEntity}.
  * @public
  */
-export const alcoholIngredient: Converter<IAlcoholIngredient> = Converters.object<IAlcoholIngredient>({
-  ...commonIngredientFields,
-  category: Converters.literal('alcohol'),
-  alcoholByVolume: IngredientConverters.percentage.optional(),
-  flavorProfile: Converters.string.optional()
-});
-
-// ============================================================================
-// Discriminated Union Converter
-// ============================================================================
+export const alcoholIngredientEntity: Converter<IAlcoholIngredientEntity> =
+  Converters.object<IAlcoholIngredientEntity>({
+    ...commonIngredientEntityFields,
+    category: Converters.literal('alcohol'),
+    alcoholByVolume: IngredientConverters.percentage.optional(),
+    flavorProfile: Converters.string.optional()
+  });
 
 /**
- * Converter for Ingredient (discriminated union)
- * Tries specialized converters based on category, falls back to base
+ * Converter for {@link Entities.Ingredients.IngredientEntity | IngredientEntity} (discriminated union).
+ * Tries specialized converters based on category, falls back to base.
  * @public
  */
-export const ingredient: Converter<Ingredient> = Converters.oneOf<Ingredient>([
-  chocolateIngredient,
-  sugarIngredient,
-  dairyIngredient,
-  fatIngredient,
-  alcoholIngredient,
-  baseIngredient
+export const ingredientEntity: Converter<IngredientEntity> = Converters.oneOf<IngredientEntity>([
+  chocolateIngredientEntity,
+  sugarIngredientEntity,
+  dairyIngredientEntity,
+  fatIngredientEntity,
+  alcoholIngredientEntity,
+  baseIngredientEntity
 ]);

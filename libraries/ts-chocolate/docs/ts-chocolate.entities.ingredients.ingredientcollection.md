@@ -9,7 +9,7 @@ Type for the collections in an IngredientsLibrary.
 **Signature:**
 
 ```typescript
-export type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;
+export type IngredientCollection = SubLibraryCollection<BaseIngredientId, IngredientEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 

@@ -9,7 +9,7 @@ Validator type for IngredientsLibrary collections.
 **Signature:**
 
 ```typescript
-export type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
+export type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, IngredientEntity>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 

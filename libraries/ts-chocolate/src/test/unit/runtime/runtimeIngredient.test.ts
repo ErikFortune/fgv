@@ -35,11 +35,11 @@ import {
 
 import {
   IGanacheCharacteristics,
-  IChocolateIngredient,
-  IDairyIngredient,
-  ISugarIngredient,
-  IFatIngredient,
-  IAlcoholIngredient,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  ISugarIngredientEntity,
+  IFatIngredientEntity,
+  IAlcoholIngredientEntity,
   Ingredients,
   IngredientsLibrary
 } from '../../../packlets/entities';
@@ -71,7 +71,7 @@ describe('RuntimeIngredient', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: IChocolateIngredient = {
+  const darkChocolate: IChocolateIngredientEntity = {
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate 70%',
     description: 'Premium dark chocolate',
@@ -93,7 +93,7 @@ describe('RuntimeIngredient', () => {
     origins: ['Venezuela']
   };
 
-  const cream: IDairyIngredient = {
+  const cream: IDairyIngredientEntity = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',
@@ -109,7 +109,7 @@ describe('RuntimeIngredient', () => {
     waterContent: 55 as Percentage
   };
 
-  const sugar: ISugarIngredient = {
+  const sugar: ISugarIngredientEntity = {
     baseId: 'sugar' as BaseIngredientId,
     name: 'Granulated Sugar',
     category: 'sugar',
@@ -125,7 +125,7 @@ describe('RuntimeIngredient', () => {
     sweetnessPotency: 1.0
   };
 
-  const butter: IFatIngredient = {
+  const butter: IFatIngredientEntity = {
     baseId: 'butter' as BaseIngredientId,
     name: 'Unsalted Butter',
     category: 'fat',
@@ -140,7 +140,7 @@ describe('RuntimeIngredient', () => {
     meltingPoint: 32 as Celsius
   };
 
-  const rum: IAlcoholIngredient = {
+  const rum: IAlcoholIngredientEntity = {
     baseId: 'rum' as BaseIngredientId,
     name: 'Dark Rum',
     category: 'alcohol',
@@ -157,7 +157,7 @@ describe('RuntimeIngredient', () => {
   };
 
   // Generic ingredient categories (liquid, flavor, other)
-  const water: Ingredients.IIngredient = {
+  const water: Ingredients.IIngredientEntity = {
     baseId: 'water' as BaseIngredientId,
     name: 'Water',
     category: 'liquid',
@@ -171,7 +171,7 @@ describe('RuntimeIngredient', () => {
     }
   };
 
-  const vanillaExtract: Ingredients.IIngredient = {
+  const vanillaExtract: Ingredients.IIngredientEntity = {
     baseId: 'vanilla-extract' as BaseIngredientId,
     name: 'Vanilla Extract',
     category: 'flavor',
@@ -186,7 +186,7 @@ describe('RuntimeIngredient', () => {
     tags: ['natural', 'aroma']
   };
 
-  const lecithin: Ingredients.IIngredient = {
+  const lecithin: Ingredients.IIngredientEntity = {
     baseId: 'lecithin' as BaseIngredientId,
     name: 'Soy Lecithin',
     category: 'other',

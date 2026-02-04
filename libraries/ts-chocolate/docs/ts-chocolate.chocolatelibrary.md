@@ -370,7 +370,7 @@ Get an editable tasks collection with persistence enabled.
 
 </td><td>
 
-Gets an [ingredient](./ts-chocolate.entities.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
+Gets an [ingredient](./ts-chocolate.entities.ingredients.ingrediententity.md) by its [composite ID](./ts-chocolate.ingredientid.md)
 
 
 </td></tr>

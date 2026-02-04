@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId, Percentage } from '../../common';
-import { IAlcoholIngredient } from '../../entities';
+import { IAlcoholIngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeAlcoholIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
@@ -40,14 +40,14 @@ import { RuntimeIngredientBase } from './runtimeIngredientBase';
  * @public
  */
 export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntimeAlcoholIngredient {
-  private readonly _alcoholIngredient: IAlcoholIngredient;
+  private readonly _alcoholIngredient: IAlcoholIngredientEntity;
 
   /**
    * Creates a RuntimeAlcoholIngredient.
    * Use RuntimeIngredient.create() or RuntimeAlcoholIngredient.create() instead.
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredient) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity) {
     super(context, id, ingredient);
     this._alcoholIngredient = ingredient;
   }
@@ -62,7 +62,7 @@ export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements I
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: IAlcoholIngredient
+    ingredient: IAlcoholIngredientEntity
   ): Result<RuntimeAlcoholIngredient> {
     return Success.with(new RuntimeAlcoholIngredient(context, id, ingredient));
   }
@@ -103,7 +103,7 @@ export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements I
   /**
    * Gets the underlying raw alcohol ingredient data
    */
-  public get raw(): IAlcoholIngredient {
+  public get raw(): IAlcoholIngredientEntity {
     return this._alcoholIngredient;
   }
 }

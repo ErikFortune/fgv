@@ -9,7 +9,7 @@ Validate temperature curve for chocolate ingredients.
 **Signature:**
 
 ```typescript
-export declare function validateTemperatureCurve(entity: Ingredient): Result<true>;
+export declare function validateTemperatureCurve(entity: IngredientEntity): Result<true>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entity
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

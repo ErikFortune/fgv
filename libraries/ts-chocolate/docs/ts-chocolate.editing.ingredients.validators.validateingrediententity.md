@@ -9,7 +9,7 @@ Validate entity-level constraints that span multiple fields. This should be call
 **Signature:**
 
 ```typescript
-export declare function validateIngredientEntity(entity: Ingredient): Result<Ingredient>;
+export declare function validateIngredientEntity(entity: IngredientEntity): Result<IngredientEntity>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entity
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Complete ingredient entity to validate
 
 **Returns:**
 
-Result&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->&gt;
+Result&lt;[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)<!-- -->&gt;
 
 Result indicating validation success or failure
 

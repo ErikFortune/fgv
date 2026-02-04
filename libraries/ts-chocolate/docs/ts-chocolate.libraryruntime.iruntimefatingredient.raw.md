@@ -9,5 +9,5 @@ Gets the underlying raw ingredient data.
 **Signature:**
 
 ```typescript
-readonly raw: IFatIngredient;
+readonly raw: IFatIngredientEntity;
 ```

@@ -31,7 +31,7 @@ import {
   FillingVersionSpec
 } from '../../../packlets/common';
 
-import { Ingredients, Ingredient } from '../../../packlets/entities';
+import { Ingredients, IngredientEntity } from '../../../packlets/entities';
 
 import { Fillings, IFillingRecipeEntity, IFillingRecipeVersionEntity } from '../../../packlets/entities';
 
@@ -64,7 +64,7 @@ describe('Ganache Calculator', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: Ingredient = {
+  const darkChocolate: IngredientEntity = {
     baseId: 'dark-70' as BaseIngredientId,
     name: 'Dark 70%',
     category: 'chocolate',
@@ -73,7 +73,7 @@ describe('Ganache Calculator', () => {
     ganacheCharacteristics: darkChocolateChars
   };
 
-  const cream: Ingredients.IIngredient = {
+  const cream: Ingredients.IIngredientEntity = {
     baseId: 'cream-35' as BaseIngredientId,
     name: 'Heavy Cream 35%',
     category: 'dairy',
@@ -150,7 +150,7 @@ describe('Ganache Calculator', () => {
     });
 
     test('handles zero water (Infinity ratios)', () => {
-      const noWaterIngredient: Ingredients.IIngredient = {
+      const noWaterIngredient: Ingredients.IIngredientEntity = {
         baseId: 'no-water' as BaseIngredientId,
         name: 'No Water',
         category: 'other',
@@ -282,7 +282,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on high fat', () => {
       // High fat scenario
-      const highFatIngredient: Ingredients.IIngredient = {
+      const highFatIngredient: Ingredients.IIngredientEntity = {
         baseId: 'highfat' as BaseIngredientId,
         name: 'High Fat',
         category: 'fat',
@@ -306,7 +306,7 @@ describe('Ganache Calculator', () => {
 
     test('errors on high water', () => {
       // High water scenario
-      const highWaterIngredient: Ingredients.IIngredient = {
+      const highWaterIngredient: Ingredients.IIngredientEntity = {
         baseId: 'highwater' as BaseIngredientId,
         name: 'High Water',
         category: 'liquid',
@@ -331,7 +331,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on low water', () => {
       // Low water
-      const lowWaterIngredient: Ingredients.IIngredient = {
+      const lowWaterIngredient: Ingredients.IIngredientEntity = {
         baseId: 'lowwater' as BaseIngredientId,
         name: 'Low Water',
         category: 'other',
@@ -355,7 +355,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on fat to water ratio issues', () => {
       // Very high fat to water ratio
-      const unbalanced: Ingredients.IIngredient = {
+      const unbalanced: Ingredients.IIngredientEntity = {
         baseId: 'unbalanced' as BaseIngredientId,
         name: 'Unbalanced',
         category: 'other',
@@ -379,7 +379,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on low sugar to water ratio', () => {
       // Low sugar to water
-      const lowSugar: Ingredients.IIngredient = {
+      const lowSugar: Ingredients.IIngredientEntity = {
         baseId: 'lowsugar' as BaseIngredientId,
         name: 'Low Sugar',
         category: 'other',

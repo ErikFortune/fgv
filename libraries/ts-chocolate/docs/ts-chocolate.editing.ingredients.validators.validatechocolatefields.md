@@ -9,7 +9,7 @@ Validate chocolate-specific fields.
 **Signature:**
 
 ```typescript
-export declare function validateChocolateFields(entity: Ingredient): Result<true>;
+export declare function validateChocolateFields(entity: IngredientEntity): Result<true>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entity
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

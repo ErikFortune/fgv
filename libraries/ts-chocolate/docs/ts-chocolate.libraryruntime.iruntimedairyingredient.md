@@ -90,7 +90,7 @@ _(Optional)_ Fat content percentage
 
 </td><td>
 
-[IDairyIngredient](./ts-chocolate.entities.idairyingredient.md)
+[IDairyIngredientEntity](./ts-chocolate.entities.idairyingrediententity.md)
 
 
 </td><td>

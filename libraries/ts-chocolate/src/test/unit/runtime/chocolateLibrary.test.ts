@@ -91,7 +91,7 @@ describe('ChocolateLibrary', () => {
     otherFats: 0 as Percentage
   };
 
-  const testIngredient: Ingredients.Ingredient = {
+  const testIngredient: Ingredients.IngredientEntity = {
     baseId: 'testChoco' as unknown as BaseIngredientId,
     name: 'Test Chocolate',
     category: 'chocolate',

@@ -9,5 +9,5 @@ Gets the underlying raw sugar ingredient data
 **Signature:**
 
 ```typescript
-get raw(): ISugarIngredient;
+get raw(): ISugarIngredientEntity;
 ```

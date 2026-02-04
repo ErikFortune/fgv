@@ -9,7 +9,7 @@ A single entry in an ingredients collection.
 **Signature:**
 
 ```typescript
-export type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, Ingredient>;
+export type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, IngredientEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.entities.ingredient.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 

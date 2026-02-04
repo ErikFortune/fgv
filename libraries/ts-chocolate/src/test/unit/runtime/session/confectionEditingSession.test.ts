@@ -44,10 +44,10 @@ import {
 } from '../../../../packlets/common';
 import {
   Confections as ConfectionEntities,
-  IChocolateIngredient,
+  IChocolateIngredientEntity,
   IFillingRecipeEntity,
   IGanacheCharacteristics,
-  IIngredient,
+  IIngredientEntity,
   IMold,
   IProcedure,
   ConfectionsLibrary,
@@ -79,7 +79,7 @@ describe('ConfectionEditingSession Factory', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: IChocolateIngredient = {
+  const darkChocolate: IChocolateIngredientEntity = {
     baseId: 'chocolate-dark-64' as BaseIngredientId,
     name: 'Dark Chocolate 64%',
     category: 'chocolate',
@@ -88,7 +88,7 @@ describe('ConfectionEditingSession Factory', () => {
     ganacheCharacteristics: mockChars
   };
 
-  const caramel: IIngredient = {
+  const caramel: IIngredientEntity = {
     baseId: 'caramel' as BaseIngredientId,
     name: 'Caramel',
     category: 'sugar',

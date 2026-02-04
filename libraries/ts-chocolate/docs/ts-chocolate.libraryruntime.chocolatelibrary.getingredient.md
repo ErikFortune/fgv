@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.ChocolateLibrary.getIngredient() method
 
-Gets an [ingredient](./ts-chocolate.entities.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
+Gets an [ingredient](./ts-chocolate.entities.ingredients.ingrediententity.md) by its [composite ID](./ts-chocolate.ingredientid.md)
 
 **Signature:**
 
 ```typescript
-getIngredient(id: IngredientId): Result<Ingredient>;
+getIngredient(id: IngredientId): Result<IngredientEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.ingredientid.md) of the ingredient to retrieve.
 
 **Returns:**
 
-Result&lt;[Ingredient](./ts-chocolate.entities.ingredient.md)<!-- -->&gt;
+Result&lt;[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)<!-- -->&gt;
 
 `Success` with ingredient, or `Failure` if not found
 

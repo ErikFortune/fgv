@@ -24,13 +24,13 @@ import '@fgv/ts-utils-jest';
 import {
   ganacheCharacteristics,
   temperatureCurve,
-  baseIngredient,
-  chocolateIngredient,
-  sugarIngredient,
-  dairyIngredient,
-  fatIngredient,
-  alcoholIngredient,
-  ingredient
+  baseIngredientEntity,
+  chocolateIngredientEntity,
+  sugarIngredientEntity,
+  dairyIngredientEntity,
+  fatIngredientEntity,
+  alcoholIngredientEntity,
+  ingredientEntity
 } from '../../../packlets/entities/ingredients/converters';
 
 describe('Ingredient Converters', () => {
@@ -157,7 +157,7 @@ describe('Ingredient Converters', () => {
     };
 
     test('converts valid base ingredient', () => {
-      expect(baseIngredient.convert(validBaseIngredient)).toSucceedAndSatisfy((result) => {
+      expect(baseIngredientEntity.convert(validBaseIngredient)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('test-ingredient');
         expect(result.name).toBe('Test Ingredient');
         expect(result.category).toBe('other');
@@ -176,7 +176,7 @@ describe('Ingredient Converters', () => {
         tags: ['premium', 'artisan']
       };
 
-      expect(baseIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(baseIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.description).toBe('A test ingredient');
         expect(result.manufacturer).toBe('Test Co.');
         expect(result.allergens).toEqual(['milk', 'soy']);
@@ -192,7 +192,7 @@ describe('Ingredient Converters', () => {
         category: 'other',
         ganacheCharacteristics: validGanacheCharacteristics
       };
-      expect(baseIngredient.convert(input)).toFail();
+      expect(baseIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid baseId (contains dot)', () => {
@@ -200,7 +200,7 @@ describe('Ingredient Converters', () => {
         ...validBaseIngredient,
         baseId: 'invalid.id'
       };
-      expect(baseIngredient.convert(input)).toFail();
+      expect(baseIngredientEntity.convert(input)).toFail();
     });
 
     test('fails with empty name', () => {
@@ -208,7 +208,7 @@ describe('Ingredient Converters', () => {
         ...validBaseIngredient,
         name: ''
       };
-      expect(baseIngredient.convert(input)).toFail();
+      expect(baseIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid category', () => {
@@ -216,7 +216,7 @@ describe('Ingredient Converters', () => {
         ...validBaseIngredient,
         category: 'invalid-category'
       };
-      expect(baseIngredient.convert(input)).toFail();
+      expect(baseIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid allergen', () => {
@@ -224,7 +224,7 @@ describe('Ingredient Converters', () => {
         ...validBaseIngredient,
         allergens: ['milk', 'invalid-allergen']
       };
-      expect(baseIngredient.convert(input)).toFail();
+      expect(baseIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid certification', () => {
@@ -232,7 +232,7 @@ describe('Ingredient Converters', () => {
         ...validBaseIngredient,
         certifications: ['organic', 'invalid-cert']
       };
-      expect(baseIngredient.convert(input)).toFail();
+      expect(baseIngredientEntity.convert(input)).toFail();
     });
   });
 
@@ -251,7 +251,7 @@ describe('Ingredient Converters', () => {
     };
 
     test('converts valid chocolate ingredient', () => {
-      expect(chocolateIngredient.convert(validChocolateIngredient)).toSucceedAndSatisfy((result) => {
+      expect(chocolateIngredientEntity.convert(validChocolateIngredient)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('chocolate');
         expect(result.chocolateType).toBe('dark');
         expect(result.cacaoPercentage).toBe(70);
@@ -269,7 +269,7 @@ describe('Ingredient Converters', () => {
         applications: ['ganache', 'molding']
       };
 
-      expect(chocolateIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(chocolateIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.fluidityStars).toBe(3);
         expect(result.viscosityMcM).toBe(8);
         expect(result.temperatureCurve).toBeDefined();
@@ -284,7 +284,7 @@ describe('Ingredient Converters', () => {
         ...validChocolateIngredient,
         category: 'sugar'
       };
-      expect(chocolateIngredient.convert(input)).toFail();
+      expect(chocolateIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for missing chocolateType', () => {
@@ -295,7 +295,7 @@ describe('Ingredient Converters', () => {
         ganacheCharacteristics: validGanacheCharacteristics,
         cacaoPercentage: 70
       };
-      expect(chocolateIngredient.convert(input)).toFail();
+      expect(chocolateIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid chocolateType', () => {
@@ -303,7 +303,7 @@ describe('Ingredient Converters', () => {
         ...validChocolateIngredient,
         chocolateType: 'invalid-type'
       };
-      expect(chocolateIngredient.convert(input)).toFail();
+      expect(chocolateIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid fluidityStars', () => {
@@ -311,7 +311,7 @@ describe('Ingredient Converters', () => {
         ...validChocolateIngredient,
         fluidityStars: 6
       };
-      expect(chocolateIngredient.convert(input)).toFail();
+      expect(chocolateIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid bean variety', () => {
@@ -319,7 +319,7 @@ describe('Ingredient Converters', () => {
         ...validChocolateIngredient,
         beanVarieties: ['Criollo', 'InvalidVariety']
       };
-      expect(chocolateIngredient.convert(input)).toFail();
+      expect(chocolateIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid application', () => {
@@ -327,7 +327,7 @@ describe('Ingredient Converters', () => {
         ...validChocolateIngredient,
         applications: ['ganache', 'invalid-application']
       };
-      expect(chocolateIngredient.convert(input)).toFail();
+      expect(chocolateIngredientEntity.convert(input)).toFail();
     });
   });
 
@@ -344,7 +344,7 @@ describe('Ingredient Converters', () => {
     };
 
     test('converts valid sugar ingredient', () => {
-      expect(sugarIngredient.convert(validSugarIngredient)).toSucceedAndSatisfy((result) => {
+      expect(sugarIngredientEntity.convert(validSugarIngredient)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('sugar');
         expect(result.baseId).toBe('granulated-sugar');
         expect(result.name).toBe('Granulated Sugar');
@@ -358,7 +358,7 @@ describe('Ingredient Converters', () => {
         sweetnessPotency: 1.0
       };
 
-      expect(sugarIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(sugarIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.hydrationNumber).toBe(1.5);
         expect(result.sweetnessPotency).toBe(1.0);
       });
@@ -369,7 +369,7 @@ describe('Ingredient Converters', () => {
         ...validSugarIngredient,
         category: 'chocolate'
       };
-      expect(sugarIngredient.convert(input)).toFail();
+      expect(sugarIngredientEntity.convert(input)).toFail();
     });
 
     test('converts with zero hydration number', () => {
@@ -377,7 +377,7 @@ describe('Ingredient Converters', () => {
         ...validSugarIngredient,
         hydrationNumber: 0
       };
-      expect(sugarIngredient.convert(input)).toSucceed();
+      expect(sugarIngredientEntity.convert(input)).toSucceed();
     });
 
     test('converts with sweetness potency greater than 1', () => {
@@ -385,7 +385,7 @@ describe('Ingredient Converters', () => {
         ...validSugarIngredient,
         sweetnessPotency: 2.5
       };
-      expect(sugarIngredient.convert(input)).toSucceed();
+      expect(sugarIngredientEntity.convert(input)).toSucceed();
     });
 
     test('fails for non-numeric hydrationNumber', () => {
@@ -393,7 +393,7 @@ describe('Ingredient Converters', () => {
         ...validSugarIngredient,
         hydrationNumber: 'sweet'
       };
-      expect(sugarIngredient.convert(input)).toFail();
+      expect(sugarIngredientEntity.convert(input)).toFail();
     });
   });
 
@@ -410,7 +410,7 @@ describe('Ingredient Converters', () => {
     };
 
     test('converts valid dairy ingredient', () => {
-      expect(dairyIngredient.convert(validDairyIngredient)).toSucceedAndSatisfy((result) => {
+      expect(dairyIngredientEntity.convert(validDairyIngredient)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('dairy');
         expect(result.baseId).toBe('heavy-cream');
         expect(result.name).toBe('Heavy Cream 35%');
@@ -424,7 +424,7 @@ describe('Ingredient Converters', () => {
         waterContent: 60
       };
 
-      expect(dairyIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(dairyIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.fatContent).toBe(35);
         expect(result.waterContent).toBe(60);
       });
@@ -435,7 +435,7 @@ describe('Ingredient Converters', () => {
         ...validDairyIngredient,
         category: 'fat'
       };
-      expect(dairyIngredient.convert(input)).toFail();
+      expect(dairyIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid fatContent percentage', () => {
@@ -443,7 +443,7 @@ describe('Ingredient Converters', () => {
         ...validDairyIngredient,
         fatContent: 150
       };
-      expect(dairyIngredient.convert(input)).toFail();
+      expect(dairyIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for negative waterContent', () => {
@@ -451,7 +451,7 @@ describe('Ingredient Converters', () => {
         ...validDairyIngredient,
         waterContent: -10
       };
-      expect(dairyIngredient.convert(input)).toFail();
+      expect(dairyIngredientEntity.convert(input)).toFail();
     });
 
     test('converts with zero fat content', () => {
@@ -459,7 +459,7 @@ describe('Ingredient Converters', () => {
         ...validDairyIngredient,
         fatContent: 0
       };
-      expect(dairyIngredient.convert(input)).toSucceed();
+      expect(dairyIngredientEntity.convert(input)).toSucceed();
     });
   });
 
@@ -476,7 +476,7 @@ describe('Ingredient Converters', () => {
     };
 
     test('converts valid fat ingredient', () => {
-      expect(fatIngredient.convert(validFatIngredient)).toSucceedAndSatisfy((result) => {
+      expect(fatIngredientEntity.convert(validFatIngredient)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('fat');
         expect(result.baseId).toBe('cocoa-butter');
         expect(result.name).toBe('Cocoa Butter');
@@ -489,7 +489,7 @@ describe('Ingredient Converters', () => {
         meltingPoint: 34
       };
 
-      expect(fatIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fatIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.meltingPoint).toBe(34);
       });
     });
@@ -499,7 +499,7 @@ describe('Ingredient Converters', () => {
         ...validFatIngredient,
         category: 'dairy'
       };
-      expect(fatIngredient.convert(input)).toFail();
+      expect(fatIngredientEntity.convert(input)).toFail();
     });
 
     test('converts with negative melting point', () => {
@@ -507,7 +507,7 @@ describe('Ingredient Converters', () => {
         ...validFatIngredient,
         meltingPoint: -10
       };
-      expect(fatIngredient.convert(input)).toSucceed();
+      expect(fatIngredientEntity.convert(input)).toSucceed();
     });
 
     test('fails for non-numeric melting point', () => {
@@ -515,7 +515,7 @@ describe('Ingredient Converters', () => {
         ...validFatIngredient,
         meltingPoint: 'warm'
       };
-      expect(fatIngredient.convert(input)).toFail();
+      expect(fatIngredientEntity.convert(input)).toFail();
     });
   });
 
@@ -532,7 +532,7 @@ describe('Ingredient Converters', () => {
     };
 
     test('converts valid alcohol ingredient without optional fields', () => {
-      expect(alcoholIngredient.convert(validAlcoholIngredient)).toSucceedAndSatisfy((result) => {
+      expect(alcoholIngredientEntity.convert(validAlcoholIngredient)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('alcohol');
         expect(result.baseId).toBe('grand-marnier');
         expect(result.name).toBe('Grand Marnier');
@@ -547,7 +547,7 @@ describe('Ingredient Converters', () => {
         alcoholByVolume: 40
       };
 
-      expect(alcoholIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(alcoholIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.alcoholByVolume).toBe(40);
       });
     });
@@ -558,7 +558,7 @@ describe('Ingredient Converters', () => {
         flavorProfile: 'Orange liqueur with cognac base'
       };
 
-      expect(alcoholIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(alcoholIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.flavorProfile).toBe('Orange liqueur with cognac base');
       });
     });
@@ -573,7 +573,7 @@ describe('Ingredient Converters', () => {
         tags: ['liqueur', 'orange', 'premium']
       };
 
-      expect(alcoholIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(alcoholIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.alcoholByVolume).toBe(40);
         expect(result.flavorProfile).toBe('Rich orange with cognac notes');
         expect(result.description).toBe('Premium French liqueur');
@@ -587,7 +587,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         category: 'liquid'
       };
-      expect(alcoholIngredient.convert(input)).toFail();
+      expect(alcoholIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid alcoholByVolume (negative)', () => {
@@ -595,7 +595,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         alcoholByVolume: -5
       };
-      expect(alcoholIngredient.convert(input)).toFail();
+      expect(alcoholIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for invalid alcoholByVolume (over 100)', () => {
@@ -603,7 +603,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         alcoholByVolume: 150
       };
-      expect(alcoholIngredient.convert(input)).toFail();
+      expect(alcoholIngredientEntity.convert(input)).toFail();
     });
 
     test('converts with zero alcoholByVolume', () => {
@@ -611,7 +611,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         alcoholByVolume: 0
       };
-      expect(alcoholIngredient.convert(input)).toSucceed();
+      expect(alcoholIngredientEntity.convert(input)).toSucceed();
     });
 
     test('converts with 100% alcoholByVolume', () => {
@@ -619,7 +619,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         alcoholByVolume: 100
       };
-      expect(alcoholIngredient.convert(input)).toSucceed();
+      expect(alcoholIngredientEntity.convert(input)).toSucceed();
     });
 
     test('fails for non-numeric alcoholByVolume', () => {
@@ -627,7 +627,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         alcoholByVolume: 'strong'
       };
-      expect(alcoholIngredient.convert(input)).toFail();
+      expect(alcoholIngredientEntity.convert(input)).toFail();
     });
 
     test('converts with empty flavorProfile (no validation on empty strings)', () => {
@@ -635,7 +635,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         flavorProfile: ''
       };
-      expect(alcoholIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(alcoholIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.flavorProfile).toBe('');
       });
     });
@@ -645,7 +645,7 @@ describe('Ingredient Converters', () => {
         ...validAlcoholIngredient,
         flavorProfile: 123
       };
-      expect(alcoholIngredient.convert(input)).toFail();
+      expect(alcoholIngredientEntity.convert(input)).toFail();
     });
 
     test('converts various common alcohol types', () => {
@@ -665,7 +665,7 @@ describe('Ingredient Converters', () => {
           name: tc.name,
           alcoholByVolume: tc.abv
         };
-        expect(alcoholIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(alcoholIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
           expect(result.name).toBe(tc.name);
           expect(result.alcoholByVolume).toBe(tc.abv);
         });
@@ -687,7 +687,7 @@ describe('Ingredient Converters', () => {
         chocolateType: 'dark',
         cacaoPercentage: 70
       };
-      expect(ingredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ingredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('chocolate');
       });
     });
@@ -699,7 +699,7 @@ describe('Ingredient Converters', () => {
         category: 'sugar',
         ganacheCharacteristics: validGanacheCharacteristics
       };
-      expect(ingredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ingredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('sugar');
       });
     });
@@ -711,7 +711,7 @@ describe('Ingredient Converters', () => {
         category: 'dairy',
         ganacheCharacteristics: validGanacheCharacteristics
       };
-      expect(ingredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ingredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('dairy');
       });
     });
@@ -723,7 +723,7 @@ describe('Ingredient Converters', () => {
         category: 'fat',
         ganacheCharacteristics: validGanacheCharacteristics
       };
-      expect(ingredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ingredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('fat');
       });
     });
@@ -736,7 +736,7 @@ describe('Ingredient Converters', () => {
         ganacheCharacteristics: validGanacheCharacteristics,
         alcoholByVolume: 40
       };
-      expect(ingredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ingredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('alcohol');
       });
     });
@@ -748,7 +748,7 @@ describe('Ingredient Converters', () => {
         category: 'flavor',
         ganacheCharacteristics: validGanacheCharacteristics
       };
-      expect(ingredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ingredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.category).toBe('flavor');
       });
     });
@@ -759,17 +759,17 @@ describe('Ingredient Converters', () => {
         category: 'chocolate'
         // Missing required fields
       };
-      expect(ingredient.convert(input)).toFail();
+      expect(ingredientEntity.convert(input)).toFail();
     });
 
     test('fails for completely invalid object', () => {
-      expect(ingredient.convert({ foo: 'bar' })).toFail();
+      expect(ingredientEntity.convert({ foo: 'bar' })).toFail();
     });
 
     test('fails for non-object input', () => {
-      expect(ingredient.convert('not an object')).toFail();
-      expect(ingredient.convert(null)).toFail();
-      expect(ingredient.convert(123)).toFail();
+      expect(ingredientEntity.convert('not an object')).toFail();
+      expect(ingredientEntity.convert(null)).toFail();
+      expect(ingredientEntity.convert(123)).toFail();
     });
   });
 });

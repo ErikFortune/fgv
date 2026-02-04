@@ -172,7 +172,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IAlcoholIngredient](./ts-chocolate.entities.ialcoholingredient.md)
+[IAlcoholIngredientEntity](./ts-chocolate.entities.ialcoholingrediententity.md)
 
 
 </td><td>
@@ -227,7 +227,7 @@ Information about a mold cavity
 </td></tr>
 <tr><td>
 
-[IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)
+[IChocolateIngredientEntity](./ts-chocolate.entities.ichocolateingrediententity.md)
 
 
 </td><td>
@@ -271,7 +271,7 @@ Yield specification for a [confection](./ts-chocolate.entities.confections.anyco
 </td></tr>
 <tr><td>
 
-[IDairyIngredient](./ts-chocolate.entities.idairyingredient.md)
+[IDairyIngredientEntity](./ts-chocolate.entities.idairyingrediententity.md)
 
 
 </td><td>
@@ -282,7 +282,7 @@ Dairy-specific ingredient
 </td></tr>
 <tr><td>
 
-[IFatIngredient](./ts-chocolate.entities.ifatingredient.md)
+[IFatIngredientEntity](./ts-chocolate.entities.ifatingrediententity.md)
 
 
 </td><td>
@@ -359,7 +359,7 @@ Characteristics relevant to ganache calculations These percentages represent the
 </td></tr>
 <tr><td>
 
-[IIngredient](./ts-chocolate.entities.iingredient.md)
+[IIngredientEntity](./ts-chocolate.entities.iingrediententity.md)
 
 
 </td><td>
@@ -539,7 +539,7 @@ Version interface for rolled truffle confections. Includes enrobing and coating 
 </td></tr>
 <tr><td>
 
-[ISugarIngredient](./ts-chocolate.entities.isugaringredient.md)
+[ISugarIngredientEntity](./ts-chocolate.entities.isugaringrediententity.md)
 
 
 </td><td>
@@ -791,7 +791,7 @@ Represents the cavities in a mold
 </td></tr>
 <tr><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

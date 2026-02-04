@@ -9,7 +9,7 @@ Validate alcohol-specific fields.
 **Signature:**
 
 ```typescript
-export declare function validateAlcoholFields(entity: Ingredient): Result<true>;
+export declare function validateAlcoholFields(entity: IngredientEntity): Result<true>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entity
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

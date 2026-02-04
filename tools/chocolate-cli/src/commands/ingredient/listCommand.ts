@@ -55,7 +55,7 @@ interface IIngredientListOptions extends IEntityListOptions {
  * Checks if an ingredient matches the specified filters
  */
 function matchesFilters(
-  ingredient: Entities.Ingredients.Ingredient,
+  ingredient: Entities.Ingredients.IngredientEntity,
   ingredientId: IngredientId,
   sourceId: SourceId,
   options: IIngredientListOptions
@@ -90,7 +90,7 @@ function matchesFilters(
 
   // Filter by chocolate type (only for chocolate ingredients)
   if (options.chocolateType) {
-    if (!Entities.Ingredients.isChocolateIngredient(ingredient)) {
+    if (!Entities.Ingredients.isChocolateIngredientEntity(ingredient)) {
       return false;
     }
     if (ingredient.chocolateType !== options.chocolateType) {
@@ -200,7 +200,7 @@ export function createListSubcommand(): Command {
         };
 
         // Add chocolate-specific fields
-        if (Entities.Ingredients.isChocolateIngredient(ingredient)) {
+        if (Entities.Ingredients.isChocolateIngredientEntity(ingredient)) {
           listItem.chocolateType = ingredient.chocolateType;
           listItem.cacaoPercentage = ingredient.cacaoPercentage;
         }

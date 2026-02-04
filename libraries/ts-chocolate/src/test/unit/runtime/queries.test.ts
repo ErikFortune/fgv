@@ -33,11 +33,11 @@ import {
 
 import {
   IGanacheCharacteristics,
-  IChocolateIngredient,
-  IDairyIngredient,
-  ISugarIngredient,
-  IFatIngredient,
-  IAlcoholIngredient,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  ISugarIngredientEntity,
+  IFatIngredientEntity,
+  IAlcoholIngredientEntity,
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
@@ -85,7 +85,7 @@ describe('Query Filters and Builders', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: IChocolateIngredient = {
+  const darkChocolate: IChocolateIngredientEntity = {
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate 70%',
     description: 'Premium dark chocolate from Venezuela',
@@ -101,7 +101,7 @@ describe('Query Filters and Builders', () => {
     applications: ['ganache', 'molding']
   };
 
-  const milkChocolate: IChocolateIngredient = {
+  const milkChocolate: IChocolateIngredientEntity = {
     baseId: 'milk-chocolate' as BaseIngredientId,
     name: 'Milk Chocolate 40%',
     category: 'chocolate',
@@ -114,7 +114,7 @@ describe('Query Filters and Builders', () => {
     applications: ['enrobing']
   };
 
-  const whiteChocolate: IChocolateIngredient = {
+  const whiteChocolate: IChocolateIngredientEntity = {
     baseId: 'white-chocolate' as BaseIngredientId,
     name: 'White Chocolate',
     category: 'chocolate',
@@ -124,7 +124,7 @@ describe('Query Filters and Builders', () => {
     tags: ['sweet']
   };
 
-  const cream: IDairyIngredient = {
+  const cream: IDairyIngredientEntity = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',
@@ -134,7 +134,7 @@ describe('Query Filters and Builders', () => {
     tags: ['fresh']
   };
 
-  const sugar: ISugarIngredient = {
+  const sugar: ISugarIngredientEntity = {
     baseId: 'sugar' as BaseIngredientId,
     name: 'Granulated Sugar',
     category: 'sugar',
@@ -148,7 +148,7 @@ describe('Query Filters and Builders', () => {
     }
   };
 
-  const butter: IFatIngredient = {
+  const butter: IFatIngredientEntity = {
     baseId: 'butter' as BaseIngredientId,
     name: 'Unsalted Butter',
     category: 'fat',
@@ -162,7 +162,7 @@ describe('Query Filters and Builders', () => {
     }
   };
 
-  const rum: IAlcoholIngredient = {
+  const rum: IAlcoholIngredientEntity = {
     baseId: 'rum' as BaseIngredientId,
     name: 'Dark Rum',
     category: 'alcohol',

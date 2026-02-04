@@ -27,8 +27,8 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseIngredientId, IngredientId } from '../../common';
 import { Converters as CommonConverters } from '../../common';
-import { Ingredient } from './model';
-import { ingredient as ingredientConverter } from './converters';
+import { IngredientEntity } from './model';
+import { ingredientEntity as ingredientConverter } from './converters';
 import { IngredientCollectionEntryInit } from './collection';
 import {
   getIngredientsDirectory,
@@ -87,7 +87,7 @@ export type IIngredientsLibraryAsyncParams = ISubLibraryAsyncParams<
  *
  * @public
  */
-export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
+export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, IngredientEntity> {
   private constructor(params?: IIngredientsLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseIngredientId,
@@ -124,7 +124,7 @@ export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredi
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<IngredientsLibrary, BaseIngredientId, Ingredient> = {
+    const createParams: ISubLibraryCreateParams<IngredientsLibrary, BaseIngredientId, IngredientEntity> = {
       itemIdConverter: CommonConverters.baseIngredientId,
       itemConverter: ingredientConverter,
       directoryNavigator: getIngredientsDirectory,

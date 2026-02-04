@@ -70,15 +70,15 @@ import {
   Confections,
   Fillings,
   Ingredients,
-  IAlcoholIngredient,
-  IChocolateIngredient,
-  IDairyIngredient,
-  IFatIngredient,
+  IAlcoholIngredientEntity,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  IFatIngredientEntity,
   IFillingRating,
   IFillingRecipeEntity,
   IFillingRecipeVersionEntity,
-  Ingredient,
-  ISugarIngredient
+  IngredientEntity,
+  ISugarIngredientEntity
 } from '../entities';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
@@ -207,7 +207,7 @@ export interface IRuntimeIngredient {
   /**
    * Gets the underlying raw ingredient data.
    */
-  readonly raw: Ingredient;
+  readonly raw: IngredientEntity;
 }
 
 /**
@@ -245,7 +245,7 @@ export interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
   /**
    * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
-  readonly raw: IChocolateIngredient;
+  readonly raw: IChocolateIngredientEntity;
 }
 
 /**
@@ -265,7 +265,7 @@ export interface IRuntimeDairyIngredient extends IRuntimeIngredient {
   /**
    * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
-  readonly raw: IDairyIngredient;
+  readonly raw: IDairyIngredientEntity;
 }
 
 /**
@@ -285,7 +285,7 @@ export interface IRuntimeSugarIngredient extends IRuntimeIngredient {
   /**
    * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
-  readonly raw: ISugarIngredient;
+  readonly raw: ISugarIngredientEntity;
 }
 
 /**
@@ -302,7 +302,7 @@ export interface IRuntimeFatIngredient extends IRuntimeIngredient {
   /**
    * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
-  readonly raw: IFatIngredient;
+  readonly raw: IFatIngredientEntity;
 }
 
 /**
@@ -322,7 +322,7 @@ export interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
   /**
    * {@inheritdoc LibraryRuntime.IRuntimeIngredient.raw}
    */
-  readonly raw: IAlcoholIngredient;
+  readonly raw: IAlcoholIngredientEntity;
 }
 
 // ============================================================================
@@ -1733,7 +1733,7 @@ export interface IGanacheCalculation {
  * @public
  */
 export interface IResolvedIngredient {
-  readonly ingredient: Ingredient;
+  readonly ingredient: IngredientEntity;
   readonly amount: Measurement;
 }
 
@@ -1741,4 +1741,4 @@ export interface IResolvedIngredient {
  * Function type for resolving an ingredient ID to its full ingredient data
  * @public
  */
-export type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
+export type IngredientResolver = (id: IngredientId) => Result<IngredientEntity>;

@@ -9,7 +9,7 @@ Get the ingredient name for display purposes.
 **Signature:**
 
 ```typescript
-getIngredientName(ingredient: Ingredient): string;
+getIngredientName(ingredient: IngredientEntity): string;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ ingredient
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

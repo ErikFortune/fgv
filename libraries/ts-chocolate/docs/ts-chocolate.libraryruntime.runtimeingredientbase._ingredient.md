@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _ingredient: Ingredient;
+protected readonly _ingredient: IngredientEntity;
 ```

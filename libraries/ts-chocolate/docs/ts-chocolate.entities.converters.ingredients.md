@@ -19,56 +19,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[alcoholIngredient](./ts-chocolate.entities.converters.ingredients.alcoholingredient.md)
+[alcoholIngredientEntity](./ts-chocolate.entities.converters.ingredients.alcoholingrediententity.md)
 
 
 </td><td>
 
-Converter for IAlcoholIngredient
+Converter for [IAlcoholIngredientEntity](./ts-chocolate.entities.ingredients.ialcoholingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[baseIngredient](./ts-chocolate.entities.converters.ingredients.baseingredient.md)
+[baseIngredientEntity](./ts-chocolate.entities.converters.ingredients.baseingrediententity.md)
 
 
 </td><td>
 
-Converter for base IIngredient properties
+Converter for base [IIngredientEntity](./ts-chocolate.entities.ingredients.iingrediententity.md) properties.
 
 
 </td></tr>
 <tr><td>
 
-[chocolateIngredient](./ts-chocolate.entities.converters.ingredients.chocolateingredient.md)
+[chocolateIngredientEntity](./ts-chocolate.entities.converters.ingredients.chocolateingrediententity.md)
 
 
 </td><td>
 
-Converter for IChocolateIngredient
+Converter for [IChocolateIngredientEntity](./ts-chocolate.entities.ingredients.ichocolateingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[dairyIngredient](./ts-chocolate.entities.converters.ingredients.dairyingredient.md)
+[dairyIngredientEntity](./ts-chocolate.entities.converters.ingredients.dairyingrediententity.md)
 
 
 </td><td>
 
-Converter for IDairyIngredient
+Converter for [IDairyIngredientEntity](./ts-chocolate.entities.ingredients.idairyingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[fatIngredient](./ts-chocolate.entities.converters.ingredients.fatingredient.md)
+[fatIngredientEntity](./ts-chocolate.entities.converters.ingredients.fatingrediententity.md)
 
 
 </td><td>
 
-Converter for IFatIngredient
+Converter for [IFatIngredientEntity](./ts-chocolate.entities.ingredients.ifatingrediententity.md)<!-- -->.
 
 
 </td></tr>
@@ -85,23 +85,23 @@ Converter for IGanacheCharacteristics
 </td></tr>
 <tr><td>
 
-[ingredient](./ts-chocolate.entities.converters.ingredients.ingredient.md)
+[ingredientEntity](./ts-chocolate.entities.converters.ingredients.ingrediententity.md)
 
 
 </td><td>
 
-Converter for Ingredient (discriminated union) Tries specialized converters based on category, falls back to base
+Converter for [IngredientEntity](./ts-chocolate.entities.ingredients.ingrediententity.md) (discriminated union). Tries specialized converters based on category, falls back to base.
 
 
 </td></tr>
 <tr><td>
 
-[sugarIngredient](./ts-chocolate.entities.converters.ingredients.sugaringredient.md)
+[sugarIngredientEntity](./ts-chocolate.entities.converters.ingredients.sugaringrediententity.md)
 
 
 </td><td>
 
-Converter for ISugarIngredient
+Converter for [ISugarIngredientEntity](./ts-chocolate.entities.ingredients.isugaringrediententity.md)<!-- -->.
 
 
 </td></tr>

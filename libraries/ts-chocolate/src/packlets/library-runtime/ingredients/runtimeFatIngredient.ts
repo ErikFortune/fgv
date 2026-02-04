@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { Celsius, IngredientId } from '../../common';
-import { IFatIngredient } from '../../entities';
+import { IFatIngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeFatIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
@@ -40,14 +40,14 @@ import { RuntimeIngredientBase } from './runtimeIngredientBase';
  * @public
  */
 export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatIngredient {
-  private readonly _fatIngredient: IFatIngredient;
+  private readonly _fatIngredient: IFatIngredientEntity;
 
   /**
    * Creates a RuntimeFatIngredient.
    * Use RuntimeIngredient.create() or RuntimeFatIngredient.create() instead.
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredient) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity) {
     super(context, id, ingredient);
     this._fatIngredient = ingredient;
   }
@@ -62,7 +62,7 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRunt
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: IFatIngredient
+    ingredient: IFatIngredientEntity
   ): Result<RuntimeFatIngredient> {
     return Success.with(new RuntimeFatIngredient(context, id, ingredient));
   }
@@ -96,7 +96,7 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRunt
   /**
    * Gets the underlying raw fat ingredient data
    */
-  public get raw(): IFatIngredient {
+  public get raw(): IFatIngredientEntity {
     return this._fatIngredient;
   }
 }

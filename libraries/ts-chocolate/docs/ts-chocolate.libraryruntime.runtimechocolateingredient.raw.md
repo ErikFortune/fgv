@@ -9,5 +9,5 @@ Gets the underlying raw chocolate ingredient data
 **Signature:**
 
 ```typescript
-get raw(): IChocolateIngredient;
+get raw(): IChocolateIngredientEntity;
 ```

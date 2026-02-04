@@ -34,7 +34,7 @@ import {
   IngredientId,
   Percentage
 } from '../../common';
-import { Ingredients, IChocolateIngredient } from '../../entities';
+import { Ingredients, IChocolateIngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeChocolateIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
@@ -48,14 +48,18 @@ import { RuntimeIngredientBase } from './runtimeIngredientBase';
  * @public
  */
 export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRuntimeChocolateIngredient {
-  private readonly _chocolateIngredient: IChocolateIngredient;
+  private readonly _chocolateIngredient: IChocolateIngredientEntity;
 
   /**
    * Creates a RuntimeChocolateIngredient.
    * Use RuntimeIngredient.create() or RuntimeChocolateIngredient.create() instead.
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredient) {
+  protected constructor(
+    context: IIngredientContext,
+    id: IngredientId,
+    ingredient: IChocolateIngredientEntity
+  ) {
     super(context, id, ingredient);
     this._chocolateIngredient = ingredient;
   }
@@ -70,7 +74,7 @@ export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: IChocolateIngredient
+    ingredient: IChocolateIngredientEntity
   ): Result<RuntimeChocolateIngredient> {
     return Success.with(new RuntimeChocolateIngredient(context, id, ingredient));
   }
@@ -153,7 +157,7 @@ export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements
   /**
    * Gets the underlying raw chocolate ingredient data
    */
-  public get raw(): IChocolateIngredient {
+  public get raw(): IChocolateIngredientEntity {
     return this._chocolateIngredient;
   }
 }

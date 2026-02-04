@@ -24,8 +24,8 @@ import { EditableCollection } from '../../../../packlets/editing';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IngredientEditorContext } from '../../../../packlets/editing/ingredients';
 import {
-  Ingredient,
-  IChocolateIngredient,
+  IngredientEntity,
+  IChocolateIngredientEntity,
   IGanacheCharacteristics,
   Converters as EntityConverters
 } from '../../../../packlets/entities';
@@ -57,20 +57,20 @@ const createGanache = (
 
 describe('IngredientEditorContext', () => {
   const createTestCollection = (
-    items: Map<BaseIngredientId, Ingredient> = new Map(),
+    items: Map<BaseIngredientId, IngredientEntity> = new Map(),
     isMutable: boolean = true
-  ): EditableCollection<Ingredient, BaseIngredientId> => {
-    return EditableCollection.createEditable<Ingredient, BaseIngredientId>({
+  ): EditableCollection<IngredientEntity, BaseIngredientId> => {
+    return EditableCollection.createEditable<IngredientEntity, BaseIngredientId>({
       collectionId: TEST_SOURCE_ID,
       metadata: { name: 'Test Ingredients' },
       isMutable,
       initialItems: items,
       keyConverter: testKeyConverter,
-      valueConverter: EntityConverters.Ingredients.ingredient
+      valueConverter: EntityConverters.Ingredients.ingredientEntity
     }).orThrow();
   };
 
-  const createValidIngredient = (): Ingredient => ({
+  const createValidIngredient = (): IngredientEntity => ({
     baseId: 'test-ingredient' as BaseIngredientId,
     name: 'Test Ingredient',
     category: 'other',
@@ -80,7 +80,7 @@ describe('IngredientEditorContext', () => {
     ganacheCharacteristics: createGanache(0, 50, 0, 30, 20, 0)
   });
 
-  const createChocolateIngredient = (): IChocolateIngredient => ({
+  const createChocolateIngredient = (): IChocolateIngredientEntity => ({
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate',
     category: 'chocolate',
@@ -161,7 +161,7 @@ describe('IngredientEditorContext', () => {
     test('should run entity-level validation for chocolate ingredients', () => {
       const collection = createTestCollection();
       const context = IngredientEditorContext.createFromCollection(collection).orThrow();
-      const ingredient: IChocolateIngredient = {
+      const ingredient: IChocolateIngredientEntity = {
         baseId: 'invalid-chocolate' as BaseIngredientId,
         name: 'Invalid Chocolate',
         category: 'chocolate',

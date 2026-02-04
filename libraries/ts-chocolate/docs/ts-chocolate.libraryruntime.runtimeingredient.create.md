@@ -9,7 +9,7 @@ Factory method that auto-detects ingredient type and returns appropriate concret
 **Signature:**
 
 ```typescript
-static create(context: IIngredientContext, id: IngredientId, ingredient: Ingredient): Result<AnyRuntimeIngredient>;
+static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyRuntimeIngredient>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ ingredient
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

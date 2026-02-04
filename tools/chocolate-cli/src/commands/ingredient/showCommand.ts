@@ -47,14 +47,14 @@ interface IIngredientShowOptions extends IEntityBaseOptions {
  */
 interface IIngredientSelectableItem extends ISelectableItem {
   id: IngredientId;
-  ingredient: Entities.Ingredients.Ingredient;
+  ingredient: Entities.Ingredients.IngredientEntity;
 }
 
 /**
  * Formats an ingredient for human-readable output
  */
 export function formatIngredientHuman(
-  ingredient: Entities.Ingredients.Ingredient,
+  ingredient: Entities.Ingredients.IngredientEntity,
   ingredientId: IngredientId,
   options: IIngredientShowOptions
 ): string {
@@ -77,7 +77,7 @@ export function formatIngredientHuman(
   }
 
   // Chocolate-specific information
-  if (Entities.Ingredients.isChocolateIngredient(ingredient)) {
+  if (Entities.Ingredients.isChocolateIngredientEntity(ingredient)) {
     lines.push('');
     lines.push('Chocolate Details:');
     lines.push(`  Type: ${ingredient.chocolateType}`);
@@ -114,7 +114,7 @@ export function formatIngredientHuman(
   }
 
   // Sugar-specific information
-  if (Entities.Ingredients.isSugarIngredient(ingredient)) {
+  if (Entities.Ingredients.isSugarIngredientEntity(ingredient)) {
     if (ingredient.sweetnessPotency !== undefined) {
       lines.push(`Sweetness Potency: ${ingredient.sweetnessPotency}x (vs sucrose)`);
     }
@@ -124,7 +124,7 @@ export function formatIngredientHuman(
   }
 
   // Dairy-specific information
-  if (Entities.Ingredients.isDairyIngredient(ingredient)) {
+  if (Entities.Ingredients.isDairyIngredientEntity(ingredient)) {
     if (ingredient.fatContent !== undefined) {
       lines.push(`Fat Content: ${ingredient.fatContent}%`);
     }
@@ -134,14 +134,14 @@ export function formatIngredientHuman(
   }
 
   // Fat-specific information
-  if (Entities.Ingredients.isFatIngredient(ingredient)) {
+  if (Entities.Ingredients.isFatIngredientEntity(ingredient)) {
     if (ingredient.meltingPoint !== undefined) {
       lines.push(`Melting Point: ${ingredient.meltingPoint}°C`);
     }
   }
 
   // Alcohol-specific information
-  if (Entities.Ingredients.isAlcoholIngredient(ingredient)) {
+  if (Entities.Ingredients.isAlcoholIngredientEntity(ingredient)) {
     if (ingredient.alcoholByVolume !== undefined) {
       lines.push(`ABV: ${ingredient.alcoholByVolume}%`);
     }
@@ -235,7 +235,7 @@ export function createShowSubcommand(): Command {
 
         // Determine ingredient ID - either from argument or interactive selection
         let ingredientId: IngredientId;
-        let ingredient: Entities.Ingredients.Ingredient;
+        let ingredient: Entities.Ingredients.IngredientEntity;
 
         if (localOptions.interactive || !ingredientIdArg) {
           if (!localOptions.interactive && !ingredientIdArg) {
@@ -246,7 +246,7 @@ export function createShowSubcommand(): Command {
           // Build selectable items
           const selectableItems: IIngredientSelectableItem[] = [];
           for (const [id, ing] of library.entries()) {
-            const categoryInfo = Entities.Ingredients.isChocolateIngredient(ing)
+            const categoryInfo = Entities.Ingredients.isChocolateIngredientEntity(ing)
               ? `${ing.category}:${ing.chocolateType}`
               : ing.category;
             selectableItems.push({

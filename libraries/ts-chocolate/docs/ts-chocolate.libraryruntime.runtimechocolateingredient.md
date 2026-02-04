@@ -201,7 +201,7 @@ Origin descriptions (optional)
 
 </td><td>
 
-[IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)
+[IChocolateIngredientEntity](./ts-chocolate.entities.ichocolateingrediententity.md)
 
 
 </td><td>

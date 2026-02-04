@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId } from '../../common';
-import { ISugarIngredient } from '../../entities';
+import { ISugarIngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeSugarIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
@@ -40,14 +40,14 @@ import { RuntimeIngredientBase } from './runtimeIngredientBase';
  * @public
  */
 export class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSugarIngredient {
-  private readonly _sugarIngredient: ISugarIngredient;
+  private readonly _sugarIngredient: ISugarIngredientEntity;
 
   /**
    * Creates a RuntimeSugarIngredient.
    * Use RuntimeIngredient.create() or RuntimeSugarIngredient.create() instead.
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredient) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity) {
     super(context, id, ingredient);
     this._sugarIngredient = ingredient;
   }
@@ -62,7 +62,7 @@ export class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRu
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: ISugarIngredient
+    ingredient: ISugarIngredientEntity
   ): Result<RuntimeSugarIngredient> {
     return Success.with(new RuntimeSugarIngredient(context, id, ingredient));
   }
@@ -103,7 +103,7 @@ export class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRu
   /**
    * Gets the underlying raw sugar ingredient data
    */
-  public get raw(): ISugarIngredient {
+  public get raw(): ISugarIngredientEntity {
     return this._sugarIngredient;
   }
 }

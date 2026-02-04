@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../../library-data';
-import { Ingredient } from './model';
+import { IngredientEntity } from './model';
 
 /**
  * A single entry in an ingredients collection.
  * @public
  */
-export type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, Ingredient>;
+export type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, IngredientEntity>;
 
 /**
  * Initialization type for an IngredientsLibrary collection entry.
  * @public
  */
-export type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, Ingredient>;
+export type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, IngredientEntity>;
 
 /**
  * Validator type for IngredientsLibrary collections.
  * @public
  */
-export type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
+export type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, IngredientEntity>;
 
 /**
  * Type for the collections in an IngredientsLibrary.
  * @public
  */
-export type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;
+export type IngredientCollection = SubLibraryCollection<BaseIngredientId, IngredientEntity>;

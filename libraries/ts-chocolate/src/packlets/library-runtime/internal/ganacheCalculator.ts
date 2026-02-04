@@ -26,7 +26,7 @@
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers, Percentage, FillingVersionSpec } from '../../common';
-import { Ingredients, Ingredient } from '../../entities';
+import { Ingredients, IngredientEntity } from '../../entities';
 import { IFillingRecipeEntity, Fillings } from '../../entities';
 import {
   IGanacheAnalysis,
@@ -78,7 +78,7 @@ interface IMutableCharacteristicsAccumulator {
  */
 function addWeightedCharacteristics(
   accumulator: IMutableCharacteristicsAccumulator,
-  ingredient: Ingredient,
+  ingredient: IngredientEntity,
   weight: Measurement
 ): void {
   const chars = ingredient.ganacheCharacteristics;

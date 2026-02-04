@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId, Percentage } from '../../common';
-import { IDairyIngredient } from '../../entities';
+import { IDairyIngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeDairyIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
@@ -40,14 +40,14 @@ import { RuntimeIngredientBase } from './runtimeIngredientBase';
  * @public
  */
 export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRuntimeDairyIngredient {
-  private readonly _dairyIngredient: IDairyIngredient;
+  private readonly _dairyIngredient: IDairyIngredientEntity;
 
   /**
    * Creates a RuntimeDairyIngredient.
    * Use RuntimeIngredient.create() or RuntimeDairyIngredient.create() instead.
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity) {
     super(context, id, ingredient);
     this._dairyIngredient = ingredient;
   }
@@ -62,7 +62,7 @@ export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRu
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: IDairyIngredient
+    ingredient: IDairyIngredientEntity
   ): Result<RuntimeDairyIngredient> {
     return Success.with(new RuntimeDairyIngredient(context, id, ingredient));
   }
@@ -103,7 +103,7 @@ export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRu
   /**
    * Gets the underlying raw dairy ingredient data
    */
-  public get raw(): IDairyIngredient {
+  public get raw(): IDairyIngredientEntity {
     return this._dairyIngredient;
   }
 }

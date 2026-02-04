@@ -20,10 +20,10 @@
 
 import '@fgv/ts-utils-jest';
 import {
-  Ingredient,
-  IChocolateIngredient,
-  IDairyIngredient,
-  IAlcoholIngredient,
+  IngredientEntity,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  IAlcoholIngredientEntity,
   IGanacheCharacteristics
 } from '../../../../packlets/entities';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -60,7 +60,7 @@ const createGanache = (
 });
 
 // Helper to create a valid base ingredient
-const createBaseIngredient = (): Ingredient => ({
+const createBaseIngredient = (): IngredientEntity => ({
   baseId: 'test-ingredient' as BaseIngredientId,
   name: 'Test Ingredient',
   category: 'other',
@@ -129,7 +129,7 @@ describe('validateGanacheCharacteristics', () => {
 });
 
 describe('validateTemperatureCurve', () => {
-  const createChocolateIngredient = (): IChocolateIngredient => ({
+  const createChocolateIngredient = (): IChocolateIngredientEntity => ({
     ...createBaseIngredient(),
     category: 'chocolate',
     chocolateType: 'dark',
@@ -147,7 +147,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should succeed for valid temperature curve', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
@@ -159,7 +159,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should fail if melt <= cool', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(45),
@@ -171,7 +171,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should fail if cool <= working', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
@@ -183,7 +183,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should fail if melt temperature is too low', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(30),
@@ -195,7 +195,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should fail if melt temperature is too high', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(70),
@@ -207,7 +207,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should fail if working temperature is too low', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
@@ -219,7 +219,7 @@ describe('validateTemperatureCurve', () => {
   });
 
   test('should fail if working temperature is too high', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
@@ -232,7 +232,7 @@ describe('validateTemperatureCurve', () => {
 });
 
 describe('validateChocolateFields', () => {
-  const createChocolateIngredient = (): IChocolateIngredient => ({
+  const createChocolateIngredient = (): IChocolateIngredientEntity => ({
     ...createBaseIngredient(),
     category: 'chocolate',
     chocolateType: 'dark',
@@ -250,7 +250,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should fail if cacaoPercentage is negative', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       cacaoPercentage: pct(-10)
     };
@@ -258,7 +258,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should fail if cacaoPercentage exceeds 100', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       cacaoPercentage: pct(150)
     };
@@ -266,7 +266,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should succeed for cacaoPercentage of 0', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       cacaoPercentage: pct(0)
     };
@@ -274,7 +274,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should succeed for cacaoPercentage of 100', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       cacaoPercentage: pct(100)
     };
@@ -282,7 +282,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should fail if fluidityStars is less than 1', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       fluidityStars: 0 as unknown as 1 | 2 | 3 | 4 | 5
     };
@@ -290,7 +290,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should fail if fluidityStars is greater than 5', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       fluidityStars: 6 as unknown as 1 | 2 | 3 | 4 | 5
     };
@@ -298,7 +298,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should succeed for valid fluidityStars', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       fluidityStars: 3
     };
@@ -306,7 +306,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should fail if viscosityMcM is negative', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       viscosityMcM: visc(-10)
     };
@@ -314,7 +314,7 @@ describe('validateChocolateFields', () => {
   });
 
   test('should succeed for valid viscosityMcM', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       viscosityMcM: visc(450)
     };
@@ -323,7 +323,7 @@ describe('validateChocolateFields', () => {
 });
 
 describe('validateDairyFields', () => {
-  const createDairyIngredient = (): IDairyIngredient => ({
+  const createDairyIngredient = (): IDairyIngredientEntity => ({
     ...createBaseIngredient(),
     category: 'dairy'
   });
@@ -339,7 +339,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should fail if fatContent is negative', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       fatContent: pct(-10)
     };
@@ -347,7 +347,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should fail if fatContent exceeds 100', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       fatContent: pct(150)
     };
@@ -355,7 +355,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should fail if waterContent is negative', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       waterContent: pct(-10)
     };
@@ -363,7 +363,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should fail if waterContent exceeds 100', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       waterContent: pct(150)
     };
@@ -371,7 +371,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should fail if fatContent + waterContent exceeds 100', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       fatContent: pct(60),
       waterContent: pct(50)
@@ -380,7 +380,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should succeed if fatContent + waterContent equals 100', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       fatContent: pct(40),
       waterContent: pct(60)
@@ -389,7 +389,7 @@ describe('validateDairyFields', () => {
   });
 
   test('should succeed if fatContent + waterContent is less than 100', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createDairyIngredient(),
       fatContent: pct(30),
       waterContent: pct(50)
@@ -399,7 +399,7 @@ describe('validateDairyFields', () => {
 });
 
 describe('validateAlcoholFields', () => {
-  const createAlcoholIngredient = (): IAlcoholIngredient => ({
+  const createAlcoholIngredient = (): IAlcoholIngredientEntity => ({
     ...createBaseIngredient(),
     category: 'alcohol'
   });
@@ -415,7 +415,7 @@ describe('validateAlcoholFields', () => {
   });
 
   test('should fail if alcoholByVolume is negative', () => {
-    const ingredient: IAlcoholIngredient = {
+    const ingredient: IAlcoholIngredientEntity = {
       ...createAlcoholIngredient(),
       alcoholByVolume: pct(-10)
     };
@@ -423,7 +423,7 @@ describe('validateAlcoholFields', () => {
   });
 
   test('should fail if alcoholByVolume exceeds 100', () => {
-    const ingredient: IAlcoholIngredient = {
+    const ingredient: IAlcoholIngredientEntity = {
       ...createAlcoholIngredient(),
       alcoholByVolume: pct(150)
     };
@@ -431,7 +431,7 @@ describe('validateAlcoholFields', () => {
   });
 
   test('should succeed for alcoholByVolume of 0', () => {
-    const ingredient: IAlcoholIngredient = {
+    const ingredient: IAlcoholIngredientEntity = {
       ...createAlcoholIngredient(),
       alcoholByVolume: pct(0)
     };
@@ -439,7 +439,7 @@ describe('validateAlcoholFields', () => {
   });
 
   test('should succeed for alcoholByVolume of 100', () => {
-    const ingredient: IAlcoholIngredient = {
+    const ingredient: IAlcoholIngredientEntity = {
       ...createAlcoholIngredient(),
       alcoholByVolume: pct(100)
     };
@@ -447,7 +447,7 @@ describe('validateAlcoholFields', () => {
   });
 
   test('should succeed for valid alcoholByVolume', () => {
-    const ingredient: IAlcoholIngredient = {
+    const ingredient: IAlcoholIngredientEntity = {
       ...createAlcoholIngredient(),
       alcoholByVolume: pct(40)
     };
@@ -473,7 +473,7 @@ describe('validateIngredientEntity', () => {
   });
 
   test('should fail if chocolate fields are invalid', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createBaseIngredient(),
       category: 'chocolate',
       chocolateType: 'dark',
@@ -483,7 +483,7 @@ describe('validateIngredientEntity', () => {
   });
 
   test('should fail if dairy fields are invalid', () => {
-    const ingredient: IDairyIngredient = {
+    const ingredient: IDairyIngredientEntity = {
       ...createBaseIngredient(),
       category: 'dairy',
       fatContent: pct(70),
@@ -493,7 +493,7 @@ describe('validateIngredientEntity', () => {
   });
 
   test('should fail if alcohol fields are invalid', () => {
-    const ingredient: IAlcoholIngredient = {
+    const ingredient: IAlcoholIngredientEntity = {
       ...createBaseIngredient(),
       category: 'alcohol',
       alcoholByVolume: pct(150) // Invalid
@@ -502,7 +502,7 @@ describe('validateIngredientEntity', () => {
   });
 
   test('should succeed for valid chocolate ingredient', () => {
-    const ingredient: IChocolateIngredient = {
+    const ingredient: IChocolateIngredientEntity = {
       ...createBaseIngredient(),
       category: 'chocolate',
       chocolateType: 'dark',

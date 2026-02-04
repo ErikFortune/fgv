@@ -31,8 +31,10 @@ const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
 // @public
 type AggregationMode = 'intersection' | 'union';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const alcoholIngredient: Converter<IAlcoholIngredient>;
+const alcoholIngredientEntity: Converter<IAlcoholIngredientEntity>;
 
 // @public
 const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[];
@@ -316,8 +318,10 @@ abstract class BaseIndexerOrchestrator<TEntity, TId> {
     protected _union(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const baseIngredient: Converter<IIngredient>;
+const baseIngredientEntity: Converter<IIngredientEntity>;
 
 // @public
 export type BaseIngredientId = Brand<string, 'BaseIngredientId'>;
@@ -467,8 +471,10 @@ export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cre
 // @public
 const chocolateApplication: Converter<ChocolateApplication>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const chocolateIngredient: Converter<IChocolateIngredient>;
+const chocolateIngredientEntity: Converter<IChocolateIngredientEntity>;
 
 // @public
 export class ChocolateLibrary {
@@ -486,12 +492,12 @@ export class ChocolateLibrary {
     getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfectionEntity>;
     getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
     getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
-    getEditableIngredients(collectionId: SourceId): Result<EditableCollection<Ingredient, BaseIngredientId>>;
+    getEditableIngredients(collectionId: SourceId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
     getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
     getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedure, BaseProcedureId>>;
     getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getIngredient(id: IngredientId): Result<Ingredient>;
+    getIngredient(id: IngredientId): Result<IngredientEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getMold(id: MoldId): Result<IMold>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1037,8 +1043,10 @@ export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Wo
 // @public
 function createPersistedSessionId(collectionId: SourceId, baseId: SessionBaseId): PersistedSessionId;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const dairyIngredient: Converter<IDairyIngredient>;
+const dairyIngredientEntity: Converter<IDairyIngredientEntity>;
 
 // @public
 export const DefaultNoteCategory: NoteCategory;
@@ -1222,14 +1230,14 @@ declare namespace Entities {
         IFillingRecipeVersionEntity,
         IFillingRating,
         IProducedFillingEntity,
-        IIngredient,
-        Ingredient,
+        IIngredientEntity,
+        IngredientEntity,
         IngredientsLibrary,
-        IAlcoholIngredient,
-        IDairyIngredient,
-        IChocolateIngredient,
-        IFatIngredient,
-        ISugarIngredient,
+        IAlcoholIngredientEntity,
+        IDairyIngredientEntity,
+        IChocolateIngredientEntity,
+        IFatIngredientEntity,
+        ISugarIngredientEntity,
         IGanacheCharacteristics,
         JournalLibrary,
         AnyConfectionJournalEntry,
@@ -1303,8 +1311,10 @@ declare namespace Enums {
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const fatIngredient: Converter<IFatIngredient>;
+const fatIngredientEntity: Converter<IFatIngredientEntity>;
 
 // @public
 const FILLING_VERSION_ID_PATTERN: RegExp;
@@ -1809,7 +1819,7 @@ interface IAdditionalChocolateEntity {
 }
 
 // @public
-interface IAlcoholIngredient extends IIngredient {
+interface IAlcoholIngredientEntity extends IIngredientEntity {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
     readonly flavorProfile?: string;
@@ -1879,7 +1889,7 @@ interface ICavityInfo {
 }
 
 // @public
-interface IChocolateIngredient extends IIngredient {
+interface IChocolateIngredientEntity extends IIngredientEntity {
     readonly applications?: ReadonlyArray<ChocolateApplication>;
     readonly beanVarieties?: ReadonlyArray<CacaoVariety>;
     readonly cacaoPercentage: Percentage;
@@ -2145,7 +2155,7 @@ interface ICreateFillingSessionOptions {
 const ID_SEPARATOR: string;
 
 // @public
-interface IDairyIngredient extends IIngredient {
+interface IDairyIngredientEntity extends IIngredientEntity {
     readonly category: 'dairy';
     readonly fatContent?: Percentage;
     readonly waterContent?: Percentage;
@@ -2261,7 +2271,7 @@ interface IExportOptions {
 }
 
 // @public
-interface IFatIngredient extends IIngredient {
+interface IFatIngredientEntity extends IIngredientEntity {
     readonly category: 'fat';
     readonly meltingPoint?: Celsius;
 }
@@ -2521,8 +2531,15 @@ interface IIndexer<TEntity, TId, TConfig> {
     warmUp(): void;
 }
 
+// @internal
+interface IIngredientContext {
+    getFillingsUsingIngredient(id: IngredientId): IRuntimeFillingRecipe[];
+    getFillingsWithAlternateIngredient(id: IngredientId): IRuntimeFillingRecipe[];
+    getFillingsWithPrimaryIngredient(id: IngredientId): IRuntimeFillingRecipe[];
+}
+
 // @public
-interface IIngredient {
+interface IIngredientEntity {
     readonly allergens?: ReadonlyArray<Allergen>;
     readonly baseId: BaseIngredientId;
     readonly category: IngredientCategory;
@@ -2538,13 +2555,6 @@ interface IIngredient {
     readonly traceAllergens?: ReadonlyArray<Allergen>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly vegan?: boolean;
-}
-
-// @internal
-interface IIngredientContext {
-    getFillingsUsingIngredient(id: IngredientId): IRuntimeFillingRecipe[];
-    getFillingsWithAlternateIngredient(id: IngredientId): IRuntimeFillingRecipe[];
-    getFillingsWithPrimaryIngredient(id: IngredientId): IRuntimeFillingRecipe[];
 }
 
 // @public
@@ -2878,38 +2888,40 @@ declare namespace Indexers {
 }
 
 // @public
-type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IAlcoholIngredient | IIngredient;
-
-// @public
-const ingredient: Converter<Ingredient>;
-
-// @public
 export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'alcohol' | 'other';
 
 // @public
 const ingredientCategory: Converter<IngredientCategory>;
 
 // @public
-type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;
+type IngredientCollection = SubLibraryCollection<BaseIngredientId, IngredientEntity>;
 
 // @public
-type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, Ingredient>;
+type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, IngredientEntity>;
 
 // @public
-type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, Ingredient>;
+type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, IngredientEntity>;
 
 // @public
 const ingredientCollections: Record<string, JsonObject>;
 
 // @public
-type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
+type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, IngredientEntity>;
 
 // @public
-class IngredientEditorContext extends ValidatingEditorContext<Ingredient, BaseIngredientId, IngredientId> {
-    static createFromCollection(collection: EditableCollection<Ingredient, BaseIngredientId>): Result<IngredientEditorContext>;
-    getIngredientCategory(ingredient: Ingredient): string;
-    getIngredientName(ingredient: Ingredient): string;
+class IngredientEditorContext extends ValidatingEditorContext<IngredientEntity, BaseIngredientId, IngredientId> {
+    static createFromCollection(collection: EditableCollection<IngredientEntity, BaseIngredientId>): Result<IngredientEditorContext>;
+    getIngredientCategory(ingredient: IngredientEntity): string;
+    getIngredientName(ingredient: IngredientEntity): string;
 }
+
+// @public
+type IngredientEntity = IChocolateIngredientEntity | ISugarIngredientEntity | IDairyIngredientEntity | IFatIngredientEntity | IAlcoholIngredientEntity | IIngredientEntity;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientEntity: Converter<IngredientEntity>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3050,7 +3062,7 @@ class IngredientQuery {
 const ingredientQuerySpecConverter: Converter<IIngredientQuerySpec>;
 
 // @public
-type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
+type IngredientResolver = (id: IngredientId) => Result<IngredientEntity>;
 
 // @public
 type IngredientResolver_2 = (id: IngredientId) => Result<IRuntimeIngredient>;
@@ -3059,33 +3071,33 @@ declare namespace Ingredients {
     export {
         ganacheCharacteristics,
         temperatureCurve,
-        baseIngredient,
-        chocolateIngredient,
-        sugarIngredient,
-        dairyIngredient,
-        fatIngredient,
-        alcoholIngredient,
-        ingredient
+        baseIngredientEntity,
+        chocolateIngredientEntity,
+        sugarIngredientEntity,
+        dairyIngredientEntity,
+        fatIngredientEntity,
+        alcoholIngredientEntity,
+        ingredientEntity
     }
 }
 
 declare namespace Ingredients_2 {
     export {
         Ingredients as Converters,
-        isChocolateIngredient,
-        isSugarIngredient,
-        isDairyIngredient,
-        isFatIngredient,
-        isAlcoholIngredient,
+        isChocolateIngredientEntity,
+        isSugarIngredientEntity,
+        isDairyIngredientEntity,
+        isFatIngredientEntity,
+        isAlcoholIngredientEntity,
         IGanacheCharacteristics,
         ITemperatureCurve,
-        IIngredient,
-        IChocolateIngredient,
-        ISugarIngredient,
-        IDairyIngredient,
-        IFatIngredient,
-        IAlcoholIngredient,
-        Ingredient,
+        IIngredientEntity,
+        IChocolateIngredientEntity,
+        ISugarIngredientEntity,
+        IDairyIngredientEntity,
+        IFatIngredientEntity,
+        IAlcoholIngredientEntity,
+        IngredientEntity,
         IngredientCollectionEntry,
         IngredientCollectionEntryInit,
         IngredientCollectionValidator,
@@ -3130,7 +3142,7 @@ class IngredientsByTagIndexer extends BaseIndexer<IRuntimeIngredient, Ingredient
 }
 
 // @public
-class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
+class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, IngredientEntity> {
     static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary>;
     static createAsync(params?: IIngredientsLibraryAsyncParams): Promise<Result<IngredientsLibrary>>;
 }
@@ -3533,7 +3545,7 @@ interface IResolvedIngredient {
     // (undocumented)
     readonly amount: Measurement;
     // (undocumented)
-    readonly ingredient: Ingredient;
+    readonly ingredient: IngredientEntity;
 }
 
 // @public
@@ -3602,7 +3614,7 @@ interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly raw: IAlcoholIngredient;
+    readonly raw: IAlcoholIngredientEntity;
 }
 
 // @public
@@ -3639,7 +3651,7 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly raw: IChocolateIngredient;
+    readonly raw: IChocolateIngredientEntity;
     readonly temperatureCurve?: Ingredients_2.ITemperatureCurve;
     readonly viscosityMcM?: DegreesMacMichael;
 }
@@ -3718,7 +3730,7 @@ interface IRuntimeDairyIngredient extends IRuntimeIngredient {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly raw: IDairyIngredient;
+    readonly raw: IDairyIngredientEntity;
     readonly waterContent?: Percentage;
 }
 
@@ -3729,7 +3741,7 @@ interface IRuntimeFatIngredient extends IRuntimeIngredient {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly raw: IFatIngredient;
+    readonly raw: IFatIngredientEntity;
 }
 
 // @public
@@ -3789,7 +3801,7 @@ interface IRuntimeIngredient {
     readonly manufacturer?: string;
     readonly name: string;
     primaryInFillings(): IRuntimeFillingRecipe[];
-    readonly raw: Ingredient;
+    readonly raw: IngredientEntity;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
@@ -3914,7 +3926,7 @@ interface IRuntimeSugarIngredient extends IRuntimeIngredient {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly raw: ISugarIngredient;
+    readonly raw: ISugarIngredientEntity;
     readonly sweetnessPotency?: number;
 }
 
@@ -3938,8 +3950,10 @@ interface IRuntimeTask {
     validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient;
+function isAlcoholIngredientEntity(ingredient: IngredientEntity): ingredient is IAlcoholIngredientEntity;
 
 // @public
 interface ISaveAlternativesOptions {
@@ -4027,8 +4041,10 @@ interface IScalingRefEntity {
     readonly targetWeight: Measurement;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function isChocolateIngredient(ingredient: Ingredient): ingredient is IChocolateIngredient;
+function isChocolateIngredientEntity(ingredient: IngredientEntity): ingredient is IChocolateIngredientEntity;
 
 // @public
 function isConfectionEditJournalEntry(entry: AnyJournalEntry): entry is IConfectionEditJournalEntry;
@@ -4039,8 +4055,10 @@ function isConfectionJournalEntry(entry: AnyJournalEntry): entry is AnyConfectio
 // @public
 function isConfectionProductionJournalEntry(entry: AnyJournalEntry): entry is IConfectionProductionJournalEntry;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredient;
+function isDairyIngredientEntity(ingredient: IngredientEntity): ingredient is IDairyIngredientEntity;
 
 // @public
 function isEncryptedCollectionFile(json: unknown): boolean;
@@ -4113,8 +4131,10 @@ interface ISessionYield {
     readonly weightPerPiece?: Measurement;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
+function isFatIngredientEntity(ingredient: IngredientEntity): ingredient is IFatIngredientEntity;
 
 // @public
 function isFillingEditJournalEntry(entry: AnyJournalEntry): entry is IFillingEditJournalEntry;
@@ -4181,8 +4201,10 @@ function isRolledTruffleEntity(confection: AnyConfectionEntity): confection is I
 // @public
 function isRolledTruffleVersionEntity(version: AnyConfectionVersionEntity): version is IRolledTruffleVersionEntity;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
+function isSugarIngredientEntity(ingredient: IngredientEntity): ingredient is ISugarIngredientEntity;
 
 // @public
 function isTaskRef(invocation: ITaskInvocation): invocation is ITaskRef;
@@ -4225,7 +4247,7 @@ interface ISubLibraryParams<TLibrary, TEntryInit> {
 }
 
 // @public
-interface ISugarIngredient extends IIngredient {
+interface ISugarIngredientEntity extends IIngredientEntity {
     readonly category: 'sugar';
     readonly hydrationNumber?: number;
     readonly sweetnessPotency?: number;
@@ -5562,14 +5584,14 @@ export { Runtime }
 // @public
 class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntimeAlcoholIngredient {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredient);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity);
     get alcoholByVolume(): Percentage | undefined;
     get category(): 'alcohol';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredient): Result<RuntimeAlcoholIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity): Result<RuntimeAlcoholIngredient>;
     get flavorProfile(): string | undefined;
-    get raw(): IAlcoholIngredient;
+    get raw(): IAlcoholIngredientEntity;
 }
 
 // @public
@@ -5611,7 +5633,7 @@ class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements I
 // @public
 class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRuntimeChocolateIngredient {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredient);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity);
     get applications(): ReadonlyArray<ChocolateApplication> | undefined;
     get beanVarieties(): ReadonlyArray<CacaoVariety> | undefined;
     get cacaoPercentage(): Percentage;
@@ -5619,10 +5641,10 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
     get chocolateType(): ChocolateType;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredient): Result<RuntimeChocolateIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity): Result<RuntimeChocolateIngredient>;
     get fluidityStars(): FluidityStars | undefined;
     get origins(): ReadonlyArray<string> | undefined;
-    get raw(): IChocolateIngredient;
+    get raw(): IChocolateIngredientEntity;
     get temperatureCurve(): Ingredients_2.ITemperatureCurve | undefined;
     get viscosityMcM(): DegreesMacMichael | undefined;
 }
@@ -5727,26 +5749,26 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
 // @public
 class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRuntimeDairyIngredient {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity);
     get category(): 'dairy';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient): Result<RuntimeDairyIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredientEntity): Result<RuntimeDairyIngredient>;
     get fatContent(): Percentage | undefined;
-    get raw(): IDairyIngredient;
+    get raw(): IDairyIngredientEntity;
     get waterContent(): Percentage | undefined;
 }
 
 // @public
 class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatIngredient {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredient);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity);
     get category(): 'fat';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredient): Result<RuntimeFatIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity): Result<RuntimeFatIngredient>;
     get meltingPoint(): Celsius | undefined;
-    get raw(): IFatIngredient;
+    get raw(): IFatIngredientEntity;
 }
 
 // @public
@@ -5803,13 +5825,13 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
 abstract class RuntimeIngredient {
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: Ingredient): Result<AnyRuntimeIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyRuntimeIngredient>;
 }
 
 // @public
 abstract class RuntimeIngredientBase implements IRuntimeIngredient {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: Ingredient);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity);
     get allergens(): ReadonlyArray<Allergen>;
     alternateInFillings(): IRuntimeFillingRecipe[];
     get baseId(): BaseIngredientId;
@@ -5828,7 +5850,7 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
     // (undocumented)
     protected readonly _id: IngredientId;
     // (undocumented)
-    protected readonly _ingredient: Ingredient;
+    protected readonly _ingredient: IngredientEntity;
     isAlcohol(): this is RuntimeAlcoholIngredient;
     isChocolate(): this is RuntimeChocolateIngredient;
     isDairy(): this is RuntimeDairyIngredient;
@@ -5837,7 +5859,7 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
     get manufacturer(): string | undefined;
     get name(): string;
     primaryInFillings(): IRuntimeFillingRecipe[];
-    abstract get raw(): Ingredient;
+    abstract get raw(): IngredientEntity;
     get sourceId(): SourceId;
     // (undocumented)
     protected readonly _sourceId: SourceId;
@@ -6104,13 +6126,13 @@ class RuntimeRolledTruffleVersion extends RuntimeConfectionVersionBase implement
 // @public
 class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSugarIngredient {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredient);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity);
     get category(): 'sugar';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredient): Result<RuntimeSugarIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredientEntity): Result<RuntimeSugarIngredient>;
     get hydrationNumber(): number | undefined;
-    get raw(): ISugarIngredient;
+    get raw(): ISugarIngredientEntity;
     get sweetnessPotency(): number | undefined;
 }
 
@@ -6378,8 +6400,10 @@ type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedu
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-const sugarIngredient: Converter<ISugarIngredient>;
+const sugarIngredientEntity: Converter<ISugarIngredientEntity>;
 
 // @public
 function supportsScaling(unit: MeasurementUnit): boolean;
@@ -6639,25 +6663,25 @@ declare namespace UserRuntime {
 export { UserRuntime }
 
 // @public
-function validateAlcoholFields(entity: Ingredient): Result<true>;
+function validateAlcoholFields(entity: IngredientEntity): Result<true>;
 
 // @public
-function validateChocolateFields(entity: Ingredient): Result<true>;
+function validateChocolateFields(entity: IngredientEntity): Result<true>;
 
 // @public
-function validateDairyFields(entity: Ingredient): Result<true>;
+function validateDairyFields(entity: IngredientEntity): Result<true>;
 
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
 
 // @public
-function validateGanacheCharacteristics(entity: Ingredient): Result<true>;
+function validateGanacheCharacteristics(entity: IngredientEntity): Result<true>;
 
 // @public
 function validateIdsWithPreferred<TId extends string>(collection: IIdsWithPreferred<TId>, context?: string): Result<IIdsWithPreferred<TId>>;
 
 // @public
-function validateIngredientEntity(entity: Ingredient): Result<Ingredient>;
+function validateIngredientEntity(entity: IngredientEntity): Result<IngredientEntity>;
 
 // @public
 function validateKebabCase(input: string): Result<string>;
@@ -6681,7 +6705,7 @@ function validateStringLength<T extends string = string>(value: T, fieldName: st
 }): Result<T>;
 
 // @public
-function validateTemperatureCurve(entity: Ingredient): Result<true>;
+function validateTemperatureCurve(entity: IngredientEntity): Result<true>;
 
 // @public
 function validateUniqueBaseId<T extends string = string>(baseId: T, existingIds: ReadonlySet<T> | ReadonlyArray<T>, fieldName?: string): Result<T>;

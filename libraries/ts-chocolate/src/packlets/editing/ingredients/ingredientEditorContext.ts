@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 import { ValidatingEditorContext } from '../validatingEditorContext';
 import { EditableCollection } from '../editableCollection';
-import { Ingredient, Converters as EntityConverters } from '../../entities';
+import { IngredientEntity, Converters as EntityConverters } from '../../entities';
 import { BaseIngredientId, Converters as CommonConverters, IngredientId } from '../../common';
 import { validateIngredientEntity } from './validators';
 
@@ -41,7 +41,7 @@ import { validateIngredientEntity } from './validators';
  * @public
  */
 export class IngredientEditorContext extends ValidatingEditorContext<
-  Ingredient,
+  IngredientEntity,
   BaseIngredientId,
   IngredientId
 > {
@@ -52,17 +52,17 @@ export class IngredientEditorContext extends ValidatingEditorContext<
    * @public
    */
   public static createFromCollection(
-    collection: EditableCollection<Ingredient, BaseIngredientId>
+    collection: EditableCollection<IngredientEntity, BaseIngredientId>
   ): Result<IngredientEditorContext> {
-    return ValidatingEditorContext.createValidating<Ingredient, BaseIngredientId, IngredientId>({
+    return ValidatingEditorContext.createValidating<IngredientEntity, BaseIngredientId, IngredientId>({
       collection,
-      entityConverter: EntityConverters.Ingredients.ingredient,
+      entityConverter: EntityConverters.Ingredients.ingredientEntity,
       keyConverter: CommonConverters.baseIngredientId,
       semanticValidator: validateIngredientEntity,
       createId: CommonConverters.ingredientId,
       /* c8 ignore next 1 - getBaseId reserved for future use by EditorContext but not yet called */
-      getBaseId: (ingredient: Ingredient) => ingredient.baseId,
-      getName: (ingredient: Ingredient) => ingredient.name
+      getBaseId: (ingredient: IngredientEntity) => ingredient.baseId,
+      getName: (ingredient: IngredientEntity) => ingredient.name
     }).onSuccess((baseContext) => {
       // Wrap in ingredient-specific context
       return Success.with(
@@ -77,7 +77,7 @@ export class IngredientEditorContext extends ValidatingEditorContext<
    * @returns Ingredient name
    * @public
    */
-  public getIngredientName(ingredient: Ingredient): string {
+  public getIngredientName(ingredient: IngredientEntity): string {
     return ingredient.name;
   }
 
@@ -87,7 +87,7 @@ export class IngredientEditorContext extends ValidatingEditorContext<
    * @returns Ingredient category
    * @public
    */
-  public getIngredientCategory(ingredient: Ingredient): string {
+  public getIngredientCategory(ingredient: IngredientEntity): string {
     return ingredient.category;
   }
 }

@@ -65,7 +65,7 @@ import {
 import {
   Confections,
   Fillings,
-  IChocolateIngredient,
+  IChocolateIngredientEntity,
   IFillingRecipeEntity
 } from '../../../packlets/entities';
 
@@ -216,7 +216,7 @@ describe('RuntimeConfection', () => {
         ganacheCharacteristics: { fatContent: 0.35 as Percentage, waterContent: 0.05 as Percentage },
         chocolateType: 'dark' as ChocolateType,
         cacaoPercentage: 64 as Percentage,
-        raw: {} as IChocolateIngredient,
+        raw: {} as IChocolateIngredientEntity,
         isChocolate: () => true,
         isDairy: () => false,
         isSugar: () => false,

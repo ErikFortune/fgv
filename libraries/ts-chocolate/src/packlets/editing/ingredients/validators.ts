@@ -26,7 +26,7 @@
  */
 
 import { Result, Success, Failure } from '@fgv/ts-utils';
-import { Ingredients, Ingredient } from '../../entities';
+import { Ingredients, IngredientEntity } from '../../entities';
 
 /**
  * Validate ganache characteristics percentages.
@@ -35,7 +35,7 @@ import { Ingredients, Ingredient } from '../../entities';
  * @returns Result indicating validation success or failure
  * @public
  */
-export function validateGanacheCharacteristics(entity: Ingredient): Result<true> {
+export function validateGanacheCharacteristics(entity: IngredientEntity): Result<true> {
   const gc = entity.ganacheCharacteristics;
   if (!gc) {
     return Failure.with('ganacheCharacteristics is required');
@@ -66,8 +66,8 @@ export function validateGanacheCharacteristics(entity: Ingredient): Result<true>
  * @returns Result indicating validation success or failure
  * @public
  */
-export function validateTemperatureCurve(entity: Ingredient): Result<true> {
-  if (!Ingredients.isChocolateIngredient(entity)) {
+export function validateTemperatureCurve(entity: IngredientEntity): Result<true> {
+  if (!Ingredients.isChocolateIngredientEntity(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -111,8 +111,8 @@ export function validateTemperatureCurve(entity: Ingredient): Result<true> {
  * @returns Result indicating validation success or failure
  * @public
  */
-export function validateChocolateFields(entity: Ingredient): Result<true> {
-  if (!Ingredients.isChocolateIngredient(entity)) {
+export function validateChocolateFields(entity: IngredientEntity): Result<true> {
+  if (!Ingredients.isChocolateIngredientEntity(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -144,8 +144,8 @@ export function validateChocolateFields(entity: Ingredient): Result<true> {
  * @returns Result indicating validation success or failure
  * @public
  */
-export function validateDairyFields(entity: Ingredient): Result<true> {
-  if (!Ingredients.isDairyIngredient(entity)) {
+export function validateDairyFields(entity: IngredientEntity): Result<true> {
+  if (!Ingredients.isDairyIngredientEntity(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -180,8 +180,8 @@ export function validateDairyFields(entity: Ingredient): Result<true> {
  * @returns Result indicating validation success or failure
  * @public
  */
-export function validateAlcoholFields(entity: Ingredient): Result<true> {
-  if (!Ingredients.isAlcoholIngredient(entity)) {
+export function validateAlcoholFields(entity: IngredientEntity): Result<true> {
+  if (!Ingredients.isAlcoholIngredientEntity(entity)) {
     return Success.with(true); // Not applicable
   }
 
@@ -202,7 +202,7 @@ export function validateAlcoholFields(entity: Ingredient): Result<true> {
  * @returns Result indicating validation success or failure
  * @public
  */
-export function validateIngredientEntity(entity: Ingredient): Result<Ingredient> {
+export function validateIngredientEntity(entity: IngredientEntity): Result<IngredientEntity> {
   return validateGanacheCharacteristics(entity)
     .onSuccess(() => validateChocolateFields(entity))
     .onSuccess(() => validateDairyFields(entity))

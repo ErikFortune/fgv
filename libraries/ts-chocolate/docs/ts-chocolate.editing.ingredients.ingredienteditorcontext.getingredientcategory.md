@@ -9,7 +9,7 @@ Get the ingredient category.
 **Signature:**
 
 ```typescript
-getIngredientCategory(ingredient: Ingredient): string;
+getIngredientCategory(ingredient: IngredientEntity): string;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ ingredient
 
 </td><td>
 
-[Ingredient](./ts-chocolate.entities.ingredient.md)
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
 
 
 </td><td>

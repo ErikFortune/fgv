@@ -9,7 +9,7 @@ Factory method for creating a RuntimeAlcoholIngredient.
 **Signature:**
 
 ```typescript
-static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredient): Result<RuntimeAlcoholIngredient>;
+static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity): Result<RuntimeAlcoholIngredient>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ ingredient
 
 </td><td>
 
-[IAlcoholIngredient](./ts-chocolate.entities.ialcoholingredient.md)
+[IAlcoholIngredientEntity](./ts-chocolate.entities.ialcoholingrediententity.md)
 
 
 </td><td>

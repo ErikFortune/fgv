@@ -9,5 +9,5 @@ Gets the underlying raw ingredient data (read-only)
 **Signature:**
 
 ```typescript
-abstract get raw(): Ingredient;
+abstract get raw(): IngredientEntity;
 ```

@@ -37,8 +37,8 @@ import {
 } from '../../../../packlets/common';
 import {
   IGanacheCharacteristics,
-  IChocolateIngredient,
-  IIngredient,
+  IChocolateIngredientEntity,
+  IIngredientEntity,
   IngredientsLibrary,
   IPersistedFillingSession
 } from '../../../../packlets/entities';
@@ -69,7 +69,7 @@ describe('EditingSession', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: IChocolateIngredient = {
+  const darkChocolate: IChocolateIngredientEntity = {
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate 70%',
     category: 'chocolate',
@@ -78,14 +78,14 @@ describe('EditingSession', () => {
     ganacheCharacteristics: testChars
   };
 
-  const cream: IIngredient = {
+  const cream: IIngredientEntity = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',
     ganacheCharacteristics: creamChars
   };
 
-  const butter: IIngredient = {
+  const butter: IIngredientEntity = {
     baseId: 'butter' as BaseIngredientId,
     name: 'Butter',
     category: 'fat',

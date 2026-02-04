@@ -35,7 +35,7 @@ import {
 
 import {
   IGanacheCharacteristics,
-  IChocolateIngredient,
+  IChocolateIngredientEntity,
   Ingredients,
   IngredientsLibrary
 } from '../../../../packlets/entities';
@@ -84,7 +84,7 @@ describe('Indexers', () => {
     otherFats: 0 as Percentage
   };
 
-  const darkChocolate: IChocolateIngredient = {
+  const darkChocolate: IChocolateIngredientEntity = {
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate',
     category: 'chocolate',
@@ -94,7 +94,7 @@ describe('Indexers', () => {
     tags: ['premium', 'single-origin']
   };
 
-  const milkChocolate: IChocolateIngredient = {
+  const milkChocolate: IChocolateIngredientEntity = {
     baseId: 'milk-chocolate' as BaseIngredientId,
     name: 'Milk Chocolate',
     category: 'chocolate',
@@ -104,7 +104,7 @@ describe('Indexers', () => {
     tags: ['classic']
   };
 
-  const altChocolate: IChocolateIngredient = {
+  const altChocolate: IChocolateIngredientEntity = {
     baseId: 'alt-chocolate' as BaseIngredientId,
     name: 'Alternative Chocolate',
     category: 'chocolate',
@@ -114,7 +114,7 @@ describe('Indexers', () => {
     tags: ['premium']
   };
 
-  const cream: Ingredients.IIngredient = {
+  const cream: Ingredients.IIngredientEntity = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
     category: 'dairy',

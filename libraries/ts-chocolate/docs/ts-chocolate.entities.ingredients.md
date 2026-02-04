@@ -47,56 +47,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isAlcoholIngredient(ingredient)](./ts-chocolate.entities.ingredients.isalcoholingredient.md)
+[isAlcoholIngredientEntity(ingredient)](./ts-chocolate.entities.ingredients.isalcoholingrediententity.md)
 
 
 </td><td>
 
-Type guard for IAlcoholIngredient
+Type guard for [IAlcoholIngredientEntity](./ts-chocolate.entities.ingredients.ialcoholingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[isChocolateIngredient(ingredient)](./ts-chocolate.entities.ingredients.ischocolateingredient.md)
+[isChocolateIngredientEntity(ingredient)](./ts-chocolate.entities.ingredients.ischocolateingrediententity.md)
 
 
 </td><td>
 
-Type guard for IChocolateIngredient
+Type guard for [IChocolateIngredientEntity](./ts-chocolate.entities.ingredients.ichocolateingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[isDairyIngredient(ingredient)](./ts-chocolate.entities.ingredients.isdairyingredient.md)
+[isDairyIngredientEntity(ingredient)](./ts-chocolate.entities.ingredients.isdairyingrediententity.md)
 
 
 </td><td>
 
-Type guard for IDairyIngredient
+Type guard for [IDairyIngredientEntity](./ts-chocolate.entities.ingredients.idairyingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[isFatIngredient(ingredient)](./ts-chocolate.entities.ingredients.isfatingredient.md)
+[isFatIngredientEntity(ingredient)](./ts-chocolate.entities.ingredients.isfatingrediententity.md)
 
 
 </td><td>
 
-Type guard for IFatIngredient
+Type guard for [IFatIngredientEntity](./ts-chocolate.entities.ingredients.ifatingrediententity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[isSugarIngredient(ingredient)](./ts-chocolate.entities.ingredients.issugaringredient.md)
+[isSugarIngredientEntity(ingredient)](./ts-chocolate.entities.ingredients.issugaringrediententity.md)
 
 
 </td><td>
 
-Type guard for ISugarIngredient
+Type guard for [ISugarIngredientEntity](./ts-chocolate.entities.ingredients.isugaringrediententity.md)<!-- -->.
 
 
 </td></tr>
@@ -117,7 +117,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IAlcoholIngredient](./ts-chocolate.entities.ingredients.ialcoholingredient.md)
+[IAlcoholIngredientEntity](./ts-chocolate.entities.ingredients.ialcoholingrediententity.md)
 
 
 </td><td>
@@ -128,7 +128,7 @@ Alcohol-specific ingredient
 </td></tr>
 <tr><td>
 
-[IChocolateIngredient](./ts-chocolate.entities.ingredients.ichocolateingredient.md)
+[IChocolateIngredientEntity](./ts-chocolate.entities.ingredients.ichocolateingrediententity.md)
 
 
 </td><td>
@@ -139,7 +139,7 @@ Chocolate-specific ingredient
 </td></tr>
 <tr><td>
 
-[IDairyIngredient](./ts-chocolate.entities.ingredients.idairyingredient.md)
+[IDairyIngredientEntity](./ts-chocolate.entities.ingredients.idairyingrediententity.md)
 
 
 </td><td>
@@ -150,7 +150,7 @@ Dairy-specific ingredient
 </td></tr>
 <tr><td>
 
-[IFatIngredient](./ts-chocolate.entities.ingredients.ifatingredient.md)
+[IFatIngredientEntity](./ts-chocolate.entities.ingredients.ifatingrediententity.md)
 
 
 </td><td>
@@ -172,7 +172,7 @@ Characteristics relevant to ganache calculations These percentages represent the
 </td></tr>
 <tr><td>
 
-[IIngredient](./ts-chocolate.entities.ingredients.iingredient.md)
+[IIngredientEntity](./ts-chocolate.entities.ingredients.iingrediententity.md)
 
 
 </td><td>
@@ -183,7 +183,7 @@ Base ingredient interface All ingredients have these common properties
 </td></tr>
 <tr><td>
 
-[ISugarIngredient](./ts-chocolate.entities.ingredients.isugaringredient.md)
+[ISugarIngredientEntity](./ts-chocolate.entities.ingredients.isugaringrediententity.md)
 
 
 </td><td>
@@ -277,17 +277,6 @@ Parameters for creating an IngredientsLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
-[Ingredient](./ts-chocolate.entities.ingredients.ingredient.md)
-
-
-</td><td>
-
-Discriminated union of all ingredient types
-
-
-</td></tr>
-<tr><td>
-
 [IngredientCollection](./ts-chocolate.entities.ingredients.ingredientcollection.md)
 
 
@@ -327,6 +316,17 @@ Initialization type for an IngredientsLibrary collection entry.
 </td><td>
 
 Validator type for IngredientsLibrary collections.
+
+
+</td></tr>
+<tr><td>
+
+[IngredientEntity](./ts-chocolate.entities.ingredients.ingrediententity.md)
+
+
+</td><td>
+
+Discriminated union of all ingredient types
 
 
 </td></tr>

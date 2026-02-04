@@ -27,7 +27,7 @@ import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../p
 import {
   IGanacheCharacteristics,
   IngredientsLibrary,
-  Ingredient,
+  IngredientEntity,
   Ingredients
 } from '../../../packlets/entities';
 
@@ -47,7 +47,7 @@ describe('IngredientsLibrary', () => {
     otherFats: 0 as Percentage
   };
 
-  const testIngredient: Ingredients.IIngredient = {
+  const testIngredient: Ingredients.IIngredientEntity = {
     baseId: 'test-choco' as BaseIngredientId,
     name: 'Test Chocolate',
     category: 'chocolate',
@@ -1028,7 +1028,7 @@ describe('IngredientsLibrary', () => {
 // ============================================================================
 
 describe('Ingredient type guards', () => {
-  const baseIngredient: Ingredients.IIngredient = {
+  const baseIngredient: Ingredients.IIngredientEntity = {
     baseId: 'test' as BaseIngredientId,
     name: 'Test',
     category: 'other',
@@ -1042,29 +1042,29 @@ describe('Ingredient type guards', () => {
     }
   };
 
-  const chocolateIngredient: Ingredient = {
+  const chocolateIngredient: IngredientEntity = {
     ...baseIngredient,
     category: 'chocolate',
     chocolateType: 'dark',
     cacaoPercentage: 70 as Percentage
   };
 
-  const sugarIngredient: Ingredient = { ...baseIngredient, category: 'sugar' };
-  const dairyIngredient: Ingredient = { ...baseIngredient, category: 'dairy' };
-  const fatIngredient: Ingredient = { ...baseIngredient, category: 'fat' };
-  const alcoholIngredient: Ingredient = { ...baseIngredient, category: 'alcohol' };
+  const sugarIngredient: IngredientEntity = { ...baseIngredient, category: 'sugar' };
+  const dairyIngredient: IngredientEntity = { ...baseIngredient, category: 'dairy' };
+  const fatIngredient: IngredientEntity = { ...baseIngredient, category: 'fat' };
+  const alcoholIngredient: IngredientEntity = { ...baseIngredient, category: 'alcohol' };
 
   test.each([
-    ['isChocolateIngredient', Ingredients.isChocolateIngredient, chocolateIngredient, true],
-    ['isChocolateIngredient', Ingredients.isChocolateIngredient, sugarIngredient, false],
-    ['isSugarIngredient', Ingredients.isSugarIngredient, sugarIngredient, true],
-    ['isSugarIngredient', Ingredients.isSugarIngredient, chocolateIngredient, false],
-    ['isDairyIngredient', Ingredients.isDairyIngredient, dairyIngredient, true],
-    ['isDairyIngredient', Ingredients.isDairyIngredient, chocolateIngredient, false],
-    ['isFatIngredient', Ingredients.isFatIngredient, fatIngredient, true],
-    ['isFatIngredient', Ingredients.isFatIngredient, chocolateIngredient, false],
-    ['isAlcoholIngredient', Ingredients.isAlcoholIngredient, alcoholIngredient, true],
-    ['isAlcoholIngredient', Ingredients.isAlcoholIngredient, chocolateIngredient, false]
+    ['isChocolateIngredient', Ingredients.isChocolateIngredientEntity, chocolateIngredient, true],
+    ['isChocolateIngredient', Ingredients.isChocolateIngredientEntity, sugarIngredient, false],
+    ['isSugarIngredient', Ingredients.isSugarIngredientEntity, sugarIngredient, true],
+    ['isSugarIngredient', Ingredients.isSugarIngredientEntity, chocolateIngredient, false],
+    ['isDairyIngredient', Ingredients.isDairyIngredientEntity, dairyIngredient, true],
+    ['isDairyIngredient', Ingredients.isDairyIngredientEntity, chocolateIngredient, false],
+    ['isFatIngredient', Ingredients.isFatIngredientEntity, fatIngredient, true],
+    ['isFatIngredient', Ingredients.isFatIngredientEntity, chocolateIngredient, false],
+    ['isAlcoholIngredient', Ingredients.isAlcoholIngredientEntity, alcoholIngredient, true],
+    ['isAlcoholIngredient', Ingredients.isAlcoholIngredientEntity, chocolateIngredient, false]
   ])('%s returns %p for %p', (name, fn, input, expected) => {
     expect(fn(input)).toBe(expected);
   });

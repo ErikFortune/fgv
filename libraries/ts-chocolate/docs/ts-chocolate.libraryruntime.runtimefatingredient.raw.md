@@ -9,5 +9,5 @@ Gets the underlying raw fat ingredient data
 **Signature:**
 
 ```typescript
-get raw(): IFatIngredient;
+get raw(): IFatIngredientEntity;
 ```

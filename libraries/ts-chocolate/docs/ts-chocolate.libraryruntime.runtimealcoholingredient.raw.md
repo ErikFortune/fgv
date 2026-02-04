@@ -9,5 +9,5 @@ Gets the underlying raw alcohol ingredient data
 **Signature:**
 
 ```typescript
-get raw(): IAlcoholIngredient;
+get raw(): IAlcoholIngredientEntity;
 ```

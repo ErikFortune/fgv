@@ -90,7 +90,7 @@ export interface ITemperatureCurve {
  * All ingredients have these common properties
  * @public
  */
-export interface IIngredient {
+export interface IIngredientEntity {
   /** Base identifier within source (no dots) */
   readonly baseId: BaseIngredientId;
   /** Display name */
@@ -134,7 +134,7 @@ export interface IIngredient {
  * Chocolate-specific ingredient
  * @public
  */
-export interface IChocolateIngredient extends IIngredient {
+export interface IChocolateIngredientEntity extends IIngredientEntity {
   /** Category is always Chocolate for this type */
   readonly category: 'chocolate';
   /** Type of chocolate */
@@ -159,7 +159,7 @@ export interface IChocolateIngredient extends IIngredient {
  * Sugar-specific ingredient
  * @public
  */
-export interface ISugarIngredient extends IIngredient {
+export interface ISugarIngredientEntity extends IIngredientEntity {
   /** Category is always Sugar for this type */
   readonly category: 'sugar';
   /** Hydration number (water molecules per sugar molecule) */
@@ -172,7 +172,7 @@ export interface ISugarIngredient extends IIngredient {
  * Dairy-specific ingredient
  * @public
  */
-export interface IDairyIngredient extends IIngredient {
+export interface IDairyIngredientEntity extends IIngredientEntity {
   /** Category is always Dairy for this type */
   readonly category: 'dairy';
   /** Fat content percentage */
@@ -185,7 +185,7 @@ export interface IDairyIngredient extends IIngredient {
  * Fat-specific ingredient
  * @public
  */
-export interface IFatIngredient extends IIngredient {
+export interface IFatIngredientEntity extends IIngredientEntity {
   /** Category is always Fat for this type */
   readonly category: 'fat';
   /** Melting point in Celsius */
@@ -196,7 +196,7 @@ export interface IFatIngredient extends IIngredient {
  * Alcohol-specific ingredient
  * @public
  */
-export interface IAlcoholIngredient extends IIngredient {
+export interface IAlcoholIngredientEntity extends IIngredientEntity {
   /** Category is always Alcohol for this type */
   readonly category: 'alcohol';
   /** Alcohol by volume percentage */
@@ -213,64 +213,68 @@ export interface IAlcoholIngredient extends IIngredient {
  * Discriminated union of all ingredient types
  * @public
  */
-export type Ingredient =
-  | IChocolateIngredient
-  | ISugarIngredient
-  | IDairyIngredient
-  | IFatIngredient
-  | IAlcoholIngredient
-  | IIngredient;
+export type IngredientEntity =
+  | IChocolateIngredientEntity
+  | ISugarIngredientEntity
+  | IDairyIngredientEntity
+  | IFatIngredientEntity
+  | IAlcoholIngredientEntity
+  | IIngredientEntity;
 
 // ============================================================================
 // Type Guards
 // ============================================================================
 
 /**
- * Type guard for IChocolateIngredient
+ * Type guard for {@link Entities.Ingredients.IChocolateIngredientEntity | IChocolateIngredientEntity}.
  * @param ingredient - Ingredient to check
  * @returns True if the ingredient is a chocolate ingredient
  * @public
  */
-export function isChocolateIngredient(ingredient: Ingredient): ingredient is IChocolateIngredient {
+export function isChocolateIngredientEntity(
+  ingredient: IngredientEntity
+): ingredient is IChocolateIngredientEntity {
   return ingredient.category === 'chocolate';
 }
 
 /**
- * Type guard for ISugarIngredient
+ * Type guard for {@link Entities.Ingredients.ISugarIngredientEntity | ISugarIngredientEntity}.
  * @param ingredient - Ingredient to check
  * @returns True if the ingredient is a sugar ingredient
  * @public
  */
-export function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient {
+export function isSugarIngredientEntity(ingredient: IngredientEntity): ingredient is ISugarIngredientEntity {
   return ingredient.category === 'sugar';
 }
 
 /**
- * Type guard for IDairyIngredient
+ * Type guard for {@link Entities.Ingredients.IDairyIngredientEntity | IDairyIngredientEntity}.
  * @param ingredient - Ingredient to check
  * @returns True if the ingredient is a dairy ingredient
  * @public
  */
-export function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredient {
+export function isDairyIngredientEntity(ingredient: IngredientEntity): ingredient is IDairyIngredientEntity {
   return ingredient.category === 'dairy';
 }
 
 /**
- * Type guard for IFatIngredient
+ * Type guard for {@link Entities.Ingredients.IFatIngredientEntity | IFatIngredientEntity}.
  * @param ingredient - Ingredient to check
  * @returns True if the ingredient is a fat ingredient
  * @public
  */
-export function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient {
+export function isFatIngredientEntity(ingredient: IngredientEntity): ingredient is IFatIngredientEntity {
   return ingredient.category === 'fat';
 }
 
 /**
- * Type guard for IAlcoholIngredient
+ * Type guard for {@link Entities.Ingredients.IAlcoholIngredientEntity | IAlcoholIngredientEntity}.
  * @param ingredient - Ingredient to check
  * @returns True if the ingredient is an alcohol ingredient
  * @public
  */
-export function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient {
+export function isAlcoholIngredientEntity(
+  ingredient: IngredientEntity
+): ingredient is IAlcoholIngredientEntity {
   return ingredient.category === 'alcohol';
 }
