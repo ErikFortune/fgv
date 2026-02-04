@@ -32,7 +32,7 @@ import {
   Percentage,
   CollectionId
 } from '../../common';
-import { AnyRuntimeIngredient, RuntimeChocolateIngredient } from '../ingredients';
+import { AnyIngredient, RuntimeChocolateIngredient } from '../ingredients';
 import { LibraryRuntimeContext } from '../libraryRuntimeContext';
 import {
   IngredientFilter,
@@ -387,8 +387,8 @@ export class IngredientQuery {
   /**
    * Execute query and return matching ingredients.
    */
-  public execute(): ReadonlyArray<AnyRuntimeIngredient> {
-    const results: AnyRuntimeIngredient[] = [];
+  public execute(): ReadonlyArray<AnyIngredient> {
+    const results: AnyIngredient[] = [];
     for (const ingredient of this._context.ingredients.values()) {
       if (this._matchesAllFilters(ingredient)) {
         results.push(ingredient);
@@ -400,7 +400,7 @@ export class IngredientQuery {
   /**
    * Execute and return first matching ingredient.
    */
-  public first(): AnyRuntimeIngredient | undefined {
+  public first(): AnyIngredient | undefined {
     for (const ingredient of this._context.ingredients.values()) {
       if (this._matchesAllFilters(ingredient)) {
         return ingredient;
@@ -438,7 +438,7 @@ export class IngredientQuery {
     return this;
   }
 
-  private _matchesAllFilters(ingredient: AnyRuntimeIngredient): boolean {
+  private _matchesAllFilters(ingredient: AnyIngredient): boolean {
     for (const filter of this._filters) {
       if (!filter(ingredient)) {
         return false;

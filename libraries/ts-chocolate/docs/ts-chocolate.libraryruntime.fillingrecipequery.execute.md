@@ -9,9 +9,9 @@ Execute query and return matching recipes.
 **Signature:**
 
 ```typescript
-execute(): ReadonlyArray<RuntimeFillingRecipe>;
+execute(): ReadonlyArray<FillingRecipe>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md)<!-- -->&gt;
+ReadonlyArray&lt;FillingRecipe&gt;
 

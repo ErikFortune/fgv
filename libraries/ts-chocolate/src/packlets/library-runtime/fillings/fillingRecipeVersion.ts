@@ -48,10 +48,10 @@ import {
   IVersionContext,
   FillingRecipeIngredientsFilter
 } from '../model';
-import { AnyRuntimeIngredient } from '../ingredients';
+import { AnyIngredient } from '../ingredients';
 
 // Specialize the context interface with concrete ingredient type
-type VersionContext = IVersionContext<AnyRuntimeIngredient>;
+type VersionContext = IVersionContext<AnyIngredient>;
 
 // ============================================================================
 // Filter Helpers
@@ -68,7 +68,7 @@ function isCategoryFilter(filter: FillingRecipeIngredientsFilter): filter is ICa
  * Check if an ingredient matches a single filter
  */
 function matchesFilter(
-  resolved: IResolvedFillingIngredient<AnyRuntimeIngredient>,
+  resolved: IResolvedFillingIngredient<AnyIngredient>,
   filter: FillingRecipeIngredientsFilter
 ): boolean {
   const ingredient = resolved.ingredient;
@@ -103,13 +103,13 @@ function matchesFilter(
  * A resolved view of a recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
+export class FillingRecipeVersion implements IFillingRecipeVersion {
   private readonly _context: VersionContext;
   private readonly _fillingId: FillingId;
   private readonly _version: IFillingRecipeVersionEntity;
 
   // Lazy-loaded resolved data
-  private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyRuntimeIngredient>> | undefined;
+  private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyIngredient>> | undefined;
   private _resolutionError: string | undefined;
   private _recipe: IFillingRecipe | undefined;
   private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
@@ -129,15 +129,15 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
    * Factory method for creating a RuntimeFillingRecipeVersion.
    * @param context - The runtime context
    * @param fillingId - The parent recipe ID
-   * @param version - The raw version data
+   * @param version - The data layer version entity
    * @returns Success with RuntimeFillingRecipeVersion
    */
   public static create(
     context: VersionContext,
     fillingId: FillingId,
     version: IFillingRecipeVersionEntity
-  ): Result<RuntimeFillingRecipeVersion> {
-    return Success.with(new RuntimeFillingRecipeVersion(context, fillingId, version));
+  ): Result<FillingRecipeVersion> {
+    return Success.with(new FillingRecipeVersion(context, fillingId, version));
   }
 
   // ============================================================================
@@ -186,7 +186,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
 
   /**
    * The underlying filling recipe version.
-   * Use this to get the raw version data for persistence or journaling.
+   * Use this to get the data layer version entity for persistence or journaling.
    */
   public get version(): IFillingRecipeVersionEntity {
     return this._version;
@@ -240,7 +240,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
    */
   public getIngredients(
     filter?: FillingRecipeIngredientsFilter[]
-  ): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>> {
+  ): Result<IterableIterator<IResolvedFillingIngredient<AnyIngredient>>> {
     // Ensure ingredients are resolved
     if (this._resolvedIngredients === undefined) {
       this._resolveIngredients();
@@ -254,7 +254,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
     const resolved = this._resolvedIngredients!;
 
     // Create generator based on filter
-    function* ingredientIterator(): IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>> {
+    function* ingredientIterator(): IterableIterator<IResolvedFillingIngredient<AnyIngredient>> {
       // undefined filter = all ingredients
       if (filter === undefined) {
         for (const ri of resolved) {
@@ -365,13 +365,13 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
    * @returns Resolved procedures, or null if version has no procedures
    */
   private _resolveProcedures(): IResolvedProcedures | null {
-    const rawProcedures = this._version.procedures;
-    if (!rawProcedures || rawProcedures.options.length === 0) {
+    const procedureEntities = this._version.procedures;
+    if (!procedureEntities || procedureEntities.options.length === 0) {
       return null;
     }
 
     const resolvedProcedures: IResolvedFillingRecipeProcedure[] = [];
-    for (const ref of rawProcedures.options) {
+    for (const ref of procedureEntities.options) {
       const procedureResult = this._context.getProcedure(ref.id);
       if (procedureResult.isSuccess()) {
         resolvedProcedures.push({
@@ -386,8 +386,8 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
 
     // Resolve preferred procedure if specified
     let recommendedProcedure = undefined;
-    if (rawProcedures.preferredId) {
-      const recommendedResult = this._context.getProcedure(rawProcedures.preferredId);
+    if (procedureEntities.preferredId) {
+      const recommendedResult = this._context.getProcedure(procedureEntities.preferredId);
       if (recommendedResult.isSuccess()) {
         recommendedProcedure = recommendedResult.value;
       }
@@ -404,12 +404,8 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
     };
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw version data
+   * Gets the underlying version entity data
    */
   public get entity(): IFillingRecipeVersionEntity {
     return this._version;
@@ -420,7 +416,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
   // ============================================================================
 
   private _resolveIngredients(): void {
-    const resolved: IResolvedFillingIngredient<AnyRuntimeIngredient>[] = [];
+    const resolved: IResolvedFillingIngredient<AnyIngredient>[] = [];
     const errors: string[] = [];
 
     for (const ri of this._version.ingredients) {
@@ -441,7 +437,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
       }
 
       // Resolve alternates (all ids except primary, skip missing ones)
-      const alternates: AnyRuntimeIngredient[] = [];
+      const alternates: AnyIngredient[] = [];
       for (const altId of ri.ingredient.ids) {
         if (altId !== primaryId) {
           const altResult = this._context.ingredients.get(altId);

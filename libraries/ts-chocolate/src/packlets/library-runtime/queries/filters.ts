@@ -23,8 +23,8 @@
  * @packageDocumentation
  */
 
-import { AnyRuntimeIngredient } from '../ingredients';
-import { RuntimeFillingRecipe } from '../fillings';
+import { AnyIngredient } from '../ingredients';
+import { FillingRecipe } from '../fillings';
 
 // ============================================================================
 // Generic Filter Types
@@ -40,13 +40,13 @@ export type FilterPredicate<T> = (item: T) => boolean;
  * Filter for RuntimeIngredient
  * @public
  */
-export type IngredientFilter = FilterPredicate<AnyRuntimeIngredient>;
+export type IngredientFilter = FilterPredicate<AnyIngredient>;
 
 /**
  * Filter for RuntimeFillingRecipe
  * @public
  */
-export type FillingRecipeFilter = FilterPredicate<RuntimeFillingRecipe>;
+export type FillingRecipeFilter = FilterPredicate<FillingRecipe>;
 
 // ============================================================================
 // Filter Combinators

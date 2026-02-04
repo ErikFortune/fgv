@@ -60,11 +60,14 @@ export {
   RuntimeFatIngredient,
   RuntimeAlcoholIngredient,
   RuntimeIngredient,
-  AnyRuntimeIngredient
+  AnyIngredient as AnyRuntimeIngredient
 } from './ingredients';
 
 // Runtime filling recipe classes
-export { RuntimeFillingRecipe, RuntimeFillingRecipeVersion } from './fillings';
+export {
+  FillingRecipe as RuntimeFillingRecipe,
+  FillingRecipeVersion as RuntimeFillingRecipeVersion
+} from './fillings';
 
 // Runtime confection classes
 export {

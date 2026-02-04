@@ -9,7 +9,7 @@ Filter for RuntimeIngredient
 **Signature:**
 
 ```typescript
-export type IngredientFilter = FilterPredicate<AnyRuntimeIngredient>;
+export type IngredientFilter = FilterPredicate<AnyIngredient>;
 ```
-**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)<!-- -->, [AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)
+**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)
 

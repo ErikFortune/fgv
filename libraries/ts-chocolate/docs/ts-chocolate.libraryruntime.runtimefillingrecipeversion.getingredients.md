@@ -9,7 +9,7 @@ Gets ingredients, optionally filtered.
 **Signature:**
 
 ```typescript
-getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
+getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyIngredient>>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ _(Optional)_ Optional array of filters (OR semantics) - `undefined`<!-- -->/omit
 
 **Returns:**
 
-Result&lt;IterableIterator&lt;[IResolvedFillingIngredient](./ts-chocolate.libraryruntime.iresolvedfillingingredient.md)<!-- -->&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;&gt;&gt;
+Result&lt;IterableIterator&lt;[IResolvedFillingIngredient](./ts-chocolate.libraryruntime.iresolvedfillingingredient.md)<!-- -->&lt;AnyIngredient&gt;&gt;&gt;
 
 Success with matching ingredients iterator, or Failure if resolution fails
 

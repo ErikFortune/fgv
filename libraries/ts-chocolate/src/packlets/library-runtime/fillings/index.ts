@@ -27,5 +27,5 @@
  * @packageDocumentation
  */
 
-export { RuntimeFillingRecipe } from './fillingRecipe';
-export { RuntimeFillingRecipeVersion } from './fillingRecipeVersion';
+export { FillingRecipe } from './fillingRecipe';
+export { FillingRecipeVersion } from './fillingRecipeVersion';

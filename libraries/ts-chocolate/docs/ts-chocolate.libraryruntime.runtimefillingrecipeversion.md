@@ -9,13 +9,13 @@ A resolved view of a recipe version with all ingredients resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeFillingRecipeVersion implements IFillingRecipeVersion 
+export declare class FillingRecipeVersion implements IFillingRecipeVersion 
 ```
 **Implements:** [IFillingRecipeVersion](./ts-chocolate.libraryruntime.ifillingrecipeversion.md)
 
 ## Remarks
 
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `RuntimeFillingRecipeVersion` class.
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `FillingRecipeVersion` class.
 
 ## Properties
 
@@ -99,7 +99,7 @@ Date this version was created (ISO 8601 format)
 
 </td><td>
 
-Gets the underlying raw version data
+Gets the underlying version entity data
 
 
 </td></tr>
@@ -246,7 +246,7 @@ Optional ratings for this version
 
 </td><td>
 
-The underlying filling recipe version. Use this to get the raw version data for persistence or journaling.
+The underlying filling recipe version. Use this to get the data layer version entity for persistence or journaling.
 
 
 </td></tr>

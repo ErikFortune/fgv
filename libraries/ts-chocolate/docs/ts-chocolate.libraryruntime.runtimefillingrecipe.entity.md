@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.RuntimeFillingRecipe.entity property
 
-Gets the underlying raw recipe data
+Gets the underlying recipe data entity
 
 **Signature:**
 

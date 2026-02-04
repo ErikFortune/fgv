@@ -9,9 +9,9 @@ Execute query and return matching ingredients.
 **Signature:**
 
 ```typescript
-execute(): ReadonlyArray<AnyRuntimeIngredient>;
+execute(): ReadonlyArray<AnyIngredient>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;
+ReadonlyArray&lt;AnyIngredient&gt;
 

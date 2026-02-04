@@ -39,4 +39,4 @@ export { RuntimeAlcoholIngredient } from './alcoholIngredient';
 export { RuntimeGenericIngredient } from './genericIngredient';
 
 // Static factory and union type
-export { RuntimeIngredient, AnyRuntimeIngredient } from './ingredient';
+export { RuntimeIngredient, AnyIngredient } from './ingredient';

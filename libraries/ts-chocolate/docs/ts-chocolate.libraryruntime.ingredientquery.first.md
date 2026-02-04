@@ -9,9 +9,9 @@ Execute and return first matching ingredient.
 **Signature:**
 
 ```typescript
-first(): AnyRuntimeIngredient | undefined;
+first(): AnyIngredient | undefined;
 ```
 **Returns:**
 
-[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md) \| undefined
+AnyIngredient \| undefined
 

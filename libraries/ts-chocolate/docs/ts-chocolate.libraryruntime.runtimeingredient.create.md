@@ -9,7 +9,7 @@ Factory method that auto-detects ingredient type and returns appropriate concret
 **Signature:**
 
 ```typescript
-static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyRuntimeIngredient>;
+static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyIngredient>;
 ```
 
 ## Parameters
@@ -82,7 +82,7 @@ The raw ingredient data
 
 **Returns:**
 
-Result&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;
+Result&lt;AnyIngredient&gt;
 
 Success with the appropriate concrete RuntimeIngredient subclass, or Failure for unknown category
 

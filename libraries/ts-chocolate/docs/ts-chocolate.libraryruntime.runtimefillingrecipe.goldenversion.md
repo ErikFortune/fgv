@@ -9,5 +9,5 @@ The golden (default approved) version - resolved. Resolved lazily on first acces
 **Signature:**
 
 ```typescript
-get goldenVersion(): RuntimeFillingRecipeVersion;
+get goldenVersion(): FillingRecipeVersion;
 ```

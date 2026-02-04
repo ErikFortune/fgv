@@ -9,7 +9,7 @@ Union type of all concrete runtime ingredient classes. Use this type when you ne
 **Signature:**
 
 ```typescript
-export type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
+export type AnyIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
 ```
 **References:** [RuntimeChocolateIngredient](./ts-chocolate.libraryruntime.runtimechocolateingredient.md)<!-- -->, [RuntimeDairyIngredient](./ts-chocolate.libraryruntime.runtimedairyingredient.md)<!-- -->, [RuntimeSugarIngredient](./ts-chocolate.libraryruntime.runtimesugaringredient.md)<!-- -->, [RuntimeFatIngredient](./ts-chocolate.libraryruntime.runtimefatingredient.md)<!-- -->, [RuntimeAlcoholIngredient](./ts-chocolate.libraryruntime.runtimealcoholingredient.md)
 

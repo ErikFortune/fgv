@@ -9,7 +9,7 @@ Filter for RuntimeFillingRecipe
 **Signature:**
 
 ```typescript
-export type FillingRecipeFilter = FilterPredicate<RuntimeFillingRecipe>;
+export type FillingRecipeFilter = FilterPredicate<FillingRecipe>;
 ```
-**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)<!-- -->, [RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md)
+**References:** [FilterPredicate](./ts-chocolate.libraryruntime.filterpredicate.md)
 

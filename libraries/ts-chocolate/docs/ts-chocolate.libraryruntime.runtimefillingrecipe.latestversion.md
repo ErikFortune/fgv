@@ -9,5 +9,5 @@ Gets the latest version (by created date). Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-get latestVersion(): RuntimeFillingRecipeVersion;
+get latestVersion(): FillingRecipeVersion;
 ```

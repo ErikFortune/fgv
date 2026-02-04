@@ -58,8 +58,8 @@ import {
   IVersionContext
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
-import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
-import { RuntimeFillingRecipe } from './fillings';
+import { RuntimeIngredient, AnyIngredient } from './ingredients';
+import { FillingRecipe } from './fillings';
 import {
   IIngredientQuerySpec,
   IFillingRecipeQuerySpec,
@@ -109,7 +109,7 @@ export interface ILibraryRuntimeContextCreateParams {
  */
 export class LibraryRuntimeContext
   implements
-    IVersionContext<AnyRuntimeIngredient>,
+    IVersionContext<AnyIngredient>,
     IIngredientContext,
     ITaskContext,
     IProcedureContext,
@@ -128,10 +128,10 @@ export class LibraryRuntimeContext
   // Lazily-populated libraries with integrated find support
   // The fourth type parameter is the orchestrator's entity type (interface type)
   private _ingredients:
-    | ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IIngredient>
+    | ValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec, IIngredient>
     | undefined;
   private _recipes:
-    | ValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
+    | ValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
     | undefined;
 
   // Extensible indexer orchestrators
@@ -543,11 +543,7 @@ export class LibraryRuntimeContext
    * Ingredients are resolved eagerly on first access and cached.
    * @throws Error if ingredient resolution fails (indicates library corruption)
    */
-  public get ingredients(): IReadOnlyValidatingLibrary<
-    IngredientId,
-    AnyRuntimeIngredient,
-    IIngredientQuerySpec
-  > {
+  public get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec> {
     return this._resolveIngredients().orThrow();
   }
 
@@ -556,11 +552,7 @@ export class LibraryRuntimeContext
    * Fillings are resolved eagerly on first access and cached.
    * @throws Error if recipe resolution fails (indicates library corruption)
    */
-  public get fillings(): IReadOnlyValidatingLibrary<
-    FillingId,
-    RuntimeFillingRecipe,
-    IFillingRecipeQuerySpec
-  > {
+  public get fillings(): IReadOnlyValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec> {
     return this._resolveFillingRecipes().orThrow();
   }
 
@@ -570,16 +562,16 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveIngredients(): Result<
-    ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IIngredient>
+    ValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec, IIngredient>
   > {
     if (this._ingredients === undefined) {
       this._ingredients = new ValidatingLibrary({
-        converters: new Collections.KeyValueConverters<IngredientId, AnyRuntimeIngredient>({
+        converters: new Collections.KeyValueConverters<IngredientId, AnyIngredient>({
           key: (from: unknown) => Converters.ingredientId.convert(from),
           /* c8 ignore next 4 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
             from instanceof RuntimeIngredient
-              ? succeed(from as AnyRuntimeIngredient)
+              ? succeed(from as AnyIngredient)
               : fail('not a runtime ingredient')
         }),
         orchestrator: this._ingredientOrchestrator
@@ -603,21 +595,21 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveFillingRecipes(): Result<
-    ValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
+    ValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
   > {
     if (this._recipes === undefined) {
       this._recipes = new ValidatingLibrary({
-        converters: new Collections.KeyValueConverters<FillingId, RuntimeFillingRecipe>({
+        converters: new Collections.KeyValueConverters<FillingId, FillingRecipe>({
           key: (from: unknown) => Converters.fillingId.convert(from),
           /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
-            from instanceof RuntimeFillingRecipe ? succeed(from) : fail('not a runtime recipe')
+            from instanceof FillingRecipe ? succeed(from) : fail('not a runtime recipe')
         }),
         orchestrator: this._recipeOrchestrator
       });
       // Populate from library - report and fail on any creation errors
       for (const [id, recipe] of this._library.fillings.entries()) {
-        const createResult = RuntimeFillingRecipe.create(this, id, recipe).report(this.logger);
+        const createResult = FillingRecipe.create(this, id, recipe).report(this.logger);
         /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
         if (createResult.isFailure()) {
           return Failure.with(`Failed to resolve recipe ${id}: ${createResult.message}`);
@@ -632,7 +624,7 @@ export class LibraryRuntimeContext
    * Gets a resolved runtime ingredient by ID.
    * @internal - for use by orchestrators and internal navigation
    */
-  public _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient> {
+  public _getIngredient(id: IngredientId): Result<AnyIngredient> {
     return this._resolveIngredients().onSuccess((lib) => lib.get(id).asResult);
   }
 
@@ -640,7 +632,7 @@ export class LibraryRuntimeContext
    * Gets a resolved runtime recipe by ID.
    * @internal - for use by orchestrators and internal navigation
    */
-  public _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe> {
+  public _getFillingRecipe(id: FillingId): Result<FillingRecipe> {
     return this._resolveFillingRecipes().onSuccess((lib) => lib.get(id).asResult);
   }
 
@@ -774,7 +766,7 @@ export class LibraryRuntimeContext
    * Used internally by RuntimeIngredient for navigation.
    * @internal
    */
-  public getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[] {
+  public getFillingsUsingIngredient(ingredientId: IngredientId): FillingRecipe[] {
     const fillingIds = this._reverseIndex.getFillingsUsingIngredient(ingredientId);
     return this._resolveFillingIds(fillingIds);
   }
@@ -784,7 +776,7 @@ export class LibraryRuntimeContext
    * Used internally by RuntimeIngredient for navigation.
    * @internal
    */
-  public getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[] {
+  public getFillingsWithPrimaryIngredient(ingredientId: IngredientId): FillingRecipe[] {
     const fillingIds = this._reverseIndex.getFillingsWithPrimaryIngredient(ingredientId);
     return this._resolveFillingIds(fillingIds);
   }
@@ -794,7 +786,7 @@ export class LibraryRuntimeContext
    * Used internally by RuntimeIngredient for navigation.
    * @internal
    */
-  public getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[] {
+  public getFillingsWithAlternateIngredient(ingredientId: IngredientId): FillingRecipe[] {
     const fillingIds = this._reverseIndex.getFillingsWithAlternateIngredient(ingredientId);
     return this._resolveFillingIds(fillingIds);
   }
@@ -803,10 +795,10 @@ export class LibraryRuntimeContext
    * Resolves a set of filling IDs to RuntimeFillingRecipe objects.
    * @internal
    */
-  private _resolveFillingIds(fillingIds: ReadonlySet<FillingId>): RuntimeFillingRecipe[] {
-    const result: RuntimeFillingRecipe[] = [];
+  private _resolveFillingIds(fillingIds: ReadonlySet<FillingId>): FillingRecipe[] {
+    const result: FillingRecipe[] = [];
     for (const id of fillingIds) {
-      this._getFillingRecipe(id).onSuccess((r: RuntimeFillingRecipe) => Success.with(result.push(r)));
+      this._getFillingRecipe(id).onSuccess((r: FillingRecipe) => Success.with(result.push(r)));
     }
     return result;
   }

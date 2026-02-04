@@ -9,5 +9,5 @@ All versions - resolved. Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<RuntimeFillingRecipeVersion>;
+get versions(): ReadonlyArray<FillingRecipeVersion>;
 ```

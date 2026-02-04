@@ -13,9 +13,9 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 **Signature:**
 
 ```typescript
-export declare class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext 
+export declare class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext 
 ```
-**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)
+**Implements:** IVersionContext&lt;AnyIngredient&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, [ILibraryRuntimeContext](./ts-chocolate.libraryruntime.ilibraryruntimecontext.md)
 
 ## Constructors
 
@@ -172,7 +172,7 @@ The confections library for accessing confection data.
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, FillingRecipe, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
@@ -193,7 +193,7 @@ A searchable library of all fillings, keyed by composite ID. Fillings are resolv
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [AnyRuntimeIngredient](./ts-chocolate.libraryruntime.anyruntimeingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, AnyIngredient, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>

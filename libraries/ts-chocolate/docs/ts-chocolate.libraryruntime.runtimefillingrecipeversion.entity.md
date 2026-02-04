@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.RuntimeFillingRecipeVersion.entity property
 
-Gets the underlying raw version data
+Gets the underlying version entity data
 
 **Signature:**
 

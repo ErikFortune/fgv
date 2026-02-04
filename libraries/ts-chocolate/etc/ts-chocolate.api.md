@@ -180,6 +180,11 @@ type AnyFillingOptionEntity = IRecipeFillingOptionEntity | IIngredientFillingOpt
 // @public
 const anyFillingOptionEntity: Converter<AnyFillingOptionEntity>;
 
+// Warning: (ae-forgotten-export) The symbol "RuntimeGenericIngredient" needs to be exported by the entry point index.d.ts
+//
+// @public
+type AnyIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
+
 // @public
 type AnyInventoryEntryEntity = IMoldInventoryEntryEntity | IIngredientInventoryEntryEntity;
 
@@ -214,11 +219,6 @@ type AnyResolvedFillingSlotEntity = IResolvedFillingSlotEntity | IResolvedIngred
 //
 // @public
 const anyResolvedFillingSlotEntity: Converter<AnyResolvedFillingSlotEntity>;
-
-// Warning: (ae-forgotten-export) The symbol "RuntimeGenericIngredient" needs to be exported by the entry point index.d.ts
-//
-// @public
-type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
 
 // @public
 type AnySessionEntity = IFillingSessionEntity | IConfectionSessionEntity;
@@ -1571,13 +1571,38 @@ const fillingProductionJournalEntryEntity: Converter<IFillingProductionJournalEn
 // @public
 const fillingRating: Converter<IFillingRating>;
 
+// @public
+class FillingRecipe implements IFillingRecipe {
+    // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "FillingRecipe"
+    //
+    // @internal
+    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity);
+    get baseId(): BaseFillingId;
+    get collectionId(): CollectionId;
+    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity): Result<FillingRecipe>;
+    get description(): string | undefined;
+    get entity(): IFillingRecipeEntity;
+    getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
+    getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion>;
+    get goldenVersion(): FillingRecipeVersion;
+    get goldenVersionSpec(): FillingVersionSpec;
+    get id(): FillingId;
+    get latestVersion(): FillingRecipeVersion;
+    get name(): FillingName;
+    get tags(): ReadonlyArray<string>;
+    usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
+    get versionCount(): number;
+    get versions(): ReadonlyArray<FillingRecipeVersion>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const fillingRecipeEntity: Converter<IFillingRecipeEntity>;
 
 // @public
-type FillingRecipeFilter = FilterPredicate<RuntimeFillingRecipe>;
+type FillingRecipeFilter = FilterPredicate<FillingRecipe>;
 
 // @public
 type FillingRecipeIndexerName = keyof IFillingRecipeQuerySpec;
@@ -1599,9 +1624,9 @@ class FillingRecipeQuery {
     constructor(context: LibraryRuntimeContext);
     count(): number;
     descriptionContains(text: string): FillingRecipeQuery;
-    execute(): ReadonlyArray<RuntimeFillingRecipe>;
+    execute(): ReadonlyArray<FillingRecipe>;
     exists(): boolean;
-    first(): RuntimeFillingRecipe | undefined;
+    first(): FillingRecipe | undefined;
     fromSource(sourceId: CollectionId): FillingRecipeQuery;
     ganacheFatContent(min: Percentage, max?: Percentage): FillingRecipeQuery;
     ganacheWithWarnings(): FillingRecipeQuery;
@@ -1727,6 +1752,31 @@ class FillingRecipesByTagIndexer extends BaseIndexer<IFillingRecipe, FillingId, 
     // (undocumented)
     protected _findInternal(config: IFillingRecipesByTagConfig): Result<ReadonlyArray<IFillingRecipe | FillingId>>;
     getAllTags(): ReadonlyArray<string>;
+}
+
+// @public
+class FillingRecipeVersion implements IFillingRecipeVersion {
+    // Warning: (ae-forgotten-export) The symbol "VersionContext" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity);
+    get baseWeight(): Measurement;
+    calculateGanache(): Result<IGanacheCalculation>;
+    static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity): Result<FillingRecipeVersion>;
+    get createdDate(): string;
+    get entity(): IFillingRecipeVersionEntity;
+    get fillingId(): FillingId;
+    get fillingRecipe(): IFillingRecipe;
+    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyIngredient>>>;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
+    get procedures(): IResolvedProcedures | undefined;
+    get ratings(): ReadonlyArray<IFillingRating>;
+    usesIngredient(ingredientId: IngredientId): boolean;
+    get version(): IFillingRecipeVersionEntity;
+    get versionId(): FillingVersionId;
+    get versionSpec(): FillingVersionSpec;
+    get yield(): string | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3332,7 +3382,7 @@ const ingredientEntity: Converter<IngredientEntity>;
 const ingredientFillingOptionEntity: Converter<IIngredientFillingOptionEntity>;
 
 // @public
-type IngredientFilter = FilterPredicate<AnyRuntimeIngredient>;
+type IngredientFilter = FilterPredicate<AnyIngredient>;
 
 // @public
 export type IngredientId = Brand<string, 'IngredientId'>;
@@ -3433,11 +3483,11 @@ class IngredientQuery {
     count(): number;
     dairy(): IngredientQuery;
     descriptionContains(text: string): IngredientQuery;
-    execute(): ReadonlyArray<AnyRuntimeIngredient>;
+    execute(): ReadonlyArray<AnyIngredient>;
     exists(): boolean;
     fat(): IngredientQuery;
     fatRange(min: Percentage, max: Percentage): IngredientQuery;
-    first(): AnyRuntimeIngredient | undefined;
+    first(): AnyIngredient | undefined;
     forApplication(application: ChocolateApplication): IngredientQuery;
     fromSource(sourceId: CollectionId): IngredientQuery;
     maxCacao(percentage: Percentage): IngredientQuery;
@@ -4943,9 +4993,9 @@ declare namespace LibraryRuntime {
         RuntimeFatIngredient,
         RuntimeAlcoholIngredient,
         RuntimeIngredient,
-        AnyRuntimeIngredient,
-        RuntimeFillingRecipe,
-        RuntimeFillingRecipeVersion,
+        AnyIngredient as AnyRuntimeIngredient,
+        FillingRecipe as RuntimeFillingRecipe,
+        FillingRecipeVersion as RuntimeFillingRecipeVersion,
         ConfectionBase,
         MoldedBonBon,
         BarTruffle,
@@ -5066,7 +5116,7 @@ export { LibraryRuntime }
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 //
 // @public
-class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext {
+class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext {
     protected constructor(library: ChocolateLibrary, preWarm: boolean);
     get cachedConfectionCount(): number;
     get cachedIngredientCount(): number;
@@ -5075,22 +5125,22 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, II
     get confections(): Confections_2.ConfectionsLibrary;
     static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
     createWeightContext(): IWeightCalculationContext;
-    get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeFillingRecipe, IFillingRecipeQuerySpec>;
+    get fillings(): IReadOnlyValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getConfection(id: ConfectionId): Result<Confections_2.AnyConfectionEntity>;
     // @internal
-    _getFillingRecipe(id: FillingId): Result<RuntimeFillingRecipe>;
+    _getFillingRecipe(id: FillingId): Result<FillingRecipe>;
     // @internal
-    getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    getFillingsUsingIngredient(ingredientId: IngredientId): FillingRecipe[];
     // @internal
-    getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    getFillingsWithAlternateIngredient(ingredientId: IngredientId): FillingRecipe[];
     // @internal
-    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeFillingRecipe[];
+    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): FillingRecipe[];
     // @internal
-    _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
+    _getIngredient(id: IngredientId): Result<AnyIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getProcedure(id: string): Result<IProcedureEntity>;
     getRuntimeConfection(id: ConfectionId): Result<AnyConfection>;
@@ -5102,7 +5152,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, II
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
     getTask(id: TaskId): Result<IRawTaskEntity>;
     hasConfection(id: ConfectionId): boolean;
-    get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
+    get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -5884,60 +5934,10 @@ class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatIngredie
 }
 
 // @public
-class RuntimeFillingRecipe implements IFillingRecipe {
-    // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "RuntimeFillingRecipe"
-    //
-    // @internal
-    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity);
-    get baseId(): BaseFillingId;
-    get collectionId(): CollectionId;
-    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity): Result<RuntimeFillingRecipe>;
-    get description(): string | undefined;
-    get entity(): IFillingRecipeEntity;
-    getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
-    getVersion(versionSpec: FillingVersionSpec): Result<RuntimeFillingRecipeVersion>;
-    get goldenVersion(): RuntimeFillingRecipeVersion;
-    get goldenVersionSpec(): FillingVersionSpec;
-    get id(): FillingId;
-    get latestVersion(): RuntimeFillingRecipeVersion;
-    get name(): FillingName;
-    get tags(): ReadonlyArray<string>;
-    usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
-    get versionCount(): number;
-    get versions(): ReadonlyArray<RuntimeFillingRecipeVersion>;
-}
-
-// @public
-class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
-    // Warning: (ae-forgotten-export) The symbol "VersionContext" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity);
-    get baseWeight(): Measurement;
-    calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity): Result<RuntimeFillingRecipeVersion>;
-    get createdDate(): string;
-    get entity(): IFillingRecipeVersionEntity;
-    get fillingId(): FillingId;
-    get fillingRecipe(): IFillingRecipe;
-    getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>>;
-    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
-    get procedures(): IResolvedProcedures | undefined;
-    get ratings(): ReadonlyArray<IFillingRating>;
-    usesIngredient(ingredientId: IngredientId): boolean;
-    get version(): IFillingRecipeVersionEntity;
-    get versionId(): FillingVersionId;
-    get versionSpec(): FillingVersionSpec;
-    get yield(): string | undefined;
-}
-
-// @public
 abstract class RuntimeIngredient {
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-    static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyRuntimeIngredient>;
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity): Result<AnyIngredient>;
 }
 
 // @public

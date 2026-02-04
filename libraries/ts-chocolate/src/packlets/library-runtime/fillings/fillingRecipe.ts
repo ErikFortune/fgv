@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeFillingRecipe - resolved recipe view with navigation
+ * FillingRecipe - resolved recipe view with navigation
  * @packageDocumentation
  */
 
@@ -37,14 +37,14 @@ import {
 } from '../../common';
 import { IFillingRecipeEntity } from '../../entities';
 import { IIngredientQueryOptions, IFillingRecipe, IVersionContext } from '../model';
-import { RuntimeFillingRecipeVersion } from './fillingRecipeVersion';
-import { AnyRuntimeIngredient } from '../ingredients';
+import { FillingRecipeVersion } from './fillingRecipeVersion';
+import { AnyIngredient } from '../ingredients';
 
 // Specialize the context interface with concrete ingredient type
-type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
+type RecipeContext = IVersionContext<AnyIngredient>;
 
 // ============================================================================
-// RuntimeFillingRecipe Class
+// FillingRecipe Class
 // ============================================================================
 
 /**
@@ -52,7 +52,7 @@ type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeFillingRecipe implements IFillingRecipe {
+export class FillingRecipe implements IFillingRecipe {
   private readonly _context: RecipeContext;
   private readonly _id: FillingId;
   private readonly _recipe: IFillingRecipeEntity;
@@ -60,15 +60,15 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
   private readonly _baseId: BaseFillingId;
 
   // Lazy-loaded versions
-  private _goldenVersion: RuntimeFillingRecipeVersion | undefined;
-  private _versions: ReadonlyArray<RuntimeFillingRecipeVersion> | undefined;
-  private _latestVersion: RuntimeFillingRecipeVersion | undefined;
+  private _goldenVersion: FillingRecipeVersion | undefined;
+  private _versions: ReadonlyArray<FillingRecipeVersion> | undefined;
+  private _latestVersion: FillingRecipeVersion | undefined;
   private _preferredIngredientIds: Set<IngredientId> | undefined;
   private _allIngredientIds: Set<IngredientId> | undefined;
 
   /**
-   * Creates a RuntimeFillingRecipe.
-   * Use {@link RuntimeFillingRecipe.create} or RuntimeContext.getRecipe() instead of calling this directly.
+   * Creates a FillingRecipe.
+   * Use {@link FillingRecipe.create} or Context.getRecipe() instead of calling this directly.
    * @internal
    */
   protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity) {
@@ -82,18 +82,18 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
   }
 
   /**
-   * Factory method for creating a RuntimeFillingRecipe.
+   * Factory method for creating a FillingRecipe.
    * @param context - The runtime context
    * @param id - The recipe ID
-   * @param recipe - The raw recipe data
-   * @returns Success with RuntimeFillingRecipe
+   * @param recipe - The data layer recipe entity
+   * @returns Success with FillingRecipe
    */
   public static create(
     context: RecipeContext,
     id: FillingId,
     recipe: IFillingRecipeEntity
-  ): Result<RuntimeFillingRecipe> {
-    return Success.with(new RuntimeFillingRecipe(context, id, recipe));
+  ): Result<FillingRecipe> {
+    return Success.with(new FillingRecipe(context, id, recipe));
   }
 
   // ============================================================================
@@ -161,14 +161,14 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
    * The golden (default approved) version - resolved.
    * Resolved lazily on first access.
    */
-  public get goldenVersion(): RuntimeFillingRecipeVersion {
+  public get goldenVersion(): FillingRecipeVersion {
     if (this._goldenVersion === undefined) {
-      const rawVersion = this._recipe.versions.find((v) => v.versionSpec === this._recipe.goldenVersionSpec);
+      const entity = this._recipe.versions.find((v) => v.versionSpec === this._recipe.goldenVersionSpec);
       /* c8 ignore next 3 - defensive coding: data validation ensures golden version exists */
-      if (!rawVersion) {
+      if (!entity) {
         throw new Error(`Golden version ${this._recipe.goldenVersionSpec} not found in recipe ${this._id}`);
       }
-      this._goldenVersion = new RuntimeFillingRecipeVersion(this._context, this._id, rawVersion);
+      this._goldenVersion = new FillingRecipeVersion(this._context, this._id, entity);
     }
     return this._goldenVersion;
   }
@@ -177,11 +177,9 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
    * All versions - resolved.
    * Resolved lazily on first access.
    */
-  public get versions(): ReadonlyArray<RuntimeFillingRecipeVersion> {
+  public get versions(): ReadonlyArray<FillingRecipeVersion> {
     if (this._versions === undefined) {
-      this._versions = this._recipe.versions.map(
-        (v) => new RuntimeFillingRecipeVersion(this._context, this._id, v)
-      );
+      this._versions = this._recipe.versions.map((v) => new FillingRecipeVersion(this._context, this._id, v));
     }
     return this._versions;
   }
@@ -189,9 +187,9 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
   /**
    * Gets a specific version by ID.
    * @param versionSpec - The version ID to find
-   * @returns Success with RuntimeFillingRecipeVersion, or Failure if not found
+   * @returns Success with FillingRecipeVersion, or Failure if not found
    */
-  public getVersion(versionSpec: FillingVersionSpec): Result<RuntimeFillingRecipeVersion> {
+  public getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion> {
     const version = this.versions.find((v) => v.versionSpec === versionSpec);
     if (!version) {
       return Failure.with(`Version ${versionSpec} not found in recipe ${this._id}`);
@@ -203,20 +201,20 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
    * Gets the latest version (by created date).
    * Resolved lazily on first access.
    */
-  public get latestVersion(): RuntimeFillingRecipeVersion {
+  public get latestVersion(): FillingRecipeVersion {
     if (this._latestVersion === undefined) {
       // Find version with latest created date
-      let latestRaw = this._recipe.versions[0];
+      let latestEntity = this._recipe.versions[0];
       for (const v of this._recipe.versions) {
-        if (v.createdDate > latestRaw.createdDate) {
-          latestRaw = v;
+        if (v.createdDate > latestEntity.createdDate) {
+          latestEntity = v;
         }
       }
       // Check if it's the same as golden version to reuse
-      if (latestRaw.versionSpec === this._recipe.goldenVersionSpec) {
+      if (latestEntity.versionSpec === this._recipe.goldenVersionSpec) {
         this._latestVersion = this.goldenVersion;
       } else {
-        this._latestVersion = new RuntimeFillingRecipeVersion(this._context, this._id, latestRaw);
+        this._latestVersion = new FillingRecipeVersion(this._context, this._id, latestEntity);
       }
     }
     return this._latestVersion;
@@ -295,12 +293,8 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
     return this.getIngredientIds(options).has(ingredientId);
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw recipe data
+   * Gets the underlying recipe data entity
    */
   public get entity(): IFillingRecipeEntity {
     return this._recipe;

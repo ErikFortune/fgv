@@ -9,9 +9,9 @@ Execute and return first matching recipe.
 **Signature:**
 
 ```typescript
-first(): RuntimeFillingRecipe | undefined;
+first(): FillingRecipe | undefined;
 ```
 **Returns:**
 
-[RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md) \| undefined
+FillingRecipe \| undefined
 

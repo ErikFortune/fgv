@@ -24,7 +24,7 @@
  */
 
 import { ChocolateType, IngredientId, Percentage, CollectionId } from '../../common';
-import { RuntimeFillingRecipe } from '../fillings';
+import { FillingRecipe } from '../fillings';
 import { LibraryRuntimeContext } from '../libraryRuntimeContext';
 import {
   FillingRecipeFilter,
@@ -293,8 +293,8 @@ export class FillingRecipeQuery {
   /**
    * Execute query and return matching recipes.
    */
-  public execute(): ReadonlyArray<RuntimeFillingRecipe> {
-    const results: RuntimeFillingRecipe[] = [];
+  public execute(): ReadonlyArray<FillingRecipe> {
+    const results: FillingRecipe[] = [];
     for (const recipe of this._context.fillings.values()) {
       if (this._matchesAllFilters(recipe)) {
         results.push(recipe);
@@ -306,7 +306,7 @@ export class FillingRecipeQuery {
   /**
    * Execute and return first matching recipe.
    */
-  public first(): RuntimeFillingRecipe | undefined {
+  public first(): FillingRecipe | undefined {
     for (const recipe of this._context.fillings.values()) {
       if (this._matchesAllFilters(recipe)) {
         return recipe;
@@ -345,7 +345,7 @@ export class FillingRecipeQuery {
     return this;
   }
 
-  private _matchesAllFilters(recipe: RuntimeFillingRecipe): boolean {
+  private _matchesAllFilters(recipe: FillingRecipe): boolean {
     for (const filter of this._filters) {
       if (!filter(recipe)) {
         return false;

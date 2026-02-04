@@ -51,7 +51,7 @@ import { RuntimeGenericIngredient } from './genericIngredient';
  * Use this type when you need to work with any runtime ingredient.
  * @public
  */
-export type AnyRuntimeIngredient =
+export type AnyIngredient =
   | RuntimeChocolateIngredient
   | RuntimeDairyIngredient
   | RuntimeSugarIngredient
@@ -96,7 +96,7 @@ export abstract class RuntimeIngredient {
     context: IIngredientContext,
     id: IngredientId,
     ingredient: IngredientEntity
-  ): Result<AnyRuntimeIngredient> {
+  ): Result<AnyIngredient> {
     switch (ingredient.category) {
       case 'chocolate':
         return RuntimeChocolateIngredient.create(context, id, ingredient as IChocolateIngredientEntity);

@@ -9,7 +9,7 @@ Gets a specific version by ID.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: FillingVersionSpec): Result<RuntimeFillingRecipeVersion>;
+getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The version ID to find
 
 **Returns:**
 
-Result&lt;[RuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.md)<!-- -->&gt;
+Result&lt;FillingRecipeVersion&gt;
 
-Success with RuntimeFillingRecipeVersion, or Failure if not found
+Success with FillingRecipeVersion, or Failure if not found
 

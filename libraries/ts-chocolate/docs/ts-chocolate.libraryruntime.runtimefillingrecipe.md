@@ -9,13 +9,13 @@ A resolved view of a recipe with navigation and version access. Immutable - does
 **Signature:**
 
 ```typescript
-export declare class RuntimeFillingRecipe implements IFillingRecipe 
+export declare class FillingRecipe implements IFillingRecipe 
 ```
 **Implements:** [IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
 
 ## Remarks
 
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `RuntimeFillingRecipe` class.
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `FillingRecipe` class.
 
 ## Properties
 
@@ -120,7 +120,7 @@ Optional description of the recipe
 
 </td><td>
 
-Gets the underlying raw recipe data
+Gets the underlying recipe data entity
 
 
 </td></tr>
@@ -136,7 +136,7 @@ Gets the underlying raw recipe data
 
 </td><td>
 
-[RuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.md)
+FillingRecipeVersion
 
 
 </td><td>
@@ -199,7 +199,7 @@ The composite recipe ID (e.g., "user.dark-ganache")
 
 </td><td>
 
-[RuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.md)
+FillingRecipeVersion
 
 
 </td><td>
@@ -283,7 +283,7 @@ Number of versions
 
 </td><td>
 
-ReadonlyArray&lt;[RuntimeFillingRecipeVersion](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.md)<!-- -->&gt;
+ReadonlyArray&lt;FillingRecipeVersion&gt;
 
 
 </td><td>
@@ -324,7 +324,7 @@ Description
 
 </td><td>
 
-Factory method for creating a RuntimeFillingRecipe.
+Factory method for creating a FillingRecipe.
 
 
 </td></tr>

@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.RuntimeFillingRecipe.create() method
 
-Factory method for creating a RuntimeFillingRecipe.
+Factory method for creating a FillingRecipe.
 
 **Signature:**
 
 ```typescript
-static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity): Result<RuntimeFillingRecipe>;
+static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity): Result<FillingRecipe>;
 ```
 
 ## Parameters
@@ -74,7 +74,7 @@ recipe
 
 </td><td>
 
-The raw recipe data
+The data layer recipe entity
 
 
 </td></tr>
@@ -82,7 +82,7 @@ The raw recipe data
 
 **Returns:**
 
-Result&lt;[RuntimeFillingRecipe](./ts-chocolate.libraryruntime.runtimefillingrecipe.md)<!-- -->&gt;
+Result&lt;FillingRecipe&gt;
 
-Success with RuntimeFillingRecipe
+Success with FillingRecipe
 
