@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeProducedConfection - mutable wrapper for produced confections with undo/redo
+ * ProducedConfection - mutable wrapper for produced confections with undo/redo
  * @packageDocumentation
  */
 
@@ -47,7 +47,7 @@ import type {
   IBarTruffleVersion,
   IMoldedBonBonVersion,
   IRolledTruffleVersion,
-  IResolvedFillingSlot as IRuntimeResolvedFillingSlot
+  IResolvedFillingSlot
 } from '../model';
 
 /**
@@ -89,13 +89,13 @@ export interface IConfectionChanges {
  * Provides common editing methods and history management.
  * @public
  */
-export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfectionEntity> {
+export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
   protected _current: T;
   protected _undoStack: T[];
   protected _redoStack: T[];
 
   /**
-   * Creates a RuntimeProducedConfectionBase.
+   * Creates a ProducedConfectionBase.
    * Use static factory methods on derived classes instead of calling this directly.
    * @internal
    */
@@ -575,39 +575,39 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
  * Provides molded bonbon-specific editing methods.
  * @public
  */
-export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBonEntity> {
+export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMoldedBonBonEntity> {
   /**
-   * Factory method for creating a RuntimeProducedMoldedBonBon from an existing produced molded bonbon.
+   * Factory method for creating a ProducedMoldedBonBon from an existing produced molded bonbon.
    * @param initial - The initial produced molded bonbon state
-   * @returns Success with RuntimeProducedMoldedBonBon
+   * @returns Success with ProducedMoldedBonBon
    * @public
    */
-  public static create(initial: IProducedMoldedBonBonEntity): Result<RuntimeProducedMoldedBonBon> {
-    return succeed(new RuntimeProducedMoldedBonBon(initial));
+  public static create(initial: IProducedMoldedBonBonEntity): Result<ProducedMoldedBonBon> {
+    return succeed(new ProducedMoldedBonBon(initial));
   }
 
   /**
-   * Factory method for creating a RuntimeProducedMoldedBonBon from a source version.
+   * Factory method for creating a ProducedMoldedBonBon from a source version.
    * @param source - Source molded bonbon version with runtime wrapper
-   * @returns Result containing RuntimeProducedMoldedBonBon or error
+   * @returns Result containing ProducedMoldedBonBon or error
    * @public
    */
-  public static fromSource(source: IMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon> {
-    return RuntimeProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
-      RuntimeProducedMoldedBonBon.create(produced)
+  public static fromSource(source: IMoldedBonBonVersion): Result<ProducedMoldedBonBon> {
+    return ProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
+      ProducedMoldedBonBon.create(produced)
     );
   }
 
   /**
-   * Restores a RuntimeProducedMoldedBonBon from serialized editing history.
+   * Restores a ProducedMoldedBonBon from serialized editing history.
    * @param history - Serialized editing history
-   * @returns Result containing RuntimeProducedMoldedBonBon or error
+   * @returns Result containing ProducedMoldedBonBon or error
    * @public
    */
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>
-  ): Result<RuntimeProducedMoldedBonBon> {
-    const instance = new RuntimeProducedMoldedBonBon(history.current);
+  ): Result<ProducedMoldedBonBon> {
+    const instance = new ProducedMoldedBonBon(history.current);
     instance._undoStack = [...history.undoStack];
     instance._redoStack = [...history.redoStack];
     return succeed(instance);
@@ -626,7 +626,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
     }).onSuccess((versionId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
-        ? RuntimeProducedMoldedBonBon._convertFillingSlots(source.fillings)
+        ? ProducedMoldedBonBon._convertFillingSlots(source.fillings)
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
@@ -654,11 +654,11 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * @internal
    */
   private static _convertFillingSlots(
-    slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
+    slots: ReadonlyArray<IResolvedFillingSlot>
   ): Result<
     ReadonlyArray<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity>
   > {
-    const slotResults = slots.map((slot) => RuntimeProducedMoldedBonBon._convertFillingSlot(slot));
+    const slotResults = slots.map((slot) => ProducedMoldedBonBon._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
 
@@ -667,7 +667,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * @internal
    */
   private static _convertFillingSlot(
-    slot: IRuntimeResolvedFillingSlot
+    slot: IResolvedFillingSlot
   ): Result<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
@@ -866,39 +866,39 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
  * Provides bar truffle-specific editing methods.
  * @public
  */
-export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedBarTruffleEntity> {
+export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruffleEntity> {
   /**
-   * Factory method for creating a RuntimeProducedBarTruffle from an existing produced bar truffle.
+   * Factory method for creating a ProducedBarTruffle from an existing produced bar truffle.
    * @param initial - The initial produced bar truffle state
-   * @returns Success with RuntimeProducedBarTruffle
+   * @returns Success with ProducedBarTruffle
    * @public
    */
-  public static create(initial: IProducedBarTruffleEntity): Result<RuntimeProducedBarTruffle> {
-    return succeed(new RuntimeProducedBarTruffle(initial));
+  public static create(initial: IProducedBarTruffleEntity): Result<ProducedBarTruffle> {
+    return succeed(new ProducedBarTruffle(initial));
   }
 
   /**
-   * Factory method for creating a RuntimeProducedBarTruffle from a source version.
+   * Factory method for creating a ProducedBarTruffle from a source version.
    * @param source - Source bar truffle version with runtime wrapper
-   * @returns Result containing RuntimeProducedBarTruffle or error
+   * @returns Result containing ProducedBarTruffle or error
    * @public
    */
-  public static fromSource(source: IBarTruffleVersion): Result<RuntimeProducedBarTruffle> {
-    return RuntimeProducedBarTruffle._convertFromSource(source).onSuccess((produced) =>
-      RuntimeProducedBarTruffle.create(produced)
+  public static fromSource(source: IBarTruffleVersion): Result<ProducedBarTruffle> {
+    return ProducedBarTruffle._convertFromSource(source).onSuccess((produced) =>
+      ProducedBarTruffle.create(produced)
     );
   }
 
   /**
-   * Restores a RuntimeProducedBarTruffle from serialized editing history.
+   * Restores a ProducedBarTruffle from serialized editing history.
    * @param history - Serialized editing history
-   * @returns Result containing RuntimeProducedBarTruffle or error
+   * @returns Result containing ProducedBarTruffle or error
    * @public
    */
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>
-  ): Result<RuntimeProducedBarTruffle> {
-    const instance = new RuntimeProducedBarTruffle(history.current);
+  ): Result<ProducedBarTruffle> {
+    const instance = new ProducedBarTruffle(history.current);
     instance._undoStack = [...history.undoStack];
     instance._redoStack = [...history.redoStack];
     return succeed(instance);
@@ -917,7 +917,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
     }).onSuccess((versionId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
-        ? RuntimeProducedBarTruffle._convertFillingSlots(source.fillings)
+        ? ProducedBarTruffle._convertFillingSlots(source.fillings)
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
@@ -940,11 +940,11 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * @internal
    */
   private static _convertFillingSlots(
-    slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
+    slots: ReadonlyArray<IResolvedFillingSlot>
   ): Result<
     ReadonlyArray<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity>
   > {
-    const slotResults = slots.map((slot) => RuntimeProducedBarTruffle._convertFillingSlot(slot));
+    const slotResults = slots.map((slot) => ProducedBarTruffle._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
 
@@ -953,7 +953,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * @internal
    */
   private static _convertFillingSlot(
-    slot: IRuntimeResolvedFillingSlot
+    slot: IResolvedFillingSlot
   ): Result<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
@@ -1062,39 +1062,39 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
  * Provides rolled truffle-specific editing methods.
  * @public
  */
-export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffleEntity> {
+export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolledTruffleEntity> {
   /**
-   * Factory method for creating a RuntimeProducedRolledTruffle from an existing produced rolled truffle.
+   * Factory method for creating a ProducedRolledTruffle from an existing produced rolled truffle.
    * @param initial - The initial produced rolled truffle state
-   * @returns Success with RuntimeProducedRolledTruffle
+   * @returns Success with ProducedRolledTruffle
    * @public
    */
-  public static create(initial: IProducedRolledTruffleEntity): Result<RuntimeProducedRolledTruffle> {
-    return succeed(new RuntimeProducedRolledTruffle(initial));
+  public static create(initial: IProducedRolledTruffleEntity): Result<ProducedRolledTruffle> {
+    return succeed(new ProducedRolledTruffle(initial));
   }
 
   /**
-   * Factory method for creating a RuntimeProducedRolledTruffle from a source version.
+   * Factory method for creating a ProducedRolledTruffle from a source version.
    * @param source - Source rolled truffle version with runtime wrapper
-   * @returns Result containing RuntimeProducedRolledTruffle or error
+   * @returns Result containing ProducedRolledTruffle or error
    * @public
    */
-  public static fromSource(source: IRolledTruffleVersion): Result<RuntimeProducedRolledTruffle> {
-    return RuntimeProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
-      RuntimeProducedRolledTruffle.create(produced)
+  public static fromSource(source: IRolledTruffleVersion): Result<ProducedRolledTruffle> {
+    return ProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
+      ProducedRolledTruffle.create(produced)
     );
   }
 
   /**
-   * Restores a RuntimeProducedRolledTruffle from serialized editing history.
+   * Restores a ProducedRolledTruffle from serialized editing history.
    * @param history - Serialized editing history
-   * @returns Result containing RuntimeProducedRolledTruffle or error
+   * @returns Result containing ProducedRolledTruffle or error
    * @public
    */
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>
-  ): Result<RuntimeProducedRolledTruffle> {
-    const instance = new RuntimeProducedRolledTruffle(history.current);
+  ): Result<ProducedRolledTruffle> {
+    const instance = new ProducedRolledTruffle(history.current);
     instance._undoStack = [...history.undoStack];
     instance._redoStack = [...history.redoStack];
     return succeed(instance);
@@ -1113,7 +1113,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
     }).onSuccess((versionId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
-        ? RuntimeProducedRolledTruffle._convertFillingSlots(source.fillings)
+        ? ProducedRolledTruffle._convertFillingSlots(source.fillings)
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
@@ -1137,11 +1137,11 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * @internal
    */
   private static _convertFillingSlots(
-    slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
+    slots: ReadonlyArray<IResolvedFillingSlot>
   ): Result<
     ReadonlyArray<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity>
   > {
-    const slotResults = slots.map((slot) => RuntimeProducedRolledTruffle._convertFillingSlot(slot));
+    const slotResults = slots.map((slot) => ProducedRolledTruffle._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
 
@@ -1150,7 +1150,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * @internal
    */
   private static _convertFillingSlot(
-    slot: IRuntimeResolvedFillingSlot
+    slot: IResolvedFillingSlot
   ): Result<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {

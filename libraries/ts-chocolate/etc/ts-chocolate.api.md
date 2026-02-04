@@ -811,7 +811,7 @@ class ConfectionEditingSession {
 // @public
 abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends AnyConfection> {
     // @internal
-    protected constructor(baseConfection: TRuntime, produced: RuntimeProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams);
+    protected constructor(baseConfection: TRuntime, produced: ProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams);
     get baseConfection(): TRuntime;
     // (undocumented)
     protected readonly _baseConfection: TRuntime;
@@ -829,9 +829,9 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined>;
     // (undocumented)
     protected readonly _originalSnapshot: T;
-    get produced(): RuntimeProducedConfectionBase<T>;
+    get produced(): ProducedConfectionBase<T>;
     // (undocumented)
-    protected readonly _produced: RuntimeProducedConfectionBase<T>;
+    protected readonly _produced: ProducedConfectionBase<T>;
     // @internal
     protected _removeFillingSession(slotId: SlotId): Result<EditingSession | undefined>;
     removeFillingSlot(slotId: SlotId): Result<EditingSession | undefined>;
@@ -1346,7 +1346,7 @@ class EditingSession {
     static create(baseRecipe: IFillingRecipeVersion, initialScale?: number): Result<EditingSession>;
     static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IFillingRecipeVersion): Result<EditingSession>;
     get hasChanges(): boolean;
-    get produced(): RuntimeProducedFilling;
+    get produced(): ProducedFilling;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
     saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult>;
@@ -3873,7 +3873,7 @@ interface IProcedure {
 
 // @internal
 interface IProcedureContext {
-    getTask(id: TaskId): Result<RuntimeTask>;
+    getTask(id: TaskId): Result<Task>;
     getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
 }
 
@@ -4051,7 +4051,7 @@ interface IRenderedProcedure {
 // @public
 interface IRenderedStep extends IProcedureStepEntity {
     readonly renderedDescription: string;
-    readonly resolvedTask?: RuntimeTask;
+    readonly resolvedTask?: Task;
 }
 
 // @public
@@ -4249,26 +4249,6 @@ interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext {
 interface IRuntimeContextCreateParams {
     readonly libraryParams?: IChocolateLibraryCreateParams;
     readonly preWarm?: boolean;
-}
-
-// @public
-interface IRuntimeTask {
-    readonly baseId: BaseTaskId;
-    readonly defaultActiveTime?: Minutes;
-    readonly defaultHoldTime?: Minutes;
-    readonly defaults?: Readonly<Record<string, unknown>>;
-    readonly defaultTemperature?: Celsius;
-    readonly defaultWaitTime?: Minutes;
-    readonly id: TaskId;
-    readonly name: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IRawTaskEntity;
-    render(params: Record<string, unknown>): Result<string>;
-    readonly requiredVariables: ReadonlyArray<string>;
-    readonly tags?: ReadonlyArray<string>;
-    readonly template: string;
-    validateAndRender(params: Record<string, unknown>): Result<string>;
-    validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4701,6 +4681,26 @@ function isValidUrlCategory(from: unknown): from is UrlCategory;
 // @public
 function isWeightExcluded(unit: MeasurementUnit): unit is WeightExcludedUnit;
 
+// @public
+interface ITask {
+    readonly baseId: BaseTaskId;
+    readonly defaultActiveTime?: Minutes;
+    readonly defaultHoldTime?: Minutes;
+    readonly defaults?: Readonly<Record<string, unknown>>;
+    readonly defaultTemperature?: Celsius;
+    readonly defaultWaitTime?: Minutes;
+    readonly entity: IRawTaskEntity;
+    readonly id: TaskId;
+    readonly name: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    render(params: Record<string, unknown>): Result<string>;
+    readonly requiredVariables: ReadonlyArray<string>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly template: string;
+    validateAndRender(params: Record<string, unknown>): Result<string>;
+    validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
+}
+
 // @internal
 interface ITaskContext {
     getTask(id: TaskId): Result<IRawTaskEntity>;
@@ -5113,8 +5113,8 @@ declare namespace LibraryRuntime {
         RolledTruffleVersion,
         Indexers,
         ITaskContext,
-        IRuntimeTask,
-        RuntimeTask,
+        ITask,
+        Task,
         IProcedureContext,
         IProcedure,
         IProcedureRenderContext,
@@ -5197,12 +5197,12 @@ declare namespace LibraryRuntime {
         IngredientQuery,
         FillingRecipeQuery,
         IFillingChanges,
-        RuntimeProducedFilling,
+        ProducedFilling,
         IConfectionChanges,
-        RuntimeProducedConfectionBase,
-        RuntimeProducedMoldedBonBon,
-        RuntimeProducedBarTruffle,
-        RuntimeProducedRolledTruffle
+        ProducedConfectionBase,
+        ProducedMoldedBonBon,
+        ProducedBarTruffle,
+        ProducedRolledTruffle
     }
 }
 export { LibraryRuntime }
@@ -5254,7 +5254,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
     getRuntimeMold(id: MoldId): Result<Mold>;
     getRuntimeProcedure(id: ProcedureId): Result<Procedure>;
-    getTask(id: TaskId): Result<RuntimeTask>;
+    getTask(id: TaskId): Result<Task>;
     getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec>;
@@ -5855,10 +5855,90 @@ export type ProcedureType = FillingCategory | ConfectionType | 'other';
 // @public
 const procedureType: Converter<ProcedureType>;
 
+// @public
+class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruffleEntity> {
+    static create(initial: IProducedBarTruffleEntity): Result<ProducedBarTruffle>;
+    // (undocumented)
+    protected _deepCopy(confection: IProducedBarTruffleEntity): IProducedBarTruffleEntity;
+    get enrobingChocolateId(): IngredientId | undefined;
+    static fromSource(source: IBarTruffleVersion): Result<ProducedBarTruffle>;
+    // (undocumented)
+    getChanges(original: IProducedBarTruffleEntity): IConfectionChanges;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>): Result<ProducedBarTruffle>;
+    setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity>;
+
+// @public
+abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
+    // @internal
+    protected constructor(initial: T);
+    protected _baseChanges(original: T): Partial<IConfectionChanges>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    createSnapshot(): T;
+    get current(): T;
+    // (undocumented)
+    protected _current: T;
+    protected abstract _deepCopy(confection: T): T;
+    get fillings(): ReadonlyArray<Confections_2.AnyResolvedFillingSlotEntity> | undefined;
+    abstract getChanges(original: T): IConfectionChanges;
+    getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T>;
+    hasChanges(original: T): boolean;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    get procedureId(): ProcedureId | undefined;
+    protected _pushUndo(): void;
+    redo(): Result<boolean>;
+    // (undocumented)
+    protected _redoStack: T[];
+    removeFillingSlot(slotId: SlotId): Result<void>;
+    restoreSnapshot(snapshot: T): Result<void>;
+    scaleToYield(yieldSpec: Confections_2.IConfectionYield): Result<Confections_2.IConfectionYield>;
+    setFillingSlot(slotId: SlotId, choice: {
+        type: 'recipe';
+        fillingId: FillingId;
+    } | {
+        type: 'ingredient';
+        ingredientId: IngredientId;
+    }): Result<void>;
+    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    get snapshot(): T;
+    undo(): Result<boolean>;
+    // (undocumented)
+    protected _undoStack: T[];
+    get versionId(): ConfectionVersionId;
+    get yield(): Confections_2.IConfectionYield;
+}
+
+// @public
+class ProducedFilling {
+    canRedo(): boolean;
+    canUndo(): boolean;
+    static create(initial: IProducedFillingEntity): Result<ProducedFilling>;
+    createSnapshot(): IProducedFillingEntity;
+    static fromSource(source: IFillingRecipeVersion, scaleFactor?: number): Result<ProducedFilling>;
+    getChanges(original: IProducedFillingEntity): IFillingChanges;
+    getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>;
+    hasChanges(original: IProducedFillingEntity): boolean;
+    get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredientEntity>;
+    redo(): Result<boolean>;
+    removeIngredient(id: IngredientId): Result<void>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>): Result<ProducedFilling>;
+    restoreSnapshot(snapshot: IProducedFillingEntity): Result<void>;
+    scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
+    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
+    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    get snapshot(): IProducedFillingEntity;
+    get targetWeight(): Measurement;
+    undo(): Result<boolean>;
+    get versionId(): FillingVersionId;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5870,10 +5950,44 @@ const producedFillingEntity: Converter<IProducedFillingEntity>;
 // @public
 const producedFillingIngredientEntity: Converter<IProducedFillingIngredientEntity>;
 
+// @public
+class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMoldedBonBonEntity> {
+    static create(initial: IProducedMoldedBonBonEntity): Result<ProducedMoldedBonBon>;
+    get decorationChocolateId(): IngredientId | undefined;
+    // (undocumented)
+    protected _deepCopy(confection: IProducedMoldedBonBonEntity): IProducedMoldedBonBonEntity;
+    static fromSource(source: IMoldedBonBonVersion): Result<ProducedMoldedBonBon>;
+    // (undocumented)
+    getChanges(original: IProducedMoldedBonBonEntity): IConfectionChanges;
+    get moldId(): MoldId;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>): Result<ProducedMoldedBonBon>;
+    get sealChocolateId(): IngredientId | undefined;
+    setDecorationChocolate(chocolateId: IngredientId | undefined): Result<void>;
+    setMold(moldId: MoldId): Result<void>;
+    setSealChocolate(chocolateId: IngredientId | undefined): Result<void>;
+    setShellChocolate(chocolateId: IngredientId): Result<void>;
+    get shellChocolateId(): IngredientId;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity>;
+
+// @public
+class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolledTruffleEntity> {
+    get coatingId(): IngredientId | undefined;
+    static create(initial: IProducedRolledTruffleEntity): Result<ProducedRolledTruffle>;
+    // (undocumented)
+    protected _deepCopy(confection: IProducedRolledTruffleEntity): IProducedRolledTruffleEntity;
+    get enrobingChocolateId(): IngredientId | undefined;
+    static fromSource(source: IRolledTruffleVersion): Result<ProducedRolledTruffle>;
+    // (undocumented)
+    getChanges(original: IProducedRolledTruffleEntity): IConfectionChanges;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>): Result<ProducedRolledTruffle>;
+    setCoating(coatingId: IngredientId | undefined): Result<void>;
+    setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6034,120 +6148,6 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
 }
 
-// @public
-class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedBarTruffleEntity> {
-    static create(initial: IProducedBarTruffleEntity): Result<RuntimeProducedBarTruffle>;
-    // (undocumented)
-    protected _deepCopy(confection: IProducedBarTruffleEntity): IProducedBarTruffleEntity;
-    get enrobingChocolateId(): IngredientId | undefined;
-    static fromSource(source: IBarTruffleVersion): Result<RuntimeProducedBarTruffle>;
-    // (undocumented)
-    getChanges(original: IProducedBarTruffleEntity): IConfectionChanges;
-    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>): Result<RuntimeProducedBarTruffle>;
-    setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
-}
-
-// @public
-abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfectionEntity> {
-    // @internal
-    protected constructor(initial: T);
-    protected _baseChanges(original: T): Partial<IConfectionChanges>;
-    canRedo(): boolean;
-    canUndo(): boolean;
-    createSnapshot(): T;
-    get current(): T;
-    // (undocumented)
-    protected _current: T;
-    protected abstract _deepCopy(confection: T): T;
-    get fillings(): ReadonlyArray<Confections_2.AnyResolvedFillingSlotEntity> | undefined;
-    abstract getChanges(original: T): IConfectionChanges;
-    getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T>;
-    hasChanges(original: T): boolean;
-    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get procedureId(): ProcedureId | undefined;
-    protected _pushUndo(): void;
-    redo(): Result<boolean>;
-    // (undocumented)
-    protected _redoStack: T[];
-    removeFillingSlot(slotId: SlotId): Result<void>;
-    restoreSnapshot(snapshot: T): Result<void>;
-    scaleToYield(yieldSpec: Confections_2.IConfectionYield): Result<Confections_2.IConfectionYield>;
-    setFillingSlot(slotId: SlotId, choice: {
-        type: 'recipe';
-        fillingId: FillingId;
-    } | {
-        type: 'ingredient';
-        ingredientId: IngredientId;
-    }): Result<void>;
-    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
-    setProcedure(id: ProcedureId | undefined): Result<void>;
-    get snapshot(): T;
-    undo(): Result<boolean>;
-    // (undocumented)
-    protected _undoStack: T[];
-    get versionId(): ConfectionVersionId;
-    get yield(): Confections_2.IConfectionYield;
-}
-
-// @public
-class RuntimeProducedFilling {
-    canRedo(): boolean;
-    canUndo(): boolean;
-    static create(initial: IProducedFillingEntity): Result<RuntimeProducedFilling>;
-    createSnapshot(): IProducedFillingEntity;
-    static fromSource(source: IFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
-    getChanges(original: IProducedFillingEntity): IFillingChanges;
-    getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>;
-    hasChanges(original: IProducedFillingEntity): boolean;
-    get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredientEntity>;
-    redo(): Result<boolean>;
-    removeIngredient(id: IngredientId): Result<void>;
-    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>): Result<RuntimeProducedFilling>;
-    restoreSnapshot(snapshot: IProducedFillingEntity): Result<void>;
-    scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
-    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
-    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
-    setProcedure(id: ProcedureId | undefined): Result<void>;
-    get snapshot(): IProducedFillingEntity;
-    get targetWeight(): Measurement;
-    undo(): Result<boolean>;
-    get versionId(): FillingVersionId;
-}
-
-// @public
-class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBonEntity> {
-    static create(initial: IProducedMoldedBonBonEntity): Result<RuntimeProducedMoldedBonBon>;
-    get decorationChocolateId(): IngredientId | undefined;
-    // (undocumented)
-    protected _deepCopy(confection: IProducedMoldedBonBonEntity): IProducedMoldedBonBonEntity;
-    static fromSource(source: IMoldedBonBonVersion): Result<RuntimeProducedMoldedBonBon>;
-    // (undocumented)
-    getChanges(original: IProducedMoldedBonBonEntity): IConfectionChanges;
-    get moldId(): MoldId;
-    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>): Result<RuntimeProducedMoldedBonBon>;
-    get sealChocolateId(): IngredientId | undefined;
-    setDecorationChocolate(chocolateId: IngredientId | undefined): Result<void>;
-    setMold(moldId: MoldId): Result<void>;
-    setSealChocolate(chocolateId: IngredientId | undefined): Result<void>;
-    setShellChocolate(chocolateId: IngredientId): Result<void>;
-    get shellChocolateId(): IngredientId;
-}
-
-// @public
-class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffleEntity> {
-    get coatingId(): IngredientId | undefined;
-    static create(initial: IProducedRolledTruffleEntity): Result<RuntimeProducedRolledTruffle>;
-    // (undocumented)
-    protected _deepCopy(confection: IProducedRolledTruffleEntity): IProducedRolledTruffleEntity;
-    get enrobingChocolateId(): IngredientId | undefined;
-    static fromSource(source: IRolledTruffleVersion): Result<RuntimeProducedRolledTruffle>;
-    // (undocumented)
-    getChanges(original: IProducedRolledTruffleEntity): IConfectionChanges;
-    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>): Result<RuntimeProducedRolledTruffle>;
-    setCoating(coatingId: IngredientId | undefined): Result<void>;
-    setEnrobingChocolate(chocolateId: IngredientId | undefined): Result<void>;
-}
-
 // @internal
 class RuntimeReverseIndex {
     constructor(library: ChocolateLibrary);
@@ -6162,31 +6162,6 @@ class RuntimeReverseIndex {
     getIngredientUsage(ingredientId: IngredientId): ReadonlyArray<IIngredientUsageInfo>;
     invalidate(): void;
     warmUp(): void;
-}
-
-// @public
-class RuntimeTask implements IRuntimeTask {
-    get baseId(): BaseTaskId;
-    // @internal
-    protected get context(): ITaskContext;
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-    static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<RuntimeTask>;
-    get defaultActiveTime(): Minutes | undefined;
-    get defaultHoldTime(): Minutes | undefined;
-    get defaults(): Readonly<Record<string, unknown>> | undefined;
-    get defaultTemperature(): Celsius | undefined;
-    get defaultWaitTime(): Minutes | undefined;
-    get id(): TaskId;
-    get name(): string;
-    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get raw(): IRawTaskEntity;
-    render(params: Record<string, unknown>): Result<string>;
-    get requiredVariables(): ReadonlyArray<string>;
-    get tags(): ReadonlyArray<string> | undefined;
-    get template(): string;
-    validateAndRender(params: Record<string, unknown>): Result<string>;
-    validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
 }
 
 // @public
@@ -6439,6 +6414,31 @@ const sugarIngredientEntity: Converter<ISugarIngredientEntity>;
 
 // @public
 function supportsScaling(unit: MeasurementUnit): boolean;
+
+// @public
+class Task implements ITask {
+    get baseId(): BaseTaskId;
+    // @internal
+    protected get context(): ITaskContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+    static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<Task>;
+    get defaultActiveTime(): Minutes | undefined;
+    get defaultHoldTime(): Minutes | undefined;
+    get defaults(): Readonly<Record<string, unknown>> | undefined;
+    get defaultTemperature(): Celsius | undefined;
+    get defaultWaitTime(): Minutes | undefined;
+    get entity(): IRawTaskEntity;
+    get id(): TaskId;
+    get name(): string;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    render(params: Record<string, unknown>): Result<string>;
+    get requiredVariables(): ReadonlyArray<string>;
+    get tags(): ReadonlyArray<string> | undefined;
+    get template(): string;
+    validateAndRender(params: Record<string, unknown>): Result<string>;
+    validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
+}
 
 // @public
 type TaskCollection = SubLibraryCollection<BaseTaskId, IRawTaskEntity>;

@@ -69,7 +69,7 @@ The rendered description with all template values resolved. Unlike the data-laye
 
 </td><td>
 
-[RuntimeTask](./ts-chocolate.libraryruntime.runtimetask.md)
+[Task](./ts-chocolate.libraryruntime.task.md)
 
 
 </td><td>

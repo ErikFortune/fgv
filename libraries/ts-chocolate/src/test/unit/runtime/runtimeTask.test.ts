@@ -23,7 +23,7 @@ import { fail } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, TaskId, Minutes, Model as CommonModel } from '../../../packlets/common';
 import { IRawTaskEntity } from '../../../packlets/entities';
-import { RuntimeTask, ITaskContext } from '../../../packlets/library-runtime';
+import { Task, ITaskContext } from '../../../packlets/library-runtime';
 
 describe('RuntimeTask', () => {
   // Mock task context
@@ -57,7 +57,7 @@ describe('RuntimeTask', () => {
     test('should create RuntimeTask from ITaskData', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
 
-      expect(RuntimeTask.create(mockContext, taskId, simpleTaskData)).toSucceedAndSatisfy((runtimeTask) => {
+      expect(Task.create(mockContext, taskId, simpleTaskData)).toSucceedAndSatisfy((runtimeTask) => {
         expect(runtimeTask.id).toBe(taskId);
         expect(runtimeTask.baseId).toBe('melt-chocolate');
         expect(runtimeTask.name).toBe('Melt Chocolate');
@@ -68,7 +68,7 @@ describe('RuntimeTask', () => {
     test('should expose required variables from template', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
 
-      expect(RuntimeTask.create(mockContext, taskId, simpleTaskData)).toSucceedAndSatisfy((runtimeTask) => {
+      expect(Task.create(mockContext, taskId, simpleTaskData)).toSucceedAndSatisfy((runtimeTask) => {
         expect(runtimeTask.requiredVariables).toEqual(['amount', 'type', 'temp']);
       });
     });
@@ -76,7 +76,7 @@ describe('RuntimeTask', () => {
     test('should expose optional properties', () => {
       const taskId = 'common.temper-chocolate' as TaskId;
 
-      expect(RuntimeTask.create(mockContext, taskId, taskWithDefaults)).toSucceedAndSatisfy((runtimeTask) => {
+      expect(Task.create(mockContext, taskId, taskWithDefaults)).toSucceedAndSatisfy((runtimeTask) => {
         expect(runtimeTask.defaultActiveTime).toBe(15);
         expect(runtimeTask.defaultTemperature).toBe(32);
         expect(runtimeTask.tags).toEqual(['tempering', 'chocolate']);
@@ -91,7 +91,7 @@ describe('RuntimeTask', () => {
   describe('validateParams', () => {
     test('should succeed when all required variables are provided', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
       expect(runtimeTask.validateParams({ amount: 200, type: 'dark', temp: 45 })).toSucceedAndSatisfy(
         (validation) => {
@@ -103,7 +103,7 @@ describe('RuntimeTask', () => {
 
     test('should report missing variables', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
       expect(runtimeTask.validateParams({ amount: 200 })).toSucceedAndSatisfy((validation) => {
         expect(validation.isValid).toBe(false);
@@ -114,7 +114,7 @@ describe('RuntimeTask', () => {
 
     test('should use defaults to satisfy required variables', () => {
       const taskId = 'common.temper-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, taskWithDefaults).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, taskWithDefaults).orThrow();
 
       // Only provide 'temp', 'method' has a default
       expect(runtimeTask.validateParams({ temp: 32 })).toSucceedAndSatisfy((validation) => {
@@ -125,7 +125,7 @@ describe('RuntimeTask', () => {
 
     test('should report extra variables provided', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
       // Provide required variables plus an extra one
       expect(
@@ -141,7 +141,7 @@ describe('RuntimeTask', () => {
   describe('render', () => {
     test('should render template with provided params', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
       expect(runtimeTask.render({ amount: 200, type: 'dark', temp: 45 })).toSucceedWith(
         'Melt 200g of dark chocolate at 45°C'
@@ -150,14 +150,14 @@ describe('RuntimeTask', () => {
 
     test('should render template using defaults for missing params', () => {
       const taskId = 'common.temper-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, taskWithDefaults).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, taskWithDefaults).orThrow();
 
       expect(runtimeTask.render({ temp: 32 })).toSucceedWith('Temper chocolate to 32°C using seeding method');
     });
 
     test('should allow overriding defaults', () => {
       const taskId = 'common.temper-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, taskWithDefaults).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, taskWithDefaults).orThrow();
 
       expect(runtimeTask.render({ temp: 28, method: 'tabling' })).toSucceedWith(
         'Temper chocolate to 28°C using tabling method'
@@ -168,7 +168,7 @@ describe('RuntimeTask', () => {
   describe('validateAndRender', () => {
     test('should render when validation passes', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
       expect(runtimeTask.validateAndRender({ amount: 200, type: 'dark', temp: 45 })).toSucceedWith(
         'Melt 200g of dark chocolate at 45°C'
@@ -177,7 +177,7 @@ describe('RuntimeTask', () => {
 
     test('should fail when validation fails', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
       expect(runtimeTask.validateAndRender({ amount: 200 })).toFailWith(/missing.*type.*temp/i);
     });
@@ -186,9 +186,9 @@ describe('RuntimeTask', () => {
   describe('raw', () => {
     test('should expose underlying ITaskData', () => {
       const taskId = 'common.melt-chocolate' as TaskId;
-      const runtimeTask = RuntimeTask.create(mockContext, taskId, simpleTaskData).orThrow();
+      const runtimeTask = Task.create(mockContext, taskId, simpleTaskData).orThrow();
 
-      expect(runtimeTask.raw).toBe(simpleTaskData);
+      expect(runtimeTask.entity).toBe(simpleTaskData);
     });
   });
 });

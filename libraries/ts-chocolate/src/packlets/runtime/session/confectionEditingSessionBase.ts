@@ -27,7 +27,7 @@ import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { FillingId, IngredientId, Measurement, SessionSpec, SlotId } from '../../common';
 import { Confections, AnyProducedConfectionEntity } from '../../entities';
-import { AnyConfection, RuntimeProducedConfectionBase } from '../../library-runtime';
+import { AnyConfection, ProducedConfectionBase } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { EditingSession } from './editingSession';
@@ -55,7 +55,7 @@ export abstract class ConfectionEditingSessionBase<
 > {
   protected readonly _baseConfection: TRuntime;
   protected readonly _context: ISessionContext;
-  protected readonly _produced: RuntimeProducedConfectionBase<T>;
+  protected readonly _produced: ProducedConfectionBase<T>;
   protected readonly _originalSnapshot: T;
   protected readonly _sessionId: SessionSpec;
   protected readonly _fillingSessions: Map<SlotId, EditingSession>;
@@ -70,7 +70,7 @@ export abstract class ConfectionEditingSessionBase<
    */
   protected constructor(
     baseConfection: TRuntime,
-    produced: RuntimeProducedConfectionBase<T>,
+    produced: ProducedConfectionBase<T>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
@@ -297,7 +297,7 @@ export abstract class ConfectionEditingSessionBase<
    * Gets the produced confection wrapper.
    * @public
    */
-  public get produced(): RuntimeProducedConfectionBase<T> {
+  public get produced(): ProducedConfectionBase<T> {
     return this._produced;
   }
 

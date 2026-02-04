@@ -38,7 +38,7 @@ import {
 import { IMoldEntity } from '../../entities';
 import { Fillings, IProcedureEntity, IProcedureStepEntity } from '../../entities';
 import { IRawTaskEntity } from '../../entities';
-import { RuntimeTask } from '../tasks';
+import { Task } from '../tasks';
 
 // ============================================================================
 // Procedure Context
@@ -62,7 +62,7 @@ export interface IProcedureContext {
    * @param id - The task ID (composite format: collectionId.baseTaskId)
    * @returns Success with the task, or Failure if not found
    */
-  getTask(id: TaskId): Result<RuntimeTask>;
+  getTask(id: TaskId): Result<Task>;
 }
 
 // ============================================================================
@@ -114,7 +114,7 @@ export interface IRenderedStep extends IProcedureStepEntity {
    * The resolved task that was used for rendering (if a task ref was used).
    * Undefined for inline tasks.
    */
-  readonly resolvedTask?: RuntimeTask;
+  readonly resolvedTask?: Task;
 }
 
 // ============================================================================

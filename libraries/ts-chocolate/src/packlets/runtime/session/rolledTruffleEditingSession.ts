@@ -27,7 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
-import { RolledTruffle, RolledTruffleVersion, RuntimeProducedRolledTruffle } from '../../library-runtime';
+import { RolledTruffle, RolledTruffleVersion, ProducedRolledTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -54,7 +54,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   private constructor(
     baseConfection: RolledTruffle,
-    produced: RuntimeProducedRolledTruffle,
+    produced: ProducedRolledTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
@@ -82,10 +82,9 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
-    return RuntimeProducedRolledTruffle.fromSource(
-      baseConfection.goldenVersion as RolledTruffleVersion
-    ).onSuccess((produced) =>
-      captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
+    return ProducedRolledTruffle.fromSource(baseConfection.goldenVersion as RolledTruffleVersion).onSuccess(
+      (produced) =>
+        captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );
   }
 
@@ -106,7 +105,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
-    return RuntimeProducedRolledTruffle.restoreFromHistory(history).onSuccess((produced) =>
+    return ProducedRolledTruffle.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );
   }

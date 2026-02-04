@@ -34,7 +34,7 @@ import {
   TaskId
 } from '../../common';
 import { IProcedureEntity, IProcedureStepEntity, Tasks } from '../../entities';
-import { RuntimeTask } from '../tasks';
+import { Task } from '../tasks';
 import {
   IProcedureContext,
   IProcedure,
@@ -276,17 +276,15 @@ export class Procedure implements IProcedure {
     if (Tasks.isInlineTaskEntity(invocation)) {
       // For inline tasks, create a RuntimeTask with a synthetic ID
       const syntheticId = `${this._id}.inline-${step.order}` as TaskId;
-      return RuntimeTask.create(renderContext.context, syntheticId, invocation.task).onSuccess(
-        (runtimeTask) => {
-          return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
-            return succeed({
-              ...step,
-              renderedDescription
-              // No resolvedTask for inline tasks
-            });
+      return Task.create(renderContext.context, syntheticId, invocation.task).onSuccess((runtimeTask) => {
+        return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
+          return succeed({
+            ...step,
+            renderedDescription
+            // No resolvedTask for inline tasks
           });
-        }
-      );
+        });
+      });
     }
     /* c8 ignore next 2 - defensive code: type system prevents this path */
     return fail('Step has invalid task structure');

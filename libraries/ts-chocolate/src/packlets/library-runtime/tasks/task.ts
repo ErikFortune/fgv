@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeTask - resolved task view with rendering capabilities
+ * Task - resolved task view with rendering capabilities
  * @packageDocumentation
  */
 
@@ -28,16 +28,16 @@ import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
 import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
 import { IRawTaskEntity, Tasks as TaskEntities } from '../../entities';
-import { ITaskContext, IRuntimeTask } from './model';
+import { ITaskContext, ITask } from './model';
 
 // ============================================================================
-// RuntimeTask Class
+// Task Class
 // ============================================================================
 
 /**
  * A resolved view of a task with rendering capabilities.
  *
- * RuntimeTask wraps a data-layer Task and provides:
+ * Task wraps a data-layer Task and provides:
  * - Composite identity (TaskId) for cross-source references
  * - Template parsing and required variable extraction
  * - Parameter validation
@@ -46,7 +46,7 @@ import { ITaskContext, IRuntimeTask } from './model';
  *
  * @public
  */
-export class RuntimeTask implements IRuntimeTask {
+export class Task implements ITask {
   private readonly _context: ITaskContext;
   private readonly _id: TaskId;
   private readonly _task: IRawTaskEntity;
@@ -67,16 +67,16 @@ export class RuntimeTask implements IRuntimeTask {
   }
 
   /**
-   * Factory method for creating a RuntimeTask.
+   * Factory method for creating a Task.
    * Parses the Mustache template and extracts required variables.
    * @param context - The runtime context for task resolution
    * @param id - The composite task ID
-   * @param task - The raw task data
-   * @returns Success with RuntimeTask, or Failure if template parsing fails
+   * @param task - The task data entity
+   * @returns Success with Task, or Failure if template parsing fails
    */
-  public static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<RuntimeTask> {
+  public static create(context: ITaskContext, id: TaskId, task: IRawTaskEntity): Result<Task> {
     return MustacheModule.MustacheTemplate.create(task.template).onSuccess((parsedTemplate) => {
-      return succeed(new RuntimeTask(context, id, task, parsedTemplate));
+      return succeed(new Task(context, id, task, parsedTemplate));
     });
   }
 
@@ -118,7 +118,7 @@ export class RuntimeTask implements IRuntimeTask {
 
   /**
    * Required variables extracted from the template.
-   * This is computed at RuntimeTask creation, not stored in the data layer.
+   * This is computed at Task creation, not stored in the data layer.
    */
   public get requiredVariables(): ReadonlyArray<string> {
     return this._requiredVariables;
@@ -246,14 +246,10 @@ export class RuntimeTask implements IRuntimeTask {
     return this._parsedTemplate.validateAndRender(this._mergeContext(params));
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw task data
+   * Gets the underlying task data entity
    */
-  public get raw(): IRawTaskEntity {
+  public get entity(): IRawTaskEntity {
     return this._task;
   }
 

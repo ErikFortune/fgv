@@ -27,7 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedBarTruffleEntity, Session } from '../../entities';
-import { BarTruffle, RuntimeProducedBarTruffle } from '../../library-runtime';
+import { BarTruffle, ProducedBarTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -54,7 +54,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   private constructor(
     baseConfection: BarTruffle,
-    produced: RuntimeProducedBarTruffle,
+    produced: ProducedBarTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
@@ -82,7 +82,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
-    return RuntimeProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+    return ProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
       captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
     );
   }
@@ -104,7 +104,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
-    return RuntimeProducedBarTruffle.restoreFromHistory(history).onSuccess((produced) =>
+    return ProducedBarTruffle.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
     );
   }

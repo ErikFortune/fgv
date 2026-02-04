@@ -9,5 +9,5 @@ The resolved task that was used for rendering (if a task ref was used). Undefine
 **Signature:**
 
 ```typescript
-readonly resolvedTask?: RuntimeTask;
+readonly resolvedTask?: Task;
 ```

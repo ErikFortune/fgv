@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _produced: RuntimeProducedConfectionBase<T>;
+protected readonly _produced: ProducedConfectionBase<T>;
 ```

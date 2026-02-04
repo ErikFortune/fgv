@@ -27,7 +27,7 @@ import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts
 
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedMoldedBonBonEntity, Session } from '../../entities';
-import { MoldedBonBon, IMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
+import { MoldedBonBon, IMold, ProducedMoldedBonBon } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -57,7 +57,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    */
   private constructor(
     baseConfection: MoldedBonBon,
-    produced: RuntimeProducedMoldedBonBon,
+    produced: ProducedMoldedBonBon,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ) {
@@ -88,7 +88,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {
-    return RuntimeProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+    return ProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
       captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
     );
   }
@@ -110,7 +110,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {
-    return RuntimeProducedMoldedBonBon.restoreFromHistory(history).onSuccess((produced) =>
+    return ProducedMoldedBonBon.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
     );
   }
@@ -239,7 +239,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     }
 
     // Update mold in produced confection (convert Result<void> to Result<undefined>)
-    return (this._produced as RuntimeProducedMoldedBonBon)
+    return (this._produced as ProducedMoldedBonBon)
       .setMold(this._pendingMoldChange.newMoldId)
       .onSuccess(() => {
         // Reload mold

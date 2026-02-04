@@ -36,7 +36,7 @@ import {
   Procedure,
   IProcedureContext,
   IProcedureRenderContext,
-  RuntimeTask
+  Task
 } from '../../../packlets/library-runtime';
 
 describe('RuntimeProcedure', () => {
@@ -57,7 +57,7 @@ describe('RuntimeProcedure', () => {
     },
     getTask: (id: TaskId) => {
       if (id === ('common.melt-chocolate' as TaskId)) {
-        return RuntimeTask.create(mockContext, id, meltChocolateTaskData);
+        return Task.create(mockContext, id, meltChocolateTaskData);
       }
       return fail(`Task not found: ${id}`);
     }

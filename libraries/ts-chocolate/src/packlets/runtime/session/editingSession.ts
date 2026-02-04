@@ -45,7 +45,7 @@ import {
   IProducedFillingEntity,
   PersistedSessionStatus
 } from '../../entities';
-import { IFillingRecipeVersion, RuntimeProducedFilling } from '../../library-runtime';
+import { IFillingRecipeVersion, ProducedFilling } from '../../library-runtime';
 import {
   ISaveAnalysis,
   ISaveVersionOptions,
@@ -73,7 +73,7 @@ import {
  */
 export class EditingSession {
   private readonly _baseRecipe: IFillingRecipeVersion;
-  private readonly _produced: RuntimeProducedFilling;
+  private readonly _produced: ProducedFilling;
   private readonly _originalSnapshot: IProducedFillingEntity;
   private readonly _sessionId: SessionSpec;
 
@@ -88,7 +88,7 @@ export class EditingSession {
    */
   private constructor(
     baseRecipe: IFillingRecipeVersion,
-    produced: RuntimeProducedFilling,
+    produced: ProducedFilling,
     sessionId?: SessionSpec,
     originalSnapshot?: IProducedFillingEntity
   ) {
@@ -111,7 +111,7 @@ export class EditingSession {
       return fail('Scale factor must be positive');
     }
 
-    return RuntimeProducedFilling.fromSource(baseRecipe, scaleFactor).onSuccess((produced) =>
+    return ProducedFilling.fromSource(baseRecipe, scaleFactor).onSuccess((produced) =>
       captureResult(() => new EditingSession(baseRecipe, produced))
     );
   }
@@ -426,7 +426,7 @@ export class EditingSession {
     }
 
     // Restore the RuntimeProducedFilling from history
-    return RuntimeProducedFilling.restoreFromHistory(data.history).onSuccess((produced) => {
+    return ProducedFilling.restoreFromHistory(data.history).onSuccess((produced) => {
       // Create the session with restored state, passing the original snapshot
       const session = new EditingSession(baseRecipe, produced, undefined, data.history.original);
       return succeed(session);
@@ -457,7 +457,7 @@ export class EditingSession {
    * The produced filling wrapper with undo/redo support.
    * @public
    */
-  public get produced(): RuntimeProducedFilling {
+  public get produced(): ProducedFilling {
     return this._produced;
   }
 

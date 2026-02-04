@@ -9,5 +9,5 @@ The produced filling wrapper with undo/redo support.
 **Signature:**
 
 ```typescript
-get produced(): RuntimeProducedFilling;
+get produced(): ProducedFilling;
 ```

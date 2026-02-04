@@ -9,7 +9,7 @@ Gets a runtime task by its composite ID (with caching). Implements ITaskContext 
 **Signature:**
 
 ```typescript
-getTask(id: TaskId): Result<RuntimeTask>;
+getTask(id: TaskId): Result<Task>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The task ID (composite format: collectionId.baseTaskId)
 
 **Returns:**
 
-Result&lt;[RuntimeTask](./ts-chocolate.libraryruntime.runtimetask.md)<!-- -->&gt;
+Result&lt;[Task](./ts-chocolate.libraryruntime.task.md)<!-- -->&gt;
 
 Success with RuntimeTask, or Failure if not found
 

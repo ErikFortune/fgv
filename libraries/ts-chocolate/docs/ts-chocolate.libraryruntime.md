@@ -207,6 +207,50 @@ Unlike the data-layer Procedure.render() which returns `[Task: taskId]` placehol
 </td></tr>
 <tr><td>
 
+[ProducedBarTruffle](./ts-chocolate.libraryruntime.producedbartruffle.md)
+
+
+</td><td>
+
+Mutable wrapper for IProducedBarTruffle with undo/redo support. Provides bar truffle-specific editing methods.
+
+
+</td></tr>
+<tr><td>
+
+[ProducedFilling](./ts-chocolate.libraryruntime.producedfilling.md)
+
+
+</td><td>
+
+Mutable wrapper for IProducedFilling with undo/redo support. Provides editing methods that maintain history for undo/redo operations.
+
+
+</td></tr>
+<tr><td>
+
+[ProducedMoldedBonBon](./ts-chocolate.libraryruntime.producedmoldedbonbon.md)
+
+
+</td><td>
+
+Mutable wrapper for IProducedMoldedBonBon with undo/redo support. Provides molded bonbon-specific editing methods.
+
+
+</td></tr>
+<tr><td>
+
+[ProducedRolledTruffle](./ts-chocolate.libraryruntime.producedrolledtruffle.md)
+
+
+</td><td>
+
+Mutable wrapper for IProducedRolledTruffle with undo/redo support. Provides rolled truffle-specific editing methods.
+
+
+</td></tr>
+<tr><td>
+
 [RolledTruffle](./ts-chocolate.libraryruntime.rolledtruffle.md)
 
 
@@ -229,69 +273,25 @@ A resolved view of a rolled truffle version with all references resolved.
 </td></tr>
 <tr><td>
 
-[RuntimeProducedBarTruffle](./ts-chocolate.libraryruntime.runtimeproducedbartruffle.md)
-
-
-</td><td>
-
-Mutable wrapper for IProducedBarTruffle with undo/redo support. Provides bar truffle-specific editing methods.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeProducedFilling](./ts-chocolate.libraryruntime.runtimeproducedfilling.md)
-
-
-</td><td>
-
-Mutable wrapper for IProducedFilling with undo/redo support. Provides editing methods that maintain history for undo/redo operations.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeProducedMoldedBonBon](./ts-chocolate.libraryruntime.runtimeproducedmoldedbonbon.md)
-
-
-</td><td>
-
-Mutable wrapper for IProducedMoldedBonBon with undo/redo support. Provides molded bonbon-specific editing methods.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeProducedRolledTruffle](./ts-chocolate.libraryruntime.runtimeproducedrolledtruffle.md)
-
-
-</td><td>
-
-Mutable wrapper for IProducedRolledTruffle with undo/redo support. Provides rolled truffle-specific editing methods.
-
-
-</td></tr>
-<tr><td>
-
-[RuntimeTask](./ts-chocolate.libraryruntime.runtimetask.md)
-
-
-</td><td>
-
-A resolved view of a task with rendering capabilities.
-
-RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Template parsing and required variable extraction - Parameter validation - Template rendering - Context access for resolving task references (future use)
-
-
-</td></tr>
-<tr><td>
-
 [SugarIngredient](./ts-chocolate.libraryruntime.sugaringredient.md)
 
 
 </td><td>
 
 A resolved view of a sugar ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[Task](./ts-chocolate.libraryruntime.task.md)
+
+
+</td><td>
+
+A resolved view of a task with rendering capabilities.
+
+Task wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Template parsing and required variable extraction - Parameter validation - Template rendering - Context access for resolving task references (future use)
 
 
 </td></tr>
@@ -380,7 +380,7 @@ Abstract base class for runtime ingredients. Provides common properties and navi
 </td></tr>
 <tr><td>
 
-[RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)
+[ProducedConfectionBase](./ts-chocolate.libraryruntime.producedconfectionbase.md)
 
 
 </td><td>
@@ -1168,25 +1168,25 @@ Runtime confection version narrowed to rolled truffle type.
 </td></tr>
 <tr><td>
 
-[IRuntimeTask](./ts-chocolate.libraryruntime.iruntimetask.md)
-
-
-</td><td>
-
-A resolved runtime view of a task with rendering capabilities.
-
-This interface provides runtime-layer access to task data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Rendering with library context - Parameter validation
-
-
-</td></tr>
-<tr><td>
-
 [ISugarIngredient](./ts-chocolate.libraryruntime.isugaringredient.md)
 
 
 </td><td>
 
 Runtime ingredient narrowed to sugar type.
+
+
+</td></tr>
+<tr><td>
+
+[ITask](./ts-chocolate.libraryruntime.itask.md)
+
+
+</td><td>
+
+A resolved view of a task with rendering capabilities.
+
+This interface provides runtime-layer access to task data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Rendering with library context - Parameter validation
 
 
 </td></tr>

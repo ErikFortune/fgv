@@ -67,7 +67,7 @@ import {
   FillingRecipeIndexerOrchestrator
 } from './indexers';
 import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibrary';
-import { ITaskContext, RuntimeTask } from './tasks';
+import { ITaskContext, Task } from './tasks';
 import { IProcedureContext, Procedure } from './procedures';
 import { IMoldContext, Mold } from './molds';
 
@@ -139,7 +139,7 @@ export class LibraryRuntimeContext
   private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
 
   // Cached runtime wrappers for tasks, procedures, molds, and confections
-  private readonly _runtimeTasks: Map<TaskId, RuntimeTask> = new Map();
+  private readonly _runtimeTasks: Map<TaskId, Task> = new Map();
   private readonly _runtimeProcedures: Map<ProcedureId, Procedure> = new Map();
   private readonly _runtimeMolds: Map<MoldId, Mold> = new Map();
   private _runtimeConfections: Map<ConfectionId, AnyConfection> | undefined;
@@ -693,7 +693,7 @@ export class LibraryRuntimeContext
    * @param id - The task ID (composite format: collectionId.baseTaskId)
    * @returns Success with RuntimeTask, or Failure if not found
    */
-  public getTask(id: TaskId): Result<RuntimeTask> {
+  public getTask(id: TaskId): Result<Task> {
     // Check cache first
     const cached = this._runtimeTasks.get(id);
     if (cached) {
@@ -702,7 +702,7 @@ export class LibraryRuntimeContext
 
     // Resolve from library and cache
     return this._library.getTask(id).onSuccess((task) => {
-      return RuntimeTask.create(this, id, task).onSuccess((runtimeTask) => {
+      return Task.create(this, id, task).onSuccess((runtimeTask) => {
         this._runtimeTasks.set(id, runtimeTask);
         return succeed(runtimeTask);
       });

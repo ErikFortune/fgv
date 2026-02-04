@@ -88,7 +88,7 @@ import * as Indexers from './indexers';
 export { Indexers };
 
 // Runtime tasks
-export { ITaskContext, IRuntimeTask, RuntimeTask } from './tasks';
+export { ITaskContext, ITask, Task } from './tasks';
 
 // Procedures
 export {

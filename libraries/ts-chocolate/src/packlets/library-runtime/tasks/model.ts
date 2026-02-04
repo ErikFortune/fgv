@@ -31,11 +31,11 @@ import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../.
 import { Tasks as TaskEntities, IRawTaskEntity } from '../../entities';
 
 // ============================================================================
-// Runtime Task Context
+// Task Context
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeTask.
+ * Minimal context interface for Task.
  * Provides task resolution capabilities.
  * @internal
  */
@@ -49,11 +49,11 @@ export interface ITaskContext {
 }
 
 // ============================================================================
-// Runtime Task Interface
+// Task Interface
 // ============================================================================
 
 /**
- * A resolved runtime view of a task with rendering capabilities.
+ * A resolved view of a task with rendering capabilities.
  *
  * This interface provides runtime-layer access to task data with:
  * - Composite identity (`id`, `sourceId`) for cross-source references
@@ -62,7 +62,7 @@ export interface ITaskContext {
  *
  * @public
  */
-export interface IRuntimeTask {
+export interface ITask {
   // ---- Composite Identity ----
 
   /**
@@ -131,10 +131,8 @@ export interface IRuntimeTask {
    */
   validateAndRender(params: Record<string, unknown>): Result<string>;
 
-  // ---- Raw Access ----
-
   /**
-   * Gets the underlying raw task data.
+   * Gets the underlying task data entity.
    */
-  readonly raw: IRawTaskEntity;
+  readonly entity: IRawTaskEntity;
 }

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeProducedFilling - mutable wrapper for produced filling with undo/redo
+ * ProducedFilling - mutable wrapper for produced filling with undo/redo
  * @packageDocumentation
  */
 
@@ -65,13 +65,13 @@ export interface IFillingChanges {
  * Provides editing methods that maintain history for undo/redo operations.
  * @public
  */
-export class RuntimeProducedFilling {
+export class ProducedFilling {
   private _current: IProducedFillingEntity;
   private _undoStack: IProducedFillingEntity[];
   private _redoStack: IProducedFillingEntity[];
 
   /**
-   * Creates a RuntimeProducedFilling.
+   * Creates a ProducedFilling.
    * Use static factory methods instead of calling this directly.
    * @internal
    */
@@ -82,42 +82,42 @@ export class RuntimeProducedFilling {
   }
 
   /**
-   * Factory method for creating a RuntimeProducedFilling from an existing produced filling.
+   * Factory method for creating a ProducedFilling from an existing produced filling.
    * @param initial - The initial produced filling state
-   * @returns Success with RuntimeProducedFilling
+   * @returns Success with ProducedFilling
    * @public
    */
-  public static create(initial: IProducedFillingEntity): Result<RuntimeProducedFilling> {
-    return succeed(new RuntimeProducedFilling(initial));
+  public static create(initial: IProducedFillingEntity): Result<ProducedFilling> {
+    return succeed(new ProducedFilling(initial));
   }
 
   /**
-   * Factory method for creating a RuntimeProducedFilling from a source recipe version.
+   * Factory method for creating a ProducedFilling from a source recipe version.
    * @param source - Source filling recipe version with runtime wrapper
    * @param scaleFactor - Optional scale factor (default: 1.0)
-   * @returns Result containing RuntimeProducedFilling or error
+   * @returns Result containing ProducedFilling or error
    * @public
    */
   public static fromSource(
     source: IFillingRecipeVersion,
     scaleFactor: number = 1.0
-  ): Result<RuntimeProducedFilling> {
-    return RuntimeProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) =>
-      RuntimeProducedFilling.create(produced)
+  ): Result<ProducedFilling> {
+    return ProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) =>
+      ProducedFilling.create(produced)
     );
   }
 
   /**
-   * Factory method for restoring a RuntimeProducedFilling from serialized history.
+   * Factory method for restoring a ProducedFilling from serialized history.
    * Restores the complete editing state including undo/redo stacks.
    * @param history - Serialized editing history
-   * @returns Result containing RuntimeProducedFilling or error
+   * @returns Result containing ProducedFilling or error
    * @public
    */
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>
-  ): Result<RuntimeProducedFilling> {
-    const instance = new RuntimeProducedFilling(history.current);
+  ): Result<ProducedFilling> {
+    const instance = new ProducedFilling(history.current);
     // Restore undo/redo stacks
     instance._undoStack = [...history.undoStack];
     instance._redoStack = [...history.redoStack];
@@ -135,7 +135,7 @@ export class RuntimeProducedFilling {
   ): Result<IProducedFillingEntity> {
     // Convert ingredients using mapResults pattern
     const ingredientResults = source.entity.ingredients.map((ing) =>
-      RuntimeProducedFilling._convertIngredient(ing, scaleFactor)
+      ProducedFilling._convertIngredient(ing, scaleFactor)
     );
 
     return mapResults(ingredientResults).onSuccess((ingredients) => {

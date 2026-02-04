@@ -139,7 +139,7 @@ T
 
 </td><td>
 
-[RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;T&gt;
+[ProducedConfectionBase](./ts-chocolate.libraryruntime.producedconfectionbase.md)<!-- -->&lt;T&gt;
 
 
 </td><td>
@@ -242,7 +242,7 @@ Gets all filling sessions.
 
 </td><td>
 
-[RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;T&gt;
+[ProducedConfectionBase](./ts-chocolate.libraryruntime.producedconfectionbase.md)<!-- -->&lt;T&gt;
 
 
 </td><td>

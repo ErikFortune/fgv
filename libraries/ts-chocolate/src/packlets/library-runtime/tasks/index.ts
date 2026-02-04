@@ -23,5 +23,5 @@
  * @packageDocumentation
  */
 
-export { ITaskContext, IRuntimeTask } from './model';
-export { RuntimeTask } from './task';
+export { ITaskContext, ITask } from './model';
+export { Task } from './task';

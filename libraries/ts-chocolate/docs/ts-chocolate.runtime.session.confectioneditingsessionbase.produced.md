@@ -9,5 +9,5 @@ Gets the produced confection wrapper.
 **Signature:**
 
 ```typescript
-get produced(): RuntimeProducedConfectionBase<T>;
+get produced(): ProducedConfectionBase<T>;
 ```
