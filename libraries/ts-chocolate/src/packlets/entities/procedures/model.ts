@@ -31,7 +31,7 @@ import { ITaskInvocation, TaskRefStatus } from '../tasks';
  * Does not include validation state - that is contextual and computed at runtime.
  * @public
  */
-export interface IProcedureStep {
+export interface IProcedureStepEntity {
   /**
    * Order number of this step (1-based)
    */
@@ -94,7 +94,7 @@ export interface IProcedureStepValidation {
  * Used during rendering when validation has been performed.
  * @public
  */
-export interface IValidatedProcedureStep extends IProcedureStep {
+export interface IValidatedProcedureStep extends IProcedureStepEntity {
   /**
    * Runtime validation state (computed, not persisted)
    */
@@ -105,7 +105,7 @@ export interface IValidatedProcedureStep extends IProcedureStep {
  * Represents a procedure for making chocolate confections
  * @public
  */
-export interface IProcedure {
+export interface IProcedureEntity {
   /**
    * Base procedure identifier (unique within source)
    */
@@ -131,7 +131,7 @@ export interface IProcedure {
   /**
    * Steps of the procedure in order
    */
-  readonly steps: ReadonlyArray<IProcedureStep>;
+  readonly steps: ReadonlyArray<IProcedureStepEntity>;
 
   /**
    * Optional tags for categorization and search

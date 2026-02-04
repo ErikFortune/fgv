@@ -92,7 +92,7 @@ export {
 
 export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } from './molds';
 
-export { ProceduresLibrary, IProcedure, IProcedureStep } from './procedures';
+export { ProceduresLibrary, IProcedureEntity, IProcedureStepEntity } from './procedures';
 
 export { TasksLibrary, ITask, ITaskData, IInlineTask, IRenderOptions, ITaskInvocation } from './tasks';
 

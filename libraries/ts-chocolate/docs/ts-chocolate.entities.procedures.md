@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IProcedure](./ts-chocolate.entities.procedures.iprocedure.md)
+[IProcedureEntity](./ts-chocolate.entities.procedures.iprocedureentity.md)
 
 
 </td><td>
@@ -58,7 +58,7 @@ Represents a procedure for making chocolate confections
 </td></tr>
 <tr><td>
 
-[IProcedureStep](./ts-chocolate.entities.procedures.iprocedurestep.md)
+[IProcedureStepEntity](./ts-chocolate.entities.procedures.iprocedurestepentity.md)
 
 
 </td><td>

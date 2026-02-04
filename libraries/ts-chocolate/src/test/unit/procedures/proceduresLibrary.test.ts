@@ -29,7 +29,7 @@ import {
   SourceId
 } from '../../../packlets/common';
 
-import { ProceduresLibrary, IProcedure, Procedures } from '../../../packlets/entities';
+import { ProceduresLibrary, IProcedureEntity, Procedures } from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 import { ITaskInvocation } from '../../../packlets/entities';
@@ -56,7 +56,7 @@ describe('ProceduresLibrary', () => {
   // Test Data
   // ============================================================================
 
-  const testProcedureData: IProcedure = {
+  const testProcedureData: IProcedureEntity = {
     baseId: 'test-procedure' as BaseProcedureId,
     name: 'Test Procedure',
     description: 'A test procedure',
@@ -69,7 +69,7 @@ describe('ProceduresLibrary', () => {
   };
 
   // Create a procedure for mutation tests
-  const createTestProcedure = (): IProcedure => testProcedureData;
+  const createTestProcedure = (): IProcedureEntity => testProcedureData;
 
   // ============================================================================
   // Creation Tests
@@ -231,7 +231,7 @@ describe('ProceduresLibrary', () => {
       expect(library.set(id, createTestProcedure())).toSucceed();
       expect(library.has(id)).toBe(true);
 
-      const updatedData: IProcedure = { ...testProcedureData, description: 'Updated Description' };
+      const updatedData: IProcedureEntity = { ...testProcedureData, description: 'Updated Description' };
       expect(library.set(id, updatedData)).toSucceed();
       expect(library.get(id)).toSucceedAndSatisfy((procedure) => {
         expect(procedure.description).toBe('Updated Description');

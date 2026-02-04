@@ -49,7 +49,7 @@ import {
   Ingredients,
   IngredientsLibrary
 } from '../../../packlets/entities';
-import { IProcedure, ProceduresLibrary, ConfectionsLibrary } from '../../../packlets/entities';
+import { IProcedureEntity, ProceduresLibrary, ConfectionsLibrary } from '../../../packlets/entities';
 import {
   IFillingRecipeEntity,
   IFillingRecipeVersionEntity,
@@ -194,7 +194,7 @@ describe('RuntimeContext', () => {
   };
 
   // Procedure test data
-  const coldMethodProcedure: IProcedure = {
+  const coldMethodProcedure: IProcedureEntity = {
     baseId: 'ganache-cold-method' as BaseProcedureId,
     name: 'Ganache (Cold Method)',
     description: 'Cold method for making ganache',
@@ -218,7 +218,7 @@ describe('RuntimeContext', () => {
     tags: ['ganache', 'cold-process']
   };
 
-  const hotMethodProcedure: IProcedure = {
+  const hotMethodProcedure: IProcedureEntity = {
     baseId: 'ganache-hot-method' as BaseProcedureId,
     name: 'Ganache (Hot Method)',
     description: 'Hot method for making ganache',

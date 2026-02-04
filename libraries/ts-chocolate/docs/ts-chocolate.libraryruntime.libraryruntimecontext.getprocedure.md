@@ -9,7 +9,7 @@ Gets a procedure by its composite ID. Used internally by RuntimeFillingRecipe fo
 **Signature:**
 
 ```typescript
-getProcedure(id: string): Result<IProcedure>;
+getProcedure(id: string): Result<IProcedureEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The procedure ID (composite format: sourceId.baseProcedureId)
 
 **Returns:**
 
-Result&lt;[IProcedure](./ts-chocolate.entities.iprocedure.md)<!-- -->&gt;
+Result&lt;[IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)<!-- -->&gt;
 
 Success with IProcedure, or Failure if not found
 

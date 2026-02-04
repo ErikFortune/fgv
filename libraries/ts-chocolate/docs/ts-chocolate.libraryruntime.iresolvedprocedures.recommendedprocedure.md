@@ -9,5 +9,5 @@ The recommended/default procedure - fully resolved. Undefined if no recommended 
 **Signature:**
 
 ```typescript
-readonly recommendedProcedure?: IProcedure;
+readonly recommendedProcedure?: IProcedureEntity;
 ```

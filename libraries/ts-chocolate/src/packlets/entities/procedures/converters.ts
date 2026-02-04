@@ -27,13 +27,13 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
 import { Converters as TaskConverters } from '../tasks';
-import { IProcedure, IProcedureStep } from './model';
+import { IProcedureEntity, IProcedureStepEntity } from './model';
 
 /**
- * Converter for {@link Entities.Procedures.IProcedureStep | IProcedureStep}.
+ * Converter for {@link Entities.Procedures.IProcedureStepEntity | IProcedureStepEntity}.
  * @public
  */
-export const procedureStep: Converter<IProcedureStep> = Converters.object<IProcedureStep>({
+export const procedureStepEntity: Converter<IProcedureStepEntity> = Converters.object<IProcedureStepEntity>({
   order: Converters.number,
   task: TaskConverters.taskInvocation,
   activeTime: CommonConverters.minutes.optional(),
@@ -44,15 +44,15 @@ export const procedureStep: Converter<IProcedureStep> = Converters.object<IProce
 });
 
 /**
- * Converter for {@link Entities.Procedures.IProcedure | IProcedure} data structure.
+ * Converter for {@link Entities.Procedures.IProcedureEntity | IProcedureEntity} data structure.
  * @public
  */
-export const procedureData: Converter<IProcedure> = Converters.object<IProcedure>({
+export const procedureEntity: Converter<IProcedureEntity> = Converters.object<IProcedureEntity>({
   baseId: CommonConverters.baseProcedureId,
   name: Converters.string,
   description: Converters.string.optional(),
   category: CommonConverters.procedureType.optional(),
-  steps: Converters.arrayOf(procedureStep),
+  steps: Converters.arrayOf(procedureStepEntity),
   tags: Converters.arrayOf(Converters.string).optional(),
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
 });

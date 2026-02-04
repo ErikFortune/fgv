@@ -9,7 +9,7 @@ Initialization type for a ProceduresLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedure>;
+export type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedureEntity>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)
 

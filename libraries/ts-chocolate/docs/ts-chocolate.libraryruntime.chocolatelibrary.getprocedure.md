@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.ChocolateLibrary.getProcedure() method
 
-Gets a [procedure](./ts-chocolate.entities.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
+Gets a [procedure](./ts-chocolate.entities.procedures.iprocedureentity.md) by its [composite ID](./ts-chocolate.procedureid.md)
 
 **Signature:**
 
 ```typescript
-getProcedure(id: ProcedureId): Result<IProcedure>;
+getProcedure(id: ProcedureId): Result<IProcedureEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.procedureid.md) of the procedure to retrieve.
 
 **Returns:**
 
-Result&lt;[IProcedure](./ts-chocolate.entities.iprocedure.md)<!-- -->&gt;
+Result&lt;[IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)<!-- -->&gt;
 
 `Success` with procedure, or `Failure` if not found
 

@@ -9,9 +9,9 @@ A rendered procedure step with resolved template values.
 **Signature:**
 
 ```typescript
-export interface IRuntimeRenderedStep extends IProcedureStep 
+export interface IRuntimeRenderedStep extends IProcedureStepEntity 
 ```
-**Extends:** [IProcedureStep](./ts-chocolate.entities.iprocedurestep.md)
+**Extends:** [IProcedureStepEntity](./ts-chocolate.entities.iprocedurestepentity.md)
 
 ## Properties
 

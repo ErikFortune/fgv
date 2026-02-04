@@ -466,7 +466,7 @@ Contains the complete undo/redo history so the session can be restored to its ex
 </td></tr>
 <tr><td>
 
-[IProcedure](./ts-chocolate.entities.iprocedure.md)
+[IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)
 
 
 </td><td>
@@ -477,7 +477,7 @@ Represents a procedure for making chocolate confections
 </td></tr>
 <tr><td>
 
-[IProcedureStep](./ts-chocolate.entities.iprocedurestep.md)
+[IProcedureStepEntity](./ts-chocolate.entities.iprocedurestepentity.md)
 
 
 </td><td>

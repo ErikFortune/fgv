@@ -35,7 +35,7 @@ import {
   FillingId,
   TaskId
 } from '../common';
-import { Confections, Fillings, IProcedure, ITaskData } from '../entities';
+import { Confections, Fillings, IProcedureEntity, ITaskData } from '../entities';
 import { AnyRuntimeConfection, RuntimeConfection } from './confections';
 import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -654,7 +654,7 @@ export class LibraryRuntimeContext
    * @param id - The procedure ID (composite format: sourceId.baseProcedureId)
    * @returns Success with IProcedure, or Failure if not found
    */
-  public getProcedure(id: string): Result<IProcedure> {
+  public getProcedure(id: string): Result<IProcedureEntity> {
     return this._library.getProcedure(id as ProcedureId);
   }
 

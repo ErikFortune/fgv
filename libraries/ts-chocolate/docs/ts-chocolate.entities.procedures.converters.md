@@ -19,23 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[procedureData](./ts-chocolate.entities.procedures.converters.proceduredata.md)
+[procedureEntity](./ts-chocolate.entities.procedures.converters.procedureentity.md)
 
 
 </td><td>
 
-Converter for [IProcedure](./ts-chocolate.entities.procedures.iprocedure.md) data structure.
+Converter for [IProcedureEntity](./ts-chocolate.entities.procedures.iprocedureentity.md) data structure.
 
 
 </td></tr>
 <tr><td>
 
-[procedureStep](./ts-chocolate.entities.procedures.converters.procedurestep.md)
+[procedureStepEntity](./ts-chocolate.entities.procedures.converters.procedurestepentity.md)
 
 
 </td><td>
 
-Converter for [IProcedureStep](./ts-chocolate.entities.procedures.iprocedurestep.md)<!-- -->.
+Converter for [IProcedureStepEntity](./ts-chocolate.entities.procedures.iprocedurestepentity.md)<!-- -->.
 
 
 </td></tr>

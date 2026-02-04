@@ -36,7 +36,7 @@ import {
   TaskId
 } from '../../common';
 import { IMoldEntity } from '../../entities';
-import { Fillings, IProcedure, IProcedureStep } from '../../entities';
+import { Fillings, IProcedureEntity, IProcedureStepEntity } from '../../entities';
 import { ITaskData } from '../../entities';
 import { RuntimeTask } from '../tasks';
 
@@ -103,7 +103,7 @@ export interface IRuntimeProcedureRenderContext {
  * A rendered procedure step with resolved template values.
  * @public
  */
-export interface IRuntimeRenderedStep extends IProcedureStep {
+export interface IRuntimeRenderedStep extends IProcedureStepEntity {
   /**
    * The rendered description with all template values resolved.
    * Unlike the data-layer placeholder, this contains actual rendered content.
@@ -197,7 +197,7 @@ export interface IRuntimeProcedure {
   readonly category?: ProcedureType;
 
   /** Steps of the procedure in order */
-  readonly steps: ReadonlyArray<IProcedureStep>;
+  readonly steps: ReadonlyArray<IProcedureStepEntity>;
 
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;
@@ -240,5 +240,5 @@ export interface IRuntimeProcedure {
   /**
    * Gets the underlying raw procedure data.
    */
-  readonly raw: IProcedure;
+  readonly raw: IProcedureEntity;
 }

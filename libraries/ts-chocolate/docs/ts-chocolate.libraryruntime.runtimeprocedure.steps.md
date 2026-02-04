@@ -9,5 +9,5 @@ Steps of the procedure in order
 **Signature:**
 
 ```typescript
-get steps(): ReadonlyArray<IProcedureStep>;
+get steps(): ReadonlyArray<IProcedureStepEntity>;
 ```

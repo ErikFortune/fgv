@@ -47,7 +47,7 @@ import { IngredientEntity, IngredientsLibrary } from '../entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../entities';
 import { Converters as EntityConverters } from '../entities';
 import { IMoldEntity, MoldsLibrary } from '../entities';
-import { IProcedure, ProceduresLibrary } from '../entities';
+import { IProcedureEntity, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
 import { IGanacheCalculation, IngredientResolver } from './model';
 import { calculateGanache } from './internal';
@@ -387,11 +387,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Entities.Procedures.IProcedure | procedure} by its {@link ProcedureId | composite ID}
+   * Gets a {@link Entities.Procedures.IProcedureEntity | procedure} by its {@link ProcedureId | composite ID}
    * @param id - The {@link ProcedureId | id} of the procedure to retrieve.
    * @returns `Success` with procedure, or `Failure` if not found
    */
-  public getProcedure(id: ProcedureId): Result<IProcedure> {
+  public getProcedure(id: ProcedureId): Result<IProcedureEntity> {
     return this._procedures.get(id);
   }
 
@@ -541,12 +541,12 @@ export class ChocolateLibrary {
    */
   public getEditableProcedures(
     collectionId: SourceId
-  ): Result<EditableCollection<IProcedure, BaseProcedureId>> {
+  ): Result<EditableCollection<IProcedureEntity, BaseProcedureId>> {
     return EditableCollection.fromLibrary(
       this.procedures,
       collectionId,
       CommonConverters.baseProcedureId,
-      EntityConverters.Procedures.procedureData
+      EntityConverters.Procedures.procedureEntity
     );
   }
 

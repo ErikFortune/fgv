@@ -9,7 +9,7 @@ Get an editable procedures collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedure, BaseProcedureId>>;
+getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IProcedure](./ts-chocolate.entities.iprocedure.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

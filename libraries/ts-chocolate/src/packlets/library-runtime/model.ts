@@ -80,7 +80,7 @@ import {
   IngredientEntity,
   ISugarIngredientEntity
 } from '../entities';
-import { IProcedure } from '../entities';
+import { IProcedureEntity } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================
@@ -520,7 +520,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * The fully resolved procedure object.
    */
-  readonly procedure: IProcedure;
+  readonly procedure: IProcedureEntity;
 
   /**
    * Optional notes specific to using this procedure with the recipe.
@@ -547,7 +547,7 @@ export interface IResolvedProcedures {
    * The recommended/default procedure - fully resolved.
    * Undefined if no recommended procedure is specified.
    */
-  readonly recommendedProcedure?: IProcedure;
+  readonly recommendedProcedure?: IProcedureEntity;
 }
 
 // ============================================================================
@@ -865,7 +865,7 @@ export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRunti
   /** Map of all fillings, keyed by composite ID. */
   readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
   /** Gets a procedure by its composite ID. */
-  getProcedure(id: string): Result<IProcedure>;
+  getProcedure(id: string): Result<IProcedureEntity>;
 }
 
 /**

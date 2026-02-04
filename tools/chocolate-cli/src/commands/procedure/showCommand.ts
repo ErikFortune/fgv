@@ -46,14 +46,14 @@ interface IProcedureShowOptions extends IEntityBaseOptions {
  */
 interface IProcedureSelectableItem extends ISelectableItem {
   id: ProcedureId;
-  procedure: Entities.Procedures.IProcedure;
+  procedure: Entities.Procedures.IProcedureEntity;
 }
 
 /**
  * Formats a step for human output
  */
 function formatStep(
-  step: Entities.Procedures.IProcedureStep,
+  step: Entities.Procedures.IProcedureStepEntity,
   tasksLibrary?: Entities.Tasks.TasksLibrary,
   context?: Record<string, unknown>
 ): string[] {
@@ -135,7 +135,7 @@ function formatStep(
  * Formats a procedure for human-readable output
  */
 export function formatProcedureHuman(
-  procedure: Entities.Procedures.IProcedure,
+  procedure: Entities.Procedures.IProcedureEntity,
   procedureId: ProcedureId,
   tasksLibrary?: Entities.Tasks.TasksLibrary,
   context?: Record<string, unknown>
@@ -207,7 +207,7 @@ export function createShowSubcommand(): Command {
 
         // Determine procedure ID - either from argument or interactive selection
         let procedureId: ProcedureId;
-        let procedure: Entities.Procedures.IProcedure;
+        let procedure: Entities.Procedures.IProcedureEntity;
 
         if (localOptions.interactive || !procedureIdArg) {
           if (!localOptions.interactive && !procedureIdArg) {

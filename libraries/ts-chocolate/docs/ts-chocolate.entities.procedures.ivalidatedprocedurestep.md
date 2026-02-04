@@ -9,9 +9,9 @@ A procedure step with runtime validation state attached. Used during rendering w
 **Signature:**
 
 ```typescript
-export interface IValidatedProcedureStep extends IProcedureStep 
+export interface IValidatedProcedureStep extends IProcedureStepEntity 
 ```
-**Extends:** [IProcedureStep](./ts-chocolate.entities.iprocedurestep.md)
+**Extends:** [IProcedureStepEntity](./ts-chocolate.entities.iprocedurestepentity.md)
 
 ## Properties
 

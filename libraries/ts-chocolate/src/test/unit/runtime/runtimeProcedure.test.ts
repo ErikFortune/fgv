@@ -31,7 +31,7 @@ import {
   ProcedureId,
   TaskId
 } from '../../../packlets/common';
-import { IProcedure, ITaskData, Fillings } from '../../../packlets/entities';
+import { IProcedureEntity, ITaskData, Fillings } from '../../../packlets/entities';
 import {
   RuntimeProcedure,
   IProcedureContext,
@@ -78,7 +78,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Procedure with inline task
-  const inlineTaskProcedure: IProcedure = {
+  const inlineTaskProcedure: IProcedureEntity = {
     baseId: 'test-inline' as BaseProcedureId,
     name: 'Test Inline Procedure',
     steps: [
@@ -98,7 +98,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Procedure with task reference
-  const taskRefProcedure: IProcedure = {
+  const taskRefProcedure: IProcedureEntity = {
     baseId: 'test-ref' as BaseProcedureId,
     name: 'Test Ref Procedure',
     steps: [
@@ -114,7 +114,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Procedure with multiple steps
-  const multiStepProcedure: IProcedure = {
+  const multiStepProcedure: IProcedureEntity = {
     baseId: 'multi-step' as BaseProcedureId,
     name: 'Multi-Step Procedure',
     description: 'A procedure with multiple steps',
@@ -146,7 +146,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Procedure with all timing types (wait and hold)
-  const allTimingProcedure: IProcedure = {
+  const allTimingProcedure: IProcedureEntity = {
     baseId: 'all-timing' as BaseProcedureId,
     name: 'All Timing Procedure',
     steps: [
@@ -168,7 +168,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Procedure with no timing data at all
-  const noTimingProcedure: IProcedure = {
+  const noTimingProcedure: IProcedureEntity = {
     baseId: 'no-timing' as BaseProcedureId,
     name: 'No Timing Procedure',
     steps: [
@@ -315,7 +315,7 @@ describe('RuntimeProcedure', () => {
     });
 
     test('should fail when task reference cannot be resolved', () => {
-      const unknownRefProcedure: IProcedure = {
+      const unknownRefProcedure: IProcedureEntity = {
         baseId: 'test-unknown' as BaseProcedureId,
         name: 'Unknown Ref',
         steps: [

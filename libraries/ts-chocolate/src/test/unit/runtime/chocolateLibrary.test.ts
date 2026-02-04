@@ -52,7 +52,7 @@ import {
 
 import { IMoldEntity, MoldsLibrary } from '../../../packlets/entities';
 
-import { IProcedure, ProceduresLibrary } from '../../../packlets/entities';
+import { IProcedureEntity, ProceduresLibrary } from '../../../packlets/entities';
 
 import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
@@ -340,7 +340,7 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('procedure lookup', () => {
-    const testProcedureData: IProcedure = {
+    const testProcedureData: IProcedureEntity = {
       baseId: 'test-procedure' as BaseProcedureId,
       name: 'Test Procedure',
       description: 'A test procedure',

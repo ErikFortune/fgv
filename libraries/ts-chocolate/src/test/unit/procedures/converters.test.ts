@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { procedureStep, procedureData } from '../../../packlets/entities/procedures/converters';
+import { procedureStepEntity, procedureEntity } from '../../../packlets/entities/procedures/converters';
 
 import { BaseTaskId } from '../../../packlets/common';
 import { ITaskInvocation } from '../../../packlets/entities';
@@ -82,7 +82,7 @@ describe('Procedure Converters', () => {
         temperature: 45,
         notes: [{ category: 'user', note: 'Use double boiler' }]
       };
-      expect(procedureStep.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureStepEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.order).toBe(1);
         expect(result.task).toEqual(inlineTask('Melt chocolate'));
         expect(result.activeTime).toBe(5);
@@ -98,7 +98,7 @@ describe('Procedure Converters', () => {
         order: 1,
         task: inlineTask('Stir gently')
       };
-      expect(procedureStep.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureStepEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.order).toBe(1);
         expect(result.task).toEqual(inlineTask('Stir gently'));
         expect(result.activeTime).toBeUndefined();
@@ -113,14 +113,14 @@ describe('Procedure Converters', () => {
       const input = {
         task: inlineTask('Stir gently')
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for missing task', () => {
       const input = {
         order: 1
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for non-numeric order', () => {
@@ -128,7 +128,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         order: 'first'
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for invalid task structure', () => {
@@ -136,7 +136,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         task: { invalid: true }
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for non-numeric activeTime', () => {
@@ -144,7 +144,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         activeTime: 'five'
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for negative activeTime', () => {
@@ -152,7 +152,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         activeTime: -5
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for negative waitTime', () => {
@@ -160,7 +160,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         waitTime: -10
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('fails for negative holdTime', () => {
@@ -168,7 +168,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         holdTime: -15
       };
-      expect(procedureStep.convert(input)).toFail();
+      expect(procedureStepEntity.convert(input)).toFail();
     });
 
     test('converts with negative temperature (e.g., freezing)', () => {
@@ -176,7 +176,7 @@ describe('Procedure Converters', () => {
         ...validProcedureStep,
         temperature: -20
       };
-      expect(procedureStep.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureStepEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.temperature).toBe(-20);
       });
     });
@@ -189,7 +189,7 @@ describe('Procedure Converters', () => {
         waitTime: 0,
         holdTime: 0
       };
-      expect(procedureStep.convert(input)).toSucceed();
+      expect(procedureStepEntity.convert(input)).toSucceed();
     });
 
     test('converts step with ref task', () => {
@@ -200,7 +200,7 @@ describe('Procedure Converters', () => {
           params: { temp: 45 }
         }
       };
-      expect(procedureStep.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureStepEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.order).toBe(1);
         expect(result.task).toHaveProperty('taskId');
       });
@@ -213,7 +213,7 @@ describe('Procedure Converters', () => {
 
   describe('procedureData', () => {
     test('converts valid procedure data with all fields', () => {
-      expect(procedureData.convert(validProcedureData)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntity.convert(validProcedureData)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('ganache-cold-method');
         expect(result.name).toBe('Ganache (Cold Method)');
         expect(result.category).toBe('ganache');
@@ -228,7 +228,7 @@ describe('Procedure Converters', () => {
         name: 'Simple Procedure',
         steps: [{ order: 1, task: inlineTask('Do the thing') }]
       };
-      expect(procedureData.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('simple-procedure');
         expect(result.name).toBe('Simple Procedure');
         expect(result.category).toBeUndefined();
@@ -245,7 +245,7 @@ describe('Procedure Converters', () => {
         description: 'A cold method for making ganache',
         notes: [{ category: 'user', note: 'Works best with dark chocolate' }]
       };
-      expect(procedureData.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.description).toBe('A cold method for making ganache');
         expect(result.notes).toEqual([{ category: 'user', note: 'Works best with dark chocolate' }]);
       });
@@ -256,7 +256,7 @@ describe('Procedure Converters', () => {
         name: 'Test',
         steps: [{ order: 1, task: inlineTask('Step') }]
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for invalid baseId (contains dot)', () => {
@@ -264,7 +264,7 @@ describe('Procedure Converters', () => {
         ...validProcedureData,
         baseId: 'invalid.id'
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for missing name', () => {
@@ -272,7 +272,7 @@ describe('Procedure Converters', () => {
         baseId: 'test',
         steps: [{ order: 1, task: inlineTask('Step') }]
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for missing steps', () => {
@@ -280,7 +280,7 @@ describe('Procedure Converters', () => {
         baseId: 'test',
         name: 'Test'
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for empty steps array', () => {
@@ -290,7 +290,7 @@ describe('Procedure Converters', () => {
         steps: []
       };
       // Empty array is valid in terms of conversion
-      expect(procedureData.convert(input)).toSucceed();
+      expect(procedureEntity.convert(input)).toSucceed();
     });
 
     test('fails for invalid category', () => {
@@ -298,7 +298,7 @@ describe('Procedure Converters', () => {
         ...validProcedureData,
         category: 'invalid-category'
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for invalid step in steps array', () => {
@@ -309,7 +309,7 @@ describe('Procedure Converters', () => {
           { order: 2 } // Missing task
         ]
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for non-array tags', () => {
@@ -317,7 +317,7 @@ describe('Procedure Converters', () => {
         ...validProcedureData,
         tags: 'not-an-array'
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('fails for non-string tag values', () => {
@@ -325,7 +325,7 @@ describe('Procedure Converters', () => {
         ...validProcedureData,
         tags: [123, 456]
       };
-      expect(procedureData.convert(input)).toFail();
+      expect(procedureEntity.convert(input)).toFail();
     });
 
     test('converts with all valid recipe categories', () => {
@@ -335,7 +335,7 @@ describe('Procedure Converters', () => {
           ...validProcedureData,
           category
         };
-        expect(procedureData.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(procedureEntity.convert(input)).toSucceedAndSatisfy((result) => {
           expect(result.category).toBe(category);
         });
       });

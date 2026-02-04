@@ -52,7 +52,7 @@ interface IProcedureListOptions extends IEntityListOptions {
  * Checks if a procedure matches the specified filters
  */
 function matchesFilters(
-  procedure: Entities.Procedures.IProcedure,
+  procedure: Entities.Procedures.IProcedureEntity,
   procedureId: ProcedureId,
   sourceId: SourceId,
   options: IProcedureListOptions

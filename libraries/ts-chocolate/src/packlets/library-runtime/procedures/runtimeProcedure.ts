@@ -33,7 +33,7 @@ import {
   ProcedureType,
   TaskId
 } from '../../common';
-import { IProcedure, IProcedureStep, Tasks } from '../../entities';
+import { IProcedureEntity, IProcedureStepEntity, Tasks } from '../../entities';
 import { RuntimeTask } from '../tasks';
 import {
   IProcedureContext,
@@ -63,9 +63,9 @@ import {
 export class RuntimeProcedure implements IRuntimeProcedure {
   private readonly _context: IProcedureContext;
   private readonly _id: ProcedureId;
-  private readonly _procedure: IProcedure;
+  private readonly _procedure: IProcedureEntity;
 
-  private constructor(context: IProcedureContext, id: ProcedureId, procedure: IProcedure) {
+  private constructor(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity) {
     this._context = context;
     this._id = id;
     this._procedure = procedure;
@@ -81,7 +81,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   public static create(
     context: IProcedureContext,
     id: ProcedureId,
-    procedure: IProcedure
+    procedure: IProcedureEntity
   ): Result<RuntimeProcedure> {
     return Success.with(new RuntimeProcedure(context, id, procedure));
   }
@@ -132,7 +132,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   /**
    * Steps of the procedure in order
    */
-  public get steps(): ReadonlyArray<IProcedureStep> {
+  public get steps(): ReadonlyArray<IProcedureStepEntity> {
     return this._procedure.steps;
   }
 
@@ -251,7 +251,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
    */
   private _renderStep(
     renderContext: IRuntimeProcedureRenderContext,
-    step: IProcedureStep
+    step: IProcedureStepEntity
   ): Result<IRuntimeRenderedStep> {
     const invocation = step.task;
 
@@ -299,7 +299,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   /**
    * Gets the underlying raw procedure data
    */
-  public get raw(): IProcedure {
+  public get raw(): IProcedureEntity {
     return this._procedure;
   }
 

@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProcedure.
 **Signature:**
 
 ```typescript
-static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedure): Result<RuntimeProcedure>;
+static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity): Result<RuntimeProcedure>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ procedure
 
 </td><td>
 
-[IProcedure](./ts-chocolate.entities.iprocedure.md)
+[IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)
 
 
 </td><td>

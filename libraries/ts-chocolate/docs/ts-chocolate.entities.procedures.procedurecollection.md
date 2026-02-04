@@ -9,7 +9,7 @@ Type for the collections in a ProceduresLibrary.
 **Signature:**
 
 ```typescript
-export type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedure>;
+export type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedureEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)
 

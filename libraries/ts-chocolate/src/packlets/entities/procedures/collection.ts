@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../../library-data';
-import { IProcedure } from './model';
+import { IProcedureEntity } from './model';
 
 /**
  * A single entry in a procedures collection.
  * @public
  */
-export type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedure>;
+export type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedureEntity>;
 
 /**
  * Initialization type for a ProceduresLibrary collection entry.
  * @public
  */
-export type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedure>;
+export type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedureEntity>;
 
 /**
  * Validator type for ProceduresLibrary collections.
  * @public
  */
-export type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedure>;
+export type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedureEntity>;
 
 /**
  * Type for the collections in a ProceduresLibrary.
  * @public
  */
-export type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedure>;
+export type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedureEntity>;

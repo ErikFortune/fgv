@@ -9,5 +9,5 @@ Gets the underlying raw procedure data
 **Signature:**
 
 ```typescript
-get raw(): IProcedure;
+get raw(): IProcedureEntity;
 ```

@@ -494,14 +494,14 @@ export class ChocolateLibrary {
     getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
     getEditableIngredients(collectionId: SourceId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
     getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
-    getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedure, BaseProcedureId>>;
+    getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
     getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<IngredientEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getMold(id: MoldId): Result<IMoldEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getProcedure(id: ProcedureId): Result<IProcedure>;
+    getProcedure(id: ProcedureId): Result<IProcedureEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: FillingId): Result<IFillingRecipeEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1264,8 +1264,8 @@ declare namespace Entities {
         ICavityInfo,
         IMoldEntity,
         ProceduresLibrary,
-        IProcedure,
-        IProcedureStep,
+        IProcedureEntity,
+        IProcedureStepEntity,
         TasksLibrary,
         ITask,
         ITaskData,
@@ -3305,21 +3305,21 @@ interface IPersistedSessionDestination {
     readonly overrideCollectionId?: SourceId;
 }
 
+// @internal
+interface IProcedureContext {
+    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
+    getTask(id: TaskId): Result<ITaskData>;
+}
+
 // @public
-interface IProcedure {
+interface IProcedureEntity {
     readonly baseId: BaseProcedureId;
     readonly category?: ProcedureType;
     readonly description?: string;
     readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly steps: ReadonlyArray<IProcedureStep>;
+    readonly steps: ReadonlyArray<IProcedureStepEntity>;
     readonly tags?: ReadonlyArray<string>;
-}
-
-// @internal
-interface IProcedureContext {
-    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    getTask(id: TaskId): Result<ITaskData>;
 }
 
 // @public
@@ -3335,7 +3335,7 @@ type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, P
 type IProceduresLibraryParams = ISubLibraryParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
 
 // @public
-interface IProcedureStep {
+interface IProcedureStepEntity {
     readonly activeTime?: Minutes;
     readonly holdTime?: Minutes;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
@@ -3516,7 +3516,7 @@ type IResolvedFillingOption = IResolvedRecipeFillingOption | IResolvedIngredient
 interface IResolvedFillingRecipeProcedure {
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly procedure: IProcedure;
+    readonly procedure: IProcedureEntity;
     readonly raw: Fillings_2.IProcedureRefEntity;
 }
 
@@ -3567,7 +3567,7 @@ interface IResolvedIngredientSlotEntity {
 // @public
 interface IResolvedProcedures {
     readonly procedures: ReadonlyArray<IResolvedFillingRecipeProcedure>;
-    readonly recommendedProcedure?: IProcedure;
+    readonly recommendedProcedure?: IProcedureEntity;
 }
 
 // @public
@@ -3863,10 +3863,10 @@ interface IRuntimeProcedure {
     readonly isCategorySpecific: boolean;
     readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: IProcedure;
+    readonly raw: IProcedureEntity;
     render(context: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
     readonly stepCount: number;
-    readonly steps: ReadonlyArray<IProcedureStep>;
+    readonly steps: ReadonlyArray<IProcedureStepEntity>;
     readonly tags?: ReadonlyArray<string>;
     readonly totalActiveTime: Minutes | undefined;
     readonly totalHoldTime: Minutes | undefined;
@@ -3894,7 +3894,7 @@ interface IRuntimeRenderedProcedure {
 }
 
 // @public
-interface IRuntimeRenderedStep extends IProcedureStep {
+interface IRuntimeRenderedStep extends IProcedureStepEntity {
     readonly renderedDescription: string;
     readonly resolvedTask?: RuntimeTask;
 }
@@ -4438,7 +4438,7 @@ interface IUserLibraryRuntime {
 }
 
 // @public
-interface IValidatedProcedureStep extends IProcedureStep {
+interface IValidatedProcedureStep extends IProcedureStepEntity {
     readonly validation?: IProcedureStepValidation;
 }
 
@@ -4468,7 +4468,7 @@ interface IValidationReport {
 // @internal
 interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
-    getProcedure(id: string): Result<IProcedure>;
+    getProcedure(id: string): Result<IProcedureEntity>;
     readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
 }
 
@@ -4919,7 +4919,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, II
     // @internal
     _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getProcedure(id: string): Result<IProcedure>;
+    getProcedure(id: string): Result<IProcedureEntity>;
     getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection>;
     getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
@@ -5376,27 +5376,27 @@ class PinchScaler implements IUnitScaler {
 const positiveNumber: Converter<number>;
 
 // @public
-type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedure>;
+type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedureEntity>;
 
 // @public
-type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedure>;
+type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedureEntity>;
 
 // @public
-type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedure>;
+type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedureEntity>;
 
 // @public
 const procedureCollections: Record<string, JsonObject>;
 
 // @public
-type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedure>;
+type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedureEntity>;
+
+// @public
+const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const procedureData: Converter<IProcedure>;
-
-// @public
-const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>>;
+const procedureEntity: Converter<IProcedureEntity>;
 
 // @public
 export type ProcedureId = Brand<string, 'ProcedureId'>;
@@ -5414,18 +5414,18 @@ const procedureRefEntity: Converter<IProcedureRefEntity>;
 
 declare namespace Procedures {
     export {
-        procedureStep,
-        procedureData
+        procedureStepEntity,
+        procedureEntity
     }
 }
 
 declare namespace Procedures_2 {
     export {
         Procedures as Converters,
-        IProcedureStep,
+        IProcedureStepEntity,
         IProcedureStepValidation,
         IValidatedProcedureStep,
-        IProcedure,
+        IProcedureEntity,
         ProcedureCollectionEntry,
         ProcedureCollectionEntryInit,
         ProcedureCollectionValidator,
@@ -5439,7 +5439,7 @@ declare namespace Procedures_2 {
 }
 
 // @public
-class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, IProcedure> {
+class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, IProcedureEntity> {
     static create(params?: IProceduresLibraryParams): Result<ProceduresLibrary>;
     static createAsync(params?: IProceduresLibraryAsyncParams): Promise<Result<ProceduresLibrary>>;
 }
@@ -5450,7 +5450,7 @@ type ProceduresMergeSource = SubLibraryMergeSource<ProceduresLibrary>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const procedureStep: Converter<IProcedureStep>;
+const procedureStepEntity: Converter<IProcedureStepEntity>;
 
 // @public
 export type ProcedureType = FillingCategory | ConfectionType | 'other';
@@ -5950,16 +5950,16 @@ class RuntimeProcedure implements IRuntimeProcedure {
     protected get context(): IProcedureContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-    static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedure): Result<RuntimeProcedure>;
+    static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity): Result<RuntimeProcedure>;
     get description(): string | undefined;
     get id(): ProcedureId;
     get isCategorySpecific(): boolean;
     get name(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    get raw(): IProcedure;
+    get raw(): IProcedureEntity;
     render(renderContext: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
     get stepCount(): number;
-    get steps(): ReadonlyArray<IProcedureStep>;
+    get steps(): ReadonlyArray<IProcedureStepEntity>;
     get tags(): ReadonlyArray<string> | undefined;
     get totalActiveTime(): Minutes | undefined;
     get totalHoldTime(): Minutes | undefined;

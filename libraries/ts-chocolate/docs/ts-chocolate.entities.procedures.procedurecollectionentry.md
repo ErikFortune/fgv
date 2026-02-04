@@ -9,7 +9,7 @@ A single entry in a procedures collection.
 **Signature:**
 
 ```typescript
-export type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedure>;
+export type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedureEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedureEntity](./ts-chocolate.entities.iprocedureentity.md)
 

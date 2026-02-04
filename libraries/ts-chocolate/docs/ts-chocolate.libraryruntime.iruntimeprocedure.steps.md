@@ -9,5 +9,5 @@ Steps of the procedure in order
 **Signature:**
 
 ```typescript
-readonly steps: ReadonlyArray<IProcedureStep>;
+readonly steps: ReadonlyArray<IProcedureStepEntity>;
 ```

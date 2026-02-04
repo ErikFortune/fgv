@@ -49,7 +49,7 @@ import {
   IGanacheCharacteristics,
   IIngredientEntity,
   IMoldEntity,
-  IProcedure,
+  IProcedureEntity,
   ConfectionsLibrary,
   FillingsLibrary,
   IngredientsLibrary,
@@ -137,7 +137,7 @@ describe('ConfectionEditingSession Factory', () => {
     }
   };
 
-  const standardProc: IProcedure = {
+  const standardProc: IProcedureEntity = {
     baseId: 'molded-bonbon-standard' as BaseProcedureId,
     name: 'Standard Molded Bonbon',
     steps: []

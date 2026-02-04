@@ -398,7 +398,7 @@ Gets a [mold](./ts-chocolate.entities.molds.imoldentity.md) by its [composite ID
 
 </td><td>
 
-Gets a [procedure](./ts-chocolate.entities.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
+Gets a [procedure](./ts-chocolate.entities.procedures.iprocedureentity.md) by its [composite ID](./ts-chocolate.procedureid.md)
 
 
 </td></tr>
