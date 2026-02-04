@@ -48,14 +48,18 @@ import { RuntimeBarTruffleVersion } from './versions';
  * @public
  */
 export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
-  private readonly _barTruffle: Confections.IBarTruffle;
+  private readonly _barTruffle: Confections.IBarTruffleEntity;
 
   /**
    * Creates a RuntimeBarTruffle.
    * Use RuntimeConfection.create() or RuntimeBarTruffle.create() instead.
    * @internal
    */
-  protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections.IBarTruffle) {
+  protected constructor(
+    context: IConfectionContext,
+    id: ConfectionId,
+    confection: Confections.IBarTruffleEntity
+  ) {
     super(context, id, confection);
     this._barTruffle = confection;
   }
@@ -70,7 +74,7 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IBarTruffle
+    confection: Confections.IBarTruffleEntity
   ): Result<RuntimeBarTruffle> {
     return Success.with(new RuntimeBarTruffle(context, id, confection));
   }
@@ -119,11 +123,13 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(rawVersion: Confections.AnyConfectionVersion): IRuntimeBarTruffleVersion {
+  protected override _createVersion(
+    rawVersion: Confections.AnyConfectionVersionEntity
+  ): IRuntimeBarTruffleVersion {
     return RuntimeBarTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IBarTruffleVersion
+      rawVersion as Confections.IBarTruffleVersionEntity
     ).orThrow();
   }
 
@@ -175,7 +181,7 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   /**
    * Gets the underlying raw bar truffle data
    */
-  public get raw(): Confections.IBarTruffle {
+  public get raw(): Confections.IBarTruffleEntity {
     return this._barTruffle;
   }
 }

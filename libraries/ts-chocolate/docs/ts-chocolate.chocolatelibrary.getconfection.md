@@ -4,12 +4,12 @@
 
 ## ChocolateLibrary.getConfection() method
 
-Gets a [confection](./ts-chocolate.entities.confections.anyconfection.md) by its [composite ID](./ts-chocolate.confectionid.md)
+Gets a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md) by its [composite ID](./ts-chocolate.confectionid.md)
 
 **Signature:**
 
 ```typescript
-getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfection>;
+getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfectionEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.confectionid.md) of the confection to retrieve.
 
 **Returns:**
 
-Result&lt;[Entities.Confections.AnyConfection](./ts-chocolate.entities.anyconfection.md)<!-- -->&gt;
+Result&lt;[Entities.Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)<!-- -->&gt;
 
 `Success` with confection data, or `Failure` if not found
 

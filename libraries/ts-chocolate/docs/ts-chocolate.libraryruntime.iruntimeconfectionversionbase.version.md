@@ -9,5 +9,5 @@ The underlying confection version. Use this to get the raw version data for pers
 **Signature:**
 
 ```typescript
-readonly version: Confections.AnyConfectionVersion;
+readonly version: Confections.AnyConfectionVersionEntity;
 ```

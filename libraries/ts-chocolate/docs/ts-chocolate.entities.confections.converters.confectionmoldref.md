@@ -4,7 +4,7 @@
 
 ## Entities.Confections.Converters.confectionMoldRef variable
 
-Converter for IConfectionMoldRef
+Converter for [IConfectionMoldRef](./ts-chocolate.entities.confections.iconfectionmoldref.md)<!-- -->.
 
 **Signature:**
 

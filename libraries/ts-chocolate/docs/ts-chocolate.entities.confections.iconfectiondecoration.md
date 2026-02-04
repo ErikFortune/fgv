@@ -4,7 +4,7 @@
 
 ## Entities.Confections.IConfectionDecoration interface
 
-Decoration specification for a [confection](./ts-chocolate.entities.confections.anyconfection.md)<!-- -->.
+Decoration specification for a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md)<!-- -->.
 
 **Signature:**
 

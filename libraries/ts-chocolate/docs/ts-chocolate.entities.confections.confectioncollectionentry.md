@@ -9,7 +9,7 @@ A single entry in a confections collection.
 **Signature:**
 
 ```typescript
-export type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, AnyConfection>;
+export type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, AnyConfectionEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.entities.anyconfection.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
 

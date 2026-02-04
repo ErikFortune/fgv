@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-protected _deepCopy(confection: IProducedRolledTruffle): IProducedRolledTruffle;
+protected _deepCopy(confection: IProducedRolledTruffleEntity): IProducedRolledTruffleEntity;
 ```
 
 ## Parameters
@@ -35,7 +35,7 @@ confection
 
 </td><td>
 
-[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)
 
 
 </td><td>
@@ -46,5 +46,5 @@ confection
 
 **Returns:**
 
-[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)
 

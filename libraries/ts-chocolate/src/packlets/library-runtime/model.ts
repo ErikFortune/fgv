@@ -1074,13 +1074,15 @@ export interface IRuntimeConfection {
    * Gets effective tags for a specific version.
    * @param version - The version to get tags for (defaults to golden version)
    */
-  getEffectiveTags(version?: Confections.AnyConfectionVersion): ReadonlyArray<string>;
+  getEffectiveTags(version?: Confections.AnyConfectionVersionEntity): ReadonlyArray<string>;
 
   /**
    * Gets effective URLs for a specific version.
    * @param version - The version to get URLs for (defaults to golden version)
    */
-  getEffectiveUrls(version?: Confections.AnyConfectionVersion): ReadonlyArray<CommonModel.ICategorizedUrl>;
+  getEffectiveUrls(
+    version?: Confections.AnyConfectionVersionEntity
+  ): ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   // ---- Convenience accessors for golden version properties ----
 
@@ -1121,7 +1123,7 @@ export interface IRuntimeConfection {
   /**
    * Gets the underlying raw confection data.
    */
-  readonly raw: Confections.AnyConfection;
+  readonly raw: Confections.AnyConfectionEntity;
 }
 
 /**
@@ -1151,7 +1153,7 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 
   /** Raw data typed to IMoldedBonBon */
-  readonly raw: Confections.IMoldedBonBon;
+  readonly raw: Confections.IMoldedBonBonEntity;
 }
 
 /**
@@ -1181,7 +1183,7 @@ export interface IRuntimeBarTruffle extends IRuntimeConfection {
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
   /** Raw data typed to IBarTruffle */
-  readonly raw: Confections.IBarTruffle;
+  readonly raw: Confections.IBarTruffleEntity;
 }
 
 /**
@@ -1208,7 +1210,7 @@ export interface IRuntimeRolledTruffle extends IRuntimeConfection {
   readonly coatings?: IResolvedCoatings;
 
   /** Raw data typed to IRolledTruffle */
-  readonly raw: Confections.IRolledTruffle;
+  readonly raw: Confections.IRolledTruffleEntity;
 }
 
 /**
@@ -1232,7 +1234,7 @@ export interface IResolvedRecipeFillingOption {
   /** Optional notes specific to this filling option */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw recipe filling option data */
-  readonly raw: Confections.IRecipeFillingOption;
+  readonly raw: Confections.IRecipeFillingOptionEntity;
 }
 
 /**
@@ -1249,7 +1251,7 @@ export interface IResolvedIngredientFillingOption {
   /** Optional notes specific to this filling option */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw ingredient filling option data */
-  readonly raw: Confections.IIngredientFillingOption;
+  readonly raw: Confections.IIngredientFillingOptionEntity;
 }
 
 /**
@@ -1293,7 +1295,7 @@ export interface IResolvedAdditionalChocolate {
   /** Purpose of this additional chocolate */
   readonly purpose: AdditionalChocolatePurpose;
   /** The original raw additional chocolate data */
-  readonly raw: Confections.IAdditionalChocolate;
+  readonly raw: Confections.IAdditionalChocolateEntity;
 }
 
 // ============================================================================
@@ -1409,7 +1411,7 @@ export interface IRuntimeConfectionVersionBase {
    * The underlying confection version.
    * Use this to get the raw version data for persistence or journaling.
    */
-  readonly version: Confections.AnyConfectionVersion;
+  readonly version: Confections.AnyConfectionVersionEntity;
 
   // ---- Version Properties ----
 
@@ -1476,7 +1478,7 @@ export interface IRuntimeConfectionVersionBase {
   /**
    * Gets the underlying raw version data.
    */
-  readonly raw: Confections.AnyConfectionVersion;
+  readonly raw: Confections.AnyConfectionVersionEntity;
 }
 
 /**
@@ -1503,7 +1505,7 @@ export interface IRuntimeMoldedBonBonVersion extends IRuntimeConfectionVersionBa
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IMoldedBonBonVersion */
-  readonly raw: Confections.IMoldedBonBonVersion;
+  readonly raw: Confections.IMoldedBonBonVersionEntity;
 }
 
 /**
@@ -1527,7 +1529,7 @@ export interface IRuntimeBarTruffleVersion extends IRuntimeConfectionVersionBase
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IBarTruffleVersion */
-  readonly raw: Confections.IBarTruffleVersion;
+  readonly raw: Confections.IBarTruffleVersionEntity;
 }
 
 /**
@@ -1548,7 +1550,7 @@ export interface IRuntimeRolledTruffleVersion extends IRuntimeConfectionVersionB
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
   /** Raw version typed to IRolledTruffleVersion */
-  readonly raw: Confections.IRolledTruffleVersion;
+  readonly raw: Confections.IRolledTruffleVersionEntity;
 }
 
 /**
@@ -1635,7 +1637,7 @@ export interface IConfectionContext {
    * @returns Resolved additional chocolates, or undefined if none
    */
   resolveAdditionalChocolates(
-    additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined,
+    additional: ReadonlyArray<Confections.IAdditionalChocolateEntity> | undefined,
     confectionId: ConfectionId
   ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
 
@@ -1645,7 +1647,7 @@ export interface IConfectionContext {
    * @returns Resolved filling slots, or undefined if none
    */
   resolveFillingSlots(
-    slots: ReadonlyArray<Confections.IFillingSlot> | undefined
+    slots: ReadonlyArray<Confections.IFillingSlotEntity> | undefined
   ): ReadonlyArray<IResolvedFillingSlot> | undefined;
 
   /**

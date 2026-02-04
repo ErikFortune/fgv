@@ -9,5 +9,5 @@ Gets the underlying raw version data.
 **Signature:**
 
 ```typescript
-readonly raw: Confections.AnyConfectionVersion;
+readonly raw: Confections.AnyConfectionVersionEntity;
 ```

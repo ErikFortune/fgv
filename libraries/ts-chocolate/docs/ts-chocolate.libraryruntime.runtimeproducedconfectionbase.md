@@ -9,7 +9,7 @@ Mutable wrapper base class for IProducedConfection with undo/redo support. Provi
 **Signature:**
 
 ```typescript
-export declare abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> 
+export declare abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfectionEntity> 
 ```
 
 ## Remarks
@@ -129,7 +129,7 @@ Gets the current produced confection.
 
 </td><td>
 
-ReadonlyArray&lt;Confections.AnyResolvedFillingSlot&gt; \| undefined
+ReadonlyArray&lt;Confections.AnyResolvedFillingSlotEntity&gt; \| undefined
 
 
 </td><td>
@@ -234,7 +234,7 @@ Gets the version ID.
 
 </td><td>
 
-Confections.IConfectionYield
+[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
 </td><td>

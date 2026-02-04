@@ -9,5 +9,5 @@ Raw data typed to IMoldedBonBon
 **Signature:**
 
 ```typescript
-readonly raw: Confections.IMoldedBonBon;
+readonly raw: Confections.IMoldedBonBonEntity;
 ```

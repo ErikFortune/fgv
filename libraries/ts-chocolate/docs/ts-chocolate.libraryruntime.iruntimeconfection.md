@@ -175,7 +175,7 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 
 </td><td>
 
-ReadonlyArray&lt;IResolvedFillingSlot&gt;
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt;
 
 
 </td><td>
@@ -301,7 +301,7 @@ _(Optional)_ Resolved procedures from the golden version
 
 </td><td>
 
-[Confections.AnyConfection](./ts-chocolate.entities.anyconfection.md)
+[Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
 
 
 </td><td>
@@ -406,7 +406,7 @@ All versions - resolved.
 
 </td><td>
 
-Confections.IConfectionYield
+[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
 </td><td>

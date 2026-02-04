@@ -132,7 +132,7 @@ Gets the preferred procedure, falling back to first available
 
 </td><td>
 
-[Confections.IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
+[Confections.IRolledTruffleVersionEntity](./ts-chocolate.entities.irolledtruffleversionentity.md)
 
 
 </td><td>

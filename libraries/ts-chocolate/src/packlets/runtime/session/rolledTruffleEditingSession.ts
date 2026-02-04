@@ -26,7 +26,7 @@
 import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
-import { Confections, IProducedRolledTruffle, Session } from '../../entities';
+import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
 import {
   RuntimeRolledTruffle,
   RuntimeRolledTruffleVersion,
@@ -48,7 +48,7 @@ import { IConfectionEditingSessionParams } from './model';
  * @public
  */
 export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
-  IProducedRolledTruffle,
+  IProducedRolledTruffleEntity,
   RuntimeRolledTruffle
 > {
   /**
@@ -106,7 +106,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   public static fromPersistedState(
     baseConfection: RuntimeRolledTruffle,
-    history: Session.ISerializedEditingHistory<IProducedRolledTruffle>,
+    history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {

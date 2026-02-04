@@ -48,7 +48,7 @@ export class RuntimeBarTruffleVersion
   extends RuntimeConfectionVersionBase
   implements IRuntimeBarTruffleVersion
 {
-  private readonly _barTruffleVersion: Confections.IBarTruffleVersion;
+  private readonly _barTruffleVersion: Confections.IBarTruffleVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
@@ -61,7 +61,7 @@ export class RuntimeBarTruffleVersion
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IBarTruffleVersion
+    version: Confections.IBarTruffleVersionEntity
   ) {
     super(context, confectionId, version);
     this._barTruffleVersion = version;
@@ -77,7 +77,7 @@ export class RuntimeBarTruffleVersion
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IBarTruffleVersion
+    version: Confections.IBarTruffleVersionEntity
   ): Result<RuntimeBarTruffleVersion> {
     return Success.with(new RuntimeBarTruffleVersion(context, confectionId, version));
   }
@@ -143,7 +143,7 @@ export class RuntimeBarTruffleVersion
   /**
    * Gets the underlying raw bar truffle version data.
    */
-  public override get raw(): Confections.IBarTruffleVersion {
+  public override get raw(): Confections.IBarTruffleVersionEntity {
     return this._barTruffleVersion;
   }
 }

@@ -9,9 +9,9 @@ Journal entry for confection edits.
 **Signature:**
 
 ```typescript
-export interface IConfectionEditJournalEntry extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> 
+export interface IConfectionEditJournalEntry extends IJournalEntryBase<AnyConfectionVersionEntity, ConfectionVersionId> 
 ```
-**Extends:** IJournalEntryBase&lt;[AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)<!-- -->, [ConfectionVersionId](./ts-chocolate.confectionversionid.md)<!-- -->&gt;
+**Extends:** IJournalEntryBase&lt;[AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)<!-- -->, [ConfectionVersionId](./ts-chocolate.confectionversionid.md)<!-- -->&gt;
 
 ## Properties
 

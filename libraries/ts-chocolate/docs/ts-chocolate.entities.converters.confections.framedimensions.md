@@ -4,7 +4,7 @@
 
 ## Entities.Converters.Confections.frameDimensions variable
 
-Converter for IFrameDimensions
+Converter for [IFrameDimensions](./ts-chocolate.entities.confections.iframedimensions.md)<!-- -->.
 
 **Signature:**
 

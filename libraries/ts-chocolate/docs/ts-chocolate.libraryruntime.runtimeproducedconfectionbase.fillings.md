@@ -9,5 +9,5 @@ Gets the fillings as a readonly array.
 **Signature:**
 
 ```typescript
-get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined;
+get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlotEntity> | undefined;
 ```

@@ -30,23 +30,23 @@ Converter for [AnyJournalEntry](./ts-chocolate.entities.journal.anyjournalentry.
 </td></tr>
 <tr><td>
 
-[anyProducedConfection](./ts-chocolate.entities.converters.journal.anyproducedconfection.md)
+[anyProducedConfectionEntity](./ts-chocolate.entities.converters.journal.anyproducedconfectionentity.md)
 
 
 </td><td>
 
-Converter for [AnyProducedConfection](./ts-chocolate.entities.confections.anyproducedconfection.md)<!-- -->. Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
+Converter for [AnyProducedConfectionEntity](./ts-chocolate.entities.confections.anyproducedconfectionentity.md)<!-- -->. Uses discriminated object pattern on `confectionType` field. Note: Kebab-case keys are intentional - they match the type discriminator values.
 
 
 </td></tr>
 <tr><td>
 
-[anyResolvedFillingSlot](./ts-chocolate.entities.converters.journal.anyresolvedfillingslot.md)
+[anyResolvedFillingSlotEntity](./ts-chocolate.entities.converters.journal.anyresolvedfillingslotentity.md)
 
 
 </td><td>
 
-Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.confections.anyresolvedfillingslot.md)<!-- -->. Uses discriminated object pattern on `slotType` field.
+Converter for [AnyResolvedFillingSlot](./ts-chocolate.entities.confections.anyresolvedfillingslotentity.md)<!-- -->. Uses discriminated object pattern on `slotType` field.
 
 
 </td></tr>
@@ -107,12 +107,12 @@ Converter for [JournalEntryType](./ts-chocolate.entities.journal.journalentrytyp
 </td></tr>
 <tr><td>
 
-[producedBarTruffle](./ts-chocolate.entities.converters.journal.producedbartruffle.md)
+[producedBarTruffleEntity](./ts-chocolate.entities.converters.journal.producedbartruffleentity.md)
 
 
 </td><td>
 
-Converter for [IProducedBarTruffle](./ts-chocolate.entities.confections.iproducedbartruffle.md)<!-- -->.
+Converter for [IProducedBarTruffleEntity](./ts-chocolate.entities.confections.iproducedbartruffleentity.md)<!-- -->.
 
 
 </td></tr>
@@ -140,45 +140,45 @@ Converter for [IProducedFillingIngredient](./ts-chocolate.entities.fillings.ipro
 </td></tr>
 <tr><td>
 
-[producedMoldedBonBon](./ts-chocolate.entities.converters.journal.producedmoldedbonbon.md)
+[producedMoldedBonBonEntity](./ts-chocolate.entities.converters.journal.producedmoldedbonbonentity.md)
 
 
 </td><td>
 
-Converter for [IProducedMoldedBonBon](./ts-chocolate.entities.confections.iproducedmoldedbonbon.md)<!-- -->.
+Converter for [IProducedMoldedBonBonEntity](./ts-chocolate.entities.confections.iproducedmoldedbonbonentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[producedRolledTruffle](./ts-chocolate.entities.converters.journal.producedrolledtruffle.md)
+[producedRolledTruffleEntity](./ts-chocolate.entities.converters.journal.producedrolledtruffleentity.md)
 
 
 </td><td>
 
-Converter for [IProducedRolledTruffle](./ts-chocolate.entities.confections.iproducedrolledtruffle.md)<!-- -->.
+Converter for [IProducedRolledTruffleEntity](./ts-chocolate.entities.confections.iproducedrolledtruffleentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[resolvedFillingSlot](./ts-chocolate.entities.converters.journal.resolvedfillingslot.md)
+[resolvedFillingSlotEntity](./ts-chocolate.entities.converters.journal.resolvedfillingslotentity.md)
 
 
 </td><td>
 
-Converter for [IResolvedFillingSlot](./ts-chocolate.entities.confections.iresolvedfillingslot.md)<!-- -->.
+Converter for [IResolvedFillingSlotEntity](./ts-chocolate.entities.confections.iresolvedfillingslotentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[resolvedIngredientSlot](./ts-chocolate.entities.converters.journal.resolvedingredientslot.md)
+[resolvedIngredientSlotEntity](./ts-chocolate.entities.converters.journal.resolvedingredientslotentity.md)
 
 
 </td><td>
 
-Converter for [IResolvedIngredientSlot](./ts-chocolate.entities.confections.iresolvedingredientslot.md)<!-- -->.
+Converter for [IResolvedIngredientSlotEntity](./ts-chocolate.entities.confections.iresolvedingredientslotentity.md)<!-- -->.
 
 
 </td></tr>

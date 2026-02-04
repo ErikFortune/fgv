@@ -216,7 +216,7 @@ export class LibraryRuntimeContext
    * @param id - The confection ID
    * @returns Success with confection data, or Failure if not found
    */
-  public getConfection(id: ConfectionId): Result<Confections.AnyConfection> {
+  public getConfection(id: ConfectionId): Result<Confections.AnyConfectionEntity> {
     return this._library.getConfection(id);
   }
 
@@ -408,7 +408,7 @@ export class LibraryRuntimeContext
    * @returns Resolved additional chocolates, or undefined if none
    */
   public resolveAdditionalChocolates(
-    additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined,
+    additional: ReadonlyArray<Confections.IAdditionalChocolateEntity> | undefined,
     confectionId: ConfectionId
   ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
     if (!additional || additional.length === 0) {
@@ -428,7 +428,7 @@ export class LibraryRuntimeContext
    * @returns Resolved filling slots, or undefined if none
    */
   public resolveFillingSlots(
-    slots: ReadonlyArray<Confections.IFillingSlot> | undefined
+    slots: ReadonlyArray<Confections.IFillingSlotEntity> | undefined
   ): ReadonlyArray<IResolvedFillingSlot> | undefined {
     if (!slots || slots.length === 0) {
       return undefined;
@@ -485,7 +485,10 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveFillingOptions(
-    options: CommonModel.IOptionsWithPreferred<Confections.AnyFillingOption, Confections.FillingOptionId>
+    options: CommonModel.IOptionsWithPreferred<
+      Confections.AnyFillingOptionEntity,
+      Confections.FillingOptionId
+    >
   ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId> {
     const resolvedOptions = options.options
       .map((opt) => this._resolveFillingOption(opt))
@@ -503,7 +506,9 @@ export class LibraryRuntimeContext
    * @returns Resolved filling option, or undefined if resolution fails
    * @internal
    */
-  private _resolveFillingOption(option: Confections.AnyFillingOption): IResolvedFillingOption | undefined {
+  private _resolveFillingOption(
+    option: Confections.AnyFillingOptionEntity
+  ): IResolvedFillingOption | undefined {
     if (option.type === 'recipe') {
       const filling = this.getRuntimeFilling(option.id);
       /* c8 ignore next - defensive: skip fillings that fail to resolve */

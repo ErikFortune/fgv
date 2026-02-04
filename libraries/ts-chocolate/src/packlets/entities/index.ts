@@ -27,18 +27,19 @@
 
 export {
   ConfectionsLibrary,
-  AnyConfectionVersion,
-  AnyConfection,
-  AnyProducedConfection,
-  IBarTruffle,
-  IMoldedBonBon,
-  IRolledTruffle,
-  IBarTruffleVersion,
-  IMoldedBonBonVersion,
-  IRolledTruffleVersion,
-  IProducedBarTruffle,
-  IProducedMoldedBonBon,
-  IProducedRolledTruffle
+  AnyConfectionVersionEntity,
+  AnyConfectionEntity,
+  AnyProducedConfectionEntity,
+  IBarTruffleEntity,
+  IMoldedBonBonEntity,
+  IRolledTruffleEntity,
+  IBarTruffleVersionEntity,
+  IMoldedBonBonVersionEntity,
+  IRolledTruffleVersionEntity,
+  IProducedBarTruffleEntity,
+  IProducedMoldedBonBonEntity,
+  IProducedRolledTruffleEntity,
+  IConfectionYield
 } from './confections';
 export {
   FillingsLibrary,

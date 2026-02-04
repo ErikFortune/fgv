@@ -96,7 +96,7 @@ Confection type is always 'molded-bonbon' for this type
 
 </td><td>
 
-ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -180,7 +180,7 @@ Resolved procedures from the golden version.
 
 </td><td>
 
-[Confections.IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
+[Confections.IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
 
 
 </td><td>

@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-getChanges(original: IProducedMoldedBonBon): IConfectionChanges;
+getChanges(original: IProducedMoldedBonBonEntity): IConfectionChanges;
 ```
 
 ## Parameters
@@ -35,7 +35,7 @@ original
 
 </td><td>
 
-[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
+[IProducedMoldedBonBonEntity](./ts-chocolate.entities.iproducedmoldedbonbonentity.md)
 
 
 </td><td>

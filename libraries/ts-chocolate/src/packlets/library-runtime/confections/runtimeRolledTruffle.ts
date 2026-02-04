@@ -49,7 +49,7 @@ import { RuntimeRolledTruffleVersion } from './versions';
  * @public
  */
 export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
-  private readonly _rolledTruffle: Confections.IRolledTruffle;
+  private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
 
   /**
    * Creates a RuntimeRolledTruffle.
@@ -59,7 +59,7 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IRolledTruffle
+    confection: Confections.IRolledTruffleEntity
   ) {
     super(context, id, confection);
     this._rolledTruffle = confection;
@@ -75,7 +75,7 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IRolledTruffle
+    confection: Confections.IRolledTruffleEntity
   ): Result<RuntimeRolledTruffle> {
     return Success.with(new RuntimeRolledTruffle(context, id, confection));
   }
@@ -125,12 +125,12 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
    * @internal
    */
   protected override _createVersion(
-    rawVersion: Confections.AnyConfectionVersion
+    rawVersion: Confections.AnyConfectionVersionEntity
   ): IRuntimeRolledTruffleVersion {
     return RuntimeRolledTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IRolledTruffleVersion
+      rawVersion as Confections.IRolledTruffleVersionEntity
     ).orThrow();
   }
 
@@ -175,7 +175,7 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   /**
    * Gets the underlying raw rolled truffle data
    */
-  public get raw(): Confections.IRolledTruffle {
+  public get raw(): Confections.IRolledTruffleEntity {
     return this._rolledTruffle;
   }
 }

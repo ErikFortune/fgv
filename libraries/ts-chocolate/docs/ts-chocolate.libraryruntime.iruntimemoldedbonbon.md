@@ -132,7 +132,7 @@ Resolved molds with preferred selection (from golden version)
 
 </td><td>
 
-[Confections.IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
+[Confections.IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
 
 
 </td><td>

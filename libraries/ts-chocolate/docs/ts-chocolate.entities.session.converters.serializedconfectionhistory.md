@@ -9,5 +9,5 @@ Converter for serialized confection editing history.
 **Signature:**
 
 ```typescript
-serializedConfectionHistory: Converter<ISerializedEditingHistory<AnyProducedConfection>>
+serializedConfectionHistory: Converter<ISerializedEditingHistory<AnyProducedConfectionEntity>>
 ```

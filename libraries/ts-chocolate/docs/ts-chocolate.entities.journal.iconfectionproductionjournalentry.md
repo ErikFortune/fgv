@@ -9,9 +9,9 @@ Journal entry for confection production sessions.
 **Signature:**
 
 ```typescript
-export interface IConfectionProductionJournalEntry extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> 
+export interface IConfectionProductionJournalEntry extends IJournalEntryBase<AnyConfectionVersionEntity, ConfectionVersionId> 
 ```
-**Extends:** IJournalEntryBase&lt;[AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)<!-- -->, [ConfectionVersionId](./ts-chocolate.confectionversionid.md)<!-- -->&gt;
+**Extends:** IJournalEntryBase&lt;[AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)<!-- -->, [ConfectionVersionId](./ts-chocolate.confectionversionid.md)<!-- -->&gt;
 
 ## Properties
 
@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-[AnyProducedConfection](./ts-chocolate.entities.anyproducedconfection.md)
+[AnyProducedConfectionEntity](./ts-chocolate.entities.anyproducedconfectionentity.md)
 
 
 </td><td>
@@ -88,7 +88,7 @@ Produced confection with resolved concrete choices
 
 </td><td>
 
-IConfectionYield
+[IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
 </td><td>

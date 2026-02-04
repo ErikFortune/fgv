@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-protected _deepCopy(confection: IProducedMoldedBonBon): IProducedMoldedBonBon;
+protected _deepCopy(confection: IProducedMoldedBonBonEntity): IProducedMoldedBonBonEntity;
 ```
 
 ## Parameters
@@ -35,7 +35,7 @@ confection
 
 </td><td>
 
-[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
+[IProducedMoldedBonBonEntity](./ts-chocolate.entities.iproducedmoldedbonbonentity.md)
 
 
 </td><td>
@@ -46,5 +46,5 @@ confection
 
 **Returns:**
 
-[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
+[IProducedMoldedBonBonEntity](./ts-chocolate.entities.iproducedmoldedbonbonentity.md)
 

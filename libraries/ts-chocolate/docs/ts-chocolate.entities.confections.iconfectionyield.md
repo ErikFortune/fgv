@@ -4,7 +4,7 @@
 
 ## Entities.Confections.IConfectionYield interface
 
-Yield specification for a [confection](./ts-chocolate.entities.confections.anyconfection.md)<!-- -->.
+Yield specification for a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md)<!-- -->.
 
 **Signature:**
 

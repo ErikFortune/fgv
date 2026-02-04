@@ -39,7 +39,7 @@ yieldSpec
 
 </td><td>
 
-Confections.IConfectionYield
+[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
 </td><td>
@@ -52,7 +52,7 @@ Target yield specification
 
 **Returns:**
 
-Result&lt;Confections.IConfectionYield&gt;
+Result&lt;[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)<!-- -->&gt;
 
 Success with actual achieved yield, or failure
 

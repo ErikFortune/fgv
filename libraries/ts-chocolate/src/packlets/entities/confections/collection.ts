@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../../library-data';
-import { AnyConfection } from './model';
+import { AnyConfectionEntity } from './model';
 
 /**
  * A single entry in a confections collection.
  * @public
  */
-export type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, AnyConfection>;
+export type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, AnyConfectionEntity>;
 
 /**
  * Initialization type for a ConfectionsLibrary collection entry.
  * @public
  */
-export type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfection>;
+export type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfectionEntity>;
 
 /**
  * Validator type for ConfectionsLibrary collections.
  * @public
  */
-export type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfection>;
+export type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfectionEntity>;
 
 /**
  * Type for the collections in a ConfectionsLibrary.
  * @public
  */
-export type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfection>;
+export type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfectionEntity>;

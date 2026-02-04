@@ -4,7 +4,7 @@
 
 ## Entities.Confections.Converters.bonBonDimensions variable
 
-Converter for IBonBonDimensions
+Converter for [IBonBonDimensions](./ts-chocolate.entities.confections.ibonbondimensions.md)<!-- -->.
 
 **Signature:**
 

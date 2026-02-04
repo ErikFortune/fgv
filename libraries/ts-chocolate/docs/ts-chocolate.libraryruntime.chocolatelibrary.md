@@ -272,7 +272,7 @@ Creates an ingredient resolver that looks up ingredients from this library
 
 </td><td>
 
-Gets a [confection](./ts-chocolate.entities.confections.anyconfection.md) by its [composite ID](./ts-chocolate.confectionid.md)
+Gets a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md) by its [composite ID](./ts-chocolate.confectionid.md)
 
 
 </td></tr>

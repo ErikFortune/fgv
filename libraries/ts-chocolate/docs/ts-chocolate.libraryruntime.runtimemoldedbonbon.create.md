@@ -9,7 +9,7 @@ Factory method for creating a RuntimeMoldedBonBon.
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, id: ConfectionId, confection: Confections.IMoldedBonBon): Result<RuntimeMoldedBonBon>;
+static create(context: IConfectionContext, id: ConfectionId, confection: Confections.IMoldedBonBonEntity): Result<RuntimeMoldedBonBon>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-[Confections.IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
+[Confections.IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
 
 
 </td><td>

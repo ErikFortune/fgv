@@ -9,7 +9,7 @@ Get an editable confections collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfection, BaseConfectionId>>;
+getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[Entities.Confections.AnyConfection](./ts-chocolate.entities.anyconfection.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[Entities.Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

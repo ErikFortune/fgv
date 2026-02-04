@@ -9,9 +9,9 @@ Mutable wrapper for IProducedRolledTruffle with undo/redo support. Provides roll
 **Signature:**
 
 ```typescript
-export declare class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffle> 
+export declare class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffleEntity> 
 ```
-**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)<!-- -->&gt;
+**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)<!-- -->&gt;
 
 ## Properties
 

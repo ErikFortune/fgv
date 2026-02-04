@@ -38,7 +38,7 @@ import {
   SlotId,
   SourceId
 } from '../../common';
-import { AnyProducedConfection } from '../confections';
+import { AnyProducedConfectionEntity } from '../confections';
 import { IProducedFilling } from '../fillings';
 
 // ============================================================================
@@ -194,7 +194,7 @@ export interface IPersistedConfectionSession extends IPersistedSessionBase {
   /** Source confection version being edited */
   readonly sourceVersionId: ConfectionVersionId;
   /** Full editing history including undo/redo stacks */
-  readonly history: ISerializedEditingHistory<AnyProducedConfection>;
+  readonly history: ISerializedEditingHistory<AnyProducedConfectionEntity>;
   /** Map of slot ID to child filling session ID */
   readonly childSessionIds: Readonly<Record<SlotId, PersistedSessionId>>;
 }

@@ -26,7 +26,7 @@
 import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
-import { Confections, IProducedMoldedBonBon, Session } from '../../entities';
+import { Confections, IProducedMoldedBonBonEntity, Session } from '../../entities';
 import { RuntimeMoldedBonBon, IRuntimeMold, RuntimeProducedMoldedBonBon } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
@@ -44,7 +44,7 @@ import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
  * @public
  */
 export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
-  IProducedMoldedBonBon,
+  IProducedMoldedBonBonEntity,
   RuntimeMoldedBonBon
 > {
   private _currentMold: IRuntimeMold;
@@ -106,7 +106,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    */
   public static fromPersistedState(
     baseConfection: RuntimeMoldedBonBon,
-    history: Session.ISerializedEditingHistory<IProducedMoldedBonBon>,
+    history: Session.ISerializedEditingHistory<IProducedMoldedBonBonEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {

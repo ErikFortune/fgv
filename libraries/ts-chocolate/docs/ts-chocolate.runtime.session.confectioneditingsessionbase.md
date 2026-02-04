@@ -11,7 +11,7 @@ Subclasses implement type-specific scaling logic: - MoldedBonBonEditingSession: 
 **Signature:**
 
 ```typescript
-export declare abstract class ConfectionEditingSessionBase<T extends AnyProducedConfection, TRuntime extends AnyRuntimeConfection> 
+export declare abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends AnyRuntimeConfection> 
 ```
 
 ## Remarks

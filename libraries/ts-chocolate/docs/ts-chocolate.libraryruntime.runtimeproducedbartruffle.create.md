@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedBarTruffle from an existing produce
 **Signature:**
 
 ```typescript
-static create(initial: IProducedBarTruffle): Result<RuntimeProducedBarTruffle>;
+static create(initial: IProducedBarTruffleEntity): Result<RuntimeProducedBarTruffle>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ initial
 
 </td><td>
 
-[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)
+[IProducedBarTruffleEntity](./ts-chocolate.entities.iproducedbartruffleentity.md)
 
 
 </td><td>

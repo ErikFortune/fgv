@@ -9,5 +9,5 @@ Raw version typed to IMoldedBonBonVersion
 **Signature:**
 
 ```typescript
-readonly raw: Confections.IMoldedBonBonVersion;
+readonly raw: Confections.IMoldedBonBonVersionEntity;
 ```

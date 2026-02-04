@@ -38,10 +38,10 @@ import {
 import {
   Confections,
   Session,
-  AnyProducedConfection,
-  IProducedBarTruffle,
-  IProducedMoldedBonBon,
-  IProducedRolledTruffle
+  AnyProducedConfectionEntity,
+  IProducedBarTruffleEntity,
+  IProducedMoldedBonBonEntity,
+  IProducedRolledTruffleEntity
 } from '../../entities';
 import type {
   IRuntimeBarTruffleVersion,
@@ -89,7 +89,7 @@ export interface IConfectionChanges {
  * Provides common editing methods and history management.
  * @public
  */
-export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfection> {
+export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfectionEntity> {
   protected _current: T;
   protected _undoStack: T[];
   protected _redoStack: T[];
@@ -297,7 +297,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
     const fillings = [...(this._current.fillings ?? [])];
     const existingIndex = fillings.findIndex((slot) => slot.slotId === slotId);
 
-    const newSlot: Confections.AnyResolvedFillingSlot =
+    const newSlot: Confections.AnyResolvedFillingSlotEntity =
       choice.type === 'recipe'
         ? {
             slotType: 'recipe' as const,
@@ -388,7 +388,7 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Gets the fillings as a readonly array.
    * @public
    */
-  public get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined {
+  public get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlotEntity> | undefined {
     return this._current.fillings;
   }
 
@@ -487,8 +487,8 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Compares two filling arrays for equality.
    */
   private _fillingsEqual(
-    a: ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined,
-    b: ReadonlyArray<Confections.AnyResolvedFillingSlot> | undefined
+    a: ReadonlyArray<Confections.AnyResolvedFillingSlotEntity> | undefined,
+    b: ReadonlyArray<Confections.AnyResolvedFillingSlotEntity> | undefined
   ): boolean {
     if (a === undefined && b === undefined) {
       return true;
@@ -517,8 +517,8 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
    * Compares two filling slots for equality.
    */
   private _fillingSlotEqual(
-    a: Confections.AnyResolvedFillingSlot,
-    b: Confections.AnyResolvedFillingSlot
+    a: Confections.AnyResolvedFillingSlotEntity,
+    b: Confections.AnyResolvedFillingSlotEntity
   ): boolean {
     if (a.slotId !== b.slotId || a.slotType !== b.slotType) {
       return false;
@@ -575,14 +575,14 @@ export abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfect
  * Provides molded bonbon-specific editing methods.
  * @public
  */
-export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBon> {
+export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBonEntity> {
   /**
    * Factory method for creating a RuntimeProducedMoldedBonBon from an existing produced molded bonbon.
    * @param initial - The initial produced molded bonbon state
    * @returns Success with RuntimeProducedMoldedBonBon
    * @public
    */
-  public static create(initial: IProducedMoldedBonBon): Result<RuntimeProducedMoldedBonBon> {
+  public static create(initial: IProducedMoldedBonBonEntity): Result<RuntimeProducedMoldedBonBon> {
     return succeed(new RuntimeProducedMoldedBonBon(initial));
   }
 
@@ -605,7 +605,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedMoldedBonBon>
+    history: Session.ISerializedEditingHistory<IProducedMoldedBonBonEntity>
   ): Result<RuntimeProducedMoldedBonBon> {
     const instance = new RuntimeProducedMoldedBonBon(history.current);
     instance._undoStack = [...history.undoStack];
@@ -618,7 +618,9 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IRuntimeMoldedBonBonVersion): Result<IProducedMoldedBonBon> {
+  private static _convertFromSource(
+    source: IRuntimeMoldedBonBonVersion
+  ): Result<IProducedMoldedBonBonEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionVersionId({
       collectionId: source.confectionId,
@@ -630,7 +632,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        const produced: IProducedMoldedBonBon = {
+        const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
           versionId,
           yield: source.yield,
@@ -655,7 +657,9 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    */
   private static _convertFillingSlots(
     slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
-  ): Result<ReadonlyArray<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot>> {
+  ): Result<
+    ReadonlyArray<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity>
+  > {
     const slotResults = slots.map((slot) => RuntimeProducedMoldedBonBon._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
@@ -666,7 +670,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
    */
   private static _convertFillingSlot(
     slot: IRuntimeResolvedFillingSlot
-  ): Result<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot> {
+  ): Result<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
       return fail(`Filling slot ${slot.slotId} has no options`);
@@ -807,7 +811,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
   // Comparison
   // ============================================================================
 
-  public getChanges(original: IProducedMoldedBonBon): IConfectionChanges {
+  public getChanges(original: IProducedMoldedBonBonEntity): IConfectionChanges {
     const baseChanges = this._baseChanges(original);
 
     const moldChanged = this._current.moldId !== original.moldId;
@@ -839,7 +843,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
   // Protected Helpers
   // ============================================================================
 
-  protected _deepCopy(confection: IProducedMoldedBonBon): IProducedMoldedBonBon {
+  protected _deepCopy(confection: IProducedMoldedBonBonEntity): IProducedMoldedBonBonEntity {
     return {
       confectionType: confection.confectionType,
       versionId: confection.versionId,
@@ -864,14 +868,14 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
  * Provides bar truffle-specific editing methods.
  * @public
  */
-export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedBarTruffle> {
+export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IProducedBarTruffleEntity> {
   /**
    * Factory method for creating a RuntimeProducedBarTruffle from an existing produced bar truffle.
    * @param initial - The initial produced bar truffle state
    * @returns Success with RuntimeProducedBarTruffle
    * @public
    */
-  public static create(initial: IProducedBarTruffle): Result<RuntimeProducedBarTruffle> {
+  public static create(initial: IProducedBarTruffleEntity): Result<RuntimeProducedBarTruffle> {
     return succeed(new RuntimeProducedBarTruffle(initial));
   }
 
@@ -894,7 +898,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedBarTruffle>
+    history: Session.ISerializedEditingHistory<IProducedBarTruffleEntity>
   ): Result<RuntimeProducedBarTruffle> {
     const instance = new RuntimeProducedBarTruffle(history.current);
     instance._undoStack = [...history.undoStack];
@@ -907,7 +911,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IRuntimeBarTruffleVersion): Result<IProducedBarTruffle> {
+  private static _convertFromSource(source: IRuntimeBarTruffleVersion): Result<IProducedBarTruffleEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionVersionId({
       collectionId: source.confectionId,
@@ -919,7 +923,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        const produced: IProducedBarTruffle = {
+        const produced: IProducedBarTruffleEntity = {
           confectionType: 'bar-truffle',
           versionId,
           yield: source.yield,
@@ -939,7 +943,9 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    */
   private static _convertFillingSlots(
     slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
-  ): Result<ReadonlyArray<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot>> {
+  ): Result<
+    ReadonlyArray<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity>
+  > {
     const slotResults = slots.map((slot) => RuntimeProducedBarTruffle._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
@@ -950,7 +956,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
    */
   private static _convertFillingSlot(
     slot: IRuntimeResolvedFillingSlot
-  ): Result<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot> {
+  ): Result<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
       return fail(`Filling slot ${slot.slotId} has no options`);
@@ -1010,7 +1016,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
   // Comparison
   // ============================================================================
 
-  public getChanges(original: IProducedBarTruffle): IConfectionChanges {
+  public getChanges(original: IProducedBarTruffleEntity): IConfectionChanges {
     const baseChanges = this._baseChanges(original);
 
     const enrobingChocolateChanged = this._current.enrobingChocolateId !== original.enrobingChocolateId;
@@ -1036,7 +1042,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
   // Protected Helpers
   // ============================================================================
 
-  protected _deepCopy(confection: IProducedBarTruffle): IProducedBarTruffle {
+  protected _deepCopy(confection: IProducedBarTruffleEntity): IProducedBarTruffleEntity {
     return {
       confectionType: confection.confectionType,
       versionId: confection.versionId,
@@ -1058,14 +1064,14 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
  * Provides rolled truffle-specific editing methods.
  * @public
  */
-export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffle> {
+export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<IProducedRolledTruffleEntity> {
   /**
    * Factory method for creating a RuntimeProducedRolledTruffle from an existing produced rolled truffle.
    * @param initial - The initial produced rolled truffle state
    * @returns Success with RuntimeProducedRolledTruffle
    * @public
    */
-  public static create(initial: IProducedRolledTruffle): Result<RuntimeProducedRolledTruffle> {
+  public static create(initial: IProducedRolledTruffleEntity): Result<RuntimeProducedRolledTruffle> {
     return succeed(new RuntimeProducedRolledTruffle(initial));
   }
 
@@ -1088,7 +1094,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedRolledTruffle>
+    history: Session.ISerializedEditingHistory<IProducedRolledTruffleEntity>
   ): Result<RuntimeProducedRolledTruffle> {
     const instance = new RuntimeProducedRolledTruffle(history.current);
     instance._undoStack = [...history.undoStack];
@@ -1101,7 +1107,9 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IRuntimeRolledTruffleVersion): Result<IProducedRolledTruffle> {
+  private static _convertFromSource(
+    source: IRuntimeRolledTruffleVersion
+  ): Result<IProducedRolledTruffleEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionVersionId({
       collectionId: source.confectionId,
@@ -1113,7 +1121,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        const produced: IProducedRolledTruffle = {
+        const produced: IProducedRolledTruffleEntity = {
           confectionType: 'rolled-truffle',
           versionId,
           yield: source.yield,
@@ -1134,7 +1142,9 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    */
   private static _convertFillingSlots(
     slots: ReadonlyArray<IRuntimeResolvedFillingSlot>
-  ): Result<ReadonlyArray<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot>> {
+  ): Result<
+    ReadonlyArray<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity>
+  > {
     const slotResults = slots.map((slot) => RuntimeProducedRolledTruffle._convertFillingSlot(slot));
     return mapResults(slotResults);
   }
@@ -1145,7 +1155,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
    */
   private static _convertFillingSlot(
     slot: IRuntimeResolvedFillingSlot
-  ): Result<Confections.IResolvedFillingSlot | Confections.IResolvedIngredientSlot> {
+  ): Result<Confections.IResolvedFillingSlotEntity | Confections.IResolvedIngredientSlotEntity> {
     const option = Helpers.getPreferredOrFirst(slot.filling);
     if (option === undefined) {
       return fail(`Filling slot ${slot.slotId} has no options`);
@@ -1232,7 +1242,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
   // Comparison
   // ============================================================================
 
-  public getChanges(original: IProducedRolledTruffle): IConfectionChanges {
+  public getChanges(original: IProducedRolledTruffleEntity): IConfectionChanges {
     const baseChanges = this._baseChanges(original);
 
     const enrobingChocolateChanged = this._current.enrobingChocolateId !== original.enrobingChocolateId;
@@ -1260,7 +1270,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
   // Protected Helpers
   // ============================================================================
 
-  protected _deepCopy(confection: IProducedRolledTruffle): IProducedRolledTruffle {
+  protected _deepCopy(confection: IProducedRolledTruffleEntity): IProducedRolledTruffleEntity {
     return {
       confectionType: confection.confectionType,
       versionId: confection.versionId,

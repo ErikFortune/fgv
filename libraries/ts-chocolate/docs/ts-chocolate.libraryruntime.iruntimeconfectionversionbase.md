@@ -175,7 +175,7 @@ Effective URLs for this version (base confection URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;IResolvedFillingSlot&gt;
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt;
 
 
 </td><td>
@@ -238,7 +238,7 @@ _(Optional)_ Resolved procedures for this version. Undefined if the version has 
 
 </td><td>
 
-[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
+[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -259,7 +259,7 @@ Gets the underlying raw version data.
 
 </td><td>
 
-[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
+[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -301,7 +301,7 @@ Version specifier for this version.
 
 </td><td>
 
-Confections.IConfectionYield
+[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
 </td><td>

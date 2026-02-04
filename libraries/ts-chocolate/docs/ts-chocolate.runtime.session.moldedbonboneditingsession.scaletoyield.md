@@ -50,7 +50,7 @@ The new yield specification
 
 **Returns:**
 
-Result&lt;Confections.IConfectionYield&gt;
+Result&lt;[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)<!-- -->&gt;
 
 Success with updated yield, or Failure
 

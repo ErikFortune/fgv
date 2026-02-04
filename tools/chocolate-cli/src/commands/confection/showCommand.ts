@@ -44,14 +44,14 @@ interface IConfectionShowOptions extends IEntityBaseOptions {
  */
 interface IConfectionSelectableItem extends ISelectableItem {
   id: ConfectionId;
-  confection: Entities.Confections.AnyConfection;
+  confection: Entities.Confections.AnyConfectionEntity;
 }
 
 /**
  * Formats a confection for human-readable output
  */
 export function formatConfectionHuman(
-  confection: Entities.Confections.AnyConfection,
+  confection: Entities.Confections.AnyConfectionEntity,
   confectionId: ConfectionId,
   versionSpec?: ConfectionVersionSpec
 ): string {
@@ -92,7 +92,7 @@ export function formatConfectionHuman(
   }
 
   // Type-specific information
-  if (Entities.Confections.isMoldedBonBonVersion(version)) {
+  if (Entities.Confections.isMoldedBonBonVersionEntity(version)) {
     lines.push('');
     lines.push('Molds:');
     const preferredMoldId = version.molds.preferredId;
@@ -124,7 +124,7 @@ export function formatConfectionHuman(
         }
       }
     }
-  } else if (Entities.Confections.isBarTruffleVersion(version)) {
+  } else if (Entities.Confections.isBarTruffleVersionEntity(version)) {
     lines.push('');
     lines.push('Frame Dimensions:');
     const fd = version.frameDimensions;
@@ -145,7 +145,7 @@ export function formatConfectionHuman(
         lines.push(`  ${chocId}${preferredMarker}`);
       }
     }
-  } else if (Entities.Confections.isRolledTruffleVersion(version)) {
+  } else if (Entities.Confections.isRolledTruffleVersionEntity(version)) {
     if (version.enrobingChocolate) {
       lines.push('');
       lines.push('Enrobing Chocolate:');
@@ -269,7 +269,7 @@ export function createShowSubcommand(): Command {
 
         // Determine confection ID - either from argument or interactive selection
         let confectionId: ConfectionId;
-        let confection: Entities.Confections.AnyConfection;
+        let confection: Entities.Confections.AnyConfectionEntity;
 
         if (localOptions.interactive || !confectionIdArg) {
           if (!localOptions.interactive && !confectionIdArg) {

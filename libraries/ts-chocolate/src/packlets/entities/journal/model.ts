@@ -30,7 +30,7 @@ import {
   Measurement,
   Model as CommonModel
 } from '../../common';
-import { AnyConfectionVersion, AnyProducedConfection, IConfectionYield } from '../confections';
+import { AnyConfectionVersionEntity, AnyProducedConfectionEntity, IConfectionYield } from '../confections';
 import { IFillingRecipeVersion, IProducedFilling } from '../fillings';
 
 /**
@@ -90,7 +90,7 @@ export interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingReci
  * @public
  */
 export interface IConfectionEditJournalEntry
-  extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> {
+  extends IJournalEntryBase<AnyConfectionVersionEntity, ConfectionVersionId> {
   readonly type: 'confection-edit';
 }
 
@@ -112,12 +112,12 @@ export interface IFillingProductionJournalEntry
  * @public
  */
 export interface IConfectionProductionJournalEntry
-  extends IJournalEntryBase<AnyConfectionVersion, ConfectionVersionId> {
+  extends IJournalEntryBase<AnyConfectionVersionEntity, ConfectionVersionId> {
   readonly type: 'confection-production';
   /** Yield specification for this production run */
   readonly yield: IConfectionYield;
   /** Produced confection with resolved concrete choices */
-  readonly produced: AnyProducedConfection;
+  readonly produced: AnyProducedConfectionEntity;
 }
 
 // ============================================================================

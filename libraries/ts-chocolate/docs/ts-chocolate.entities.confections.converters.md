@@ -19,45 +19,45 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[additionalChocolate](./ts-chocolate.entities.confections.converters.additionalchocolate.md)
+[additionalChocolateEntity](./ts-chocolate.entities.confections.converters.additionalchocolateentity.md)
 
 
 </td><td>
 
-Converter for IAdditionalChocolate
+Converter for [IAdditionalChocolateEntity](./ts-chocolate.entities.confections.iadditionalchocolateentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[anyConfection](./ts-chocolate.entities.confections.converters.anyconfection.md)
+[anyConfectionEntity](./ts-chocolate.entities.confections.converters.anyconfectionentity.md)
 
 
 </td><td>
 
-Converter for [AnyConfection](./ts-chocolate.entities.confections.anyconfection.md) with validation. Validates that goldenVersionSpec exists in versions. Returns the plain data object (discriminated union), not a class instance.
+Converter for [AnyConfectionEntity](./ts-chocolate.entities.confections.anyconfectionentity.md) with validation. Validates that goldenVersionSpec exists in versions. Returns the plain data object (discriminated union), not a class instance.
 
 
 </td></tr>
 <tr><td>
 
-[anyConfectionRaw](./ts-chocolate.entities.confections.converters.anyconfectionraw.md)
+[anyConfectionRawEntity](./ts-chocolate.entities.confections.converters.anyconfectionrawentity.md)
 
 
 </td><td>
 
-Converter for AnyConfection (discriminated union) Dispatches to the appropriate type-specific converter based on confectionType
+Converter for [AnyConfectionEntity](./ts-chocolate.entities.confections.anyconfectionentity.md) (discriminated union) Dispatches to the appropriate type-specific converter based on confectionType
 
 
 </td></tr>
 <tr><td>
 
-[anyConfectionVersion](./ts-chocolate.entities.confections.converters.anyconfectionversion.md)
+[anyConfectionVersionEntity](./ts-chocolate.entities.confections.converters.anyconfectionversionentity.md)
 
 
 </td><td>
 
-Converter for AnyConfectionVersion (discriminated by presence of type-specific fields)
+Converter for [AnyConfectionVersionEntity](./ts-chocolate.entities.confections.anyconfectionversionentity.md) (discriminated by presence of type-specific fields)
 
 
 </td></tr>
@@ -74,45 +74,45 @@ Converter for AnyConfectionVersion (discriminated by presence of type-specific f
 </td></tr>
 <tr><td>
 
-[anyFillingOption](./ts-chocolate.entities.confections.converters.anyfillingoption.md)
+[anyFillingOptionEntity](./ts-chocolate.entities.confections.converters.anyfillingoptionentity.md)
 
 
 </td><td>
 
-`Converter` for [AnyFillingOption](./ts-chocolate.entities.confections.anyfillingoption.md) (discriminated union)
+`Converter` for [AnyFillingOptionEntity](./ts-chocolate.entities.confections.anyfillingoptionentity.md) (discriminated union)
 
 
 </td></tr>
 <tr><td>
 
-[barTruffle](./ts-chocolate.entities.confections.converters.bartruffle.md)
+[barTruffleEntity](./ts-chocolate.entities.confections.converters.bartruffleentity.md)
 
 
 </td><td>
 
-Converter for IBarTruffle
+Converter for [IBarTruffleEntity](./ts-chocolate.entities.confections.ibartruffleentity.md)
 
 
 </td></tr>
 <tr><td>
 
-[barTruffleVersion](./ts-chocolate.entities.confections.converters.bartruffleversion.md)
+[barTruffleVersionEntity](./ts-chocolate.entities.confections.converters.bartruffleversionentity.md)
 
 
 </td><td>
 
-Converter for IBarTruffleVersion
+Converter for [IBarTruffleVersionEntity](./ts-chocolate.entities.confections.ibartruffleversionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[baseConfection](./ts-chocolate.entities.confections.converters.baseconfection.md)
+[baseConfectionEntity](./ts-chocolate.entities.confections.converters.baseconfectionentity.md)
 
 
 </td><td>
 
-Converter for base IConfectionBase properties
+Converter for base [IConfectionEntityBase](./ts-chocolate.entities.confections.iconfectionentitybase.md) properties.
 
 
 </td></tr>
@@ -123,7 +123,7 @@ Converter for base IConfectionBase properties
 
 </td><td>
 
-Converter for IBonBonDimensions
+Converter for [IBonBonDimensions](./ts-chocolate.entities.confections.ibonbondimensions.md)<!-- -->.
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Converter for IBonBonDimensions
 
 </td><td>
 
-Converter for ICoatings (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
+Converter for [ICoatings](./ts-chocolate.entities.confections.icoatings.md) (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Converter for ICoatings (IIdsWithPreferred<IngredientId>). Validates that prefer
 
 </td><td>
 
-Converter for IConfectionMoldRef
+Converter for [IConfectionMoldRef](./ts-chocolate.entities.confections.iconfectionmoldref.md)<!-- -->.
 
 
 </td></tr>
@@ -195,7 +195,7 @@ Converter for confection molds with preferred selection. Validates that preferre
 </td></tr>
 <tr><td>
 
-[fillingOptions](./ts-chocolate.entities.confections.converters.fillingoptions.md)
+[fillingOptionEntities](./ts-chocolate.entities.confections.converters.fillingoptionentities.md)
 
 
 </td><td>
@@ -206,12 +206,12 @@ Converter for filling options with preferred selection. Validates that preferred
 </td></tr>
 <tr><td>
 
-[fillingSlot](./ts-chocolate.entities.confections.converters.fillingslot.md)
+[fillingSlotEntity](./ts-chocolate.entities.confections.converters.fillingslotentity.md)
 
 
 </td><td>
 
-`Converter` for [IFillingSlot](./ts-chocolate.entities.confections.ifillingslot.md)<!-- -->.
+`Converter` for [IFillingSlotEntity](./ts-chocolate.entities.confections.ifillingslotentity.md)<!-- -->.
 
 
 </td></tr>
@@ -222,40 +222,40 @@ Converter for filling options with preferred selection. Validates that preferred
 
 </td><td>
 
-Converter for IFrameDimensions
+Converter for [IFrameDimensions](./ts-chocolate.entities.confections.iframedimensions.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[ingredientFillingOption](./ts-chocolate.entities.confections.converters.ingredientfillingoption.md)
+[ingredientFillingOptionEntity](./ts-chocolate.entities.confections.converters.ingredientfillingoptionentity.md)
 
 
 </td><td>
 
-`Converter` for [IIngredientFillingOption](./ts-chocolate.entities.confections.iingredientfillingoption.md)<!-- -->.
+`Converter` for [IIngredientFillingOptionEntity](./ts-chocolate.entities.confections.iingredientfillingoptionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[moldedBonBon](./ts-chocolate.entities.confections.converters.moldedbonbon.md)
+[moldedBonBonEntity](./ts-chocolate.entities.confections.converters.moldedbonbonentity.md)
 
 
 </td><td>
 
-Converter for IMoldedBonBon
+Converter for [IMoldedBonBonEntity](./ts-chocolate.entities.confections.imoldedbonbonentity.md)
 
 
 </td></tr>
 <tr><td>
 
-[moldedBonBonVersion](./ts-chocolate.entities.confections.converters.moldedbonbonversion.md)
+[moldedBonBonVersionEntity](./ts-chocolate.entities.confections.converters.moldedbonbonversionentity.md)
 
 
 </td><td>
 
-Converter for IMoldedBonBonVersion
+Converter for [IMoldedBonBonVersionEntity](./ts-chocolate.entities.confections.imoldedbonbonversionentity.md)<!-- -->.
 
 
 </td></tr>
@@ -272,34 +272,34 @@ Converter for IMoldedBonBonVersion
 </td></tr>
 <tr><td>
 
-[recipeFillingOption](./ts-chocolate.entities.confections.converters.recipefillingoption.md)
+[recipeFillingOptionEntity](./ts-chocolate.entities.confections.converters.recipefillingoptionentity.md)
 
 
 </td><td>
 
-`Converter` for [IRecipeFillingOption](./ts-chocolate.entities.confections.irecipefillingoption.md)<!-- -->.
+`Converter` for [IRecipeFillingOptionEntity](./ts-chocolate.entities.confections.irecipefillingoptionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[rolledTruffle](./ts-chocolate.entities.confections.converters.rolledtruffle.md)
+[rolledTruffleEntity](./ts-chocolate.entities.confections.converters.rolledtruffleentity.md)
 
 
 </td><td>
 
-Converter for IRolledTruffle
+Converter for [IRolledTruffleEntity](./ts-chocolate.entities.confections.irolledtruffleentity.md)
 
 
 </td></tr>
 <tr><td>
 
-[rolledTruffleVersion](./ts-chocolate.entities.confections.converters.rolledtruffleversion.md)
+[rolledTruffleVersionEntity](./ts-chocolate.entities.confections.converters.rolledtruffleversionentity.md)
 
 
 </td><td>
 
-Converter for IRolledTruffleVersion
+Converter for [IRolledTruffleVersionEntity](./ts-chocolate.entities.confections.irolledtruffleversionentity.md)<!-- -->.
 
 
 </td></tr>

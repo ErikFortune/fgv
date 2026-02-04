@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedMoldedBonBon from an existing produ
 **Signature:**
 
 ```typescript
-static create(initial: IProducedMoldedBonBon): Result<RuntimeProducedMoldedBonBon>;
+static create(initial: IProducedMoldedBonBonEntity): Result<RuntimeProducedMoldedBonBon>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ initial
 
 </td><td>
 
-[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
+[IProducedMoldedBonBonEntity](./ts-chocolate.entities.iproducedmoldedbonbonentity.md)
 
 
 </td><td>

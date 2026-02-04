@@ -26,7 +26,7 @@
 import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
-import { Confections, IProducedBarTruffle, Session } from '../../entities';
+import { Confections, IProducedBarTruffleEntity, Session } from '../../entities';
 import { RuntimeBarTruffle, RuntimeProducedBarTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
@@ -44,7 +44,7 @@ import { IConfectionEditingSessionParams } from './model';
  * @public
  */
 export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
-  IProducedBarTruffle,
+  IProducedBarTruffleEntity,
   RuntimeBarTruffle
 > {
   /**
@@ -100,7 +100,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    */
   public static fromPersistedState(
     baseConfection: RuntimeBarTruffle,
-    history: Session.ISerializedEditingHistory<IProducedBarTruffle>,
+    history: Session.ISerializedEditingHistory<IProducedBarTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {

@@ -27,17 +27,17 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
 import {
-  anyConfectionVersion as anyConfectionVersionConverter,
+  anyConfectionVersionEntity as anyConfectionVersionConverter,
   confectionYield as confectionYieldConverter
 } from '../confections/converters';
 import {
-  AnyProducedConfection,
-  AnyResolvedFillingSlot,
-  IProducedBarTruffle,
-  IProducedMoldedBonBon,
-  IProducedRolledTruffle,
-  IResolvedFillingSlot,
-  IResolvedIngredientSlot,
+  AnyProducedConfectionEntity,
+  AnyResolvedFillingSlotEntity,
+  IProducedBarTruffleEntity,
+  IProducedMoldedBonBonEntity,
+  IProducedRolledTruffleEntity,
+  IResolvedFillingSlotEntity,
+  IResolvedIngredientSlotEntity,
   ResolvedSlotType,
   allResolvedSlotTypes
 } from '../confections';
@@ -81,35 +81,36 @@ export const journalEntryType: Converter<JournalEntryType> = Converters.enumerat
 export const resolvedSlotType: Converter<ResolvedSlotType> = Converters.enumeratedValue(allResolvedSlotTypes);
 
 /**
- * Converter for {@link Entities.Confections.IResolvedFillingSlot | IResolvedFillingSlot}.
+ * Converter for {@link Entities.Confections.IResolvedFillingSlotEntity | IResolvedFillingSlotEntity}.
  * @public
  */
-export const resolvedFillingSlot: Converter<IResolvedFillingSlot> = Converters.object<IResolvedFillingSlot>({
-  slotType: Converters.literal('recipe'),
-  slotId: CommonConverters.slotId,
-  fillingId: CommonConverters.fillingId
-});
+export const resolvedFillingSlotEntity: Converter<IResolvedFillingSlotEntity> =
+  Converters.object<IResolvedFillingSlotEntity>({
+    slotType: Converters.literal('recipe'),
+    slotId: CommonConverters.slotId,
+    fillingId: CommonConverters.fillingId
+  });
 
 /**
- * Converter for {@link Entities.Confections.IResolvedIngredientSlot | IResolvedIngredientSlot}.
+ * Converter for {@link Entities.Confections.IResolvedIngredientSlotEntity | IResolvedIngredientSlotEntity}.
  * @public
  */
-export const resolvedIngredientSlot: Converter<IResolvedIngredientSlot> =
-  Converters.object<IResolvedIngredientSlot>({
+export const resolvedIngredientSlotEntity: Converter<IResolvedIngredientSlotEntity> =
+  Converters.object<IResolvedIngredientSlotEntity>({
     slotType: Converters.literal('ingredient'),
     slotId: CommonConverters.slotId,
     ingredientId: CommonConverters.ingredientId
   });
 
 /**
- * Converter for {@link Entities.Confections.AnyResolvedFillingSlot | AnyResolvedFillingSlot}.
+ * Converter for {@link Entities.Confections.AnyResolvedFillingSlotEntity | AnyResolvedFillingSlot}.
  * Uses discriminated object pattern on `slotType` field.
  * @public
  */
-export const anyResolvedFillingSlot: Converter<AnyResolvedFillingSlot> =
-  Converters.discriminatedObject<AnyResolvedFillingSlot>('slotType', {
-    recipe: resolvedFillingSlot,
-    ingredient: resolvedIngredientSlot
+export const anyResolvedFillingSlotEntity: Converter<AnyResolvedFillingSlotEntity> =
+  Converters.discriminatedObject<AnyResolvedFillingSlotEntity>('slotType', {
+    recipe: resolvedFillingSlotEntity,
+    ingredient: resolvedIngredientSlotEntity
   });
 
 // ============================================================================
@@ -147,15 +148,15 @@ export const producedFilling: Converter<IProducedFilling> = Converters.object<IP
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Confections.IProducedMoldedBonBon | IProducedMoldedBonBon}.
+ * Converter for {@link Entities.Confections.IProducedMoldedBonBonEntity | IProducedMoldedBonBonEntity}.
  * @public
  */
-export const producedMoldedBonBon: Converter<IProducedMoldedBonBon> =
-  Converters.object<IProducedMoldedBonBon>({
+export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> =
+  Converters.object<IProducedMoldedBonBonEntity>({
     confectionType: Converters.literal('molded-bonbon'),
     versionId: CommonConverters.confectionVersionId,
     yield: confectionYieldConverter,
-    fillings: Converters.arrayOf(anyResolvedFillingSlot).optional(),
+    fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     moldId: CommonConverters.moldId,
@@ -165,29 +166,30 @@ export const producedMoldedBonBon: Converter<IProducedMoldedBonBon> =
   });
 
 /**
- * Converter for {@link Entities.Confections.IProducedBarTruffle | IProducedBarTruffle}.
+ * Converter for {@link Entities.Confections.IProducedBarTruffleEntity | IProducedBarTruffleEntity}.
  * @public
  */
-export const producedBarTruffle: Converter<IProducedBarTruffle> = Converters.object<IProducedBarTruffle>({
-  confectionType: Converters.literal('bar-truffle'),
-  versionId: CommonConverters.confectionVersionId,
-  yield: confectionYieldConverter,
-  fillings: Converters.arrayOf(anyResolvedFillingSlot).optional(),
-  procedureId: CommonConverters.procedureId.optional(),
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
-  enrobingChocolateId: CommonConverters.ingredientId.optional()
-});
+export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
+  Converters.object<IProducedBarTruffleEntity>({
+    confectionType: Converters.literal('bar-truffle'),
+    versionId: CommonConverters.confectionVersionId,
+    yield: confectionYieldConverter,
+    fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
+    procedureId: CommonConverters.procedureId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    enrobingChocolateId: CommonConverters.ingredientId.optional()
+  });
 
 /**
- * Converter for {@link Entities.Confections.IProducedRolledTruffle | IProducedRolledTruffle}.
+ * Converter for {@link Entities.Confections.IProducedRolledTruffleEntity | IProducedRolledTruffleEntity}.
  * @public
  */
-export const producedRolledTruffle: Converter<IProducedRolledTruffle> =
-  Converters.object<IProducedRolledTruffle>({
+export const producedRolledTruffleEntity: Converter<IProducedRolledTruffleEntity> =
+  Converters.object<IProducedRolledTruffleEntity>({
     confectionType: Converters.literal('rolled-truffle'),
     versionId: CommonConverters.confectionVersionId,
     yield: confectionYieldConverter,
-    fillings: Converters.arrayOf(anyResolvedFillingSlot).optional(),
+    fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     enrobingChocolateId: CommonConverters.ingredientId.optional(),
@@ -195,17 +197,17 @@ export const producedRolledTruffle: Converter<IProducedRolledTruffle> =
   });
 
 /**
- * Converter for {@link Entities.Confections.AnyProducedConfection | AnyProducedConfection}.
+ * Converter for {@link Entities.Confections.AnyProducedConfectionEntity | AnyProducedConfectionEntity}.
  * Uses discriminated object pattern on `confectionType` field.
  * Note: Kebab-case keys are intentional - they match the type discriminator values.
  * @public
  */
-export const anyProducedConfection: Converter<AnyProducedConfection> =
-  Converters.discriminatedObject<AnyProducedConfection>('confectionType', {
+export const anyProducedConfectionEntity: Converter<AnyProducedConfectionEntity> =
+  Converters.discriminatedObject<AnyProducedConfectionEntity>('confectionType', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    'molded-bonbon': producedMoldedBonBon,
-    'bar-truffle': producedBarTruffle,
-    'rolled-truffle': producedRolledTruffle
+    'molded-bonbon': producedMoldedBonBonEntity,
+    'bar-truffle': producedBarTruffleEntity,
+    'rolled-truffle': producedRolledTruffleEntity
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
@@ -278,7 +280,7 @@ export const confectionProductionJournalEntry: Converter<IConfectionProductionJo
     updatedId: CommonConverters.confectionVersionId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     yield: confectionYieldConverter,
-    produced: anyProducedConfection
+    produced: anyProducedConfectionEntity
   });
 
 /**

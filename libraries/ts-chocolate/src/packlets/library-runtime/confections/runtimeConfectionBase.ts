@@ -62,10 +62,10 @@ import type { RuntimeRolledTruffle } from './runtimeRolledTruffle';
 export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected readonly _context: IConfectionContext;
   protected readonly _id: ConfectionId;
-  protected readonly _confection: Confections.AnyConfection;
+  protected readonly _confection: Confections.AnyConfectionEntity;
   protected readonly _sourceId: SourceId;
   protected readonly _baseId: BaseConfectionId;
-  protected readonly _rawGoldenVersion: Confections.AnyConfectionVersion;
+  protected readonly _rawGoldenVersion: Confections.AnyConfectionVersionEntity;
 
   // Lazy-resolved version caches (undefined = not yet resolved)
   private _resolvedGoldenVersion: AnyRuntimeConfectionVersion | undefined;
@@ -82,7 +82,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.AnyConfection
+    confection: Confections.AnyConfectionEntity
   ) {
     this._context = context;
     this._id = id;
@@ -247,7 +247,9 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @returns The runtime version (from cache or newly created)
    * @internal
    */
-  private _getOrCreateVersion(rawVersion: Confections.AnyConfectionVersion): AnyRuntimeConfectionVersion {
+  private _getOrCreateVersion(
+    rawVersion: Confections.AnyConfectionVersionEntity
+  ): AnyRuntimeConfectionVersion {
     // Initialize cache if needed
     if (this._versionCache === undefined) {
       this._versionCache = new Map();
@@ -273,7 +275,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @internal
    */
   protected abstract _createVersion(
-    rawVersion: Confections.AnyConfectionVersion
+    rawVersion: Confections.AnyConfectionVersionEntity
   ): AnyRuntimeConfectionVersion;
 
   // ============================================================================
@@ -298,7 +300,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Gets effective tags for a specific version (base tags + version's additional tags).
    * @param version - The version to get tags for (defaults to golden version)
    */
-  public getEffectiveTags(version?: Confections.AnyConfectionVersion): ReadonlyArray<string> {
+  public getEffectiveTags(version?: Confections.AnyConfectionVersionEntity): ReadonlyArray<string> {
     const targetVersion = version ?? this._rawGoldenVersion;
     const baseTags = this._confection.tags ?? [];
     const versionTags = targetVersion.additionalTags ?? [];
@@ -311,7 +313,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @param version - The version to get URLs for (defaults to golden version)
    */
   public getEffectiveUrls(
-    version?: Confections.AnyConfectionVersion
+    version?: Confections.AnyConfectionVersionEntity
   ): ReadonlyArray<CommonModel.ICategorizedUrl> {
     const targetVersion = version ?? this._rawGoldenVersion;
     const baseUrls = this._confection.urls ?? [];
@@ -327,21 +329,21 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * Returns true if this is a molded bonbon confection.
    */
   public isMoldedBonBon(): this is RuntimeMoldedBonBon {
-    return Confections.isMoldedBonBon(this._confection);
+    return Confections.isMoldedBonBonEntity(this._confection);
   }
 
   /**
    * Returns true if this is a bar truffle confection.
    */
   public isBarTruffle(): this is RuntimeBarTruffle {
-    return Confections.isBarTruffle(this._confection);
+    return Confections.isBarTruffleEntity(this._confection);
   }
 
   /**
    * Returns true if this is a rolled truffle confection.
    */
   public isRolledTruffle(): this is RuntimeRolledTruffle {
-    return Confections.isRolledTruffle(this._confection);
+    return Confections.isRolledTruffleEntity(this._confection);
   }
 
   // ============================================================================
@@ -351,5 +353,5 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * Gets the underlying raw confection data (read-only)
    */
-  public abstract get raw(): Confections.AnyConfection;
+  public abstract get raw(): Confections.AnyConfectionEntity;
 }

@@ -50,7 +50,7 @@ export class RuntimeMoldedBonBonVersion
   extends RuntimeConfectionVersionBase
   implements IRuntimeMoldedBonBonVersion
 {
-  private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersion;
+  private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved)
   private _resolvedShellChocolate: IResolvedChocolateSpec | undefined;
@@ -65,7 +65,7 @@ export class RuntimeMoldedBonBonVersion
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IMoldedBonBonVersion
+    version: Confections.IMoldedBonBonVersionEntity
   ) {
     super(context, confectionId, version);
     this._moldedBonBonVersion = version;
@@ -81,7 +81,7 @@ export class RuntimeMoldedBonBonVersion
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IMoldedBonBonVersion
+    version: Confections.IMoldedBonBonVersionEntity
   ): Result<RuntimeMoldedBonBonVersion> {
     return Success.with(new RuntimeMoldedBonBonVersion(context, confectionId, version));
   }
@@ -165,7 +165,7 @@ export class RuntimeMoldedBonBonVersion
   /**
    * Gets the underlying raw molded bonbon version data.
    */
-  public override get raw(): Confections.IMoldedBonBonVersion {
+  public override get raw(): Confections.IMoldedBonBonVersionEntity {
     return this._moldedBonBonVersion;
   }
 }

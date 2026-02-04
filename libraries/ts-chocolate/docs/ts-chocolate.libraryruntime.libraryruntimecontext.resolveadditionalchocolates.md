@@ -9,7 +9,7 @@ Resolves additional chocolates to runtime objects.
 **Signature:**
 
 ```typescript
-resolveAdditionalChocolates(additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+resolveAdditionalChocolates(additional: ReadonlyArray<Confections.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ additional
 
 </td><td>
 
-ReadonlyArray&lt;Confections.IAdditionalChocolate&gt; \| undefined
+ReadonlyArray&lt;Confections.IAdditionalChocolateEntity&gt; \| undefined
 
 
 </td><td>

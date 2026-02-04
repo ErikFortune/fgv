@@ -9,7 +9,7 @@ Validator type for ConfectionsLibrary collections.
 **Signature:**
 
 ```typescript
-export type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfection>;
+export type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfectionEntity>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.entities.anyconfection.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
 

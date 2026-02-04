@@ -27,31 +27,31 @@ import { Conversion, Converter, Converters, Failure, Result, Success } from '@fg
 
 import { Converters as CommonConverters, Model, MoldId } from '../../common';
 import {
-  AnyConfectionVersion,
-  AnyFillingOption,
-  AnyConfection,
+  AnyConfectionVersionEntity,
+  AnyFillingOptionEntity,
+  AnyConfectionEntity,
   FillingOptionId,
-  IAdditionalChocolate,
-  IBarTruffle,
-  IBarTruffleVersion,
+  IAdditionalChocolateEntity,
+  IBarTruffleEntity,
+  IBarTruffleVersionEntity,
   IBonBonDimensions,
   IChocolateSpec,
   ICoatings,
-  IConfectionBase,
+  IConfectionEntityBase,
   IConfectionDecoration,
   IConfectionMoldRef,
-  IConfectionVersionBase,
+  IConfectionVersionEntityBase,
   IConfectionYield,
   IMoldedBonBonYield,
   AnyConfectionYield,
-  IFillingSlot,
+  IFillingSlotEntity,
   IFrameDimensions,
-  IIngredientFillingOption,
-  IMoldedBonBon,
-  IMoldedBonBonVersion,
-  IRecipeFillingOption,
-  IRolledTruffle,
-  IRolledTruffleVersion
+  IIngredientFillingOptionEntity,
+  IMoldedBonBonEntity,
+  IMoldedBonBonVersionEntity,
+  IRecipeFillingOptionEntity,
+  IRolledTruffleEntity,
+  IRolledTruffleVersionEntity
 } from './model';
 import { Converters as RecipeConverters } from '../fillings';
 
@@ -118,51 +118,51 @@ const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOpti
 ]);
 
 /**
- * `Converter` for {@link Entities.Confections.IRecipeFillingOption | IRecipeFillingOption}.
+ * `Converter` for {@link Entities.Confections.IRecipeFillingOptionEntity | IRecipeFillingOptionEntity}.
  * @public
  */
-export const recipeFillingOption: Converter<IRecipeFillingOption> = Converters.object<IRecipeFillingOption>({
-  type: Converters.literal('recipe'),
-  id: CommonConverters.fillingId,
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const recipeFillingOptionEntity: Converter<IRecipeFillingOptionEntity> =
+  Converters.object<IRecipeFillingOptionEntity>({
+    type: Converters.literal('recipe'),
+    id: CommonConverters.fillingId,
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
 
 /**
- * `Converter` for {@link Entities.Confections.IIngredientFillingOption | IIngredientFillingOption}.
+ * `Converter` for {@link Entities.Confections.IIngredientFillingOptionEntity | IIngredientFillingOptionEntity}.
  * @public
  */
-export const ingredientFillingOption: Converter<IIngredientFillingOption> =
-  Converters.object<IIngredientFillingOption>({
+export const ingredientFillingOptionEntity: Converter<IIngredientFillingOptionEntity> =
+  Converters.object<IIngredientFillingOptionEntity>({
     type: Converters.literal('ingredient'),
     id: CommonConverters.ingredientId,
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
 /**
- * `Converter` for {@link Entities.Confections.AnyFillingOption | AnyFillingOption} (discriminated union)
+ * `Converter` for {@link Entities.Confections.AnyFillingOptionEntity | AnyFillingOptionEntity} (discriminated union)
  * @public
  */
-export const anyFillingOption: Converter<AnyFillingOption> = Converters.oneOf<AnyFillingOption>([
-  recipeFillingOption,
-  ingredientFillingOption
-]);
+export const anyFillingOptionEntity: Converter<AnyFillingOptionEntity> =
+  Converters.oneOf<AnyFillingOptionEntity>([recipeFillingOptionEntity, ingredientFillingOptionEntity]);
 
 /**
  * Converter for filling options with preferred selection.
  * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const fillingOptions: Converter<Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>> =
-  CommonConverters.optionsWithPreferred(anyFillingOption, fillingOptionId, 'fillingOptions');
+export const fillingOptionEntities: Converter<
+  Model.IOptionsWithPreferred<AnyFillingOptionEntity, FillingOptionId>
+> = CommonConverters.optionsWithPreferred(anyFillingOptionEntity, fillingOptionId, 'fillingOptions');
 
 /**
- * `Converter` for {@link Entities.Confections.IFillingSlot | IFillingSlot}.
+ * `Converter` for {@link Entities.Confections.IFillingSlotEntity | IFillingSlotEntity}.
  * @public
  */
-export const fillingSlot: Converter<IFillingSlot> = Converters.object<IFillingSlot>({
+export const fillingSlotEntity: Converter<IFillingSlotEntity> = Converters.object<IFillingSlotEntity>({
   slotId: CommonConverters.slotId,
   name: Converters.string.optional(),
-  filling: fillingOptions
+  filling: fillingOptionEntities
 });
 
 // ============================================================================
@@ -180,20 +180,21 @@ export const chocolateSpec: Converter<IChocolateSpec> = CommonConverters.idsWith
 );
 
 /**
- * Converter for IAdditionalChocolate
+ * Converter for {@link Entities.Confections.IAdditionalChocolateEntity | IAdditionalChocolateEntity}.
  * @public
  */
-export const additionalChocolate: Converter<IAdditionalChocolate> = Converters.object<IAdditionalChocolate>({
-  chocolate: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'additionalChocolate'),
-  purpose: CommonConverters.additionalChocolatePurpose
-});
+export const additionalChocolateEntity: Converter<IAdditionalChocolateEntity> =
+  Converters.object<IAdditionalChocolateEntity>({
+    chocolate: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'additionalChocolate'),
+    purpose: CommonConverters.additionalChocolatePurpose
+  });
 
 // ============================================================================
 // Mold Converters
 // ============================================================================
 
 /**
- * Converter for IConfectionMoldRef
+ * Converter for {@link Entities.Confections.IConfectionMoldRef | IConfectionMoldRef}.
  * @public
  */
 export const confectionMoldRef: Converter<IConfectionMoldRef> = CommonConverters.refWithNotes(
@@ -213,7 +214,7 @@ export const confectionMolds: Converter<Model.IOptionsWithPreferred<IConfectionM
 // ============================================================================
 
 /**
- * Converter for IFrameDimensions
+ * Converter for {@link Entities.Confections.IFrameDimensions | IFrameDimensions}.
  * @public
  */
 export const frameDimensions: Converter<IFrameDimensions> = Converters.object<IFrameDimensions>({
@@ -223,7 +224,7 @@ export const frameDimensions: Converter<IFrameDimensions> = Converters.object<IF
 });
 
 /**
- * Converter for IBonBonDimensions
+ * Converter for {@link Entities.Confections.IBonBonDimensions | IBonBonDimensions}.
  * @public
  */
 export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.object<IBonBonDimensions>({
@@ -236,7 +237,7 @@ export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.object<
 // ============================================================================
 
 /**
- * Converter for ICoatings (IIdsWithPreferred<IngredientId>).
+ * Converter for {@link Entities.Confections.ICoatings | ICoatings} (IIdsWithPreferred<IngredientId>).
  * Validates that preferredId (if specified) exists in ids.
  * @public
  */
@@ -253,11 +254,11 @@ export const coatings: Converter<ICoatings> = CommonConverters.idsWithPreferred(
  * Common fields shared by all version types
  * @internal
  */
-const commonVersionFields: Conversion.FieldConverters<IConfectionVersionBase> = {
+const commonVersionFields: Conversion.FieldConverters<IConfectionVersionEntityBase> = {
   versionSpec: CommonConverters.confectionVersionSpec,
   createdDate: Converters.string, // ISO 8601 date string
   yield: confectionYield,
-  fillings: Converters.arrayOf(fillingSlot).optional(),
+  fillings: Converters.arrayOf(fillingSlotEntity).optional(),
   decorations: Converters.arrayOf(confectionDecoration).optional(),
   procedures: RecipeConverters.procedures.optional(),
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
@@ -266,47 +267,50 @@ const commonVersionFields: Conversion.FieldConverters<IConfectionVersionBase> = 
 };
 
 /**
- * Converter for IMoldedBonBonVersion
+ * Converter for {@link Entities.Confections.IMoldedBonBonVersionEntity | IMoldedBonBonVersionEntity}.
  * @public
  */
-export const moldedBonBonVersion: Converter<IMoldedBonBonVersion> = Converters.object<IMoldedBonBonVersion>({
-  ...commonVersionFields,
-  molds: confectionMolds,
-  shellChocolate: chocolateSpec,
-  additionalChocolates: Converters.arrayOf(additionalChocolate).optional()
-});
+export const moldedBonBonVersionEntity: Converter<IMoldedBonBonVersionEntity> =
+  Converters.object<IMoldedBonBonVersionEntity>({
+    ...commonVersionFields,
+    molds: confectionMolds,
+    shellChocolate: chocolateSpec,
+    additionalChocolates: Converters.arrayOf(additionalChocolateEntity).optional()
+  });
 
 /**
- * Converter for IBarTruffleVersion
+ * Converter for {@link Entities.Confections.IBarTruffleVersionEntity | IBarTruffleVersionEntity}.
  * @public
  */
-export const barTruffleVersion: Converter<IBarTruffleVersion> = Converters.object<IBarTruffleVersion>({
-  ...commonVersionFields,
-  frameDimensions,
-  singleBonBonDimensions: bonBonDimensions,
-  enrobingChocolate: chocolateSpec.optional()
-});
+export const barTruffleVersionEntity: Converter<IBarTruffleVersionEntity> =
+  Converters.object<IBarTruffleVersionEntity>({
+    ...commonVersionFields,
+    frameDimensions,
+    singleBonBonDimensions: bonBonDimensions,
+    enrobingChocolate: chocolateSpec.optional()
+  });
 
 /**
- * Converter for IRolledTruffleVersion
+ * Converter for {@link Entities.Confections.IRolledTruffleVersionEntity | IRolledTruffleVersionEntity}.
  * @public
  */
-export const rolledTruffleVersion: Converter<IRolledTruffleVersion> =
-  Converters.object<IRolledTruffleVersion>({
+export const rolledTruffleVersionEntity: Converter<IRolledTruffleVersionEntity> =
+  Converters.object<IRolledTruffleVersionEntity>({
     ...commonVersionFields,
     enrobingChocolate: chocolateSpec.optional(),
     coatings: coatings.optional()
   });
 
 /**
- * Converter for AnyConfectionVersion (discriminated by presence of type-specific fields)
+ * Converter for {@link Entities.Confections.AnyConfectionVersionEntity | AnyConfectionVersionEntity} (discriminated by presence of type-specific fields)
  * @public
  */
-export const anyConfectionVersion: Converter<AnyConfectionVersion> = Converters.oneOf<AnyConfectionVersion>([
-  moldedBonBonVersion,
-  barTruffleVersion,
-  rolledTruffleVersion
-]);
+export const anyConfectionVersionEntity: Converter<AnyConfectionVersionEntity> =
+  Converters.oneOf<AnyConfectionVersionEntity>([
+    moldedBonBonVersionEntity,
+    barTruffleVersionEntity,
+    rolledTruffleVersionEntity
+  ]);
 
 // ============================================================================
 // Base Confection Converter
@@ -317,7 +321,7 @@ export const anyConfectionVersion: Converter<AnyConfectionVersion> = Converters.
  * @internal
  */
 const commonConfectionFields: Conversion.FieldConverters<
-  Omit<IConfectionBase, 'confectionType' | 'versions'>
+  Omit<IConfectionEntityBase, 'confectionType' | 'versions'>
 > = {
   baseId: CommonConverters.baseConfectionId,
   name: CommonConverters.confectionName,
@@ -328,47 +332,48 @@ const commonConfectionFields: Conversion.FieldConverters<
 };
 
 /**
- * Converter for base IConfectionBase properties
+ * Converter for base {@link Entities.Confections.IConfectionEntityBase | IConfectionEntityBase} properties.
  * @public
  */
-export const baseConfection: Converter<IConfectionBase> = Converters.object<IConfectionBase>({
-  ...commonConfectionFields,
-  confectionType: CommonConverters.confectionType,
-  versions: Converters.arrayOf(anyConfectionVersion)
-});
+export const baseConfectionEntity: Converter<IConfectionEntityBase> =
+  Converters.object<IConfectionEntityBase>({
+    ...commonConfectionFields,
+    confectionType: CommonConverters.confectionType,
+    versions: Converters.arrayOf(anyConfectionVersionEntity)
+  });
 
 // ============================================================================
 // Discriminated Confection Converters
 // ============================================================================
 
 /**
- * Converter for IMoldedBonBon
+ * Converter for {@link Entities.Confections.IMoldedBonBonEntity | IMoldedBonBonEntity}
  * @public
  */
-export const moldedBonBon: Converter<IMoldedBonBon> = Converters.object<IMoldedBonBon>({
+export const moldedBonBonEntity: Converter<IMoldedBonBonEntity> = Converters.object<IMoldedBonBonEntity>({
   ...commonConfectionFields,
   confectionType: Converters.literal('molded-bonbon'),
-  versions: Converters.arrayOf(moldedBonBonVersion)
+  versions: Converters.arrayOf(moldedBonBonVersionEntity)
 });
 
 /**
- * Converter for IBarTruffle
+ * Converter for {@link Entities.Confections.IBarTruffleEntity | IBarTruffleEntity}
  * @public
  */
-export const barTruffle: Converter<IBarTruffle> = Converters.object<IBarTruffle>({
+export const barTruffleEntity: Converter<IBarTruffleEntity> = Converters.object<IBarTruffleEntity>({
   ...commonConfectionFields,
   confectionType: Converters.literal('bar-truffle'),
-  versions: Converters.arrayOf(barTruffleVersion)
+  versions: Converters.arrayOf(barTruffleVersionEntity)
 });
 
 /**
- * Converter for IRolledTruffle
+ * Converter for {@link Entities.Confections.IRolledTruffleEntity | IRolledTruffleEntity}
  * @public
  */
-export const rolledTruffle: Converter<IRolledTruffle> = Converters.object<IRolledTruffle>({
+export const rolledTruffleEntity: Converter<IRolledTruffleEntity> = Converters.object<IRolledTruffleEntity>({
   ...commonConfectionFields,
   confectionType: Converters.literal('rolled-truffle'),
-  versions: Converters.arrayOf(rolledTruffleVersion)
+  versions: Converters.arrayOf(rolledTruffleVersionEntity)
 });
 
 // ============================================================================
@@ -376,25 +381,25 @@ export const rolledTruffle: Converter<IRolledTruffle> = Converters.object<IRolle
 // ============================================================================
 
 /**
- * Converter for AnyConfection (discriminated union)
+ * Converter for {@link Entities.Confections.AnyConfectionEntity | AnyConfectionEntity} (discriminated union)
  * Dispatches to the appropriate type-specific converter based on confectionType
  * @public
  */
-export const anyConfectionRaw: Converter<AnyConfection> = Converters.oneOf<AnyConfection>([
-  moldedBonBon,
-  barTruffle,
-  rolledTruffle
+export const anyConfectionRawEntity: Converter<AnyConfectionEntity> = Converters.oneOf<AnyConfectionEntity>([
+  moldedBonBonEntity,
+  barTruffleEntity,
+  rolledTruffleEntity
 ]);
 
 /**
- * Converter for {@link Entities.Confections.AnyConfection | AnyConfection} with validation.
+ * Converter for {@link Entities.Confections.AnyConfectionEntity | AnyConfectionEntity} with validation.
  * Validates that goldenVersionSpec exists in versions.
  * Returns the plain data object (discriminated union), not a class instance.
  * @public
  */
-export const anyConfection: Converter<AnyConfection> = Converters.generic<AnyConfection>(
-  (from: unknown): Result<AnyConfection> => {
-    return anyConfectionRaw.convert(from).onSuccess((data) => {
+export const anyConfectionEntity: Converter<AnyConfectionEntity> = Converters.generic<AnyConfectionEntity>(
+  (from: unknown): Result<AnyConfectionEntity> => {
+    return anyConfectionRawEntity.convert(from).onSuccess((data) => {
       if (data.versions.length === 0) {
         return Failure.with('Confection must have at least one version');
       }

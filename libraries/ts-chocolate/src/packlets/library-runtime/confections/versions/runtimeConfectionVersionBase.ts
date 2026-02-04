@@ -50,7 +50,7 @@ import type { RuntimeRolledTruffleVersion } from './runtimeRolledTruffleVersion'
 export abstract class RuntimeConfectionVersionBase implements IRuntimeConfectionVersionBase {
   protected readonly _context: IConfectionContext;
   protected readonly _confectionId: ConfectionId;
-  protected readonly _version: Confections.AnyConfectionVersion;
+  protected readonly _version: Confections.AnyConfectionVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _confection: IRuntimeConfection | undefined;
@@ -70,7 +70,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.AnyConfectionVersion
+    version: Confections.AnyConfectionVersionEntity
   ) {
     this._context = context;
     this._confectionId = confectionId;
@@ -126,7 +126,7 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
    * The underlying confection version.
    * Use this to get the raw version data for persistence or journaling.
    */
-  public get version(): Confections.AnyConfectionVersion {
+  public get version(): Confections.AnyConfectionVersionEntity {
     return this._version;
   }
 
@@ -214,21 +214,21 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
    * Returns true if this is a molded bonbon version.
    */
   public isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion {
-    return Confections.isMoldedBonBonVersion(this._version);
+    return Confections.isMoldedBonBonVersionEntity(this._version);
   }
 
   /**
    * Returns true if this is a bar truffle version.
    */
   public isBarTruffleVersion(): this is RuntimeBarTruffleVersion {
-    return Confections.isBarTruffleVersion(this._version);
+    return Confections.isBarTruffleVersionEntity(this._version);
   }
 
   /**
    * Returns true if this is a rolled truffle version.
    */
   public isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion {
-    return Confections.isRolledTruffleVersion(this._version);
+    return Confections.isRolledTruffleVersionEntity(this._version);
   }
 
   // ============================================================================
@@ -238,5 +238,5 @@ export abstract class RuntimeConfectionVersionBase implements IRuntimeConfection
   /**
    * Gets the underlying raw version data (read-only)
    */
-  public abstract get raw(): Confections.AnyConfectionVersion;
+  public abstract get raw(): Confections.AnyConfectionVersionEntity;
 }

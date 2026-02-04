@@ -11,3 +11,5 @@ Discriminated union of all yield types.
 ```typescript
 export type AnyConfectionYield = IConfectionYield | IMoldedBonBonYield;
 ```
+**References:** [IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
+

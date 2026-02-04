@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _rawGoldenVersion: Confections.AnyConfectionVersion;
+protected readonly _rawGoldenVersion: Confections.AnyConfectionVersionEntity;
 ```

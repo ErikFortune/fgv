@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-getChanges(original: IProducedRolledTruffle): IConfectionChanges;
+getChanges(original: IProducedRolledTruffleEntity): IConfectionChanges;
 ```
 
 ## Parameters
@@ -35,7 +35,7 @@ original
 
 </td><td>
 
-[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)
 
 
 </td><td>

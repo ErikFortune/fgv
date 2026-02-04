@@ -9,7 +9,7 @@ Factory method for creating a RuntimeRolledTruffleVersion.
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections.IRolledTruffleVersion): Result<RuntimeRolledTruffleVersion>;
+static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections.IRolledTruffleVersionEntity): Result<RuntimeRolledTruffleVersion>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ version
 
 </td><td>
 
-[Confections.IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
+[Confections.IRolledTruffleVersionEntity](./ts-chocolate.entities.irolledtruffleversionentity.md)
 
 
 </td><td>

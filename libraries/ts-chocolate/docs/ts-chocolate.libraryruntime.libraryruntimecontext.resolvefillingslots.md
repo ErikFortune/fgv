@@ -9,7 +9,7 @@ Resolves filling slots to runtime objects.
 **Signature:**
 
 ```typescript
-resolveFillingSlots(slots: ReadonlyArray<Confections.IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
+resolveFillingSlots(slots: ReadonlyArray<Confections.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ slots
 
 </td><td>
 
-ReadonlyArray&lt;Confections.IFillingSlot&gt; \| undefined
+ReadonlyArray&lt;Confections.IFillingSlotEntity&gt; \| undefined
 
 
 </td><td>
@@ -50,7 +50,7 @@ The raw filling slots
 
 **Returns:**
 
-ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
 
 Resolved filling slots, or undefined if none
 

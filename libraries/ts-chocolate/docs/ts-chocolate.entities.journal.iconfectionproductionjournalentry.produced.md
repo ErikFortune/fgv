@@ -9,5 +9,5 @@ Produced confection with resolved concrete choices
 **Signature:**
 
 ```typescript
-readonly produced: AnyProducedConfection;
+readonly produced: AnyProducedConfectionEntity;
 ```

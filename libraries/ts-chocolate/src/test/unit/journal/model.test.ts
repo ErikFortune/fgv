@@ -31,7 +31,7 @@ import {
   IConfectionProductionJournalEntry,
   IFillingRecipeVersion,
   IProducedFilling,
-  IProducedMoldedBonBon
+  IProducedMoldedBonBonEntity
 } from '../../../packlets/entities';
 
 describe('Journal Model', () => {
@@ -106,25 +106,25 @@ describe('Journal Model', () => {
       produced: producedFilling
     };
 
-    const confectionRecipe: Confections.IMoldedBonBonVersion = {
-      versionSpec: 'v1' as Confections.IMoldedBonBonVersion['versionSpec'],
+    const confectionRecipe: Confections.IMoldedBonBonVersionEntity = {
+      versionSpec: 'v1' as Confections.IMoldedBonBonVersionEntity['versionSpec'],
       createdDate: '2026-01-15',
       yield: { count: 24 },
       molds: {
-        preferredId: 'mold-1' as Confections.IMoldedBonBonVersion['molds']['preferredId'],
+        preferredId: 'mold-1' as Confections.IMoldedBonBonVersionEntity['molds']['preferredId'],
         options: []
       },
       shellChocolate: {
-        ids: ['choc-1' as Confections.IMoldedBonBonVersion['shellChocolate']['ids'][number]]
+        ids: ['choc-1' as Confections.IMoldedBonBonVersionEntity['shellChocolate']['ids'][number]]
       }
     };
 
-    const producedConfection: IProducedMoldedBonBon = {
+    const producedConfection: IProducedMoldedBonBonEntity = {
       confectionType: 'molded-bonbon',
-      versionId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBon['versionId'],
+      versionId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBonEntity['versionId'],
       yield: { count: 24 },
-      moldId: 'mold-1' as IProducedMoldedBonBon['moldId'],
-      shellChocolateId: 'choc-1' as IProducedMoldedBonBon['shellChocolateId']
+      moldId: 'mold-1' as IProducedMoldedBonBonEntity['moldId'],
+      shellChocolateId: 'choc-1' as IProducedMoldedBonBonEntity['shellChocolateId']
     };
 
     const confectionEditEntry: IConfectionEditJournalEntry = {
@@ -227,30 +227,30 @@ describe('Journal Model', () => {
   });
 
   describe('type guards for resolved slots', () => {
-    const fillingSlot: Confections.IResolvedFillingSlot = {
+    const fillingSlot: Confections.IResolvedFillingSlotEntity = {
       slotType: 'recipe',
-      slotId: 'slot-1' as Confections.IResolvedFillingSlot['slotId'],
-      fillingId: 'filling-1' as Confections.IResolvedFillingSlot['fillingId']
+      slotId: 'slot-1' as Confections.IResolvedFillingSlotEntity['slotId'],
+      fillingId: 'filling-1' as Confections.IResolvedFillingSlotEntity['fillingId']
     };
 
-    const ingredientSlot: Confections.IResolvedIngredientSlot = {
+    const ingredientSlot: Confections.IResolvedIngredientSlotEntity = {
       slotType: 'ingredient',
-      slotId: 'slot-2' as Confections.IResolvedIngredientSlot['slotId'],
-      ingredientId: 'ingredient-1' as Confections.IResolvedIngredientSlot['ingredientId']
+      slotId: 'slot-2' as Confections.IResolvedIngredientSlotEntity['slotId'],
+      ingredientId: 'ingredient-1' as Confections.IResolvedIngredientSlotEntity['ingredientId']
     };
 
     describe('isResolvedFillingSlot', () => {
       test('returns true for recipe slots', () => {
-        expect(Confections.isResolvedFillingSlot(fillingSlot)).toBe(true);
+        expect(Confections.isResolvedFillingSlotEntity(fillingSlot)).toBe(true);
       });
 
       test('returns false for ingredient slots', () => {
-        expect(Confections.isResolvedFillingSlot(ingredientSlot)).toBe(false);
+        expect(Confections.isResolvedFillingSlotEntity(ingredientSlot)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const slot: Confections.AnyResolvedFillingSlot = fillingSlot;
-        if (Confections.isResolvedFillingSlot(slot)) {
+        const slot: Confections.AnyResolvedFillingSlotEntity = fillingSlot;
+        if (Confections.isResolvedFillingSlotEntity(slot)) {
           expect(slot.slotType).toBe('recipe');
           expect(slot.fillingId).toBe('filling-1');
         }
@@ -259,16 +259,16 @@ describe('Journal Model', () => {
 
     describe('isResolvedIngredientSlot', () => {
       test('returns true for ingredient slots', () => {
-        expect(Confections.isResolvedIngredientSlot(ingredientSlot)).toBe(true);
+        expect(Confections.isResolvedIngredientSlotEntity(ingredientSlot)).toBe(true);
       });
 
       test('returns false for recipe slots', () => {
-        expect(Confections.isResolvedIngredientSlot(fillingSlot)).toBe(false);
+        expect(Confections.isResolvedIngredientSlotEntity(fillingSlot)).toBe(false);
       });
 
       test('narrows type correctly', () => {
-        const slot: Confections.AnyResolvedFillingSlot = ingredientSlot;
-        if (Confections.isResolvedIngredientSlot(slot)) {
+        const slot: Confections.AnyResolvedFillingSlotEntity = ingredientSlot;
+        if (Confections.isResolvedIngredientSlotEntity(slot)) {
           expect(slot.slotType).toBe('ingredient');
           expect(slot.ingredientId).toBe('ingredient-1');
         }

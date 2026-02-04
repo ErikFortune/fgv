@@ -143,7 +143,7 @@ describe('ConfectionEditingSession Factory', () => {
     steps: []
   };
 
-  const moldedBonBon: ConfectionEntities.IMoldedBonBon = {
+  const moldedBonBon: ConfectionEntities.IMoldedBonBonEntity = {
     baseId: 'test-bonbon' as BaseConfectionId,
     name: 'Test Bonbon' as ConfectionName,
     confectionType: 'molded-bonbon',
@@ -187,7 +187,7 @@ describe('ConfectionEditingSession Factory', () => {
     ]
   };
 
-  const barTruffle: ConfectionEntities.IBarTruffle = {
+  const barTruffle: ConfectionEntities.IBarTruffleEntity = {
     baseId: 'test-bar' as BaseConfectionId,
     name: 'Test Bar' as ConfectionName,
     confectionType: 'bar-truffle',
@@ -232,7 +232,7 @@ describe('ConfectionEditingSession Factory', () => {
     ]
   };
 
-  const rolledTruffle: ConfectionEntities.IRolledTruffle = {
+  const rolledTruffle: ConfectionEntities.IRolledTruffleEntity = {
     baseId: 'test-rolled' as BaseConfectionId,
     name: 'Test Rolled' as ConfectionName,
     confectionType: 'rolled-truffle',

@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isBarTruffle(confection)](./ts-chocolate.entities.confections.isbartruffle.md)
+[isBarTruffleEntity(confection)](./ts-chocolate.entities.confections.isbartruffleentity.md)
 
 
 </td><td>
@@ -58,7 +58,7 @@ Type guard for IBarTruffle
 </td></tr>
 <tr><td>
 
-[isBarTruffleVersion(version)](./ts-chocolate.entities.confections.isbartruffleversion.md)
+[isBarTruffleVersionEntity(version)](./ts-chocolate.entities.confections.isbartruffleversionentity.md)
 
 
 </td><td>
@@ -69,7 +69,7 @@ Type guard for IBarTruffleVersion
 </td></tr>
 <tr><td>
 
-[isMoldedBonBon(confection)](./ts-chocolate.entities.confections.ismoldedbonbon.md)
+[isMoldedBonBonEntity(confection)](./ts-chocolate.entities.confections.ismoldedbonbonentity.md)
 
 
 </td><td>
@@ -80,7 +80,7 @@ Type guard for IMoldedBonBon
 </td></tr>
 <tr><td>
 
-[isMoldedBonBonVersion(version)](./ts-chocolate.entities.confections.ismoldedbonbonversion.md)
+[isMoldedBonBonVersionEntity(version)](./ts-chocolate.entities.confections.ismoldedbonbonversionentity.md)
 
 
 </td><td>
@@ -102,7 +102,7 @@ Type guard to check if a yield is frame-based (for molded bonbons).
 </td></tr>
 <tr><td>
 
-[isProducedBarTruffle(produced)](./ts-chocolate.entities.confections.isproducedbartruffle.md)
+[isProducedBarTruffleEntity(produced)](./ts-chocolate.entities.confections.isproducedbartruffleentity.md)
 
 
 </td><td>
@@ -113,7 +113,7 @@ Type guard for IProducedBarTruffle
 </td></tr>
 <tr><td>
 
-[isProducedMoldedBonBon(produced)](./ts-chocolate.entities.confections.isproducedmoldedbonbon.md)
+[isProducedMoldedBonBonEntity(produced)](./ts-chocolate.entities.confections.isproducedmoldedbonbonentity.md)
 
 
 </td><td>
@@ -124,7 +124,7 @@ Type guard for IProducedMoldedBonBon
 </td></tr>
 <tr><td>
 
-[isProducedRolledTruffle(produced)](./ts-chocolate.entities.confections.isproducedrolledtruffle.md)
+[isProducedRolledTruffleEntity(produced)](./ts-chocolate.entities.confections.isproducedrolledtruffleentity.md)
 
 
 </td><td>
@@ -135,7 +135,7 @@ Type guard for IProducedRolledTruffle
 </td></tr>
 <tr><td>
 
-[isResolvedFillingSlot(slot)](./ts-chocolate.entities.confections.isresolvedfillingslot.md)
+[isResolvedFillingSlotEntity(slot)](./ts-chocolate.entities.confections.isresolvedfillingslotentity.md)
 
 
 </td><td>
@@ -146,7 +146,7 @@ Type guard for IResolvedFillingSlot
 </td></tr>
 <tr><td>
 
-[isResolvedIngredientSlot(slot)](./ts-chocolate.entities.confections.isresolvedingredientslot.md)
+[isResolvedIngredientSlotEntity(slot)](./ts-chocolate.entities.confections.isresolvedingredientslotentity.md)
 
 
 </td><td>
@@ -157,7 +157,7 @@ Type guard for IResolvedIngredientSlot
 </td></tr>
 <tr><td>
 
-[isRolledTruffle(confection)](./ts-chocolate.entities.confections.isrolledtruffle.md)
+[isRolledTruffleEntity(confection)](./ts-chocolate.entities.confections.isrolledtruffleentity.md)
 
 
 </td><td>
@@ -168,7 +168,7 @@ Type guard for IRolledTruffle
 </td></tr>
 <tr><td>
 
-[isRolledTruffleVersion(version)](./ts-chocolate.entities.confections.isrolledtruffleversion.md)
+[isRolledTruffleVersionEntity(version)](./ts-chocolate.entities.confections.isrolledtruffleversionentity.md)
 
 
 </td><td>
@@ -194,7 +194,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IAdditionalChocolate](./ts-chocolate.entities.confections.iadditionalchocolate.md)
+[IAdditionalChocolateEntity](./ts-chocolate.entities.confections.iadditionalchocolateentity.md)
 
 
 </td><td>
@@ -205,7 +205,7 @@ Additional chocolate specification with purpose. Used for seal chocolate, decora
 </td></tr>
 <tr><td>
 
-[IBarTruffle](./ts-chocolate.entities.confections.ibartruffle.md)
+[IBarTruffleEntity](./ts-chocolate.entities.confections.ibartruffleentity.md)
 
 
 </td><td>
@@ -216,7 +216,7 @@ Bar truffle confection Ganache slab cut into squares and enrobed
 </td></tr>
 <tr><td>
 
-[IBarTruffleVersion](./ts-chocolate.entities.confections.ibartruffleversion.md)
+[IBarTruffleVersionEntity](./ts-chocolate.entities.confections.ibartruffleversionentity.md)
 
 
 </td><td>
@@ -238,7 +238,18 @@ Single bonbon dimensions for bar truffle cutting
 </td></tr>
 <tr><td>
 
-[IConfectionBase](./ts-chocolate.entities.confections.iconfectionbase.md)
+[IConfectionDecoration](./ts-chocolate.entities.confections.iconfectiondecoration.md)
+
+
+</td><td>
+
+Decoration specification for a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionEntityBase](./ts-chocolate.entities.confections.iconfectionentitybase.md)
 
 
 </td><td>
@@ -249,18 +260,7 @@ Base confection interface - all confection types share these properties. Contain
 </td></tr>
 <tr><td>
 
-[IConfectionDecoration](./ts-chocolate.entities.confections.iconfectiondecoration.md)
-
-
-</td><td>
-
-Decoration specification for a [confection](./ts-chocolate.entities.confections.anyconfection.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionVersionBase](./ts-chocolate.entities.confections.iconfectionversionbase.md)
+[IConfectionVersionEntityBase](./ts-chocolate.entities.confections.iconfectionversionentitybase.md)
 
 
 </td><td>
@@ -276,13 +276,13 @@ Base version interface - shared by all confection version types. Contains the co
 
 </td><td>
 
-Yield specification for a [confection](./ts-chocolate.entities.confections.anyconfection.md)<!-- -->.
+Yield specification for a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md)<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[IFillingSlot](./ts-chocolate.entities.confections.ifillingslot.md)
+[IFillingSlotEntity](./ts-chocolate.entities.confections.ifillingslotentity.md)
 
 
 </td><td>
@@ -304,7 +304,7 @@ Frame dimensions for bar truffle production
 </td></tr>
 <tr><td>
 
-[IIngredientFillingOption](./ts-chocolate.entities.confections.iingredientfillingoption.md)
+[IIngredientFillingOptionEntity](./ts-chocolate.entities.confections.iingredientfillingoptionentity.md)
 
 
 </td><td>
@@ -315,7 +315,7 @@ Ingredient filling option - references an ingredient (e.g., praline paste)
 </td></tr>
 <tr><td>
 
-[IMoldedBonBon](./ts-chocolate.entities.confections.imoldedbonbon.md)
+[IMoldedBonBonEntity](./ts-chocolate.entities.confections.imoldedbonbonentity.md)
 
 
 </td><td>
@@ -326,7 +326,7 @@ Molded bonbon confection Uses chocolate molds for shell formation
 </td></tr>
 <tr><td>
 
-[IMoldedBonBonVersion](./ts-chocolate.entities.confections.imoldedbonbonversion.md)
+[IMoldedBonBonVersionEntity](./ts-chocolate.entities.confections.imoldedbonbonversionentity.md)
 
 
 </td><td>
@@ -348,7 +348,7 @@ Frame-based yield specification for molded bonbons. Stores frames + buffer perce
 </td></tr>
 <tr><td>
 
-[IProducedBarTruffle](./ts-chocolate.entities.confections.iproducedbartruffle.md)
+[IProducedBarTruffleEntity](./ts-chocolate.entities.confections.iproducedbartruffleentity.md)
 
 
 </td><td>
@@ -359,7 +359,7 @@ Produced bar truffle with concrete choices.
 </td></tr>
 <tr><td>
 
-[IProducedConfectionBase](./ts-chocolate.entities.confections.iproducedconfectionbase.md)
+[IProducedConfectionEntityBase](./ts-chocolate.entities.confections.iproducedconfectionentitybase.md)
 
 
 </td><td>
@@ -370,7 +370,7 @@ Base interface for all produced confection types. Contains common fields shared 
 </td></tr>
 <tr><td>
 
-[IProducedMoldedBonBon](./ts-chocolate.entities.confections.iproducedmoldedbonbon.md)
+[IProducedMoldedBonBonEntity](./ts-chocolate.entities.confections.iproducedmoldedbonbonentity.md)
 
 
 </td><td>
@@ -381,7 +381,7 @@ Produced molded bonbon with concrete choices.
 </td></tr>
 <tr><td>
 
-[IProducedRolledTruffle](./ts-chocolate.entities.confections.iproducedrolledtruffle.md)
+[IProducedRolledTruffleEntity](./ts-chocolate.entities.confections.iproducedrolledtruffleentity.md)
 
 
 </td><td>
@@ -392,7 +392,7 @@ Produced rolled truffle with concrete choices.
 </td></tr>
 <tr><td>
 
-[IRecipeFillingOption](./ts-chocolate.entities.confections.irecipefillingoption.md)
+[IRecipeFillingOptionEntity](./ts-chocolate.entities.confections.irecipefillingoptionentity.md)
 
 
 </td><td>
@@ -403,7 +403,7 @@ Recipe filling option - references a recipe (e.g., ganache)
 </td></tr>
 <tr><td>
 
-[IResolvedFillingSlot](./ts-chocolate.entities.confections.iresolvedfillingslot.md)
+[IResolvedFillingSlotEntity](./ts-chocolate.entities.confections.iresolvedfillingslotentity.md)
 
 
 </td><td>
@@ -414,7 +414,7 @@ Resolved slot with recipe filling.
 </td></tr>
 <tr><td>
 
-[IResolvedIngredientSlot](./ts-chocolate.entities.confections.iresolvedingredientslot.md)
+[IResolvedIngredientSlotEntity](./ts-chocolate.entities.confections.iresolvedingredientslotentity.md)
 
 
 </td><td>
@@ -425,7 +425,7 @@ Resolved slot with ingredient filling.
 </td></tr>
 <tr><td>
 
-[IRolledTruffle](./ts-chocolate.entities.confections.irolledtruffle.md)
+[IRolledTruffleEntity](./ts-chocolate.entities.confections.irolledtruffleentity.md)
 
 
 </td><td>
@@ -436,7 +436,7 @@ Rolled truffle confection Hand-rolled ganache balls with various coatings
 </td></tr>
 <tr><td>
 
-[IRolledTruffleVersion](./ts-chocolate.entities.confections.irolledtruffleversion.md)
+[IRolledTruffleVersionEntity](./ts-chocolate.entities.confections.irolledtruffleversionentity.md)
 
 
 </td><td>
@@ -512,7 +512,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[AnyConfection](./ts-chocolate.entities.confections.anyconfection.md)
+[AnyConfectionEntity](./ts-chocolate.entities.confections.anyconfectionentity.md)
 
 
 </td><td>
@@ -523,7 +523,7 @@ Discriminated union of all confection data types. Use this when working with raw
 </td></tr>
 <tr><td>
 
-[AnyConfectionVersion](./ts-chocolate.entities.confections.anyconfectionversion.md)
+[AnyConfectionVersionEntity](./ts-chocolate.entities.confections.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -545,7 +545,7 @@ Discriminated union of all yield types.
 </td></tr>
 <tr><td>
 
-[AnyFillingOption](./ts-chocolate.entities.confections.anyfillingoption.md)
+[AnyFillingOptionEntity](./ts-chocolate.entities.confections.anyfillingoptionentity.md)
 
 
 </td><td>
@@ -556,7 +556,7 @@ Discriminated union of filling options. Satisfies IHasId<FillingOptionId> for us
 </td></tr>
 <tr><td>
 
-[AnyProducedConfection](./ts-chocolate.entities.confections.anyproducedconfection.md)
+[AnyProducedConfectionEntity](./ts-chocolate.entities.confections.anyproducedconfectionentity.md)
 
 
 </td><td>
@@ -567,7 +567,7 @@ Discriminated union of produced confection types. Discriminated on the `confecti
 </td></tr>
 <tr><td>
 
-[AnyResolvedFillingSlot](./ts-chocolate.entities.confections.anyresolvedfillingslot.md)
+[AnyResolvedFillingSlotEntity](./ts-chocolate.entities.confections.anyresolvedfillingslotentity.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Factory method that auto-detects confection type and returns appropriate concret
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, id: ConfectionId, confection: Confections.AnyConfection): Result<AnyRuntimeConfection>;
+static create(context: IConfectionContext, id: ConfectionId, confection: Confections.AnyConfectionEntity): Result<AnyRuntimeConfection>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-[Confections.AnyConfection](./ts-chocolate.entities.anyconfection.md)
+[Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
 
 
 </td><td>

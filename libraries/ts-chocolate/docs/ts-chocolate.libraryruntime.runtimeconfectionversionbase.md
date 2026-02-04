@@ -96,7 +96,7 @@ IConfectionContext
 
 </td><td>
 
-[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
+[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -262,7 +262,7 @@ Effective URLs for this version (base confection URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;IResolvedFillingSlot&gt; \| undefined
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.libraryruntime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -327,7 +327,7 @@ Resolved procedures for this version. Undefined if the version has no procedures
 
 </td><td>
 
-[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
+[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -348,7 +348,7 @@ Gets the underlying raw version data (read-only)
 
 </td><td>
 
-[Confections.AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
+[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -390,7 +390,7 @@ Version specifier for this version.
 
 </td><td>
 
-Confections.IConfectionYield
+[Confections.IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
 
 
 </td><td>

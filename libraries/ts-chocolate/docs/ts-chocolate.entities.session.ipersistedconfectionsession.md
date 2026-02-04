@@ -92,7 +92,7 @@ Confection type discriminator (for type-specific restoration)
 
 </td><td>
 
-[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[AnyProducedConfection](./ts-chocolate.entities.anyproducedconfection.md)<!-- -->&gt;
+[ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[AnyProducedConfectionEntity](./ts-chocolate.entities.anyproducedconfectionentity.md)<!-- -->&gt;
 
 
 </td><td>

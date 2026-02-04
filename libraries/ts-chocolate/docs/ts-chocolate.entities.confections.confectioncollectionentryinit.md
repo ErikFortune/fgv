@@ -9,7 +9,7 @@ Initialization type for a ConfectionsLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfection>;
+export type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfectionEntity>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.entities.anyconfection.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseConfectionId](./ts-chocolate.baseconfectionid.md)<!-- -->, [AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
 

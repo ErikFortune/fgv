@@ -132,7 +132,7 @@ Golden version typed as IRuntimeRolledTruffleVersion
 
 </td><td>
 
-[Confections.IRolledTruffle](./ts-chocolate.entities.irolledtruffle.md)
+[Confections.IRolledTruffleEntity](./ts-chocolate.entities.irolledtruffleentity.md)
 
 
 </td><td>

@@ -4,7 +4,7 @@
 
 ## Entities.Confections.Converters.coatings variable
 
-Converter for ICoatings (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
+Converter for [ICoatings](./ts-chocolate.entities.confections.icoatings.md) (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 **Signature:**
 

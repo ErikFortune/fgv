@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedRolledTruffle from an existing prod
 **Signature:**
 
 ```typescript
-static create(initial: IProducedRolledTruffle): Result<RuntimeProducedRolledTruffle>;
+static create(initial: IProducedRolledTruffleEntity): Result<RuntimeProducedRolledTruffle>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ initial
 
 </td><td>
 
-[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)
 
 
 </td><td>

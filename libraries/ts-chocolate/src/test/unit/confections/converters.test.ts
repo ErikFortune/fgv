@@ -329,7 +329,7 @@ describe('Confections converters', () => {
         molds: { options: [{ id: 'common.dome-25mm' }] },
         shellChocolate: { ids: ['common.chocolate-dark-64'] }
       };
-      expect(ConfectionConverters.anyConfectionVersion.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyConfectionVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.createdDate).toBe('2026-01-01');
         expect(result.notes).toEqual([{ category: 'user', note: 'Initial version' }]);
@@ -344,7 +344,7 @@ describe('Confections converters', () => {
         frameDimensions: { width: 300, height: 200, depth: 8 },
         singleBonBonDimensions: { width: 25, height: 25 }
       };
-      expect(ConfectionConverters.anyConfectionVersion.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyConfectionVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.notes).toBeUndefined();
       });
@@ -357,32 +357,34 @@ describe('Confections converters', () => {
 
   describe('moldedBonBon', () => {
     test('converts valid molded bonbon', () => {
-      expect(ConfectionConverters.moldedBonBon.convert(validMoldedBonBon)).toSucceedAndSatisfy((result) => {
-        expect(result.confectionType).toBe('molded-bonbon');
-        expect(result.baseId).toBe('dark-dome-bonbon');
-        const version = result.versions[0];
-        expect(version.molds).toBeDefined();
-        expect(version.shellChocolate).toBeDefined();
-      });
+      expect(ConfectionConverters.moldedBonBonEntity.convert(validMoldedBonBon)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.confectionType).toBe('molded-bonbon');
+          expect(result.baseId).toBe('dark-dome-bonbon');
+          const version = result.versions[0];
+          expect(version.molds).toBeDefined();
+          expect(version.shellChocolate).toBeDefined();
+        }
+      );
     });
 
     test('fails for wrong confection type', () => {
       const input = { ...validMoldedBonBon, confectionType: 'bar-truffle' };
-      expect(ConfectionConverters.moldedBonBon.convert(input)).toFail();
+      expect(ConfectionConverters.moldedBonBonEntity.convert(input)).toFail();
     });
 
     test('fails for version missing molds', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { molds: _molds, ...versionWithoutMolds } = validMoldedBonBon.versions[0];
       const input = { ...validMoldedBonBon, versions: [versionWithoutMolds] };
-      expect(ConfectionConverters.moldedBonBon.convert(input)).toFail();
+      expect(ConfectionConverters.moldedBonBonEntity.convert(input)).toFail();
     });
 
     test('fails for version missing shellChocolate', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { shellChocolate: _shell, ...versionWithoutShell } = validMoldedBonBon.versions[0];
       const input = { ...validMoldedBonBon, versions: [versionWithoutShell] };
-      expect(ConfectionConverters.moldedBonBon.convert(input)).toFail();
+      expect(ConfectionConverters.moldedBonBonEntity.convert(input)).toFail();
     });
   });
 
@@ -392,7 +394,7 @@ describe('Confections converters', () => {
 
   describe('barTruffle', () => {
     test('converts valid bar truffle', () => {
-      expect(ConfectionConverters.barTruffle.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.barTruffleEntity.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
         expect(result.confectionType).toBe('bar-truffle');
         expect(result.baseId).toBe('dark-bar-truffle');
         const version = result.versions[0];
@@ -403,14 +405,14 @@ describe('Confections converters', () => {
 
     test('fails for wrong confection type', () => {
       const input = { ...validBarTruffle, confectionType: 'molded-bonbon' };
-      expect(ConfectionConverters.barTruffle.convert(input)).toFail();
+      expect(ConfectionConverters.barTruffleEntity.convert(input)).toFail();
     });
 
     test('fails for version missing frameDimensions', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { frameDimensions: _frame, ...versionWithoutFrame } = validBarTruffle.versions[0];
       const input = { ...validBarTruffle, versions: [versionWithoutFrame] };
-      expect(ConfectionConverters.barTruffle.convert(input)).toFail();
+      expect(ConfectionConverters.barTruffleEntity.convert(input)).toFail();
     });
   });
 
@@ -420,19 +422,21 @@ describe('Confections converters', () => {
 
   describe('rolledTruffle', () => {
     test('converts valid rolled truffle', () => {
-      expect(ConfectionConverters.rolledTruffle.convert(validRolledTruffle)).toSucceedAndSatisfy((result) => {
-        expect(result.confectionType).toBe('rolled-truffle');
-        expect(result.baseId).toBe('dark-cocoa-truffle');
-        const version = result.versions[0];
-        expect(version.coatings).toBeDefined();
-      });
+      expect(ConfectionConverters.rolledTruffleEntity.convert(validRolledTruffle)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.confectionType).toBe('rolled-truffle');
+          expect(result.baseId).toBe('dark-cocoa-truffle');
+          const version = result.versions[0];
+          expect(version.coatings).toBeDefined();
+        }
+      );
     });
 
     test('converts rolled truffle version without optional fields', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { coatings: _coatings, ...versionWithoutCoatings } = validRolledTruffle.versions[0];
       const input = { ...validRolledTruffle, versions: [versionWithoutCoatings] };
-      expect(ConfectionConverters.rolledTruffle.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.rolledTruffleEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.confectionType).toBe('rolled-truffle');
         const version = result.versions[0];
         expect(version.coatings).toBeUndefined();
@@ -442,7 +446,7 @@ describe('Confections converters', () => {
 
     test('fails for wrong confection type', () => {
       const input = { ...validRolledTruffle, confectionType: 'molded-bonbon' };
-      expect(ConfectionConverters.rolledTruffle.convert(input)).toFail();
+      expect(ConfectionConverters.rolledTruffleEntity.convert(input)).toFail();
     });
   });
 
@@ -452,30 +456,32 @@ describe('Confections converters', () => {
 
   describe('confectionData (discriminated union)', () => {
     test('converts molded bonbon', () => {
-      expect(ConfectionConverters.anyConfectionRaw.convert(validMoldedBonBon)).toSucceedAndSatisfy(
+      expect(ConfectionConverters.anyConfectionRawEntity.convert(validMoldedBonBon)).toSucceedAndSatisfy(
         (result) => {
-          expect(Confections.isMoldedBonBon(result)).toBe(true);
+          expect(Confections.isMoldedBonBonEntity(result)).toBe(true);
         }
       );
     });
 
     test('converts bar truffle', () => {
-      expect(ConfectionConverters.anyConfectionRaw.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
-        expect(Confections.isBarTruffle(result)).toBe(true);
-      });
+      expect(ConfectionConverters.anyConfectionRawEntity.convert(validBarTruffle)).toSucceedAndSatisfy(
+        (result) => {
+          expect(Confections.isBarTruffleEntity(result)).toBe(true);
+        }
+      );
     });
 
     test('converts rolled truffle', () => {
-      expect(ConfectionConverters.anyConfectionRaw.convert(validRolledTruffle)).toSucceedAndSatisfy(
+      expect(ConfectionConverters.anyConfectionRawEntity.convert(validRolledTruffle)).toSucceedAndSatisfy(
         (result) => {
-          expect(Confections.isRolledTruffle(result)).toBe(true);
+          expect(Confections.isRolledTruffleEntity(result)).toBe(true);
         }
       );
     });
 
     test('fails for unknown confection type', () => {
       const input = { ...validMoldedBonBon, confectionType: 'unknown-type' };
-      expect(ConfectionConverters.anyConfectionRaw.convert(input)).toFail();
+      expect(ConfectionConverters.anyConfectionRawEntity.convert(input)).toFail();
     });
   });
 
@@ -485,20 +491,24 @@ describe('Confections converters', () => {
 
   describe('confection (validated)', () => {
     test('converts and validates valid confection', () => {
-      expect(ConfectionConverters.anyConfection.convert(validMoldedBonBon)).toSucceedAndSatisfy((result) => {
-        expect(result.baseId).toBe('dark-dome-bonbon');
-        expect(result.goldenVersionSpec).toBe('2026-01-01-01');
-      });
+      expect(ConfectionConverters.anyConfectionEntity.convert(validMoldedBonBon)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.baseId).toBe('dark-dome-bonbon');
+          expect(result.goldenVersionSpec).toBe('2026-01-01-01');
+        }
+      );
     });
 
     test('fails when versions array is empty', () => {
       const input = { ...validMoldedBonBon, versions: [] };
-      expect(ConfectionConverters.anyConfection.convert(input)).toFailWith(/at least one version/i);
+      expect(ConfectionConverters.anyConfectionEntity.convert(input)).toFailWith(/at least one version/i);
     });
 
     test('fails when golden version not found in versions', () => {
       const input = { ...validMoldedBonBon, goldenVersionSpec: '9999-99-99-99' };
-      expect(ConfectionConverters.anyConfection.convert(input)).toFailWith(/Golden version.*not found/i);
+      expect(ConfectionConverters.anyConfectionEntity.convert(input)).toFailWith(
+        /Golden version.*not found/i
+      );
     });
 
     test('succeeds when golden version exists in versions', () => {
@@ -510,7 +520,7 @@ describe('Confections converters', () => {
         ],
         goldenVersionSpec: '2026-02-01-01'
       };
-      expect(ConfectionConverters.anyConfection.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyConfectionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.goldenVersionSpec).toBe('2026-02-01-01');
       });
     });
@@ -527,7 +537,7 @@ describe('Confections converters', () => {
         id: 'common.dark-ganache-classic',
         notes: [{ category: 'user', note: 'Rich dark chocolate ganache' }]
       };
-      expect(ConfectionConverters.recipeFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.recipeFillingOptionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('recipe');
         expect(result.id).toBe('common.dark-ganache-classic');
         expect(result.notes).toEqual([{ category: 'user', note: 'Rich dark chocolate ganache' }]);
@@ -539,7 +549,7 @@ describe('Confections converters', () => {
         type: 'recipe',
         id: 'common.milk-ganache'
       };
-      expect(ConfectionConverters.recipeFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.recipeFillingOptionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('recipe');
         expect(result.id).toBe('common.milk-ganache');
         expect(result.notes).toBeUndefined();
@@ -551,7 +561,7 @@ describe('Confections converters', () => {
         type: 'ingredient',
         id: 'common.dark-ganache-classic'
       };
-      expect(ConfectionConverters.recipeFillingOption.convert(input)).toFail();
+      expect(ConfectionConverters.recipeFillingOptionEntity.convert(input)).toFail();
     });
   });
 
@@ -562,11 +572,13 @@ describe('Confections converters', () => {
         id: 'common.praline-paste',
         notes: [{ category: 'user', note: 'Hazelnut praline' }]
       };
-      expect(ConfectionConverters.ingredientFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.type).toBe('ingredient');
-        expect(result.id).toBe('common.praline-paste');
-        expect(result.notes).toEqual([{ category: 'user', note: 'Hazelnut praline' }]);
-      });
+      expect(ConfectionConverters.ingredientFillingOptionEntity.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.type).toBe('ingredient');
+          expect(result.id).toBe('common.praline-paste');
+          expect(result.notes).toEqual([{ category: 'user', note: 'Hazelnut praline' }]);
+        }
+      );
     });
 
     test('fails for wrong type discriminator', () => {
@@ -574,28 +586,28 @@ describe('Confections converters', () => {
         type: 'recipe',
         id: 'common.praline-paste'
       };
-      expect(ConfectionConverters.ingredientFillingOption.convert(input)).toFail();
+      expect(ConfectionConverters.ingredientFillingOptionEntity.convert(input)).toFail();
     });
   });
 
   describe('anyFillingOption', () => {
     test('converts recipe filling option', () => {
       const input = { type: 'recipe', id: 'common.dark-ganache-classic' };
-      expect(ConfectionConverters.anyFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyFillingOptionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('recipe');
       });
     });
 
     test('converts ingredient filling option', () => {
       const input = { type: 'ingredient', id: 'common.praline-paste' };
-      expect(ConfectionConverters.anyFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.anyFillingOptionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.type).toBe('ingredient');
       });
     });
 
     test('fails for unknown type', () => {
       const input = { type: 'unknown', id: 'common.something' };
-      expect(ConfectionConverters.anyFillingOption.convert(input)).toFail();
+      expect(ConfectionConverters.anyFillingOptionEntity.convert(input)).toFail();
     });
   });
 
@@ -608,7 +620,7 @@ describe('Confections converters', () => {
         ],
         preferredId: 'common.dark-ganache-classic'
       };
-      expect(ConfectionConverters.fillingOptions.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.fillingOptionEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options).toHaveLength(2);
         expect(result.preferredId).toBe('common.dark-ganache-classic');
       });
@@ -618,7 +630,7 @@ describe('Confections converters', () => {
       const input = {
         options: [{ type: 'ingredient', id: 'common.praline-paste' }]
       };
-      expect(ConfectionConverters.fillingOptions.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.fillingOptionEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options).toHaveLength(1);
         expect(result.preferredId).toBeUndefined();
       });
@@ -632,7 +644,7 @@ describe('Confections converters', () => {
         ],
         preferredId: 'common.praline-paste'
       };
-      expect(ConfectionConverters.fillingOptions.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.fillingOptionEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options).toHaveLength(2);
         expect(result.options[0].type).toBe('recipe');
         expect(result.options[1].type).toBe('ingredient');
@@ -650,7 +662,7 @@ describe('Confections converters', () => {
           preferredId: 'common.dark-ganache-classic'
         }
       };
-      expect(ConfectionConverters.fillingSlot.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.fillingSlotEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.slotId).toBe('center');
         expect(result.name).toBe('Ganache Center');
         expect(result.filling.options).toHaveLength(1);
@@ -665,7 +677,7 @@ describe('Confections converters', () => {
           options: [{ type: 'ingredient', id: 'common.praline-paste' }]
         }
       };
-      expect(ConfectionConverters.fillingSlot.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.fillingSlotEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.slotId).toBe('layer1');
         expect(result.name).toBeUndefined();
       });
@@ -676,12 +688,12 @@ describe('Confections converters', () => {
         name: 'Some Filling',
         filling: { options: [] }
       };
-      expect(ConfectionConverters.fillingSlot.convert(input)).toFail();
+      expect(ConfectionConverters.fillingSlotEntity.convert(input)).toFail();
     });
 
     test('fails for missing filling', () => {
       const input = { slotId: 'center', name: 'Center' };
-      expect(ConfectionConverters.fillingSlot.convert(input)).toFail();
+      expect(ConfectionConverters.fillingSlotEntity.convert(input)).toFail();
     });
 
     test('fails when preferredId is not in options', () => {
@@ -695,7 +707,7 @@ describe('Confections converters', () => {
           preferredId: 'common.nonexistent-recipe'
         }
       };
-      expect(ConfectionConverters.fillingSlot.convert(input)).toFailWith(
+      expect(ConfectionConverters.fillingSlotEntity.convert(input)).toFailWith(
         /fillingOptions: preferredId 'common.nonexistent-recipe' not found in options/
       );
     });
@@ -714,7 +726,7 @@ describe('Confections converters', () => {
         },
         purpose: 'seal'
       };
-      expect(ConfectionConverters.additionalChocolate.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.additionalChocolateEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.chocolate.ids[0]).toBe('common.chocolate-dark-64');
         expect(result.chocolate.preferredId).toBe('common.chocolate-dark-64');
         expect(result.purpose).toBe('seal');
@@ -728,7 +740,7 @@ describe('Confections converters', () => {
         },
         purpose: 'decoration'
       };
-      expect(ConfectionConverters.additionalChocolate.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.additionalChocolateEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.purpose).toBe('decoration');
         expect(result.chocolate.preferredId).toBeUndefined();
       });
@@ -741,7 +753,7 @@ describe('Confections converters', () => {
         },
         purpose: 'invalid'
       };
-      expect(ConfectionConverters.additionalChocolate.convert(input)).toFail();
+      expect(ConfectionConverters.additionalChocolateEntity.convert(input)).toFail();
     });
 
     test('fails when preferredId is not in ids', () => {
@@ -752,7 +764,7 @@ describe('Confections converters', () => {
         },
         purpose: 'seal'
       };
-      expect(ConfectionConverters.additionalChocolate.convert(input)).toFailWith(
+      expect(ConfectionConverters.additionalChocolateEntity.convert(input)).toFailWith(
         /additionalChocolate: preferredId 'common.nonexistent-chocolate' not found in ids/
       );
     });

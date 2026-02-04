@@ -183,7 +183,7 @@ Alcohol-specific ingredient
 </td></tr>
 <tr><td>
 
-[IBarTruffle](./ts-chocolate.entities.ibartruffle.md)
+[IBarTruffleEntity](./ts-chocolate.entities.ibartruffleentity.md)
 
 
 </td><td>
@@ -194,7 +194,7 @@ Bar truffle confection Ganache slab cut into squares and enrobed
 </td></tr>
 <tr><td>
 
-[IBarTruffleVersion](./ts-chocolate.entities.ibartruffleversion.md)
+[IBarTruffleVersionEntity](./ts-chocolate.entities.ibartruffleversionentity.md)
 
 
 </td><td>
@@ -255,6 +255,17 @@ Journal entry for confection edits.
 </td><td>
 
 Journal entry for confection production sessions.
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionYield](./ts-chocolate.entities.iconfectionyield.md)
+
+
+</td><td>
+
+Yield specification for a [confection](./ts-chocolate.entities.confections.anyconfectionentity.md)<!-- -->.
 
 
 </td></tr>
@@ -381,7 +392,7 @@ Represents a chocolate mold
 </td></tr>
 <tr><td>
 
-[IMoldedBonBon](./ts-chocolate.entities.imoldedbonbon.md)
+[IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
 
 
 </td><td>
@@ -392,7 +403,7 @@ Molded bonbon confection Uses chocolate molds for shell formation
 </td></tr>
 <tr><td>
 
-[IMoldedBonBonVersion](./ts-chocolate.entities.imoldedbonbonversion.md)
+[IMoldedBonBonVersionEntity](./ts-chocolate.entities.imoldedbonbonversionentity.md)
 
 
 </td><td>
@@ -451,7 +462,7 @@ A single step in a procedure (persisted data model). Does not include validation
 </td></tr>
 <tr><td>
 
-[IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)
+[IProducedBarTruffleEntity](./ts-chocolate.entities.iproducedbartruffleentity.md)
 
 
 </td><td>
@@ -473,7 +484,7 @@ Produced filling with concrete choices. Captures what was actually made during a
 </td></tr>
 <tr><td>
 
-[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)
+[IProducedMoldedBonBonEntity](./ts-chocolate.entities.iproducedmoldedbonbonentity.md)
 
 
 </td><td>
@@ -484,7 +495,7 @@ Produced molded bonbon with concrete choices.
 </td></tr>
 <tr><td>
 
-[IProducedRolledTruffle](./ts-chocolate.entities.iproducedrolledtruffle.md)
+[IProducedRolledTruffleEntity](./ts-chocolate.entities.iproducedrolledtruffleentity.md)
 
 
 </td><td>
@@ -506,7 +517,7 @@ Options for rendering procedure steps.
 </td></tr>
 <tr><td>
 
-[IRolledTruffle](./ts-chocolate.entities.irolledtruffle.md)
+[IRolledTruffleEntity](./ts-chocolate.entities.irolledtruffleentity.md)
 
 
 </td><td>
@@ -517,7 +528,7 @@ Rolled truffle confection Hand-rolled ganache balls with various coatings
 </td></tr>
 <tr><td>
 
-[IRolledTruffleVersion](./ts-chocolate.entities.irolledtruffleversion.md)
+[IRolledTruffleVersionEntity](./ts-chocolate.entities.irolledtruffleversionentity.md)
 
 
 </td><td>
@@ -681,7 +692,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[AnyConfection](./ts-chocolate.entities.anyconfection.md)
+[AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
 
 
 </td><td>
@@ -703,7 +714,7 @@ Union type for confection journal entries (edit or production)
 </td></tr>
 <tr><td>
 
-[AnyConfectionVersion](./ts-chocolate.entities.anyconfectionversion.md)
+[AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
 
 
 </td><td>
@@ -747,7 +758,7 @@ Discriminated union of all persisted session types. Use type guards to narrow to
 </td></tr>
 <tr><td>
 
-[AnyProducedConfection](./ts-chocolate.entities.anyproducedconfection.md)
+[AnyProducedConfectionEntity](./ts-chocolate.entities.anyproducedconfectionentity.md)
 
 
 </td><td>

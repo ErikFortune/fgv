@@ -9,5 +9,5 @@ Gets the underlying raw molded bonbon version data.
 **Signature:**
 
 ```typescript
-get raw(): Confections.IMoldedBonBonVersion;
+get raw(): Confections.IMoldedBonBonVersionEntity;
 ```

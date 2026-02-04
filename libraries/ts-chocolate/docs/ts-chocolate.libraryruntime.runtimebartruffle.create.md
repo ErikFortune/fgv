@@ -9,7 +9,7 @@ Factory method for creating a RuntimeBarTruffle.
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, id: ConfectionId, confection: Confections.IBarTruffle): Result<RuntimeBarTruffle>;
+static create(context: IConfectionContext, id: ConfectionId, confection: Confections.IBarTruffleEntity): Result<RuntimeBarTruffle>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-[Confections.IBarTruffle](./ts-chocolate.entities.ibartruffle.md)
+[Confections.IBarTruffleEntity](./ts-chocolate.entities.ibartruffleentity.md)
 
 
 </td><td>

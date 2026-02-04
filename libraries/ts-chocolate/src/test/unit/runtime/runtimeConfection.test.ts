@@ -69,7 +69,7 @@ describe('RuntimeConfection', () => {
   // Test Data
   // ============================================================================
 
-  const moldedBonBonData: Confections.IMoldedBonBon = {
+  const moldedBonBonData: Confections.IMoldedBonBonEntity = {
     baseId: 'test-bonbon' as BaseConfectionId,
     confectionType: 'molded-bonbon',
     name: 'Test Bonbon' as ConfectionName,
@@ -141,7 +141,7 @@ describe('RuntimeConfection', () => {
     ]
   };
 
-  const barTruffleData: Confections.IBarTruffle = {
+  const barTruffleData: Confections.IBarTruffleEntity = {
     baseId: 'test-bar' as BaseConfectionId,
     confectionType: 'bar-truffle',
     name: 'Test Bar Truffle' as ConfectionName,
@@ -173,7 +173,7 @@ describe('RuntimeConfection', () => {
     ]
   };
 
-  const rolledTruffleData: Confections.IRolledTruffle = {
+  const rolledTruffleData: Confections.IRolledTruffleEntity = {
     baseId: 'test-rolled' as BaseConfectionId,
     confectionType: 'rolled-truffle',
     name: 'Test Rolled Truffle' as ConfectionName,
@@ -338,7 +338,7 @@ describe('RuntimeConfection', () => {
       };
     },
     resolveAdditionalChocolates: (
-      additional: ReadonlyArray<Confections.IAdditionalChocolate> | undefined,
+      additional: ReadonlyArray<Confections.IAdditionalChocolateEntity> | undefined,
       confectionId: ConfectionId
     ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined => {
       if (!additional || additional.length === 0) return undefined;
@@ -349,7 +349,7 @@ describe('RuntimeConfection', () => {
       }));
     },
     resolveFillingSlots: (
-      slots: ReadonlyArray<Confections.IFillingSlot> | undefined
+      slots: ReadonlyArray<Confections.IFillingSlotEntity> | undefined
     ): ReadonlyArray<IResolvedFillingSlot> | undefined => {
       if (!slots || slots.length === 0) return undefined;
       return slots.map((slot) => ({
@@ -822,7 +822,7 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('confection without optional properties', () => {
-    const minimalMolded: Confections.IMoldedBonBon = {
+    const minimalMolded: Confections.IMoldedBonBonEntity = {
       baseId: 'minimal' as BaseConfectionId,
       confectionType: 'molded-bonbon',
       name: 'Minimal Bonbon' as ConfectionName,
@@ -881,7 +881,7 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('bar truffle without enrobing chocolate', () => {
-    const barWithoutEnrobing: Confections.IBarTruffle = {
+    const barWithoutEnrobing: Confections.IBarTruffleEntity = {
       baseId: 'no-enrobing' as BaseConfectionId,
       confectionType: 'bar-truffle',
       name: 'Bar Without Enrobing' as ConfectionName,
@@ -918,7 +918,7 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('rolled truffle without coatings', () => {
-    const rolledWithoutCoatings: Confections.IRolledTruffle = {
+    const rolledWithoutCoatings: Confections.IRolledTruffleEntity = {
       baseId: 'no-coatings' as BaseConfectionId,
       confectionType: 'rolled-truffle',
       name: 'Rolled Without Coatings' as ConfectionName,

@@ -47,7 +47,7 @@ import { IProcedureRef } from '../fillings';
 // ============================================================================
 
 /**
- * Yield specification for a {@link Entities.Confections.AnyConfection | confection}.
+ * Yield specification for a {@link Entities.Confections.AnyConfectionEntity | confection}.
  * @public
  */
 export interface IConfectionYield {
@@ -96,7 +96,7 @@ export function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is
 }
 
 /**
- * Decoration specification for a {@link Entities.Confections.AnyConfection | confection}.
+ * Decoration specification for a {@link Entities.Confections.AnyConfectionEntity | confection}.
  * @public
  */
 export interface IConfectionDecoration {
@@ -127,7 +127,7 @@ export type FillingOptionId = FillingId | IngredientId;
  * Recipe filling option - references a recipe (e.g., ganache)
  * @public
  */
-export interface IRecipeFillingOption {
+export interface IRecipeFillingOptionEntity {
   /** Discriminator for recipe filling */
   readonly type: 'recipe';
   /** The filling recipe ID */
@@ -140,7 +140,7 @@ export interface IRecipeFillingOption {
  * Ingredient filling option - references an ingredient (e.g., praline paste)
  * @public
  */
-export interface IIngredientFillingOption {
+export interface IIngredientFillingOptionEntity {
   /** Discriminator for ingredient filling */
   readonly type: 'ingredient';
   /** The ingredient ID */
@@ -154,20 +154,20 @@ export interface IIngredientFillingOption {
  * Satisfies IHasId<FillingOptionId> for use with IOptionsWithPreferred.
  * @public
  */
-export type AnyFillingOption = IRecipeFillingOption | IIngredientFillingOption;
+export type AnyFillingOptionEntity = IRecipeFillingOptionEntity | IIngredientFillingOptionEntity;
 
 /**
  * A single filling slot with its own options and preferred selection.
  * Each slot can hold recipes OR ingredients (or both).
  * @public
  */
-export interface IFillingSlot {
+export interface IFillingSlotEntity {
   /** Unique identifier for this slot within the confection (e.g., "layer1", "center") */
   readonly slotId: SlotId;
   /** Human-readable name for display (e.g., "Inner Layer", "Ganache Center") */
   readonly name?: string;
   /** Available filling options with preferred selection */
-  readonly filling: Model.IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
+  readonly filling: Model.IOptionsWithPreferred<AnyFillingOptionEntity, FillingOptionId>;
 }
 
 // ============================================================================
@@ -187,7 +187,7 @@ export type IChocolateSpec = Model.IIdsWithPreferred<IngredientId>;
  * Used for seal chocolate, decoration chocolate, etc.
  * @public
  */
-export interface IAdditionalChocolate {
+export interface IAdditionalChocolateEntity {
   /** Available chocolate options with preferred selection */
   readonly chocolate: Model.IIdsWithPreferred<IngredientId>;
   /** Purpose of this additional chocolate */
@@ -254,7 +254,7 @@ export type ICoatings = Model.IIdsWithPreferred<IngredientId>;
  * Contains the configuration details that can change between versions.
  * @public
  */
-export interface IConfectionVersionBase {
+export interface IConfectionVersionEntityBase {
   /** Unique identifier for this version */
   readonly versionSpec: ConfectionVersionSpec;
   /** Date this version was created (ISO 8601 format) */
@@ -262,7 +262,7 @@ export interface IConfectionVersionBase {
   /** Yield specification for this version */
   readonly yield: IConfectionYield;
   /** Optional filling slots - each slot has independent options with a preferred selection */
-  readonly fillings?: ReadonlyArray<IFillingSlot>;
+  readonly fillings?: ReadonlyArray<IFillingSlotEntity>;
   /** Optional decorations for this version */
   readonly decorations?: ReadonlyArray<IConfectionDecoration>;
   /** Optional procedures with preferred selection */
@@ -280,13 +280,13 @@ export interface IConfectionVersionBase {
  * Includes mold and chocolate shell specifications.
  * @public
  */
-export interface IMoldedBonBonVersion extends IConfectionVersionBase {
+export interface IMoldedBonBonVersionEntity extends IConfectionVersionEntityBase {
   /** Required molds with preferred selection */
   readonly molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
   /** Required shell chocolate specification */
   readonly shellChocolate: IChocolateSpec;
   /** Optional additional chocolates (seal, decoration) */
-  readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+  readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolateEntity>;
 }
 
 /**
@@ -294,7 +294,7 @@ export interface IMoldedBonBonVersion extends IConfectionVersionBase {
  * Includes frame and cutting dimensions.
  * @public
  */
-export interface IBarTruffleVersion extends IConfectionVersionBase {
+export interface IBarTruffleVersionEntity extends IConfectionVersionEntityBase {
   /** Frame dimensions for ganache slab */
   readonly frameDimensions: IFrameDimensions;
   /** Single bonbon dimensions for cutting */
@@ -308,7 +308,7 @@ export interface IBarTruffleVersion extends IConfectionVersionBase {
  * Includes enrobing and coating specifications.
  * @public
  */
-export interface IRolledTruffleVersion extends IConfectionVersionBase {
+export interface IRolledTruffleVersionEntity extends IConfectionVersionEntityBase {
   /** Optional enrobing chocolate specification */
   readonly enrobingChocolate?: IChocolateSpec;
   /** Optional coatings (cocoa powder, nuts, etc.) */
@@ -319,7 +319,10 @@ export interface IRolledTruffleVersion extends IConfectionVersionBase {
  * Union type for all confection version types.
  * @public
  */
-export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
+export type AnyConfectionVersionEntity =
+  | IMoldedBonBonVersionEntity
+  | IBarTruffleVersionEntity
+  | IRolledTruffleVersionEntity;
 
 // ============================================================================
 // Base Confection Interface
@@ -330,7 +333,7 @@ export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | I
  * Contains stable identity and metadata; configuration details are in versions.
  * @public
  */
-export interface IConfectionBase {
+export interface IConfectionEntityBase {
   /** Base identifier within source (no dots) */
   readonly baseId: BaseConfectionId;
   /** Confection type (discriminator) */
@@ -346,7 +349,7 @@ export interface IConfectionBase {
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;
   /** Version history - contains type-specific configuration details */
-  readonly versions: ReadonlyArray<AnyConfectionVersion>;
+  readonly versions: ReadonlyArray<AnyConfectionVersionEntity>;
 }
 
 // ============================================================================
@@ -358,11 +361,11 @@ export interface IConfectionBase {
  * Uses chocolate molds for shell formation
  * @public
  */
-export interface IMoldedBonBon extends IConfectionBase {
+export interface IMoldedBonBonEntity extends IConfectionEntityBase {
   /** Type discriminator */
   readonly confectionType: 'molded-bonbon';
   /** Version history with molded bonbon specific details */
-  readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
+  readonly versions: ReadonlyArray<IMoldedBonBonVersionEntity>;
 }
 
 /**
@@ -370,11 +373,11 @@ export interface IMoldedBonBon extends IConfectionBase {
  * Ganache slab cut into squares and enrobed
  * @public
  */
-export interface IBarTruffle extends IConfectionBase {
+export interface IBarTruffleEntity extends IConfectionEntityBase {
   /** Type discriminator */
   readonly confectionType: 'bar-truffle';
   /** Version history with bar truffle specific details */
-  readonly versions: ReadonlyArray<IBarTruffleVersion>;
+  readonly versions: ReadonlyArray<IBarTruffleVersionEntity>;
 }
 
 /**
@@ -382,11 +385,11 @@ export interface IBarTruffle extends IConfectionBase {
  * Hand-rolled ganache balls with various coatings
  * @public
  */
-export interface IRolledTruffle extends IConfectionBase {
+export interface IRolledTruffleEntity extends IConfectionEntityBase {
   /** Type discriminator */
   readonly confectionType: 'rolled-truffle';
   /** Version history with rolled truffle specific details */
-  readonly versions: ReadonlyArray<IRolledTruffleVersion>;
+  readonly versions: ReadonlyArray<IRolledTruffleVersionEntity>;
 }
 
 // ============================================================================
@@ -398,7 +401,7 @@ export interface IRolledTruffle extends IConfectionBase {
  * Use this when working with raw confection data.
  * @public
  */
-export type AnyConfection = IMoldedBonBon | IBarTruffle | IRolledTruffle;
+export type AnyConfectionEntity = IMoldedBonBonEntity | IBarTruffleEntity | IRolledTruffleEntity;
 
 // ============================================================================
 // Type Guards
@@ -410,7 +413,7 @@ export type AnyConfection = IMoldedBonBon | IBarTruffle | IRolledTruffle;
  * @returns True if the confection is a molded bonbon
  * @public
  */
-export function isMoldedBonBon(confection: AnyConfection): confection is IMoldedBonBon {
+export function isMoldedBonBonEntity(confection: AnyConfectionEntity): confection is IMoldedBonBonEntity {
   return confection.confectionType === 'molded-bonbon';
 }
 
@@ -420,7 +423,7 @@ export function isMoldedBonBon(confection: AnyConfection): confection is IMolded
  * @returns True if the confection is a bar truffle
  * @public
  */
-export function isBarTruffle(confection: AnyConfection): confection is IBarTruffle {
+export function isBarTruffleEntity(confection: AnyConfectionEntity): confection is IBarTruffleEntity {
   return confection.confectionType === 'bar-truffle';
 }
 
@@ -430,7 +433,7 @@ export function isBarTruffle(confection: AnyConfection): confection is IBarTruff
  * @returns True if the confection is a rolled truffle
  * @public
  */
-export function isRolledTruffle(confection: AnyConfection): confection is IRolledTruffle {
+export function isRolledTruffleEntity(confection: AnyConfectionEntity): confection is IRolledTruffleEntity {
   return confection.confectionType === 'rolled-truffle';
 }
 
@@ -444,7 +447,9 @@ export function isRolledTruffle(confection: AnyConfection): confection is IRolle
  * @returns True if the version is a molded bonbon version
  * @public
  */
-export function isMoldedBonBonVersion(version: AnyConfectionVersion): version is IMoldedBonBonVersion {
+export function isMoldedBonBonVersionEntity(
+  version: AnyConfectionVersionEntity
+): version is IMoldedBonBonVersionEntity {
   return 'molds' in version && 'shellChocolate' in version;
 }
 
@@ -454,7 +459,9 @@ export function isMoldedBonBonVersion(version: AnyConfectionVersion): version is
  * @returns True if the version is a bar truffle version
  * @public
  */
-export function isBarTruffleVersion(version: AnyConfectionVersion): version is IBarTruffleVersion {
+export function isBarTruffleVersionEntity(
+  version: AnyConfectionVersionEntity
+): version is IBarTruffleVersionEntity {
   return 'frameDimensions' in version && 'singleBonBonDimensions' in version;
 }
 
@@ -464,8 +471,10 @@ export function isBarTruffleVersion(version: AnyConfectionVersion): version is I
  * @returns True if the version is a rolled truffle version
  * @public
  */
-export function isRolledTruffleVersion(version: AnyConfectionVersion): version is IRolledTruffleVersion {
-  return !isMoldedBonBonVersion(version) && !isBarTruffleVersion(version);
+export function isRolledTruffleVersionEntity(
+  version: AnyConfectionVersionEntity
+): version is IRolledTruffleVersionEntity {
+  return !isMoldedBonBonVersionEntity(version) && !isBarTruffleVersionEntity(version);
 }
 
 // ============================================================================
@@ -488,7 +497,7 @@ export const allResolvedSlotTypes: ResolvedSlotType[] = ['recipe', 'ingredient']
  * Resolved slot with recipe filling.
  * @public
  */
-export interface IResolvedFillingSlot {
+export interface IResolvedFillingSlotEntity {
   /** Slot type discriminator */
   readonly slotType: 'recipe';
   /** Slot identifier */
@@ -501,7 +510,7 @@ export interface IResolvedFillingSlot {
  * Resolved slot with ingredient filling.
  * @public
  */
-export interface IResolvedIngredientSlot {
+export interface IResolvedIngredientSlotEntity {
   /** Slot type discriminator */
   readonly slotType: 'ingredient';
   /** Slot identifier */
@@ -515,7 +524,7 @@ export interface IResolvedIngredientSlot {
  * Discriminated on the `slotType` field.
  * @public
  */
-export type AnyResolvedFillingSlot = IResolvedFillingSlot | IResolvedIngredientSlot;
+export type AnyResolvedFillingSlotEntity = IResolvedFillingSlotEntity | IResolvedIngredientSlotEntity;
 
 /**
  * Type guard for IResolvedFillingSlot
@@ -523,7 +532,9 @@ export type AnyResolvedFillingSlot = IResolvedFillingSlot | IResolvedIngredientS
  * @returns True if the slot contains a recipe filling
  * @public
  */
-export function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IResolvedFillingSlot {
+export function isResolvedFillingSlotEntity(
+  slot: AnyResolvedFillingSlotEntity
+): slot is IResolvedFillingSlotEntity {
   return slot.slotType === 'recipe';
 }
 
@@ -533,7 +544,9 @@ export function isResolvedFillingSlot(slot: AnyResolvedFillingSlot): slot is IRe
  * @returns True if the slot contains an ingredient filling
  * @public
  */
-export function isResolvedIngredientSlot(slot: AnyResolvedFillingSlot): slot is IResolvedIngredientSlot {
+export function isResolvedIngredientSlotEntity(
+  slot: AnyResolvedFillingSlotEntity
+): slot is IResolvedIngredientSlotEntity {
   return slot.slotType === 'ingredient';
 }
 
@@ -546,7 +559,7 @@ export function isResolvedIngredientSlot(slot: AnyResolvedFillingSlot): slot is 
  * Contains common fields shared by all confection productions.
  * @public
  */
-export interface IProducedConfectionBase {
+export interface IProducedConfectionEntityBase {
   /** Confection type discriminator (matches ConfectionType) */
   readonly confectionType: ConfectionType;
   /** Confection version ID that was produced */
@@ -554,7 +567,7 @@ export interface IProducedConfectionBase {
   /** Yield specification for this production */
   readonly yield: IConfectionYield;
   /** Resolved filling slots with concrete selections */
-  readonly fillings?: ReadonlyArray<AnyResolvedFillingSlot>;
+  readonly fillings?: ReadonlyArray<AnyResolvedFillingSlotEntity>;
   /** Resolved procedure ID if one was used */
   readonly procedureId?: ProcedureId;
   /** Optional categorized notes about production */
@@ -565,7 +578,7 @@ export interface IProducedConfectionBase {
  * Produced molded bonbon with concrete choices.
  * @public
  */
-export interface IProducedMoldedBonBon extends IProducedConfectionBase {
+export interface IProducedMoldedBonBonEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'molded-bonbon';
   /** Resolved mold ID */
@@ -582,7 +595,7 @@ export interface IProducedMoldedBonBon extends IProducedConfectionBase {
  * Produced bar truffle with concrete choices.
  * @public
  */
-export interface IProducedBarTruffle extends IProducedConfectionBase {
+export interface IProducedBarTruffleEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'bar-truffle';
   /** Resolved enrobing chocolate ingredient ID (if used) */
@@ -593,7 +606,7 @@ export interface IProducedBarTruffle extends IProducedConfectionBase {
  * Produced rolled truffle with concrete choices.
  * @public
  */
-export interface IProducedRolledTruffle extends IProducedConfectionBase {
+export interface IProducedRolledTruffleEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'rolled-truffle';
   /** Resolved enrobing chocolate ingredient ID (if used) */
@@ -607,7 +620,10 @@ export interface IProducedRolledTruffle extends IProducedConfectionBase {
  * Discriminated on the `confectionType` field.
  * @public
  */
-export type AnyProducedConfection = IProducedMoldedBonBon | IProducedBarTruffle | IProducedRolledTruffle;
+export type AnyProducedConfectionEntity =
+  | IProducedMoldedBonBonEntity
+  | IProducedBarTruffleEntity
+  | IProducedRolledTruffleEntity;
 
 /**
  * Type guard for IProducedMoldedBonBon
@@ -615,7 +631,9 @@ export type AnyProducedConfection = IProducedMoldedBonBon | IProducedBarTruffle 
  * @returns True if this is a produced molded bonbon
  * @public
  */
-export function isProducedMoldedBonBon(produced: AnyProducedConfection): produced is IProducedMoldedBonBon {
+export function isProducedMoldedBonBonEntity(
+  produced: AnyProducedConfectionEntity
+): produced is IProducedMoldedBonBonEntity {
   return produced.confectionType === 'molded-bonbon';
 }
 
@@ -625,7 +643,9 @@ export function isProducedMoldedBonBon(produced: AnyProducedConfection): produce
  * @returns True if this is a produced bar truffle
  * @public
  */
-export function isProducedBarTruffle(produced: AnyProducedConfection): produced is IProducedBarTruffle {
+export function isProducedBarTruffleEntity(
+  produced: AnyProducedConfectionEntity
+): produced is IProducedBarTruffleEntity {
   return produced.confectionType === 'bar-truffle';
 }
 
@@ -635,6 +655,8 @@ export function isProducedBarTruffle(produced: AnyProducedConfection): produced 
  * @returns True if this is a produced rolled truffle
  * @public
  */
-export function isProducedRolledTruffle(produced: AnyProducedConfection): produced is IProducedRolledTruffle {
+export function isProducedRolledTruffleEntity(
+  produced: AnyProducedConfectionEntity
+): produced is IProducedRolledTruffleEntity {
   return produced.confectionType === 'rolled-truffle';
 }

@@ -9,5 +9,5 @@ The original raw recipe filling option data
 **Signature:**
 
 ```typescript
-readonly raw: Confections.IRecipeFillingOption;
+readonly raw: Confections.IRecipeFillingOptionEntity;
 ```

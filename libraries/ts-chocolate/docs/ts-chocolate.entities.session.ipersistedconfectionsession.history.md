@@ -9,5 +9,5 @@ Full editing history including undo/redo stacks
 **Signature:**
 
 ```typescript
-readonly history: ISerializedEditingHistory<AnyProducedConfection>;
+readonly history: ISerializedEditingHistory<AnyProducedConfectionEntity>;
 ```

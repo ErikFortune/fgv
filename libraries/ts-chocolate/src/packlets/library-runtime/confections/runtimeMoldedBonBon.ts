@@ -50,7 +50,7 @@ import { RuntimeMoldedBonBonVersion } from './versions';
  * @public
  */
 export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
-  private readonly _moldedBonBon: Confections.IMoldedBonBon;
+  private readonly _moldedBonBon: Confections.IMoldedBonBonEntity;
 
   /**
    * Creates a RuntimeMoldedBonBon.
@@ -60,7 +60,7 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IMoldedBonBon
+    confection: Confections.IMoldedBonBonEntity
   ) {
     super(context, id, confection);
     this._moldedBonBon = confection;
@@ -76,7 +76,7 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IMoldedBonBon
+    confection: Confections.IMoldedBonBonEntity
   ): Result<RuntimeMoldedBonBon> {
     return Success.with(new RuntimeMoldedBonBon(context, id, confection));
   }
@@ -126,12 +126,12 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
    * @internal
    */
   protected override _createVersion(
-    rawVersion: Confections.AnyConfectionVersion
+    rawVersion: Confections.AnyConfectionVersionEntity
   ): IRuntimeMoldedBonBonVersion {
     return RuntimeMoldedBonBonVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IMoldedBonBonVersion
+      rawVersion as Confections.IMoldedBonBonVersionEntity
     ).orThrow();
   }
 
@@ -183,7 +183,7 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   /**
    * Gets the underlying raw molded bonbon data
    */
-  public get raw(): Confections.IMoldedBonBon {
+  public get raw(): Confections.IMoldedBonBonEntity {
     return this._moldedBonBon;
   }
 }

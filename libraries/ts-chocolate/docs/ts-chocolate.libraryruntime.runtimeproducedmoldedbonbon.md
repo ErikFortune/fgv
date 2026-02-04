@@ -9,9 +9,9 @@ Mutable wrapper for IProducedMoldedBonBon with undo/redo support. Provides molde
 **Signature:**
 
 ```typescript
-export declare class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBon> 
+export declare class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<IProducedMoldedBonBonEntity> 
 ```
-**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;[IProducedMoldedBonBon](./ts-chocolate.entities.iproducedmoldedbonbon.md)<!-- -->&gt;
+**Extends:** [RuntimeProducedConfectionBase](./ts-chocolate.libraryruntime.runtimeproducedconfectionbase.md)<!-- -->&lt;[IProducedMoldedBonBonEntity](./ts-chocolate.entities.iproducedmoldedbonbonentity.md)<!-- -->&gt;
 
 ## Properties
 

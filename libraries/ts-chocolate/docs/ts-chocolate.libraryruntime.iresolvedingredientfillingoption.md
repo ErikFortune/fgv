@@ -110,7 +110,7 @@ _(Optional)_ Optional notes specific to this filling option
 
 </td><td>
 
-Confections.IIngredientFillingOption
+Confections.IIngredientFillingOptionEntity
 
 
 </td><td>

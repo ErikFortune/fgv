@@ -9,5 +9,5 @@ Raw version typed to IRolledTruffleVersion
 **Signature:**
 
 ```typescript
-readonly raw: Confections.IRolledTruffleVersion;
+readonly raw: Confections.IRolledTruffleVersionEntity;
 ```
