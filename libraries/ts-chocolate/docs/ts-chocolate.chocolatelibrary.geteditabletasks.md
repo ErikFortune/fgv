@@ -9,7 +9,7 @@ Get an editable tasks collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>>;
+getEditableTasks(collectionId: CollectionId): Result<EditableCollection<ITaskData, BaseTaskId>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

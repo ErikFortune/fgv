@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->, metadata: [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->) =&gt; Result&lt;Collections.AggregatedResultMapEntry&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem&gt;&gt;
+(collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->, metadata: [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->) =&gt; Result&lt;Collections.AggregatedResultMapEntry&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->, TBaseId, TItem&gt;&gt;
 
 
 </td><td>
@@ -68,7 +68,7 @@ Create a new mutable collection.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; Result&lt;Collections.AggregatedResultMapEntry&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;&gt;
+(collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->) =&gt; Result&lt;Collections.AggregatedResultMapEntry&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;&gt;
 
 
 </td><td>
@@ -89,7 +89,7 @@ Delete a mutable collection.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; boolean
+(collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->) =&gt; boolean
 
 
 </td><td>
@@ -110,7 +110,7 @@ Check if a collection exists.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; Result&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
+(collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->) =&gt; Result&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
 
 
 </td><td>
@@ -131,7 +131,7 @@ Get metadata for a specific collection by ID.
 
 </td><td>
 
-() =&gt; ReadonlyArray&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
+() =&gt; ReadonlyArray&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -152,7 +152,7 @@ Get all collection IDs in the library.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; Result&lt;boolean&gt;
+(collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->) =&gt; Result&lt;boolean&gt;
 
 
 </td><td>
@@ -173,7 +173,7 @@ Check if a collection is mutable.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->, metadata: Partial&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;) =&gt; Result&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
+(collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->, metadata: Partial&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;) =&gt; Result&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
 
 
 </td><td>

@@ -9,7 +9,7 @@ Get an editable molds collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Adds a new session to a collection. Fails if a session with the same baseId alre
 **Signature:**
 
 ```typescript
-addSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId>;
+addSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

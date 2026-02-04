@@ -322,7 +322,7 @@ Gets the underlying raw confection data.
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

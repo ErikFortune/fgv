@@ -30,7 +30,7 @@ import {
   ChocolateType,
   IngredientCategory,
   Percentage,
-  SourceId
+  CollectionId
 } from '../../common';
 import { AnyRuntimeIngredient, RuntimeChocolateIngredient } from '../ingredients';
 import { LibraryRuntimeContext } from '../libraryRuntimeContext';
@@ -280,7 +280,7 @@ export class IngredientQuery {
    * Filter by source.
    * @param sourceId - Source ID to filter by
    */
-  public fromSource(sourceId: SourceId): IngredientQuery {
+  public fromSource(sourceId: CollectionId): IngredientQuery {
     return this._addFilter(equals(sourceId, (i) => i.sourceId));
   }
 

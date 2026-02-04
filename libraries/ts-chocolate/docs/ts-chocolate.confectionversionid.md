@@ -4,7 +4,7 @@
 
 ## ConfectionVersionId type
 
-Globally unique confection version identifier (composite) Format: "confectionId<!-- -->@<!-- -->versionSpec" where confectionId is "sourceId.baseConfectionId" Examples: "user.dark-dome-bonbon<!-- -->@<!-- -->2026-01-03-01"
+Globally unique confection version identifier (composite) Format: "confectionId<!-- -->@<!-- -->versionSpec" where confectionId is "collectionId.baseConfectionId" Examples: "user.dark-dome-bonbon<!-- -->@<!-- -->2026-01-03-01"
 
 **Signature:**
 

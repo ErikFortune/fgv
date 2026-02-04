@@ -4,12 +4,12 @@
 
 ## Helpers.createFillingId() function
 
-Creates a composite FillingId from source ID and base ID
+Creates a composite FillingId from collection ID and base ID
 
 **Signature:**
 
 ```typescript
-export declare function createFillingId(sourceId: SourceId, baseId: BaseFillingId): FillingId;
+export declare function createFillingId(collectionId: CollectionId, baseId: BaseFillingId): FillingId;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-sourceId
+collectionId
 
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>
 
-The source identifier
+The collection identifier
 
 
 </td></tr>
@@ -68,5 +68,5 @@ The base filling identifier
 
 [FillingId](./ts-chocolate.fillingid.md)
 
-Composite filling ID in format "sourceId.baseId"
+Composite filling ID in format "collectionId.baseId"
 

@@ -251,7 +251,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       const lib = createLibraryWithJournals([journal]);
 
       const journalId = CommonHelpers.createJournalId(
-        CommonConverters.sourceId.convert('test-collection').orThrow(),
+        CommonConverters.collectionId.convert('test-collection').orThrow(),
         journal.baseId
       );
       const result = lib.getJournal(journalId);
@@ -263,7 +263,7 @@ describe('JournalLibrary (Collection-Based)', () => {
     test('fails for unknown ID', () => {
       const lib = JournalLibrary.create({ builtin: false }).orThrow();
       const unknownId = CommonHelpers.createJournalId(
-        CommonConverters.sourceId.convert('test-collection').orThrow(),
+        CommonConverters.collectionId.convert('test-collection').orThrow(),
         CommonConverters.baseJournalId.convert('2099-12-31-999999-99999999').orThrow()
       );
       expect(lib.getJournal(unknownId)).toFail();
@@ -276,7 +276,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       const lib = createLibraryWithJournals([journal]);
 
       const journalId = CommonHelpers.createJournalId(
-        CommonConverters.sourceId.convert('test-collection').orThrow(),
+        CommonConverters.collectionId.convert('test-collection').orThrow(),
         journal.baseId
       );
       expect(lib.hasJournal(journalId)).toBe(true);
@@ -285,7 +285,7 @@ describe('JournalLibrary (Collection-Based)', () => {
     test('returns false for unknown journal', () => {
       const lib = JournalLibrary.create({ builtin: false }).orThrow();
       const unknownId = CommonHelpers.createJournalId(
-        CommonConverters.sourceId.convert('unknown').orThrow(),
+        CommonConverters.collectionId.convert('unknown').orThrow(),
         CommonConverters.baseJournalId.convert('2099-12-31-999999-99999999').orThrow()
       );
       expect(lib.hasJournal(unknownId)).toBe(false);

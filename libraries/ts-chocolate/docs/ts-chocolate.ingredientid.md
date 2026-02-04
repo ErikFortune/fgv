@@ -4,7 +4,7 @@
 
 ## IngredientId type
 
-Globally unique ingredient identifier (composite) Format: "sourceId.baseIngredientId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique ingredient identifier (composite) Format: "collectionId.baseIngredientId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 **Signature:**
 

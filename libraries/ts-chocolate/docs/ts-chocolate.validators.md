@@ -107,6 +107,17 @@ In-place `Validator` for [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[collectionId](./ts-chocolate.validators.collectionid.md)
+
+
+</td><td>
+
+In-place `Validator` for [CollectionId](./ts-chocolate.collectionid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [confectionId](./ts-chocolate.validators.confectionid.md)
 
 
@@ -223,17 +234,6 @@ In-place `Validator` for [ProcedureId](./ts-chocolate.procedureid.md) (composite
 </td><td>
 
 In-place `Validator` for [PersistedSessionId](./ts-chocolate.sessionid.md) (composite string).
-
-
-</td></tr>
-<tr><td>
-
-[sourceId](./ts-chocolate.validators.sourceid.md)
-
-
-</td><td>
-
-In-place `Validator` for [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 
 </td></tr>

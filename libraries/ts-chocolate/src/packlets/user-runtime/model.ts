@@ -25,7 +25,7 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { FillingVersionId, SessionId, SourceId } from '../common';
+import { FillingVersionId, SessionId, CollectionId } from '../common';
 import { AnySessionEntity, IFillingSessionEntity, PersistedSessionStatus } from '../entities';
 import { Session } from '../runtime';
 
@@ -41,7 +41,7 @@ export type AnyMaterializedSession = Session.EditingSession | Session.AnyConfect
  */
 export interface ICreateFillingSessionOptions {
   /** Target collection for the persisted session */
-  readonly collectionId: SourceId;
+  readonly collectionId: CollectionId;
   /** Initial session status (default: 'active') */
   readonly status?: PersistedSessionStatus;
   /** Optional user-provided label */

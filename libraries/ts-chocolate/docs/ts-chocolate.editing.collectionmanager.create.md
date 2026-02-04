@@ -9,7 +9,7 @@ Create a new mutable collection.
 **Signature:**
 
 ```typescript
-create(collectionId: SourceId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
+create(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>
@@ -62,5 +62,5 @@ metadata
 
 **Returns:**
 
-Result&lt;Collections.AggregatedResultMapEntry&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;&gt;
+Result&lt;Collections.AggregatedResultMapEntry&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;&gt;
 

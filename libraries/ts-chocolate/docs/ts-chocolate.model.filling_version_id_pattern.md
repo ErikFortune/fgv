@@ -4,7 +4,7 @@
 
 ## Model.FILLING\_VERSION\_ID\_PATTERN variable
 
-Pattern for valid filling version IDs Format: fillingId<!-- -->@<!-- -->versionSpec where fillingId is sourceId.baseFillingId
+Pattern for valid filling version IDs Format: fillingId<!-- -->@<!-- -->versionSpec where fillingId is collectionId.baseFillingId
 
 **Signature:**
 

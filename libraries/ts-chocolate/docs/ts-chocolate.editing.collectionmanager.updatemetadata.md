@@ -9,7 +9,7 @@ Update collection metadata.
 **Signature:**
 
 ```typescript
-updateMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
+updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

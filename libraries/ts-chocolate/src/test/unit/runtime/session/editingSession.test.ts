@@ -33,7 +33,7 @@ import {
   NoteCategory,
   ProcedureId,
   BaseSessionId,
-  SourceId
+  CollectionId
 } from '../../../../packlets/common';
 import {
   IGanacheCharacteristics,
@@ -126,7 +126,7 @@ describe('EditingSession', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -143,7 +143,7 @@ describe('EditingSession', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -547,7 +547,7 @@ describe('EditingSession', () => {
 
       expect(
         session.toPersistedState({
-          collectionId: 'user' as SourceId
+          collectionId: 'user' as CollectionId
         })
       ).toSucceedAndSatisfy((persisted) => {
         expect(persisted.sessionType).toBe('filling');
@@ -575,7 +575,7 @@ describe('EditingSession', () => {
 
       expect(
         session.toPersistedState({
-          collectionId: 'user' as SourceId
+          collectionId: 'user' as CollectionId
         })
       ).toSucceedAndSatisfy((persisted) => {
         // Should have one item in undo stack (first edit)
@@ -591,7 +591,7 @@ describe('EditingSession', () => {
 
       expect(
         session.toPersistedState({
-          collectionId: 'user' as SourceId,
+          collectionId: 'user' as CollectionId,
           baseId: '2026-01-15-120000-12345678' as BaseSessionId
         })
       ).toSucceedAndSatisfy((persisted) => {
@@ -605,7 +605,7 @@ describe('EditingSession', () => {
 
       expect(
         session.toPersistedState({
-          collectionId: 'user' as SourceId,
+          collectionId: 'user' as CollectionId,
           status: 'planning'
         })
       ).toSucceedAndSatisfy((persisted) => {
@@ -620,7 +620,7 @@ describe('EditingSession', () => {
       const notes = [{ category: 'session' as NoteCategory, note: 'Test session notes' }];
       expect(
         session.toPersistedState({
-          collectionId: 'user' as SourceId,
+          collectionId: 'user' as CollectionId,
           label: 'My Session',
           notes
         })
@@ -640,7 +640,7 @@ describe('EditingSession', () => {
       session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
 
       // Persist
-      const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
+      const persisted = session.toPersistedState({ collectionId: 'user' as CollectionId }).orThrow();
 
       // Restore
       expect(Session.EditingSession.fromPersistedState(persisted, version)).toSucceedAndSatisfy(
@@ -667,7 +667,7 @@ describe('EditingSession', () => {
       session.undo().orThrow();
 
       // Persist
-      const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
+      const persisted = session.toPersistedState({ collectionId: 'user' as CollectionId }).orThrow();
 
       // Restore
       expect(Session.EditingSession.fromPersistedState(persisted, version)).toSucceedAndSatisfy(
@@ -690,7 +690,7 @@ describe('EditingSession', () => {
     test('fails for version mismatch', () => {
       const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.EditingSession.create(version).orThrow();
-      const persisted = session.toPersistedState({ collectionId: 'user' as SourceId }).orThrow();
+      const persisted = session.toPersistedState({ collectionId: 'user' as CollectionId }).orThrow();
 
       // Create a fake persisted state with wrong version ID
       const wrongPersisted: IFillingSessionEntity = {

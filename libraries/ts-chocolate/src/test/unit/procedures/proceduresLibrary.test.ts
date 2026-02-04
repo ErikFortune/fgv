@@ -26,7 +26,7 @@ import {
   Minutes,
   Model as CommonModel,
   ProcedureId,
-  SourceId
+  CollectionId
 } from '../../../packlets/common';
 
 import { ProceduresLibrary, IProcedureEntity, Procedures } from '../../../packlets/entities';
@@ -95,7 +95,7 @@ describe('ProceduresLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testProcedure: createTestProcedure()
@@ -114,7 +114,7 @@ describe('ProceduresLibrary', () => {
       const result = ProceduresLibrary.create({
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testProcedure: createTestProcedure()
@@ -206,7 +206,7 @@ describe('ProceduresLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {}
           }
@@ -262,7 +262,7 @@ describe('ProceduresLibrary.createAsync', () => {
   test('creates library with built-ins by default', async () => {
     const result = await ProceduresLibrary.createAsync();
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('common' as SourceId)).toBe(true);
+      expect(lib.collections.has('common' as CollectionId)).toBe(true);
     });
   });
 
@@ -315,7 +315,7 @@ describe('ProceduresLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('external' as SourceId)).toBe(true);
+      expect(lib.collections.has('external' as CollectionId)).toBe(true);
       expect(lib.get('external.external-procedure' as ProcedureId)).toSucceed();
     });
   });
@@ -371,7 +371,7 @@ describe('ProceduresLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
       expect(lib.get('secret.secret-procedure' as ProcedureId)).toSucceedAndSatisfy((procedure) => {
         expect(procedure.name).toBe('Secret Procedure');
       });

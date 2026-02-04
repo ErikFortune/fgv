@@ -32,7 +32,7 @@ import {
   ProcedureId,
   BaseSessionId,
   SessionSpec,
-  SourceId,
+  CollectionId,
   Helpers as CommonHelpers,
   Converters as CommonConverters,
   Model as CommonModel
@@ -381,7 +381,7 @@ export class EditingSession {
    * @public
    */
   public toPersistedState(options: {
-    readonly collectionId: SourceId;
+    readonly collectionId: CollectionId;
     readonly baseId?: BaseSessionId;
     readonly status?: PersistedSessionStatus;
     readonly label?: string;

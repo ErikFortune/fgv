@@ -343,7 +343,7 @@ _(Optional)_ Optional related molds (cross-catalog via composite IDs)
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

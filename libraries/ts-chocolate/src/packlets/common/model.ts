@@ -106,7 +106,7 @@ export const VERSION_ID_SEPARATOR: string = '@';
 
 /**
  * Pattern for valid filling version IDs
- * Format: fillingId\@versionSpec where fillingId is sourceId.baseFillingId
+ * Format: fillingId\@versionSpec where fillingId is collectionId.baseFillingId
  * @public
  */
 export const FILLING_VERSION_ID_PATTERN: RegExp =
@@ -162,7 +162,7 @@ export const CONFECTION_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}
 
 /**
  * Pattern for valid confection version IDs
- * Format: confectionId\@versionSpec where confectionId is sourceId.baseConfectionId
+ * Format: confectionId\@versionSpec where confectionId is collectionId.baseConfectionId
  * @public
  */
 export const CONFECTION_VERSION_ID_PATTERN: RegExp =

@@ -9,7 +9,7 @@ Get metadata for a specific collection by ID.
 **Signature:**
 
 ```typescript
-get(collectionId: SourceId): Result<ICollectionSourceMetadata>;
+get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

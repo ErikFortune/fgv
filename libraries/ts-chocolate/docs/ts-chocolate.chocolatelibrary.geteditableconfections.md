@@ -9,7 +9,7 @@ Get an editable confections collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
+getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

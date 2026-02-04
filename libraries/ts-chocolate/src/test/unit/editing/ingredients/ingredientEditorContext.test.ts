@@ -29,9 +29,9 @@ import {
   IGanacheCharacteristics,
   Converters as EntityConverters
 } from '../../../../packlets/entities';
-import { BaseIngredientId, Celsius, IngredientId, Percentage, SourceId } from '../../../../index';
+import { BaseIngredientId, Celsius, IngredientId, Percentage, CollectionId } from '../../../../index';
 
-const TEST_SOURCE_ID = 'test-ingredients' as SourceId;
+const TEST_SOURCE_ID = 'test-ingredients' as CollectionId;
 const testKeyConverter = Converters.string as unknown as Converter<BaseIngredientId>;
 
 // Helper functions for branded types

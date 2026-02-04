@@ -30,7 +30,7 @@
 
 import { Brand } from '@fgv/ts-utils';
 
-import { MeasurementUnit, SourceId, WeightUnit } from '../common';
+import { MeasurementUnit, CollectionId, WeightUnit } from '../common';
 import { SubLibraryId } from '../library-data';
 
 // ============================================================================
@@ -131,21 +131,21 @@ export interface IToolSettings {
  */
 export interface IDefaultCollectionTargets {
   /** Default collection for new journals */
-  readonly journals?: SourceId;
+  readonly journals?: CollectionId;
   /** Default collection for new sessions */
-  readonly sessions?: SourceId;
+  readonly sessions?: CollectionId;
   /** Default collection for new fillings */
-  readonly fillings?: SourceId;
+  readonly fillings?: CollectionId;
   /** Default collection for new confections */
-  readonly confections?: SourceId;
+  readonly confections?: CollectionId;
   /** Default collection for new ingredients */
-  readonly ingredients?: SourceId;
+  readonly ingredients?: CollectionId;
   /** Default collection for new molds */
-  readonly molds?: SourceId;
+  readonly molds?: CollectionId;
   /** Default collection for new procedures */
-  readonly procedures?: SourceId;
+  readonly procedures?: CollectionId;
   /** Default collection for new tasks */
-  readonly tasks?: SourceId;
+  readonly tasks?: CollectionId;
 }
 
 // ============================================================================

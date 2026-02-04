@@ -34,7 +34,7 @@ import {
   Converters,
   Model as CommonModel,
   ProcedureId,
-  SourceId
+  CollectionId
 } from '../../common';
 import { Confections } from '../../entities';
 import {
@@ -63,7 +63,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected readonly _context: IConfectionContext;
   protected readonly _id: ConfectionId;
   protected readonly _confection: Confections.AnyConfectionEntity;
-  protected readonly _sourceId: SourceId;
+  protected readonly _sourceId: CollectionId;
   protected readonly _baseId: BaseConfectionId;
   protected readonly _rawGoldenVersion: Confections.AnyConfectionVersionEntity;
 
@@ -115,7 +115,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): SourceId {
+  public get sourceId(): CollectionId {
     return this._sourceId;
   }
 

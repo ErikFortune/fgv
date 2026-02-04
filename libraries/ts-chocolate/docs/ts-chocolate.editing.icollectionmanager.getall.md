@@ -9,5 +9,5 @@ Get all collection IDs in the library.
 **Signature:**
 
 ```typescript
-readonly getAll: () => ReadonlyArray<SourceId>;
+readonly getAll: () => ReadonlyArray<CollectionId>;
 ```

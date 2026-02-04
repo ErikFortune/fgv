@@ -9,5 +9,5 @@ The source ID part of the composite ID.
 **Signature:**
 
 ```typescript
-readonly sourceId: SourceId;
+readonly sourceId: CollectionId;
 ```

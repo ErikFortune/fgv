@@ -9,5 +9,5 @@ Collection identifier.
 **Signature:**
 
 ```typescript
-readonly collectionId: SourceId;
+readonly collectionId: CollectionId;
 ```

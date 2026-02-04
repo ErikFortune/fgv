@@ -27,7 +27,7 @@ import {
   Measurement,
   Model as CommonModel,
   ProcedureId,
-  SourceId
+  CollectionId
 } from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
@@ -54,7 +54,7 @@ export interface IFillingRenderContext {
 export interface IFillingListItem {
   id: FillingId;
   name: FillingName;
-  sourceId: SourceId;
+  collectionId: CollectionId;
   category: Entities.Fillings.FillingCategory;
   description?: string;
   tags?: ReadonlyArray<string>;

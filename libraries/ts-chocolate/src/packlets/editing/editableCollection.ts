@@ -31,7 +31,7 @@ import {
   succeed
 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { SourceId, Helpers as CommonHelpers } from '../common';
+import { CollectionId, Helpers as CommonHelpers } from '../common';
 import {
   ICollectionSourceFile,
   ICollectionSourceMetadata,
@@ -54,7 +54,7 @@ export interface IEditableCollectionParams<T, TBaseId extends string = string> {
   /**
    * Collection identifier.
    */
-  readonly collectionId: SourceId;
+  readonly collectionId: CollectionId;
 
   /**
    * Collection metadata (name, description, etc.).
@@ -111,7 +111,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   /**
    * Collection identifier.
    */
-  public readonly collectionId: SourceId;
+  public readonly collectionId: CollectionId;
 
   /**
    * Whether collection is mutable.
@@ -130,7 +130,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * Use the static `createEditable` method for proper initialization.
    */
   private constructor(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     isMutable: boolean,
     metadata: ICollectionSourceMetadata,
     params: Collections.IValidatingResultMapConstructorParams<TBaseId, T>,
@@ -332,7 +332,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    */
   public static fromLibrary<T, TBaseId extends string, TItem>(
     library: SubLibraryBase<string, TBaseId, TItem>,
-    collectionId: SourceId,
+    collectionId: CollectionId,
     keyConverter: Converter<TBaseId, unknown>,
     valueConverter: Converter<T, unknown>
   ): Result<EditableCollection<T, TBaseId>> {

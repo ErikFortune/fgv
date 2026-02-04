@@ -36,7 +36,7 @@ import {
   SessionId,
   BaseSessionId,
   SlotId,
-  SourceId
+  CollectionId
 } from '../../common';
 import { AnyProducedConfectionEntity } from '../confections';
 import { IProducedFillingEntity } from '../fillings';
@@ -102,9 +102,9 @@ export const allPersistedSessionStatuses: ReadonlyArray<PersistedSessionStatus> 
  */
 export interface ISessionDestinationEntity {
   /** Default collection ID from tool configuration */
-  readonly defaultCollectionId?: SourceId;
+  readonly defaultCollectionId?: CollectionId;
   /** User-selected override collection ID */
-  readonly overrideCollectionId?: SourceId;
+  readonly overrideCollectionId?: CollectionId;
 }
 
 // ============================================================================

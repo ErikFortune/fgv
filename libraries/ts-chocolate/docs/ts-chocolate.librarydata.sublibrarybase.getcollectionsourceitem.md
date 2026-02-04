@@ -11,7 +11,7 @@ Returns the FileTree item that was used to load this collection. This can be pas
 **Signature:**
 
 ```typescript
-getCollectionSourceItem(collectionId: SourceId): FileTree.FileTreeItem | undefined;
+getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

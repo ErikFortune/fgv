@@ -33,7 +33,7 @@ import {
   ProcedureId,
   FillingId,
   FillingVersionSpec,
-  SourceId,
+  CollectionId,
   TaskId,
   BaseIngredientId,
   BaseFillingId,
@@ -208,42 +208,42 @@ export class ChocolateLibrary {
     const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     const ingredientsResult = IngredientsLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients'),
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'ingredients'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients'),
       mergeLibraries: params.libraries?.ingredients,
       logger
     }).report(logger);
 
     const recipesResult = FillingsLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'fillings'),
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'fillings'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'fillings'),
       mergeLibraries: params.libraries?.fillings,
       logger
     }).report(logger);
 
     const moldsResult = MoldsLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'molds'),
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'molds'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'molds'),
       mergeLibraries: params.libraries?.molds,
       logger
     }).report(logger);
 
     const proceduresResult = ProceduresLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'procedures'),
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'procedures'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'procedures'),
       mergeLibraries: params.libraries?.procedures,
       logger
     }).report(logger);
 
     const tasksResult = TasksLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'tasks'),
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'tasks'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'tasks'),
       mergeLibraries: params.libraries?.tasks,
       logger
     }).report(logger);
 
     const confectionsResult = Entities.Confections.ConfectionsLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'confections'),
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'confections'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'confections'),
       mergeLibraries: params.libraries?.confections,
       logger
@@ -282,10 +282,10 @@ export class ChocolateLibrary {
   private static _toFileSources(
     sources: ReadonlyArray<ILibraryFileTreeSource>,
     subLibraryId: SubLibraryId
-  ): ReadonlyArray<IFileTreeSource<SourceId>> {
+  ): ReadonlyArray<IFileTreeSource<CollectionId>> {
     return sources.map((source) => ({
       directory: source.directory,
-      load: resolveBuiltInSpec<SourceId>(source.load, subLibraryId),
+      load: resolveBuiltInSpec<CollectionId>(source.load, subLibraryId),
       mutable: source.mutable
     }));
   }
@@ -491,7 +491,7 @@ export class ChocolateLibrary {
    * @public
    */
   public getEditableIngredients(
-    collectionId: SourceId
+    collectionId: CollectionId
   ): Result<EditableCollection<IngredientEntity, BaseIngredientId>> {
     return EditableCollection.fromLibrary(
       this.ingredients,
@@ -508,7 +508,7 @@ export class ChocolateLibrary {
    * @public
    */
   public getEditableFillings(
-    collectionId: SourceId
+    collectionId: CollectionId
   ): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>> {
     return EditableCollection.fromLibrary(
       this.fillings,
@@ -524,7 +524,7 @@ export class ChocolateLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>> {
+  public getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>> {
     return EditableCollection.fromLibrary(
       this.molds,
       collectionId,
@@ -540,7 +540,7 @@ export class ChocolateLibrary {
    * @public
    */
   public getEditableProcedures(
-    collectionId: SourceId
+    collectionId: CollectionId
   ): Result<EditableCollection<IProcedureEntity, BaseProcedureId>> {
     return EditableCollection.fromLibrary(
       this.procedures,
@@ -556,7 +556,7 @@ export class ChocolateLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>> {
+  public getEditableTasks(collectionId: CollectionId): Result<EditableCollection<ITaskData, BaseTaskId>> {
     return EditableCollection.fromLibrary(
       this.tasks,
       collectionId,
@@ -572,7 +572,7 @@ export class ChocolateLibrary {
    * @public
    */
   public getEditableConfections(
-    collectionId: SourceId
+    collectionId: CollectionId
   ): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>> {
     return EditableCollection.fromLibrary(
       this.confections,

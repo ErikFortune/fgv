@@ -41,7 +41,7 @@ import {
   ProcedureId,
   Percentage,
   SlotId,
-  SourceId,
+  CollectionId,
   UrlCategory
 } from '../../../packlets/common';
 import {
@@ -209,7 +209,7 @@ describe('RuntimeConfection', () => {
       // Return a minimal mock chocolate ingredient
       return Success.with({
         id,
-        sourceId: 'common' as SourceId,
+        sourceId: 'common' as CollectionId,
         baseId: 'chocolate-dark-64' as BaseIngredientId,
         name: 'Mock Chocolate',
         category: 'chocolate' as IngredientCategory,
@@ -231,7 +231,7 @@ describe('RuntimeConfection', () => {
       // Return a minimal mock filling recipe
       return Success.with({
         id,
-        sourceId: 'common' as SourceId,
+        sourceId: 'common' as CollectionId,
         baseId: 'dark-ganache-classic' as BaseFillingId,
         name: 'Mock Ganache' as FillingName,
         goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,

@@ -47,7 +47,7 @@ import {
   JournalId,
   SessionId,
   BaseSessionId,
-  SourceId
+  CollectionId
 } from './ids';
 import {
   confectionVersionId as confectionVersionIdConverter,
@@ -72,14 +72,14 @@ import { sessionId } from './validators';
 // ============================================================================
 
 /**
- * Creates a composite IngredientId from source ID and base ID
- * @param sourceId - The source identifier
+ * Creates a composite IngredientId from collection ID and base ID
+ * @param collectionId - The collection identifier
  * @param baseId - The base ingredient identifier
- * @returns Composite ingredient ID in format "sourceId.baseId"
+ * @returns Composite ingredient ID in format "collectionId.baseId"
  * @public
  */
-export function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId {
-  return `${sourceId}${ID_SEPARATOR}${baseId}` as IngredientId;
+export function createIngredientId(collectionId: CollectionId, baseId: BaseIngredientId): IngredientId {
+  return `${collectionId}${ID_SEPARATOR}${baseId}` as IngredientId;
 }
 
 /**
@@ -93,12 +93,12 @@ export function parseIngredientId(id: IngredientId): Result<ParsedIngredientId> 
 }
 
 /**
- * Gets the source ID from a composite IngredientId
+ * Gets the collection ID from a composite IngredientId
  * @param id - The composite ingredient ID
- * @returns The source ID portion
+ * @returns The collection ID portion
  * @public
  */
-export function getIngredientSourceId(id: IngredientId): SourceId {
+export function getIngredientCollectionId(id: IngredientId): CollectionId {
   return parsedIngredientId.convert(id).orThrow().collectionId;
 }
 
@@ -113,14 +113,14 @@ export function getIngredientBaseId(id: IngredientId): BaseIngredientId {
 }
 
 /**
- * Creates a composite FillingId from source ID and base ID
- * @param sourceId - The source identifier
+ * Creates a composite FillingId from collection ID and base ID
+ * @param collectionId - The collection identifier
  * @param baseId - The base filling identifier
- * @returns Composite filling ID in format "sourceId.baseId"
+ * @returns Composite filling ID in format "collectionId.baseId"
  * @public
  */
-export function createFillingId(sourceId: SourceId, baseId: BaseFillingId): FillingId {
-  return `${sourceId}${ID_SEPARATOR}${baseId}` as FillingId;
+export function createFillingId(collectionId: CollectionId, baseId: BaseFillingId): FillingId {
+  return `${collectionId}${ID_SEPARATOR}${baseId}` as FillingId;
 }
 
 /**
@@ -134,12 +134,12 @@ export function parseFillingId(id: FillingId): Result<ParsedFillingId> {
 }
 
 /**
- * Gets the source ID from a composite FillingId
+ * Gets the collection ID from a composite FillingId
  * @param id - The composite filling ID
- * @returns The source ID portion
+ * @returns The collection ID portion
  * @public
  */
-export function getFillingSourceId(id: FillingId): SourceId {
+export function getFillingCollectionId(id: FillingId): CollectionId {
   return parsedFillingId.convert(id).orThrow().collectionId;
 }
 
@@ -164,7 +164,7 @@ export function getFillingBaseId(id: FillingId): BaseFillingId {
  * @returns Composite journal ID in format "collectionId.baseJournalId"
  * @public
  */
-export function createJournalId(collectionId: SourceId, baseId: BaseJournalId): JournalId {
+export function createJournalId(collectionId: CollectionId, baseId: BaseJournalId): JournalId {
   return `${collectionId}${ID_SEPARATOR}${baseId}` as JournalId;
 }
 
@@ -184,7 +184,7 @@ export function parseJournalId(id: JournalId): Result<ParsedJournalId> {
  * @returns The collection ID portion
  * @public
  */
-export function getJournalCollectionId(id: JournalId): SourceId {
+export function getJournalCollectionId(id: JournalId): CollectionId {
   return parsedJournalId.convert(id).orThrow().collectionId;
 }
 
@@ -203,14 +203,14 @@ export function getJournalBaseId(id: JournalId): BaseJournalId {
 // ============================================================================
 
 /**
- * Creates a composite {@link SessionId | SessionId} from {@link SourceId | collection ID} and
+ * Creates a composite {@link SessionId | SessionId} from {@link CollectionId | collection ID} and
  * {@link BaseSessionId | base session ID}.
  * @param collectionId - The collection identifier (e.g., "user-sessions")
  * @param baseId - The base session identifier
  * @returns Composite session ID in format "collectionId.baseSessionId"
  * @public
  */
-export function createSessionId(collectionId: SourceId, baseId: BaseSessionId): SessionId {
+export function createSessionId(collectionId: CollectionId, baseId: BaseSessionId): SessionId {
   return sessionId.convert(`${collectionId}${ID_SEPARATOR}${baseId}`).orThrow();
 }
 
@@ -230,7 +230,7 @@ export function parseSessionId(id: SessionId): Result<ParsedSessionId> {
  * @returns The collection ID portion
  * @public
  */
-export function getCollectionIdFromSessionId(id: SessionId): SourceId {
+export function getSessionCollectionId(id: SessionId): CollectionId {
   return parsedSessionId.convert(id).orThrow().collectionId;
 }
 
@@ -240,7 +240,7 @@ export function getCollectionIdFromSessionId(id: SessionId): SourceId {
  * @returns The base session ID portion
  * @public
  */
-export function getBaseIdFromSessionId(id: SessionId): BaseSessionId {
+export function getSessionBaseId(id: SessionId): BaseSessionId {
   return parsedSessionId.convert(id).orThrow().itemId;
 }
 

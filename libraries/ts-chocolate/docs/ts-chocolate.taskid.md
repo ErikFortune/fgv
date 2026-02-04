@@ -4,7 +4,7 @@
 
 ## TaskId type
 
-Globally unique task identifier (composite) Format: "sourceId.baseTaskId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique task identifier (composite) Format: "collectionId.baseTaskId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 **Signature:**
 

@@ -69,9 +69,9 @@ export interface IFillingListOptions extends IFillingBaseOptions {
   tag?: string[];
 
   /**
-   * Filter by source collection ID
+   * Filter by collection ID
    */
-  source?: string;
+  collection?: string;
 
   /**
    * Filter by name (case-insensitive substring match)

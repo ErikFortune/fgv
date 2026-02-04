@@ -30,12 +30,12 @@ Creates and validates a confection version ID from component parts. Uses convert
 </td></tr>
 <tr><td>
 
-[createFillingId(sourceId, baseId)](./ts-chocolate.helpers.createfillingid.md)
+[createFillingId(collectionId, baseId)](./ts-chocolate.helpers.createfillingid.md)
 
 
 </td><td>
 
-Creates a composite FillingId from source ID and base ID
+Creates a composite FillingId from collection ID and base ID
 
 
 </td></tr>
@@ -63,12 +63,12 @@ Creates and validates a filling version ID from component parts. Uses converter 
 </td></tr>
 <tr><td>
 
-[createIngredientId(sourceId, baseId)](./ts-chocolate.helpers.createingredientid.md)
+[createIngredientId(collectionId, baseId)](./ts-chocolate.helpers.createingredientid.md)
 
 
 </td><td>
 
-Creates a composite IngredientId from source ID and base ID
+Creates a composite IngredientId from collection ID and base ID
 
 
 </td></tr>
@@ -90,7 +90,7 @@ Creates a composite JournalId from collection ID and base journal ID
 
 </td><td>
 
-Creates a composite [SessionId](./ts-chocolate.sessionid.md) from [collection ID](./ts-chocolate.sourceid.md) and [base session ID](./ts-chocolate.basesessionid.md)<!-- -->.
+Creates a composite [SessionId](./ts-chocolate.sessionid.md) from [collection ID](./ts-chocolate.collectionid.md) and [base session ID](./ts-chocolate.basesessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -118,28 +118,6 @@ Generate a unique base ID from a name. Combines nameToBaseId and generateUniqueB
 </td></tr>
 <tr><td>
 
-[getBaseIdFromSessionId(id)](./ts-chocolate.helpers.getbaseidfromsessionid.md)
-
-
-</td><td>
-
-Gets the base ID from a composite [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[getCollectionIdFromSessionId(id)](./ts-chocolate.helpers.getcollectionidfromsessionid.md)
-
-
-</td><td>
-
-Gets the collection ID from a composite [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [getFillingBaseId(id)](./ts-chocolate.helpers.getfillingbaseid.md)
 
 
@@ -151,12 +129,12 @@ Gets the base ID from a composite FillingId
 </td></tr>
 <tr><td>
 
-[getFillingSourceId(id)](./ts-chocolate.helpers.getfillingsourceid.md)
+[getFillingCollectionId(id)](./ts-chocolate.helpers.getfillingcollectionid.md)
 
 
 </td><td>
 
-Gets the source ID from a composite FillingId
+Gets the collection ID from a composite FillingId
 
 
 </td></tr>
@@ -195,12 +173,12 @@ Gets the base ID from a composite IngredientId
 </td></tr>
 <tr><td>
 
-[getIngredientSourceId(id)](./ts-chocolate.helpers.getingredientsourceid.md)
+[getIngredientCollectionId(id)](./ts-chocolate.helpers.getingredientcollectionid.md)
 
 
 </td><td>
 
-Gets the source ID from a composite IngredientId
+Gets the collection ID from a composite IngredientId
 
 
 </td></tr>
@@ -267,6 +245,28 @@ Gets the preferred ID from a simple ID collection, falling back to the first ID.
 </td><td>
 
 Gets the preferred option from a collection, falling back to the first option.
+
+
+</td></tr>
+<tr><td>
+
+[getSessionBaseId(id)](./ts-chocolate.helpers.getsessionbaseid.md)
+
+
+</td><td>
+
+Gets the base ID from a composite [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[getSessionCollectionId(id)](./ts-chocolate.helpers.getsessioncollectionid.md)
+
+
+</td><td>
+
+Gets the collection ID from a composite [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 
 </td></tr>

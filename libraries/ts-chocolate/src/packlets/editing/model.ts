@@ -20,7 +20,7 @@
 // SOFTWARE.
 import { Collections, Result, ValidatingResultMap } from '@fgv/ts-utils';
 import { ICollectionSourceFile, ICollectionSourceMetadata } from '../library-data';
-import { SourceId } from '../common';
+import { CollectionId } from '../common';
 
 // ============================================================================
 // Core Editing Interfaces
@@ -79,7 +79,7 @@ export interface IEditorContext<T, TBaseId extends string = string, TId extends 
    * @param targetCollectionId - Target collection ID
    * @returns Result containing the new entity ID in target collection or failure
    */
-  readonly copyTo: (id: TId, targetCollectionId: SourceId) => Result<TId>;
+  readonly copyTo: (id: TId, targetCollectionId: CollectionId) => Result<TId>;
 
   /**
    * Check if entity exists in collection.
@@ -211,7 +211,7 @@ export interface IEditableCollection<T, TBaseId extends string = string, TId ext
   /**
    * Collection identifier.
    */
-  readonly collectionId: SourceId;
+  readonly collectionId: CollectionId;
 
   /**
    * Collection metadata (name, description, etc.).
@@ -265,14 +265,14 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * Get all collection IDs in the library.
    * @returns Array of collection IDs
    */
-  readonly getAll: () => ReadonlyArray<SourceId>;
+  readonly getAll: () => ReadonlyArray<CollectionId>;
 
   /**
    * Get metadata for a specific collection by ID.
    * @param collectionId - Collection identifier
    * @returns Result containing the collection metadata or failure
    */
-  readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
+  readonly get: (collectionId: CollectionId) => Result<ICollectionSourceMetadata>;
 
   /**
    * Create a new mutable collection.
@@ -281,9 +281,9 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @returns Result indicating success or failure
    */
   readonly create: (
-    collectionId: SourceId,
+    collectionId: CollectionId,
     metadata: ICollectionSourceMetadata
-  ) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>>;
+  ) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
 
   /**
    * Delete a mutable collection.
@@ -291,8 +291,8 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @returns Result indicating success or failure
    */
   readonly delete: (
-    collectionId: SourceId
-  ) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    collectionId: CollectionId
+  ) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
 
   /**
    * Update collection metadata.
@@ -301,7 +301,7 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @returns Result indicating success or failure
    */
   readonly updateMetadata: (
-    collectionId: SourceId,
+    collectionId: CollectionId,
     metadata: Partial<ICollectionSourceMetadata>
   ) => Result<ICollectionSourceMetadata>;
 
@@ -310,14 +310,14 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @param collectionId - Collection identifier
    * @returns True if collection exists
    */
-  readonly exists: (collectionId: SourceId) => boolean;
+  readonly exists: (collectionId: CollectionId) => boolean;
 
   /**
    * Check if a collection is mutable.
    * @param collectionId - Collection identifier
    * @returns Result containing true if mutable, failure if not found
    */
-  readonly isMutable: (collectionId: SourceId) => Result<boolean>;
+  readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
 }
 
 // ============================================================================
@@ -358,5 +358,5 @@ export interface IImportOptions {
    * New collection ID when using 'create-new' mode.
    * Required if onCollisionMode is 'create-new'.
    */
-  readonly newCollectionId?: SourceId;
+  readonly newCollectionId?: CollectionId;
 }

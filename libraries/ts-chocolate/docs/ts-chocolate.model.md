@@ -184,7 +184,7 @@ Pattern for valid composite IDs (exactly one dot)
 
 </td><td>
 
-Pattern for valid confection version IDs Format: confectionId<!-- -->@<!-- -->versionSpec where confectionId is sourceId.baseConfectionId
+Pattern for valid confection version IDs Format: confectionId<!-- -->@<!-- -->versionSpec where confectionId is collectionId.baseConfectionId
 
 
 </td></tr>
@@ -206,7 +206,7 @@ Pattern for valid confection version specs Format: YYYY-MM-DD-NN with optional l
 
 </td><td>
 
-Pattern for valid filling version IDs Format: fillingId<!-- -->@<!-- -->versionSpec where fillingId is sourceId.baseFillingId
+Pattern for valid filling version IDs Format: fillingId<!-- -->@<!-- -->versionSpec where fillingId is collectionId.baseFillingId
 
 
 </td></tr>

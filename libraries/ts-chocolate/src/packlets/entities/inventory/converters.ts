@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Failure, fail, Result, Success, succeed } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, Model as CommonModel, SourceId } from '../../common';
+import { Converters as CommonConverters, Model as CommonModel, CollectionId } from '../../common';
 import {
   allInventoryTypes,
   AnyInventoryEntryEntity,
@@ -94,7 +94,7 @@ export const moldInventoryEntryId: Converter<MoldInventoryEntryId> =
  * Type alias for parsed {@link Entities.Inventory.MoldInventoryEntryId | MoldInventoryEntryId} components.
  * @public
  */
-export type ParsedMoldInventoryEntryId = Converters.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
+export type ParsedMoldInventoryEntryId = Converters.ICompositeId<CollectionId, MoldInventoryEntryBaseId>;
 
 /**
  * Converter that parses a {@link Entities.Inventory.MoldInventoryEntryId | MoldInventoryEntryId} string
@@ -102,7 +102,7 @@ export type ParsedMoldInventoryEntryId = Converters.ICompositeId<SourceId, MoldI
  * @public
  */
 export const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId> = Converters.compositeId(
-  CommonConverters.sourceId,
+  CommonConverters.collectionId,
   ID_SEPARATOR,
   moldInventoryEntryBaseId
 );
@@ -160,7 +160,7 @@ export const ingredientInventoryEntryId: Converter<IngredientInventoryEntryId> =
  * @public
  */
 export type ParsedIngredientInventoryEntryId = Converters.ICompositeId<
-  SourceId,
+  CollectionId,
   IngredientInventoryEntryBaseId
 >;
 
@@ -170,7 +170,7 @@ export type ParsedIngredientInventoryEntryId = Converters.ICompositeId<
  * @public
  */
 export const parsedIngredientInventoryEntryId: Converter<ParsedIngredientInventoryEntryId> =
-  Converters.compositeId(CommonConverters.sourceId, ID_SEPARATOR, ingredientInventoryEntryBaseId);
+  Converters.compositeId(CommonConverters.collectionId, ID_SEPARATOR, ingredientInventoryEntryBaseId);
 
 // ============================================================================
 // Enumeration Converters

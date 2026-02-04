@@ -172,8 +172,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     }
 
     const existing = existingResult.value;
-    const collectionId = Helpers.getCollectionIdFromSessionId(sessionId);
-    const baseId = Helpers.getBaseIdFromSessionId(sessionId);
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const baseId = Helpers.getSessionBaseId(sessionId);
 
     // Create updated persisted state (only EditingSession has toPersistedState for now)
     const fillingSession = session as Session.EditingSession;

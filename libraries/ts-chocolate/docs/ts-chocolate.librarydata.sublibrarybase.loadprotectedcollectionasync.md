@@ -9,7 +9,7 @@ Decrypts and loads one or more protected collections.
 **Signature:**
 
 ```typescript
-loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<SourceId>>>;
+loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<CollectionId>>>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional filter to select which protected collections to load. - If
 
 **Returns:**
 
-Promise&lt;Result&lt;ReadonlyArray&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;&gt;&gt;
+Promise&lt;Result&lt;ReadonlyArray&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;&gt;&gt;
 
 Promise resolving to Success with array of loaded collection IDs, or Failure with error.
 

@@ -38,7 +38,7 @@ import {
   ProcedureId,
   FillingId,
   FillingName,
-  SourceId,
+  CollectionId,
   TaskId
 } from '../../../packlets/common';
 
@@ -136,7 +136,7 @@ describe('ChocolateLibrary', () => {
     test('creates with provided ingredients library only (no builtins)', () => {
       const ingredients = IngredientsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       expect(ChocolateLibrary.create({ builtin: false, libraries: { ingredients } })).toSucceedAndSatisfy(
@@ -149,7 +149,7 @@ describe('ChocolateLibrary', () => {
     test('creates with provided recipes library only (no builtins)', () => {
       const recipes = FillingsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
       expect(
@@ -162,7 +162,7 @@ describe('ChocolateLibrary', () => {
     test('merges provided ingredients library with builtins', () => {
       const ingredients = IngredientsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       expect(ChocolateLibrary.create({ libraries: { ingredients } })).toSucceedAndSatisfy((lib) => {
@@ -184,12 +184,12 @@ describe('ChocolateLibrary', () => {
     beforeEach(() => {
       const ingredients = IngredientsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       const recipes = FillingsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({
@@ -247,7 +247,7 @@ describe('ChocolateLibrary', () => {
     beforeEach(() => {
       const recipes = FillingsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({ builtin: false, libraries: { fillings: recipes } }).orThrow();
@@ -305,7 +305,7 @@ describe('ChocolateLibrary', () => {
       const molds = MoldsLibrary.create({
         builtin: false,
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { 'test-mold': testMoldData } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { 'test-mold': testMoldData } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({ builtin: false, libraries: { molds } }).orThrow();
@@ -358,7 +358,7 @@ describe('ChocolateLibrary', () => {
         builtin: false,
         collections: [
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          { id: 'test' as SourceId, isMutable: true, items: { 'test-procedure': testProcedureData } }
+          { id: 'test' as CollectionId, isMutable: true, items: { 'test-procedure': testProcedureData } }
         ]
       }).orThrow();
 
@@ -399,12 +399,12 @@ describe('ChocolateLibrary', () => {
     beforeEach(() => {
       const ingredients = IngredientsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       const recipes = FillingsLibrary.create({
         builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
+        collections: [{ id: 'test' as CollectionId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({

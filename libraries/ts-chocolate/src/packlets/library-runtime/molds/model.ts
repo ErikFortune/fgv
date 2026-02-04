@@ -25,7 +25,14 @@
  * @packageDocumentation
  */
 
-import { BaseMoldId, Measurement, Model as CommonModel, MoldFormat, MoldId, SourceId } from '../../common';
+import {
+  BaseMoldId,
+  Measurement,
+  Model as CommonModel,
+  MoldFormat,
+  MoldId,
+  CollectionId
+} from '../../common';
 import { ICavities, ICavityDimensions, IMoldEntity } from '../../entities';
 
 // ============================================================================
@@ -67,7 +74,7 @@ export interface IRuntimeMold {
   /**
    * The source ID part of the composite ID.
    */
-  readonly sourceId: SourceId;
+  readonly sourceId: CollectionId;
 
   /**
    * The base mold ID within the source.

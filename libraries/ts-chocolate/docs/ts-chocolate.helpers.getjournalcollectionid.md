@@ -9,7 +9,7 @@ Gets the collection ID from a composite JournalId
 **Signature:**
 
 ```typescript
-export declare function getJournalCollectionId(id: JournalId): SourceId;
+export declare function getJournalCollectionId(id: JournalId): CollectionId;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The composite journal ID
 
 **Returns:**
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 The collection ID portion
 

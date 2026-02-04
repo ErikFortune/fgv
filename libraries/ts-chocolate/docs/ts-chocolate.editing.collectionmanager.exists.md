@@ -9,7 +9,7 @@ Check if a collection exists.
 **Signature:**
 
 ```typescript
-exists(collectionId: SourceId): boolean;
+exists(collectionId: CollectionId): boolean;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

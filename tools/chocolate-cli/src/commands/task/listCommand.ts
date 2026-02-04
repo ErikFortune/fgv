@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { Entities, SourceId, TaskId } from '@fgv/ts-chocolate';
+import { Entities, CollectionId, TaskId } from '@fgv/ts-chocolate';
 import { Mustache } from '@fgv/ts-extras';
 
 import {
@@ -27,7 +27,7 @@ import {
   OutputFormat,
   loadTasksLibrary,
   formatList,
-  getSourceIdFromCompositeId,
+  getCollectionIdFromCompositeId,
   addCommonFilterOptions,
   IColumnConfig,
   IGenericListItem,
@@ -60,11 +60,10 @@ function getRequiredVariableCount(template: string): number {
 function matchesFilters(
   task: Entities.Tasks.ITaskData,
   taskId: TaskId,
-  sourceId: SourceId,
+  collectionId: CollectionId,
   options: IEntityListOptions
 ): boolean {
-  // Filter by source
-  if (options.source && sourceId !== options.source) {
+  if (options.collection && collectionId !== options.collection) {
     return false;
   }
 
@@ -120,7 +119,7 @@ export function createListSubcommand(): Command {
   // Add common filter options
   addCommonFilterOptions(cmd);
 
-  cmd.action(async (localOptions: { tag?: string[]; source?: string; name?: string }) => {
+  cmd.action(async (localOptions: { tag?: string[]; collection?: string; name?: string }) => {
     // Merge with parent options
     const parentOptions = cmd.optsWithGlobals() as IEntityListOptions;
     const options: IEntityListOptions = {
@@ -140,11 +139,10 @@ export function createListSubcommand(): Command {
     const matchingTasks: ITaskListItem[] = [];
 
     for (const [taskId, task] of library.entries()) {
-      // Get the source ID from the composite ID
-      const sourceId = getSourceIdFromCompositeId(taskId);
+      const collectionId = getCollectionIdFromCompositeId(taskId);
 
       // Apply filters
-      if (!matchesFilters(task, taskId, sourceId, options)) {
+      if (!matchesFilters(task, taskId, collectionId, options)) {
         continue;
       }
 
@@ -152,7 +150,7 @@ export function createListSubcommand(): Command {
       matchingTasks.push({
         id: taskId,
         name: task.name,
-        sourceId,
+        collectionId: collectionId,
         description: formatCategorizedNotes(task.notes),
         tags: task.tags,
         requiredVariables: getRequiredVariableCount(task.template),

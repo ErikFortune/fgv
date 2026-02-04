@@ -24,7 +24,7 @@
  */
 
 import { Collections, Converter, Converters, fail, Result, succeed } from '@fgv/ts-utils';
-import { SourceId } from '../common';
+import { CollectionId } from '../common';
 import { ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
 import { ICollectionManager } from './model';
 
@@ -114,14 +114,14 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   /**
    * Get all collection IDs in the library.
    */
-  public getAll(): ReadonlyArray<SourceId> {
+  public getAll(): ReadonlyArray<CollectionId> {
     return Array.from(this._library.collections.keys());
   }
 
   /**
    * Get metadata for a specific collection by ID.
    */
-  public get(collectionId: SourceId): Result<ICollectionSourceMetadata> {
+  public get(collectionId: CollectionId): Result<ICollectionSourceMetadata> {
     return this._library.collections
       .get(collectionId)
       .asResult.onFailure(() => fail(`Collection "${collectionId}" not found`))
@@ -135,9 +135,9 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    * Create a new mutable collection.
    */
   public create(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     metadata: ICollectionSourceMetadata
-  ): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>> {
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
     // Check if collection already exists
     if (this._library.collections.has(collectionId)) {
       return fail(`Collection "${collectionId}" already exists`);
@@ -159,8 +159,8 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    * Delete a mutable collection.
    */
   public delete(
-    collectionId: SourceId
-  ): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>> {
+    collectionId: CollectionId
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
     // Delegate to public method
     return this._library.removeCollection(collectionId);
   }
@@ -169,7 +169,7 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    * Update collection metadata.
    */
   public updateMetadata(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     metadata: Partial<ICollectionSourceMetadata>
   ): Result<ICollectionSourceMetadata> {
     // Delegate to public method
@@ -179,14 +179,14 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   /**
    * Check if a collection exists.
    */
-  public exists(collectionId: SourceId): boolean {
+  public exists(collectionId: CollectionId): boolean {
     return this._library.collections.has(collectionId);
   }
 
   /**
    * Check if a collection is mutable.
    */
-  public isMutable(collectionId: SourceId): Result<boolean> {
+  public isMutable(collectionId: CollectionId): Result<boolean> {
     return this._library.collections
       .get(collectionId)
       .asResult.onFailure(() => fail(`Collection "${collectionId}" not found`))

@@ -9,7 +9,7 @@ Creates a new mutable collection for sessions.
 **Signature:**
 
 ```typescript
-createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
+createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional metadata for the collection
 
 **Returns:**
 
-Result&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
+Result&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;
 
 Success with the collection ID, or Failure if creation fails
 

@@ -25,7 +25,7 @@
 
 import { captureResult, fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
-import { MoldId, SourceId } from '../../common';
+import { MoldId, CollectionId } from '../../common';
 import {
   getMoldInventoryDirectory,
   ICollectionSourceMetadata,
@@ -227,7 +227,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @public
    */
   public addEntry(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     entryId: MoldInventoryEntryBaseId,
     entry: IMoldInventoryEntryEntity
   ): Result<MoldInventoryEntryId> {
@@ -245,7 +245,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @public
    */
   public upsertEntry(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     entryId: MoldInventoryEntryBaseId,
     entry: IMoldInventoryEntryEntity
   ): Result<MoldInventoryEntryId> {
@@ -306,7 +306,10 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @returns Success with the collection ID, or Failure if creation fails
    * @public
    */
-  public createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId> {
+  public createCollection(
+    collectionId: CollectionId,
+    metadata?: ICollectionSourceMetadata
+  ): Result<CollectionId> {
     if (this.collections.has(collectionId)) {
       return fail(`Collection ${collectionId} already exists`);
     }

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { Entities, FillingId, Helpers, SourceId } from '@fgv/ts-chocolate';
+import { Entities, FillingId, Helpers, CollectionId } from '@fgv/ts-chocolate';
 
 import {
   IFillingListOptions,
@@ -35,11 +35,11 @@ import {
 function matchesFilters(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
-  sourceId: SourceId,
+  collectionId: CollectionId,
   options: IFillingListOptions
 ): boolean {
   // Filter by source
-  if (options.source && sourceId !== options.source) {
+  if (options.collection && collectionId !== options.collection) {
     return false;
   }
 
@@ -74,9 +74,9 @@ export function createListSubcommand(): Command {
   cmd
     .description('List fillings with optional filtering')
     .option('--tag <tag>', 'Filter by tag (can be repeated)', (val, prev: string[]) => [...prev, val], [])
-    .option('--source <sourceId>', 'Filter by source collection ID')
+    .option('--collection <collectionId>', 'Filter by collection ID')
     .option('--name <pattern>', 'Filter by name (case-insensitive substring match)')
-    .action(async (localOptions: { tag?: string[]; source?: string; name?: string }) => {
+    .action(async (localOptions: { tag?: string[]; collection?: string; name?: string }) => {
       // Merge with parent options
       const parentOptions = cmd.optsWithGlobals() as IFillingListOptions;
       const options: IFillingListOptions = {
@@ -96,11 +96,10 @@ export function createListSubcommand(): Command {
       const matchingFillings: IFillingListItem[] = [];
 
       for (const [fillingId, filling] of library.entries()) {
-        // Get the source ID from the composite ID
-        const sourceId = Helpers.getFillingSourceId(fillingId);
+        const collectionId = Helpers.getFillingCollectionId(fillingId);
 
         // Apply filters
-        if (!matchesFilters(filling, fillingId, sourceId, options)) {
+        if (!matchesFilters(filling, fillingId, collectionId, options)) {
           continue;
         }
 
@@ -108,7 +107,7 @@ export function createListSubcommand(): Command {
         matchingFillings.push({
           id: fillingId,
           name: filling.name,
-          sourceId,
+          collectionId: collectionId,
           category: filling.category,
           description: filling.description,
           tags: filling.tags,

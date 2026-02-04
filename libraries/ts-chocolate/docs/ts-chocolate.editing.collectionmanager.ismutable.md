@@ -9,7 +9,7 @@ Check if a collection is mutable.
 **Signature:**
 
 ```typescript
-isMutable(collectionId: SourceId): Result<boolean>;
+isMutable(collectionId: CollectionId): Result<boolean>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

@@ -62,7 +62,7 @@ import {
   BaseSessionId,
   SessionSpec,
   SlotId,
-  SourceId,
+  CollectionId,
   UrlCategory,
   NoteCategory
 } from './ids';
@@ -72,27 +72,29 @@ import {
 // ============================================================================
 
 /**
- * Type guard for {@link SourceId | SourceId}.
+ * Type guard for {@link CollectionId | CollectionId}.
  * @param from - Value to check
- * @returns `true` if the value is a valid {@link SourceId | SourceId}.
+ * @returns `true` if the value is a valid {@link CollectionId | CollectionId}.
  * @public
  */
-export function isValidSourceId(from: unknown): from is SourceId {
+export function isValidCollectionId(from: unknown): from is CollectionId {
   return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
 }
 
 /**
- * Validates unknown value is a {@link SourceId | SourceId}.
+ * Validates unknown value is a {@link CollectionId | CollectionId}.
  * @param from - Value to validate
- * @returns `Success` with {@link SourceId | SourceId} or `Failure` with an error
+ * @returns `Success` with {@link CollectionId | CollectionId} or `Failure` with an error
  * message if validation fails.
  * @public
  */
-export function toSourceId(from: unknown): Result<SourceId> {
-  if (isValidSourceId(from)) {
+export function toCollectionId(from: unknown): Result<CollectionId> {
+  if (isValidCollectionId(from)) {
     return Success.with(from);
   }
-  return Failure.with('Invalid SourceId: must be non-empty alphanumeric with dashes/underscores, no dots');
+  return Failure.with(
+    'Invalid CollectionId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
 }
 
 /**

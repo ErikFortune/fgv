@@ -66,7 +66,7 @@ export function addCommonFilterOptions(cmd: Command): void {
       (val: string, prev: string[]) => [...prev, val],
       []
     )
-    .option('--source <sourceId>', 'Filter by source collection ID')
+    .option('--collection <collectionId>', 'Filter by collection ID')
     .option('--name <pattern>', 'Filter by name (case-insensitive substring match)');
 }
 

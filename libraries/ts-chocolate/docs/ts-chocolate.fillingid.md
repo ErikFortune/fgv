@@ -4,7 +4,7 @@
 
 ## FillingId type
 
-Globally unique filling recipe identifier (composite) Format: "sourceId.baseFillingId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique filling recipe identifier (composite) Format: "collectionId.baseFillingId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 **Signature:**
 

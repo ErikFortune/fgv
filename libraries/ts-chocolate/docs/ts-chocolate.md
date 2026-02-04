@@ -542,12 +542,23 @@ Types of chocolate
 </td></tr>
 <tr><td>
 
+[CollectionId](./ts-chocolate.collectionid.md)
+
+
+</td><td>
+
+Unique identifier for a source collection (of ingredients/recipes, etc) Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
 [ConfectionId](./ts-chocolate.confectionid.md)
 
 
 </td><td>
 
-Globally unique confection identifier (composite) Format: "sourceId.baseConfectionId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique confection identifier (composite) Format: "collectionId.baseConfectionId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -580,7 +591,7 @@ Types of confections (discriminator for confection union)
 
 </td><td>
 
-Globally unique confection version identifier (composite) Format: "confectionId<!-- -->@<!-- -->versionSpec" where confectionId is "sourceId.baseConfectionId" Examples: "user.dark-dome-bonbon<!-- -->@<!-- -->2026-01-03-01"
+Globally unique confection version identifier (composite) Format: "confectionId<!-- -->@<!-- -->versionSpec" where confectionId is "collectionId.baseConfectionId" Examples: "user.dark-dome-bonbon<!-- -->@<!-- -->2026-01-03-01"
 
 
 </td></tr>
@@ -624,7 +635,7 @@ Filling recipe category for classification
 
 </td><td>
 
-Globally unique filling recipe identifier (composite) Format: "sourceId.baseFillingId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique filling recipe identifier (composite) Format: "collectionId.baseFillingId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -646,7 +657,7 @@ Non-unique filling recipe name used for display and grouping
 
 </td><td>
 
-Globally unique filling recipe version identifier (composite) Format: "fillingId<!-- -->@<!-- -->versionSpec" where fillingId is "sourceId.baseFillingId" Examples: "user.ganache<!-- -->@<!-- -->2026-01-03-01", "felchlin.truffle<!-- -->@<!-- -->2026-01-03-02-less-sugar"
+Globally unique filling recipe version identifier (composite) Format: "fillingId<!-- -->@<!-- -->versionSpec" where fillingId is "collectionId.baseFillingId" Examples: "user.ganache<!-- -->@<!-- -->2026-01-03-01", "felchlin.truffle<!-- -->@<!-- -->2026-01-03-02-less-sugar"
 
 
 </td></tr>
@@ -701,7 +712,7 @@ Base categories of ingredients (discriminated union tag)
 
 </td><td>
 
-Globally unique ingredient identifier (composite) Format: "sourceId.baseIngredientId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique ingredient identifier (composite) Format: "collectionId.baseIngredientId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -789,7 +800,7 @@ Chocolate World mold format series. Each series corresponds to a specific frame 
 
 </td><td>
 
-Globally unique mold identifier (composite) Format: "sourceId.baseMoldId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique mold identifier (composite) Format: "collectionId.baseMoldId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -822,7 +833,7 @@ Percentage value (0-100)
 
 </td><td>
 
-Globally unique procedure identifier (composite) Format: "sourceId.baseProcedureId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique procedure identifier (composite) Format: "collectionId.baseProcedureId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -883,17 +894,6 @@ Unique identifier for a filling slot within a confection or recipe Character res
 </td></tr>
 <tr><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
-
-
-</td><td>
-
-Unique identifier for a source (collection of ingredients/recipes) Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
-
-
-</td></tr>
-<tr><td>
-
 [SpoonLevel](./ts-chocolate.spoonlevel.md)
 
 
@@ -921,7 +921,7 @@ Spoon measurement units that share the same scaling system
 
 </td><td>
 
-Globally unique task identifier (composite) Format: "sourceId.baseTaskId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique task identifier (composite) Format: "collectionId.baseTaskId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>

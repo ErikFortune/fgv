@@ -4,12 +4,12 @@
 
 ## Helpers.createIngredientId() function
 
-Creates a composite IngredientId from source ID and base ID
+Creates a composite IngredientId from collection ID and base ID
 
 **Signature:**
 
 ```typescript
-export declare function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
+export declare function createIngredientId(collectionId: CollectionId, baseId: BaseIngredientId): IngredientId;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-sourceId
+collectionId
 
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>
 
-The source identifier
+The collection identifier
 
 
 </td></tr>
@@ -68,5 +68,5 @@ The base ingredient identifier
 
 [IngredientId](./ts-chocolate.ingredientid.md)
 
-Composite ingredient ID in format "sourceId.baseId"
+Composite ingredient ID in format "collectionId.baseId"
 

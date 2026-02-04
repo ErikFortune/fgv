@@ -11,7 +11,7 @@ Can be either: - A library instance directly (merges all collections) - An `IMer
 **Signature:**
 
 ```typescript
-export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
+export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, CollectionId>;
 ```
-**References:** [IMergeLibrarySource](./ts-chocolate.librarydata.imergelibrarysource.md)<!-- -->, [SourceId](./ts-chocolate.sourceid.md)
+**References:** [IMergeLibrarySource](./ts-chocolate.librarydata.imergelibrarysource.md)<!-- -->, [CollectionId](./ts-chocolate.collectionid.md)
 

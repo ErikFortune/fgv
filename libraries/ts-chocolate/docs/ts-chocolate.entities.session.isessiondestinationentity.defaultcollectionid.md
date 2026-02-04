@@ -9,5 +9,5 @@ Default collection ID from tool configuration
 **Signature:**
 
 ```typescript
-readonly defaultCollectionId?: SourceId;
+readonly defaultCollectionId?: CollectionId;
 ```

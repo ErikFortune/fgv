@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected readonly _sourceId: SourceId;
+protected readonly _sourceId: CollectionId;
 ```

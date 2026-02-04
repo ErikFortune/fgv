@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)<!-- -->&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
+[LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)<!-- -->&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -158,7 +158,7 @@ Can be: - A single library (merges all collections) - An `IMergeLibrarySource` o
 
 </td><td>
 
-ReadonlyArray&lt;IProtectedCollectionInternal&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;&gt;
+ReadonlyArray&lt;IProtectedCollectionInternal&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;&gt;
 
 
 </td><td>

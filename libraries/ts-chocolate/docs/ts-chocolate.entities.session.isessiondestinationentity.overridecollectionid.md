@@ -9,5 +9,5 @@ User-selected override collection ID
 **Signature:**
 
 ```typescript
-readonly overrideCollectionId?: SourceId;
+readonly overrideCollectionId?: CollectionId;
 ```

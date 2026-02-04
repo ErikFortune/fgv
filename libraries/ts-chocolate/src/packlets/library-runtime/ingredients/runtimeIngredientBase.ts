@@ -30,7 +30,7 @@ import {
   Converters,
   IngredientCategory,
   IngredientId,
-  SourceId
+  CollectionId
 } from '../../common';
 import { Ingredients, IngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
@@ -55,7 +55,7 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   protected readonly _context: IIngredientContext;
   protected readonly _id: IngredientId;
   protected readonly _ingredient: IngredientEntity;
-  protected readonly _sourceId: SourceId;
+  protected readonly _sourceId: CollectionId;
   protected readonly _baseId: BaseIngredientId;
 
   /**
@@ -89,7 +89,7 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): SourceId {
+  public get sourceId(): CollectionId {
     return this._sourceId;
   }
 

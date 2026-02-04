@@ -219,7 +219,7 @@ Gets the underlying raw recipe data.
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

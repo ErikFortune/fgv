@@ -9,7 +9,7 @@ Initialization type for a sub-library collection entry. Fixes the collection ID 
 **Signature:**
 
 ```typescript
-export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
+export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
+**References:** [CollectionId](./ts-chocolate.collectionid.md)<!-- -->, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
 

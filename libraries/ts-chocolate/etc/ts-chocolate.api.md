@@ -369,7 +369,10 @@ const baseProcedureId_2: Validator<BaseProcedureId>;
 export type BaseSessionId = Brand<string, 'BaseSessionId'>;
 
 // @public
-const baseSessionId: Validator<BaseSessionId>;
+const baseSessionId: Converter<BaseSessionId>;
+
+// @public
+const baseSessionId_2: Validator<BaseSessionId>;
 
 // @public
 export type BaseTaskId = Brand<string, 'BaseTaskId'>;
@@ -511,12 +514,12 @@ export class ChocolateLibrary {
     get fillings(): FillingsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfectionEntity>;
-    getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
-    getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
-    getEditableIngredients(collectionId: SourceId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
-    getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
-    getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
-    getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>>;
+    getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
+    getEditableFillings(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
+    getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
+    getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+    getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
+    getEditableTasks(collectionId: CollectionId): Result<EditableCollection<ITaskData, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<IngredientEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -597,6 +600,15 @@ class CollectionFilter<T extends string> {
 }
 
 // @public
+export type CollectionId = Brand<string, 'CollectionId'>;
+
+// @public
+const collectionId: Converter<CollectionId>;
+
+// @public
+const collectionId_2: Validator<CollectionId>;
+
+// @public
 function collectionJsonConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
 // @public
@@ -612,13 +624,13 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 // @public
 class CollectionManager<TCompositeId extends string, TBaseId extends string, TItem> implements ICollectionManager {
     constructor(library: SubLibraryBase<TCompositeId, TBaseId, TItem>);
-    create(collectionId: SourceId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
-    delete(collectionId: SourceId): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
-    exists(collectionId: SourceId): boolean;
-    get(collectionId: SourceId): Result<ICollectionSourceMetadata>;
-    getAll(): ReadonlyArray<SourceId>;
-    isMutable(collectionId: SourceId): Result<boolean>;
-    updateMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
+    create(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    delete(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    exists(collectionId: CollectionId): boolean;
+    get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
+    getAll(): ReadonlyArray<CollectionId>;
+    isMutable(collectionId: CollectionId): Result<boolean>;
+    updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
 }
 
 // @public
@@ -898,7 +910,7 @@ declare namespace Converters {
         idsWithPreferred,
         refWithNotes,
         numberInRange,
-        sourceId,
+        collectionId,
         baseIngredientId,
         baseFillingId,
         baseMoldId,
@@ -931,8 +943,8 @@ declare namespace Converters {
         ParsedFillingVersionId,
         parsedFillingVersionId,
         sessionSpec,
-        sessionBaseId,
-        persistedSessionId,
+        baseSessionId,
+        sessionId,
         ParsedSessionId,
         parsedSessionId,
         slotId,
@@ -1043,7 +1055,7 @@ function createConfectionVersionId(parts: {
 }): Result<ConfectionVersionId>;
 
 // @public
-function createFillingId(sourceId: SourceId, baseId: BaseFillingId): FillingId;
+function createFillingId(collectionId: CollectionId, baseId: BaseFillingId): FillingId;
 
 // @public
 function createFillingVersionId(fillingId: FillingId, versionSpec: FillingVersionSpec): FillingVersionId;
@@ -1058,16 +1070,16 @@ function createFillingVersionIdValidated(parts: {
 function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryLoadSpec<TCollectionId>, nameConverter: Converter<TCollectionId> | Validator<TCollectionId>): CollectionFilter<TCollectionId>;
 
 // @public
-function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
+function createIngredientId(collectionId: CollectionId, baseId: BaseIngredientId): IngredientId;
 
 // @public
-function createJournalId(collectionId: SourceId, baseId: BaseJournalId): JournalId;
+function createJournalId(collectionId: CollectionId, baseId: BaseJournalId): JournalId;
 
 // @public
 export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace>;
 
 // @public
-function createSessionId(collectionId: SourceId, baseId: BaseSessionId): SessionId;
+function createSessionId(collectionId: CollectionId, baseId: BaseSessionId): SessionId;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1100,12 +1112,12 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     add(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     canSave(): boolean;
     clear(): Result<boolean>;
-    readonly collectionId: SourceId;
+    readonly collectionId: CollectionId;
     static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
     delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
     export(): Result<ICollectionSourceFile<T>>;
     static fromJson<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
-    static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: SourceId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
+    static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: CollectionId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
     static fromYaml<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     isDirty(): boolean;
     readonly isMutable: boolean;
@@ -1172,7 +1184,7 @@ class EditingSession {
     get targetWeight(): Measurement;
     toEditJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingEditJournalEntryEntity>;
     toPersistedState(options: {
-        readonly collectionId: SourceId;
+        readonly collectionId: CollectionId;
         readonly baseId?: BaseSessionId;
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
@@ -1198,7 +1210,7 @@ class EditorContext<T, TBaseId extends string = string, TId extends string = str
     protected constructor(params: IEditorContextParams<T, TBaseId, TId>);
     clearUnsavedChanges(): void;
     protected get collection(): EditableCollection<T, TBaseId>;
-    copyTo(id: TId, targetCollectionId: SourceId): Result<TId>;
+    copyTo(id: TId, targetCollectionId: CollectionId): Result<TId>;
     static create<T, TBaseId extends string = string, TId extends string = string>(params: IEditorContextParams<T, TBaseId, TId>): Result<EditorContext<T, TBaseId, TId>>;
     create(baseId: TBaseId | undefined, entity: T): Result<TId>;
     delete(id: TId): Result<T>;
@@ -1459,7 +1471,7 @@ class FillingRecipeQuery {
     execute(): ReadonlyArray<RuntimeFillingRecipe>;
     exists(): boolean;
     first(): RuntimeFillingRecipe | undefined;
-    fromSource(sourceId: SourceId): FillingRecipeQuery;
+    fromSource(sourceId: CollectionId): FillingRecipeQuery;
     ganacheFatContent(min: Percentage, max?: Percentage): FillingRecipeQuery;
     ganacheWithWarnings(): FillingRecipeQuery;
     hasMultipleVersions(): FillingRecipeQuery;
@@ -1713,12 +1725,6 @@ function generateUniqueBaseId(baseId: string, existingIds: ReadonlySet<string> |
 function generateUniqueBaseIdFromName(name: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
 
 // @public
-function getBaseIdFromSessionId(id: SessionId): BaseSessionId;
-
-// @public
-function getCollectionIdFromSessionId(id: SessionId): SourceId;
-
-// @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -1731,10 +1737,10 @@ function getCurrentTimestamp(): string;
 function getFillingBaseId(id: FillingId): BaseFillingId;
 
 // @public
-function getFillingsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+function getFillingCollectionId(id: FillingId): CollectionId;
 
 // @public
-function getFillingSourceId(id: FillingId): SourceId;
+function getFillingsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getFillingVersionFillingId(id: FillingVersionId): FillingId;
@@ -1746,19 +1752,19 @@ function getFillingVersionSpec(id: FillingVersionId): FillingVersionSpec;
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
 
 // @public
+function getIngredientCollectionId(id: IngredientId): CollectionId;
+
+// @public
 function getIngredientInventoryDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getIngredientsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-function getIngredientSourceId(id: IngredientId): SourceId;
-
-// @public
 function getJournalBaseId(id: JournalId): BaseJournalId;
 
 // @public
-function getJournalCollectionId(id: JournalId): SourceId;
+function getJournalCollectionId(id: JournalId): CollectionId;
 
 // @public
 function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -1785,6 +1791,12 @@ function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(co
 function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
+function getSessionBaseId(id: SessionId): BaseSessionId;
+
+// @public
+function getSessionCollectionId(id: SessionId): CollectionId;
+
+// @public
 function getSessionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -1806,11 +1818,11 @@ declare namespace Helpers {
     export {
         createIngredientId,
         parseIngredientId,
-        getIngredientSourceId,
+        getIngredientCollectionId,
         getIngredientBaseId,
         createFillingId,
         parseFillingId,
-        getFillingSourceId,
+        getFillingCollectionId,
         getFillingBaseId,
         createJournalId,
         parseJournalId,
@@ -1818,8 +1830,8 @@ declare namespace Helpers {
         getJournalBaseId,
         createSessionId,
         parseSessionId,
-        getCollectionIdFromSessionId,
-        getBaseIdFromSessionId,
+        getSessionCollectionId,
+        getSessionBaseId,
         createFillingVersionId,
         parseFillingVersionId,
         getFillingVersionFillingId,
@@ -2011,13 +2023,13 @@ interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = s
 
 // @public
 interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
-    readonly create: (collectionId: SourceId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>>;
-    readonly delete: (collectionId: SourceId) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
-    readonly exists: (collectionId: SourceId) => boolean;
-    readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
-    readonly getAll: () => ReadonlyArray<SourceId>;
-    readonly isMutable: (collectionId: SourceId) => Result<boolean>;
-    readonly updateMetadata: (collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>) => Result<ICollectionSourceMetadata>;
+    readonly create: (collectionId: CollectionId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
+    readonly delete: (collectionId: CollectionId) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    readonly exists: (collectionId: CollectionId) => boolean;
+    readonly get: (collectionId: CollectionId) => Result<ICollectionSourceMetadata>;
+    readonly getAll: () => ReadonlyArray<CollectionId>;
+    readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
+    readonly updateMetadata: (collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>) => Result<ICollectionSourceMetadata>;
 }
 
 // @public
@@ -2189,7 +2201,7 @@ interface IConfectionYield {
 
 // @public
 interface ICreateFillingSessionOptions {
-    readonly collectionId: SourceId;
+    readonly collectionId: CollectionId;
     readonly label?: string;
     readonly status?: PersistedSessionStatus;
 }
@@ -2217,7 +2229,7 @@ function idsWithPreferred<TId extends string>(idConverter: Converter<TId>, conte
 
 // @public
 interface IEditableCollection<T, TBaseId extends string = string, TId extends string = string> extends ValidatingResultMap<TBaseId, T> {
-    readonly collectionId: SourceId;
+    readonly collectionId: CollectionId;
     readonly export: () => Result<ICollectionSourceFile<T>>;
     readonly isMutable: boolean;
     readonly items: ReadonlyMap<TBaseId, T>;
@@ -2228,7 +2240,7 @@ interface IEditableCollection<T, TBaseId extends string = string, TId extends st
 
 // @public
 interface IEditableCollectionParams<T, TBaseId extends string = string> {
-    readonly collectionId: SourceId;
+    readonly collectionId: CollectionId;
     readonly initialItems: ReadonlyMap<TBaseId, T>;
     readonly isMutable: boolean;
     readonly keyConverter: Converter<TBaseId, unknown>;
@@ -2251,7 +2263,7 @@ interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
 // @public
 interface IEditorContext<T, TBaseId extends string = string, TId extends string = string> {
     readonly clearUnsavedChanges: () => void;
-    readonly copyTo: (id: TId, targetCollectionId: SourceId) => Result<TId>;
+    readonly copyTo: (id: TId, targetCollectionId: CollectionId) => Result<TId>;
     readonly create: (baseId: TBaseId | undefined, entity: T) => Result<TId>;
     readonly delete: (id: TId) => Result<T>;
     readonly exists: (id: TId) => boolean;
@@ -2565,7 +2577,7 @@ interface IIdsWithPreferred<TId extends string> {
 
 // @public
 interface IImportOptions {
-    readonly newCollectionId?: SourceId;
+    readonly newCollectionId?: CollectionId;
     readonly onCollisionMode: 'replace' | 'create-new' | 'fail';
 }
 
@@ -3038,19 +3050,19 @@ const ingredientInventoryEntryId: Converter<IngredientInventoryEntryId>;
 //
 // @public
 class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntryId, IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity> {
-    addEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
+    addEntry(collectionId: CollectionId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IIngredientInventoryLibraryParams): Result<IngredientInventoryLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: IIngredientInventoryLibraryAsyncParams): Promise<Result<IngredientInventoryLibrary>>;
-    createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
+    createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
     getAllEntries(): ReadonlyArray<IIngredientInventoryEntryEntity>;
     getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
     hasForIngredient(ingredientId: IngredientId): boolean;
     removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntryEntity>;
     removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
-    upsertEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
+    upsertEntry(collectionId: CollectionId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
 }
 
 // @public
@@ -3085,7 +3097,7 @@ class IngredientQuery {
     fatRange(min: Percentage, max: Percentage): IngredientQuery;
     first(): AnyRuntimeIngredient | undefined;
     forApplication(application: ChocolateApplication): IngredientQuery;
-    fromSource(sourceId: SourceId): IngredientQuery;
+    fromSource(sourceId: CollectionId): IngredientQuery;
     maxCacao(percentage: Percentage): IngredientQuery;
     maxFat(max: Percentage): IngredientQuery;
     maxWater(max: Percentage): IngredientQuery;
@@ -3695,7 +3707,7 @@ interface IRuntimeConfection {
     readonly name: ConfectionName;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
     readonly raw: Confections_2.AnyConfectionEntity;
-    readonly sourceId: SourceId;
+    readonly sourceId: CollectionId;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
     readonly versions: ReadonlyArray<AnyRuntimeConfectionVersion>;
@@ -3769,7 +3781,7 @@ interface IRuntimeFillingRecipe {
     readonly latestVersion: IRuntimeFillingRecipeVersion;
     readonly name: FillingName;
     readonly raw: IFillingRecipeEntity;
-    readonly sourceId: SourceId;
+    readonly sourceId: CollectionId;
     readonly tags?: ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
     readonly versionCount: number;
@@ -3815,7 +3827,7 @@ interface IRuntimeIngredient {
     readonly name: string;
     primaryInFillings(): IRuntimeFillingRecipe[];
     readonly raw: IngredientEntity;
-    readonly sourceId: SourceId;
+    readonly sourceId: CollectionId;
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
     usedByFillings(): IRuntimeFillingRecipe[];
@@ -3838,7 +3850,7 @@ interface IRuntimeMold {
     readonly productNumber: string;
     readonly raw: IMoldEntity;
     readonly related?: ReadonlyArray<MoldId>;
-    readonly sourceId: SourceId;
+    readonly sourceId: CollectionId;
     readonly tags?: ReadonlyArray<string>;
     readonly totalCapacity: Measurement | undefined;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
@@ -4123,8 +4135,8 @@ interface ISessionContext extends IConfectionContext {
 
 // @public
 interface ISessionDestinationEntity {
-    readonly defaultCollectionId?: SourceId;
-    readonly overrideCollectionId?: SourceId;
+    readonly defaultCollectionId?: CollectionId;
+    readonly overrideCollectionId?: CollectionId;
 }
 
 // @public
@@ -4257,7 +4269,7 @@ interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
     readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
-    readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+    readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4279,14 +4291,14 @@ interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem> {
 
 // @public
 interface ISubLibraryParams<TLibrary, TEntryInit> {
-    readonly builtin?: LibraryLoadSpec<SourceId>;
+    readonly builtin?: LibraryLoadSpec<CollectionId>;
     readonly collections?: ReadonlyArray<TEntryInit>;
     readonly fileSources?: SubLibraryFileTreeSource | ReadonlyArray<SubLibraryFileTreeSource>;
     readonly logger?: Logging.LogReporter<unknown>;
     readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
-    readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+    readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 }
 
 // @public
@@ -4325,6 +4337,9 @@ function isValidBaseTaskId(from: unknown): from is BaseTaskId;
 
 // @public
 function isValidCelsius(from: unknown): from is Celsius;
+
+// @public
+function isValidCollectionId(from: unknown): from is CollectionId;
 
 // @public
 function isValidConfectionName(from: unknown): from is ConfectionName;
@@ -4370,9 +4385,6 @@ function isValidSessionSpec(from: unknown): from is SessionSpec;
 
 // @public
 function isValidSlotId(from: unknown): from is SlotId;
-
-// @public
-function isValidSourceId(from: unknown): from is SourceId;
 
 // @public
 function isValidUrlCategory(from: unknown): from is UrlCategory;
@@ -5131,19 +5143,19 @@ const moldInventoryEntryId: Converter<MoldInventoryEntryId>;
 //
 // @public
 class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInventoryEntryBaseId, IMoldInventoryEntryEntity> {
-    addEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntryEntity): Result<MoldInventoryEntryId>;
+    addEntry(collectionId: CollectionId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntryEntity): Result<MoldInventoryEntryId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IMoldInventoryLibraryParams): Result<MoldInventoryLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: IMoldInventoryLibraryAsyncParams): Promise<Result<MoldInventoryLibrary>>;
-    createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
+    createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
     getAllEntries(): ReadonlyArray<IMoldInventoryEntryEntity>;
     getForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity>;
     hasForMold(moldId: MoldId): boolean;
     removeEntry(entryId: MoldInventoryEntryId): Result<IMoldInventoryEntryEntity>;
     removeForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity>;
-    upsertEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntryEntity): Result<MoldInventoryEntryId>;
+    upsertEntry(collectionId: CollectionId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntryEntity): Result<MoldInventoryEntryId>;
 }
 
 // @public
@@ -5238,7 +5250,7 @@ function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
 
 // @public
-type ParsedConfectionId = Converters_4.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_4.ICompositeId<CollectionId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
@@ -5250,7 +5262,7 @@ type ParsedConfectionVersionId = Converters_4.ICompositeId<ConfectionId, Confect
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_4.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_4.ICompositeId<CollectionId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
@@ -5262,7 +5274,7 @@ type ParsedFillingVersionId = Converters_4.ICompositeId<FillingId, FillingVersio
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_4.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_4.ICompositeId<CollectionId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
@@ -5270,7 +5282,7 @@ const parsedIngredientId: Converter<ParsedIngredientId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, IngredientInventoryEntryBaseId>;
+type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<CollectionId, IngredientInventoryEntryBaseId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5278,13 +5290,13 @@ type ParsedIngredientInventoryEntryId = Converters_4.ICompositeId<SourceId, Ingr
 const parsedIngredientInventoryEntryId: Converter<ParsedIngredientInventoryEntryId>;
 
 // @public
-type ParsedJournalId = Converters_4.ICompositeId<SourceId, BaseJournalId>;
+type ParsedJournalId = Converters_4.ICompositeId<CollectionId, BaseJournalId>;
 
 // @public
 const parsedJournalId: Converter<ParsedJournalId>;
 
 // @public
-type ParsedMoldId = Converters_4.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_4.ICompositeId<CollectionId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
@@ -5292,7 +5304,7 @@ const parsedMoldId: Converter<ParsedMoldId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInventoryEntryBaseId>;
+type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<CollectionId, MoldInventoryEntryBaseId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5300,19 +5312,19 @@ type ParsedMoldInventoryEntryId = Converters_4.ICompositeId<SourceId, MoldInvent
 const parsedMoldInventoryEntryId: Converter<ParsedMoldInventoryEntryId>;
 
 // @public
-type ParsedProcedureId = Converters_4.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_4.ICompositeId<CollectionId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedSessionId = Converters_4.ICompositeId<SourceId, BaseSessionId>;
+type ParsedSessionId = Converters_4.ICompositeId<CollectionId, BaseSessionId>;
 
 // @public
 const parsedSessionId: Converter<ParsedSessionId>;
 
 // @public
-type ParsedTaskId = Converters_4.ICompositeId<SourceId, BaseTaskId>;
+type ParsedTaskId = Converters_4.ICompositeId<CollectionId, BaseTaskId>;
 
 // @public
 const parsedTaskId: Converter<ParsedTaskId>;
@@ -5345,9 +5357,6 @@ const PERSISTED_SESSION_SCHEMA_VERSION: 1;
 //
 // @public
 const persistedSessionDestinationEntity: Converter<ISessionDestinationEntity>;
-
-// @public
-const persistedSessionId: Converter<SessionId>;
 
 // @public
 type PersistedSessionSchemaVersion = typeof PERSISTED_SESSION_SCHEMA_VERSION;
@@ -5706,9 +5715,9 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     abstract get raw(): Confections_2.AnyConfectionEntity;
     // (undocumented)
     protected readonly _rawGoldenVersion: Confections_2.AnyConfectionVersionEntity;
-    get sourceId(): SourceId;
+    get sourceId(): CollectionId;
     // (undocumented)
-    protected readonly _sourceId: SourceId;
+    protected readonly _sourceId: CollectionId;
     get tags(): ReadonlyArray<string> | undefined;
     get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
     get versions(): ReadonlyArray<AnyRuntimeConfectionVersion>;
@@ -5801,7 +5810,7 @@ class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
     get latestVersion(): RuntimeFillingRecipeVersion;
     get name(): FillingName;
     get raw(): IFillingRecipeEntity;
-    get sourceId(): SourceId;
+    get sourceId(): CollectionId;
     get tags(): ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
     get versionCount(): number;
@@ -5872,9 +5881,9 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
     get name(): string;
     primaryInFillings(): IRuntimeFillingRecipe[];
     abstract get raw(): IngredientEntity;
-    get sourceId(): SourceId;
+    get sourceId(): CollectionId;
     // (undocumented)
-    protected readonly _sourceId: SourceId;
+    protected readonly _sourceId: CollectionId;
     get tags(): ReadonlyArray<string>;
     get traceAllergens(): ReadonlyArray<Allergen>;
     usedByFillings(): IRuntimeFillingRecipe[];
@@ -5903,7 +5912,7 @@ class RuntimeMold implements IRuntimeMold {
     get raw(): IMoldEntity;
     // (undocumented)
     get related(): ReadonlyArray<MoldId> | undefined;
-    get sourceId(): SourceId;
+    get sourceId(): CollectionId;
     get tags(): ReadonlyArray<string> | undefined;
     get totalCapacity(): Measurement | undefined;
     get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
@@ -6271,9 +6280,6 @@ const SESSION_ID_PATTERN: RegExp;
 const SESSION_SPEC_PATTERN: RegExp;
 
 // @public
-const sessionBaseId: Converter<BaseSessionId>;
-
-// @public
 type SessionCollection = SubLibraryCollection<BaseSessionId, AnySessionEntity>;
 
 // @public
@@ -6289,19 +6295,22 @@ type SessionCollectionValidator = SubLibraryCollectionValidator<BaseSessionId, A
 export type SessionId = Brand<string, 'SessionId'>;
 
 // @public
-const sessionId: Validator<SessionId>;
+const sessionId: Converter<SessionId>;
+
+// @public
+const sessionId_2: Validator<SessionId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySessionEntity> {
-    addSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId>;
+    addSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: ISessionLibraryParams): Result<SessionLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: ISessionLibraryAsyncParams): Promise<Result<SessionLibrary>>;
-    createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
+    createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
     getActiveSessions(): ReadonlyArray<AnySessionEntity>;
     getAllSessions(): ReadonlyArray<AnySessionEntity>;
     getSession(sessionId: SessionId): Result<AnySessionEntity>;
@@ -6313,7 +6322,7 @@ class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySession
     getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingSessionEntity>;
     hasSession(sessionId: SessionId): boolean;
     removeSession(sessionId: SessionId): Result<AnySessionEntity>;
-    upsertSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId>;
+    upsertSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId>;
 }
 
 // @public
@@ -6330,15 +6339,6 @@ export type SlotId = Brand<string, 'SlotId'>;
 
 // @public
 const slotId: Converter<SlotId>;
-
-// @public
-export type SourceId = Brand<string, 'SourceId'>;
-
-// @public
-const sourceId: Converter<SourceId>;
-
-// @public
-const sourceId_2: Validator<SourceId>;
 
 // @public
 function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
@@ -6365,34 +6365,34 @@ export type SpoonUnit = 'tsp' | 'Tbsp';
 const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
 
 // @public
-abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem, ICollectionSourceMetadata> {
+abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
-    getCollectionSourceItem(collectionId: SourceId): FileTree.FileTreeItem | undefined;
+    getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined;
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
-    loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<SourceId>>>;
+    loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<CollectionId>>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<SourceId>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // @internal
-    removeCollection(collectionId: SourceId): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<CollectionId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
-    updateCollectionMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
+    removeCollection(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    updateCollectionMetadata(collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
 }
 
 // @public
 type SubLibraryBuiltInTreeProvider = () => Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<SourceId, SubLibraryCollectionEntry<TBaseId, TItem>>;
+type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<CollectionId, SubLibraryCollectionEntry<TBaseId, TItem>>;
 
 // @public
-type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
+type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>;
 
 // @public
 type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
@@ -6401,16 +6401,16 @@ type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collect
 type SubLibraryDirectoryNavigator = (tree: FileTree.FileTreeItem) => Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
+type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>;
 
 // @public
-type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
+type SubLibraryFileTreeSource = IFileTreeSource<CollectionId>;
 
 // @public
 type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections' | 'sessions' | 'moldInventory' | 'ingredientInventory';
 
 // @public
-type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
+type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, CollectionId>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6538,6 +6538,9 @@ function toBaseTaskId(from: unknown): Result<BaseTaskId>;
 function toCelsius(from: unknown): Result<Celsius>;
 
 // @public
+function toCollectionId(from: unknown): Result<CollectionId>;
+
+// @public
 function toConfectionName(from: unknown): Result<ConfectionName>;
 
 // @public
@@ -6584,9 +6587,6 @@ function toSessionSpec(from: unknown): Result<SessionSpec>;
 
 // @public
 function toSlotId(from: unknown): Result<SlotId>;
-
-// @public
-function toSourceId(from: unknown): Result<SourceId>;
 
 // @public
 function toUrlCategory(from: unknown): Result<UrlCategory>;
@@ -6739,8 +6739,8 @@ class ValidatingLibrary<TK extends string, TV, TSpec, TOrchEntity = TV> extends 
 
 declare namespace Validation {
     export {
-        isValidSourceId,
-        toSourceId,
+        isValidCollectionId,
+        toCollectionId,
         isValidBaseIngredientId,
         toBaseIngredientId,
         isValidBaseFillingId,
@@ -6834,7 +6834,7 @@ class ValidationReportBuilder {
 
 declare namespace Validators {
     export {
-        sourceId_2 as sourceId,
+        collectionId_2 as collectionId,
         baseIngredientId_2 as baseIngredientId,
         baseFillingId_2 as baseFillingId,
         baseMoldId_2 as baseMoldId,
@@ -6842,7 +6842,7 @@ declare namespace Validators {
         baseTaskId_2 as baseTaskId,
         baseConfectionId_2 as baseConfectionId,
         baseJournalId_2 as baseJournalId,
-        baseSessionId,
+        baseSessionId_2 as baseSessionId,
         ingredientId_2 as ingredientId,
         fillingId_2 as fillingId,
         moldId_2 as moldId,
@@ -6850,7 +6850,7 @@ declare namespace Validators {
         taskId_2 as taskId,
         confectionId_2 as confectionId,
         journalId_2 as journalId,
-        sessionId,
+        sessionId_2 as sessionId,
         fillingVersionSpec_2 as fillingVersionSpec,
         confectionVersionSpec_2 as confectionVersionSpec,
         fillingVersionId_2 as fillingVersionId,

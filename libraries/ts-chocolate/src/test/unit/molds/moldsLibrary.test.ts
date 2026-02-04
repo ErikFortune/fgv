@@ -26,7 +26,7 @@ import {
   Measurement,
   Millimeters,
   MoldId,
-  SourceId,
+  CollectionId,
   Model as CommonModel
 } from '../../../packlets/common';
 
@@ -88,7 +88,7 @@ describe('MoldsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testMold: createTestMold()
@@ -107,7 +107,7 @@ describe('MoldsLibrary', () => {
       const result = MoldsLibrary.create({
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testMold: createTestMold()
@@ -199,7 +199,7 @@ describe('MoldsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {}
           }
@@ -255,7 +255,7 @@ describe('MoldsLibrary.createAsync', () => {
   test('creates library with built-ins by default', async () => {
     const result = await MoldsLibrary.createAsync();
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('common' as SourceId)).toBe(true);
+      expect(lib.collections.has('common' as CollectionId)).toBe(true);
     });
   });
 
@@ -298,7 +298,7 @@ describe('MoldsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('external' as SourceId)).toBe(true);
+      expect(lib.collections.has('external' as CollectionId)).toBe(true);
       expect(lib.get('external.external-mold' as MoldId)).toSucceed();
     });
   });
@@ -348,7 +348,7 @@ describe('MoldsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
       expect(lib.get('secret.secret-mold' as MoldId)).toSucceedAndSatisfy((mold) => {
         expect(mold.manufacturer).toBe('Secret Manufacturer');
       });

@@ -28,7 +28,7 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  CollectionId
 } from '../../../packlets/common';
 
 import {
@@ -94,7 +94,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'user' as SourceId,
+            id: 'user' as CollectionId,
             isMutable: true,
             items: {
               testGanache: testRecipe
@@ -114,7 +114,7 @@ describe('FillingsLibrary', () => {
         builtin: true,
         collections: [
           {
-            id: 'user' as SourceId,
+            id: 'user' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -130,7 +130,7 @@ describe('FillingsLibrary', () => {
 
     test('creates library with specific built-in collections', () => {
       const result = FillingsLibrary.create({
-        builtin: ['common' as SourceId]
+        builtin: ['common' as CollectionId]
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
@@ -141,7 +141,7 @@ describe('FillingsLibrary', () => {
 
     test('creates library with IBuiltInLoadParams include filter', () => {
       const result = FillingsLibrary.create({
-        builtin: { included: ['common' as SourceId] }
+        builtin: { included: ['common' as CollectionId] }
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
@@ -152,7 +152,7 @@ describe('FillingsLibrary', () => {
 
     test('creates library with IBuiltInLoadParams exclude filter', () => {
       const result = FillingsLibrary.create({
-        builtin: { excluded: ['nonexistent' as SourceId] }
+        builtin: { excluded: ['nonexistent' as CollectionId] }
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
@@ -175,7 +175,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'user' as SourceId,
+            id: 'user' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -218,7 +218,7 @@ describe('FillingsLibrary', () => {
     beforeEach(() => {
       library = FillingsLibrary.create({
         builtin: false,
-        collections: [{ id: 'user' as SourceId, isMutable: true, items: {} }]
+        collections: [{ id: 'user' as CollectionId, isMutable: true, items: {} }]
       }).orThrow();
     });
 
@@ -268,7 +268,7 @@ describe('FillingsLibrary', () => {
     test('addCollectionEntry adds collection', () => {
       expect(
         library.addCollectionEntry({
-          id: 'new' as SourceId,
+          id: 'new' as CollectionId,
           isMutable: true,
           items: {}
         })
@@ -282,7 +282,7 @@ describe('FillingsLibrary', () => {
     });
 
     test('composeId creates valid composite ID', () => {
-      expect(library.composeId('source' as SourceId, 'base' as BaseFillingId)).toSucceedWith(
+      expect(library.composeId('source' as CollectionId, 'base' as BaseFillingId)).toSucceedWith(
         'source.base' as FillingId
       );
     });
@@ -298,7 +298,7 @@ describe('FillingsLibrary', () => {
     beforeEach(() => {
       library = FillingsLibrary.create({
         builtin: false,
-        collections: [{ id: 'user' as SourceId, isMutable: true, items: { testGanache: testRecipe } }]
+        collections: [{ id: 'user' as CollectionId, isMutable: true, items: { testGanache: testRecipe } }]
       }).orThrow();
     });
 
@@ -311,7 +311,7 @@ describe('FillingsLibrary', () => {
     });
 
     test('collections returns readonly map', () => {
-      expect(library.collections.has('user' as SourceId)).toBe(true);
+      expect(library.collections.has('user' as CollectionId)).toBe(true);
     });
   });
 
@@ -640,7 +640,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'custom' as SourceId,
+            id: 'custom' as CollectionId,
             isMutable: true,
             items: {
               testGanache: testRecipe
@@ -668,7 +668,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'custom' as SourceId,
+            id: 'custom' as CollectionId,
             isMutable: true,
             items: {
               testGanache: testRecipe
@@ -697,7 +697,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'source1' as SourceId,
+            id: 'source1' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -708,7 +708,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'source2' as SourceId,
+            id: 'source2' as CollectionId,
             isMutable: false,
             items: { testGanache: testRecipe }
           }
@@ -734,12 +734,12 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'collection1' as SourceId,
+            id: 'collection1' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           },
           {
-            id: 'collection2' as SourceId,
+            id: 'collection2' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -768,12 +768,12 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'include-me' as SourceId,
+            id: 'include-me' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           },
           {
-            id: 'exclude-me' as SourceId,
+            id: 'exclude-me' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -786,7 +786,7 @@ describe('FillingsLibrary', () => {
           builtin: false,
           mergeLibraries: {
             library: existingLibrary,
-            filter: ['include-me' as SourceId]
+            filter: ['include-me' as CollectionId]
           }
         })
       ).toSucceedAndSatisfy((lib) => {
@@ -802,12 +802,12 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'keep-this' as SourceId,
+            id: 'keep-this' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           },
           {
-            id: 'remove-this' as SourceId,
+            id: 'remove-this' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -835,7 +835,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'custom' as SourceId,
+            id: 'custom' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -862,7 +862,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'common' as SourceId, // Same as builtin
+            id: 'common' as CollectionId, // Same as builtin
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -883,7 +883,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'duplicate' as SourceId,
+            id: 'duplicate' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -894,7 +894,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'duplicate' as SourceId,
+            id: 'duplicate' as CollectionId,
             isMutable: false,
             items: { testGanache: testRecipe }
           }
@@ -914,7 +914,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'mutable-source' as SourceId,
+            id: 'mutable-source' as CollectionId,
             isMutable: true,
             items: { testGanache: testRecipe }
           }
@@ -925,7 +925,7 @@ describe('FillingsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'immutable-source' as SourceId,
+            id: 'immutable-source' as CollectionId,
             isMutable: false,
             items: { testGanache: testRecipe }
           }
@@ -973,7 +973,7 @@ describe('FillingsLibrary', () => {
         });
         expect(result).toSucceedAndSatisfy((lib) => {
           // Should have at least the common built-in collection (fgv is skipped since no key)
-          expect(lib.collections.has('common' as SourceId)).toBe(true);
+          expect(lib.collections.has('common' as CollectionId)).toBe(true);
         });
       });
 
@@ -983,7 +983,7 @@ describe('FillingsLibrary', () => {
         const result = await FillingsLibrary.createAsync();
         expect(result).toSucceedAndSatisfy((lib) => {
           // Should have the common built-in collection (fgv is captured as protected)
-          expect(lib.collections.has('common' as SourceId)).toBe(true);
+          expect(lib.collections.has('common' as CollectionId)).toBe(true);
         });
       });
 
@@ -1033,7 +1033,7 @@ describe('FillingsLibrary', () => {
         });
 
         expect(result).toSucceedAndSatisfy((lib) => {
-          expect(lib.collections.has('external' as SourceId)).toBe(true);
+          expect(lib.collections.has('external' as CollectionId)).toBe(true);
           expect(lib.get('external.external-recipe' as FillingId)).toSucceed();
         });
       });
@@ -1091,7 +1091,7 @@ describe('FillingsLibrary', () => {
         });
 
         expect(result).toSucceedAndSatisfy((lib) => {
-          expect(lib.collections.has('secret' as SourceId)).toBe(true);
+          expect(lib.collections.has('secret' as CollectionId)).toBe(true);
           expect(lib.get('secret.secret-recipe' as FillingId)).toSucceedAndSatisfy((recipe) => {
             expect(recipe.name).toBe('Secret Recipe');
           });
@@ -1230,8 +1230,8 @@ describe('FillingsLibrary', () => {
 
         expect(result).toSucceedAndSatisfy((lib) => {
           // Both collections should be loaded
-          expect(lib.collections.has('plain' as SourceId)).toBe(true);
-          expect(lib.collections.has('secret' as SourceId)).toBe(true);
+          expect(lib.collections.has('plain' as CollectionId)).toBe(true);
+          expect(lib.collections.has('secret' as CollectionId)).toBe(true);
           expect(lib.get('plain.plain-recipe' as FillingId)).toSucceed();
           expect(lib.get('secret.secret-recipe' as FillingId)).toSucceed();
         });

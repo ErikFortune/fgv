@@ -123,14 +123,14 @@ export const toolSettings: Converter<IToolSettings> = Converters.object<IToolSet
  */
 export const defaultCollectionTargets: Converter<IDefaultCollectionTargets> =
   Converters.object<IDefaultCollectionTargets>({
-    journals: CommonConverters.sourceId.optional(),
-    sessions: CommonConverters.sourceId.optional(),
-    fillings: CommonConverters.sourceId.optional(),
-    confections: CommonConverters.sourceId.optional(),
-    ingredients: CommonConverters.sourceId.optional(),
-    molds: CommonConverters.sourceId.optional(),
-    procedures: CommonConverters.sourceId.optional(),
-    tasks: CommonConverters.sourceId.optional()
+    journals: CommonConverters.collectionId.optional(),
+    sessions: CommonConverters.collectionId.optional(),
+    fillings: CommonConverters.collectionId.optional(),
+    confections: CommonConverters.collectionId.optional(),
+    ingredients: CommonConverters.collectionId.optional(),
+    molds: CommonConverters.collectionId.optional(),
+    procedures: CommonConverters.collectionId.optional(),
+    tasks: CommonConverters.collectionId.optional()
   });
 
 // ============================================================================

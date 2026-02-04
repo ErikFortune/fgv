@@ -25,7 +25,7 @@
 
 import { Logging, Result, succeed } from '@fgv/ts-utils';
 
-import { SourceId } from '../common';
+import { CollectionId } from '../common';
 import {
   IngredientInventoryLibrary,
   JournalLibrary,
@@ -146,7 +146,7 @@ export class UserLibrary implements IUserLibrary {
   private static _toFileSources(
     sources: ReadonlyArray<ILibraryFileTreeSource>,
     subLibraryId: SubLibraryId
-  ): ReadonlyArray<IFileTreeSource<SourceId>> {
+  ): ReadonlyArray<IFileTreeSource<CollectionId>> {
     // User libraries have no built-in data, so we ignore the subLibraryId
     // and just map directory/mutable from the source
     return sources.map((source) => ({

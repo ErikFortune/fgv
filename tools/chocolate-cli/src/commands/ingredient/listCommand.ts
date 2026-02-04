@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { Entities, Helpers, IngredientId, SourceId } from '@fgv/ts-chocolate';
+import { Entities, Helpers, IngredientId, CollectionId } from '@fgv/ts-chocolate';
 
 import {
   IEntityListOptions,
@@ -57,11 +57,11 @@ interface IIngredientListOptions extends IEntityListOptions {
 function matchesFilters(
   ingredient: Entities.Ingredients.IngredientEntity,
   ingredientId: IngredientId,
-  sourceId: SourceId,
+  collectionId: CollectionId,
   options: IIngredientListOptions
 ): boolean {
-  // Filter by source
-  if (options.source && sourceId !== options.source) {
+  // Filter by collection
+  if (options.collection && collectionId !== options.collection) {
     return false;
   }
 
@@ -155,7 +155,7 @@ export function createListSubcommand(): Command {
   cmd.action(
     async (localOptions: {
       tag?: string[];
-      source?: string;
+      collection?: string;
       name?: string;
       category?: string;
       chocolateType?: string;
@@ -180,11 +180,10 @@ export function createListSubcommand(): Command {
       const matchingIngredients: IIngredientListItem[] = [];
 
       for (const [ingredientId, ingredient] of library.entries()) {
-        // Get the source ID from the composite ID
-        const sourceId = Helpers.getIngredientSourceId(ingredientId);
+        const collectionId = Helpers.getIngredientCollectionId(ingredientId);
 
         // Apply filters
-        if (!matchesFilters(ingredient, ingredientId, sourceId, options)) {
+        if (!matchesFilters(ingredient, ingredientId, collectionId, options)) {
           continue;
         }
 
@@ -192,7 +191,7 @@ export function createListSubcommand(): Command {
         const listItem: IIngredientListItem = {
           id: ingredientId,
           name: ingredient.name,
-          sourceId,
+          collectionId: collectionId,
           category: ingredient.category,
           description: ingredient.description,
           tags: ingredient.tags,

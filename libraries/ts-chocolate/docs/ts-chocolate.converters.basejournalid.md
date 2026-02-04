@@ -4,7 +4,7 @@
 
 ## Converters.baseJournalId variable
 
-Converter for [JournalBaseId](./ts-chocolate.basejournalid.md)<!-- -->.
+Converter for [BaseJournalId](./ts-chocolate.basejournalid.md)<!-- -->.
 
 **Signature:**
 

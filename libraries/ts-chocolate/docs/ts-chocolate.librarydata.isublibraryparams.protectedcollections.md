@@ -13,5 +13,5 @@ This field is typically populated by `loadAllCollectionsAsync` and passed to the
 **Signature:**
 
 ```typescript
-readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 ```

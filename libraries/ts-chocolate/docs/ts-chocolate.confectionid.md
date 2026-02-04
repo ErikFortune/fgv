@@ -4,7 +4,7 @@
 
 ## ConfectionId type
 
-Globally unique confection identifier (composite) Format: "sourceId.baseConfectionId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique confection identifier (composite) Format: "collectionId.baseConfectionId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 **Signature:**
 

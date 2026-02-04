@@ -9,7 +9,7 @@ Filter by source.
 **Signature:**
 
 ```typescript
-fromSource(sourceId: SourceId): FillingRecipeQuery;
+fromSource(sourceId: CollectionId): FillingRecipeQuery;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sourceId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

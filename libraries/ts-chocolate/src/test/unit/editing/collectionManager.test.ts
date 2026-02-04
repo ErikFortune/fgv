@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 import { CollectionManager } from '../../../packlets/editing';
 import { IngredientsLibrary } from '../../../packlets/entities';
-import { SourceId } from '../../../packlets/common';
+import { CollectionId } from '../../../packlets/common';
 import { ICollectionSourceMetadata } from '../../../packlets/library-data';
 
 describe('CollectionManager', () => {
@@ -59,13 +59,13 @@ describe('CollectionManager', () => {
         name: 'Test Collection'
       };
 
-      manager.create('coll1' as SourceId, metadata).orThrow();
-      manager.create('coll2' as SourceId, metadata).orThrow();
+      manager.create('coll1' as CollectionId, metadata).orThrow();
+      manager.create('coll2' as CollectionId, metadata).orThrow();
 
       const collections = manager.getAll();
       expect(collections.length).toBe(2);
-      expect(collections).toContain('coll1' as SourceId);
-      expect(collections).toContain('coll2' as SourceId);
+      expect(collections).toContain('coll1' as CollectionId);
+      expect(collections).toContain('coll2' as CollectionId);
     });
   });
 
@@ -80,27 +80,27 @@ describe('CollectionManager', () => {
         description: 'A test collection'
       };
 
-      manager.create('test-coll' as SourceId, metadata).orThrow();
+      manager.create('test-coll' as CollectionId, metadata).orThrow();
 
-      expect(manager.get('test-coll' as SourceId)).toSucceedAndSatisfy((result) => {
+      expect(manager.get('test-coll' as CollectionId)).toSucceedAndSatisfy((result) => {
         expect(result).toBeDefined();
       });
     });
 
     test('fails for non-existent collection', () => {
-      expect(manager.get('nonexistent' as SourceId)).toFailWith(/not found/i);
+      expect(manager.get('nonexistent' as CollectionId)).toFailWith(/not found/i);
     });
 
     test('returns empty object when collection has no metadata', () => {
       // Add collection directly to library without metadata
       library.addCollectionEntry({
-        id: 'no-metadata' as SourceId,
+        id: 'no-metadata' as CollectionId,
         isMutable: true,
         items: {}
         // Note: no metadata field
       });
 
-      expect(manager.get('no-metadata' as SourceId)).toSucceedAndSatisfy((result) => {
+      expect(manager.get('no-metadata' as CollectionId)).toSucceedAndSatisfy((result) => {
         expect(result).toEqual({});
       });
     });
@@ -117,8 +117,8 @@ describe('CollectionManager', () => {
         description: 'A new test collection'
       };
 
-      expect(manager.create('new-coll' as SourceId, metadata)).toSucceed();
-      expect(manager.exists('new-coll' as SourceId)).toBe(true);
+      expect(manager.create('new-coll' as CollectionId, metadata)).toSucceed();
+      expect(manager.exists('new-coll' as CollectionId)).toBe(true);
     });
 
     test('creates collection with minimal metadata', () => {
@@ -126,7 +126,7 @@ describe('CollectionManager', () => {
         name: 'Minimal'
       };
 
-      expect(manager.create('minimal' as SourceId, metadata)).toSucceed();
+      expect(manager.create('minimal' as CollectionId, metadata)).toSucceed();
     });
 
     test('fails when collection already exists', () => {
@@ -134,8 +134,8 @@ describe('CollectionManager', () => {
         name: 'Duplicate'
       };
 
-      manager.create('dup' as SourceId, metadata).orThrow();
-      expect(manager.create('dup' as SourceId, metadata)).toFailWith(/already exists/i);
+      manager.create('dup' as CollectionId, metadata).orThrow();
+      expect(manager.create('dup' as CollectionId, metadata)).toFailWith(/already exists/i);
     });
 
     test('fails with empty collection name', () => {
@@ -143,7 +143,7 @@ describe('CollectionManager', () => {
         name: ''
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/cannot be empty/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/cannot be empty/i);
     });
 
     test('fails with whitespace-only name', () => {
@@ -151,7 +151,7 @@ describe('CollectionManager', () => {
         name: '   '
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/cannot be empty/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/cannot be empty/i);
     });
 
     test('fails with leading whitespace in name', () => {
@@ -159,7 +159,7 @@ describe('CollectionManager', () => {
         name: '  Leading'
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/leading or trailing whitespace/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/leading or trailing whitespace/i);
     });
 
     test('fails with trailing whitespace in name', () => {
@@ -167,7 +167,7 @@ describe('CollectionManager', () => {
         name: 'Trailing  '
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/leading or trailing whitespace/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/leading or trailing whitespace/i);
     });
 
     test('fails with name exceeding 200 characters', () => {
@@ -175,7 +175,7 @@ describe('CollectionManager', () => {
         name: 'a'.repeat(201)
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/exceeds 200 characters/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/exceeds 200 characters/i);
     });
 
     test('succeeds with name exactly 200 characters', () => {
@@ -183,7 +183,7 @@ describe('CollectionManager', () => {
         name: 'a'.repeat(200)
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toSucceed();
+      expect(manager.create('test' as CollectionId, metadata)).toSucceed();
     });
 
     test('fails with description exceeding 2000 characters', () => {
@@ -192,7 +192,7 @@ describe('CollectionManager', () => {
         description: 'a'.repeat(2001)
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/exceeds 2000 characters/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/exceeds 2000 characters/i);
     });
 
     test('succeeds with description exactly 2000 characters', () => {
@@ -201,7 +201,7 @@ describe('CollectionManager', () => {
         description: 'a'.repeat(2000)
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toSucceed();
+      expect(manager.create('test' as CollectionId, metadata)).toSucceed();
     });
 
     test('fails with empty secretName', () => {
@@ -210,7 +210,7 @@ describe('CollectionManager', () => {
         secretName: ''
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/secret name cannot be empty/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/secret name cannot be empty/i);
     });
 
     test('fails with secretName exceeding 100 characters', () => {
@@ -219,7 +219,7 @@ describe('CollectionManager', () => {
         secretName: 'a'.repeat(101)
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toFailWith(/exceeds 100 characters/i);
+      expect(manager.create('test' as CollectionId, metadata)).toFailWith(/exceeds 100 characters/i);
     });
 
     test('succeeds with valid secretName', () => {
@@ -228,7 +228,7 @@ describe('CollectionManager', () => {
         secretName: 'my-secret'
       };
 
-      expect(manager.create('test' as SourceId, metadata)).toSucceed();
+      expect(manager.create('test' as CollectionId, metadata)).toSucceed();
     });
   });
 
@@ -242,26 +242,26 @@ describe('CollectionManager', () => {
         name: 'To Delete'
       };
 
-      manager.create('deletable' as SourceId, metadata).orThrow();
-      expect(manager.exists('deletable' as SourceId)).toBe(true);
+      manager.create('deletable' as CollectionId, metadata).orThrow();
+      expect(manager.exists('deletable' as CollectionId)).toBe(true);
 
-      expect(manager.delete('deletable' as SourceId)).toSucceed();
-      expect(manager.exists('deletable' as SourceId)).toBe(false);
+      expect(manager.delete('deletable' as CollectionId)).toSucceed();
+      expect(manager.exists('deletable' as CollectionId)).toBe(false);
     });
 
     test('fails for non-existent collection', () => {
-      expect(manager.delete('nonexistent' as SourceId)).toFailWith(/not found/i);
+      expect(manager.delete('nonexistent' as CollectionId)).toFailWith(/not found/i);
     });
 
     test('fails for immutable collection', () => {
       // Add an immutable collection directly to the library
       library.addCollectionEntry({
-        id: 'immutable' as SourceId,
+        id: 'immutable' as CollectionId,
         isMutable: false,
         items: {}
       });
 
-      expect(manager.delete('immutable' as SourceId)).toFailWith(/cannot delete immutable/i);
+      expect(manager.delete('immutable' as CollectionId)).toFailWith(/cannot delete immutable/i);
     });
   });
 
@@ -275,7 +275,7 @@ describe('CollectionManager', () => {
         name: 'Original Name',
         description: 'Original description'
       };
-      manager.create('test-coll' as SourceId, metadata).orThrow();
+      manager.create('test-coll' as CollectionId, metadata).orThrow();
     });
 
     test('updates collection name', () => {
@@ -283,7 +283,7 @@ describe('CollectionManager', () => {
         name: 'Updated Name'
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toSucceed();
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toSucceed();
     });
 
     test('updates collection description', () => {
@@ -291,7 +291,7 @@ describe('CollectionManager', () => {
         description: 'Updated description'
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toSucceed();
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toSucceed();
     });
 
     test('updates multiple metadata fields', () => {
@@ -300,7 +300,7 @@ describe('CollectionManager', () => {
         description: 'New description'
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toSucceed();
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toSucceed();
     });
 
     test('fails for non-existent collection', () => {
@@ -308,12 +308,12 @@ describe('CollectionManager', () => {
         name: 'New Name'
       };
 
-      expect(manager.updateMetadata('nonexistent' as SourceId, updates)).toFailWith(/not found/i);
+      expect(manager.updateMetadata('nonexistent' as CollectionId, updates)).toFailWith(/not found/i);
     });
 
     test('fails for immutable collection', () => {
       library.addCollectionEntry({
-        id: 'immutable' as SourceId,
+        id: 'immutable' as CollectionId,
         isMutable: false,
         items: {}
       });
@@ -322,7 +322,7 @@ describe('CollectionManager', () => {
         name: 'New Name'
       };
 
-      expect(manager.updateMetadata('immutable' as SourceId, updates)).toFailWith(
+      expect(manager.updateMetadata('immutable' as CollectionId, updates)).toFailWith(
         /cannot update metadata.*immutable/i
       );
     });
@@ -332,7 +332,7 @@ describe('CollectionManager', () => {
         name: ''
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toFailWith(/cannot be empty/i);
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toFailWith(/cannot be empty/i);
     });
 
     test('fails with whitespace-only name', () => {
@@ -340,7 +340,7 @@ describe('CollectionManager', () => {
         name: '   '
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toFailWith(/cannot be empty/i);
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toFailWith(/cannot be empty/i);
     });
 
     test('fails with leading whitespace', () => {
@@ -348,7 +348,7 @@ describe('CollectionManager', () => {
         name: '  Leading'
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toFailWith(
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toFailWith(
         /leading or trailing whitespace/i
       );
     });
@@ -358,7 +358,7 @@ describe('CollectionManager', () => {
         name: 'Trailing  '
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toFailWith(
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toFailWith(
         /leading or trailing whitespace/i
       );
     });
@@ -368,7 +368,9 @@ describe('CollectionManager', () => {
         name: 'a'.repeat(201)
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toFailWith(/exceeds 200 characters/i);
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toFailWith(
+        /exceeds 200 characters/i
+      );
     });
 
     test('fails with description exceeding 2000 characters', () => {
@@ -376,13 +378,15 @@ describe('CollectionManager', () => {
         description: 'a'.repeat(2001)
       };
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toFailWith(/exceeds 2000 characters/i);
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toFailWith(
+        /exceeds 2000 characters/i
+      );
     });
 
     test('succeeds with empty updates object', () => {
       const updates: Partial<ICollectionSourceMetadata> = {};
 
-      expect(manager.updateMetadata('test-coll' as SourceId, updates)).toSucceed();
+      expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toSucceed();
     });
   });
 
@@ -392,7 +396,7 @@ describe('CollectionManager', () => {
 
   describe('exists', () => {
     test('returns false for non-existent collection', () => {
-      expect(manager.exists('nonexistent' as SourceId)).toBe(false);
+      expect(manager.exists('nonexistent' as CollectionId)).toBe(false);
     });
 
     test('returns true for existing collection', () => {
@@ -400,8 +404,8 @@ describe('CollectionManager', () => {
         name: 'Existing'
       };
 
-      manager.create('existing' as SourceId, metadata).orThrow();
-      expect(manager.exists('existing' as SourceId)).toBe(true);
+      manager.create('existing' as CollectionId, metadata).orThrow();
+      expect(manager.exists('existing' as CollectionId)).toBe(true);
     });
 
     test('returns false after collection is deleted', () => {
@@ -409,11 +413,11 @@ describe('CollectionManager', () => {
         name: 'To Delete'
       };
 
-      manager.create('deletable' as SourceId, metadata).orThrow();
-      expect(manager.exists('deletable' as SourceId)).toBe(true);
+      manager.create('deletable' as CollectionId, metadata).orThrow();
+      expect(manager.exists('deletable' as CollectionId)).toBe(true);
 
-      manager.delete('deletable' as SourceId).orThrow();
-      expect(manager.exists('deletable' as SourceId)).toBe(false);
+      manager.delete('deletable' as CollectionId).orThrow();
+      expect(manager.exists('deletable' as CollectionId)).toBe(false);
     });
   });
 
@@ -427,22 +431,22 @@ describe('CollectionManager', () => {
         name: 'Mutable'
       };
 
-      manager.create('mutable' as SourceId, metadata).orThrow();
-      expect(manager.isMutable('mutable' as SourceId)).toSucceedWith(true);
+      manager.create('mutable' as CollectionId, metadata).orThrow();
+      expect(manager.isMutable('mutable' as CollectionId)).toSucceedWith(true);
     });
 
     test('returns false for immutable collection', () => {
       library.addCollectionEntry({
-        id: 'immutable' as SourceId,
+        id: 'immutable' as CollectionId,
         isMutable: false,
         items: {}
       });
 
-      expect(manager.isMutable('immutable' as SourceId)).toSucceedWith(false);
+      expect(manager.isMutable('immutable' as CollectionId)).toSucceedWith(false);
     });
 
     test('fails for non-existent collection', () => {
-      expect(manager.isMutable('nonexistent' as SourceId)).toFailWith(/not found/i);
+      expect(manager.isMutable('nonexistent' as CollectionId)).toFailWith(/not found/i);
     });
   });
 
@@ -458,19 +462,19 @@ describe('CollectionManager', () => {
       };
 
       // Create
-      expect(manager.create('lifecycle' as SourceId, metadata)).toSucceed();
-      expect(manager.exists('lifecycle' as SourceId)).toBe(true);
+      expect(manager.create('lifecycle' as CollectionId, metadata)).toSucceed();
+      expect(manager.exists('lifecycle' as CollectionId)).toBe(true);
 
       // Update
       const updates: Partial<ICollectionSourceMetadata> = {
         name: 'Updated Name',
         description: 'Updated description'
       };
-      expect(manager.updateMetadata('lifecycle' as SourceId, updates)).toSucceed();
+      expect(manager.updateMetadata('lifecycle' as CollectionId, updates)).toSucceed();
 
       // Delete
-      expect(manager.delete('lifecycle' as SourceId)).toSucceed();
-      expect(manager.exists('lifecycle' as SourceId)).toBe(false);
+      expect(manager.delete('lifecycle' as CollectionId)).toSucceed();
+      expect(manager.exists('lifecycle' as CollectionId)).toBe(false);
     });
 
     test('multiple collections can be managed independently', () => {
@@ -478,29 +482,31 @@ describe('CollectionManager', () => {
       const metadata2: ICollectionSourceMetadata = { name: 'Collection 2' };
       const metadata3: ICollectionSourceMetadata = { name: 'Collection 3' };
 
-      manager.create('coll1' as SourceId, metadata1).orThrow();
-      manager.create('coll2' as SourceId, metadata2).orThrow();
-      manager.create('coll3' as SourceId, metadata3).orThrow();
+      manager.create('coll1' as CollectionId, metadata1).orThrow();
+      manager.create('coll2' as CollectionId, metadata2).orThrow();
+      manager.create('coll3' as CollectionId, metadata3).orThrow();
 
       expect(manager.getAll().length).toBe(3);
 
-      manager.delete('coll2' as SourceId).orThrow();
+      manager.delete('coll2' as CollectionId).orThrow();
 
       expect(manager.getAll().length).toBe(2);
-      expect(manager.exists('coll1' as SourceId)).toBe(true);
-      expect(manager.exists('coll2' as SourceId)).toBe(false);
-      expect(manager.exists('coll3' as SourceId)).toBe(true);
+      expect(manager.exists('coll1' as CollectionId)).toBe(true);
+      expect(manager.exists('coll2' as CollectionId)).toBe(false);
+      expect(manager.exists('coll3' as CollectionId)).toBe(true);
     });
 
     test('immutable collections are protected from modification', () => {
       library.addCollectionEntry({
-        id: 'protected' as SourceId,
+        id: 'protected' as CollectionId,
         isMutable: false,
         items: {}
       });
 
-      expect(manager.delete('protected' as SourceId)).toFailWith(/immutable/i);
-      expect(manager.updateMetadata('protected' as SourceId, { name: 'New Name' })).toFailWith(/immutable/i);
+      expect(manager.delete('protected' as CollectionId)).toFailWith(/immutable/i);
+      expect(manager.updateMetadata('protected' as CollectionId, { name: 'New Name' })).toFailWith(
+        /immutable/i
+      );
     });
   });
 });

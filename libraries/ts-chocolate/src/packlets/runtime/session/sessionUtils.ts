@@ -84,7 +84,7 @@ export function generateSessionBaseId(now?: Date): Result<BaseSessionId> {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
   const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
-  return CommonConverters.sessionBaseId.convert(
+  return CommonConverters.baseSessionId.convert(
     `${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`
   );
 }

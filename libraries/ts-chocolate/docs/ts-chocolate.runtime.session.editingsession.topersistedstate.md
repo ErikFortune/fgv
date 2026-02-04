@@ -10,7 +10,7 @@ Creates a persisted session state from this editing session. Captures the comple
 
 ```typescript
 toPersistedState(options: {
-        readonly collectionId: SourceId;
+        readonly collectionId: CollectionId;
         readonly baseId?: BaseSessionId;
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
@@ -43,7 +43,7 @@ options
 
 </td><td>
 
-{ readonly collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->; readonly baseId?: [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->; readonly status?: [PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)<!-- -->; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
+{ readonly collectionId: [CollectionId](./ts-chocolate.collectionid.md)<!-- -->; readonly baseId?: [BaseSessionId](./ts-chocolate.basesessionid.md)<!-- -->; readonly status?: [PersistedSessionStatus](./ts-chocolate.entities.persistedsessionstatus.md)<!-- -->; readonly label?: string; readonly notes?: [CommonModel.ICategorizedNote](./ts-chocolate.model.icategorizednote.md)<!-- -->\[\]; }
 
 
 </td><td>

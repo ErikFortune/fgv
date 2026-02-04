@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { ChocolateType, IngredientId, Percentage, SourceId } from '../../common';
+import { ChocolateType, IngredientId, Percentage, CollectionId } from '../../common';
 import { RuntimeFillingRecipe } from '../fillings';
 import { LibraryRuntimeContext } from '../libraryRuntimeContext';
 import {
@@ -177,7 +177,7 @@ export class FillingRecipeQuery {
    * Filter by source.
    * @param sourceId - Source ID to filter by
    */
-  public fromSource(sourceId: SourceId): FillingRecipeQuery {
+  public fromSource(sourceId: CollectionId): FillingRecipeQuery {
     return this._addFilter(equals(sourceId, (r) => r.sourceId));
   }
 

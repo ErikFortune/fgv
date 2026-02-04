@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import * as yaml from 'yaml';
-import { Model as CommonModel, SourceId } from '@fgv/ts-chocolate';
+import { Model as CommonModel, CollectionId } from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
 
@@ -60,14 +60,14 @@ export function padRight(str: string, length: number): string {
 }
 
 /**
- * Extracts source ID from a composite ID (sourceId.baseId format)
+ * Extracts collection ID from a composite ID (collectionId.baseId format)
  */
-export function getSourceIdFromCompositeId(compositeId: string): SourceId {
+export function getCollectionIdFromCompositeId(compositeId: string): CollectionId {
   const dotIndex = compositeId.indexOf(ID_SEPARATOR);
   if (dotIndex === -1) {
-    return compositeId as SourceId;
+    return compositeId as CollectionId;
   }
-  return compositeId.substring(0, dotIndex) as SourceId;
+  return compositeId.substring(0, dotIndex) as CollectionId;
 }
 
 /**
@@ -132,7 +132,7 @@ export function formatOptionsWithPreferred<TId extends string>(
 export interface IGenericListItem {
   id: string;
   name: string;
-  sourceId: SourceId;
+  collectionId: CollectionId;
   description?: string;
   tags?: ReadonlyArray<string>;
 }

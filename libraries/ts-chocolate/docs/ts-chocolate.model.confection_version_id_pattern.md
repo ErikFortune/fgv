@@ -4,7 +4,7 @@
 
 ## Model.CONFECTION\_VERSION\_ID\_PATTERN variable
 
-Pattern for valid confection version IDs Format: confectionId<!-- -->@<!-- -->versionSpec where confectionId is sourceId.baseConfectionId
+Pattern for valid confection version IDs Format: confectionId<!-- -->@<!-- -->versionSpec where confectionId is collectionId.baseConfectionId
 
 **Signature:**
 

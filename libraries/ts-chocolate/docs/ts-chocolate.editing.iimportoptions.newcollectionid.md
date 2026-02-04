@@ -9,5 +9,5 @@ New collection ID when using 'create-new' mode. Required if onCollisionMode is '
 **Signature:**
 
 ```typescript
-readonly newCollectionId?: SourceId;
+readonly newCollectionId?: CollectionId;
 ```

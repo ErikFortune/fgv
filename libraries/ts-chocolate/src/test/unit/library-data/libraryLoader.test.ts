@@ -39,7 +39,7 @@ import {
   IMergeLibrarySource,
   LibraryPaths
 } from '../../../packlets/library-data';
-import { SourceId } from '../../../packlets/common';
+import { CollectionId } from '../../../packlets/common';
 
 describe('libraryLoader', () => {
   // ============================================================================
@@ -318,48 +318,48 @@ describe('libraryLoader', () => {
     });
 
     test('succeeds with single source', () => {
-      const sets: ICollectionSet<SourceId>[] = [
+      const sets: ICollectionSet<CollectionId>[] = [
         {
           source: 'builtin',
-          collections: [{ id: 'felchlin' as SourceId }, { id: 'valrhona' as SourceId }]
+          collections: [{ id: 'felchlin' as CollectionId }, { id: 'valrhona' as CollectionId }]
         }
       ];
       expect(checkForCollisionIds(sets)).toSucceedWith(true);
     });
 
     test('succeeds with multiple sources and unique IDs', () => {
-      const sets: ICollectionSet<SourceId>[] = [
+      const sets: ICollectionSet<CollectionId>[] = [
         {
           source: 'builtin',
-          collections: [{ id: 'felchlin' as SourceId }]
+          collections: [{ id: 'felchlin' as CollectionId }]
         },
         {
           source: 'fileSource[0]',
-          collections: [{ id: 'custom' as SourceId }]
+          collections: [{ id: 'custom' as CollectionId }]
         }
       ];
       expect(checkForCollisionIds(sets)).toSucceedWith(true);
     });
 
     test('fails when same ID appears in different sources', () => {
-      const sets: ICollectionSet<SourceId>[] = [
+      const sets: ICollectionSet<CollectionId>[] = [
         {
           source: 'builtin',
-          collections: [{ id: 'felchlin' as SourceId }]
+          collections: [{ id: 'felchlin' as CollectionId }]
         },
         {
           source: 'fileSource[0]',
-          collections: [{ id: 'felchlin' as SourceId }]
+          collections: [{ id: 'felchlin' as CollectionId }]
         }
       ];
       expect(checkForCollisionIds(sets)).toFailWith(/felchlin.*conflict.*builtin.*fileSource/);
     });
 
     test('fails with collision within same source', () => {
-      const sets: ICollectionSet<SourceId>[] = [
+      const sets: ICollectionSet<CollectionId>[] = [
         {
           source: 'source1',
-          collections: [{ id: 'duplicate' as SourceId }, { id: 'duplicate' as SourceId }]
+          collections: [{ id: 'duplicate' as CollectionId }, { id: 'duplicate' as CollectionId }]
         }
       ];
       expect(checkForCollisionIds(sets)).toFailWith(/duplicate.*conflict.*source1.*source1/);
@@ -430,7 +430,7 @@ describe('libraryLoader', () => {
 
     test('returns true for IMergeLibrarySource with library property', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+      const mergeSource: IMergeLibrarySource<IMockLibrary, CollectionId> = {
         library: mockLibrary,
         filter: true
       };
@@ -439,7 +439,7 @@ describe('libraryLoader', () => {
 
     test('returns true for IMergeLibrarySource without filter', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+      const mergeSource: IMergeLibrarySource<IMockLibrary, CollectionId> = {
         library: mockLibrary
       };
       expect(isMergeLibrarySource(mergeSource)).toBe(true);
@@ -472,7 +472,7 @@ describe('libraryLoader', () => {
 
     test('normalizes library directly to object with filter: true', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const result = normalizeMergeSource<IMockLibrary, SourceId>(mockLibrary);
+      const result = normalizeMergeSource<IMockLibrary, CollectionId>(mockLibrary);
       expect(result).toEqual({
         library: mockLibrary,
         filter: true
@@ -481,20 +481,20 @@ describe('libraryLoader', () => {
 
     test('normalizes IMergeLibrarySource with explicit filter', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+      const mergeSource: IMergeLibrarySource<IMockLibrary, CollectionId> = {
         library: mockLibrary,
-        filter: ['felchlin' as SourceId]
+        filter: ['felchlin' as CollectionId]
       };
       const result = normalizeMergeSource(mergeSource);
       expect(result).toEqual({
         library: mockLibrary,
-        filter: ['felchlin' as SourceId]
+        filter: ['felchlin' as CollectionId]
       });
     });
 
     test('normalizes IMergeLibrarySource with filter: false', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+      const mergeSource: IMergeLibrarySource<IMockLibrary, CollectionId> = {
         library: mockLibrary,
         filter: false
       };
@@ -507,7 +507,7 @@ describe('libraryLoader', () => {
 
     test('normalizes IMergeLibrarySource without filter to filter: true', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+      const mergeSource: IMergeLibrarySource<IMockLibrary, CollectionId> = {
         library: mockLibrary
       };
       const result = normalizeMergeSource(mergeSource);
@@ -519,14 +519,14 @@ describe('libraryLoader', () => {
 
     test('normalizes IMergeLibrarySource with ILibraryLoadParams filter', () => {
       const mockLibrary: IMockLibrary = { name: 'test' };
-      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+      const mergeSource: IMergeLibrarySource<IMockLibrary, CollectionId> = {
         library: mockLibrary,
-        filter: { included: ['felchlin' as SourceId], excluded: ['deprecated' as SourceId] }
+        filter: { included: ['felchlin' as CollectionId], excluded: ['deprecated' as CollectionId] }
       };
       const result = normalizeMergeSource(mergeSource);
       expect(result).toEqual({
         library: mockLibrary,
-        filter: { included: ['felchlin' as SourceId], excluded: ['deprecated' as SourceId] }
+        filter: { included: ['felchlin' as CollectionId], excluded: ['deprecated' as CollectionId] }
       });
     });
   });

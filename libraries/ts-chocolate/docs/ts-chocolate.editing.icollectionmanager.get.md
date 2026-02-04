@@ -9,5 +9,5 @@ Get metadata for a specific collection by ID.
 **Signature:**
 
 ```typescript
-readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
+readonly get: (collectionId: CollectionId) => Result<ICollectionSourceMetadata>;
 ```

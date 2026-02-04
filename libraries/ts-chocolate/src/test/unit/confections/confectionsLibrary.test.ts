@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Confections, ConfectionsLibrary } from '../../../packlets/entities';
-import { ConfectionId, SourceId } from '../../../packlets/common';
+import { ConfectionId, CollectionId } from '../../../packlets/common';
 
 describe('ConfectionsLibrary', () => {
   // ============================================================================
@@ -79,7 +79,7 @@ describe('ConfectionsLibrary', () => {
   };
 
   const testCollection: Confections.ConfectionCollectionEntryInit = {
-    id: 'test' as SourceId,
+    id: 'test' as CollectionId,
     isMutable: false,
     items: {
       'test-molded': moldedBonBonData,
@@ -328,7 +328,7 @@ describe('ConfectionsLibrary', () => {
     test('merges multiple collections', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const collection2: Confections.ConfectionCollectionEntryInit = {
-        id: 'custom' as SourceId,
+        id: 'custom' as CollectionId,
         isMutable: true,
         items: {
           'custom-truffle': {
@@ -355,7 +355,7 @@ describe('ConfectionsLibrary', () => {
     test('second collection overwrites items with same collection ID', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const duplicateCollection: Confections.ConfectionCollectionEntryInit = {
-        id: 'test' as SourceId, // Same as testCollection
+        id: 'test' as CollectionId, // Same as testCollection
         isMutable: false,
         items: {
           'other-truffle': {
@@ -388,7 +388,7 @@ describe('ConfectionsLibrary', () => {
     test('fails for confection with no versions', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const invalidCollection: Confections.ConfectionCollectionEntryInit = {
-        id: 'invalid' as SourceId,
+        id: 'invalid' as CollectionId,
         isMutable: false,
         items: {
           'no-versions': {
@@ -411,7 +411,7 @@ describe('ConfectionsLibrary', () => {
     test('fails for confection with missing golden version', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const invalidCollection: Confections.ConfectionCollectionEntryInit = {
-        id: 'invalid' as SourceId,
+        id: 'invalid' as CollectionId,
         isMutable: false,
         items: {
           'bad-golden': {
@@ -451,7 +451,7 @@ describe('ConfectionsLibrary.createAsync', () => {
   test('creates library with built-ins by default', async () => {
     const result = await ConfectionsLibrary.createAsync();
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('common' as SourceId)).toBe(true);
+      expect(lib.collections.has('common' as CollectionId)).toBe(true);
     });
   });
 
@@ -494,7 +494,7 @@ describe('ConfectionsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('external' as SourceId)).toBe(true);
+      expect(lib.collections.has('external' as CollectionId)).toBe(true);
       expect(lib.get('external.external-confection' as ConfectionId)).toSucceed();
     });
   });
@@ -544,7 +544,7 @@ describe('ConfectionsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
       expect(lib.get('secret.secret-confection' as ConfectionId)).toSucceedAndSatisfy((confection) => {
         expect(confection.name).toBe('Secret Confection');
       });

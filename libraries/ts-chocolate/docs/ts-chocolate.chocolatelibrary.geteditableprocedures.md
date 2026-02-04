@@ -9,7 +9,7 @@ Get an editable procedures collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
+getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

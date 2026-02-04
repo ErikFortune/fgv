@@ -9,7 +9,7 @@ A single entry in a sub-library collection. Fixes the collection ID type to Sour
 **Signature:**
 
 ```typescript
-export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
+export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
+**References:** [CollectionId](./ts-chocolate.collectionid.md)<!-- -->, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
 

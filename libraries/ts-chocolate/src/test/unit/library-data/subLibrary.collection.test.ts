@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 import { IngredientsLibrary } from '../../../packlets/entities';
-import { SourceId } from '../../../packlets/common';
+import { CollectionId } from '../../../packlets/common';
 import { ICollectionSourceMetadata } from '../../../packlets/library-data';
 
 describe('SubLibraryBase Collection Management', () => {
@@ -38,75 +38,75 @@ describe('SubLibraryBase Collection Management', () => {
     beforeEach(() => {
       // Add a mutable test collection
       library.addCollectionEntry({
-        id: 'test-collection' as SourceId,
+        id: 'test-collection' as CollectionId,
         isMutable: true,
         items: {}
       });
     });
 
     test('successfully removes a mutable collection', () => {
-      expect(library.collections.has('test-collection' as SourceId)).toBe(true);
+      expect(library.collections.has('test-collection' as CollectionId)).toBe(true);
 
-      expect(library.removeCollection('test-collection' as SourceId)).toSucceed();
+      expect(library.removeCollection('test-collection' as CollectionId)).toSucceed();
 
-      expect(library.collections.has('test-collection' as SourceId)).toBe(false);
+      expect(library.collections.has('test-collection' as CollectionId)).toBe(false);
     });
 
     test('fails when collection does not exist', () => {
-      expect(library.removeCollection('nonexistent' as SourceId)).toFailWith(/not found/i);
+      expect(library.removeCollection('nonexistent' as CollectionId)).toFailWith(/not found/i);
     });
 
     test('fails when attempting to remove immutable collection', () => {
       library.addCollectionEntry({
-        id: 'immutable-collection' as SourceId,
+        id: 'immutable-collection' as CollectionId,
         isMutable: false,
         items: {}
       });
 
-      expect(library.removeCollection('immutable-collection' as SourceId)).toFailWith(
+      expect(library.removeCollection('immutable-collection' as CollectionId)).toFailWith(
         /cannot delete immutable/i
       );
     });
 
     test('collection stays immutable after failed removal attempt', () => {
       library.addCollectionEntry({
-        id: 'protected' as SourceId,
+        id: 'protected' as CollectionId,
         isMutable: false,
         items: {}
       });
 
-      library.removeCollection('protected' as SourceId);
+      library.removeCollection('protected' as CollectionId);
 
       // Collection should still exist
-      expect(library.collections.has('protected' as SourceId)).toBe(true);
+      expect(library.collections.has('protected' as CollectionId)).toBe(true);
     });
 
     test('removes empty collection successfully', () => {
       // Add an empty mutable collection
       library.addCollectionEntry({
-        id: 'empty-collection' as SourceId,
+        id: 'empty-collection' as CollectionId,
         isMutable: true,
         items: {}
       });
 
-      expect(library.collections.has('empty-collection' as SourceId)).toBe(true);
+      expect(library.collections.has('empty-collection' as CollectionId)).toBe(true);
 
-      expect(library.removeCollection('empty-collection' as SourceId)).toSucceed();
+      expect(library.removeCollection('empty-collection' as CollectionId)).toSucceed();
 
-      expect(library.collections.has('empty-collection' as SourceId)).toBe(false);
+      expect(library.collections.has('empty-collection' as CollectionId)).toBe(false);
     });
 
     test('can add collection after removing it', () => {
-      library.removeCollection('test-collection' as SourceId).orThrow();
+      library.removeCollection('test-collection' as CollectionId).orThrow();
 
       // Should be able to add a new collection with the same ID
       library.addCollectionEntry({
-        id: 'test-collection' as SourceId,
+        id: 'test-collection' as CollectionId,
         isMutable: true,
         items: {}
       });
 
-      expect(library.collections.has('test-collection' as SourceId)).toBe(true);
+      expect(library.collections.has('test-collection' as CollectionId)).toBe(true);
     });
   });
 
@@ -117,7 +117,7 @@ describe('SubLibraryBase Collection Management', () => {
   describe('updateCollectionMetadata', () => {
     beforeEach(() => {
       library.addCollectionEntry({
-        id: 'test-collection' as SourceId,
+        id: 'test-collection' as CollectionId,
         isMutable: true,
         items: {}
       });
@@ -129,7 +129,7 @@ describe('SubLibraryBase Collection Management', () => {
         description: 'Updated description'
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('fails when collection does not exist', () => {
@@ -137,12 +137,14 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'New Name'
       };
 
-      expect(library.updateCollectionMetadata('nonexistent' as SourceId, metadata)).toFailWith(/not found/i);
+      expect(library.updateCollectionMetadata('nonexistent' as CollectionId, metadata)).toFailWith(
+        /not found/i
+      );
     });
 
     test('fails when attempting to update immutable collection', () => {
       library.addCollectionEntry({
-        id: 'immutable' as SourceId,
+        id: 'immutable' as CollectionId,
         isMutable: false,
         items: {}
       });
@@ -151,7 +153,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'New Name'
       };
 
-      expect(library.updateCollectionMetadata('immutable' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('immutable' as CollectionId, metadata)).toFailWith(
         /cannot update metadata.*immutable/i
       );
     });
@@ -161,7 +163,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: ''
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /cannot be empty/i
       );
     });
@@ -171,7 +173,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: '   '
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /cannot be empty/i
       );
     });
@@ -181,7 +183,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: '  Leading'
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /leading or trailing whitespace/i
       );
     });
@@ -191,7 +193,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'Trailing  '
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /leading or trailing whitespace/i
       );
     });
@@ -201,7 +203,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'a'.repeat(201)
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /exceeds 200 characters/i
       );
     });
@@ -211,7 +213,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'a'.repeat(200)
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('validates description length exceeding 2000 characters', () => {
@@ -219,7 +221,7 @@ describe('SubLibraryBase Collection Management', () => {
         description: 'a'.repeat(2001)
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /exceeds 2000 characters/i
       );
     });
@@ -229,7 +231,7 @@ describe('SubLibraryBase Collection Management', () => {
         description: 'a'.repeat(2000)
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('accepts valid name update', () => {
@@ -237,7 +239,7 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'Valid Name'
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('accepts valid description update', () => {
@@ -245,7 +247,7 @@ describe('SubLibraryBase Collection Management', () => {
         description: 'A valid description'
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('accepts update with both name and description', () => {
@@ -254,13 +256,13 @@ describe('SubLibraryBase Collection Management', () => {
         description: 'Updated description'
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('accepts empty metadata object', () => {
       const metadata: Partial<ICollectionSourceMetadata> = {};
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('treats empty secretName as removal (no validation error)', () => {
@@ -268,7 +270,7 @@ describe('SubLibraryBase Collection Management', () => {
         secretName: ''
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('validates secretName with leading/trailing whitespace when set', () => {
@@ -276,7 +278,7 @@ describe('SubLibraryBase Collection Management', () => {
         secretName: '  my-secret '
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /leading or trailing whitespace/i
       );
     });
@@ -286,7 +288,7 @@ describe('SubLibraryBase Collection Management', () => {
         secretName: 'a'.repeat(101)
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toFailWith(
         /exceeds 100 characters/i
       );
     });
@@ -296,21 +298,27 @@ describe('SubLibraryBase Collection Management', () => {
         secretName: 'my-secret'
       };
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+      expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('can set and then remove secretName', () => {
       expect(
-        library.updateCollectionMetadata('test-collection' as SourceId, { secretName: 'my-secret' })
+        library.updateCollectionMetadata('test-collection' as CollectionId, { secretName: 'my-secret' })
       ).toSucceed();
-      expect(library.collections.get('test-collection' as SourceId).asResult).toSucceedAndSatisfy((entry) => {
-        expect(entry.metadata?.secretName).toBe('my-secret');
-      });
+      expect(library.collections.get('test-collection' as CollectionId).asResult).toSucceedAndSatisfy(
+        (entry) => {
+          expect(entry.metadata?.secretName).toBe('my-secret');
+        }
+      );
 
-      expect(library.updateCollectionMetadata('test-collection' as SourceId, { secretName: '' })).toSucceed();
-      expect(library.collections.get('test-collection' as SourceId).asResult).toSucceedAndSatisfy((entry) => {
-        expect(entry.metadata?.secretName).toBeUndefined();
-      });
+      expect(
+        library.updateCollectionMetadata('test-collection' as CollectionId, { secretName: '' })
+      ).toSucceed();
+      expect(library.collections.get('test-collection' as CollectionId).asResult).toSucceedAndSatisfy(
+        (entry) => {
+          expect(entry.metadata?.secretName).toBeUndefined();
+        }
+      );
     });
   });
 
@@ -321,7 +329,7 @@ describe('SubLibraryBase Collection Management', () => {
   describe('integration scenarios', () => {
     test('can update and then remove a collection', () => {
       library.addCollectionEntry({
-        id: 'lifecycle' as SourceId,
+        id: 'lifecycle' as CollectionId,
         isMutable: true,
         items: {}
       });
@@ -330,66 +338,66 @@ describe('SubLibraryBase Collection Management', () => {
         name: 'Updated Name'
       };
 
-      library.updateCollectionMetadata('lifecycle' as SourceId, metadata).orThrow();
-      library.removeCollection('lifecycle' as SourceId).orThrow();
+      library.updateCollectionMetadata('lifecycle' as CollectionId, metadata).orThrow();
+      library.removeCollection('lifecycle' as CollectionId).orThrow();
 
-      expect(library.collections.has('lifecycle' as SourceId)).toBe(false);
+      expect(library.collections.has('lifecycle' as CollectionId)).toBe(false);
     });
 
     test('multiple mutable collections can be managed independently', () => {
       library.addCollectionEntry({
-        id: 'coll1' as SourceId,
+        id: 'coll1' as CollectionId,
         isMutable: true,
         items: {}
       });
 
       library.addCollectionEntry({
-        id: 'coll2' as SourceId,
+        id: 'coll2' as CollectionId,
         isMutable: true,
         items: {}
       });
 
       library.addCollectionEntry({
-        id: 'coll3' as SourceId,
+        id: 'coll3' as CollectionId,
         isMutable: true,
         items: {}
       });
 
       // Remove one
-      library.removeCollection('coll2' as SourceId).orThrow();
+      library.removeCollection('coll2' as CollectionId).orThrow();
 
       // Others should still exist
-      expect(library.collections.has('coll1' as SourceId)).toBe(true);
-      expect(library.collections.has('coll2' as SourceId)).toBe(false);
-      expect(library.collections.has('coll3' as SourceId)).toBe(true);
+      expect(library.collections.has('coll1' as CollectionId)).toBe(true);
+      expect(library.collections.has('coll2' as CollectionId)).toBe(false);
+      expect(library.collections.has('coll3' as CollectionId)).toBe(true);
     });
 
     test('immutable collections remain protected throughout operations', () => {
       library.addCollectionEntry({
-        id: 'protected' as SourceId,
+        id: 'protected' as CollectionId,
         isMutable: false,
         items: {}
       });
 
       library.addCollectionEntry({
-        id: 'mutable' as SourceId,
+        id: 'mutable' as CollectionId,
         isMutable: true,
         items: {}
       });
 
       // Can remove mutable
-      expect(library.removeCollection('mutable' as SourceId)).toSucceed();
+      expect(library.removeCollection('mutable' as CollectionId)).toSucceed();
 
       // Cannot remove immutable
-      expect(library.removeCollection('protected' as SourceId)).toFailWith(/immutable/i);
+      expect(library.removeCollection('protected' as CollectionId)).toFailWith(/immutable/i);
 
       // Immutable still exists
-      expect(library.collections.has('protected' as SourceId)).toBe(true);
+      expect(library.collections.has('protected' as CollectionId)).toBe(true);
     });
 
     test('validation errors are properly reported', () => {
       library.addCollectionEntry({
-        id: 'test' as SourceId,
+        id: 'test' as CollectionId,
         isMutable: true,
         items: {}
       });
@@ -399,7 +407,7 @@ describe('SubLibraryBase Collection Management', () => {
         description: 'a'.repeat(2001)
       };
 
-      const result = library.updateCollectionMetadata('test' as SourceId, badMetadata);
+      const result = library.updateCollectionMetadata('test' as CollectionId, badMetadata);
 
       expect(result).toFail();
       // Should contain both error messages

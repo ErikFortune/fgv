@@ -63,7 +63,7 @@ import {
   Percentage,
   ProcedureId,
   SlotId,
-  SourceId,
+  CollectionId,
   Model as CommonModel
 } from '../common';
 import {
@@ -114,7 +114,7 @@ export interface IRuntimeIngredient {
   /**
    * The source ID part of the composite ID.
    */
-  readonly sourceId: SourceId;
+  readonly sourceId: CollectionId;
 
   /**
    * The base ingredient ID within the source.
@@ -581,7 +581,7 @@ export interface IRuntimeFillingRecipe {
   /**
    * The source ID part of the composite ID.
    */
-  readonly sourceId: SourceId;
+  readonly sourceId: CollectionId;
 
   /**
    * The base recipe ID within the source.
@@ -1012,7 +1012,7 @@ export interface IRuntimeConfection {
   /**
    * The source ID part of the composite ID.
    */
-  readonly sourceId: SourceId;
+  readonly sourceId: CollectionId;
 
   /**
    * The base confection ID within the source.

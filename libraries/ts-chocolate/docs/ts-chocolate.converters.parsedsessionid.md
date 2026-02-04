@@ -4,7 +4,7 @@
 
 ## Converters.parsedSessionId variable
 
-Converter that parses a [PersistedSessionId](./ts-chocolate.sessionid.md) string into its component parts or validates a `CompositeId` object representation.
+Converter that parses a [SessionId](./ts-chocolate.sessionid.md) string into its component parts or validates a `CompositeId` object representation.
 
 **Signature:**
 

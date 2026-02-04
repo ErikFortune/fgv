@@ -30,7 +30,7 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  CollectionId
 } from '../../../../packlets/common';
 
 import {
@@ -196,7 +196,7 @@ describe('Indexers', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -214,7 +214,7 @@ describe('Indexers', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */

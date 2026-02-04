@@ -38,7 +38,7 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId,
+  CollectionId,
   TaskId
 } from '../../../packlets/common';
 
@@ -298,7 +298,7 @@ describe('RuntimeContext', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -316,7 +316,7 @@ describe('RuntimeContext', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -687,7 +687,7 @@ describe('RuntimeContext', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: false,
             items: {
               /* eslint-disable @typescript-eslint/naming-convention */
@@ -704,7 +704,7 @@ describe('RuntimeContext', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: false,
             items: {
               /* eslint-disable @typescript-eslint/naming-convention */
@@ -991,7 +991,7 @@ describe('RuntimeContext', () => {
           builtin: false,
           collections: [
             {
-              id: 'test' as SourceId,
+              id: 'test' as CollectionId,
               isMutable: true,
               items: {
                 /* eslint-disable @typescript-eslint/naming-convention */
@@ -1360,7 +1360,7 @@ describe('RuntimeContext', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: false,
             items: {
               /* eslint-disable @typescript-eslint/naming-convention */

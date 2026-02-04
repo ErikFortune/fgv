@@ -28,7 +28,7 @@ import {
   Percentage,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  CollectionId
 } from '../../../packlets/common';
 
 import {
@@ -250,7 +250,7 @@ describe('Query Filters and Builders', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -271,7 +271,7 @@ describe('Query Filters and Builders', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -611,7 +611,7 @@ describe('Query Filters and Builders', () => {
 
       test('fromSource() filters by source', () => {
         const query = new IngredientQuery(ctx);
-        const results = query.fromSource('test' as SourceId).execute();
+        const results = query.fromSource('test' as CollectionId).execute();
         expect(results.length).toBe(7);
       });
     });
@@ -832,7 +832,7 @@ describe('Query Filters and Builders', () => {
     describe('source filters', () => {
       test('fromSource() filters by source', () => {
         const query = new FillingRecipeQuery(ctx);
-        const results = query.fromSource('test' as SourceId).execute();
+        const results = query.fromSource('test' as CollectionId).execute();
         expect(results.length).toBe(3);
       });
     });

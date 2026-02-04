@@ -75,7 +75,7 @@ export interface IEntityListOptions extends IEntityBaseOptions {
   /**
    * Filter by source collection ID
    */
-  source?: string;
+  collection?: string;
 
   /**
    * Filter by name (case-insensitive substring match)

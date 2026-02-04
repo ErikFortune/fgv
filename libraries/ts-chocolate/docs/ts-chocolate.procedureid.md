@@ -4,7 +4,7 @@
 
 ## ProcedureId type
 
-Globally unique procedure identifier (composite) Format: "sourceId.baseProcedureId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+Globally unique procedure identifier (composite) Format: "collectionId.baseProcedureId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 **Signature:**
 

@@ -9,5 +9,5 @@ Target collection for the persisted session
 **Signature:**
 
 ```typescript
-readonly collectionId: SourceId;
+readonly collectionId: CollectionId;
 ```

@@ -31,7 +31,7 @@ import {
   FillingName,
   FillingVersionSpec,
   Model as CommonModel,
-  SourceId
+  CollectionId
 } from '../../../packlets/common';
 
 import {
@@ -181,7 +181,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -199,7 +199,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */

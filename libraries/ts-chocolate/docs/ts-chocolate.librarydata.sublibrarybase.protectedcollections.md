@@ -11,5 +11,5 @@ These are encrypted collections that were encountered during loading but couldn'
 **Signature:**
 
 ```typescript
-get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<SourceId>>;
+get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<CollectionId>>;
 ```

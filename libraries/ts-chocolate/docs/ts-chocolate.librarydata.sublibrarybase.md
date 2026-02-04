@@ -13,9 +13,9 @@ This reduces the type parameter count from 4 to 3 and eliminates boilerplate in 
 **Signature:**
 
 ```typescript
-export declare abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem, ICollectionSourceMetadata> 
+export declare abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata> 
 ```
-**Extends:** Collections.AggregatedResultMapBase&lt;TCompositeId, [SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
+**Extends:** Collections.AggregatedResultMapBase&lt;TCompositeId, [CollectionId](./ts-chocolate.collectionid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
 
 ## Constructors
 
@@ -90,7 +90,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IProtectedCollectionInfo](./ts-chocolate.librarydata.iprotectedcollectioninfo.md)<!-- -->&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;&gt;
+ReadonlyArray&lt;[IProtectedCollectionInfo](./ts-chocolate.librarydata.iprotectedcollectioninfo.md)<!-- -->&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;&gt;
 
 
 </td><td>

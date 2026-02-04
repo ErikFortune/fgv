@@ -11,5 +11,5 @@ Controls which built-in collections are loaded. Built-in collections are always 
 **Signature:**
 
 ```typescript
-readonly builtin?: LibraryLoadSpec<SourceId>;
+readonly builtin?: LibraryLoadSpec<CollectionId>;
 ```

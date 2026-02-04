@@ -9,7 +9,7 @@ Get an editable ingredients collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableIngredients(collectionId: SourceId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
+getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

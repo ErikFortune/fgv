@@ -25,7 +25,7 @@
 
 import { captureResult, fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
-import { IngredientId, SourceId } from '../../common';
+import { IngredientId, CollectionId } from '../../common';
 import {
   getIngredientInventoryDirectory,
   ICollectionSourceMetadata,
@@ -231,7 +231,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @public
    */
   public addEntry(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     entryId: IngredientInventoryEntryBaseId,
     entry: IIngredientInventoryEntryEntity
   ): Result<IngredientInventoryEntryId> {
@@ -251,7 +251,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @public
    */
   public upsertEntry(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     entryId: IngredientInventoryEntryBaseId,
     entry: IIngredientInventoryEntryEntity
   ): Result<IngredientInventoryEntryId> {
@@ -312,7 +312,10 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @returns Success with the collection ID, or Failure if creation fails
    * @public
    */
-  public createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId> {
+  public createCollection(
+    collectionId: CollectionId,
+    metadata?: ICollectionSourceMetadata
+  ): Result<CollectionId> {
     if (this.collections.has(collectionId)) {
       return fail(`Collection ${collectionId} already exists`);
     }

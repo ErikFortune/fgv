@@ -129,6 +129,17 @@ Type guard for [Celsius](./ts-chocolate.celsius.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[isValidCollectionId(from)](./ts-chocolate.validation.isvalidcollectionid.md)
+
+
+</td><td>
+
+Type guard for [CollectionId](./ts-chocolate.collectionid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [isValidConfectionName(from)](./ts-chocolate.validation.isvalidconfectionname.md)
 
 
@@ -294,17 +305,6 @@ Type guard for [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
-[isValidSourceId(from)](./ts-chocolate.validation.isvalidsourceid.md)
-
-
-</td><td>
-
-Type guard for [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [isValidUrlCategory(from)](./ts-chocolate.validation.isvalidurlcategory.md)
 
 
@@ -410,6 +410,17 @@ Validates unknown value is a [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->.
 </td><td>
 
 Validates unknown value is a [Celsius](./ts-chocolate.celsius.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toCollectionId(from)](./ts-chocolate.validation.tocollectionid.md)
+
+
+</td><td>
+
+Validates unknown value is a [CollectionId](./ts-chocolate.collectionid.md)<!-- -->.
 
 
 </td></tr>
@@ -575,17 +586,6 @@ Validates unknown value is a [SessionSpec](./ts-chocolate.sessionspec.md)<!-- --
 </td><td>
 
 Validates unknown value is a [SlotId](./ts-chocolate.slotid.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[toSourceId(from)](./ts-chocolate.validation.tosourceid.md)
-
-
-</td><td>
-
-Validates unknown value is a [SourceId](./ts-chocolate.sourceid.md)<!-- -->.
 
 
 </td></tr>

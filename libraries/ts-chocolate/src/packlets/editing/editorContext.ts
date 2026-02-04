@@ -24,7 +24,7 @@ import {
   Converters as CommonConverters,
   Helpers as CommonHelpers,
   Validation as CommonValidation,
-  SourceId
+  CollectionId
 } from '../common';
 import { IEditorContext, IValidationReport } from './model';
 import { EditableCollection } from './editableCollection';
@@ -102,8 +102,8 @@ export interface IEditorContextParams<T, TBaseId extends string = string, TId ex
 export class EditorContext<T, TBaseId extends string = string, TId extends string = string>
   implements IEditorContext<T, TBaseId, TId>
 {
-  private static readonly _parsedEntityId: Converter<{ collectionId: SourceId; itemId: string }> =
-    Converters.compositeId(CommonConverters.sourceId, '.', Converters.string);
+  private static readonly _parsedEntityId: Converter<{ collectionId: CollectionId; itemId: string }> =
+    Converters.compositeId(CommonConverters.collectionId, '.', Converters.string);
 
   private readonly _collection: EditableCollection<T, TBaseId>;
   private readonly _semanticValidator?: (entity: T) => Result<T>;
@@ -249,7 +249,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @param targetCollectionId - Target collection ID
    * @returns Result containing the new entity ID in target collection or failure
    */
-  public copyTo(id: TId, targetCollectionId: SourceId): Result<TId> {
+  public copyTo(id: TId, targetCollectionId: CollectionId): Result<TId> {
     return Failure.with('Copy operation not implemented for this entity type');
   }
 

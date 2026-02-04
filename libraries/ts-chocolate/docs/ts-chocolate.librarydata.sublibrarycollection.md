@@ -9,7 +9,7 @@ Type for the collections map in a sub-library. Maps SourceId to collection entri
 **Signature:**
 
 ```typescript
-export type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<SourceId, SubLibraryCollectionEntry<TBaseId, TItem>>;
+export type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<CollectionId, SubLibraryCollectionEntry<TBaseId, TItem>>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)
+**References:** [CollectionId](./ts-chocolate.collectionid.md)<!-- -->, [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)
 

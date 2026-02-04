@@ -30,7 +30,7 @@ import {
   Percentage,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  CollectionId
 } from '../../../packlets/common';
 
 import {
@@ -227,7 +227,7 @@ describe('RuntimeIngredient', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -249,7 +249,7 @@ describe('RuntimeIngredient', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: { ganache: testRecipe }
         }

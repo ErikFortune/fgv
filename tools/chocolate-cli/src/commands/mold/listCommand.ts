@@ -19,14 +19,14 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { Entities, MoldId, SourceId } from '@fgv/ts-chocolate';
+import { Entities, MoldId, CollectionId } from '@fgv/ts-chocolate';
 
 import {
   IEntityListOptions,
   OutputFormat,
   loadMoldsLibrary,
   formatList,
-  getSourceIdFromCompositeId,
+  getCollectionIdFromCompositeId,
   addCommonFilterOptions,
   IColumnConfig,
   IGenericListItem
@@ -69,11 +69,10 @@ function getCavityCount(mold: Entities.Molds.IMoldEntity): number {
 function matchesFilters(
   mold: Entities.Molds.IMoldEntity,
   moldId: MoldId,
-  sourceId: SourceId,
+  collectionId: CollectionId,
   options: IMoldListOptions
 ): boolean {
-  // Filter by source
-  if (options.source && sourceId !== options.source) {
+  if (options.collection && collectionId !== options.collection) {
     return false;
   }
 
@@ -163,7 +162,7 @@ export function createListSubcommand(): Command {
   cmd.action(
     async (localOptions: {
       tag?: string[];
-      source?: string;
+      collection?: string;
       name?: string;
       manufacturer?: string;
       moldFormat?: string;
@@ -189,11 +188,10 @@ export function createListSubcommand(): Command {
       const matchingMolds: IMoldListItem[] = [];
 
       for (const [moldId, mold] of library.entries()) {
-        // Get the source ID from the composite ID
-        const sourceId = getSourceIdFromCompositeId(moldId);
+        const collectionId = getCollectionIdFromCompositeId(moldId);
 
         // Apply filters
-        if (!matchesFilters(mold, moldId, sourceId, options)) {
+        if (!matchesFilters(mold, moldId, collectionId, options)) {
           continue;
         }
 
@@ -201,7 +199,7 @@ export function createListSubcommand(): Command {
         matchingMolds.push({
           id: moldId,
           name: mold.description ?? mold.productNumber,
-          sourceId,
+          collectionId: collectionId,
           description: mold.description,
           tags: mold.tags,
           manufacturer: mold.manufacturer,

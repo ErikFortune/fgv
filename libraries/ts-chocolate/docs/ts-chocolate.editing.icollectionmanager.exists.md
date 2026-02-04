@@ -9,5 +9,5 @@ Check if a collection exists.
 **Signature:**
 
 ```typescript
-readonly exists: (collectionId: SourceId) => boolean;
+readonly exists: (collectionId: CollectionId) => boolean;
 ```

@@ -9,5 +9,5 @@ Create a new mutable collection.
 **Signature:**
 
 ```typescript
-readonly create: (collectionId: SourceId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>>;
+readonly create: (collectionId: CollectionId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
 ```

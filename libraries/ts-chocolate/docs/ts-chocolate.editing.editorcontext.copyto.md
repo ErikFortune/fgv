@@ -9,7 +9,7 @@ Copy entity to another collection. This method must be overridden by derived cla
 **Signature:**
 
 ```typescript
-copyTo(id: TId, targetCollectionId: SourceId): Result<TId>;
+copyTo(id: TId, targetCollectionId: CollectionId): Result<TId>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ targetCollectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

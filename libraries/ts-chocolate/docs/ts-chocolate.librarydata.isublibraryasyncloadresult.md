@@ -70,7 +70,7 @@ Successfully loaded collections ready to be added to the library.
 
 </td><td>
 
-ReadonlyArray&lt;IProtectedCollectionInternal&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;&gt;
+ReadonlyArray&lt;IProtectedCollectionInternal&lt;[CollectionId](./ts-chocolate.collectionid.md)<!-- -->&gt;&gt;
 
 
 </td><td>

@@ -40,7 +40,7 @@ import {
   Percentage,
   ProcedureId,
   SlotId,
-  SourceId
+  CollectionId
 } from '../../../../packlets/common';
 import {
   Confections as ConfectionEntities,
@@ -275,7 +275,7 @@ describe('ConfectionEditingSession Factory', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: true,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -291,7 +291,7 @@ describe('ConfectionEditingSession Factory', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: true,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -306,7 +306,7 @@ describe('ConfectionEditingSession Factory', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -321,7 +321,7 @@ describe('ConfectionEditingSession Factory', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -336,7 +336,7 @@ describe('ConfectionEditingSession Factory', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: true,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */

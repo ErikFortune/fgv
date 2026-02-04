@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { BaseTaskId, Minutes, SourceId, TaskId } from '../../../packlets/common';
+import { BaseTaskId, Minutes, CollectionId, TaskId } from '../../../packlets/common';
 import { TasksLibrary, ITaskData, Tasks } from '../../../packlets/entities';
 import { CryptoUtils } from '@fgv/ts-extras';
 
@@ -56,7 +56,7 @@ describe('TasksLibrary', () => {
       expect(TasksLibrary.create()).toSucceedAndSatisfy((lib) => {
         // Should have the common collection with built-in tasks
         expect(lib.collectionCount).toBeGreaterThan(0);
-        expect(lib.collections.has('common' as SourceId)).toBe(true);
+        expect(lib.collections.has('common' as CollectionId)).toBe(true);
         // Verify a few known tasks exist
         expect(lib.has('common.melt-chocolate' as TaskId)).toBe(true);
         expect(lib.has('common.heat-ingredient' as TaskId)).toBe(true);
@@ -69,7 +69,7 @@ describe('TasksLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testTask: createTestTask()
@@ -91,7 +91,7 @@ describe('TasksLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testTask: createTestTask()
@@ -118,7 +118,7 @@ describe('TasksLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'common' as SourceId,
+            id: 'common' as CollectionId,
             isMutable: false,
             items: {
               // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -166,7 +166,7 @@ describe('TasksLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'common' as SourceId,
+            id: 'common' as CollectionId,
             isMutable: false,
             items: {
               /* eslint-disable @typescript-eslint/naming-convention */
@@ -215,7 +215,7 @@ describe('TasksLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {}
           }
@@ -276,7 +276,7 @@ describe('TasksLibrary.createAsync', () => {
     expect(result).toSucceedAndSatisfy((lib) => {
       // Should have the common collection with built-in tasks
       expect(lib.collectionCount).toBeGreaterThan(0);
-      expect(lib.collections.has('common' as SourceId)).toBe(true);
+      expect(lib.collections.has('common' as CollectionId)).toBe(true);
       // Verify a few known tasks exist
       expect(lib.has('common.melt-chocolate' as TaskId)).toBe(true);
       expect(lib.has('common.heat-ingredient' as TaskId)).toBe(true);
@@ -322,7 +322,7 @@ describe('TasksLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('external' as SourceId)).toBe(true);
+      expect(lib.collections.has('external' as CollectionId)).toBe(true);
       expect(lib.get('external.external-task' as TaskId)).toSucceed();
     });
   });
@@ -372,7 +372,7 @@ describe('TasksLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
       expect(lib.get('secret.secret-task' as TaskId)).toSucceedAndSatisfy((task) => {
         expect(task.name).toBe('Secret Task');
       });

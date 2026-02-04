@@ -19,14 +19,14 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { Entities, ProcedureId, SourceId } from '@fgv/ts-chocolate';
+import { Entities, ProcedureId, CollectionId } from '@fgv/ts-chocolate';
 
 import {
   IEntityListOptions,
   OutputFormat,
   loadProceduresLibrary,
   formatList,
-  getSourceIdFromCompositeId,
+  getCollectionIdFromCompositeId,
   addCommonFilterOptions,
   IColumnConfig,
   IGenericListItem
@@ -54,11 +54,11 @@ interface IProcedureListOptions extends IEntityListOptions {
 function matchesFilters(
   procedure: Entities.Procedures.IProcedureEntity,
   procedureId: ProcedureId,
-  sourceId: SourceId,
+  sourceId: CollectionId,
   options: IProcedureListOptions
 ): boolean {
   // Filter by source
-  if (options.source && sourceId !== options.source) {
+  if (options.collection && sourceId !== options.collection) {
     return false;
   }
 
@@ -137,7 +137,7 @@ export function createListSubcommand(): Command {
 
     for (const [procedureId, procedure] of library.entries()) {
       // Get the source ID from the composite ID
-      const sourceId = getSourceIdFromCompositeId(procedureId);
+      const sourceId = getCollectionIdFromCompositeId(procedureId);
 
       // Apply filters
       if (!matchesFilters(procedure, procedureId, sourceId, options)) {
@@ -148,7 +148,7 @@ export function createListSubcommand(): Command {
       matchingProcedures.push({
         id: procedureId,
         name: procedure.name,
-        sourceId,
+        collectionId: sourceId,
         description: procedure.description,
         tags: procedure.tags,
         category: procedure.category,

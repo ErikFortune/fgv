@@ -41,7 +41,7 @@ import {
 } from '@fgv/ts-utils';
 import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 
-import { SourceId } from '../common';
+import { CollectionId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { collectionSourceMetadata as collectionSourceMetadataConverter } from './converters';
 import { CryptoUtils } from '@fgv/ts-extras';
@@ -77,7 +77,7 @@ import {
  * @public
  */
 export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<
-  SourceId,
+  CollectionId,
   TBaseId,
   TItem,
   ICollectionSourceMetadata
@@ -92,7 +92,7 @@ export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collectio
  * @public
  */
 export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<
-  SourceId,
+  CollectionId,
   TBaseId,
   TItem,
   ICollectionSourceMetadata
@@ -119,7 +119,7 @@ export type SubLibraryCollectionValidator<
  * @public
  */
 export type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<
-  SourceId,
+  CollectionId,
   SubLibraryCollectionEntry<TBaseId, TItem>
 >;
 
@@ -132,7 +132,7 @@ export type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IR
  * Fixes the collection ID type to SourceId.
  * @public
  */
-export type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
+export type SubLibraryFileTreeSource = IFileTreeSource<CollectionId>;
 
 /**
  * Specifies a sub-library to merge into a new library.
@@ -144,7 +144,7 @@ export type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
  * @typeParam TLibrary - The library type (e.g., `IngredientsLibrary`)
  * @public
  */
-export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
+export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, CollectionId>;
 
 // ============================================================================
 // Directory Navigator and Built-in Tree Provider
@@ -187,7 +187,7 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
    * - `SourceId[]`: Load only the specified built-in collections by name.
    * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
    */
-  readonly builtin?: LibraryLoadSpec<SourceId>;
+  readonly builtin?: LibraryLoadSpec<CollectionId>;
 
   /**
    * File tree sources to load collections from.
@@ -230,7 +230,7 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
    * This field is typically populated by `loadAllCollectionsAsync` and passed to
    * the constructor by derived class `createAsync()` methods.
    */
-  readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+  readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 }
 
 /**
@@ -273,7 +273,7 @@ export interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
    * Protected collections that were captured but not decrypted.
    * These can be decrypted later using `loadProtectedCollectionAsync`.
    */
-  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 }
 
 /**
@@ -282,8 +282,8 @@ export interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
  */
 interface IFileTreeSourceLoadResult<TBaseId extends string, TItem> {
   readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
-  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
-  readonly sourceItems: ReadonlyMap<SourceId, FileTree.FileTreeItem>;
+  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
+  readonly sourceItems: ReadonlyMap<CollectionId, FileTree.FileTreeItem>;
 }
 
 // ============================================================================
@@ -359,7 +359,7 @@ export abstract class SubLibraryBase<
   TItem
 > extends Collections.AggregatedResultMapBase<
   TCompositeId,
-  SourceId,
+  CollectionId,
   TBaseId,
   TItem,
   ICollectionSourceMetadata
@@ -388,13 +388,13 @@ export abstract class SubLibraryBase<
    * Protected collections that were captured but not decrypted during loading.
    * These can be decrypted later using loadProtectedCollectionAsync.
    */
-  private readonly _protectedCollections: Map<SourceId, IProtectedCollectionInternal<SourceId>>;
+  private readonly _protectedCollections: Map<CollectionId, IProtectedCollectionInternal<CollectionId>>;
 
   /**
    * FileTree source items for collections loaded from FileTree.
    * Maps collection ID to its source FileTree item for persistence.
    */
-  private readonly _sourceItems: Map<SourceId, FileTree.FileTreeItem>;
+  private readonly _sourceItems: Map<CollectionId, FileTree.FileTreeItem>;
 
   /**
    * Creates a new SubLibraryBase instance with full loading support.
@@ -441,7 +441,7 @@ export abstract class SubLibraryBase<
       )
         .onSuccess((loadResult) =>
           Success.with<
-            ICollectionSet<SourceId> & {
+            ICollectionSet<CollectionId> & {
               protectedCollections: typeof loadResult.protectedCollections;
               sourceItems: typeof loadResult.sourceItems;
             }
@@ -462,7 +462,7 @@ export abstract class SubLibraryBase<
     );
 
     // Check for collisions between all sources
-    const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
+    const allSets: ReadonlyArray<ICollectionSet<CollectionId>> = [
       { source: 'builtin', collections: builtInResult.collections },
       ...fileSourceData.map((d) => ({ source: d.source, collections: d.collections })),
       { source: 'mergeLibraries', collections: mergedLibraryCollections }
@@ -481,7 +481,7 @@ export abstract class SubLibraryBase<
     ];
 
     super({
-      collectionIdConverter: CommonConverters.sourceId,
+      collectionIdConverter: CommonConverters.collectionId,
       separator: '.',
       itemIdConverter: params.itemIdConverter,
       itemConverter: params.itemConverter,
@@ -549,7 +549,7 @@ export abstract class SubLibraryBase<
    * @returns Success with collections or Failure with error.
    */
   private static _loadBuiltInCollections<TBaseId extends string, TItem>(
-    spec: LibraryLoadSpec<SourceId>,
+    spec: LibraryLoadSpec<CollectionId>,
     itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
     itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
@@ -609,7 +609,7 @@ export abstract class SubLibraryBase<
     /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
     const loader = new CollectionLoader({
       itemConverter,
-      collectionIdConverter: CommonConverters.sourceId,
+      collectionIdConverter: CommonConverters.collectionId,
       itemIdConverter,
       mutable: loadParams.mutable ?? mutable,
       logger
@@ -625,7 +625,7 @@ export abstract class SubLibraryBase<
         }));
 
         // Extract sourceItems from IRuntimeCollection
-        const sourceItems = new Map<SourceId, FileTree.FileTreeItem>();
+        const sourceItems = new Map<CollectionId, FileTree.FileTreeItem>();
         for (const coll of result.collections) {
           sourceItems.set(coll.id, coll.sourceItem);
         }
@@ -662,13 +662,13 @@ export abstract class SubLibraryBase<
       const { library, filter: filterSpec } = normalizeMergeSource(source);
 
       // Create filter from spec using shared helper
-      const filter = createFilterFromSpec(filterSpec, CommonConverters.sourceId);
+      const filter = createFilterFromSpec(filterSpec, CommonConverters.collectionId);
 
       // Build array of collection IDs for filtering
       const collectionIds = Array.from(library.collections.keys());
 
       // Filter the IDs
-      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => Success.with(id));
+      const filterResult = filter.filterItems(collectionIds, (id: CollectionId) => Success.with(id));
       if (filterResult.isSuccess()) {
         for (const filtered of filterResult.value) {
           const id = filtered.name;
@@ -704,7 +704,7 @@ export abstract class SubLibraryBase<
    * @returns Promise resolving to Success with collections or Failure with error.
    */
   private static async _loadBuiltInCollectionsAsync<TBaseId extends string, TItem>(
-    spec: LibraryLoadSpec<SourceId>,
+    spec: LibraryLoadSpec<CollectionId>,
     itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
     itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
@@ -771,7 +771,7 @@ export abstract class SubLibraryBase<
     /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
     const loader = new CollectionLoader({
       itemConverter,
-      collectionIdConverter: CommonConverters.sourceId,
+      collectionIdConverter: CommonConverters.collectionId,
       itemIdConverter,
       mutable: loadParams.mutable ?? mutable,
       logger
@@ -800,7 +800,7 @@ export abstract class SubLibraryBase<
           }));
 
           // Extract sourceItems from IRuntimeCollection
-          const sourceItems = new Map<SourceId, FileTree.FileTreeItem>();
+          const sourceItems = new Map<CollectionId, FileTree.FileTreeItem>();
           for (const coll of loadResult.collections) {
             sourceItems.set(coll.id, coll.sourceItem);
           }
@@ -843,7 +843,7 @@ export abstract class SubLibraryBase<
     const logger = params.logger;
 
     // Aggregate protected collections from all sources
-    const allProtectedCollections: IProtectedCollectionInternal<SourceId>[] = [];
+    const allProtectedCollections: IProtectedCollectionInternal<CollectionId>[] = [];
 
     // Load built-in collections async
     const builtInResult = await SubLibraryBase._loadBuiltInCollectionsAsync(
@@ -904,7 +904,7 @@ export abstract class SubLibraryBase<
     );
 
     // Check for collisions
-    const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
+    const allSets: ReadonlyArray<ICollectionSet<CollectionId>> = [
       {
         source: 'builtin',
         collections: builtInResult.value.collections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
@@ -997,7 +997,7 @@ export abstract class SubLibraryBase<
    * @returns Read-only array of protected collection references with metadata.
    * @public
    */
-  public get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<SourceId>> {
+  public get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<CollectionId>> {
     /* c8 ignore next 4 - protected collection tested but coverage intermittently missed */
     return Array.from(this._protectedCollections.values()).map((internal) => ({
       ...internal.ref,
@@ -1019,12 +1019,12 @@ export abstract class SubLibraryBase<
   public async loadProtectedCollectionAsync(
     encryption: IEncryptionConfig,
     filter?: ReadonlyArray<string | RegExp>
-  ): Promise<Result<ReadonlyArray<SourceId>>> {
-    const loadedIds: SourceId[] = [];
+  ): Promise<Result<ReadonlyArray<CollectionId>>> {
+    const loadedIds: CollectionId[] = [];
     const errors = new MessageAggregator();
 
     // Determine which protected collections to attempt to load
-    const toLoad: IProtectedCollectionInternal<SourceId>[] = [];
+    const toLoad: IProtectedCollectionInternal<CollectionId>[] = [];
     for (const internal of this._protectedCollections.values()) {
       if (this._matchesFilter(internal, filter)) {
         toLoad.push(internal);
@@ -1064,7 +1064,7 @@ export abstract class SubLibraryBase<
    * Checks if a protected collection matches the filter.
    */
   private _matchesFilter(
-    internal: IProtectedCollectionInternal<SourceId>,
+    internal: IProtectedCollectionInternal<CollectionId>,
     filter: ReadonlyArray<string | RegExp> | undefined
   ): boolean {
     if (filter === undefined || filter.length === 0) {
@@ -1090,7 +1090,7 @@ export abstract class SubLibraryBase<
    * Decrypts a protected collection and adds it to the library.
    */
   private async _decryptAndLoadProtectedCollection(
-    internal: IProtectedCollectionInternal<SourceId>,
+    internal: IProtectedCollectionInternal<CollectionId>,
     encryption: IEncryptionConfig
   ): Promise<Result<true>> {
     // Try to get the key for this secret
@@ -1199,7 +1199,7 @@ export abstract class SubLibraryBase<
    * @returns The FileTree source item, or undefined if not available
    * @public
    */
-  public getCollectionSourceItem(collectionId: SourceId): FileTree.FileTreeItem | undefined {
+  public getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined {
     return this._sourceItems.get(collectionId);
   }
 
@@ -1220,8 +1220,8 @@ export abstract class SubLibraryBase<
    * @internal
    */
   public removeCollection(
-    collectionId: SourceId
-  ): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>> {
+    collectionId: CollectionId
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
     return this.collections
       .get(collectionId)
       .asResult.withErrorFormat((msg) => `Collection "${collectionId}" not found: ${msg}`)
@@ -1248,7 +1248,7 @@ export abstract class SubLibraryBase<
    * @internal
    */
   public updateCollectionMetadata(
-    collectionId: SourceId,
+    collectionId: CollectionId,
     metadata: Partial<ICollectionSourceMetadata>
   ): Result<ICollectionSourceMetadata> {
     // Validation - collections.get returns a DetailedResult, use .asResult to convert

@@ -342,7 +342,7 @@ ReadonlyArray&lt;[MoldId](./ts-chocolate.moldid.md)<!-- -->&gt; \| undefined
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

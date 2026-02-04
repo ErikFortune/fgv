@@ -32,7 +32,7 @@ import {
   FillingVersionId,
   SessionId,
   BaseSessionId,
-  SourceId,
+  CollectionId,
   Converters as CommonConverters
 } from '../../common';
 import {
@@ -156,7 +156,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
 
   private constructor(params?: ISessionLibraryParams) {
     super({
-      itemIdConverter: CommonConverters.sessionBaseId,
+      itemIdConverter: CommonConverters.baseSessionId,
       itemConverter: anyPersistedSessionConverter,
       directoryNavigator: getSessionsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
@@ -193,7 +193,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
     const createParams: ISubLibraryCreateParams<SessionLibrary, BaseSessionId, AnySessionEntity> = {
-      itemIdConverter: CommonConverters.sessionBaseId,
+      itemIdConverter: CommonConverters.baseSessionId,
       itemConverter: anyPersistedSessionConverter,
       directoryNavigator: getSessionsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
@@ -473,12 +473,12 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    * @returns Success with the composite session ID, or Failure if add fails
    * @public
    */
-  public addSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId> {
+  public addSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId> {
     return this.addToCollection(collectionId, session.baseId, session)
       .asResult.withErrorFormat((msg) => `Failed to add session ${session.baseId} to ${collectionId}: ${msg}`)
       .onSuccess(() => {
         this._invalidateIndices();
-        return CommonConverters.persistedSessionId.convert(`${collectionId}.${session.baseId}`);
+        return CommonConverters.sessionId.convert(`${collectionId}.${session.baseId}`);
       });
   }
 
@@ -490,14 +490,14 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    * @returns Success with the composite session ID, or Failure if upsert fails
    * @public
    */
-  public upsertSession(collectionId: SourceId, session: AnySessionEntity): Result<SessionId> {
+  public upsertSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId> {
     return this.setInCollection(collectionId, session.baseId, session)
       .asResult.withErrorFormat(
         (msg) => `Failed to upsert session ${session.baseId} in ${collectionId}: ${msg}`
       )
       .onSuccess(() => {
         this._invalidateIndices();
-        return CommonConverters.persistedSessionId.convert(`${collectionId}.${session.baseId}`);
+        return CommonConverters.sessionId.convert(`${collectionId}.${session.baseId}`);
       });
   }
 
@@ -538,7 +538,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    * @returns Success with the collection ID, or Failure if creation fails
    * @public
    */
-  public createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId> {
+  public createCollection(
+    collectionId: CollectionId,
+    metadata?: ICollectionSourceMetadata
+  ): Result<CollectionId> {
     if (this.collections.has(collectionId)) {
       return fail(`Collection ${collectionId} already exists`);
     }

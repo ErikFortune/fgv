@@ -9,5 +9,5 @@ Protected collections that were captured but not decrypted. These can be decrypt
 **Signature:**
 
 ```typescript
-readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 ```

@@ -4,12 +4,12 @@
 
 ## Helpers.createSessionId() function
 
-Creates a composite [SessionId](./ts-chocolate.sessionid.md) from [collection ID](./ts-chocolate.sourceid.md) and [base session ID](./ts-chocolate.basesessionid.md)<!-- -->.
+Creates a composite [SessionId](./ts-chocolate.sessionid.md) from [collection ID](./ts-chocolate.collectionid.md) and [base session ID](./ts-chocolate.basesessionid.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare function createSessionId(collectionId: SourceId, baseId: BaseSessionId): SessionId;
+export declare function createSessionId(collectionId: CollectionId, baseId: BaseSessionId): SessionId;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

@@ -30,12 +30,12 @@ import { Brand } from '@fgv/ts-utils';
 // ============================================================================
 
 /**
- * Unique identifier for a source (collection of ingredients/recipes)
+ * Unique identifier for a source collection (of ingredients/recipes, etc)
  * Character restrictions: alphanumeric, dashes, underscores only (no dots)
  * Pattern: /^[a-zA-Z0-9_-]+$/
  * @public
  */
-export type SourceId = Brand<string, 'SourceId'>;
+export type CollectionId = Brand<string, 'CollectionId'>;
 
 /**
  * Ingredient identifier within a single source
@@ -83,7 +83,7 @@ export type BaseTaskId = Brand<string, 'BaseTaskId'>;
 
 /**
  * Globally unique ingredient identifier (composite)
- * Format: "sourceId.baseIngredientId"
+ * Format: "collectionId.baseIngredientId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
@@ -92,7 +92,7 @@ export type IngredientId = Brand<string, 'IngredientId'>;
 
 /**
  * Globally unique filling recipe identifier (composite)
- * Format: "sourceId.baseFillingId"
+ * Format: "collectionId.baseFillingId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
@@ -101,7 +101,7 @@ export type FillingId = Brand<string, 'FillingId'>;
 
 /**
  * Globally unique mold identifier (composite)
- * Format: "sourceId.baseMoldId"
+ * Format: "collectionId.baseMoldId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
@@ -110,7 +110,7 @@ export type MoldId = Brand<string, 'MoldId'>;
 
 /**
  * Globally unique procedure identifier (composite)
- * Format: "sourceId.baseProcedureId"
+ * Format: "collectionId.baseProcedureId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
@@ -119,7 +119,7 @@ export type ProcedureId = Brand<string, 'ProcedureId'>;
 
 /**
  * Globally unique task identifier (composite)
- * Format: "sourceId.baseTaskId"
+ * Format: "collectionId.baseTaskId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
@@ -149,7 +149,7 @@ export type IndexerId = Brand<string, 'IndexerId'>;
 
 /**
  * Globally unique filling recipe version identifier (composite)
- * Format: "fillingId\@versionSpec" where fillingId is "sourceId.baseFillingId"
+ * Format: "fillingId\@versionSpec" where fillingId is "collectionId.baseFillingId"
  * Examples: "user.ganache\@2026-01-03-01", "felchlin.truffle\@2026-01-03-02-less-sugar"
  * @public
  */
@@ -180,7 +180,7 @@ export type BaseConfectionId = Brand<string, 'BaseConfectionId'>;
 
 /**
  * Globally unique confection identifier (composite)
- * Format: "sourceId.baseConfectionId"
+ * Format: "collectionId.baseConfectionId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
@@ -203,7 +203,7 @@ export type ConfectionVersionSpec = Brand<string, 'ConfectionVersionSpec'>;
 
 /**
  * Globally unique confection version identifier (composite)
- * Format: "confectionId\@versionSpec" where confectionId is "sourceId.baseConfectionId"
+ * Format: "confectionId\@versionSpec" where confectionId is "collectionId.baseConfectionId"
  * Examples: "user.dark-dome-bonbon\@2026-01-03-01"
  * @public
  */

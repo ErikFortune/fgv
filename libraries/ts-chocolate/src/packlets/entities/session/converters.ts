@@ -72,8 +72,8 @@ export const persistedSessionStatus: Converter<PersistedSessionStatus> =
  */
 export const persistedSessionDestinationEntity: Converter<ISessionDestinationEntity> =
   Converters.object<ISessionDestinationEntity>({
-    defaultCollectionId: CommonConverters.sourceId.optional(),
-    overrideCollectionId: CommonConverters.sourceId.optional()
+    defaultCollectionId: CommonConverters.collectionId.optional(),
+    overrideCollectionId: CommonConverters.collectionId.optional()
   });
 
 // ============================================================================
@@ -111,7 +111,7 @@ export const serializedConfectionHistoryEntity: Converter<
  * @public
  */
 export const childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>> = Converters.recordOf(
-  CommonConverters.persistedSessionId,
+  CommonConverters.sessionId,
   { keyConverter: CommonConverters.slotId }
 ) as Converter<Readonly<Record<SlotId, SessionId>>>;
 
@@ -125,7 +125,7 @@ export const childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>> = C
  */
 export const fillingSessionEntity: Converter<IFillingSessionEntity> =
   Converters.object<IFillingSessionEntity>({
-    baseId: CommonConverters.sessionBaseId,
+    baseId: CommonConverters.baseSessionId,
     sessionType: Converters.literal('filling'),
     status: persistedSessionStatus,
     createdAt: Converters.string,
@@ -143,7 +143,7 @@ export const fillingSessionEntity: Converter<IFillingSessionEntity> =
  */
 export const confectionSessionEntity: Converter<IConfectionSessionEntity> =
   Converters.object<IConfectionSessionEntity>({
-    baseId: CommonConverters.sessionBaseId,
+    baseId: CommonConverters.baseSessionId,
     sessionType: Converters.literal('confection'),
     status: persistedSessionStatus,
     createdAt: Converters.string,

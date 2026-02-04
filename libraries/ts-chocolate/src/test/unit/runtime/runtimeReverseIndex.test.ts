@@ -29,7 +29,7 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  CollectionId
 } from '../../../packlets/common';
 
 import {
@@ -151,7 +151,7 @@ describe('RuntimeReverseIndex', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
@@ -169,7 +169,7 @@ describe('RuntimeReverseIndex', () => {
       builtin: false,
       collections: [
         {
-          id: 'test' as SourceId,
+          id: 'test' as CollectionId,
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */

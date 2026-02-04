@@ -20,10 +20,10 @@
 
 import '@fgv/ts-utils-jest';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
-import { SourceId } from '../../../index';
+import { CollectionId } from '../../../index';
 import { EditableCollection, EditorContext } from '../../../packlets/editing';
 
-const TEST_SOURCE_ID = 'test-collection' as SourceId;
+const TEST_SOURCE_ID = 'test-collection' as CollectionId;
 
 interface TestEntity {
   name: string;
@@ -323,7 +323,7 @@ describe('EditorContext', () => {
       const context = createTestContext(collection).orThrow();
 
       expect(
-        context.copyTo('test-collection.item1' as TestEntityId, 'target-collection' as SourceId)
+        context.copyTo('test-collection.item1' as TestEntityId, 'target-collection' as CollectionId)
       ).toFailWith(/not implemented/i);
     });
   });

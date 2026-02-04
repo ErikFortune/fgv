@@ -39,14 +39,14 @@ import {
   FillingVersionSpec,
   SessionSpec,
   SlotId,
-  SourceId,
+  CollectionId,
   UrlCategory,
   Validation,
   BaseJournalId
 } from '../../../packlets/common';
 
 const {
-  isValidSourceId,
+  isValidCollectionId: isValidSourceId,
   isValidBaseIngredientId,
   isValidBaseMoldId,
   isValidBaseProcedureId,
@@ -60,7 +60,7 @@ const {
   isValidPercentage,
   isValidCelsius,
   isValidDegreesMacMichael,
-  toSourceId,
+  toCollectionId: toSourceId,
   toBaseIngredientId,
   toBaseMoldId,
   toBaseProcedureId,
@@ -102,9 +102,9 @@ const {
   parseIngredientId,
   parseFillingId,
   parseFillingVersionId,
-  getIngredientSourceId,
+  getIngredientCollectionId: getIngredientSourceId,
   getIngredientBaseId,
-  getFillingSourceId,
+  getFillingCollectionId: getFillingSourceId,
   getFillingBaseId,
   getFillingVersionFillingId,
   getFillingVersionSpec
@@ -267,7 +267,7 @@ describe('Common validation', () => {
 
   describe('Base ID converters', () => {
     describe.each([
-      ['toSourceId', toSourceId, 'felchlin', 'source.id', /Invalid SourceId/],
+      ['toSourceId', toSourceId, 'felchlin', 'source.id', /Invalid CollectionId/],
       ['toBaseIngredientId', toBaseIngredientId, 'maracaibo-65', 'base.id', /Invalid BaseIngredientId/],
       ['toBaseMoldId', toBaseMoldId, 'cw-2227', 'mold.id', /Invalid BaseMoldId/],
       ['toBaseProcedureId', toBaseProcedureId, 'ganache-cold', 'proc.id', /Invalid BaseProcedureId/],
@@ -599,13 +599,13 @@ describe('Common validation', () => {
   describe('Composite ID helpers', () => {
     describe('create helpers', () => {
       test('createIngredientId creates composite ID', () => {
-        const sourceId = 'felchlin' as SourceId;
+        const sourceId = 'felchlin' as CollectionId;
         const baseId = 'maracaibo-65' as BaseIngredientId;
         expect(createIngredientId(sourceId, baseId)).toBe('felchlin.maracaibo-65');
       });
 
       test('createFillingId creates composite ID', () => {
-        const sourceId = 'user' as SourceId;
+        const sourceId = 'user' as CollectionId;
         const baseId = 'classic-ganache' as BaseFillingId;
         expect(createFillingId(sourceId, baseId)).toBe('user.classic-ganache');
       });

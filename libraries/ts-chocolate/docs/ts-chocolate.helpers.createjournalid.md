@@ -9,7 +9,7 @@ Creates a composite JournalId from collection ID and base journal ID
 **Signature:**
 
 ```typescript
-export declare function createJournalId(collectionId: SourceId, baseId: BaseJournalId): JournalId;
+export declare function createJournalId(collectionId: CollectionId, baseId: BaseJournalId): JournalId;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collectionId
 
 </td><td>
 
-[SourceId](./ts-chocolate.sourceid.md)
+[CollectionId](./ts-chocolate.collectionid.md)
 
 
 </td><td>

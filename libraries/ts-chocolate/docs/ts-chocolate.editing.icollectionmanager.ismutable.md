@@ -9,5 +9,5 @@ Check if a collection is mutable.
 **Signature:**
 
 ```typescript
-readonly isMutable: (collectionId: SourceId) => Result<boolean>;
+readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
 ```

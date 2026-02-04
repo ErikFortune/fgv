@@ -33,7 +33,7 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  SourceId
+  CollectionId
 } from '../../common';
 import { IFillingRecipeEntity } from '../../entities';
 import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from '../model';
@@ -56,7 +56,7 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
   private readonly _context: RecipeContext;
   private readonly _id: FillingId;
   private readonly _recipe: IFillingRecipeEntity;
-  private readonly _sourceId: SourceId;
+  private readonly _sourceId: CollectionId;
   private readonly _baseId: BaseFillingId;
 
   // Lazy-loaded versions
@@ -110,7 +110,7 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): SourceId {
+  public get sourceId(): CollectionId {
     return this._sourceId;
   }
 

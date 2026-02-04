@@ -69,7 +69,7 @@ import {
   BaseSessionId,
   SessionSpec,
   SlotId,
-  SourceId,
+  CollectionId,
   SpoonLevel,
   TaskId,
   UrlCategory,
@@ -129,7 +129,7 @@ import {
   toBaseSessionId,
   toSessionSpec,
   toSlotId,
-  toSourceId,
+  toCollectionId,
   toUrlCategory,
   validateIdsWithPreferred,
   validateOptionsWithPreferred
@@ -151,10 +151,10 @@ import * as CommonValidators from './validators';
 // ============================================================================
 
 /**
- * Converter for {@link SourceId | SourceId}.
+ * Converter for {@link CollectionId | CollectionId}.
  * @public
  */
-export const sourceId: Converter<SourceId> = Converters.generic(toSourceId);
+export const collectionId: Converter<CollectionId> = Converters.generic(toCollectionId);
 
 /**
  * Converter for {@link BaseIngredientId | BaseIngredientId}.
@@ -194,7 +194,7 @@ export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId
 export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
 
 /**
- * Converter for {@link BaseJournalId | JournalBaseId}.
+ * Converter for {@link BaseJournalId | BaseJournalId}.
  * @public
  */
 export const baseJournalId: Converter<BaseJournalId> = Converters.generic(toBaseJournalId);
@@ -206,7 +206,7 @@ export const baseJournalId: Converter<BaseJournalId> = Converters.generic(toBase
  */
 export const ingredientId: Converter<IngredientId> = Converters.compositeIdString(
   CommonValidators.ingredientId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseIngredientId
 );
@@ -218,7 +218,7 @@ export const ingredientId: Converter<IngredientId> = Converters.compositeIdStrin
  */
 export const fillingId: Converter<FillingId> = Converters.compositeIdString(
   CommonValidators.fillingId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseFillingId
 );
@@ -230,7 +230,7 @@ export const fillingId: Converter<FillingId> = Converters.compositeIdString(
  */
 export const moldId: Converter<MoldId> = Converters.compositeIdString(
   CommonValidators.moldId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseMoldId
 );
@@ -242,7 +242,7 @@ export const moldId: Converter<MoldId> = Converters.compositeIdString(
  */
 export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
   CommonValidators.procedureId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseProcedureId
 );
@@ -254,7 +254,7 @@ export const procedureId: Converter<ProcedureId> = Converters.compositeIdString(
  */
 export const taskId: Converter<TaskId> = Converters.compositeIdString(
   CommonValidators.taskId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseTaskId
 );
@@ -266,7 +266,7 @@ export const taskId: Converter<TaskId> = Converters.compositeIdString(
  */
 export const confectionId: Converter<ConfectionId> = Converters.compositeIdString(
   CommonValidators.confectionId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseConfectionId
 );
@@ -278,7 +278,7 @@ export const confectionId: Converter<ConfectionId> = Converters.compositeIdStrin
  */
 export const journalId: Converter<JournalId> = Converters.compositeIdString(
   CommonValidators.journalId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseJournalId
 );
@@ -291,7 +291,7 @@ export const journalId: Converter<JournalId> = Converters.compositeIdString(
  * Type alias for parsed {@link IngredientId | IngredientId}' components
  * @public
  */
-export type ParsedIngredientId = Converters.ICompositeId<SourceId, BaseIngredientId>;
+export type ParsedIngredientId = Converters.ICompositeId<CollectionId, BaseIngredientId>;
 
 /**
  * Converter that parses an {@link IngredientId | IngredientId} string into its component parts
@@ -299,7 +299,7 @@ export type ParsedIngredientId = Converters.ICompositeId<SourceId, BaseIngredien
  * @public
  */
 export const parsedIngredientId: Converter<ParsedIngredientId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseIngredientId
 );
@@ -308,7 +308,7 @@ export const parsedIngredientId: Converter<ParsedIngredientId> = Converters.comp
  * Type alias for parsed {@link FillingId | FillingId} components.
  * @public
  */
-export type ParsedFillingId = Converters.ICompositeId<SourceId, BaseFillingId>;
+export type ParsedFillingId = Converters.ICompositeId<CollectionId, BaseFillingId>;
 
 /**
  * Converter that parses a {@link FillingId | FillingId} string into its component parts
@@ -316,7 +316,7 @@ export type ParsedFillingId = Converters.ICompositeId<SourceId, BaseFillingId>;
  * @public
  */
 export const parsedFillingId: Converter<ParsedFillingId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseFillingId
 );
@@ -325,7 +325,7 @@ export const parsedFillingId: Converter<ParsedFillingId> = Converters.compositeI
  * Type alias for parsed {@link MoldId | MoldId} components.
  * @public
  */
-export type ParsedMoldId = Converters.ICompositeId<SourceId, BaseMoldId>;
+export type ParsedMoldId = Converters.ICompositeId<CollectionId, BaseMoldId>;
 
 /**
  * Converter that parses a {@link MoldId | MoldId} string into its component parts
@@ -333,7 +333,7 @@ export type ParsedMoldId = Converters.ICompositeId<SourceId, BaseMoldId>;
  * @public
  */
 export const parsedMoldId: Converter<ParsedMoldId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseMoldId
 );
@@ -342,7 +342,7 @@ export const parsedMoldId: Converter<ParsedMoldId> = Converters.compositeId(
  * Type alias for parsed {@link ProcedureId | ProcedureId} components.
  * @public
  */
-export type ParsedProcedureId = Converters.ICompositeId<SourceId, BaseProcedureId>;
+export type ParsedProcedureId = Converters.ICompositeId<CollectionId, BaseProcedureId>;
 
 /**
  * Converter that parses a {@link ProcedureId | ProcedureId} string into its component parts
@@ -350,7 +350,7 @@ export type ParsedProcedureId = Converters.ICompositeId<SourceId, BaseProcedureI
  * @public
  */
 export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseProcedureId
 );
@@ -359,7 +359,7 @@ export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compos
  * Type alias for parsed {@link TaskId | TaskId} components.
  * @public
  */
-export type ParsedTaskId = Converters.ICompositeId<SourceId, BaseTaskId>;
+export type ParsedTaskId = Converters.ICompositeId<CollectionId, BaseTaskId>;
 
 /**
  * Converter that parses a {@link TaskId | TaskId} string into its component parts
@@ -367,7 +367,7 @@ export type ParsedTaskId = Converters.ICompositeId<SourceId, BaseTaskId>;
  * @public
  */
 export const parsedTaskId: Converter<ParsedTaskId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseTaskId
 );
@@ -376,7 +376,7 @@ export const parsedTaskId: Converter<ParsedTaskId> = Converters.compositeId(
  * Type alias for parsed {@link JournalId | JournalId} components.
  * @public
  */
-export type ParsedJournalId = Converters.ICompositeId<SourceId, BaseJournalId>;
+export type ParsedJournalId = Converters.ICompositeId<CollectionId, BaseJournalId>;
 
 /**
  * Converter that parses a {@link JournalId | JournalId} string into its component parts
@@ -384,7 +384,7 @@ export type ParsedJournalId = Converters.ICompositeId<SourceId, BaseJournalId>;
  * @public
  */
 export const parsedJournalId: Converter<ParsedJournalId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseJournalId
 );
@@ -437,38 +437,38 @@ export const parsedFillingVersionId: Converter<ParsedFillingVersionId> = Convert
 export const sessionSpec: Converter<SessionSpec> = Converters.generic(toSessionSpec);
 
 /**
- * Converter for {@link BaseSessionId | SessionBaseId}.
+ * Converter for {@link BaseSessionId | BaseSessionId}.
  * @public
  */
-export const sessionBaseId: Converter<BaseSessionId> = Converters.generic(toBaseSessionId);
+export const baseSessionId: Converter<BaseSessionId> = Converters.generic(toBaseSessionId);
 
 /**
- * Converter for {@link SessionId | PersistedSessionId} (composite string).
- * Accepts either a {@link SessionId | PersistedSessionId} string or a `CompositeId` object representation.
+ * Converter for {@link SessionId | SessionId} (composite string).
+ * Accepts either a {@link SessionId | SessionId} string or a `CompositeId` object representation.
  * @public
  */
-export const persistedSessionId: Converter<SessionId> = Converters.compositeIdString(
+export const sessionId: Converter<SessionId> = Converters.compositeIdString(
   CommonValidators.sessionId,
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
-  sessionBaseId
+  baseSessionId
 );
 
 /**
- * Type alias for parsed {@link SessionId | PersistedSessionId} components.
+ * Type alias for parsed {@link SessionId | SessionId} components.
  * @public
  */
-export type ParsedSessionId = Converters.ICompositeId<SourceId, BaseSessionId>;
+export type ParsedSessionId = Converters.ICompositeId<CollectionId, BaseSessionId>;
 
 /**
- * Converter that parses a {@link SessionId | PersistedSessionId} string into its component parts
+ * Converter that parses a {@link SessionId | SessionId} string into its component parts
  * or validates a `CompositeId` object representation.
  * @public
  */
 export const parsedSessionId: Converter<ParsedSessionId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
-  sessionBaseId
+  baseSessionId
 );
 
 /**
@@ -481,7 +481,7 @@ export const slotId: Converter<SlotId> = Converters.generic(toSlotId);
  * Type alias for parsed {@link ConfectionId | ConfectionId} components.
  * @public
  */
-export type ParsedConfectionId = Converters.ICompositeId<SourceId, BaseConfectionId>;
+export type ParsedConfectionId = Converters.ICompositeId<CollectionId, BaseConfectionId>;
 
 /**
  * Converter that parses a {@link ConfectionId | ConfectionId} string into its component parts
@@ -489,7 +489,7 @@ export type ParsedConfectionId = Converters.ICompositeId<SourceId, BaseConfectio
  * @public
  */
 export const parsedConfectionId: Converter<ParsedConfectionId> = Converters.compositeId(
-  sourceId,
+  collectionId,
   ID_SEPARATOR,
   baseConfectionId
 );

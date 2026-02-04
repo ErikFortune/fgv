@@ -19,14 +19,14 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { ConfectionId, ConfectionVersionSpec, Entities, SourceId } from '@fgv/ts-chocolate';
+import { ConfectionId, ConfectionVersionSpec, Entities, CollectionId } from '@fgv/ts-chocolate';
 
 import {
   IEntityListOptions,
   OutputFormat,
   loadConfectionsLibrary,
   formatList,
-  getSourceIdFromCompositeId,
+  getCollectionIdFromCompositeId,
   addCommonFilterOptions,
   IColumnConfig,
   IGenericListItem
@@ -70,11 +70,11 @@ function getYieldString(confection: Entities.Confections.AnyConfectionEntity): s
 function matchesFilters(
   confection: Entities.Confections.AnyConfectionEntity,
   confectionId: ConfectionId,
-  sourceId: SourceId,
+  collectionId: CollectionId,
   options: IConfectionListOptions
 ): boolean {
-  // Filter by source
-  if (options.source && sourceId !== options.source) {
+  // Filter by collection
+  if (options.collection && collectionId !== options.collection) {
     return false;
   }
 
@@ -166,7 +166,7 @@ export function createListSubcommand(): Command {
   cmd.action(
     async (localOptions: {
       tag?: string[];
-      source?: string;
+      collection?: string;
       name?: string;
       type?: string;
       mold?: string;
@@ -192,11 +192,11 @@ export function createListSubcommand(): Command {
       const matchingConfections: IConfectionListItem[] = [];
 
       for (const [confectionId, confection] of library.entries()) {
-        // Get the source ID from the composite ID
-        const sourceId = getSourceIdFromCompositeId(confectionId);
+        // Get the collection ID from the composite ID
+        const collectionId = getCollectionIdFromCompositeId(confectionId);
 
         // Apply filters
-        if (!matchesFilters(confection, confectionId, sourceId, options)) {
+        if (!matchesFilters(confection, confectionId, collectionId, options)) {
           continue;
         }
 
@@ -204,7 +204,7 @@ export function createListSubcommand(): Command {
         matchingConfections.push({
           id: confectionId,
           name: confection.name,
-          sourceId,
+          collectionId,
           description: confection.description,
           tags: confection.tags,
           confectionType: confection.confectionType,

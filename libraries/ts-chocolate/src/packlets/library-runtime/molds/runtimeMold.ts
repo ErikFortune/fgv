@@ -32,7 +32,7 @@ import {
   Model as CommonModel,
   MoldFormat,
   MoldId,
-  SourceId
+  CollectionId
 } from '../../common';
 import { ICavities, ICavityDimensions, IMoldEntity } from '../../entities';
 import { IMoldContext, IRuntimeMold } from './model';
@@ -55,7 +55,7 @@ export class RuntimeMold implements IRuntimeMold {
   private readonly _context: IMoldContext;
   private readonly _id: MoldId;
   private readonly _mold: IMoldEntity;
-  private readonly _sourceId: SourceId;
+  private readonly _sourceId: CollectionId;
 
   private constructor(context: IMoldContext, id: MoldId, mold: IMoldEntity) {
     this._context = context;
@@ -90,7 +90,7 @@ export class RuntimeMold implements IRuntimeMold {
   /**
    * The source ID part of the composite ID
    */
-  public get sourceId(): SourceId {
+  public get sourceId(): CollectionId {
     return this._sourceId;
   }
 

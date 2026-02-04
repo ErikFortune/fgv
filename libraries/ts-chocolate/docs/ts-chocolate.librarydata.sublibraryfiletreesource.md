@@ -9,7 +9,7 @@ File tree source for sub-library data. Fixes the collection ID type to SourceId.
 **Signature:**
 
 ```typescript
-export type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
+export type SubLibraryFileTreeSource = IFileTreeSource<CollectionId>;
 ```
-**References:** [IFileTreeSource](./ts-chocolate.librarydata.ifiletreesource.md)<!-- -->, [SourceId](./ts-chocolate.sourceid.md)
+**References:** [IFileTreeSource](./ts-chocolate.librarydata.ifiletreesource.md)<!-- -->, [CollectionId](./ts-chocolate.collectionid.md)
 

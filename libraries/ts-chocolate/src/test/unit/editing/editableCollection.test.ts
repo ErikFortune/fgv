@@ -20,10 +20,10 @@
 
 import '@fgv/ts-utils-jest';
 import { Converters } from '@fgv/ts-utils';
-import { SourceId } from '../../../index';
+import { CollectionId } from '../../../index';
 import { EditableCollection } from '../../../packlets/editing';
 
-const TEST_SOURCE_ID = 'test' as SourceId;
+const TEST_SOURCE_ID = 'test' as CollectionId;
 const testKeyConverter = Converters.string;
 const testValueConverter = Converters.object<TestItem>({
   name: Converters.string,
@@ -67,7 +67,7 @@ describe('EditableCollection', () => {
     test('should fail without collection ID', () => {
       expect(
         EditableCollection.createEditable<TestItem>({
-          collectionId: '' as SourceId,
+          collectionId: '' as CollectionId,
           metadata: testMetadata,
           isMutable: true,
           initialItems: new Map(),

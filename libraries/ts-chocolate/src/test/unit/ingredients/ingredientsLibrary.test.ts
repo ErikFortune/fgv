@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 import { Result } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
-import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../packlets/common';
+import { BaseIngredientId, IngredientId, Percentage, CollectionId } from '../../../packlets/common';
 
 import {
   IGanacheCharacteristics,
@@ -78,7 +78,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testChoco: testIngredient
@@ -97,7 +97,7 @@ describe('IngredientsLibrary', () => {
       const result = IngredientsLibrary.create({
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {
               testChoco: testIngredient
@@ -130,7 +130,7 @@ describe('IngredientsLibrary', () => {
     test('loads specific built-in collections with array', () => {
       expect(
         IngredientsLibrary.create({
-          builtin: ['common' as SourceId, 'felchlin' as SourceId]
+          builtin: ['common' as CollectionId, 'felchlin' as CollectionId]
         })
       ).toSucceedAndSatisfy((lib) => {
         expect(lib.collectionCount).toBe(2);
@@ -235,7 +235,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'test' as SourceId,
+            id: 'test' as CollectionId,
             isMutable: true,
             items: {}
           }
@@ -330,7 +330,7 @@ describe('IngredientsLibrary', () => {
     test('addCollectionEntry adds a collection', () => {
       expect(
         library.addCollectionEntry({
-          id: 'new-source' as SourceId,
+          id: 'new-source' as CollectionId,
           isMutable: true,
           items: { testItem: testIngredient }
         })
@@ -344,7 +344,7 @@ describe('IngredientsLibrary', () => {
     });
 
     test('composeId creates valid composite ID', () => {
-      expect(library.composeId('source' as SourceId, 'base' as BaseIngredientId)).toSucceedWith(
+      expect(library.composeId('source' as CollectionId, 'base' as BaseIngredientId)).toSucceedWith(
         'source.base' as IngredientId
       );
     });
@@ -714,7 +714,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'custom' as SourceId,
+            id: 'custom' as CollectionId,
             isMutable: true,
             items: {
               testChoco: testIngredient
@@ -742,7 +742,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'custom' as SourceId,
+            id: 'custom' as CollectionId,
             isMutable: true,
             items: {
               testChoco: testIngredient
@@ -771,7 +771,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'source1' as SourceId,
+            id: 'source1' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -782,7 +782,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'source2' as SourceId,
+            id: 'source2' as CollectionId,
             isMutable: false,
             items: { testChoco: testIngredient }
           }
@@ -808,12 +808,12 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'collection1' as SourceId,
+            id: 'collection1' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           },
           {
-            id: 'collection2' as SourceId,
+            id: 'collection2' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -842,12 +842,12 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'include-me' as SourceId,
+            id: 'include-me' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           },
           {
-            id: 'exclude-me' as SourceId,
+            id: 'exclude-me' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -860,7 +860,7 @@ describe('IngredientsLibrary', () => {
           builtin: false,
           mergeLibraries: {
             library: existingLibrary,
-            filter: ['include-me' as SourceId]
+            filter: ['include-me' as CollectionId]
           }
         })
       ).toSucceedAndSatisfy((lib) => {
@@ -876,12 +876,12 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'keep-this' as SourceId,
+            id: 'keep-this' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           },
           {
-            id: 'remove-this' as SourceId,
+            id: 'remove-this' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -909,7 +909,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'custom' as SourceId,
+            id: 'custom' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -936,7 +936,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'felchlin' as SourceId, // Same as builtin
+            id: 'felchlin' as CollectionId, // Same as builtin
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -957,7 +957,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'duplicate' as SourceId,
+            id: 'duplicate' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -968,7 +968,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'duplicate' as SourceId,
+            id: 'duplicate' as CollectionId,
             isMutable: false,
             items: { testChoco: testIngredient }
           }
@@ -988,7 +988,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'mutable-source' as SourceId,
+            id: 'mutable-source' as CollectionId,
             isMutable: true,
             items: { testChoco: testIngredient }
           }
@@ -999,7 +999,7 @@ describe('IngredientsLibrary', () => {
         builtin: false,
         collections: [
           {
-            id: 'immutable-source' as SourceId,
+            id: 'immutable-source' as CollectionId,
             isMutable: false,
             items: { testChoco: testIngredient }
           }
@@ -1087,7 +1087,7 @@ describe('IngredientsLibrary.createAsync', () => {
     const result = await IngredientsLibrary.createAsync();
     expect(result).toSucceedAndSatisfy((lib) => {
       // Should have built-in collections like common, guittard, etc.
-      expect(lib.collections.has('common' as SourceId)).toBe(true);
+      expect(lib.collections.has('common' as CollectionId)).toBe(true);
     });
   });
 
@@ -1136,7 +1136,7 @@ describe('IngredientsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('external' as SourceId)).toBe(true);
+      expect(lib.collections.has('external' as CollectionId)).toBe(true);
       expect(lib.get('external.external-butter' as IngredientId)).toSucceed();
     });
   });
@@ -1192,7 +1192,7 @@ describe('IngredientsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
       expect(lib.get('secret.secret-ingredient' as IngredientId)).toSucceedAndSatisfy((ingredient) => {
         expect(ingredient.name).toBe('Secret Ingredient');
       });
@@ -1351,7 +1351,7 @@ describe('IngredientsLibrary protected collections', () => {
       });
 
       // Collection should be decrypted and loaded
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
       expect(lib.get('secret.secret-ingredient' as IngredientId)).toSucceedAndSatisfy((ingredient) => {
         expect(ingredient.name).toBe('Secret Ingredient');
       });
@@ -1393,8 +1393,8 @@ describe('IngredientsLibrary protected collections', () => {
         ['secret']
       );
 
-      expect(result).toSucceedWith(['secret' as SourceId]);
-      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(result).toSucceedWith(['secret' as CollectionId]);
+      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
     });
 
     test('filters by secret name string', async () => {
@@ -1407,7 +1407,7 @@ describe('IngredientsLibrary protected collections', () => {
         [TEST_SECRET_NAME]
       );
 
-      expect(result).toSucceedWith(['secret' as SourceId]);
+      expect(result).toSucceedWith(['secret' as CollectionId]);
     });
 
     test('filters by regex pattern on collection ID', async () => {
@@ -1420,7 +1420,7 @@ describe('IngredientsLibrary protected collections', () => {
         [/^sec/]
       );
 
-      expect(result).toSucceedWith(['secret' as SourceId]);
+      expect(result).toSucceedWith(['secret' as CollectionId]);
     });
 
     test('filters by regex pattern on secret name', async () => {
@@ -1433,7 +1433,7 @@ describe('IngredientsLibrary protected collections', () => {
         [/test-secret/]
       );
 
-      expect(result).toSucceedWith(['secret' as SourceId]);
+      expect(result).toSucceedWith(['secret' as CollectionId]);
     });
 
     test('fails when no key available for secret', async () => {
@@ -1466,7 +1466,7 @@ describe('IngredientsLibrary protected collections', () => {
         }
       });
 
-      expect(result).toSucceedWith(['secret' as SourceId]);
+      expect(result).toSucceedWith(['secret' as CollectionId]);
     });
 
     test('fails when decryption fails with wrong key', async () => {
@@ -1559,7 +1559,7 @@ describe('IngredientsLibrary protected collections', () => {
 
       // Manually add a collection with the same ID as the protected one
       lib.addCollectionEntry({
-        id: 'protected' as SourceId,
+        id: 'protected' as CollectionId,
         isMutable: true,
         items: {}
       });
@@ -1670,7 +1670,7 @@ describe('IngredientsLibrary protected collections', () => {
       });
 
       // Verify one collection was loaded and one remains protected
-      expect(lib.collections.has('secret1' as SourceId)).toBe(true);
+      expect(lib.collections.has('secret1' as CollectionId)).toBe(true);
       expect(lib.protectedCollections).toHaveLength(1);
       expect(lib.protectedCollections[0].collectionId).toBe('secret2');
     });
