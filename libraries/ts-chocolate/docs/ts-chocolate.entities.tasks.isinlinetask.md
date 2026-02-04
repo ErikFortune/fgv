@@ -37,7 +37,7 @@ invocation
 
 </td><td>
 
-ITaskInvocation
+[ITaskInvocation](./ts-chocolate.entities.itaskinvocation.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ The task invocation to check
 
 **Returns:**
 
-invocation is IInlineTask
+invocation is [IInlineTask](./ts-chocolate.entities.iinlinetask.md)
 
 True if the invocation is an inline task
 

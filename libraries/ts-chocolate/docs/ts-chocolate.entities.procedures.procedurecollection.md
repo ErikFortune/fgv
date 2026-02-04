@@ -11,5 +11,5 @@ Type for the collections in a ProceduresLibrary.
 ```typescript
 export type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedure>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
 

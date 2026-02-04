@@ -154,7 +154,7 @@ The [molds library](./ts-chocolate.entities.molds.moldslibrary.md)<!-- -->.
 
 </td><td>
 
-ProceduresLibrary
+[ProceduresLibrary](./ts-chocolate.entities.procedureslibrary.md)
 
 
 </td><td>
@@ -175,7 +175,7 @@ The [procedures library](./ts-chocolate.entities.procedures.procedureslibrary.md
 
 </td><td>
 
-TasksLibrary
+[TasksLibrary](./ts-chocolate.entities.taskslibrary.md)
 
 
 </td><td>

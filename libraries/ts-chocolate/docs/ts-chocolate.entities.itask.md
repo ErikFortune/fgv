@@ -11,7 +11,7 @@ A reusable task template with runtime-computed properties. Extends ITaskData wit
 ```typescript
 export interface ITask extends ITaskData 
 ```
-**Extends:** ITaskData
+**Extends:** [ITaskData](./ts-chocolate.entities.itaskdata.md)
 
 ## Properties
 

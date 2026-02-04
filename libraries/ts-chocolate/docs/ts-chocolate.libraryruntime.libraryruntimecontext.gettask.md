@@ -50,7 +50,7 @@ The task ID (composite format: sourceId.baseTaskId)
 
 **Returns:**
 
-Result&lt;ITaskData&gt;
+Result&lt;[ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->&gt;
 
 Success with ITaskData, or Failure if not found
 

@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;IProcedure, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IProcedure](./ts-chocolate.entities.iprocedure.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

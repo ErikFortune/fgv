@@ -11,5 +11,5 @@ Initialization type for a ProceduresLibrary collection entry.
 ```typescript
 export type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedure>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
 

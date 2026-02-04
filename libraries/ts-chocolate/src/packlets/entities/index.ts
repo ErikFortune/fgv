@@ -85,13 +85,9 @@ export { IngredientInventoryLibrary, MoldInventoryLibrary, InventoryType } from 
 
 export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMold } from './molds';
 
-export * from './procedures/model';
-export * from './procedures/collection';
-export * from './procedures/library';
+export { ProceduresLibrary, IProcedure, IProcedureStep } from './procedures';
 
-export * from './tasks/model';
-export * from './tasks/collection';
-export * from './tasks/library';
+export { TasksLibrary, ITask, ITaskData, IInlineTask, IRenderOptions, ITaskInvocation } from './tasks';
 
 // Export aggregated converters namespace
 import * as Converters from './converters';

@@ -239,7 +239,7 @@ Optional categorized notes
 
 </td><td>
 
-ITaskData
+[ITaskData](./ts-chocolate.entities.itaskdata.md)
 
 
 </td><td>

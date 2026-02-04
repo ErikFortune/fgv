@@ -196,7 +196,7 @@ _(Optional)_ Optional categorized notes
 
 </td><td>
 
-IProcedure
+[IProcedure](./ts-chocolate.entities.iprocedure.md)
 
 
 </td><td>
@@ -238,7 +238,7 @@ Number of steps
 
 </td><td>
 
-ReadonlyArray&lt;IProcedureStep&gt;
+ReadonlyArray&lt;[IProcedureStep](./ts-chocolate.entities.iprocedurestep.md)<!-- -->&gt;
 
 
 </td><td>

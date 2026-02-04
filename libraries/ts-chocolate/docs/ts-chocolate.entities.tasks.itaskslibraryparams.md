@@ -11,5 +11,5 @@ Parameters for creating a TasksLibrary instance synchronously.
 ```typescript
 export type ITasksLibraryParams = ISubLibraryParams<TasksLibrary, TaskCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [TasksLibrary](./ts-chocolate.entities.taskslibrary.md)
 

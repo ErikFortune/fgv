@@ -11,5 +11,5 @@ Parameters for creating a ProceduresLibrary instance asynchronously with encrypt
 ```typescript
 export type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [ProceduresLibrary](./ts-chocolate.entities.procedureslibrary.md)
 

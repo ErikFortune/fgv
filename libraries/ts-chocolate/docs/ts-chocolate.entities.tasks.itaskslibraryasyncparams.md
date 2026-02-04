@@ -11,5 +11,5 @@ Parameters for creating a TasksLibrary instance asynchronously with encryption s
 ```typescript
 export type ITasksLibraryAsyncParams = ISubLibraryAsyncParams<TasksLibrary, TaskCollectionEntryInit>;
 ```
-**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+**References:** [ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)<!-- -->, [TasksLibrary](./ts-chocolate.entities.taskslibrary.md)
 

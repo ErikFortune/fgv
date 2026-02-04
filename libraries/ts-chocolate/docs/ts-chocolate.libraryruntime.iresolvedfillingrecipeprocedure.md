@@ -89,7 +89,7 @@ _(Optional)_ Optional notes specific to using this procedure with the recipe.
 
 </td><td>
 
-IProcedure
+[IProcedure](./ts-chocolate.entities.iprocedure.md)
 
 
 </td><td>

@@ -11,5 +11,5 @@ Type for the collections in a TasksLibrary.
 ```typescript
 export type TaskCollection = SubLibraryCollection<BaseTaskId, ITaskData>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)
 

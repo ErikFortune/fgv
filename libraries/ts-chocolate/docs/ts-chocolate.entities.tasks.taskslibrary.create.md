@@ -50,7 +50,7 @@ _(Optional)_ Optional creation parameters with initial collections
 
 **Returns:**
 
-Result&lt;TasksLibrary&gt;
+Result&lt;[TasksLibrary](./ts-chocolate.entities.taskslibrary.md)<!-- -->&gt;
 
 Success with new instance, or Failure with error message
 

@@ -11,5 +11,5 @@ A single entry in a tasks collection.
 ```typescript
 export type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, ITaskData>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)
 

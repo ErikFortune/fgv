@@ -69,7 +69,7 @@ procedure
 
 </td><td>
 
-IProcedure
+[IProcedure](./ts-chocolate.entities.iprocedure.md)
 
 
 </td><td>

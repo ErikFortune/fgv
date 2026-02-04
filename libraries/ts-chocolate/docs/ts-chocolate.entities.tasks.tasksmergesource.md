@@ -11,5 +11,5 @@ Specifies a tasks library to merge into a new library.
 ```typescript
 export type TasksMergeSource = SubLibraryMergeSource<TasksLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [TasksLibrary](./ts-chocolate.entities.taskslibrary.md)
 

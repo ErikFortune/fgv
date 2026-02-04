@@ -11,5 +11,5 @@ Validator type for TasksLibrary collections.
 ```typescript
 export type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, ITaskData>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [TaskId](./ts-chocolate.taskid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [TaskId](./ts-chocolate.taskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)
 

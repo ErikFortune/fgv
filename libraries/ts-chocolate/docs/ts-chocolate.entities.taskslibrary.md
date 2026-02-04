@@ -13,7 +13,7 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "common.melt-
 ```typescript
 export declare class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[TaskId](./ts-chocolate.taskid.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, ITaskData&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[TaskId](./ts-chocolate.taskid.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->&gt;
 
 ## Methods
 

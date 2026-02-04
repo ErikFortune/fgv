@@ -11,5 +11,5 @@ Specifies a procedures library to merge into a new library.
 ```typescript
 export type ProceduresMergeSource = SubLibraryMergeSource<ProceduresLibrary>;
 ```
-**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [ProceduresLibrary](./ts-chocolate.entities.procedureslibrary.md)
 

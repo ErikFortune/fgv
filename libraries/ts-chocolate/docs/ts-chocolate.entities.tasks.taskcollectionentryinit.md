@@ -11,5 +11,5 @@ Initialization type for a TasksLibrary collection entry.
 ```typescript
 export type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, ITaskData>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.entities.itaskdata.md)
 

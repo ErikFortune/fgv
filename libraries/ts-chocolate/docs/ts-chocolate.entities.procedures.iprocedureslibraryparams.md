@@ -11,5 +11,5 @@ Parameters for creating a ProceduresLibrary instance synchronously.
 ```typescript
 export type IProceduresLibraryParams = ISubLibraryParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
 ```
-**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [ProceduresLibrary](./ts-chocolate.entities.procedureslibrary.md)
 

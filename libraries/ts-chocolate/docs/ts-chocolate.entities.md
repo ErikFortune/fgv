@@ -157,43 +157,6 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "common.melt-
 </td></tr>
 </tbody></table>
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[isInlineTask(invocation)](./ts-chocolate.entities.isinlinetask.md)
-
-
-</td><td>
-
-Type guard for inline task - discriminates by presence of `task`
-
-
-</td></tr>
-<tr><td>
-
-[isTaskRef(invocation)](./ts-chocolate.entities.istaskref.md)
-
-
-</td><td>
-
-Type guard for task ref - discriminates by presence of `taskId`
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -488,17 +451,6 @@ A single step in a procedure (persisted data model). Does not include validation
 </td></tr>
 <tr><td>
 
-[IProcedureStepValidation](./ts-chocolate.entities.iprocedurestepvalidation.md)
-
-
-</td><td>
-
-Runtime validation state for a procedure step. This is computed at render/use time based on which TasksLibrary is available.
-
-
-</td></tr>
-<tr><td>
-
 [IProducedBarTruffle](./ts-chocolate.entities.iproducedbartruffle.md)
 
 
@@ -607,39 +559,6 @@ Persisted task data - the data model stored in YAML/JSON files. Does not include
 
 
 </td></tr>
-<tr><td>
-
-[ITaskRef](./ts-chocolate.entities.itaskref.md)
-
-
-</td><td>
-
-Represents a step's reference to a reusable task with parameter values.
-
-
-</td></tr>
-<tr><td>
-
-[ITaskRefValidation](./ts-chocolate.entities.itaskrefvalidation.md)
-
-
-</td><td>
-
-Result of validating a task reference against a task definition.
-
-
-</td></tr>
-<tr><td>
-
-[IValidatedProcedureStep](./ts-chocolate.entities.ivalidatedprocedurestep.md)
-
-
-</td><td>
-
-A procedure step with runtime validation state attached. Used during rendering when validation has been performed.
-
-
-</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -742,32 +661,6 @@ Description
 
 
 </td><td>
-
-
-</td></tr>
-</tbody></table>
-
-## Variables
-
-<table><thead><tr><th>
-
-Variable
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[defaultRenderOptions](./ts-chocolate.entities.defaultrenderoptions.md)
-
-
-</td><td>
-
-Default render options
 
 
 </td></tr>
@@ -909,78 +802,12 @@ Inventory entry type discriminator.
 </td></tr>
 <tr><td>
 
-[IProcedureFileTreeSource](./ts-chocolate.entities.iprocedurefiletreesource.md)
-
-
-</td><td>
-
-File tree source for procedure data.
-
-
-</td></tr>
-<tr><td>
-
-[IProceduresLibraryAsyncParams](./ts-chocolate.entities.iprocedureslibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a ProceduresLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[IProceduresLibraryParams](./ts-chocolate.entities.iprocedureslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a ProceduresLibrary instance synchronously.
-
-
-</td></tr>
-<tr><td>
-
-[ITaskFileTreeSource](./ts-chocolate.entities.itaskfiletreesource.md)
-
-
-</td><td>
-
-File tree source for task data.
-
-
-</td></tr>
-<tr><td>
-
 [ITaskInvocation](./ts-chocolate.entities.itaskinvocation.md)
 
 
 </td><td>
 
 A task invocation - either a reference to a library task or an inline task definition. Discriminated by the presence of `task` (inline) vs `taskId` (ref).
-
-
-</td></tr>
-<tr><td>
-
-[ITasksLibraryAsyncParams](./ts-chocolate.entities.itaskslibraryasyncparams.md)
-
-
-</td><td>
-
-Parameters for creating a TasksLibrary instance asynchronously with encryption support.
-
-
-</td></tr>
-<tr><td>
-
-[ITasksLibraryParams](./ts-chocolate.entities.itaskslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a TasksLibrary instance synchronously.
 
 
 </td></tr>
@@ -1003,138 +830,6 @@ Types of journal entries.
 </td><td>
 
 Persisted session lifecycle state. - `planning`<!-- -->: Session is being planned but not actively editing - `active`<!-- -->: Session is actively being edited - `committing`<!-- -->: Session is in the process of being committed - `committed`<!-- -->: Session has been committed to a journal entry - `abandoned`<!-- -->: Session was explicitly abandoned
-
-
-</td></tr>
-<tr><td>
-
-[ProcedureCollection](./ts-chocolate.entities.procedurecollection.md)
-
-
-</td><td>
-
-Type for the collections in a ProceduresLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[ProcedureCollectionEntry](./ts-chocolate.entities.procedurecollectionentry.md)
-
-
-</td><td>
-
-A single entry in a procedures collection.
-
-
-</td></tr>
-<tr><td>
-
-[ProcedureCollectionEntryInit](./ts-chocolate.entities.procedurecollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a ProceduresLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[ProcedureCollectionValidator](./ts-chocolate.entities.procedurecollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for ProceduresLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[ProceduresMergeSource](./ts-chocolate.entities.proceduresmergesource.md)
-
-
-</td><td>
-
-Specifies a procedures library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[TaskCollection](./ts-chocolate.entities.taskcollection.md)
-
-
-</td><td>
-
-Type for the collections in a TasksLibrary.
-
-
-</td></tr>
-<tr><td>
-
-[TaskCollectionEntry](./ts-chocolate.entities.taskcollectionentry.md)
-
-
-</td><td>
-
-A single entry in a tasks collection.
-
-
-</td></tr>
-<tr><td>
-
-[TaskCollectionEntryInit](./ts-chocolate.entities.taskcollectionentryinit.md)
-
-
-</td><td>
-
-Initialization type for a TasksLibrary collection entry.
-
-
-</td></tr>
-<tr><td>
-
-[TaskCollectionValidator](./ts-chocolate.entities.taskcollectionvalidator.md)
-
-
-</td><td>
-
-Validator type for TasksLibrary collections.
-
-
-</td></tr>
-<tr><td>
-
-[TaskRefStatus](./ts-chocolate.entities.taskrefstatus.md)
-
-
-</td><td>
-
-Validation status for a step's task reference. Used at load time to mark incomplete references without hard failing.
-
-
-</td></tr>
-<tr><td>
-
-[TasksMergeSource](./ts-chocolate.entities.tasksmergesource.md)
-
-
-</td><td>
-
-Specifies a tasks library to merge into a new library.
-
-
-</td></tr>
-<tr><td>
-
-[ValidationBehavior](./ts-chocolate.entities.validationbehavior.md)
-
-
-</td><td>
-
-How to handle validation issues during rendering
 
 
 </td></tr>

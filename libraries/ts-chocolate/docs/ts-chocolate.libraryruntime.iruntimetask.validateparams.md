@@ -9,7 +9,7 @@ Validates that params (combined with defaults) satisfy required variables.
 **Signature:**
 
 ```typescript
-validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
+validateParams(params: Record<string, unknown>): Result<TaskEntities.ITaskRefValidation>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The parameter values to validate
 
 **Returns:**
 
-Result&lt;ITaskRefValidation&gt;
+Result&lt;TaskEntities.ITaskRefValidation&gt;
 
 Validation result with details about present/missing variables
 

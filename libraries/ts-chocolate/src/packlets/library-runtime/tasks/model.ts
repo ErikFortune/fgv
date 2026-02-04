@@ -28,7 +28,7 @@
 import { Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
-import { ITaskData, ITaskRefValidation } from '../../entities';
+import { Tasks as TaskEntities, ITaskData } from '../../entities';
 
 // ============================================================================
 // Runtime Task Context
@@ -115,7 +115,7 @@ export interface IRuntimeTask {
    * @param params - The parameter values to validate
    * @returns Validation result with details about present/missing variables
    */
-  validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
+  validateParams(params: Record<string, unknown>): Result<TaskEntities.ITaskRefValidation>;
 
   /**
    * Renders the task template with the given params (merged with defaults).

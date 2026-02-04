@@ -11,5 +11,5 @@ A single entry in a procedures collection.
 ```typescript
 export type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedure>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
 

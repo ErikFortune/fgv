@@ -11,7 +11,7 @@ A procedure step with runtime validation state attached. Used during rendering w
 ```typescript
 export interface IValidatedProcedureStep extends IProcedureStep 
 ```
-**Extends:** IProcedureStep
+**Extends:** [IProcedureStep](./ts-chocolate.entities.iprocedurestep.md)
 
 ## Properties
 

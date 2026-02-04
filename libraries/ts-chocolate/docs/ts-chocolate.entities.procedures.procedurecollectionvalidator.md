@@ -11,5 +11,5 @@ Validator type for ProceduresLibrary collections.
 ```typescript
 export type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedure>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->, [IProcedure](./ts-chocolate.entities.iprocedure.md)
 

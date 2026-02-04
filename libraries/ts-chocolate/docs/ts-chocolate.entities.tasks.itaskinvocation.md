@@ -11,3 +11,5 @@ A task invocation - either a reference to a library task or an inline task defin
 ```typescript
 export type ITaskInvocation = IInlineTask | ITaskRef;
 ```
+**References:** [IInlineTask](./ts-chocolate.entities.iinlinetask.md)
+

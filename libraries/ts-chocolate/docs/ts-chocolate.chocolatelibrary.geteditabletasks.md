@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;ITaskData, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

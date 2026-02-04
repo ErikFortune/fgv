@@ -37,7 +37,7 @@ invocation
 
 </td><td>
 
-ITaskInvocation
+[ITaskInvocation](./ts-chocolate.entities.itaskinvocation.md)
 
 
 </td><td>

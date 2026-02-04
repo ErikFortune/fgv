@@ -50,7 +50,7 @@ The [id](./ts-chocolate.procedureid.md) of the procedure to retrieve.
 
 **Returns:**
 
-Result&lt;IProcedure&gt;
+Result&lt;[IProcedure](./ts-chocolate.entities.iprocedure.md)<!-- -->&gt;
 
 `Success` with procedure, or `Failure` if not found
 

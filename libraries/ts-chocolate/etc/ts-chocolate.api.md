@@ -1234,6 +1234,15 @@ declare namespace Entities {
         ICavityDimensions,
         ICavityInfo,
         IMold,
+        ProceduresLibrary,
+        IProcedure,
+        IProcedureStep,
+        TasksLibrary,
+        ITask,
+        ITaskData,
+        IInlineTask,
+        IRenderOptions,
+        ITaskInvocation,
         Converters_2 as Converters,
         Confections_2 as Confections,
         Fillings_2 as Fillings,
@@ -1243,41 +1252,7 @@ declare namespace Entities {
         Molds_2 as Molds,
         Procedures_2 as Procedures,
         Session,
-        Tasks_2 as Tasks,
-        IProcedureStep,
-        IProcedureStepValidation,
-        IValidatedProcedureStep,
-        IProcedure,
-        ProcedureCollectionEntry,
-        ProcedureCollectionEntryInit,
-        ProcedureCollectionValidator,
-        ProcedureCollection,
-        IProcedureFileTreeSource,
-        ProceduresMergeSource,
-        IProceduresLibraryParams,
-        IProceduresLibraryAsyncParams,
-        ProceduresLibrary,
-        isTaskRef,
-        isInlineTask,
-        ITaskData,
-        ITask,
-        ITaskRef,
-        TaskRefStatus,
-        ITaskRefValidation,
-        IInlineTask,
-        ITaskInvocation,
-        ValidationBehavior,
-        IRenderOptions,
-        defaultRenderOptions,
-        TaskCollectionEntry,
-        TaskCollectionEntryInit,
-        TaskCollectionValidator,
-        TaskCollection,
-        ITaskFileTreeSource,
-        TasksMergeSource,
-        ITasksLibraryParams,
-        ITasksLibraryAsyncParams,
-        TasksLibrary
+        Tasks_2 as Tasks
     }
 }
 export { Entities }
@@ -3939,7 +3914,7 @@ interface IRuntimeTask {
     readonly tags?: ReadonlyArray<string>;
     readonly template: string;
     validateAndRender(params: Record<string, unknown>): Result<string>;
-    validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
+    validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
 }
 
 // @public
@@ -6132,7 +6107,7 @@ class RuntimeTask implements IRuntimeTask {
     get tags(): ReadonlyArray<string> | undefined;
     get template(): string;
     validateAndRender(params: Record<string, unknown>): Result<string>;
-    validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
+    validateParams(params: Record<string, unknown>): Result<Tasks_2.ITaskRefValidation>;
 }
 
 // @public

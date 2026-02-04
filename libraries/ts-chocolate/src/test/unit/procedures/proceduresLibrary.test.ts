@@ -29,7 +29,7 @@ import {
   SourceId
 } from '../../../packlets/common';
 
-import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/entities';
+import { ProceduresLibrary, IProcedure, Procedures } from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 import { ITaskInvocation } from '../../../packlets/entities';
@@ -304,7 +304,7 @@ describe('ProceduresLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IProcedureFileTreeSource = {
+    const fileSource: Procedures.IProcedureFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: true
     };
@@ -356,7 +356,7 @@ describe('ProceduresLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IProcedureFileTreeSource = {
+    const fileSource: Procedures.IProcedureFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };
@@ -414,7 +414,7 @@ describe('ProceduresLibrary.createAsync', () => {
 
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow();
-    const fileSource: IProcedureFileTreeSource = {
+    const fileSource: Procedures.IProcedureFileTreeSource = {
       directory: rootDir as FileTree.IFileTreeDirectoryItem,
       mutable: false
     };

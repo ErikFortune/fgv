@@ -68,7 +68,7 @@ Parameter values for rendering the template
 
 </td><td>
 
-ITaskData
+[ITaskData](./ts-chocolate.entities.itaskdata.md)
 
 
 </td><td>

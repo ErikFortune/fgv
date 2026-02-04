@@ -50,7 +50,7 @@ The [id](./ts-chocolate.taskid.md) of the task to retrieve.
 
 **Returns:**
 
-Result&lt;ITaskData&gt;
+Result&lt;[ITaskData](./ts-chocolate.entities.itaskdata.md)<!-- -->&gt;
 
 `Success` with task data, or `Failure` if not found
 

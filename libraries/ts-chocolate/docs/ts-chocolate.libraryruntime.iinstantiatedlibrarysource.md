@@ -131,7 +131,7 @@ _(Optional)_ Pre-built molds library
 
 </td><td>
 
-ProceduresLibrary
+[ProceduresLibrary](./ts-chocolate.entities.procedureslibrary.md)
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Pre-built procedures library
 
 </td><td>
 
-TasksLibrary
+[TasksLibrary](./ts-chocolate.entities.taskslibrary.md)
 
 
 </td><td>

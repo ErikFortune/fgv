@@ -52,7 +52,7 @@ _(Optional)_ Optional creation parameters with initial collections and encryptio
 
 **Returns:**
 
-Promise&lt;Result&lt;TasksLibrary&gt;&gt;
+Promise&lt;Result&lt;[TasksLibrary](./ts-chocolate.entities.taskslibrary.md)<!-- -->&gt;&gt;
 
 Promise resolving to Success with new instance, or Failure with error message
 

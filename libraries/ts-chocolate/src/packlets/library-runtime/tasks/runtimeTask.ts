@@ -27,7 +27,7 @@ import { Result, succeed } from '@fgv/ts-utils';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
 import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
-import { ITaskData, ITaskRefValidation } from '../../entities';
+import { ITaskData, Tasks as TaskEntities } from '../../entities';
 import { ITaskContext, IRuntimeTask } from './model';
 
 // ============================================================================
@@ -196,7 +196,7 @@ export class RuntimeTask implements IRuntimeTask {
    * @param params - The parameter values to validate
    * @returns Validation result with details about present/missing variables
    */
-  public validateParams(params: Record<string, unknown>): Result<ITaskRefValidation> {
+  public validateParams(params: Record<string, unknown>): Result<TaskEntities.ITaskRefValidation> {
     const mergedParams = this._mergeContext(params);
     return this._parsedTemplate.validateContext(mergedParams).onSuccess((validation) => {
       // Find extra variables (params provided but not in template)

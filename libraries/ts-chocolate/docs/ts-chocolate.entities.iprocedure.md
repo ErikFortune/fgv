@@ -152,7 +152,7 @@ _(Optional)_ Optional categorized notes about the procedure
 
 </td><td>
 
-ReadonlyArray&lt;IProcedureStep&gt;
+ReadonlyArray&lt;[IProcedureStep](./ts-chocolate.entities.iprocedurestep.md)<!-- -->&gt;
 
 
 </td><td>

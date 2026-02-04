@@ -22,8 +22,9 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseTaskId, Minutes, SourceId, TaskId } from '../../../packlets/common';
-import { TasksLibrary, ITaskData, ITaskFileTreeSource } from '../../../packlets/entities';
+import { TasksLibrary, ITaskData, Tasks } from '../../../packlets/entities';
 import { CryptoUtils } from '@fgv/ts-extras';
+import { ITaskFileTreeSource } from '../../../packlets/entities/tasks';
 
 describe('TasksLibrary', () => {
   // ============================================================================
@@ -311,7 +312,7 @@ describe('TasksLibrary.createAsync', () => {
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
 
-    const fileSource: ITaskFileTreeSource = {
+    const fileSource: Tasks.ITaskFileTreeSource = {
       directory: rootDir,
       mutable: true
     };
@@ -357,7 +358,7 @@ describe('TasksLibrary.createAsync', () => {
     const tree = FileTree.inMemory(files).orThrow();
     const rootDir = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
 
-    const fileSource: ITaskFileTreeSource = {
+    const fileSource: Tasks.ITaskFileTreeSource = {
       directory: rootDir,
       mutable: false
     };
