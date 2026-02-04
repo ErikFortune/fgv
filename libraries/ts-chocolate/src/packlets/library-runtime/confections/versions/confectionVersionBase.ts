@@ -34,9 +34,9 @@ import {
 } from '../../model';
 
 // Forward declarations to avoid circular imports
-import type { RuntimeMoldedBonBonVersion } from './runtimeMoldedBonBonVersion';
-import type { RuntimeBarTruffleVersion } from './runtimeBarTruffleVersion';
-import type { RuntimeRolledTruffleVersion } from './runtimeRolledTruffleVersion';
+import type { RuntimeMoldedBonBonVersion } from './moldedBonBonVersion';
+import type { RuntimeBarTruffleVersion } from './barTruffleVersion';
+import type { RuntimeRolledTruffleVersion } from './rolledTruffleVersion';
 
 // ============================================================================
 // RuntimeConfectionVersionBase Abstract Class

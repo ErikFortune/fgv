@@ -3,7 +3,7 @@ import { Result, Success } from '@fgv/ts-utils';
 import { IngredientCategory, IngredientId } from '../../common';
 import { IngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeIngredient } from '../model';
-import { RuntimeIngredientBase } from './runtimeIngredientBase';
+import { RuntimeIngredientBase } from './ingredientBase';
 
 export class RuntimeGenericIngredient extends RuntimeIngredientBase implements IRuntimeIngredient {
   protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity) {

@@ -55,7 +55,7 @@ import {
   RuntimeAlcoholIngredient
 } from '../../../packlets/library-runtime';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { RuntimeGenericIngredient } from '../../../packlets/library-runtime/ingredients/runtimeGenericIngredient';
+import { RuntimeGenericIngredient } from '../../../packlets/library-runtime/ingredients/genericIngredient';
 
 describe('RuntimeIngredient', () => {
   // ============================================================================

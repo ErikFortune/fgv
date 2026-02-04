@@ -28,15 +28,15 @@
  */
 
 // Base class and context interface
-export { RuntimeIngredientBase } from './runtimeIngredientBase';
+export { RuntimeIngredientBase } from './ingredientBase';
 
 // Concrete ingredient classes
-export { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
-export { RuntimeDairyIngredient } from './runtimeDairyIngredient';
-export { RuntimeSugarIngredient } from './runtimeSugarIngredient';
-export { RuntimeFatIngredient } from './runtimeFatIngredient';
-export { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
-export { RuntimeGenericIngredient } from './runtimeGenericIngredient';
+export { RuntimeChocolateIngredient } from './chocolateIngredient';
+export { RuntimeDairyIngredient } from './dairyIngredient';
+export { RuntimeSugarIngredient } from './sugarIngredient';
+export { RuntimeFatIngredient } from './fatIngredient';
+export { RuntimeAlcoholIngredient } from './alcoholIngredient';
+export { RuntimeGenericIngredient } from './genericIngredient';
 
 // Static factory and union type
-export { RuntimeIngredient, AnyRuntimeIngredient } from './runtimeIngredient';
+export { RuntimeIngredient, AnyRuntimeIngredient } from './ingredient';

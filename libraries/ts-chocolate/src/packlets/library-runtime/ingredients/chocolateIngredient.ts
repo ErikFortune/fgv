@@ -36,7 +36,7 @@ import {
 } from '../../common';
 import { Ingredients, IChocolateIngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeChocolateIngredient } from '../model';
-import { RuntimeIngredientBase } from './runtimeIngredientBase';
+import { RuntimeIngredientBase } from './ingredientBase';
 
 // ============================================================================
 // RuntimeChocolateIngredient Class

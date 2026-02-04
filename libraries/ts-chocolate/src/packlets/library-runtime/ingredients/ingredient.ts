@@ -35,12 +35,12 @@ import {
   ISugarIngredientEntity
 } from '../../entities';
 import { IIngredientContext } from '../model';
-import { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
-import { RuntimeDairyIngredient } from './runtimeDairyIngredient';
-import { RuntimeSugarIngredient } from './runtimeSugarIngredient';
-import { RuntimeFatIngredient } from './runtimeFatIngredient';
-import { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
-import { RuntimeGenericIngredient } from './runtimeGenericIngredient';
+import { RuntimeChocolateIngredient } from './chocolateIngredient';
+import { RuntimeDairyIngredient } from './dairyIngredient';
+import { RuntimeSugarIngredient } from './sugarIngredient';
+import { RuntimeFatIngredient } from './fatIngredient';
+import { RuntimeAlcoholIngredient } from './alcoholIngredient';
+import { RuntimeGenericIngredient } from './genericIngredient';
 
 // ============================================================================
 // AnyRuntimeIngredient Union Type

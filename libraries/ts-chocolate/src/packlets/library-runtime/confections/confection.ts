@@ -28,9 +28,9 @@ import { Failure, Result } from '@fgv/ts-utils';
 import { ConfectionId } from '../../common';
 import { Confections } from '../../entities';
 import { IConfectionContext } from '../model';
-import { RuntimeMoldedBonBon } from './runtimeMoldedBonBon';
-import { RuntimeBarTruffle } from './runtimeBarTruffle';
-import { RuntimeRolledTruffle } from './runtimeRolledTruffle';
+import { RuntimeMoldedBonBon } from './moldedBonBon';
+import { RuntimeBarTruffle } from './barTruffle';
+import { RuntimeRolledTruffle } from './rolledTruffle';
 
 // ============================================================================
 // AnyRuntimeConfection Union Type

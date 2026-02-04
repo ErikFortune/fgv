@@ -35,7 +35,7 @@ import {
   IRuntimeRolledTruffle,
   IRuntimeRolledTruffleVersion
 } from '../../model';
-import { RuntimeConfectionVersionBase } from './runtimeConfectionVersionBase';
+import { RuntimeConfectionVersionBase } from './confectionVersionBase';
 
 // ============================================================================
 // RuntimeRolledTruffleVersion Class

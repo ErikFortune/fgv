@@ -27,7 +27,7 @@
  * @packageDocumentation
  */
 
-export { RuntimeConfectionVersionBase } from './runtimeConfectionVersionBase';
-export { RuntimeMoldedBonBonVersion } from './runtimeMoldedBonBonVersion';
-export { RuntimeBarTruffleVersion } from './runtimeBarTruffleVersion';
-export { RuntimeRolledTruffleVersion } from './runtimeRolledTruffleVersion';
+export { RuntimeConfectionVersionBase } from './confectionVersionBase';
+export { RuntimeMoldedBonBonVersion } from './moldedBonBonVersion';
+export { RuntimeBarTruffleVersion } from './barTruffleVersion';
+export { RuntimeRolledTruffleVersion } from './rolledTruffleVersion';

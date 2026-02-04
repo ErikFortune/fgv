@@ -30,4 +30,4 @@ export {
   IRuntimeRenderedProcedure,
   IRuntimeRenderedStep
 } from './model';
-export { RuntimeProcedure } from './runtimeProcedure';
+export { RuntimeProcedure } from './procedure';

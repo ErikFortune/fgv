@@ -36,11 +36,11 @@ import { Ingredients, IngredientEntity } from '../../entities';
 import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
-import type { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
-import type { RuntimeDairyIngredient } from './runtimeDairyIngredient';
-import type { RuntimeSugarIngredient } from './runtimeSugarIngredient';
-import type { RuntimeFatIngredient } from './runtimeFatIngredient';
-import type { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
+import type { RuntimeChocolateIngredient } from './chocolateIngredient';
+import type { RuntimeDairyIngredient } from './dairyIngredient';
+import type { RuntimeSugarIngredient } from './sugarIngredient';
+import type { RuntimeFatIngredient } from './fatIngredient';
+import type { RuntimeAlcoholIngredient } from './alcoholIngredient';
 
 // ============================================================================
 // RuntimeIngredientBase Abstract Class

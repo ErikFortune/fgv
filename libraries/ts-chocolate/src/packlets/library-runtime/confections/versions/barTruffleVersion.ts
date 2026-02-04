@@ -34,7 +34,7 @@ import {
   IRuntimeBarTruffle,
   IRuntimeBarTruffleVersion
 } from '../../model';
-import { RuntimeConfectionVersionBase } from './runtimeConfectionVersionBase';
+import { RuntimeConfectionVersionBase } from './confectionVersionBase';
 
 // ============================================================================
 // RuntimeBarTruffleVersion Class

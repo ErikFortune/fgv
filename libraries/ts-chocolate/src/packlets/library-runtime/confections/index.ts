@@ -28,15 +28,15 @@
  */
 
 // Base class
-export { RuntimeConfectionBase } from './runtimeConfectionBase';
+export { RuntimeConfectionBase } from './confectionBase';
 
 // Concrete confection classes
-export { RuntimeMoldedBonBon } from './runtimeMoldedBonBon';
-export { RuntimeBarTruffle } from './runtimeBarTruffle';
-export { RuntimeRolledTruffle } from './runtimeRolledTruffle';
+export { RuntimeMoldedBonBon } from './moldedBonBon';
+export { RuntimeBarTruffle } from './barTruffle';
+export { RuntimeRolledTruffle } from './rolledTruffle';
 
 // Static factory and union type
-export { RuntimeConfection, AnyRuntimeConfection } from './runtimeConfection';
+export { RuntimeConfection, AnyRuntimeConfection } from './confection';
 
 // Version classes
 export {

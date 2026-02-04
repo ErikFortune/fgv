@@ -24,4 +24,4 @@
  */
 
 export { IMoldContext, IRuntimeMold } from './model';
-export { RuntimeMold } from './runtimeMold';
+export { RuntimeMold } from './mold';

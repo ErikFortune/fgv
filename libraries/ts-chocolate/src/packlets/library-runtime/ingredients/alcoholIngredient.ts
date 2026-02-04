@@ -19,52 +19,52 @@
 // SOFTWARE.
 
 /**
- * RuntimeFatIngredient - concrete fat ingredient implementation
+ * RuntimeAlcoholIngredient - concrete alcohol ingredient implementation
  * @packageDocumentation
  */
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { Celsius, IngredientId } from '../../common';
-import { IFatIngredientEntity } from '../../entities';
-import { IIngredientContext, IRuntimeFatIngredient } from '../model';
-import { RuntimeIngredientBase } from './runtimeIngredientBase';
+import { IngredientId, Percentage } from '../../common';
+import { IAlcoholIngredientEntity } from '../../entities';
+import { IIngredientContext, IRuntimeAlcoholIngredient } from '../model';
+import { RuntimeIngredientBase } from './ingredientBase';
 
 // ============================================================================
-// RuntimeFatIngredient Class
+// RuntimeAlcoholIngredient Class
 // ============================================================================
 
 /**
- * A resolved view of a fat ingredient with navigation capabilities.
+ * A resolved view of an alcohol ingredient with navigation capabilities.
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatIngredient {
-  private readonly _fatIngredient: IFatIngredientEntity;
+export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntimeAlcoholIngredient {
+  private readonly _alcoholIngredient: IAlcoholIngredientEntity;
 
   /**
-   * Creates a RuntimeFatIngredient.
-   * Use RuntimeIngredient.create() or RuntimeFatIngredient.create() instead.
+   * Creates a RuntimeAlcoholIngredient.
+   * Use RuntimeIngredient.create() or RuntimeAlcoholIngredient.create() instead.
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredientEntity) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity) {
     super(context, id, ingredient);
-    this._fatIngredient = ingredient;
+    this._alcoholIngredient = ingredient;
   }
 
   /**
-   * Factory method for creating a RuntimeFatIngredient.
+   * Factory method for creating a RuntimeAlcoholIngredient.
    * @param context - The runtime context
    * @param id - The ingredient ID
-   * @param ingredient - The raw fat ingredient data
-   * @returns Success with RuntimeFatIngredient
+   * @param ingredient - The raw alcohol ingredient data
+   * @returns Success with RuntimeAlcoholIngredient
    */
   public static create(
     context: IIngredientContext,
     id: IngredientId,
-    ingredient: IFatIngredientEntity
-  ): Result<RuntimeFatIngredient> {
-    return Success.with(new RuntimeFatIngredient(context, id, ingredient));
+    ingredient: IAlcoholIngredientEntity
+  ): Result<RuntimeAlcoholIngredient> {
+    return Success.with(new RuntimeAlcoholIngredient(context, id, ingredient));
   }
 
   // ============================================================================
@@ -72,21 +72,28 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRunt
   // ============================================================================
 
   /**
-   * Category is always 'fat' for this type
+   * Category is always 'alcohol' for this type
    */
-  public get category(): 'fat' {
-    return 'fat';
+  public get category(): 'alcohol' {
+    return 'alcohol';
   }
 
   // ============================================================================
-  // Fat-Specific Properties
+  // Alcohol-Specific Properties
   // ============================================================================
 
   /**
-   * Melting point in Celsius (optional)
+   * Alcohol by volume percentage (optional)
    */
-  public get meltingPoint(): Celsius | undefined {
-    return this._fatIngredient.meltingPoint;
+  public get alcoholByVolume(): Percentage | undefined {
+    return this._alcoholIngredient.alcoholByVolume;
+  }
+
+  /**
+   * Flavor profile description (optional)
+   */
+  public get flavorProfile(): string | undefined {
+    return this._alcoholIngredient.flavorProfile;
   }
 
   // ============================================================================
@@ -94,9 +101,9 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IRunt
   // ============================================================================
 
   /**
-   * Gets the underlying raw fat ingredient data
+   * Gets the underlying raw alcohol ingredient data
    */
-  public get raw(): IFatIngredientEntity {
-    return this._fatIngredient;
+  public get raw(): IAlcoholIngredientEntity {
+    return this._alcoholIngredient;
   }
 }

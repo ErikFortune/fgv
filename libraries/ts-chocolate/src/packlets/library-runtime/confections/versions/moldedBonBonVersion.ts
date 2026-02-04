@@ -36,7 +36,7 @@ import {
   IRuntimeMoldedBonBon,
   IRuntimeMoldedBonBonVersion
 } from '../../model';
-import { RuntimeConfectionVersionBase } from './runtimeConfectionVersionBase';
+import { RuntimeConfectionVersionBase } from './confectionVersionBase';
 
 // ============================================================================
 // RuntimeMoldedBonBonVersion Class

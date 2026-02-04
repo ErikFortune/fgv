@@ -19,65 +19,66 @@
 // SOFTWARE.
 
 /**
- * RuntimeRolledTruffle - concrete rolled truffle confection implementation
+ * RuntimeMoldedBonBon - concrete molded bonbon confection implementation
  * @packageDocumentation
  */
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
+import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, MoldId, ProcedureId } from '../../common';
 import { Confections } from '../../entities';
 import {
   IConfectionContext,
+  IResolvedAdditionalChocolate,
   IResolvedChocolateSpec,
-  IResolvedCoatings,
+  IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeRolledTruffle,
-  IRuntimeRolledTruffleVersion
+  IRuntimeMoldedBonBon,
+  IRuntimeMoldedBonBonVersion
 } from '../model';
-import { RuntimeConfectionBase } from './runtimeConfectionBase';
-import { RuntimeRolledTruffleVersion } from './versions';
+import { RuntimeConfectionBase } from './confectionBase';
+import { RuntimeMoldedBonBonVersion } from './versions';
 
 // ============================================================================
-// RuntimeRolledTruffle Class
+// RuntimeMoldedBonBon Class
 // ============================================================================
 
 /**
- * A resolved view of a rolled truffle confection with navigation capabilities.
+ * A resolved view of a molded bonbon confection with navigation capabilities.
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
-  private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
+export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
+  private readonly _moldedBonBon: Confections.IMoldedBonBonEntity;
 
   /**
-   * Creates a RuntimeRolledTruffle.
-   * Use RuntimeConfection.create() or RuntimeRolledTruffle.create() instead.
+   * Creates a RuntimeMoldedBonBon.
+   * Use RuntimeConfection.create() or RuntimeMoldedBonBon.create() instead.
    * @internal
    */
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IRolledTruffleEntity
+    confection: Confections.IMoldedBonBonEntity
   ) {
     super(context, id, confection);
-    this._rolledTruffle = confection;
+    this._moldedBonBon = confection;
   }
 
   /**
-   * Factory method for creating a RuntimeRolledTruffle.
+   * Factory method for creating a RuntimeMoldedBonBon.
    * @param context - The runtime context
    * @param id - The confection ID
-   * @param confection - The rolled truffle data
-   * @returns Success with RuntimeRolledTruffle
+   * @param confection - The molded bonbon data
+   * @returns Success with RuntimeMoldedBonBon
    */
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IRolledTruffleEntity
-  ): Result<RuntimeRolledTruffle> {
-    return Success.with(new RuntimeRolledTruffle(context, id, confection));
+    confection: Confections.IMoldedBonBonEntity
+  ): Result<RuntimeMoldedBonBon> {
+    return Success.with(new RuntimeMoldedBonBon(context, id, confection));
   }
 
   // ============================================================================
@@ -85,10 +86,10 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   // ============================================================================
 
   /**
-   * Confection type is always 'rolled-truffle' for this type
+   * Confection type is always 'molded-bonbon' for this type
    */
-  public get confectionType(): 'rolled-truffle' {
-    return 'rolled-truffle';
+  public get confectionType(): 'molded-bonbon' {
+    return 'molded-bonbon';
   }
 
   // ============================================================================
@@ -96,17 +97,17 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   // ============================================================================
 
   /**
-   * Golden version typed as IRuntimeRolledTruffleVersion.
+   * Golden version typed as IRuntimeMoldedBonBonVersion.
    */
-  public override get goldenVersion(): IRuntimeRolledTruffleVersion {
-    return super.goldenVersion as IRuntimeRolledTruffleVersion;
+  public override get goldenVersion(): IRuntimeMoldedBonBonVersion {
+    return super.goldenVersion as IRuntimeMoldedBonBonVersion;
   }
 
   /**
-   * All versions typed as IRuntimeRolledTruffleVersion.
+   * All versions typed as IRuntimeMoldedBonBonVersion.
    */
-  public override get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion> {
-    return super.versions as ReadonlyArray<IRuntimeRolledTruffleVersion>;
+  public override get versions(): ReadonlyArray<IRuntimeMoldedBonBonVersion> {
+    return super.versions as ReadonlyArray<IRuntimeMoldedBonBonVersion>;
   }
 
   /**
@@ -114,8 +115,8 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
    * @param versionSpec - The version specifier to find
    * @returns Success with typed runtime version, or Failure if not found
    */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion> {
-    return super.getVersion(versionSpec) as Result<IRuntimeRolledTruffleVersion>;
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeMoldedBonBonVersion> {
+    return super.getVersion(versionSpec) as Result<IRuntimeMoldedBonBonVersion>;
   }
 
   /**
@@ -126,16 +127,16 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
    */
   protected override _createVersion(
     rawVersion: Confections.AnyConfectionVersionEntity
-  ): IRuntimeRolledTruffleVersion {
-    return RuntimeRolledTruffleVersion.create(
+  ): IRuntimeMoldedBonBonVersion {
+    return RuntimeMoldedBonBonVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IRolledTruffleVersionEntity
+      rawVersion as Confections.IMoldedBonBonVersionEntity
     ).orThrow();
   }
 
   // ============================================================================
-  // Rolled Truffle-Specific Properties (delegate to golden version)
+  // Molded BonBon-Specific Properties (delegate to golden version)
   // ============================================================================
 
   /**
@@ -155,17 +156,24 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   }
 
   /**
-   * Resolved enrobing chocolate specification (from golden version, optional).
+   * Resolved molds with preferred selection (from golden version).
    */
-  public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
-    return this.goldenVersion.enrobingChocolate;
+  public get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
+    return this.goldenVersion.molds;
   }
 
   /**
-   * Resolved coating specification (from golden version, optional).
+   * Resolved shell chocolate specification (from golden version).
    */
-  public get coatings(): IResolvedCoatings | undefined {
-    return this.goldenVersion.coatings;
+  public get shellChocolate(): IResolvedChocolateSpec {
+    return this.goldenVersion.shellChocolate;
+  }
+
+  /**
+   * Resolved additional chocolates (from golden version).
+   */
+  public get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
+    return this.goldenVersion.additionalChocolates;
   }
 
   // ============================================================================
@@ -173,9 +181,9 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   // ============================================================================
 
   /**
-   * Gets the underlying raw rolled truffle data
+   * Gets the underlying raw molded bonbon data
    */
-  public get raw(): Confections.IRolledTruffleEntity {
-    return this._rolledTruffle;
+  public get raw(): Confections.IMoldedBonBonEntity {
+    return this._moldedBonBon;
   }
 }

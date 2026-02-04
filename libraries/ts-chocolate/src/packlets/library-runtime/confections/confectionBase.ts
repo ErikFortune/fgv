@@ -46,9 +46,9 @@ import {
 } from '../model';
 
 // Forward declarations to avoid circular imports
-import type { RuntimeMoldedBonBon } from './runtimeMoldedBonBon';
-import type { RuntimeBarTruffle } from './runtimeBarTruffle';
-import type { RuntimeRolledTruffle } from './runtimeRolledTruffle';
+import type { RuntimeMoldedBonBon } from './moldedBonBon';
+import type { RuntimeBarTruffle } from './barTruffle';
+import type { RuntimeRolledTruffle } from './rolledTruffle';
 
 // ============================================================================
 // RuntimeConfectionBase Abstract Class

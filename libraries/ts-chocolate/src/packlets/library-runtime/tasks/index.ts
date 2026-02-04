@@ -24,4 +24,4 @@
  */
 
 export { ITaskContext, IRuntimeTask } from './model';
-export { RuntimeTask } from './runtimeTask';
+export { RuntimeTask } from './task';

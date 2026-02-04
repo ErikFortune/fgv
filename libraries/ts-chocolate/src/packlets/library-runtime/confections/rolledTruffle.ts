@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeBarTruffle - concrete bar truffle confection implementation
+ * RuntimeRolledTruffle - concrete rolled truffle confection implementation
  * @packageDocumentation
  */
 
@@ -30,53 +30,54 @@ import { Confections } from '../../entities';
 import {
   IConfectionContext,
   IResolvedChocolateSpec,
+  IResolvedCoatings,
+  IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRuntimeBarTruffle,
-  IRuntimeBarTruffleVersion,
-  IResolvedConfectionProcedure
+  IRuntimeRolledTruffle,
+  IRuntimeRolledTruffleVersion
 } from '../model';
-import { RuntimeConfectionBase } from './runtimeConfectionBase';
-import { RuntimeBarTruffleVersion } from './versions';
+import { RuntimeConfectionBase } from './confectionBase';
+import { RuntimeRolledTruffleVersion } from './versions';
 
 // ============================================================================
-// RuntimeBarTruffle Class
+// RuntimeRolledTruffle Class
 // ============================================================================
 
 /**
- * A resolved view of a bar truffle confection with navigation capabilities.
+ * A resolved view of a rolled truffle confection with navigation capabilities.
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
-  private readonly _barTruffle: Confections.IBarTruffleEntity;
+export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
+  private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
 
   /**
-   * Creates a RuntimeBarTruffle.
-   * Use RuntimeConfection.create() or RuntimeBarTruffle.create() instead.
+   * Creates a RuntimeRolledTruffle.
+   * Use RuntimeConfection.create() or RuntimeRolledTruffle.create() instead.
    * @internal
    */
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IBarTruffleEntity
+    confection: Confections.IRolledTruffleEntity
   ) {
     super(context, id, confection);
-    this._barTruffle = confection;
+    this._rolledTruffle = confection;
   }
 
   /**
-   * Factory method for creating a RuntimeBarTruffle.
+   * Factory method for creating a RuntimeRolledTruffle.
    * @param context - The runtime context
    * @param id - The confection ID
-   * @param confection - The bar truffle data
-   * @returns Success with RuntimeBarTruffle
+   * @param confection - The rolled truffle data
+   * @returns Success with RuntimeRolledTruffle
    */
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IBarTruffleEntity
-  ): Result<RuntimeBarTruffle> {
-    return Success.with(new RuntimeBarTruffle(context, id, confection));
+    confection: Confections.IRolledTruffleEntity
+  ): Result<RuntimeRolledTruffle> {
+    return Success.with(new RuntimeRolledTruffle(context, id, confection));
   }
 
   // ============================================================================
@@ -84,10 +85,10 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   // ============================================================================
 
   /**
-   * Confection type is always 'bar-truffle' for this type
+   * Confection type is always 'rolled-truffle' for this type
    */
-  public get confectionType(): 'bar-truffle' {
-    return 'bar-truffle';
+  public get confectionType(): 'rolled-truffle' {
+    return 'rolled-truffle';
   }
 
   // ============================================================================
@@ -95,17 +96,17 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   // ============================================================================
 
   /**
-   * Golden version typed as IRuntimeBarTruffleVersion.
+   * Golden version typed as IRuntimeRolledTruffleVersion.
    */
-  public override get goldenVersion(): IRuntimeBarTruffleVersion {
-    return super.goldenVersion as IRuntimeBarTruffleVersion;
+  public override get goldenVersion(): IRuntimeRolledTruffleVersion {
+    return super.goldenVersion as IRuntimeRolledTruffleVersion;
   }
 
   /**
-   * All versions typed as IRuntimeBarTruffleVersion.
+   * All versions typed as IRuntimeRolledTruffleVersion.
    */
-  public override get versions(): ReadonlyArray<IRuntimeBarTruffleVersion> {
-    return super.versions as ReadonlyArray<IRuntimeBarTruffleVersion>;
+  public override get versions(): ReadonlyArray<IRuntimeRolledTruffleVersion> {
+    return super.versions as ReadonlyArray<IRuntimeRolledTruffleVersion>;
   }
 
   /**
@@ -113,8 +114,8 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
    * @param versionSpec - The version specifier to find
    * @returns Success with typed runtime version, or Failure if not found
    */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeBarTruffleVersion> {
-    return super.getVersion(versionSpec) as Result<IRuntimeBarTruffleVersion>;
+  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRuntimeRolledTruffleVersion> {
+    return super.getVersion(versionSpec) as Result<IRuntimeRolledTruffleVersion>;
   }
 
   /**
@@ -125,31 +126,17 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
    */
   protected override _createVersion(
     rawVersion: Confections.AnyConfectionVersionEntity
-  ): IRuntimeBarTruffleVersion {
-    return RuntimeBarTruffleVersion.create(
+  ): IRuntimeRolledTruffleVersion {
+    return RuntimeRolledTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IBarTruffleVersionEntity
+      rawVersion as Confections.IRolledTruffleVersionEntity
     ).orThrow();
   }
 
   // ============================================================================
-  // Bar Truffle-Specific Properties (delegate to golden version)
+  // Rolled Truffle-Specific Properties (delegate to golden version)
   // ============================================================================
-
-  /**
-   * Frame dimensions for ganache slab (from golden version).
-   */
-  public get frameDimensions(): Confections.IFrameDimensions {
-    return this.goldenVersion.frameDimensions;
-  }
-
-  /**
-   * Single bonbon dimensions for cutting (from golden version).
-   */
-  public get singleBonBonDimensions(): Confections.IBonBonDimensions {
-    return this.goldenVersion.singleBonBonDimensions;
-  }
 
   /**
    * Resolved filling slots from the golden version.
@@ -174,14 +161,21 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
     return this.goldenVersion.enrobingChocolate;
   }
 
+  /**
+   * Resolved coating specification (from golden version, optional).
+   */
+  public get coatings(): IResolvedCoatings | undefined {
+    return this.goldenVersion.coatings;
+  }
+
   // ============================================================================
   // Raw Access
   // ============================================================================
 
   /**
-   * Gets the underlying raw bar truffle data
+   * Gets the underlying raw rolled truffle data
    */
-  public get raw(): Confections.IBarTruffleEntity {
-    return this._barTruffle;
+  public get raw(): Confections.IRolledTruffleEntity {
+    return this._rolledTruffle;
   }
 }
