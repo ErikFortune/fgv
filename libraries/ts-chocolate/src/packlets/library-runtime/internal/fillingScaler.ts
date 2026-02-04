@@ -24,7 +24,7 @@
  */
 
 import { FillingVersionSpec, Measurement } from '../../common';
-import { IFillingRecipeVersion } from '../../entities';
+import { IFillingRecipeVersionEntity } from '../../entities';
 
 // ============================================================================
 // Scaling Options
@@ -74,7 +74,7 @@ export interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
  * @returns Total weight in grams
  * @public
  */
-export function calculateBaseWeight(version: IFillingRecipeVersion): Measurement {
+export function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement {
   const total = version.ingredients.reduce((sum: number, ingredient) => sum + ingredient.amount, 0);
   return total as Measurement;
 }
@@ -86,7 +86,9 @@ export function calculateBaseWeight(version: IFillingRecipeVersion): Measurement
  * @returns New filling recipe version with recalculated base weight
  * @public
  */
-export function recalculateFillingRecipeVersion(version: IFillingRecipeVersion): IFillingRecipeVersion {
+export function recalculateFillingRecipeVersion(
+  version: IFillingRecipeVersionEntity
+): IFillingRecipeVersionEntity {
   return {
     ...version,
     baseWeight: calculateBaseWeight(version)

@@ -11,9 +11,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.classic
 **Signature:**
 
 ```typescript
-export declare class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipe> 
+export declare class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipeEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)<!-- -->&gt;
 
 ## Methods
 

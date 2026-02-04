@@ -40,7 +40,7 @@ import {
   IAlcoholIngredient,
   IngredientsLibrary
 } from '../../../packlets/entities';
-import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
 import {
   ChocolateLibrary,
   IngredientQuery,
@@ -176,7 +176,7 @@ describe('Query Filters and Builders', () => {
     }
   };
 
-  const darkGanacheRecipe: IFillingRecipe = {
+  const darkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'dark-ganache' as BaseFillingId,
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
@@ -205,7 +205,7 @@ describe('Query Filters and Builders', () => {
     ]
   };
 
-  const milkGanacheRecipe: IFillingRecipe = {
+  const milkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'milk-ganache' as BaseFillingId,
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',
@@ -224,7 +224,7 @@ describe('Query Filters and Builders', () => {
     ]
   };
 
-  const whiteGanacheRecipe: IFillingRecipe = {
+  const whiteGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'white-ganache' as BaseFillingId,
     name: 'White Ganache' as FillingName,
     category: 'ganache',

@@ -9,5 +9,5 @@ Produced filling with resolved concrete choices
 **Signature:**
 
 ```typescript
-readonly produced: IProducedFilling;
+readonly produced: IProducedFillingEntity;
 ```

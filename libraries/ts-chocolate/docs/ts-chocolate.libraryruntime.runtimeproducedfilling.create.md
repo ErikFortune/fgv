@@ -9,7 +9,7 @@ Factory method for creating a RuntimeProducedFilling from an existing produced f
 **Signature:**
 
 ```typescript
-static create(initial: IProducedFilling): Result<RuntimeProducedFilling>;
+static create(initial: IProducedFillingEntity): Result<RuntimeProducedFilling>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ initial
 
 </td><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

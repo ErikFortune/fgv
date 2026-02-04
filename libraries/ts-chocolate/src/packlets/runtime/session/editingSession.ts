@@ -42,7 +42,7 @@ import {
   IFillingEditJournalEntry,
   IFillingProductionJournalEntry,
   IPersistedFillingSession,
-  IProducedFilling,
+  IProducedFillingEntity,
   PersistedSessionStatus
 } from '../../entities';
 import { IRuntimeFillingRecipeVersion, RuntimeProducedFilling } from '../../library-runtime';
@@ -74,7 +74,7 @@ import {
 export class EditingSession {
   private readonly _baseRecipe: IRuntimeFillingRecipeVersion;
   private readonly _produced: RuntimeProducedFilling;
-  private readonly _originalSnapshot: IProducedFilling;
+  private readonly _originalSnapshot: IProducedFillingEntity;
   private readonly _sessionId: SessionId;
 
   /**
@@ -90,7 +90,7 @@ export class EditingSession {
     baseRecipe: IRuntimeFillingRecipeVersion,
     produced: RuntimeProducedFilling,
     sessionId?: SessionId,
-    originalSnapshot?: IProducedFilling
+    originalSnapshot?: IProducedFillingEntity
   ) {
     this._baseRecipe = baseRecipe;
     this._produced = produced;

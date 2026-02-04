@@ -42,10 +42,10 @@ import {
   allResolvedSlotTypes
 } from '../confections';
 import {
-  fillingRecipeVersion as fillingRecipeVersionConverter,
+  fillingRecipeVersionEntity as fillingRecipeVersionConverter,
   ingredientModifiers as ingredientModifiersConverter
 } from '../fillings/converters';
-import { IProducedFilling, IProducedFillingIngredient } from '../fillings';
+import { IProducedFillingEntity, IProducedFillingIngredientEntity } from '../fillings';
 import {
   allJournalEntryTypes,
   AnyJournalEntry,
@@ -118,11 +118,11 @@ export const anyResolvedFillingSlotEntity: Converter<AnyResolvedFillingSlotEntit
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Fillings.IProducedFillingIngredient | IProducedFillingIngredient}.
+ * Converter for {@link Entities.Fillings.IProducedFillingIngredientEntity | IProducedFillingIngredientEntity}.
  * @public
  */
-export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
-  Converters.object<IProducedFillingIngredient>({
+export const producedFillingIngredientEntity: Converter<IProducedFillingIngredientEntity> =
+  Converters.object<IProducedFillingIngredientEntity>({
     ingredientId: CommonConverters.ingredientId,
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
@@ -131,17 +131,18 @@ export const producedFillingIngredient: Converter<IProducedFillingIngredient> =
   });
 
 /**
- * Converter for {@link Entities.Fillings.IProducedFilling | IProducedFilling}.
+ * Converter for {@link Entities.Fillings.IProducedFillingEntity | IProducedFillingEntity}.
  * @public
  */
-export const producedFilling: Converter<IProducedFilling> = Converters.object<IProducedFilling>({
-  versionId: CommonConverters.fillingVersionId,
-  scaleFactor: Converters.number,
-  targetWeight: CommonConverters.measurement,
-  ingredients: Converters.arrayOf(producedFillingIngredient),
-  procedureId: CommonConverters.procedureId.optional(),
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const producedFillingEntity: Converter<IProducedFillingEntity> =
+  Converters.object<IProducedFillingEntity>({
+    versionId: CommonConverters.fillingVersionId,
+    scaleFactor: Converters.number,
+    targetWeight: CommonConverters.measurement,
+    ingredients: Converters.arrayOf(producedFillingIngredientEntity),
+    procedureId: CommonConverters.procedureId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
 
 // ============================================================================
 // Produced Confection Converters
@@ -262,7 +263,7 @@ export const fillingProductionJournalEntry: Converter<IFillingProductionJournalE
     updatedId: CommonConverters.fillingVersionId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     yield: CommonConverters.measurement,
-    produced: producedFilling
+    produced: producedFillingEntity
   });
 
 /**

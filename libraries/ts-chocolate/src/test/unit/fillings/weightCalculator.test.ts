@@ -51,7 +51,7 @@ describe('WeightCalculator', () => {
     baseId: string,
     amount: number,
     unit?: 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods'
-  ): Fillings.IFillingIngredient => ({
+  ): Fillings.IFillingIngredientEntity => ({
     ingredient: {
       ids: [`common.${baseId}` as IngredientId],
       preferredId: `common.${baseId}` as IngredientId
@@ -246,7 +246,7 @@ describe('WeightCalculator', () => {
 
     describe('with ingredient having multiple IDs', () => {
       test('uses preferredId when available', () => {
-        const ingredient: Fillings.IFillingIngredient = {
+        const ingredient: Fillings.IFillingIngredientEntity = {
           ingredient: {
             ids: ['alt.cream' as IngredientId, 'common.heavy-cream' as IngredientId],
             preferredId: 'common.heavy-cream' as IngredientId
@@ -261,7 +261,7 @@ describe('WeightCalculator', () => {
       });
 
       test('uses first ID when preferredId is not set', () => {
-        const ingredient: Fillings.IFillingIngredient = {
+        const ingredient: Fillings.IFillingIngredientEntity = {
           ingredient: {
             ids: ['common.water' as IngredientId, 'alt.water' as IngredientId]
           },

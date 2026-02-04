@@ -395,28 +395,28 @@ export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Tri
 const cacaoVariety: Converter<CacaoVariety>;
 
 // @public
-function calculateBaseWeight(version: IFillingRecipeVersion): Measurement;
+function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement;
 
 // @public
-function calculateForFillingRecipe(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
+function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
 
 // @public
-function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<Fillings_2.IFillingIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
+function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<Fillings_2.IFillingIngredientEntity>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
 
 // @public
-function calculateGanache(recipe: IFillingRecipe, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
+function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
 
 // @public
-function calculateIngredientWeight(ingredient: Fillings_2.IFillingIngredient, context?: IWeightCalculationContext): IWeightContribution;
+function calculateIngredientWeight(ingredient: Fillings_2.IFillingIngredientEntity, context?: IWeightCalculationContext): IWeightContribution;
 
 // @public
-function calculateTotalWeight(ingredients: ReadonlyArray<Fillings_2.IFillingIngredient>, context?: IWeightCalculationContext): Measurement;
+function calculateTotalWeight(ingredients: ReadonlyArray<Fillings_2.IFillingIngredientEntity>, context?: IWeightCalculationContext): Measurement;
 
 // @public
-function calculateWeightContributions(ingredients: ReadonlyArray<Fillings_2.IFillingIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
+function calculateWeightContributions(ingredients: ReadonlyArray<Fillings_2.IFillingIngredientEntity>, context?: IWeightCalculationContext): IWeightContribution[];
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -473,7 +473,7 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 // @public
 export class ChocolateLibrary {
     calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
-    calculateGanacheForRecipe(recipe: IFillingRecipe, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
+    calculateGanacheForRecipe(recipe: IFillingRecipeEntity, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get confections(): Entities.Confections.ConfectionsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -485,7 +485,7 @@ export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfectionEntity>;
     getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
-    getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipe, BaseFillingId>>;
+    getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
     getEditableIngredients(collectionId: SourceId): Result<EditableCollection<Ingredient, BaseIngredientId>>;
     getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
     getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedure, BaseProcedureId>>;
@@ -497,7 +497,7 @@ export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getProcedure(id: ProcedureId): Result<IProcedure>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getRecipe(id: FillingId): Result<IFillingRecipe>;
+    getRecipe(id: FillingId): Result<IFillingRecipeEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getTask(id: TaskId): Result<ITaskData>;
     hasConfection(id: ConfectionId): boolean;
@@ -1218,10 +1218,10 @@ declare namespace Entities {
         IConfectionYield,
         FillingsLibrary,
         FillingCategory_2 as FillingCategory,
-        IFillingRecipe,
-        IFillingRecipeVersion,
+        IFillingRecipeEntity,
+        IFillingRecipeVersionEntity,
         IFillingRating,
-        IProducedFilling,
+        IProducedFillingEntity,
         IIngredient,
         Ingredient,
         IngredientsLibrary,
@@ -1327,24 +1327,24 @@ type FillingCategory_2 = 'ganache' | 'caramel' | 'gianduja';
 const fillingCategory_2: Converter<FillingCategory>;
 
 // @public
-type FillingCollection = SubLibraryCollection<BaseFillingId, IFillingRecipe>;
+type FillingCollection = SubLibraryCollection<BaseFillingId, IFillingRecipeEntity>;
 
 // @public
-type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipe>;
+type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipeEntity>;
 
 // @public
-type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipe>;
+type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipeEntity>;
 
 // @public
 const fillingCollections: Record<string, JsonObject>;
 
 // @public
-type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipe>;
+type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipeEntity>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const fillingDerivation: Converter<IFillingDerivation>;
+const fillingDerivationEntity: Converter<IFillingDerivationEntity>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1363,7 +1363,7 @@ const fillingId_2: Validator<FillingId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const fillingIngredient: Converter<IFillingIngredient>;
+const fillingIngredientEntity: Converter<IFillingIngredientEntity>;
 
 // @public
 export type FillingName = Brand<string, 'FillingName'>;
@@ -1393,12 +1393,7 @@ const fillingRating: Converter<IFillingRating>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const fillingRecipe: Converter<IFillingRecipe>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const fillingRecipeData: Converter<IFillingRecipe>;
+const fillingRecipeEntity: Converter<IFillingRecipeEntity>;
 
 // @public
 type FillingRecipeFilter = FilterPredicate<RuntimeFillingRecipe>;
@@ -1450,6 +1445,11 @@ class FillingRecipeQuery {
 
 // @public
 const fillingRecipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const fillingRecipeRawEntity: Converter<IFillingRecipeEntity>;
 
 // @public
 type FillingRecipeResolver = (id: FillingId) => Result<IRuntimeFillingRecipe>;
@@ -1551,23 +1551,23 @@ class FillingRecipesByTagIndexer extends BaseIndexer<IRuntimeFillingRecipe, Fill
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const fillingRecipeVersion: Converter<IFillingRecipeVersion>;
+const fillingRecipeVersionEntity: Converter<IFillingRecipeVersionEntity>;
 
 declare namespace Fillings {
     export {
         ingredientModifiers,
-        fillingIngredient,
+        fillingIngredientEntity,
         ratingCategory,
         fillingCategory,
         fillingRating,
-        fillingDerivation,
-        procedureRef,
-        procedures,
-        fillingRecipeVersion,
-        fillingRecipeData,
-        fillingRecipe,
-        scalingRef,
-        ingredientSnapshot
+        fillingDerivationEntity,
+        procedureRefEntity,
+        procedureEntities,
+        fillingRecipeVersionEntity,
+        fillingRecipeRawEntity,
+        fillingRecipeEntity,
+        scalingRefEntity,
+        ingredientSnapshotEntity
     }
 }
 
@@ -1575,21 +1575,21 @@ declare namespace Fillings_2 {
     export {
         Fillings as Converters,
         IIngredientModifiers,
-        IFillingIngredient,
+        IFillingIngredientEntity,
         RatingCategory,
         FillingCategory_2 as FillingCategory,
         allFillingCategories_2 as allFillingCategories,
         allRatingCategories,
         IFillingRating,
-        IFillingUsage,
-        IFillingRecipeVersion,
-        IFillingDerivation,
-        IProcedureRef,
-        IFillingRecipe,
-        IScalingRef,
-        IIngredientSnapshot,
-        IProducedFillingIngredient,
-        IProducedFilling,
+        IFillingUsageEntity,
+        IFillingRecipeVersionEntity,
+        IFillingDerivationEntity,
+        IProcedureRefEntity,
+        IFillingRecipeEntity,
+        IScalingRefEntity,
+        IIngredientSnapshotEntity,
+        IProducedFillingIngredientEntity,
+        IProducedFillingEntity,
         FillingCollectionEntry,
         FillingCollectionEntryInit,
         FillingCollectionValidator,
@@ -1603,7 +1603,7 @@ declare namespace Fillings_2 {
 }
 
 // @public
-class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipe> {
+class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipeEntity> {
     static create(params?: IFillingsLibraryParams): Result<FillingsLibrary>;
     static createAsync(params?: IFillingsLibraryAsyncParams): Promise<Result<FillingsLibrary>>;
 }
@@ -2027,7 +2027,7 @@ interface IConfectionContext {
     resolveCoatings(coatings: Confections_2.ICoatings): IResolvedCoatings;
     resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
     resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2120,7 +2120,7 @@ interface IConfectionVersionEntityBase {
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly fillings?: ReadonlyArray<IFillingSlotEntity>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+    readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
     readonly versionSpec: ConfectionVersionSpec;
     readonly yield: IConfectionYield;
 }
@@ -2283,14 +2283,14 @@ interface IFillingChanges {
 }
 
 // @public
-interface IFillingDerivation {
+interface IFillingDerivationEntity {
     readonly derivedDate: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly sourceVersionId: FillingVersionId;
 }
 
 // @public
-interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
+interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> {
     // (undocumented)
     readonly type: 'filling-edit';
 }
@@ -2299,7 +2299,7 @@ interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersi
 type IFillingFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-interface IFillingIngredient {
+interface IFillingIngredientEntity {
     readonly amount: Measurement;
     readonly ingredient: Model.IIdsWithPreferred<IngredientId>;
     readonly modifiers?: IIngredientModifiers;
@@ -2308,8 +2308,8 @@ interface IFillingIngredient {
 }
 
 // @public
-interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
-    readonly produced: IProducedFilling;
+interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> {
+    readonly produced: IProducedFillingEntity;
     // (undocumented)
     readonly type: 'filling-production';
     readonly yield: Measurement;
@@ -2323,16 +2323,16 @@ interface IFillingRating {
 }
 
 // @public
-interface IFillingRecipe {
+interface IFillingRecipeEntity {
     readonly baseId: BaseFillingId;
     readonly category: FillingCategory_2;
-    readonly derivedFrom?: IFillingDerivation;
+    readonly derivedFrom?: IFillingDerivationEntity;
     readonly description?: string;
     readonly goldenVersionSpec: FillingVersionSpec;
     readonly name: FillingName;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
-    readonly versions: ReadonlyArray<IFillingRecipeVersion>;
+    readonly versions: ReadonlyArray<IFillingRecipeVersionEntity>;
 }
 
 // @public
@@ -2374,12 +2374,12 @@ interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
 }
 
 // @public
-interface IFillingRecipeVersion {
+interface IFillingRecipeVersionEntity {
     readonly baseWeight: Measurement;
     readonly createdDate: string;
-    readonly ingredients: ReadonlyArray<IFillingIngredient>;
+    readonly ingredients: ReadonlyArray<IFillingIngredientEntity>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+    readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
     readonly ratings?: ReadonlyArray<IFillingRating>;
     readonly versionSpec: FillingVersionSpec;
     readonly yield?: string;
@@ -2402,7 +2402,7 @@ interface IFillingSlotEntity {
 }
 
 // @public
-interface IFillingUsage {
+interface IFillingUsageEntity {
     readonly date: string;
     readonly modifiedVersionSpec?: FillingVersionSpec;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
@@ -2611,7 +2611,7 @@ type IIngredientsLibraryAsyncParams = ISubLibraryAsyncParams<IngredientsLibrary,
 type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 
 // @public
-interface IIngredientSnapshot {
+interface IIngredientSnapshotEntity {
     readonly ingredientId: IngredientId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly originalAmount: Measurement;
@@ -3141,7 +3141,7 @@ type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const ingredientSnapshot: Converter<IIngredientSnapshot>;
+const ingredientSnapshotEntity: Converter<IIngredientSnapshotEntity>;
 
 // @public
 type IngredientUsageType = 'primary' | 'alternate' | 'any';
@@ -3269,7 +3269,7 @@ interface IPersistedConfectionSession extends IPersistedSessionBase {
 
 // @public
 interface IPersistedFillingSession extends IPersistedSessionBase {
-    readonly history: ISerializedEditingHistory<IProducedFilling>;
+    readonly history: ISerializedEditingHistory<IProducedFillingEntity>;
     // (undocumented)
     readonly sessionType: 'filling';
     readonly sourceVersionId: FillingVersionId;
@@ -3314,7 +3314,7 @@ interface IProcedureContext {
 type IProcedureFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-type IProcedureRef = Model.IRefWithNotes<ProcedureId>;
+type IProcedureRefEntity = Model.IRefWithNotes<ProcedureId>;
 
 // @public
 type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
@@ -3356,8 +3356,8 @@ interface IProducedConfectionEntityBase {
 }
 
 // @public
-interface IProducedFilling {
-    readonly ingredients: ReadonlyArray<IProducedFillingIngredient>;
+interface IProducedFillingEntity {
+    readonly ingredients: ReadonlyArray<IProducedFillingIngredientEntity>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedureId?: ProcedureId;
     readonly scaleFactor: number;
@@ -3366,7 +3366,7 @@ interface IProducedFilling {
 }
 
 // @public
-interface IProducedFillingIngredient {
+interface IProducedFillingIngredientEntity {
     readonly amount: Measurement;
     readonly ingredientId: IngredientId;
     readonly modifiers?: IIngredientModifiers;
@@ -3485,7 +3485,7 @@ interface IResolvedConfectionProcedure {
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IRuntimeProcedure;
-    readonly raw: Fillings_2.IProcedureRef;
+    readonly raw: Fillings_2.IProcedureRefEntity;
 }
 
 // @public
@@ -3494,7 +3494,7 @@ interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IR
     readonly amount: Measurement;
     readonly ingredient: TIngredient;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly raw: Fillings_2.IFillingIngredient;
+    readonly raw: Fillings_2.IFillingIngredientEntity;
 }
 
 // @public
@@ -3505,7 +3505,7 @@ interface IResolvedFillingRecipeProcedure {
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IProcedure;
-    readonly raw: Fillings_2.IProcedureRef;
+    readonly raw: Fillings_2.IProcedureRefEntity;
 }
 
 // @public
@@ -3743,7 +3743,7 @@ interface IRuntimeFillingRecipe {
     readonly id: FillingId;
     readonly latestVersion: IRuntimeFillingRecipeVersion;
     readonly name: FillingName;
-    readonly raw: IFillingRecipe;
+    readonly raw: IFillingRecipeEntity;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
@@ -3763,9 +3763,9 @@ interface IRuntimeFillingRecipeVersion {
     readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
     readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IFillingRating>;
-    readonly raw: IFillingRecipeVersion;
+    readonly raw: IFillingRecipeVersionEntity;
     usesIngredient(ingredientId: IngredientId): boolean;
-    readonly version: IFillingRecipeVersion;
+    readonly version: IFillingRecipeVersionEntity;
     readonly versionId: FillingVersionId;
     readonly versionSpec: FillingVersionSpec;
     readonly yield?: string;
@@ -3868,7 +3868,7 @@ interface IRuntimeProcedureRenderContext {
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     readonly context: IProcedureContext;
     readonly mold?: IMold;
-    readonly recipe: Fillings_2.IProducedFilling;
+    readonly recipe: Fillings_2.IProducedFillingEntity;
 }
 
 // @public
@@ -4020,7 +4020,7 @@ interface IScaledAmount {
 }
 
 // @public
-interface IScalingRef {
+interface IScalingRefEntity {
     readonly createdDate: string;
     readonly scaleFactor: number;
     readonly sourceVersionId: FillingVersionId;
@@ -4506,8 +4506,8 @@ declare namespace Journal {
         resolvedFillingSlotEntity,
         resolvedIngredientSlotEntity,
         anyResolvedFillingSlotEntity,
-        producedFillingIngredient,
-        producedFilling,
+        producedFillingIngredientEntity,
+        producedFillingEntity,
         producedMoldedBonBonEntity,
         producedBarTruffleEntity,
         producedRolledTruffleEntity,
@@ -4910,7 +4910,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyRuntimeIngredient>, II
     resolveCoatings(coatings: Confections_2.ICoatings): IResolvedCoatings;
     resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
     resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRef, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
     warmUp(): void;
 }
@@ -5366,6 +5366,9 @@ type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, I
 const procedureData: Converter<IProcedure>;
 
 // @public
+const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>>;
+
+// @public
 export type ProcedureId = Brand<string, 'ProcedureId'>;
 
 // @public
@@ -5377,7 +5380,7 @@ const procedureId_2: Validator<ProcedureId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const procedureRef: Converter<IProcedureRef>;
+const procedureRefEntity: Converter<IProcedureRefEntity>;
 
 declare namespace Procedures {
     export {
@@ -5385,9 +5388,6 @@ declare namespace Procedures {
         procedureData
     }
 }
-
-// @public
-const procedures: Converter<Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
 
 declare namespace Procedures_2 {
     export {
@@ -5436,12 +5436,12 @@ const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const producedFilling: Converter<IProducedFilling>;
+const producedFillingEntity: Converter<IProducedFillingEntity>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const producedFillingIngredient: Converter<IProducedFillingIngredient>;
+const producedFillingIngredientEntity: Converter<IProducedFillingIngredientEntity>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5468,7 +5468,7 @@ export type RatingScore = Brand<number, 'RatingScore'>;
 const ratingScore: Converter<RatingScore>;
 
 // @public
-function recalculateFillingRecipeVersion(version: IFillingRecipeVersion): IFillingRecipeVersion;
+function recalculateFillingRecipeVersion(version: IFillingRecipeVersionEntity): IFillingRecipeVersionEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -5755,9 +5755,9 @@ class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "RuntimeFillingRecipe"
     //
     // @internal
-    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe);
+    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity);
     get baseId(): BaseFillingId;
-    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipe): Result<RuntimeFillingRecipe>;
+    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity): Result<RuntimeFillingRecipe>;
     get description(): string | undefined;
     getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
     getVersion(versionSpec: FillingVersionSpec): Result<RuntimeFillingRecipeVersion>;
@@ -5766,7 +5766,7 @@ class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
     get id(): FillingId;
     get latestVersion(): RuntimeFillingRecipeVersion;
     get name(): FillingName;
-    get raw(): IFillingRecipe;
+    get raw(): IFillingRecipeEntity;
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
@@ -5779,10 +5779,10 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     // Warning: (ae-forgotten-export) The symbol "VersionContext" needs to be exported by the entry point index.d.ts
     //
     // @internal
-    constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion);
+    constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity);
     get baseWeight(): Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion): Result<RuntimeFillingRecipeVersion>;
+    static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity): Result<RuntimeFillingRecipeVersion>;
     get createdDate(): string;
     get fillingId(): FillingId;
     get fillingRecipe(): IRuntimeFillingRecipe;
@@ -5791,9 +5791,9 @@ class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
     get ratings(): ReadonlyArray<IFillingRating>;
-    get raw(): IFillingRecipeVersion;
+    get raw(): IFillingRecipeVersionEntity;
     usesIngredient(ingredientId: IngredientId): boolean;
-    get version(): IFillingRecipeVersion;
+    get version(): IFillingRecipeVersionEntity;
     get versionId(): FillingVersionId;
     get versionSpec(): FillingVersionSpec;
     get yield(): string | undefined;
@@ -5996,22 +5996,22 @@ abstract class RuntimeProducedConfectionBase<T extends AnyProducedConfectionEnti
 class RuntimeProducedFilling {
     canRedo(): boolean;
     canUndo(): boolean;
-    static create(initial: IProducedFilling): Result<RuntimeProducedFilling>;
-    createSnapshot(): IProducedFilling;
+    static create(initial: IProducedFillingEntity): Result<RuntimeProducedFilling>;
+    createSnapshot(): IProducedFillingEntity;
     static fromSource(source: IRuntimeFillingRecipeVersion, scaleFactor?: number): Result<RuntimeProducedFilling>;
-    getChanges(original: IProducedFilling): IFillingChanges;
-    getSerializedHistory(original: IProducedFilling): Session.ISerializedEditingHistory<IProducedFilling>;
-    hasChanges(original: IProducedFilling): boolean;
-    get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredient>;
+    getChanges(original: IProducedFillingEntity): IFillingChanges;
+    getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistory<IProducedFillingEntity>;
+    hasChanges(original: IProducedFillingEntity): boolean;
+    get ingredients(): ReadonlyArray<Fillings_2.IProducedFillingIngredientEntity>;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
-    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedFilling>): Result<RuntimeProducedFilling>;
-    restoreSnapshot(snapshot: IProducedFilling): Result<void>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedFillingEntity>): Result<RuntimeProducedFilling>;
+    restoreSnapshot(snapshot: IProducedFillingEntity): Result<void>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings_2.IIngredientModifiers): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
-    get snapshot(): IProducedFilling;
+    get snapshot(): IProducedFillingEntity;
     get targetWeight(): Measurement;
     undo(): Result<boolean>;
     get versionId(): FillingVersionId;
@@ -6145,7 +6145,7 @@ function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number)
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const scalingRef: Converter<IScalingRef>;
+const scalingRefEntity: Converter<IScalingRefEntity>;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
@@ -6154,7 +6154,7 @@ type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 const serializedConfectionHistory: Converter<ISerializedEditingHistory<AnyProducedConfectionEntity>>;
 
 // @public
-const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFilling>>;
+const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFillingEntity>>;
 
 // @public
 function serializeToJson<T>(data: T, options?: ISerializationOptions): Result<string>;

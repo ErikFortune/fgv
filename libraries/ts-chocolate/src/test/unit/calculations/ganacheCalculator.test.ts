@@ -33,7 +33,7 @@ import {
 
 import { Ingredients, Ingredient } from '../../../packlets/entities';
 
-import { Fillings, IFillingRecipe, IFillingRecipeVersion } from '../../../packlets/entities';
+import { Fillings, IFillingRecipeEntity, IFillingRecipeVersionEntity } from '../../../packlets/entities';
 
 import {
   IngredientResolver,
@@ -178,7 +178,7 @@ describe('Ganache Calculator', () => {
 
   describe('calculateFromFillingRecipeIngredients', () => {
     test('resolves and calculates ingredients', () => {
-      const fillingIngredients: Fillings.IFillingIngredient[] = [
+      const fillingIngredients: Fillings.IFillingIngredientEntity[] = [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
         { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ];
@@ -191,7 +191,7 @@ describe('Ganache Calculator', () => {
     });
 
     test('fails when ingredient not found', () => {
-      const fillingIngredients: Fillings.IFillingIngredient[] = [
+      const fillingIngredients: Fillings.IFillingIngredientEntity[] = [
         { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Measurement }
       ];
 
@@ -206,7 +206,7 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateForFillingRecipe', () => {
-    const testVersion: IFillingRecipeVersion = {
+    const testVersion: IFillingRecipeVersionEntity = {
       versionSpec: '2026-01-01-01' as FillingVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
@@ -216,7 +216,7 @@ describe('Ganache Calculator', () => {
       baseWeight: 150 as Measurement
     };
 
-    const testRecipe: IFillingRecipe = {
+    const testRecipe: IFillingRecipeEntity = {
       baseId: 'test-ganache' as BaseFillingId,
       name: 'Test Ganache' as FillingName,
       category: 'ganache',
@@ -407,7 +407,7 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateGanache', () => {
-    const testVersion: IFillingRecipeVersion = {
+    const testVersion: IFillingRecipeVersionEntity = {
       versionSpec: '2026-01-01-01' as FillingVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
@@ -417,7 +417,7 @@ describe('Ganache Calculator', () => {
       baseWeight: 150 as Measurement
     };
 
-    const testRecipe: IFillingRecipe = {
+    const testRecipe: IFillingRecipeEntity = {
       baseId: 'test' as BaseFillingId,
       name: 'Test' as FillingName,
       category: 'ganache',

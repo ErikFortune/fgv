@@ -9,7 +9,7 @@ Calculates ganache characteristics for a recipe object Useful when working with 
 **Signature:**
 
 ```typescript
-calculateGanacheForRecipe(recipe: IFillingRecipe, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
+calculateGanacheForRecipe(recipe: IFillingRecipeEntity, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ recipe
 
 </td><td>
 
-[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
+[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
 
 
 </td><td>

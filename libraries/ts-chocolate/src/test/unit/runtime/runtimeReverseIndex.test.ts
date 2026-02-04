@@ -38,7 +38,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/entities';
-import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
 import { ChocolateLibrary, RuntimeReverseIndex } from '../../../packlets/library-runtime';
 
 describe('RuntimeReverseIndex', () => {
@@ -99,7 +99,7 @@ describe('RuntimeReverseIndex', () => {
     tags: ['fresh']
   };
 
-  const darkGanacheRecipe: IFillingRecipe = {
+  const darkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'dark-ganache' as BaseFillingId,
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
@@ -124,7 +124,7 @@ describe('RuntimeReverseIndex', () => {
     ]
   };
 
-  const milkGanacheRecipe: IFillingRecipe = {
+  const milkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'milk-ganache' as BaseFillingId,
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',

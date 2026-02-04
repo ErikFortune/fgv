@@ -199,7 +199,7 @@ Human-readable recipe name
 
 </td><td>
 
-[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
+[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
 
 
 </td><td>

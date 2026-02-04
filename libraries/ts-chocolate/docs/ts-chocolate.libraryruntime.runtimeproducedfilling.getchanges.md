@@ -9,7 +9,7 @@ Gets detailed changes between current state and original.
 **Signature:**
 
 ```typescript
-getChanges(original: IProducedFilling): IFillingChanges;
+getChanges(original: IProducedFillingEntity): IFillingChanges;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ original
 
 </td><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

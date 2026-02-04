@@ -133,7 +133,7 @@ export const defaultWeightContext: IWeightCalculationContext = {
  * @public
  */
 export function calculateIngredientWeight(
-  ingredient: Fillings.IFillingIngredient,
+  ingredient: Fillings.IFillingIngredientEntity,
   context: IWeightCalculationContext = defaultWeightContext
 ): IWeightContribution {
   const unit = ingredient.unit ?? 'g';
@@ -185,7 +185,7 @@ export function calculateIngredientWeight(
  * @public
  */
 export function calculateTotalWeight(
-  ingredients: ReadonlyArray<Fillings.IFillingIngredient>,
+  ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>,
   context: IWeightCalculationContext = defaultWeightContext
 ): Measurement {
   let total = 0;
@@ -208,7 +208,7 @@ export function calculateTotalWeight(
  * @public
  */
 export function calculateWeightContributions(
-  ingredients: ReadonlyArray<Fillings.IFillingIngredient>,
+  ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>,
   context: IWeightCalculationContext = defaultWeightContext
 ): IWeightContribution[] {
   return ingredients.map((ingredient) => calculateIngredientWeight(ingredient, context));

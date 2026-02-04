@@ -9,9 +9,9 @@ Journal entry for filling recipe edits.
 **Signature:**
 
 ```typescript
-export interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> 
+export interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> 
 ```
-**Extends:** IJournalEntryBase&lt;[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)<!-- -->, [FillingVersionId](./ts-chocolate.fillingversionid.md)<!-- -->&gt;
+**Extends:** IJournalEntryBase&lt;[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)<!-- -->, [FillingVersionId](./ts-chocolate.fillingversionid.md)<!-- -->&gt;
 
 ## Properties
 

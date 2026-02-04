@@ -9,7 +9,7 @@ Factory method for creating a RuntimeFillingRecipeVersion.
 **Signature:**
 
 ```typescript
-static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion): Result<RuntimeFillingRecipeVersion>;
+static create(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity): Result<RuntimeFillingRecipeVersion>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ version
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 
 </td><td>

@@ -35,7 +35,7 @@ import {
   Converters as CommonConverters,
   Model as CommonModel
 } from '../../common';
-import { Fillings, IProducedFilling, Session } from '../../entities';
+import { Fillings, IProducedFillingEntity, Session } from '../../entities';
 import type { IRuntimeFillingRecipeVersion } from '../model';
 
 /**
@@ -66,16 +66,16 @@ export interface IFillingChanges {
  * @public
  */
 export class RuntimeProducedFilling {
-  private _current: IProducedFilling;
-  private _undoStack: IProducedFilling[];
-  private _redoStack: IProducedFilling[];
+  private _current: IProducedFillingEntity;
+  private _undoStack: IProducedFillingEntity[];
+  private _redoStack: IProducedFillingEntity[];
 
   /**
    * Creates a RuntimeProducedFilling.
    * Use static factory methods instead of calling this directly.
    * @internal
    */
-  private constructor(initial: IProducedFilling) {
+  private constructor(initial: IProducedFillingEntity) {
     this._current = initial;
     this._undoStack = [];
     this._redoStack = [];
@@ -87,7 +87,7 @@ export class RuntimeProducedFilling {
    * @returns Success with RuntimeProducedFilling
    * @public
    */
-  public static create(initial: IProducedFilling): Result<RuntimeProducedFilling> {
+  public static create(initial: IProducedFillingEntity): Result<RuntimeProducedFilling> {
     return succeed(new RuntimeProducedFilling(initial));
   }
 
@@ -115,7 +115,7 @@ export class RuntimeProducedFilling {
    * @public
    */
   public static restoreFromHistory(
-    history: Session.ISerializedEditingHistory<IProducedFilling>
+    history: Session.ISerializedEditingHistory<IProducedFillingEntity>
   ): Result<RuntimeProducedFilling> {
     const instance = new RuntimeProducedFilling(history.current);
     // Restore undo/redo stacks
@@ -132,7 +132,7 @@ export class RuntimeProducedFilling {
   private static _convertFromSource(
     source: IRuntimeFillingRecipeVersion,
     scaleFactor: number
-  ): Result<IProducedFilling> {
+  ): Result<IProducedFillingEntity> {
     // Convert ingredients using mapResults pattern
     const ingredientResults = source.raw.ingredients.map((ing) =>
       RuntimeProducedFilling._convertIngredient(ing, scaleFactor)
@@ -143,7 +143,7 @@ export class RuntimeProducedFilling {
       return CommonConverters.measurement
         .convert(source.raw.baseWeight * scaleFactor)
         .onSuccess((targetWeight) => {
-          const produced: IProducedFilling = {
+          const produced: IProducedFillingEntity = {
             versionId: source.versionId,
             scaleFactor,
             targetWeight,
@@ -161,9 +161,9 @@ export class RuntimeProducedFilling {
    * @internal
    */
   private static _convertIngredient(
-    ing: Fillings.IFillingIngredient,
+    ing: Fillings.IFillingIngredientEntity,
     scaleFactor: number
-  ): Result<Fillings.IProducedFillingIngredient> {
+  ): Result<Fillings.IProducedFillingIngredientEntity> {
     // Use helper to get preferred ID
     const ingredientId = Helpers.getPreferredIdOrFirst(ing.ingredient);
     if (ingredientId === undefined) {
@@ -191,7 +191,7 @@ export class RuntimeProducedFilling {
    * @returns Immutable copy of current produced filling
    * @public
    */
-  public createSnapshot(): IProducedFilling {
+  public createSnapshot(): IProducedFillingEntity {
     return this._deepCopy(this._current);
   }
 
@@ -202,7 +202,7 @@ export class RuntimeProducedFilling {
    * @returns Success or failure
    * @public
    */
-  public restoreSnapshot(snapshot: IProducedFilling): Result<void> {
+  public restoreSnapshot(snapshot: IProducedFillingEntity): Result<void> {
     this._pushUndo();
     this._current = this._deepCopy(snapshot);
     this._redoStack = [];
@@ -217,8 +217,8 @@ export class RuntimeProducedFilling {
    * @public
    */
   public getSerializedHistory(
-    original: IProducedFilling
-  ): Session.ISerializedEditingHistory<IProducedFilling> {
+    original: IProducedFillingEntity
+  ): Session.ISerializedEditingHistory<IProducedFillingEntity> {
     return {
       current: this._deepCopy(this._current),
       original: this._deepCopy(original),
@@ -312,7 +312,7 @@ export class RuntimeProducedFilling {
     const ingredients = [...this._current.ingredients];
     const existingIndex = ingredients.findIndex((ing) => ing.ingredientId === id);
 
-    const newIngredient: Fillings.IProducedFillingIngredient = {
+    const newIngredient: Fillings.IProducedFillingIngredientEntity = {
       ingredientId: id,
       amount,
       unit,
@@ -456,7 +456,7 @@ export class RuntimeProducedFilling {
    * Gets the current state as an immutable snapshot.
    * @public
    */
-  public get snapshot(): IProducedFilling {
+  public get snapshot(): IProducedFillingEntity {
     return this.createSnapshot();
   }
 
@@ -480,7 +480,7 @@ export class RuntimeProducedFilling {
    * Gets the ingredients as a readonly array.
    * @public
    */
-  public get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredient> {
+  public get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredientEntity> {
     return this._current.ingredients;
   }
 
@@ -495,7 +495,7 @@ export class RuntimeProducedFilling {
    * @returns True if changes were detected
    * @public
    */
-  public hasChanges(original: IProducedFilling): boolean {
+  public hasChanges(original: IProducedFillingEntity): boolean {
     return this.getChanges(original).hasChanges;
   }
 
@@ -505,7 +505,7 @@ export class RuntimeProducedFilling {
    * @returns Structure describing what changed
    * @public
    */
-  public getChanges(original: IProducedFilling): IFillingChanges {
+  public getChanges(original: IProducedFillingEntity): IFillingChanges {
     const targetWeightChanged = this._current.targetWeight !== original.targetWeight;
     const ingredientsChanged = !this._ingredientsEqual(this._current.ingredients, original.ingredients);
     const notesChanged = !this._notesEqual(this._current.notes, original.notes);
@@ -547,7 +547,7 @@ export class RuntimeProducedFilling {
    * Only includes weight-contributing units (g, mL).
    */
   private _calculateWeightFromIngredients(
-    ingredients: ReadonlyArray<Fillings.IProducedFillingIngredient>
+    ingredients: ReadonlyArray<Fillings.IProducedFillingIngredientEntity>
   ): Measurement {
     const total = ingredients.reduce((sum, ing) => {
       const unit = ing.unit ?? 'g';
@@ -563,7 +563,7 @@ export class RuntimeProducedFilling {
   /**
    * Creates a deep copy of a produced filling.
    */
-  private _deepCopy(filling: IProducedFilling): IProducedFilling {
+  private _deepCopy(filling: IProducedFillingEntity): IProducedFillingEntity {
     return {
       versionId: filling.versionId,
       scaleFactor: filling.scaleFactor,
@@ -584,8 +584,8 @@ export class RuntimeProducedFilling {
    * Compares two ingredient arrays for equality.
    */
   private _ingredientsEqual(
-    a: ReadonlyArray<Fillings.IProducedFillingIngredient>,
-    b: ReadonlyArray<Fillings.IProducedFillingIngredient>
+    a: ReadonlyArray<Fillings.IProducedFillingIngredientEntity>,
+    b: ReadonlyArray<Fillings.IProducedFillingIngredientEntity>
   ): boolean {
     if (a.length !== b.length) {
       return false;
@@ -608,8 +608,8 @@ export class RuntimeProducedFilling {
    * Compares two ingredients for equality.
    */
   private _ingredientEqual(
-    a: Fillings.IProducedFillingIngredient,
-    b: Fillings.IProducedFillingIngredient
+    a: Fillings.IProducedFillingIngredientEntity,
+    b: Fillings.IProducedFillingIngredientEntity
   ): boolean {
     return (
       a.ingredientId === b.ingredientId &&

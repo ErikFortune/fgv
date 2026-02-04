@@ -29,8 +29,8 @@ import {
   IFillingProductionJournalEntry,
   IConfectionEditJournalEntry,
   IConfectionProductionJournalEntry,
-  IFillingRecipeVersion,
-  IProducedFilling,
+  IFillingRecipeVersionEntity,
+  IProducedFillingEntity,
   IProducedMoldedBonBonEntity
 } from '../../../packlets/entities';
 
@@ -74,17 +74,17 @@ describe('Journal Model', () => {
   });
 
   describe('type guards for journal entries', () => {
-    const fillingRecipe: IFillingRecipeVersion = {
-      versionSpec: 'v1' as IFillingRecipeVersion['versionSpec'],
+    const fillingRecipe: IFillingRecipeVersionEntity = {
+      versionSpec: 'v1' as IFillingRecipeVersionEntity['versionSpec'],
       createdDate: '2026-01-15',
       ingredients: [],
-      baseWeight: 300 as IFillingRecipeVersion['baseWeight']
+      baseWeight: 300 as IFillingRecipeVersionEntity['baseWeight']
     };
 
-    const producedFilling: IProducedFilling = {
-      versionId: 'source.recipe@2026-01-01-01' as IProducedFilling['versionId'],
+    const producedFilling: IProducedFillingEntity = {
+      versionId: 'source.recipe@2026-01-01-01' as IProducedFillingEntity['versionId'],
       scaleFactor: 1.0,
-      targetWeight: 300 as IProducedFilling['targetWeight'],
+      targetWeight: 300 as IProducedFillingEntity['targetWeight'],
       ingredients: []
     };
 

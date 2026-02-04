@@ -260,7 +260,7 @@ const commonVersionFields: Conversion.FieldConverters<IConfectionVersionEntityBa
   yield: confectionYield,
   fillings: Converters.arrayOf(fillingSlotEntity).optional(),
   decorations: Converters.arrayOf(confectionDecoration).optional(),
-  procedures: RecipeConverters.procedures.optional(),
+  procedures: RecipeConverters.procedureEntities.optional(),
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
   additionalTags: Converters.arrayOf(Converters.string).optional(),
   additionalUrls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()

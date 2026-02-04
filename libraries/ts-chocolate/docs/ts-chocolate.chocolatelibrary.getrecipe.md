@@ -4,12 +4,12 @@
 
 ## ChocolateLibrary.getRecipe() method
 
-Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
+Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) by its [composite ID](./ts-chocolate.fillingid.md)
 
 **Signature:**
 
 ```typescript
-getRecipe(id: FillingId): Result<IFillingRecipe>;
+getRecipe(id: FillingId): Result<IFillingRecipeEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.fillingid.md) of the recipe to retrieve.
 
 **Returns:**
 
-Result&lt;[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)<!-- -->&gt;
+Result&lt;[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)<!-- -->&gt;
 
 `Success` with recipe, or `Failure` if not found
 

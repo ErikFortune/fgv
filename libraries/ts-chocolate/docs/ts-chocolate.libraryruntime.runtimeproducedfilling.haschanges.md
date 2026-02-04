@@ -9,7 +9,7 @@ Checks if current state differs from original. Uses deep equality check.
 **Signature:**
 
 ```typescript
-hasChanges(original: IProducedFilling): boolean;
+hasChanges(original: IProducedFillingEntity): boolean;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ original
 
 </td><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

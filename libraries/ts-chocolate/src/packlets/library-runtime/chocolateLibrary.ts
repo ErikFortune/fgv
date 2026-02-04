@@ -44,7 +44,7 @@ import {
 } from '../common';
 import * as Entities from '../entities';
 import { Ingredient, IngredientsLibrary } from '../entities';
-import { IFillingRecipe, FillingsLibrary } from '../entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../entities';
 import { Converters as EntityConverters } from '../entities';
 import { IMold, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
@@ -351,11 +351,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Entities.Fillings.IFillingRecipe | recipe} by its {@link FillingId | composite ID}
+   * Gets a {@link Entities.Fillings.IFillingRecipeEntity | recipe} by its {@link FillingId | composite ID}
    * @param id - The {@link FillingId | id} of the recipe to retrieve.
    * @returns `Success` with recipe, or `Failure` if not found
    */
-  public getRecipe(id: FillingId): Result<IFillingRecipe> {
+  public getRecipe(id: FillingId): Result<IFillingRecipeEntity> {
     return this._recipes.get(id);
   }
 
@@ -474,7 +474,7 @@ export class ChocolateLibrary {
    * @returns Success with ganache calculation, or Failure if ingredients missing
    */
   public calculateGanacheForRecipe(
-    recipe: IFillingRecipe,
+    recipe: IFillingRecipeEntity,
     versionSpec?: FillingVersionSpec
   ): Result<IGanacheCalculation> {
     return calculateGanache(recipe, this.createIngredientResolver(), versionSpec);
@@ -509,12 +509,12 @@ export class ChocolateLibrary {
    */
   public getEditableFillings(
     collectionId: SourceId
-  ): Result<EditableCollection<IFillingRecipe, BaseFillingId>> {
+  ): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>> {
     return EditableCollection.fromLibrary(
       this.fillings,
       collectionId,
       CommonConverters.baseFillingId,
-      EntityConverters.Fillings.fillingRecipe
+      EntityConverters.Fillings.fillingRecipeEntity
     );
   }
 

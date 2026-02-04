@@ -44,7 +44,11 @@ import {
 
 import { Ingredients, IGanacheCharacteristics, IngredientsLibrary } from '../../../packlets/entities';
 
-import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
+import {
+  IFillingRecipeEntity,
+  IFillingRecipeVersionEntity,
+  FillingsLibrary
+} from '../../../packlets/entities';
 
 import { IMold, MoldsLibrary } from '../../../packlets/entities';
 
@@ -94,14 +98,14 @@ describe('ChocolateLibrary', () => {
     ganacheCharacteristics: testChars
   };
 
-  const testRecipeVersion: IFillingRecipeVersion = {
+  const testRecipeVersion: IFillingRecipeVersionEntity = {
     versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [{ ingredient: { ids: ['test.testChoco' as IngredientId] }, amount: 100 as Measurement }],
     baseWeight: 100 as Measurement
   };
 
-  const testRecipe: IFillingRecipe = {
+  const testRecipe: IFillingRecipeEntity = {
     baseId: 'testRecipe' as BaseFillingId,
     name: 'Test Recipe' as FillingName,
     category: 'ganache',

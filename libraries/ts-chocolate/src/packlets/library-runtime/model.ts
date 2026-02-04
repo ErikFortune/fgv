@@ -75,8 +75,8 @@ import {
   IDairyIngredient,
   IFatIngredient,
   IFillingRating,
-  IFillingRecipe,
-  IFillingRecipeVersion,
+  IFillingRecipeEntity,
+  IFillingRecipeVersionEntity,
   Ingredient,
   ISugarIngredient
 } from '../entities';
@@ -401,7 +401,7 @@ export interface IRuntimeFillingRecipeVersion {
    * The underlying filling recipe version.
    * Use this to get the raw version data for persistence or journaling.
    */
-  readonly version: IFillingRecipeVersion;
+  readonly version: IFillingRecipeVersionEntity;
 
   // ---- Version Properties (from IFillingRecipeVersion) ----
 
@@ -499,7 +499,7 @@ export interface IRuntimeFillingRecipeVersion {
   /**
    * Gets the underlying raw version data.
    */
-  readonly raw: IFillingRecipeVersion;
+  readonly raw: IFillingRecipeVersionEntity;
 }
 
 // ============================================================================
@@ -530,7 +530,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * The original raw procedure reference data.
    */
-  readonly raw: Fillings.IProcedureRef;
+  readonly raw: Fillings.IProcedureRefEntity;
 }
 
 /**
@@ -665,7 +665,7 @@ export interface IRuntimeFillingRecipe {
   /**
    * Gets the underlying raw recipe data.
    */
-  readonly raw: IFillingRecipe;
+  readonly raw: IFillingRecipeEntity;
 }
 
 // ============================================================================
@@ -701,7 +701,7 @@ export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredie
   /**
    * The original raw ingredient reference data
    */
-  readonly raw: Fillings.IFillingIngredient;
+  readonly raw: Fillings.IFillingIngredientEntity;
 }
 
 // ============================================================================
@@ -1334,7 +1334,7 @@ export interface IResolvedConfectionProcedure {
   /** Optional notes specific to using this procedure */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The original raw procedure reference data */
-  readonly raw: Fillings.IProcedureRef;
+  readonly raw: Fillings.IProcedureRefEntity;
 }
 
 // ============================================================================
@@ -1656,7 +1656,7 @@ export interface IConfectionContext {
    * @returns Resolved procedures, or undefined if none
    */
   resolveProcedures(
-    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined
+    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined
   ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 }
 

@@ -28,10 +28,10 @@ import { Converter, Converters } from '@fgv/ts-utils';
 import { Converters as CommonConverters, SlotId, PersistedSessionId } from '../../common';
 import {
   anyProducedConfectionEntity as anyProducedConfectionConverter,
-  producedFilling as producedFillingConverter
+  producedFillingEntity as producedFillingConverter
 } from '../journal/converters';
 import { AnyProducedConfectionEntity } from '../confections';
-import { IProducedFilling } from '../fillings';
+import { IProducedFillingEntity } from '../fillings';
 import {
   allPersistedSessionStatuses,
   allPersistedSessionTypes,
@@ -84,8 +84,8 @@ export const persistedSessionDestination: Converter<IPersistedSessionDestination
  * Converter for serialized filling editing history.
  * @public
  */
-export const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFilling>> =
-  Converters.object<ISerializedEditingHistory<IProducedFilling>>({
+export const serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFillingEntity>> =
+  Converters.object<ISerializedEditingHistory<IProducedFillingEntity>>({
     current: producedFillingConverter,
     original: producedFillingConverter,
     undoStack: Converters.arrayOf(producedFillingConverter),

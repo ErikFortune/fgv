@@ -74,7 +74,7 @@ function calculatePercentage(amount: Measurement, baseWeight: Measurement): stri
  * Gets the display ID for a filling ingredient.
  * Uses preferredId if available, otherwise the first ID in the list.
  */
-function getIngredientDisplayId(ingredient: Entities.Fillings.IFillingIngredient): string {
+function getIngredientDisplayId(ingredient: Entities.Fillings.IFillingIngredientEntity): string {
   return ingredient.ingredient.preferredId ?? ingredient.ingredient.ids[0];
 }
 
@@ -225,7 +225,7 @@ export function formatFillingList(fillings: IFillingListItem[], format: OutputFo
  * Formats a filling for human-readable output
  */
 function formatFillingHuman(
-  filling: Entities.Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
   versionSpec?: FillingVersionSpec,
   context?: IFillingRenderContext
@@ -326,7 +326,7 @@ function formatFillingHuman(
  * Formats a filling for table output (same as human for details)
  */
 function formatFillingTable(
-  filling: Entities.Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
   versionSpec?: FillingVersionSpec,
   context?: IFillingRenderContext
@@ -338,7 +338,7 @@ function formatFillingTable(
  * Formats a filling for output
  */
 export function formatFilling(
-  filling: Entities.Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
   format: OutputFormat,
   versionSpec?: FillingVersionSpec,
@@ -365,8 +365,8 @@ export function formatFilling(
  * Formats a produced filling for human-readable output
  */
 function formatProducedFillingHuman(
-  produced: Entities.Fillings.IProducedFilling,
-  sourceVersion: Entities.Fillings.IFillingRecipeVersion,
+  produced: Entities.Fillings.IProducedFillingEntity,
+  sourceVersion: Entities.Fillings.IFillingRecipeVersionEntity,
   precision?: number
 ): string {
   const lines: string[] = [];
@@ -417,8 +417,8 @@ function formatProducedFillingHuman(
  * Formats a produced filling for table output (same as human)
  */
 function formatProducedFillingTable(
-  produced: Entities.Fillings.IProducedFilling,
-  sourceVersion: Entities.Fillings.IFillingRecipeVersion,
+  produced: Entities.Fillings.IProducedFillingEntity,
+  sourceVersion: Entities.Fillings.IFillingRecipeVersionEntity,
   precision?: number
 ): string {
   return formatProducedFillingHuman(produced, sourceVersion, precision);
@@ -428,8 +428,8 @@ function formatProducedFillingTable(
  * Formats a produced filling for output
  */
 export function formatProducedFilling(
-  produced: Entities.Fillings.IProducedFilling,
-  sourceVersion: Entities.Fillings.IFillingRecipeVersion,
+  produced: Entities.Fillings.IProducedFillingEntity,
+  sourceVersion: Entities.Fillings.IFillingRecipeVersionEntity,
   format: OutputFormat,
   precision?: number
 ): string {

@@ -9,5 +9,5 @@ The specific produced filling this procedure is being rendered for
 **Signature:**
 
 ```typescript
-readonly recipe: Fillings.IProducedFilling;
+readonly recipe: Fillings.IProducedFillingEntity;
 ```

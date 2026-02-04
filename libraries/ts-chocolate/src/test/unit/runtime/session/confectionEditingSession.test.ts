@@ -45,7 +45,7 @@ import {
 import {
   Confections as ConfectionEntities,
   IChocolateIngredient,
-  IFillingRecipe,
+  IFillingRecipeEntity,
   IGanacheCharacteristics,
   IIngredient,
   IMold,
@@ -95,7 +95,7 @@ describe('ConfectionEditingSession Factory', () => {
     ganacheCharacteristics: mockChars
   };
 
-  const caramelFilling: IFillingRecipe = {
+  const caramelFilling: IFillingRecipeEntity = {
     baseId: 'caramel-filling' as BaseFillingId,
     name: 'Caramel Filling' as FillingName,
     category: 'ganache',

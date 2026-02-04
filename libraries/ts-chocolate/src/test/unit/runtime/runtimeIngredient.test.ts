@@ -43,7 +43,7 @@ import {
   Ingredients,
   IngredientsLibrary
 } from '../../../packlets/entities';
-import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
 import { ChocolateLibrary } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
 import {
@@ -202,7 +202,7 @@ describe('RuntimeIngredient', () => {
     allergens: ['soy']
   };
 
-  const testRecipe: IFillingRecipe = {
+  const testRecipe: IFillingRecipeEntity = {
     baseId: 'ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
     category: 'ganache',

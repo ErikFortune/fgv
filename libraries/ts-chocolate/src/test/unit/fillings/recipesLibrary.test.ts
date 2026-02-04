@@ -31,7 +31,12 @@ import {
   SourceId
 } from '../../../packlets/common';
 
-import { Fillings, IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
+import {
+  Fillings,
+  IFillingRecipeEntity,
+  IFillingRecipeVersionEntity,
+  FillingsLibrary
+} from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 
@@ -40,7 +45,7 @@ describe('FillingsLibrary', () => {
   // Test Data
   // ============================================================================
 
-  const testRecipeVersion: IFillingRecipeVersion = {
+  const testRecipeVersion: IFillingRecipeVersionEntity = {
     versionSpec: '2026-01-01-01' as FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
@@ -51,7 +56,7 @@ describe('FillingsLibrary', () => {
     yield: '10 bonbons'
   };
 
-  const testRecipeData: IFillingRecipe = {
+  const testRecipeData: IFillingRecipeEntity = {
     baseId: 'test-ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
     category: 'ganache',
@@ -232,7 +237,7 @@ describe('FillingsLibrary', () => {
     test('update succeeds for existing recipe', () => {
       const id = 'user.updateTest' as FillingId;
       library.add(id, testRecipe).orThrow();
-      const updatedData: IFillingRecipe = { ...testRecipeData, description: 'Updated' };
+      const updatedData: IFillingRecipeEntity = { ...testRecipeData, description: 'Updated' };
       const updated = updatedData;
       expect(library.update(id, updated)).toSucceed();
     });

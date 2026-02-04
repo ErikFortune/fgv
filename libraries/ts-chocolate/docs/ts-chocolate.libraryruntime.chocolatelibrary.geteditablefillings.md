@@ -9,7 +9,7 @@ Get an editable fillings collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipe, BaseFillingId>>;
+getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

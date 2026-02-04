@@ -40,7 +40,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/entities';
-import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
 import {
   ChocolateLibrary,
   RuntimeFillingRecipe,
@@ -110,7 +110,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     }
   };
 
-  const darkGanacheRecipe: IFillingRecipe = {
+  const darkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'dark-ganache' as BaseFillingId,
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
@@ -157,7 +157,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     ]
   };
 
-  const emptyRecipe: IFillingRecipe = {
+  const emptyRecipe: IFillingRecipeEntity = {
     baseId: 'empty-recipe' as BaseFillingId,
     name: 'Empty Recipe' as FillingName,
     category: 'ganache',

@@ -9,11 +9,11 @@ Creates an immutable snapshot of the current state.
 **Signature:**
 
 ```typescript
-createSnapshot(): IProducedFilling;
+createSnapshot(): IProducedFillingEntity;
 ```
 **Returns:**
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 Immutable copy of current produced filling
 

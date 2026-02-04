@@ -9,7 +9,7 @@ Resolves procedure references to runtime objects.
 **Signature:**
 
 ```typescript
-resolveProcedures(procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+resolveProcedures(procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ procedures
 
 </td><td>
 
-[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;Fillings.IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;Fillings.IProcedureRefEntity, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

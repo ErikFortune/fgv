@@ -219,7 +219,7 @@ Optional ratings for this version.
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 
 </td><td>
@@ -240,7 +240,7 @@ Gets the underlying raw version data.
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 
 </td><td>

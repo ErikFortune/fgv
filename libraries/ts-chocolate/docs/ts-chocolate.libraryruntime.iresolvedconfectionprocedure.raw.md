@@ -9,5 +9,5 @@ The original raw procedure reference data
 **Signature:**
 
 ```typescript
-readonly raw: Fillings.IProcedureRef;
+readonly raw: Fillings.IProcedureRefEntity;
 ```

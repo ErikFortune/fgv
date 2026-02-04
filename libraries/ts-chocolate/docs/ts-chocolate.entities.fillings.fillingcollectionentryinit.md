@@ -9,7 +9,7 @@ Initialization type for a FillingsLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipe>;
+export type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipeEntity>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
 

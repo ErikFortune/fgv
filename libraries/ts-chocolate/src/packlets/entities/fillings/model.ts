@@ -70,7 +70,7 @@ export interface IIngredientModifiers {
  * `preferredId` indicates the default/recommended one.
  * @public
  */
-export interface IFillingIngredient {
+export interface IFillingIngredientEntity {
   /**
    * Available ingredient options with preferred selection.
    * The preferredId (or first id if not specified) is the primary ingredient.
@@ -157,7 +157,7 @@ export interface IFillingRating {
  * Record of a filling recipe being used (for production tracking)
  * @public
  */
-export interface IFillingUsage {
+export interface IFillingUsageEntity {
   /**
    * Date of use in ISO 8601 format
    */
@@ -194,7 +194,7 @@ export interface IFillingUsage {
  * Complete details for a single version of a filling recipe
  * @public
  */
-export interface IFillingRecipeVersion {
+export interface IFillingRecipeVersionEntity {
   /**
    * Unique identifier for this version
    */
@@ -208,7 +208,7 @@ export interface IFillingRecipeVersion {
   /**
    * Ingredients used in this version of the filling recipe
    */
-  readonly ingredients: ReadonlyArray<IFillingIngredient>;
+  readonly ingredients: ReadonlyArray<IFillingIngredientEntity>;
 
   /**
    * Base weight of the filling recipe (sum of all ingredient amounts)
@@ -234,7 +234,7 @@ export interface IFillingRecipeVersion {
    * Optional procedures associated with this version.
    * Contains applicable procedures and the preferred default.
    */
-  readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+  readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
 }
 /**
  * Reference to a source filling recipe+version from which a filling recipe was derived.
@@ -242,7 +242,7 @@ export interface IFillingRecipeVersion {
  * a new filling recipe in a writable collection.
  * @public
  */
-export interface IFillingDerivation {
+export interface IFillingDerivationEntity {
   /**
    * Source filling recipe version ID (format: "sourceId.fillingId\@versionSpec")
    */
@@ -264,13 +264,13 @@ export interface IFillingDerivation {
  * Contains the procedure ID and optional notes.
  * @public
  */
-export type IProcedureRef = Model.IRefWithNotes<ProcedureId>;
+export type IProcedureRefEntity = Model.IRefWithNotes<ProcedureId>;
 
 /**
  * Complete filling recipe with version history
  * @public
  */
-export interface IFillingRecipe {
+export interface IFillingRecipeEntity {
   /**
    * Base filling recipe identifier (unique within source)
    */
@@ -299,7 +299,7 @@ export interface IFillingRecipe {
   /**
    * Version history
    */
-  readonly versions: ReadonlyArray<IFillingRecipeVersion>;
+  readonly versions: ReadonlyArray<IFillingRecipeVersionEntity>;
 
   /**
    * The ID of the golden (approved default) version
@@ -310,7 +310,7 @@ export interface IFillingRecipe {
    * Optional derivation info - tracks lineage if this filling recipe was forked
    * from another filling recipe (e.g., when editing a read-only filling recipe)
    */
-  readonly derivedFrom?: IFillingDerivation;
+  readonly derivedFrom?: IFillingDerivationEntity;
 
   /**
    * Optional categorized URLs for external resources (tutorials, videos, etc.)
@@ -323,7 +323,7 @@ export interface IFillingRecipe {
  * Stores only the reference and scale parameters, not ingredient snapshots.
  * @public
  */
-export interface IScalingRef {
+export interface IScalingRefEntity {
   /**
    * Source filling recipe version ID (format: "sourceId.fillingId\@versionSpec")
    */
@@ -350,7 +350,7 @@ export interface IScalingRef {
  * Used when the source filling recipe might become unavailable.
  * @public
  */
-export interface IIngredientSnapshot {
+export interface IIngredientSnapshotEntity {
   /**
    * The ingredient ID
    */
@@ -382,7 +382,7 @@ export interface IIngredientSnapshot {
  * the single actual ingredient that was used in production.
  * @public
  */
-export interface IProducedFillingIngredient {
+export interface IProducedFillingIngredientEntity {
   /** The single selected ingredient ID */
   readonly ingredientId: IngredientId;
   /** Actual amount used */
@@ -400,7 +400,7 @@ export interface IProducedFillingIngredient {
  * Captures what was actually made during a filling production session.
  * @public
  */
-export interface IProducedFilling {
+export interface IProducedFillingEntity {
   /** Filling version ID that was produced */
   readonly versionId: FillingVersionId;
   /** Scale factor applied */
@@ -408,7 +408,7 @@ export interface IProducedFilling {
   /** Target weight for this production */
   readonly targetWeight: Measurement;
   /** Resolved ingredients with concrete selections */
-  readonly ingredients: ReadonlyArray<IProducedFillingIngredient>;
+  readonly ingredients: ReadonlyArray<IProducedFillingIngredientEntity>;
   /** Resolved procedure ID if one was used */
   readonly procedureId?: ProcedureId;
   /** Optional categorized notes about production */

@@ -173,7 +173,7 @@ _(Optional)_ Optional categorized notes about this version
 
 </td><td>
 
-[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRefEntity, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>

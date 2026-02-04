@@ -9,5 +9,5 @@ Converter for serialized filling editing history.
 **Signature:**
 
 ```typescript
-serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFilling>>
+serializedFillingHistory: Converter<ISerializedEditingHistory<IProducedFillingEntity>>
 ```

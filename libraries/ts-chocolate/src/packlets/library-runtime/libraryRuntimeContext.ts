@@ -447,7 +447,7 @@ export class LibraryRuntimeContext
    * @returns Resolved procedures, or undefined if none
    */
   public resolveProcedures(
-    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined
+    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined
   ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
     if (!procedures || procedures.options.length === 0) {
       return undefined;

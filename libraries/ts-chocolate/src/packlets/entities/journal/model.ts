@@ -31,7 +31,7 @@ import {
   Model as CommonModel
 } from '../../common';
 import { AnyConfectionVersionEntity, AnyProducedConfectionEntity, IConfectionYield } from '../confections';
-import { IFillingRecipeVersion, IProducedFilling } from '../fillings';
+import { IFillingRecipeVersionEntity, IProducedFillingEntity } from '../fillings';
 
 /**
  * Types of journal entries.
@@ -81,7 +81,8 @@ export interface IJournalEntryBase<TVersion, TVersionId> {
  * Journal entry for filling recipe edits.
  * @public
  */
-export interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
+export interface IFillingEditJournalEntry
+  extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> {
   readonly type: 'filling-edit';
 }
 
@@ -99,12 +100,12 @@ export interface IConfectionEditJournalEntry
  * @public
  */
 export interface IFillingProductionJournalEntry
-  extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> {
+  extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> {
   readonly type: 'filling-production';
   /** Total yield weight of this production run */
   readonly yield: Measurement;
   /** Produced filling with resolved concrete choices */
-  readonly produced: IProducedFilling;
+  readonly produced: IProducedFillingEntity;
 }
 
 /**

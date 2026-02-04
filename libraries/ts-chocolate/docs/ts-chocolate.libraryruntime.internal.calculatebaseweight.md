@@ -9,7 +9,7 @@ Calculates the base weight from filling recipe version (sum of ingredient amount
 **Signature:**
 
 ```typescript
-export declare function calculateBaseWeight(version: IFillingRecipeVersion): Measurement;
+export declare function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 
 </td><td>

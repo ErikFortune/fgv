@@ -30,15 +30,15 @@ import {
   allFillingCategories,
   allRatingCategories,
   FillingCategory,
-  IFillingDerivation,
-  IFillingIngredient,
+  IFillingDerivationEntity,
+  IFillingIngredientEntity,
   IFillingRating,
-  IFillingRecipe,
-  IFillingRecipeVersion,
+  IFillingRecipeEntity,
+  IFillingRecipeVersionEntity,
   IIngredientModifiers,
-  IIngredientSnapshot,
-  IProcedureRef,
-  IScalingRef,
+  IIngredientSnapshotEntity,
+  IProcedureRefEntity,
+  IScalingRefEntity,
   RatingCategory
 } from './model';
 
@@ -52,17 +52,18 @@ export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.o
 });
 
 /**
- * Converter for {@link Entities.Fillings.IFillingIngredient | IFillingIngredient}.
+ * Converter for {@link Entities.Fillings.IFillingIngredientEntity | IFillingIngredientEntity}.
  * Uses IIdsWithPreferred pattern for ingredient selection with validation.
  * @public
  */
-export const fillingIngredient: Converter<IFillingIngredient> = Converters.object<IFillingIngredient>({
-  ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'fillingIngredient'),
-  amount: CommonConverters.measurement,
-  unit: CommonConverters.measurementUnit.optional(),
-  modifiers: ingredientModifiers.optional(),
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const fillingIngredientEntity: Converter<IFillingIngredientEntity> =
+  Converters.object<IFillingIngredientEntity>({
+    ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'fillingIngredient'),
+    amount: CommonConverters.measurement,
+    unit: CommonConverters.measurementUnit.optional(),
+    modifiers: ingredientModifiers.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
 
 /**
  * Converter for {@link Entities.Fillings.RatingCategory | RatingCategory}.
@@ -87,20 +88,21 @@ export const fillingRating: Converter<IFillingRating> = Converters.object<IFilli
 });
 
 /**
- * Converter for {@link Entities.Fillings.IFillingDerivation | IFillingDerivation}
+ * Converter for {@link Entities.Fillings.IFillingDerivationEntity | IFillingDerivationEntity}
  * @public
  */
-export const fillingDerivation: Converter<IFillingDerivation> = Converters.object<IFillingDerivation>({
-  sourceVersionId: CommonConverters.fillingVersionId,
-  derivedDate: Converters.string, // ISO 8601 date string
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const fillingDerivationEntity: Converter<IFillingDerivationEntity> =
+  Converters.object<IFillingDerivationEntity>({
+    sourceVersionId: CommonConverters.fillingVersionId,
+    derivedDate: Converters.string, // ISO 8601 date string
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
 
 /**
- * Converter for {@link Entities.Fillings.IProcedureRef | IProcedureRef}
+ * Converter for {@link Entities.Fillings.IProcedureRefEntity | IProcedureRefEntity}
  * @public
  */
-export const procedureRef: Converter<IProcedureRef> = CommonConverters.refWithNotes(
+export const procedureRefEntity: Converter<IProcedureRefEntity> = CommonConverters.refWithNotes(
   CommonConverters.procedureId
 );
 
@@ -109,49 +111,50 @@ export const procedureRef: Converter<IProcedureRef> = CommonConverters.refWithNo
  * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const procedures: Converter<Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>> =
-  CommonConverters.optionsWithPreferred(procedureRef, CommonConverters.procedureId, 'procedures');
+export const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>> =
+  CommonConverters.optionsWithPreferred(procedureRefEntity, CommonConverters.procedureId, 'procedures');
 
 /**
- * Converter for {@link Entities.Fillings.IFillingRecipeVersion | IFillingRecipeVersion}.
+ * Converter for {@link Entities.Fillings.IFillingRecipeVersionEntity | IFillingRecipeVersionEntity}.
  * @public
  */
-export const fillingRecipeVersion: Converter<IFillingRecipeVersion> =
-  Converters.object<IFillingRecipeVersion>({
+export const fillingRecipeVersionEntity: Converter<IFillingRecipeVersionEntity> =
+  Converters.object<IFillingRecipeVersionEntity>({
     versionSpec: CommonConverters.fillingVersionSpec,
     createdDate: Converters.string, // ISO 8601 date string
-    ingredients: Converters.arrayOf(fillingIngredient),
+    ingredients: Converters.arrayOf(fillingIngredientEntity),
     baseWeight: CommonConverters.measurement,
     yield: Converters.string.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     ratings: Converters.arrayOf(fillingRating).optional(),
-    procedures: procedures.optional()
+    procedures: procedureEntities.optional()
   });
 
 /**
- * Converter for {@link Entities.Fillings.IFillingRecipe | IFillingRecipe} data structure
+ * Converter for {@link Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity} data structure
  * @public
  */
-export const fillingRecipeData: Converter<IFillingRecipe> = Converters.object<IFillingRecipe>({
-  baseId: CommonConverters.baseFillingId,
-  name: CommonConverters.fillingName,
-  category: fillingCategory,
-  description: Converters.string.optional(),
-  tags: Converters.arrayOf(Converters.string).optional(),
-  versions: Converters.arrayOf(fillingRecipeVersion),
-  goldenVersionSpec: CommonConverters.fillingVersionSpec,
-  derivedFrom: fillingDerivation.optional(),
-  urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
-});
+export const fillingRecipeRawEntity: Converter<IFillingRecipeEntity> =
+  Converters.object<IFillingRecipeEntity>({
+    baseId: CommonConverters.baseFillingId,
+    name: CommonConverters.fillingName,
+    category: fillingCategory,
+    description: Converters.string.optional(),
+    tags: Converters.arrayOf(Converters.string).optional(),
+    versions: Converters.arrayOf(fillingRecipeVersionEntity),
+    goldenVersionSpec: CommonConverters.fillingVersionSpec,
+    derivedFrom: fillingDerivationEntity.optional(),
+    urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
+  });
 
 /**
- * Converter for {@link Entities.Fillings.IFillingRecipe | IFillingRecipe} with validation.
+ * Converter for {@link Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity} with validation.
  * Validates that goldenVersionSpec exists in versions and returns the plain data object.
  * @public
  */
-export const fillingRecipe: Converter<IFillingRecipe> = Converters.generic<IFillingRecipe>(
-  (from: unknown): Result<IFillingRecipe> => {
-    return fillingRecipeData.convert(from).onSuccess((data) => {
+export const fillingRecipeEntity: Converter<IFillingRecipeEntity> = Converters.generic<IFillingRecipeEntity>(
+  (from: unknown): Result<IFillingRecipeEntity> => {
+    return fillingRecipeRawEntity.convert(from).onSuccess((data) => {
       if (data.versions.length === 0) {
         return Failure.with('Filling recipe must have at least one version');
       }
@@ -170,10 +173,10 @@ export const fillingRecipe: Converter<IFillingRecipe> = Converters.generic<IFill
 );
 
 /**
- * Converter for {@link Entities.Fillings.IScalingRef | IScalingRef} (lightweight reference-based format)
+ * Converter for {@link Entities.Fillings.IScalingRefEntity | IScalingRefEntity} (lightweight reference-based format)
  * @public
  */
-export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>({
+export const scalingRefEntity: Converter<IScalingRefEntity> = Converters.object<IScalingRefEntity>({
   sourceVersionId: CommonConverters.fillingVersionId,
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.measurement,
@@ -181,12 +184,13 @@ export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>
 });
 
 /**
- * Converter for {@link Entities.Fillings.IIngredientSnapshot | IIngredientSnapshot} (for archival)
+ * Converter for {@link Entities.Fillings.IIngredientSnapshotEntity | IIngredientSnapshotEntity} (for archival)
  * @public
  */
-export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.object<IIngredientSnapshot>({
-  ingredientId: CommonConverters.ingredientId,
-  originalAmount: CommonConverters.measurement,
-  scaledAmount: CommonConverters.measurement,
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const ingredientSnapshotEntity: Converter<IIngredientSnapshotEntity> =
+  Converters.object<IIngredientSnapshotEntity>({
+    ingredientId: CommonConverters.ingredientId,
+    originalAmount: CommonConverters.measurement,
+    scaledAmount: CommonConverters.measurement,
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });

@@ -39,7 +39,7 @@ import {
   SourceId
 } from '../../common';
 import { AnyProducedConfectionEntity } from '../confections';
-import { IProducedFilling } from '../fillings';
+import { IProducedFillingEntity } from '../fillings';
 
 // ============================================================================
 // Schema Version
@@ -171,7 +171,7 @@ export interface IPersistedFillingSession extends IPersistedSessionBase {
   /** Source filling version being edited */
   readonly sourceVersionId: FillingVersionId;
   /** Full editing history including undo/redo stacks */
-  readonly history: ISerializedEditingHistory<IProducedFilling>;
+  readonly history: ISerializedEditingHistory<IProducedFillingEntity>;
 }
 
 // ============================================================================

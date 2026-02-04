@@ -326,7 +326,7 @@ Rating for a specific category of a filling recipe version
 </td></tr>
 <tr><td>
 
-[IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
+[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
 
 
 </td><td>
@@ -337,7 +337,7 @@ Complete filling recipe with version history
 </td></tr>
 <tr><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 
 </td><td>
@@ -473,7 +473,7 @@ Produced bar truffle with concrete choices.
 </td></tr>
 <tr><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

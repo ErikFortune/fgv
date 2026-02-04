@@ -9,7 +9,7 @@ Factory method for restoring a RuntimeProducedFilling from serialized history. R
 **Signature:**
 
 ```typescript
-static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedFilling>): Result<RuntimeProducedFilling>;
+static restoreFromHistory(history: Session.ISerializedEditingHistory<IProducedFillingEntity>): Result<RuntimeProducedFilling>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ history
 
 </td><td>
 
-[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)<!-- -->&gt;
+[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)<!-- -->&gt;
 
 
 </td><td>

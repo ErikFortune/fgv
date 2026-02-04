@@ -87,7 +87,7 @@ export interface IRuntimeProcedureRenderContext {
   /**
    * The specific produced filling this procedure is being rendered for
    */
-  readonly recipe: Fillings.IProducedFilling;
+  readonly recipe: Fillings.IProducedFillingEntity;
 
   /**
    * Optional mold being used for this recipe

@@ -9,5 +9,5 @@ Gets the current state as an immutable snapshot.
 **Signature:**
 
 ```typescript
-get snapshot(): IProducedFilling;
+get snapshot(): IProducedFillingEntity;
 ```

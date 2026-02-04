@@ -9,5 +9,5 @@ The underlying filling recipe version. Use this to get the raw version data for 
 **Signature:**
 
 ```typescript
-get version(): IFillingRecipeVersion;
+get version(): IFillingRecipeVersionEntity;
 ```

@@ -27,8 +27,8 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseFillingId, FillingId } from '../../common';
 import { Converters as CommonConverters } from '../../common';
-import { IFillingRecipe } from './model';
-import { fillingRecipeData as fillingRecipeConverter } from './converters';
+import { IFillingRecipeEntity } from './model';
+import { fillingRecipeRawEntity as fillingRecipeConverter } from './converters';
 import { FillingCollectionEntryInit } from './collection';
 import {
   getFillingsDirectory,
@@ -87,7 +87,7 @@ export type IFillingsLibraryAsyncParams = ISubLibraryAsyncParams<FillingsLibrary
  *
  * @public
  */
-export class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipe> {
+export class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipeEntity> {
   private constructor(params?: IFillingsLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseFillingId,
@@ -122,7 +122,7 @@ export class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IF
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<FillingsLibrary, BaseFillingId, IFillingRecipe> = {
+    const createParams: ISubLibraryCreateParams<FillingsLibrary, BaseFillingId, IFillingRecipeEntity> = {
       itemIdConverter: CommonConverters.baseFillingId,
       itemConverter: fillingRecipeConverter,
       directoryNavigator: getFillingsDirectory,

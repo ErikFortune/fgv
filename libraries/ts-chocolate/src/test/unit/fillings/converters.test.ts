@@ -22,12 +22,12 @@ import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
-  fillingIngredient,
-  fillingRecipeVersion,
-  fillingRecipe,
-  scalingRef,
-  procedureRef,
-  procedures
+  fillingIngredientEntity,
+  fillingRecipeVersionEntity,
+  fillingRecipeEntity,
+  scalingRefEntity,
+  procedureRefEntity,
+  procedureEntities
 } from '../../../packlets/entities/fillings/converters';
 
 describe('Recipe Converters', () => {
@@ -41,7 +41,7 @@ describe('Recipe Converters', () => {
         ingredient: { ids: ['source.ingredient'] },
         amount: 100
       };
-      expect(fillingIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.ingredient.ids[0]).toBe('source.ingredient');
         expect(result.amount).toBe(100);
       });
@@ -53,7 +53,7 @@ describe('Recipe Converters', () => {
         amount: 50,
         notes: [{ category: 'user', note: 'Melted first' }]
       };
-      expect(fillingIngredient.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingIngredientEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.notes).toEqual([{ category: 'user', note: 'Melted first' }]);
       });
     });
@@ -63,7 +63,7 @@ describe('Recipe Converters', () => {
         ingredient: { ids: ['invalid'] },
         amount: 100
       };
-      expect(fillingIngredient.convert(input)).toFail();
+      expect(fillingIngredientEntity.convert(input)).toFail();
     });
 
     test('fails for negative amount', () => {
@@ -71,7 +71,7 @@ describe('Recipe Converters', () => {
         ingredient: { ids: ['source.ingredient'] },
         amount: -10
       };
-      expect(fillingIngredient.convert(input)).toFail();
+      expect(fillingIngredientEntity.convert(input)).toFail();
     });
   });
 
@@ -90,7 +90,7 @@ describe('Recipe Converters', () => {
         ],
         baseWeight: 150
       };
-      expect(fillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.createdDate).toBe('2026-01-01');
         expect(result.ingredients.length).toBe(2);
@@ -107,7 +107,7 @@ describe('Recipe Converters', () => {
         yield: '20 bonbons',
         notes: [{ category: 'user', note: 'First version' }]
       };
-      expect(fillingRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.yield).toBe('20 bonbons');
         expect(result.notes).toEqual([{ category: 'user', note: 'First version' }]);
       });
@@ -134,7 +134,7 @@ describe('Recipe Converters', () => {
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('test-recipe');
         expect(result.name).toBe('Test Recipe');
         expect(result.goldenVersionSpec).toBe('2026-01-01-01');
@@ -154,7 +154,7 @@ describe('Recipe Converters', () => {
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.description).toBe('A test recipe');
         expect(result.tags).toEqual(['dark', 'ganache']);
       });
@@ -178,7 +178,7 @@ describe('Recipe Converters', () => {
         versions: [versionWithProcedures],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
         const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
         expect(goldenVersion?.procedures).toBeDefined();
         expect(goldenVersion?.procedures!.options.length).toBe(2);
@@ -198,7 +198,7 @@ describe('Recipe Converters', () => {
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
         const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
         expect(goldenVersion?.procedures).toBeUndefined();
       });
@@ -212,7 +212,7 @@ describe('Recipe Converters', () => {
         versions: [],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toFailWith(/Filling recipe must have at least one version/);
+      expect(fillingRecipeEntity.convert(input)).toFailWith(/Filling recipe must have at least one version/);
     });
 
     test('fails for recipe with invalid goldenVersionSpec', () => {
@@ -223,7 +223,7 @@ describe('Recipe Converters', () => {
         versions: [validVersion],
         goldenVersionSpec: '2026-12-31-99'
       };
-      expect(fillingRecipe.convert(input)).toFailWith(/Golden version.*not found/);
+      expect(fillingRecipeEntity.convert(input)).toFailWith(/Golden version.*not found/);
     });
 
     test('fails for invalid base ID', () => {
@@ -234,7 +234,7 @@ describe('Recipe Converters', () => {
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toFail();
+      expect(fillingRecipeEntity.convert(input)).toFail();
     });
 
     test('fails for empty name', () => {
@@ -245,7 +245,7 @@ describe('Recipe Converters', () => {
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
-      expect(fillingRecipe.convert(input)).toFail();
+      expect(fillingRecipeEntity.convert(input)).toFail();
     });
   });
 
@@ -258,7 +258,7 @@ describe('Recipe Converters', () => {
       const input = {
         id: 'common.ganache-cold-method'
       };
-      expect(procedureRef.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureRefEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.id).toBe('common.ganache-cold-method');
         expect(result.notes).toBeUndefined();
       });
@@ -269,7 +269,7 @@ describe('Recipe Converters', () => {
         id: 'common.ganache-hot-method',
         notes: [{ category: 'user', note: 'Use for this specific chocolate' }]
       };
-      expect(procedureRef.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureRefEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.id).toBe('common.ganache-hot-method');
         expect(result.notes).toEqual([{ category: 'user', note: 'Use for this specific chocolate' }]);
       });
@@ -279,14 +279,14 @@ describe('Recipe Converters', () => {
       const input = {
         id: 'invalid'
       };
-      expect(procedureRef.convert(input)).toFail();
+      expect(procedureRefEntity.convert(input)).toFail();
     });
 
     test('fails for missing procedure ID', () => {
       const input = {
         notes: [{ category: 'user', note: 'Some notes' }]
       };
-      expect(procedureRef.convert(input)).toFail();
+      expect(procedureRefEntity.convert(input)).toFail();
     });
   });
 
@@ -299,7 +299,7 @@ describe('Recipe Converters', () => {
       const input = {
         options: [{ id: 'common.ganache-cold-method' }, { id: 'common.ganache-hot-method' }]
       };
-      expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options.length).toBe(2);
         expect(result.options[0].id).toBe('common.ganache-cold-method');
         expect(result.options[1].id).toBe('common.ganache-hot-method');
@@ -312,7 +312,7 @@ describe('Recipe Converters', () => {
         options: [{ id: 'common.ganache-cold-method' }, { id: 'common.ganache-hot-method' }],
         preferredId: 'common.ganache-cold-method'
       };
-      expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options.length).toBe(2);
         expect(result.preferredId).toBe('common.ganache-cold-method');
       });
@@ -329,7 +329,7 @@ describe('Recipe Converters', () => {
         ],
         preferredId: 'common.ganache-cold-method'
       };
-      expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options[0].notes).toEqual([{ category: 'user', note: 'Preferred for dark chocolate' }]);
         expect(result.options[1].notes).toEqual([{ category: 'user', note: 'Alternative method' }]);
       });
@@ -340,7 +340,7 @@ describe('Recipe Converters', () => {
         options: []
       };
       // Empty array is valid - no minimum requirement
-      expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.options.length).toBe(0);
       });
     });
@@ -349,7 +349,7 @@ describe('Recipe Converters', () => {
       const input = {
         options: [{ id: 'common.ganache-cold-method' }, { id: 'invalid' }]
       };
-      expect(procedures.convert(input)).toFail();
+      expect(procedureEntities.convert(input)).toFail();
     });
 
     test('fails for invalid preferred procedure ID', () => {
@@ -357,14 +357,14 @@ describe('Recipe Converters', () => {
         options: [{ id: 'common.ganache-cold-method' }],
         preferredId: 'invalid'
       };
-      expect(procedures.convert(input)).toFail();
+      expect(procedureEntities.convert(input)).toFail();
     });
 
     test('fails for missing options field', () => {
       const input = {
         preferredId: 'common.ganache-cold-method'
       };
-      expect(procedures.convert(input)).toFail();
+      expect(procedureEntities.convert(input)).toFail();
     });
 
     test('fails when preferredId is not in options', () => {
@@ -372,7 +372,7 @@ describe('Recipe Converters', () => {
         options: [{ id: 'common.ganache-cold-method' }],
         preferredId: 'common.ganache-hot-method'
       };
-      expect(procedures.convert(input)).toFailWith(/preferredId.*not found/i);
+      expect(procedureEntities.convert(input)).toFailWith(/preferredId.*not found/i);
     });
   });
 });
@@ -386,7 +386,7 @@ describe('procedures', () => {
     const input = {
       options: [{ id: 'common.ganache-cold-method' }, { id: 'common.ganache-hot-method' }]
     };
-    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+    expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
       expect(result.options.length).toBe(2);
       expect(result.options[0].id).toBe('common.ganache-cold-method');
       expect(result.options[1].id).toBe('common.ganache-hot-method');
@@ -399,7 +399,7 @@ describe('procedures', () => {
       options: [{ id: 'common.ganache-cold-method' }, { id: 'common.ganache-hot-method' }],
       preferredId: 'common.ganache-cold-method'
     };
-    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+    expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
       expect(result.options.length).toBe(2);
       expect(result.preferredId).toBe('common.ganache-cold-method');
     });
@@ -416,7 +416,7 @@ describe('procedures', () => {
       ],
       preferredId: 'common.ganache-cold-method'
     };
-    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+    expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
       expect(result.options[0].notes).toEqual([{ category: 'user', note: 'Preferred for dark chocolate' }]);
       expect(result.options[1].notes).toEqual([{ category: 'user', note: 'Alternative method' }]);
     });
@@ -427,7 +427,7 @@ describe('procedures', () => {
       options: []
     };
     // Empty array is valid - no minimum requirement
-    expect(procedures.convert(input)).toSucceedAndSatisfy((result) => {
+    expect(procedureEntities.convert(input)).toSucceedAndSatisfy((result) => {
       expect(result.options.length).toBe(0);
     });
   });
@@ -436,7 +436,7 @@ describe('procedures', () => {
     const input = {
       options: [{ id: 'common.ganache-cold-method' }, { id: 'invalid' }]
     };
-    expect(procedures.convert(input)).toFail();
+    expect(procedureEntities.convert(input)).toFail();
   });
 
   test('fails for invalid preferred procedure ID', () => {
@@ -444,14 +444,14 @@ describe('procedures', () => {
       options: [{ id: 'common.ganache-cold-method' }],
       preferredId: 'invalid'
     };
-    expect(procedures.convert(input)).toFail();
+    expect(procedureEntities.convert(input)).toFail();
   });
 
   test('fails for missing options field', () => {
     const input = {
       preferredId: 'common.ganache-cold-method'
     };
-    expect(procedures.convert(input)).toFail();
+    expect(procedureEntities.convert(input)).toFail();
   });
 
   test('fails when preferredId is not in options', () => {
@@ -459,7 +459,7 @@ describe('procedures', () => {
       options: [{ id: 'common.ganache-cold-method' }],
       preferredId: 'common.ganache-hot-method'
     };
-    expect(procedures.convert(input)).toFailWith(/preferredId.*not found/i);
+    expect(procedureEntities.convert(input)).toFailWith(/preferredId.*not found/i);
   });
 });
 
@@ -475,7 +475,7 @@ describe('scalingRef', () => {
       targetWeight: 300,
       createdDate: '2026-01-15'
     };
-    expect(scalingRef.convert(input)).toSucceedAndSatisfy((result) => {
+    expect(scalingRefEntity.convert(input)).toSucceedAndSatisfy((result) => {
       expect(result.sourceVersionId).toBe('source.test-recipe@2026-01-01-01');
       expect(result.scaleFactor).toBe(2);
       expect(result.targetWeight).toBe(300);
@@ -490,6 +490,6 @@ describe('scalingRef', () => {
       targetWeight: 300,
       createdDate: '2026-01-15'
     };
-    expect(scalingRef.convert(input)).toFail();
+    expect(scalingRefEntity.convert(input)).toFail();
   });
 });

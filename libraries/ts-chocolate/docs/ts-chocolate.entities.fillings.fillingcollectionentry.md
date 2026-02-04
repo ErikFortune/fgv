@@ -9,7 +9,7 @@ A single entry in a fillings collection.
 **Signature:**
 
 ```typescript
-export type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipe>;
+export type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipeEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.entities.ifillingrecipe.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
 

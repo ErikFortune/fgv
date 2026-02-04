@@ -42,7 +42,7 @@ import {
   IngredientsLibrary,
   IPersistedFillingSession
 } from '../../../../packlets/entities';
-import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/entities';
 import { ChocolateLibrary } from '../../../../packlets/library-runtime';
 import { RuntimeContext, Session } from '../../../../packlets/runtime';
 
@@ -99,7 +99,7 @@ describe('EditingSession', () => {
     }
   };
 
-  const testRecipe: IFillingRecipe = {
+  const testRecipe: IFillingRecipeEntity = {
     baseId: 'test-ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
     category: 'ganache',

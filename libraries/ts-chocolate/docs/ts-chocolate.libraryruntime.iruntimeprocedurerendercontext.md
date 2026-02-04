@@ -91,7 +91,7 @@ _(Optional)_ Optional mold being used for this recipe
 
 </td><td>
 
-[Fillings.IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[Fillings.IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

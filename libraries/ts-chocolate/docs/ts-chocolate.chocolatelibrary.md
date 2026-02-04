@@ -412,7 +412,7 @@ Gets a [procedure](./ts-chocolate.entities.procedures.iprocedure.md) by its [com
 
 </td><td>
 
-Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
+Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) by its [composite ID](./ts-chocolate.fillingid.md)
 
 
 </td></tr>

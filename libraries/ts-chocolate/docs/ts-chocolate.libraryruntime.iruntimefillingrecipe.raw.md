@@ -9,5 +9,5 @@ Gets the underlying raw recipe data.
 **Signature:**
 
 ```typescript
-readonly raw: IFillingRecipe;
+readonly raw: IFillingRecipeEntity;
 ```

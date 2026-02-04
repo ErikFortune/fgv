@@ -50,7 +50,11 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IProcedure, ProceduresLibrary, ConfectionsLibrary } from '../../../packlets/entities';
-import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
+import {
+  IFillingRecipeEntity,
+  IFillingRecipeVersionEntity,
+  FillingsLibrary
+} from '../../../packlets/entities';
 import { ChocolateLibrary } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
 import { ITaskInvocation } from '../../../packlets/entities';
@@ -133,7 +137,7 @@ describe('RuntimeContext', () => {
     tags: ['fresh']
   };
 
-  const darkGanacheRecipe: IFillingRecipe = {
+  const darkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'dark-ganache' as BaseFillingId,
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
@@ -170,7 +174,7 @@ describe('RuntimeContext', () => {
     ]
   };
 
-  const milkGanacheRecipe: IFillingRecipe = {
+  const milkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'milk-ganache' as BaseFillingId,
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',
@@ -233,7 +237,7 @@ describe('RuntimeContext', () => {
   };
 
   // Version with procedures - using IOptionsWithPreferred pattern at version level
-  const versionWithProcedures: IFillingRecipeVersion = {
+  const versionWithProcedures: IFillingRecipeVersionEntity = {
     versionSpec: '2026-01-01-01' as FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
@@ -255,7 +259,7 @@ describe('RuntimeContext', () => {
     }
   };
 
-  const darkGanacheWithProceduresRecipe: IFillingRecipe = {
+  const darkGanacheWithProceduresRecipe: IFillingRecipeEntity = {
     baseId: 'dark-ganache-with-procedures' as BaseFillingId,
     name: 'Dark Ganache with Procedures' as FillingName,
     category: 'ganache',
@@ -266,7 +270,7 @@ describe('RuntimeContext', () => {
   };
 
   // Recipe with missing procedure reference (for error handling test)
-  const recipeWithMissingProcedure: IFillingRecipe = {
+  const recipeWithMissingProcedure: IFillingRecipeEntity = {
     baseId: 'ganache-missing-proc' as BaseFillingId,
     name: 'Ganache Missing Proc' as FillingName,
     category: 'ganache',

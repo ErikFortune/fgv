@@ -40,7 +40,7 @@ import {
   SlotId
 } from '../../common';
 
-import { IProcedureRef } from '../fillings';
+import { IProcedureRefEntity } from '../fillings';
 
 // ============================================================================
 // Yield and Decoration Types
@@ -266,7 +266,7 @@ export interface IConfectionVersionEntityBase {
   /** Optional decorations for this version */
   readonly decorations?: ReadonlyArray<IConfectionDecoration>;
   /** Optional procedures with preferred selection */
-  readonly procedures?: Model.IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+  readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
   /** Optional categorized notes about this version */
   readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
   /** Additional tags (merged with base confection tags) */

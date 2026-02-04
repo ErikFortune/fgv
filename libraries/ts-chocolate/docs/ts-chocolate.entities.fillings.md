@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IFillingDerivation](./ts-chocolate.entities.fillings.ifillingderivation.md)
+[IFillingDerivationEntity](./ts-chocolate.entities.fillings.ifillingderivationentity.md)
 
 
 </td><td>
@@ -58,7 +58,7 @@ Reference to a source filling recipe+version from which a filling recipe was der
 </td></tr>
 <tr><td>
 
-[IFillingIngredient](./ts-chocolate.entities.fillings.ifillingingredient.md)
+[IFillingIngredientEntity](./ts-chocolate.entities.fillings.ifillingingrediententity.md)
 
 
 </td><td>
@@ -80,7 +80,7 @@ Rating for a specific category of a filling recipe version
 </td></tr>
 <tr><td>
 
-[IFillingRecipe](./ts-chocolate.entities.fillings.ifillingrecipe.md)
+[IFillingRecipeEntity](./ts-chocolate.entities.fillings.ifillingrecipeentity.md)
 
 
 </td><td>
@@ -91,7 +91,7 @@ Complete filling recipe with version history
 </td></tr>
 <tr><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.fillings.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.fillings.ifillingrecipeversionentity.md)
 
 
 </td><td>
@@ -102,7 +102,7 @@ Complete details for a single version of a filling recipe
 </td></tr>
 <tr><td>
 
-[IFillingUsage](./ts-chocolate.entities.fillings.ifillingusage.md)
+[IFillingUsageEntity](./ts-chocolate.entities.fillings.ifillingusageentity.md)
 
 
 </td><td>
@@ -124,7 +124,7 @@ Modifiers that qualify how an ingredient is measured or added. Groups measuremen
 </td></tr>
 <tr><td>
 
-[IIngredientSnapshot](./ts-chocolate.entities.fillings.iingredientsnapshot.md)
+[IIngredientSnapshotEntity](./ts-chocolate.entities.fillings.iingredientsnapshotentity.md)
 
 
 </td><td>
@@ -135,7 +135,7 @@ Optional ingredient snapshot for archival purposes. Used when the source filling
 </td></tr>
 <tr><td>
 
-[IProducedFilling](./ts-chocolate.entities.fillings.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.fillings.iproducedfillingentity.md)
 
 
 </td><td>
@@ -146,7 +146,7 @@ Produced filling with concrete choices. Captures what was actually made during a
 </td></tr>
 <tr><td>
 
-[IProducedFillingIngredient](./ts-chocolate.entities.fillings.iproducedfillingingredient.md)
+[IProducedFillingIngredientEntity](./ts-chocolate.entities.fillings.iproducedfillingingrediententity.md)
 
 
 </td><td>
@@ -157,7 +157,7 @@ Resolved filling ingredient with concrete choice. Unlike IFillingIngredient whic
 </td></tr>
 <tr><td>
 
-[IScalingRef](./ts-chocolate.entities.fillings.iscalingref.md)
+[IScalingRefEntity](./ts-chocolate.entities.fillings.iscalingrefentity.md)
 
 
 </td><td>
@@ -343,7 +343,7 @@ Parameters for creating a FillingsLibrary instance synchronously.
 </td></tr>
 <tr><td>
 
-[IProcedureRef](./ts-chocolate.entities.fillings.iprocedureref.md)
+[IProcedureRefEntity](./ts-chocolate.entities.fillings.iprocedurerefentity.md)
 
 
 </td><td>

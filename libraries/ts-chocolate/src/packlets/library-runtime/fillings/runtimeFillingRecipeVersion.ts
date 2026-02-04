@@ -34,7 +34,7 @@ import {
   FillingVersionSpec,
   Model as CommonModel
 } from '../../common';
-import { IFillingRecipeVersion, IFillingRating } from '../../entities';
+import { IFillingRecipeVersionEntity, IFillingRating } from '../../entities';
 import { calculateFromIngredients, validateGanache } from '../internal';
 import {
   ICategoryFilter,
@@ -106,7 +106,7 @@ function matchesFilter(
 export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion {
   private readonly _context: VersionContext;
   private readonly _fillingId: FillingId;
-  private readonly _version: IFillingRecipeVersion;
+  private readonly _version: IFillingRecipeVersionEntity;
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyRuntimeIngredient>> | undefined;
@@ -119,7 +119,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
    * Use RuntimeFillingRecipe.getVersion() or goldenVersion instead of calling this directly.
    * @internal
    */
-  public constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion) {
+  public constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity) {
     this._context = context;
     this._fillingId = fillingId;
     this._version = version;
@@ -135,7 +135,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   public static create(
     context: VersionContext,
     fillingId: FillingId,
-    version: IFillingRecipeVersion
+    version: IFillingRecipeVersionEntity
   ): Result<RuntimeFillingRecipeVersion> {
     return Success.with(new RuntimeFillingRecipeVersion(context, fillingId, version));
   }
@@ -188,7 +188,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
    * The underlying filling recipe version.
    * Use this to get the raw version data for persistence or journaling.
    */
-  public get version(): IFillingRecipeVersion {
+  public get version(): IFillingRecipeVersionEntity {
     return this._version;
   }
 
@@ -411,7 +411,7 @@ export class RuntimeFillingRecipeVersion implements IRuntimeFillingRecipeVersion
   /**
    * Gets the underlying raw version data
    */
-  public get raw(): IFillingRecipeVersion {
+  public get raw(): IFillingRecipeVersionEntity {
     return this._version;
   }
 

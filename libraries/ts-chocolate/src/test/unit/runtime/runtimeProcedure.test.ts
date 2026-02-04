@@ -64,7 +64,7 @@ describe('RuntimeProcedure', () => {
   };
 
   // Mock recipe for render context
-  const mockRecipe: Fillings.IProducedFilling = {
+  const mockRecipe: Fillings.IProducedFillingEntity = {
     versionId: 'test.test-recipe@v1' as FillingVersionId,
     scaleFactor: 2.0,
     targetWeight: 200 as Measurement,

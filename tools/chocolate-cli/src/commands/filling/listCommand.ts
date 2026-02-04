@@ -33,7 +33,7 @@ import {
  * Checks if a filling matches the specified filters
  */
 function matchesFilters(
-  filling: Entities.Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
   sourceId: SourceId,
   options: IFillingListOptions

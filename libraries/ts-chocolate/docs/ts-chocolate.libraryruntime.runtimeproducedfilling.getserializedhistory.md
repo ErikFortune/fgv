@@ -9,7 +9,7 @@ Serializes the complete editing history for persistence. Includes current state,
 **Signature:**
 
 ```typescript
-getSerializedHistory(original: IProducedFilling): Session.ISerializedEditingHistory<IProducedFilling>;
+getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistory<IProducedFillingEntity>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ original
 
 </td><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Original state when editing started (for change detection on restore)
 
 **Returns:**
 
-[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)<!-- -->&gt;
+[Session.ISerializedEditingHistory](./ts-chocolate.entities.session.iserializededitinghistory.md)<!-- -->&lt;[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)<!-- -->&gt;
 
 Serialized editing history
 

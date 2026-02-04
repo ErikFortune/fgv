@@ -30,23 +30,23 @@ Converter for [FillingCategory](./ts-chocolate.entities.fillings.fillingcategory
 </td></tr>
 <tr><td>
 
-[fillingDerivation](./ts-chocolate.entities.fillings.converters.fillingderivation.md)
+[fillingDerivationEntity](./ts-chocolate.entities.fillings.converters.fillingderivationentity.md)
 
 
 </td><td>
 
-Converter for [IFillingDerivation](./ts-chocolate.entities.fillings.ifillingderivation.md)
+Converter for [IFillingDerivationEntity](./ts-chocolate.entities.fillings.ifillingderivationentity.md)
 
 
 </td></tr>
 <tr><td>
 
-[fillingIngredient](./ts-chocolate.entities.fillings.converters.fillingingredient.md)
+[fillingIngredientEntity](./ts-chocolate.entities.fillings.converters.fillingingrediententity.md)
 
 
 </td><td>
 
-Converter for [IFillingIngredient](./ts-chocolate.entities.fillings.ifillingingredient.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
+Converter for [IFillingIngredientEntity](./ts-chocolate.entities.fillings.ifillingingrediententity.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
 
 
 </td></tr>
@@ -63,34 +63,34 @@ Converter for [IFillingRating](./ts-chocolate.entities.fillings.ifillingrating.m
 </td></tr>
 <tr><td>
 
-[fillingRecipe](./ts-chocolate.entities.fillings.converters.fillingrecipe.md)
+[fillingRecipeEntity](./ts-chocolate.entities.fillings.converters.fillingrecipeentity.md)
 
 
 </td><td>
 
-Converter for [IFillingRecipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) with validation. Validates that goldenVersionSpec exists in versions and returns the plain data object.
+Converter for [IFillingRecipeEntity](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) with validation. Validates that goldenVersionSpec exists in versions and returns the plain data object.
 
 
 </td></tr>
 <tr><td>
 
-[fillingRecipeData](./ts-chocolate.entities.fillings.converters.fillingrecipedata.md)
+[fillingRecipeRawEntity](./ts-chocolate.entities.fillings.converters.fillingreciperawentity.md)
 
 
 </td><td>
 
-Converter for [IFillingRecipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) data structure
+Converter for [IFillingRecipeEntity](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) data structure
 
 
 </td></tr>
 <tr><td>
 
-[fillingRecipeVersion](./ts-chocolate.entities.fillings.converters.fillingrecipeversion.md)
+[fillingRecipeVersionEntity](./ts-chocolate.entities.fillings.converters.fillingrecipeversionentity.md)
 
 
 </td><td>
 
-Converter for [IFillingRecipeVersion](./ts-chocolate.entities.fillings.ifillingrecipeversion.md)<!-- -->.
+Converter for [IFillingRecipeVersionEntity](./ts-chocolate.entities.fillings.ifillingrecipeversionentity.md)<!-- -->.
 
 
 </td></tr>
@@ -107,34 +107,34 @@ Converter for [IIngredientModifiers](./ts-chocolate.entities.fillings.iingredien
 </td></tr>
 <tr><td>
 
-[ingredientSnapshot](./ts-chocolate.entities.fillings.converters.ingredientsnapshot.md)
+[ingredientSnapshotEntity](./ts-chocolate.entities.fillings.converters.ingredientsnapshotentity.md)
 
 
 </td><td>
 
-Converter for [IIngredientSnapshot](./ts-chocolate.entities.fillings.iingredientsnapshot.md) (for archival)
+Converter for [IIngredientSnapshotEntity](./ts-chocolate.entities.fillings.iingredientsnapshotentity.md) (for archival)
 
 
 </td></tr>
 <tr><td>
 
-[procedureRef](./ts-chocolate.entities.fillings.converters.procedureref.md)
-
-
-</td><td>
-
-Converter for [IProcedureRef](./ts-chocolate.entities.fillings.iprocedureref.md)
-
-
-</td></tr>
-<tr><td>
-
-[procedures](./ts-chocolate.entities.fillings.converters.procedures.md)
+[procedureEntities](./ts-chocolate.entities.fillings.converters.procedureentities.md)
 
 
 </td><td>
 
 Converter for filling recipe procedures with preferred selection. Validates that preferredId (if specified) exists in options.
+
+
+</td></tr>
+<tr><td>
+
+[procedureRefEntity](./ts-chocolate.entities.fillings.converters.procedurerefentity.md)
+
+
+</td><td>
+
+Converter for [IProcedureRefEntity](./ts-chocolate.entities.fillings.iprocedurerefentity.md)
 
 
 </td></tr>
@@ -151,12 +151,12 @@ Converter for [RatingCategory](./ts-chocolate.entities.fillings.ratingcategory.m
 </td></tr>
 <tr><td>
 
-[scalingRef](./ts-chocolate.entities.fillings.converters.scalingref.md)
+[scalingRefEntity](./ts-chocolate.entities.fillings.converters.scalingrefentity.md)
 
 
 </td><td>
 
-Converter for [IScalingRef](./ts-chocolate.entities.fillings.iscalingref.md) (lightweight reference-based format)
+Converter for [IScalingRefEntity](./ts-chocolate.entities.fillings.iscalingrefentity.md) (lightweight reference-based format)
 
 
 </td></tr>

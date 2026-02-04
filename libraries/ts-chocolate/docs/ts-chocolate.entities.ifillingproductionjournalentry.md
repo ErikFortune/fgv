@@ -9,9 +9,9 @@ Journal entry for filling production sessions.
 **Signature:**
 
 ```typescript
-export interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipeVersion, FillingVersionId> 
+export interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipeVersionEntity, FillingVersionId> 
 ```
-**Extends:** IJournalEntryBase&lt;[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)<!-- -->, [FillingVersionId](./ts-chocolate.fillingversionid.md)<!-- -->&gt;
+**Extends:** IJournalEntryBase&lt;[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)<!-- -->, [FillingVersionId](./ts-chocolate.fillingversionid.md)<!-- -->&gt;
 
 ## Properties
 
@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

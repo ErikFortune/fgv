@@ -44,10 +44,10 @@ export {
 export {
   FillingsLibrary,
   FillingCategory,
-  IFillingRecipe,
-  IFillingRecipeVersion,
+  IFillingRecipeEntity,
+  IFillingRecipeVersionEntity,
   IFillingRating,
-  IProducedFilling
+  IProducedFillingEntity
 } from './fillings';
 
 export {

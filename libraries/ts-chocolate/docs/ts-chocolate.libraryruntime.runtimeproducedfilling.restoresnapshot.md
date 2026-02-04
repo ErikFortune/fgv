@@ -9,7 +9,7 @@ Restores state from a snapshot. Pushes current state to undo stack and clears re
 **Signature:**
 
 ```typescript
-restoreSnapshot(snapshot: IProducedFilling): Result<void>;
+restoreSnapshot(snapshot: IProducedFillingEntity): Result<void>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ snapshot
 
 </td><td>
 
-[IProducedFilling](./ts-chocolate.entities.iproducedfilling.md)
+[IProducedFillingEntity](./ts-chocolate.entities.iproducedfillingentity.md)
 
 
 </td><td>

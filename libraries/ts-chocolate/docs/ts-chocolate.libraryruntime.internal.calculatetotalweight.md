@@ -11,7 +11,7 @@ This function handles mixed-unit filling recipes by: - Adding grams directly - C
 **Signature:**
 
 ```typescript
-export declare function calculateTotalWeight(ingredients: ReadonlyArray<Fillings.IFillingIngredient>, context?: IWeightCalculationContext): Measurement;
+export declare function calculateTotalWeight(ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>, context?: IWeightCalculationContext): Measurement;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ ingredients
 
 </td><td>
 
-ReadonlyArray&lt;Fillings.IFillingIngredient&gt;
+ReadonlyArray&lt;Fillings.IFillingIngredientEntity&gt;
 
 
 </td><td>

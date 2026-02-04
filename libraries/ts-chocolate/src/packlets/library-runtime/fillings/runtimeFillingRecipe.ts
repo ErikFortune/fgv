@@ -35,7 +35,7 @@ import {
   FillingVersionSpec,
   SourceId
 } from '../../common';
-import { IFillingRecipe } from '../../entities';
+import { IFillingRecipeEntity } from '../../entities';
 import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from '../model';
 import { RuntimeFillingRecipeVersion } from './runtimeFillingRecipeVersion';
 import { AnyRuntimeIngredient } from '../ingredients';
@@ -55,7 +55,7 @@ type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
 export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
   private readonly _context: RecipeContext;
   private readonly _id: FillingId;
-  private readonly _recipe: IFillingRecipe;
+  private readonly _recipe: IFillingRecipeEntity;
   private readonly _sourceId: SourceId;
   private readonly _baseId: BaseFillingId;
 
@@ -71,7 +71,7 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
    * Use {@link RuntimeFillingRecipe.create} or RuntimeContext.getRecipe() instead of calling this directly.
    * @internal
    */
-  protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe) {
+  protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity) {
     this._context = context;
     this._id = id;
     this._recipe = recipe;
@@ -91,7 +91,7 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
   public static create(
     context: RecipeContext,
     id: FillingId,
-    recipe: IFillingRecipe
+    recipe: IFillingRecipeEntity
   ): Result<RuntimeFillingRecipe> {
     return Success.with(new RuntimeFillingRecipe(context, id, recipe));
   }
@@ -302,7 +302,7 @@ export class RuntimeFillingRecipe implements IRuntimeFillingRecipe {
   /**
    * Gets the underlying raw recipe data
    */
-  public get raw(): IFillingRecipe {
+  public get raw(): IFillingRecipeEntity {
     return this._recipe;
   }
 }

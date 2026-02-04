@@ -9,7 +9,7 @@ Recalculates base weight for filling recipe version and returns updated version
 **Signature:**
 
 ```typescript
-export declare function recalculateFillingRecipeVersion(version: IFillingRecipeVersion): IFillingRecipeVersion;
+export declare function recalculateFillingRecipeVersion(version: IFillingRecipeVersionEntity): IFillingRecipeVersionEntity;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 
 </td><td>
@@ -50,7 +50,7 @@ Filling recipe version to update
 
 **Returns:**
 
-[IFillingRecipeVersion](./ts-chocolate.entities.ifillingrecipeversion.md)
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
 
 New filling recipe version with recalculated base weight
 

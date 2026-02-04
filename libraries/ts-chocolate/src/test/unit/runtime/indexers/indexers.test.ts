@@ -39,7 +39,7 @@ import {
   Ingredients,
   IngredientsLibrary
 } from '../../../../packlets/entities';
-import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/entities';
 import {
   ChocolateLibrary,
   Indexers,
@@ -129,7 +129,7 @@ describe('Indexers', () => {
     tags: ['fresh']
   };
 
-  const darkGanacheRecipe: IFillingRecipe = {
+  const darkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'dark-ganache' as BaseFillingId,
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
@@ -154,7 +154,7 @@ describe('Indexers', () => {
     ]
   };
 
-  const milkGanacheRecipe: IFillingRecipe = {
+  const milkGanacheRecipe: IFillingRecipeEntity = {
     baseId: 'milk-ganache' as BaseFillingId,
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',
@@ -173,7 +173,7 @@ describe('Indexers', () => {
     ]
   };
 
-  const saltedCaramelRecipe: IFillingRecipe = {
+  const saltedCaramelRecipe: IFillingRecipeEntity = {
     baseId: 'salted-caramel' as BaseFillingId,
     name: 'Salted Caramel' as FillingName,
     category: 'caramel',

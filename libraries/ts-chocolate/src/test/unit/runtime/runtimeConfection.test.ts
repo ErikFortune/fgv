@@ -62,7 +62,12 @@ import {
   RuntimeBarTruffle,
   RuntimeRolledTruffle
 } from '../../../packlets/library-runtime';
-import { Confections, Fillings, IChocolateIngredient, IFillingRecipe } from '../../../packlets/entities';
+import {
+  Confections,
+  Fillings,
+  IChocolateIngredient,
+  IFillingRecipeEntity
+} from '../../../packlets/entities';
 
 describe('RuntimeConfection', () => {
   // ============================================================================
@@ -230,7 +235,7 @@ describe('RuntimeConfection', () => {
         baseId: 'dark-ganache-classic' as BaseFillingId,
         name: 'Mock Ganache' as FillingName,
         goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
-        raw: {} as IFillingRecipe
+        raw: {} as IFillingRecipeEntity
       } as unknown as IRuntimeFillingRecipe);
     },
     getRuntimeMold: (id: MoldId) => {
@@ -379,7 +384,7 @@ describe('RuntimeConfection', () => {
       }));
     },
     resolveProcedures: (
-      procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRef, ProcedureId> | undefined
+      procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined
     ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined => {
       if (!procedures || procedures.options.length === 0) return undefined;
       const options = procedures.options.map((ref) => ({

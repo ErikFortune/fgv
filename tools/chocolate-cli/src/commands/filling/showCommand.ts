@@ -43,7 +43,7 @@ import { interactiveSelect, ISelectableItem } from '../shared';
  */
 interface IFillingSelectableItem extends ISelectableItem {
   id: FillingId;
-  filling: Entities.Fillings.IFillingRecipe;
+  filling: Entities.Fillings.IFillingRecipeEntity;
 }
 
 /**
@@ -121,7 +121,7 @@ export function createShowSubcommand(): Command {
 
         // Determine filling ID - either from argument or interactive selection
         let fillingId: FillingId;
-        let filling: Entities.Fillings.IFillingRecipe;
+        let filling: Entities.Fillings.IFillingRecipeEntity;
 
         if (localOptions.interactive || !fillingIdArg) {
           if (!localOptions.interactive && !fillingIdArg) {
@@ -232,7 +232,7 @@ export function createShowSubcommand(): Command {
           }
 
           // Create produced filling snapshot directly
-          const producedIngredients: Entities.Fillings.IProducedFillingIngredient[] =
+          const producedIngredients: Entities.Fillings.IProducedFillingIngredientEntity[] =
             sourceVersion.ingredients.map((ing) => {
               const ingredientId = ing.ingredient.preferredId ?? ing.ingredient.ids[0];
               return {
@@ -243,7 +243,7 @@ export function createShowSubcommand(): Command {
             });
 
           const versionId = `${fillingId}@${sourceVersion.versionSpec}`;
-          const producedFilling: Entities.Fillings.IProducedFilling = {
+          const producedFilling: Entities.Fillings.IProducedFillingEntity = {
             versionId: versionId as FillingVersionId,
             scaleFactor,
             targetWeight,
