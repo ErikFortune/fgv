@@ -101,6 +101,27 @@ _(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.irolledtruffle.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.IRolledTruffleEntity](./ts-chocolate.entities.irolledtruffleentity.md)
+
+
+</td><td>
+
+Entity data typed to IRolledTruffle
+
+
+</td></tr>
+<tr><td>
+
 [goldenVersion](./ts-chocolate.libraryruntime.irolledtruffle.goldenversion.md)
 
 
@@ -117,27 +138,6 @@ _(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 </td><td>
 
 Golden version typed as IRuntimeRolledTruffleVersion
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.irolledtruffle.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.IRolledTruffleEntity](./ts-chocolate.entities.irolledtruffleentity.md)
-
-
-</td><td>
-
-Raw data typed to IRolledTruffle
 
 
 </td></tr>

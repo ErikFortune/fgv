@@ -103,7 +103,7 @@ export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IDa
   /**
    * Gets the underlying raw dairy ingredient data
    */
-  public get raw(): IDairyIngredientEntity {
+  public get entity(): IDairyIngredientEntity {
     return this._dairyIngredient;
   }
 }

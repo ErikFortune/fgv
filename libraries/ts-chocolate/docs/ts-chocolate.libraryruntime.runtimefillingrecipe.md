@@ -105,6 +105,27 @@ Optional description of the recipe
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.runtimefillingrecipe.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
+
+
+</td><td>
+
+Gets the underlying raw recipe data
+
+
+</td></tr>
+<tr><td>
+
 [goldenVersion](./ts-chocolate.libraryruntime.runtimefillingrecipe.goldenversion.md)
 
 
@@ -205,27 +226,6 @@ Gets the latest version (by created date). Resolved lazily on first access.
 </td><td>
 
 Human-readable recipe name
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.runtimefillingrecipe.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
-
-
-</td><td>
-
-Gets the underlying raw recipe data
 
 
 </td></tr>

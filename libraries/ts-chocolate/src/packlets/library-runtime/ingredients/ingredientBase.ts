@@ -244,5 +244,5 @@ export abstract class RuntimeIngredientBase implements IIngredient {
   /**
    * Gets the underlying raw ingredient data (read-only)
    */
-  public abstract get raw(): IngredientEntity;
+  public abstract get entity(): IngredientEntity;
 }

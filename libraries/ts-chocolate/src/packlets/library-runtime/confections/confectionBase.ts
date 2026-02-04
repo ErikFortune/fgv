@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeConfectionBase - abstract base class for runtime confections
+ * ConfectionBase - abstract base class for runtime confections
  * @packageDocumentation
  */
 
@@ -46,12 +46,12 @@ import {
 } from '../model';
 
 // Forward declarations to avoid circular imports
-import type { RuntimeMoldedBonBon } from './moldedBonBon';
-import type { RuntimeBarTruffle } from './barTruffle';
-import type { RuntimeRolledTruffle } from './rolledTruffle';
+import type { MoldedBonBon } from './moldedBonBon';
+import type { BarTruffle } from './barTruffle';
+import type { RolledTruffle } from './rolledTruffle';
 
 // ============================================================================
-// RuntimeConfectionBase Abstract Class
+// ConfectionBase Abstract Class
 // ============================================================================
 
 /**
@@ -59,13 +59,13 @@ import type { RuntimeRolledTruffle } from './rolledTruffle';
  * Provides common properties and version navigation shared by all confection types.
  * @public
  */
-export abstract class RuntimeConfectionBase implements IConfectionBase {
+export abstract class ConfectionBase implements IConfectionBase {
   protected readonly _context: IConfectionContext;
   protected readonly _id: ConfectionId;
   protected readonly _confection: Confections.AnyConfectionEntity;
   protected readonly _sourceId: CollectionId;
   protected readonly _baseId: BaseConfectionId;
-  protected readonly _rawGoldenVersion: Confections.AnyConfectionVersionEntity;
+  protected readonly _goldenVersionEntity: Confections.AnyConfectionVersionEntity;
 
   // Lazy-resolved version caches (undefined = not yet resolved)
   private _resolvedGoldenVersion: AnyConfectionVersion | undefined;
@@ -73,7 +73,7 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
   private _versionCache: Map<ConfectionVersionSpec, AnyConfectionVersion> | undefined;
 
   /**
-   * Creates a RuntimeConfectionBase.
+   * Creates a ConfectionBase.
    * @param context - The runtime context for navigation
    * @param id - The composite confection ID
    * @param confection - The confection data
@@ -92,13 +92,13 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
     this._sourceId = parsed.collectionId;
     this._baseId = parsed.itemId;
 
-    // Find and cache the raw golden version
+    // Find and cache the golden version entity
     const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
     /* c8 ignore next 3 - defensive: converter validates golden version exists */
     if (!goldenVersion) {
       throw new Error(`Golden version ${confection.goldenVersionSpec} not found in confection ${id}`);
     }
-    this._rawGoldenVersion = goldenVersion;
+    this._goldenVersionEntity = goldenVersion;
   }
 
   // ============================================================================
@@ -178,14 +178,14 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
    * Decorations from the golden version
    */
   public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
-    return this._rawGoldenVersion.decorations;
+    return this._goldenVersionEntity.decorations;
   }
 
   /**
    * Yield specification from the golden version
    */
   public get yield(): Confections.IConfectionYield {
-    return this._rawGoldenVersion.yield;
+    return this._goldenVersionEntity.yield;
   }
 
   /**
@@ -211,7 +211,7 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
   /* c8 ignore next 6 - base class getter overridden by all concrete subclasses */
   public get goldenVersion(): AnyConfectionVersion {
     if (this._resolvedGoldenVersion === undefined) {
-      this._resolvedGoldenVersion = this._createVersion(this._rawGoldenVersion);
+      this._resolvedGoldenVersion = this._createVersion(this._goldenVersionEntity);
     }
     return this._resolvedGoldenVersion;
   }
@@ -234,45 +234,45 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
    * @returns Success with runtime version, or Failure if not found
    */
   public getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion> {
-    const rawVersion = this._confection.versions.find((v) => v.versionSpec === versionSpec);
-    if (!rawVersion) {
+    const entity = this._confection.versions.find((v) => v.versionSpec === versionSpec);
+    if (!entity) {
       return Failure.with(`Version ${versionSpec} not found in confection ${this._id}`);
     }
-    return Success.with(this._getOrCreateVersion(rawVersion));
+    return Success.with(this._getOrCreateVersion(entity));
   }
 
   /**
-   * Gets or creates a runtime version from a raw version, using caching.
-   * @param rawVersion - The raw version data
+   * Gets or creates a runtime version from a data layer entity, using caching.
+   * @param entity - The data layer entity
    * @returns The runtime version (from cache or newly created)
    * @internal
    */
-  private _getOrCreateVersion(rawVersion: Confections.AnyConfectionVersionEntity): AnyConfectionVersion {
+  private _getOrCreateVersion(entity: Confections.AnyConfectionVersionEntity): AnyConfectionVersion {
     // Initialize cache if needed
     if (this._versionCache === undefined) {
       this._versionCache = new Map();
     }
 
     // Check cache
-    const cached = this._versionCache.get(rawVersion.versionSpec);
+    const cached = this._versionCache.get(entity.versionSpec);
     if (cached !== undefined) {
       return cached;
     }
 
     // Create new version and cache it
-    const runtimeVersion = this._createVersion(rawVersion);
-    this._versionCache.set(rawVersion.versionSpec, runtimeVersion);
-    return runtimeVersion;
+    const resolvedVersion = this._createVersion(entity);
+    this._versionCache.set(entity.versionSpec, resolvedVersion);
+    return resolvedVersion;
   }
 
   /**
-   * Creates a runtime version from a raw version.
+   * Creates a runtime version from a data layer entity.
    * Must be overridden by subclasses to return the appropriate typed version.
-   * @param rawVersion - The raw version data
+   * @param entity - The data layer entity
    * @returns The runtime version
    * @internal
    */
-  protected abstract _createVersion(rawVersion: Confections.AnyConfectionVersionEntity): AnyConfectionVersion;
+  protected abstract _createVersion(entity: Confections.AnyConfectionVersionEntity): AnyConfectionVersion;
 
   // ============================================================================
   // Effective Tags/URLs (merged from base + version)
@@ -282,14 +282,14 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
    * Gets effective tags for the golden version (base tags + version's additional tags).
    */
   public get effectiveTags(): ReadonlyArray<string> {
-    return this.getEffectiveTags(this._rawGoldenVersion);
+    return this.getEffectiveTags(this._goldenVersionEntity);
   }
 
   /**
    * Gets effective URLs for the golden version (base URLs + version's additional URLs).
    */
   public get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl> {
-    return this.getEffectiveUrls(this._rawGoldenVersion);
+    return this.getEffectiveUrls(this._goldenVersionEntity);
   }
 
   /**
@@ -297,7 +297,7 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
    * @param version - The version to get tags for (defaults to golden version)
    */
   public getEffectiveTags(version?: Confections.AnyConfectionVersionEntity): ReadonlyArray<string> {
-    const targetVersion = version ?? this._rawGoldenVersion;
+    const targetVersion = version ?? this._goldenVersionEntity;
     const baseTags = this._confection.tags ?? [];
     const versionTags = targetVersion.additionalTags ?? [];
     // Deduplicate while preserving order (base first)
@@ -311,7 +311,7 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
   public getEffectiveUrls(
     version?: Confections.AnyConfectionVersionEntity
   ): ReadonlyArray<CommonModel.ICategorizedUrl> {
-    const targetVersion = version ?? this._rawGoldenVersion;
+    const targetVersion = version ?? this._goldenVersionEntity;
     const baseUrls = this._confection.urls ?? [];
     const versionUrls = targetVersion.additionalUrls ?? [];
     return [...baseUrls, ...versionUrls];
@@ -324,30 +324,26 @@ export abstract class RuntimeConfectionBase implements IConfectionBase {
   /**
    * Returns true if this is a molded bonbon confection.
    */
-  public isMoldedBonBon(): this is RuntimeMoldedBonBon {
+  public isMoldedBonBon(): this is MoldedBonBon {
     return Confections.isMoldedBonBonEntity(this._confection);
   }
 
   /**
    * Returns true if this is a bar truffle confection.
    */
-  public isBarTruffle(): this is RuntimeBarTruffle {
+  public isBarTruffle(): this is BarTruffle {
     return Confections.isBarTruffleEntity(this._confection);
   }
 
   /**
    * Returns true if this is a rolled truffle confection.
    */
-  public isRolledTruffle(): this is RuntimeRolledTruffle {
+  public isRolledTruffle(): this is RolledTruffle {
     return Confections.isRolledTruffleEntity(this._confection);
   }
 
-  // ============================================================================
-  // Raw Access - must be overridden by subclasses to return typed data
-  // ============================================================================
-
   /**
-   * Gets the underlying raw confection data (read-only)
+   * Gets the underlying confection data entity (read-only)
    */
-  public abstract get raw(): Confections.AnyConfectionEntity;
+  public abstract get entity(): Confections.AnyConfectionEntity;
 }

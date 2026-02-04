@@ -304,7 +304,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
     return this.getIngredients().onSuccess((ingredientIterator) => {
       // Convert to IResolvedIngredient format for calculation
       const resolvedForCalc: IResolvedIngredient[] = [...ingredientIterator].map((ri) => ({
-        ingredient: ri.ingredient.raw,
+        ingredient: ri.ingredient.entity,
         amount: ri.amount
       }));
 
@@ -378,7 +378,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
           id: ref.id,
           procedure: procedureResult.value,
           notes: ref.notes,
-          raw: ref
+          entity: ref
         });
       }
       // Skip procedures that fail to resolve (e.g., missing from library)
@@ -411,7 +411,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
   /**
    * Gets the underlying raw version data
    */
-  public get raw(): IFillingRecipeVersionEntity {
+  public get entity(): IFillingRecipeVersionEntity {
     return this._version;
   }
 
@@ -457,7 +457,7 @@ export class RuntimeFillingRecipeVersion implements IFillingRecipeVersion {
         amount: ri.amount,
         notes: ri.notes,
         alternates,
-        raw: ri
+        entity: ri
       });
     }
 

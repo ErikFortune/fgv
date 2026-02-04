@@ -8,7 +8,7 @@ A resolved runtime view of a recipe version with resolved ingredients.
 
 This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
 
-Note: Does not extend `IFillingRecipeVersionEntity` because `ingredients` has a different type (resolved vs raw references).
+Note: Does not directly extend `IFillingRecipeVersionEntity` because `ingredients` has a different type (resolved vs entity references).
 
 **Signature:**
 
@@ -78,6 +78,27 @@ string
 </td><td>
 
 Date this version was created (ISO 8601 format).
+
+
+</td></tr>
+<tr><td>
+
+[entity](./ts-chocolate.libraryruntime.ifillingrecipeversion.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
+
+
+</td><td>
+
+Gets the underlying entity version data.
 
 
 </td></tr>
@@ -209,27 +230,6 @@ Optional ratings for this version.
 </td></tr>
 <tr><td>
 
-[raw](./ts-chocolate.libraryruntime.ifillingrecipeversion.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
-
-
-</td><td>
-
-Gets the underlying raw version data.
-
-
-</td></tr>
-<tr><td>
-
 [version](./ts-chocolate.libraryruntime.ifillingrecipeversion.version.md)
 
 
@@ -245,7 +245,7 @@ Gets the underlying raw version data.
 
 </td><td>
 
-The underlying filling recipe version. Use this to get the raw version data for persistence or journaling.
+The underlying filling recipe version. Use this to get the entity version data for persistence or journaling.
 
 
 </td></tr>

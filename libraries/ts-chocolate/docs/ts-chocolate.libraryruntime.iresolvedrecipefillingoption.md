@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iresolvedrecipefillingoption.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Confections.IRecipeFillingOptionEntity
+
+
+</td><td>
+
+The original recipe filling option entity data
+
+
+</td></tr>
+<tr><td>
+
 [filling](./ts-chocolate.libraryruntime.iresolvedrecipefillingoption.filling.md)
 
 
@@ -95,27 +116,6 @@ ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorize
 </td><td>
 
 _(Optional)_ Optional notes specific to this filling option
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iresolvedrecipefillingoption.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Confections.IRecipeFillingOptionEntity
-
-
-</td><td>
-
-The original raw recipe filling option data
 
 
 </td></tr>

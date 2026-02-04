@@ -366,14 +366,14 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     describe('raw access', () => {
       test('raw returns underlying recipe data', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(recipe.raw.name).toBe('Dark Ganache');
+        expect(recipe.entity.name).toBe('Dark Ganache');
       });
     });
 
     describe('create factory', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(RuntimeFillingRecipe.create(ctx as never, recipe.id, recipe.raw)).toSucceed();
+        expect(RuntimeFillingRecipe.create(ctx as never, recipe.id, recipe.entity)).toSucceed();
       });
     });
   });
@@ -435,7 +435,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       test('resolved ingredient includes raw reference', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
-        expect(ingredients[0].raw.ingredient.ids[0]).toBe('test.dark-chocolate');
+        expect(ingredients[0].entity.ingredient.ids[0]).toBe('test.dark-chocolate');
       });
 
       test('getIngredients with empty array returns nothing', () => {
@@ -586,7 +586,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     describe('raw access', () => {
       test('raw returns underlying version data', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(recipe.goldenVersion.raw.versionSpec).toBe('2026-01-01-01');
+        expect(recipe.goldenVersion.entity.versionSpec).toBe('2026-01-01-01');
       });
     });
 
@@ -594,7 +594,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(
-          RuntimeFillingRecipeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.raw)
+          RuntimeFillingRecipeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.entity)
         ).toSucceed();
       });
     });

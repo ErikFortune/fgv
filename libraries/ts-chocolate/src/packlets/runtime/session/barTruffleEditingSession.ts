@@ -27,7 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedBarTruffleEntity, Session } from '../../entities';
-import { RuntimeBarTruffle, RuntimeProducedBarTruffle } from '../../library-runtime';
+import { BarTruffle, RuntimeProducedBarTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -45,7 +45,7 @@ import { IConfectionEditingSessionParams } from './model';
  */
 export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
   IProducedBarTruffleEntity,
-  RuntimeBarTruffle
+  BarTruffle
 > {
   /**
    * Creates a BarTruffleEditingSession.
@@ -53,7 +53,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @internal
    */
   private constructor(
-    baseConfection: RuntimeBarTruffle,
+    baseConfection: BarTruffle,
     produced: RuntimeProducedBarTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -78,7 +78,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static create(
-    baseConfection: RuntimeBarTruffle,
+    baseConfection: BarTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
@@ -99,7 +99,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static fromPersistedState(
-    baseConfection: RuntimeBarTruffle,
+    baseConfection: BarTruffle,
     history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -164,7 +164,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     }
 
     return this._context.getRuntimeFilling(fillingSlot.fillingId).onSuccess((filling) => {
-      return succeed(filling.goldenVersion.raw.baseWeight);
+      return succeed(filling.goldenVersion.entity.baseWeight);
     });
   }
 }

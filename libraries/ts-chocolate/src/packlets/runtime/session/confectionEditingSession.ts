@@ -25,7 +25,7 @@
 
 import { Failure, Result } from '@fgv/ts-utils';
 
-import { AnyRuntimeConfection } from '../../library-runtime';
+import { AnyConfection } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { BarTruffleEditingSession } from './barTruffleEditingSession';
@@ -81,7 +81,7 @@ export class ConfectionEditingSession {
    * @public
    */
   public static create(
-    baseConfection: AnyRuntimeConfection,
+    baseConfection: AnyConfection,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<AnyConfectionEditingSession> {

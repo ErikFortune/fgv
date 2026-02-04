@@ -58,6 +58,27 @@ Resolved chocolate specification
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iresolvedadditionalchocolate.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Confections.IAdditionalChocolateEntity
+
+
+</td><td>
+
+The original additional chocolate entity data
+
+
+</td></tr>
+<tr><td>
+
 [purpose](./ts-chocolate.libraryruntime.iresolvedadditionalchocolate.purpose.md)
 
 
@@ -74,27 +95,6 @@ Resolved chocolate specification
 </td><td>
 
 Purpose of this additional chocolate
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iresolvedadditionalchocolate.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Confections.IAdditionalChocolateEntity
-
-
-</td><td>
-
-The original raw additional chocolate data
 
 
 </td></tr>

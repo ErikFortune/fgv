@@ -36,7 +36,7 @@ import {
   IBarTruffleVersionEntity,
   IBonBonDimensions,
   IChocolateSpec,
-  ICoatings,
+  ICoatingsEntity,
   IConfectionEntityBase,
   IConfectionDecoration,
   IConfectionMoldRef,
@@ -237,11 +237,11 @@ export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.object<
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Confections.ICoatings | ICoatings} (IIdsWithPreferred<IngredientId>).
+ * Converter for {@link Entities.Confections.ICoatingsEntity | ICoatingsEntity} (IIdsWithPreferred<IngredientId>).
  * Validates that preferredId (if specified) exists in ids.
  * @public
  */
-export const coatings: Converter<ICoatings> = CommonConverters.idsWithPreferred(
+export const coatingsEntity: Converter<ICoatingsEntity> = CommonConverters.idsWithPreferred(
   CommonConverters.ingredientId,
   'coatings'
 );
@@ -298,7 +298,7 @@ export const rolledTruffleVersionEntity: Converter<IRolledTruffleVersionEntity> 
   Converters.object<IRolledTruffleVersionEntity>({
     ...commonVersionFields,
     enrobingChocolate: chocolateSpec.optional(),
-    coatings: coatings.optional()
+    coatings: coatingsEntity.optional()
   });
 
 /**

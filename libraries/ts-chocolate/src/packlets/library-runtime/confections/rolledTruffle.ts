@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeRolledTruffle - concrete rolled truffle confection implementation
+ * RolledTruffle - concrete rolled truffle confection implementation
  * @packageDocumentation
  */
 
@@ -36,11 +36,11 @@ import {
   IRolledTruffle,
   IRolledTruffleVersion
 } from '../model';
-import { RuntimeConfectionBase } from './confectionBase';
-import { RuntimeRolledTruffleVersion } from './versions';
+import { ConfectionBase } from './confectionBase';
+import { RolledTruffleVersion } from './versions';
 
 // ============================================================================
-// RuntimeRolledTruffle Class
+// RolledTruffle Class
 // ============================================================================
 
 /**
@@ -48,12 +48,12 @@ import { RuntimeRolledTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRolledTruffle {
+export class RolledTruffle extends ConfectionBase implements IRolledTruffle {
   private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
 
   /**
-   * Creates a RuntimeRolledTruffle.
-   * Use RuntimeConfection.create() or RuntimeRolledTruffle.create() instead.
+   * Creates a RolledTruffle.
+   * Use Confection.create() or RolledTruffle.create() instead.
    * @internal
    */
   protected constructor(
@@ -66,18 +66,18 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRoll
   }
 
   /**
-   * Factory method for creating a RuntimeRolledTruffle.
+   * Factory method for creating a RolledTruffle.
    * @param context - The runtime context
    * @param id - The confection ID
    * @param confection - The rolled truffle data
-   * @returns Success with RuntimeRolledTruffle
+   * @returns Success with RolledTruffle
    */
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
     confection: Confections.IRolledTruffleEntity
-  ): Result<RuntimeRolledTruffle> {
-    return Success.with(new RuntimeRolledTruffle(context, id, confection));
+  ): Result<RolledTruffle> {
+    return Success.with(new RolledTruffle(context, id, confection));
   }
 
   // ============================================================================
@@ -96,14 +96,14 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRoll
   // ============================================================================
 
   /**
-   * Golden version typed as IRuntimeRolledTruffleVersion.
+   * Golden version typed as IRolledTruffleVersion.
    */
   public override get goldenVersion(): IRolledTruffleVersion {
     return super.goldenVersion as IRolledTruffleVersion;
   }
 
   /**
-   * All versions typed as IRuntimeRolledTruffleVersion.
+   * All versions typed as IRolledTruffleVersion.
    */
   public override get versions(): ReadonlyArray<IRolledTruffleVersion> {
     return super.versions as ReadonlyArray<IRolledTruffleVersion>;
@@ -119,18 +119,16 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRoll
   }
 
   /**
-   * Creates a runtime version from a raw version.
-   * @param rawVersion - The raw version data
+   * Creates a runtime version from a data layer entity.
+   * @param entity - The data layer entity
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(
-    rawVersion: Confections.AnyConfectionVersionEntity
-  ): IRolledTruffleVersion {
-    return RuntimeRolledTruffleVersion.create(
+  protected override _createVersion(entity: Confections.AnyConfectionVersionEntity): IRolledTruffleVersion {
+    return RolledTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IRolledTruffleVersionEntity
+      entity as Confections.IRolledTruffleVersionEntity
     ).orThrow();
   }
 
@@ -168,14 +166,10 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRoll
     return this.goldenVersion.coatings;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw rolled truffle data
+   * Gets the underlying rolled truffle data entity
    */
-  public get raw(): Confections.IRolledTruffleEntity {
+  public get entity(): Confections.IRolledTruffleEntity {
     return this._rolledTruffle;
   }
 }

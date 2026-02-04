@@ -86,6 +86,27 @@ Category is always 'alcohol' for this type
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.runtimealcoholingredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IAlcoholIngredientEntity](./ts-chocolate.entities.ialcoholingrediententity.md)
+
+
+</td><td>
+
+Gets the underlying raw alcohol ingredient data
+
+
+</td></tr>
+<tr><td>
+
 [flavorProfile](./ts-chocolate.libraryruntime.runtimealcoholingredient.flavorprofile.md)
 
 
@@ -102,27 +123,6 @@ string \| undefined
 </td><td>
 
 Flavor profile description (optional)
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.runtimealcoholingredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IAlcoholIngredientEntity](./ts-chocolate.entities.ialcoholingrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw alcohol ingredient data
 
 
 </td></tr>

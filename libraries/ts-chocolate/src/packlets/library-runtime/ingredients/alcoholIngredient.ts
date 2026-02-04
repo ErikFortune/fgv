@@ -103,7 +103,7 @@ export class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements I
   /**
    * Gets the underlying raw alcohol ingredient data
    */
-  public get raw(): IAlcoholIngredientEntity {
+  public get entity(): IAlcoholIngredientEntity {
     return this._alcoholIngredient;
   }
 }

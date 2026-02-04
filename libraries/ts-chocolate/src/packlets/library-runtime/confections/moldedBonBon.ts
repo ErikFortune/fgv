@@ -37,8 +37,8 @@ import {
   IMoldedBonBon,
   IMoldedBonBonVersion
 } from '../model';
-import { RuntimeConfectionBase } from './confectionBase';
-import { RuntimeMoldedBonBonVersion } from './versions';
+import { ConfectionBase } from './confectionBase';
+import { MoldedBonBonVersion } from './versions';
 
 // ============================================================================
 // RuntimeMoldedBonBon Class
@@ -49,12 +49,12 @@ import { RuntimeMoldedBonBonVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMoldedBonBon {
+export class MoldedBonBon extends ConfectionBase implements IMoldedBonBon {
   private readonly _moldedBonBon: Confections.IMoldedBonBonEntity;
 
   /**
-   * Creates a RuntimeMoldedBonBon.
-   * Use RuntimeConfection.create() or RuntimeMoldedBonBon.create() instead.
+   * Creates a MoldedBonBon.
+   * Use Confection.create() or MoldedBonBon.create() instead.
    * @internal
    */
   protected constructor(
@@ -67,18 +67,18 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMolde
   }
 
   /**
-   * Factory method for creating a RuntimeMoldedBonBon.
+   * Factory method for creating a MoldedBonBon.
    * @param context - The runtime context
    * @param id - The confection ID
    * @param confection - The molded bonbon data
-   * @returns Success with RuntimeMoldedBonBon
+   * @returns Success with MoldedBonBon
    */
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
     confection: Confections.IMoldedBonBonEntity
-  ): Result<RuntimeMoldedBonBon> {
-    return Success.with(new RuntimeMoldedBonBon(context, id, confection));
+  ): Result<MoldedBonBon> {
+    return Success.with(new MoldedBonBon(context, id, confection));
   }
 
   // ============================================================================
@@ -97,14 +97,14 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMolde
   // ============================================================================
 
   /**
-   * Golden version typed as IRuntimeMoldedBonBonVersion.
+   * Golden version typed as IMoldedBonBonVersion.
    */
   public override get goldenVersion(): IMoldedBonBonVersion {
     return super.goldenVersion as IMoldedBonBonVersion;
   }
 
   /**
-   * All versions typed as IRuntimeMoldedBonBonVersion.
+   * All versions typed as IMoldedBonBonVersion.
    */
   public override get versions(): ReadonlyArray<IMoldedBonBonVersion> {
     return super.versions as ReadonlyArray<IMoldedBonBonVersion>;
@@ -120,18 +120,16 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMolde
   }
 
   /**
-   * Creates a runtime version from a raw version.
-   * @param rawVersion - The raw version data
+   * Creates a runtime version from a data layer entity.
+   * @param entity - The data layer entity
    * @returns The runtime version
    * @internal
    */
-  protected override _createVersion(
-    rawVersion: Confections.AnyConfectionVersionEntity
-  ): IMoldedBonBonVersion {
-    return RuntimeMoldedBonBonVersion.create(
+  protected override _createVersion(entity: Confections.AnyConfectionVersionEntity): IMoldedBonBonVersion {
+    return MoldedBonBonVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IMoldedBonBonVersionEntity
+      entity as Confections.IMoldedBonBonVersionEntity
     ).orThrow();
   }
 
@@ -176,14 +174,10 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IMolde
     return this.goldenVersion.additionalChocolates;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw molded bonbon data
+   * Gets the underlying molded bonbon data entity
    */
-  public get raw(): Confections.IMoldedBonBonEntity {
+  public get entity(): Confections.IMoldedBonBonEntity {
     return this._moldedBonBon;
   }
 }

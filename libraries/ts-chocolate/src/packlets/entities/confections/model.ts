@@ -243,7 +243,7 @@ export interface IBonBonDimensions {
  * `preferredId` indicates the default/recommended one.
  * @public
  */
-export type ICoatings = Model.IIdsWithPreferred<IngredientId>;
+export type ICoatingsEntity = Model.IIdsWithPreferred<IngredientId>;
 
 // ============================================================================
 // Version Types
@@ -312,7 +312,7 @@ export interface IRolledTruffleVersionEntity extends IConfectionVersionEntityBas
   /** Optional enrobing chocolate specification */
   readonly enrobingChocolate?: IChocolateSpec;
   /** Optional coatings (cocoa powder, nuts, etc.) */
-  readonly coatings?: ICoatings;
+  readonly coatings?: ICoatingsEntity;
 }
 
 /**

@@ -9,7 +9,7 @@ Resolves coating specifications to runtime ingredient objects.
 **Signature:**
 
 ```typescript
-resolveCoatings(coatings: Confections.ICoatings): IResolvedCoatings;
+resolveCoatings(coatings: Confections.ICoatingsEntity): IResolvedCoatings;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ coatings
 
 </td><td>
 
-Confections.ICoatings
+Confections.ICoatingsEntity
 
 
 </td><td>

@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iresolvedcoatings.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Confections.ICoatingsEntity
+
+
+</td><td>
+
+The original coatings spec
+
+
+</td></tr>
+<tr><td>
+
 [options](./ts-chocolate.libraryruntime.iresolvedcoatings.options.md)
 
 
@@ -74,27 +95,6 @@ All available coating ingredient options
 </td><td>
 
 _(Optional)_ The preferred/default coating (resolved ingredient)
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iresolvedcoatings.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Confections.ICoatings
-
-
-</td><td>
-
-The original raw coatings spec
 
 
 </td></tr>

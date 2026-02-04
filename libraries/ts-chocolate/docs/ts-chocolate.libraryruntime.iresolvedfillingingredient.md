@@ -79,6 +79,27 @@ Amount in grams
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iresolvedfillingingredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Fillings.IFillingIngredientEntity
+
+
+</td><td>
+
+The original ingredient entity reference data
+
+
+</td></tr>
+<tr><td>
+
 [ingredient](./ts-chocolate.libraryruntime.iresolvedfillingingredient.ingredient.md)
 
 
@@ -116,27 +137,6 @@ ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorize
 </td><td>
 
 _(Optional)_ Optional notes for this specific ingredient usage
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iresolvedfillingingredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Fillings.IFillingIngredientEntity
-
-
-</td><td>
-
-The original raw ingredient reference data
 
 
 </td></tr>

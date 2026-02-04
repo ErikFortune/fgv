@@ -271,7 +271,7 @@ describe('RuntimeIngredient', () => {
   describe('create', () => {
     test('create factory method succeeds', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      expect(RuntimeIngredient.create(ctx as never, ingredient.id, ingredient.raw)).toSucceed();
+      expect(RuntimeIngredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
     });
   });
 
@@ -531,8 +531,8 @@ describe('RuntimeIngredient', () => {
     test('provides raw access to underlying sugar ingredient', () => {
       const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
       if (ingredient.isSugar()) {
-        expect(ingredient.raw.category).toBe('sugar');
-        expect(ingredient.raw.baseId).toBe('sugar');
+        expect(ingredient.entity.category).toBe('sugar');
+        expect(ingredient.entity.baseId).toBe('sugar');
       }
     });
   });
@@ -558,8 +558,8 @@ describe('RuntimeIngredient', () => {
     test('provides raw access to underlying fat ingredient', () => {
       const ingredient = ctx.ingredients.get('test.butter' as IngredientId).orThrow();
       if (ingredient.isFat()) {
-        expect(ingredient.raw.category).toBe('fat');
-        expect(ingredient.raw.baseId).toBe('butter');
+        expect(ingredient.entity.category).toBe('fat');
+        expect(ingredient.entity.baseId).toBe('butter');
       }
     });
   });
@@ -592,8 +592,8 @@ describe('RuntimeIngredient', () => {
     test('provides raw access to underlying alcohol ingredient', () => {
       const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
       if (ingredient.isAlcohol()) {
-        expect(ingredient.raw.category).toBe('alcohol');
-        expect(ingredient.raw.baseId).toBe('rum');
+        expect(ingredient.entity.category).toBe('alcohol');
+        expect(ingredient.entity.baseId).toBe('rum');
       }
     });
   });
@@ -630,7 +630,7 @@ describe('RuntimeIngredient', () => {
   describe('raw access', () => {
     test('raw returns underlying ingredient', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      expect(ingredient.raw.name).toBe('Dark Chocolate 70%');
+      expect(ingredient.entity.name).toBe('Dark Chocolate 70%');
     });
   });
 
@@ -648,8 +648,8 @@ describe('RuntimeIngredient', () => {
 
       test('liquid ingredient has correct raw data', () => {
         const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
-        expect(ingredient.raw.name).toBe('Water');
-        expect(ingredient.raw.ganacheCharacteristics.water).toBe(100);
+        expect(ingredient.entity.name).toBe('Water');
+        expect(ingredient.entity.ganacheCharacteristics.water).toBe(100);
       });
     });
 
@@ -662,9 +662,9 @@ describe('RuntimeIngredient', () => {
 
       test('flavor ingredient has correct raw data and tags', () => {
         const ingredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
-        expect(ingredient.raw.name).toBe('Vanilla Extract');
-        expect(ingredient.raw.tags).toContain('natural');
-        expect(ingredient.raw.tags).toContain('aroma');
+        expect(ingredient.entity.name).toBe('Vanilla Extract');
+        expect(ingredient.entity.tags).toContain('natural');
+        expect(ingredient.entity.tags).toContain('aroma');
       });
     });
 
@@ -677,25 +677,25 @@ describe('RuntimeIngredient', () => {
 
       test('other ingredient has correct raw data and description', () => {
         const ingredient = ctx.ingredients.get('test.lecithin' as IngredientId).orThrow();
-        expect(ingredient.raw.name).toBe('Soy Lecithin');
-        expect(ingredient.raw.description).toBe('Emulsifier used in chocolate production');
-        expect(ingredient.raw.allergens).toContain('soy');
+        expect(ingredient.entity.name).toBe('Soy Lecithin');
+        expect(ingredient.entity.description).toBe('Emulsifier used in chocolate production');
+        expect(ingredient.entity.allergens).toContain('soy');
       });
     });
 
     describe('RuntimeGenericIngredient factory', () => {
       test('create succeeds with valid parameters', () => {
         const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
-        expect(RuntimeGenericIngredient.create(ctx as never, ingredient.id, ingredient.raw)).toSucceed();
+        expect(RuntimeGenericIngredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
       });
 
       test('created instance has correct category and raw access', () => {
         const originalIngredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
         expect(
-          RuntimeGenericIngredient.create(ctx as never, originalIngredient.id, originalIngredient.raw)
+          RuntimeGenericIngredient.create(ctx as never, originalIngredient.id, originalIngredient.entity)
         ).toSucceedAndSatisfy((newIngredient) => {
           expect(newIngredient.category).toBe('flavor');
-          expect(newIngredient.raw.name).toBe('Vanilla Extract');
+          expect(newIngredient.entity.name).toBe('Vanilla Extract');
         });
       });
     });

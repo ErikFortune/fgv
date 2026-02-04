@@ -95,7 +95,7 @@ import { ChocolateLibrary } from './chocolateLibrary';
  * - Composite identity (`id`, `sourceId`) for cross-source references
  * - Navigation to recipes that use this ingredient
  * - Type narrowing methods for discriminated access
- * - Raw access to underlying data
+ * - Access to underlying data entities
  *
  * Note: Does not extend `IIngredientEntity` directly because the class implementation
  * provides the same shape but with additional runtime behavior.
@@ -202,12 +202,10 @@ export interface IIngredient {
    */
   isAlcohol(): this is IAlcoholIngredient;
 
-  // ---- Raw access ----
-
   /**
-   * Gets the underlying raw ingredient data.
+   * Gets the underlying ingredient entity data.
    */
-  readonly raw: IngredientEntity;
+  readonly entity: IngredientEntity;
 }
 
 /**
@@ -243,9 +241,9 @@ export interface IChocolateIngredient extends IIngredient {
   readonly origins?: ReadonlyArray<string>;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IIngredient.entity}
    */
-  readonly raw: IChocolateIngredientEntity;
+  readonly entity: IChocolateIngredientEntity;
 }
 
 /**
@@ -263,9 +261,9 @@ export interface IDairyIngredient extends IIngredient {
   readonly waterContent?: Percentage;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IIngredient.entity}
    */
-  readonly raw: IDairyIngredientEntity;
+  readonly entity: IDairyIngredientEntity;
 }
 
 /**
@@ -283,9 +281,9 @@ export interface ISugarIngredient extends IIngredient {
   readonly sweetnessPotency?: number;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IIngredient.entity}
    */
-  readonly raw: ISugarIngredientEntity;
+  readonly entity: ISugarIngredientEntity;
 }
 
 /**
@@ -300,9 +298,9 @@ export interface IFatIngredient extends IIngredient {
   readonly meltingPoint?: Celsius;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IIngredient.entity}
    */
-  readonly raw: IFatIngredientEntity;
+  readonly entity: IFatIngredientEntity;
 }
 
 /**
@@ -320,9 +318,9 @@ export interface IAlcoholIngredient extends IIngredient {
   readonly flavorProfile?: string;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.raw}
+   * {@inheritdoc LibraryRuntime.IIngredient.entity}
    */
-  readonly raw: IAlcoholIngredientEntity;
+  readonly entity: IAlcoholIngredientEntity;
 }
 
 // ============================================================================
@@ -363,8 +361,8 @@ export type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
  * - Resolved ingredient access via flexible filtering
  * - Ganache calculation
  *
- * Note: Does not extend `IFillingRecipeVersionEntity` because `ingredients` has a different
- * type (resolved vs raw references).
+ * Note: Does not directly extend `IFillingRecipeVersionEntity` because `ingredients` has a different
+ * type (resolved vs entity references).
  *
  * @public
  */
@@ -399,7 +397,7 @@ export interface IFillingRecipeVersion {
 
   /**
    * The underlying filling recipe version.
-   * Use this to get the raw version data for persistence or journaling.
+   * Use this to get the entity version data for persistence or journaling.
    */
   readonly version: IFillingRecipeVersionEntity;
 
@@ -494,12 +492,12 @@ export interface IFillingRecipeVersion {
    */
   readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
 
-  // ---- Raw access ----
+  // ---- Entity access ----
 
   /**
-   * Gets the underlying raw version data.
+   * Gets the underlying entity version data.
    */
-  readonly raw: IFillingRecipeVersionEntity;
+  readonly entity: IFillingRecipeVersionEntity;
 }
 
 // ============================================================================
@@ -528,9 +526,9 @@ export interface IResolvedFillingRecipeProcedure {
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
-   * The original raw procedure reference data.
+   * The original procedure reference entity data.
    */
-  readonly raw: Fillings.IProcedureRefEntity;
+  readonly entity: Fillings.IProcedureRefEntity;
 }
 
 /**
@@ -559,13 +557,13 @@ export interface IResolvedProcedures {
  *
  * This interface provides runtime-layer access to recipe data with:
  * - Composite identity (`id`, `collectionId`) for cross-source references
- * - Resolved version access (full objects, not just raw data)
+ * - Resolved version access (full objects, not just entity data)
  * - Scaling and calculation operations
  * - Usage and ingredient queries
  * - Resolved procedure access
  *
  * Note: Does not extend {@link Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity}
- * directly because `versions` has a different type (resolved vs raw versions).
+ * directly because `versions` has a different type (resolved vs data layer entity versions).
  *
  * @public
  */
@@ -660,12 +658,12 @@ export interface IFillingRecipe {
    */
   usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
 
-  // ---- Raw access ----
+  // ---- Entity access ----
 
   /**
-   * Gets the underlying raw recipe data.
+   * Gets the underlying filling recipe entity data.
    */
-  readonly raw: IFillingRecipeEntity;
+  readonly entity: IFillingRecipeEntity;
 }
 
 // ============================================================================
@@ -699,9 +697,9 @@ export interface IResolvedFillingIngredient<TIngredient extends IIngredient = II
   readonly alternates: ReadonlyArray<TIngredient>;
 
   /**
-   * The original raw ingredient reference data
+   * The original ingredient entity reference data
    */
-  readonly raw: Fillings.IFillingIngredientEntity;
+  readonly entity: Fillings.IFillingIngredientEntity;
 }
 
 // ============================================================================
@@ -996,7 +994,7 @@ export interface ILibraryRuntimeContext {
  * - Version navigation with typed versions
  * - Effective tags/urls (merged from base + version)
  * - Type narrowing methods for discriminated access
- * - Raw access to underlying data
+ * - Access to underlying entity data
  *
  * @public
  */
@@ -1118,12 +1116,10 @@ export interface IConfectionBase {
    */
   isRolledTruffle(): this is IRolledTruffle;
 
-  // ---- Raw access ----
-
   /**
-   * Gets the underlying raw confection data.
+   * Gets the underlying confection entity data.
    */
-  readonly raw: Confections.AnyConfectionEntity;
+  readonly entity: Confections.AnyConfectionEntity;
 }
 
 /**
@@ -1152,8 +1148,8 @@ export interface IMoldedBonBon extends IConfectionBase {
   /** Resolved additional chocolates (from golden version) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 
-  /** Raw data typed to IMoldedBonBon */
-  readonly raw: Confections.IMoldedBonBonEntity;
+  /** Entity data typed to IMoldedBonBon */
+  readonly entity: Confections.IMoldedBonBonEntity;
 }
 
 /**
@@ -1182,8 +1178,8 @@ export interface IBarTruffle extends IConfectionBase {
   /** Resolved enrobing chocolate (from golden version, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
-  /** Raw data typed to IBarTruffle */
-  readonly raw: Confections.IBarTruffleEntity;
+  /** Entity data typed to IBarTruffle */
+  readonly entity: Confections.IBarTruffleEntity;
 }
 
 /**
@@ -1209,8 +1205,8 @@ export interface IRolledTruffle extends IConfectionBase {
   /** Resolved coatings (from golden version, optional) */
   readonly coatings?: IResolvedCoatings;
 
-  /** Raw data typed to IRolledTruffle */
-  readonly raw: Confections.IRolledTruffleEntity;
+  /** Entity data typed to IRolledTruffle */
+  readonly entity: Confections.IRolledTruffleEntity;
 }
 
 /**
@@ -1233,8 +1229,8 @@ export interface IResolvedRecipeFillingOption {
   readonly filling: IFillingRecipe;
   /** Optional notes specific to this filling option */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-  /** The original raw recipe filling option data */
-  readonly raw: Confections.IRecipeFillingOptionEntity;
+  /** The original recipe filling option entity data */
+  readonly entity: Confections.IRecipeFillingOptionEntity;
 }
 
 /**
@@ -1250,8 +1246,8 @@ export interface IResolvedIngredientFillingOption {
   readonly ingredient: IIngredient;
   /** Optional notes specific to this filling option */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-  /** The original raw ingredient filling option data */
-  readonly raw: Confections.IIngredientFillingOptionEntity;
+  /** The original ingredient filling option entity data */
+  readonly entity: Confections.IIngredientFillingOptionEntity;
 }
 
 /**
@@ -1281,8 +1277,8 @@ export interface IResolvedChocolateSpec {
   readonly chocolate: IChocolateIngredient;
   /** Alternate chocolate options (all chocolate category) */
   readonly alternates: ReadonlyArray<IChocolateIngredient>;
-  /** The original raw chocolate spec */
-  readonly raw: Confections.IChocolateSpec;
+  /** The original chocolate spec entity */
+  readonly entity: Confections.IChocolateSpec;
 }
 
 /**
@@ -1294,8 +1290,8 @@ export interface IResolvedAdditionalChocolate {
   readonly chocolate: IResolvedChocolateSpec;
   /** Purpose of this additional chocolate */
   readonly purpose: AdditionalChocolatePurpose;
-  /** The original raw additional chocolate data */
-  readonly raw: Confections.IAdditionalChocolateEntity;
+  /** The original additional chocolate entity data */
+  readonly entity: Confections.IAdditionalChocolateEntity;
 }
 
 // ============================================================================
@@ -1313,8 +1309,8 @@ export interface IResolvedConfectionMoldRef {
   readonly mold: IRuntimeMold;
   /** Optional notes specific to using this mold */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-  /** The original raw mold reference data */
-  readonly raw: Confections.IConfectionMoldRef;
+  /** The original mold entity reference data */
+  readonly entity: Confections.IConfectionMoldRef;
 }
 
 // ============================================================================
@@ -1333,8 +1329,8 @@ export interface IResolvedConfectionProcedure {
   readonly procedure: IRuntimeProcedure;
   /** Optional notes specific to using this procedure */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-  /** The original raw procedure reference data */
-  readonly raw: Fillings.IProcedureRefEntity;
+  /** The original procedure reference entity data */
+  readonly entity: Fillings.IProcedureRefEntity;
 }
 
 // ============================================================================
@@ -1351,8 +1347,8 @@ export interface IResolvedCoatings {
   readonly options: ReadonlyArray<IResolvedCoatingOption>;
   /** The preferred/default coating (resolved ingredient) */
   readonly preferred?: IResolvedCoatingOption;
-  /** The original raw coatings spec */
-  readonly raw: Confections.ICoatings;
+  /** The original coatings spec */
+  readonly entity: Confections.ICoatingsEntity;
 }
 
 /**
@@ -1379,7 +1375,7 @@ export interface IResolvedCoatingOption {
  * - Parent confection reference (ID and resolved object)
  * - Resolved filling slots and procedures
  * - Effective tags/urls (merged from base confection + version)
- * - Raw access to underlying version data
+ * - Access to underlying recipe version entity data
  *
  * @public
  */
@@ -1409,7 +1405,7 @@ export interface IConfectionVersionBase {
 
   /**
    * The underlying confection version.
-   * Use this to get the raw version data for persistence or journaling.
+   * Use this to get the version entity data for persistence or journaling.
    */
   readonly version: Confections.AnyConfectionVersionEntity;
 
@@ -1473,12 +1469,10 @@ export interface IConfectionVersionBase {
    */
   isRolledTruffleVersion(): this is IRolledTruffleVersion;
 
-  // ---- Raw access ----
-
   /**
-   * Gets the underlying raw version data.
+   * Gets the underlying recipe version entity data.
    */
-  readonly raw: Confections.AnyConfectionVersionEntity;
+  readonly entity: Confections.AnyConfectionVersionEntity;
 }
 
 /**
@@ -1504,8 +1498,8 @@ export interface IMoldedBonBonVersion extends IConfectionVersionBase {
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
-  /** Raw version typed to IMoldedBonBonVersion */
-  readonly raw: Confections.IMoldedBonBonVersionEntity;
+  /** Entity data typed to {@link Entities.Confections.IMoldedBonBonVersionEntity | IMoldedBonBonVersionEntity}. */
+  readonly entity: Confections.IMoldedBonBonVersionEntity;
 }
 
 /**
@@ -1528,8 +1522,8 @@ export interface IBarTruffleVersion extends IConfectionVersionBase {
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
-  /** Raw version typed to IBarTruffleVersion */
-  readonly raw: Confections.IBarTruffleVersionEntity;
+  /** Entity data typed to {@link Entities.Confections.IBarTruffleVersionEntity | IBarTruffleVersionEntity}. */
+  readonly entity: Confections.IBarTruffleVersionEntity;
 }
 
 /**
@@ -1549,8 +1543,8 @@ export interface IRolledTruffleVersion extends IConfectionVersionBase {
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 
-  /** Raw version typed to IRolledTruffleVersion */
-  readonly raw: Confections.IRolledTruffleVersionEntity;
+  /** Entity data typed to {@link Entities.Confections.IRolledTruffleVersionEntity | IRolledTruffleVersionEntity}. */
+  readonly entity: Confections.IRolledTruffleVersionEntity;
 }
 
 /**
@@ -1605,7 +1599,7 @@ export interface IConfectionContext {
 
   /**
    * Resolves a chocolate specification to runtime ingredient objects.
-   * @param spec - The raw chocolate specification
+   * @param spec - The chocolate entity specification
    * @param confectionId - The confection ID (for error messages)
    * @returns Resolved chocolate specification with primary chocolate + alternates
    */
@@ -1613,14 +1607,14 @@ export interface IConfectionContext {
 
   /**
    * Resolves coating specifications to runtime ingredient objects.
-   * @param coatings - The raw coatings specification
+   * @param coatings - The coatings entity specification
    * @returns Resolved coatings specification
    */
-  resolveCoatings(coatings: Confections.ICoatings): IResolvedCoatings;
+  resolveCoatings(coatings: Confections.ICoatingsEntity): IResolvedCoatings;
 
   /**
    * Resolves mold references to runtime mold objects.
-   * @param molds - The raw mold references with preferred selection
+   * @param molds - The mold entity references with preferred selection
    * @returns Resolved mold references
    */
   resolveMoldRefs(
@@ -1629,7 +1623,7 @@ export interface IConfectionContext {
 
   /**
    * Resolves additional chocolates to runtime objects.
-   * @param additional - The raw additional chocolates
+   * @param additional - The additional chocolates entities
    * @param confectionId - The confection ID (for error messages)
    * @returns Resolved additional chocolates, or undefined if none
    */
@@ -1640,7 +1634,7 @@ export interface IConfectionContext {
 
   /**
    * Resolves filling slots to runtime objects.
-   * @param slots - The raw filling slots
+   * @param slots - The filling slots entities
    * @returns Resolved filling slots, or undefined if none
    */
   resolveFillingSlots(
@@ -1649,7 +1643,7 @@ export interface IConfectionContext {
 
   /**
    * Resolves procedure references to runtime objects.
-   * @param procedures - The raw procedure references
+   * @param procedures - The procedure reference entities
    * @returns Resolved procedures, or undefined if none
    */
   resolveProcedures(

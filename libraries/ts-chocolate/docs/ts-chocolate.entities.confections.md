@@ -666,7 +666,7 @@ Chocolate specification for shell, enrobing, or coating. Uses IIdsWithPreferred 
 </td></tr>
 <tr><td>
 
-[ICoatings](./ts-chocolate.entities.confections.icoatings.md)
+[ICoatingsEntity](./ts-chocolate.entities.confections.icoatingsentity.md)
 
 
 </td><td>

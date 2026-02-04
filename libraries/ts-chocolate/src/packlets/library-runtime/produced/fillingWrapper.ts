@@ -134,14 +134,14 @@ export class RuntimeProducedFilling {
     scaleFactor: number
   ): Result<IProducedFillingEntity> {
     // Convert ingredients using mapResults pattern
-    const ingredientResults = source.raw.ingredients.map((ing) =>
+    const ingredientResults = source.entity.ingredients.map((ing) =>
       RuntimeProducedFilling._convertIngredient(ing, scaleFactor)
     );
 
     return mapResults(ingredientResults).onSuccess((ingredients) => {
       // Convert target weight properly
       return CommonConverters.measurement
-        .convert(source.raw.baseWeight * scaleFactor)
+        .convert(source.entity.baseWeight * scaleFactor)
         .onSuccess((targetWeight) => {
           const produced: IProducedFillingEntity = {
             versionId: source.versionId,
@@ -149,7 +149,7 @@ export class RuntimeProducedFilling {
             targetWeight,
             ingredients,
             procedureId: source.preferredProcedure?.id,
-            notes: source.raw.notes
+            notes: source.entity.notes
           };
           return succeed(produced);
         });

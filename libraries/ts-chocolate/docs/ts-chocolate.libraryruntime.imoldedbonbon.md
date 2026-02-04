@@ -80,6 +80,27 @@ Type is always 'molded-bonbon' for this confection
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.imoldedbonbon.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
+
+
+</td><td>
+
+Entity data typed to IMoldedBonBon
+
+
+</td></tr>
+<tr><td>
+
 [goldenVersion](./ts-chocolate.libraryruntime.imoldedbonbon.goldenversion.md)
 
 
@@ -117,27 +138,6 @@ Golden version typed as IRuntimeMoldedBonBonVersion
 </td><td>
 
 Resolved molds with preferred selection (from golden version)
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.imoldedbonbon.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
-
-
-</td><td>
-
-Raw data typed to IMoldedBonBon
 
 
 </td></tr>

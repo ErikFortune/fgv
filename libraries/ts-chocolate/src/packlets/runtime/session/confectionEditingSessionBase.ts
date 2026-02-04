@@ -27,7 +27,7 @@ import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { FillingId, IngredientId, Measurement, SessionSpec, SlotId } from '../../common';
 import { Confections, AnyProducedConfectionEntity } from '../../entities';
-import { AnyRuntimeConfection, RuntimeProducedConfectionBase } from '../../library-runtime';
+import { AnyConfection, RuntimeProducedConfectionBase } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { EditingSession } from './editingSession';
@@ -51,7 +51,7 @@ import { generateSessionId } from './sessionUtils';
  */
 export abstract class ConfectionEditingSessionBase<
   T extends AnyProducedConfectionEntity,
-  TRuntime extends AnyRuntimeConfection
+  TRuntime extends AnyConfection
 > {
   protected readonly _baseConfection: TRuntime;
   protected readonly _context: ISessionContext;

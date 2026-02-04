@@ -57,10 +57,10 @@ import {
   IFillingRecipe,
   IRuntimeMold,
   IRuntimeProcedure,
-  RuntimeConfection,
-  RuntimeMoldedBonBon,
-  RuntimeBarTruffle,
-  RuntimeRolledTruffle
+  Confection,
+  MoldedBonBon,
+  BarTruffle,
+  RolledTruffle
 } from '../../../packlets/library-runtime';
 import {
   Confections,
@@ -313,10 +313,10 @@ describe('RuntimeConfection', () => {
       return {
         chocolate,
         alternates,
-        raw: spec
+        entity: spec
       };
     },
-    resolveCoatings: (coatings: Confections.ICoatings): IResolvedCoatings => {
+    resolveCoatings: (coatings: Confections.ICoatingsEntity): IResolvedCoatings => {
       const options = coatings.ids.map((id) => ({
         id,
         ingredient: mockContext.getRuntimeIngredient(id).value!
@@ -325,7 +325,7 @@ describe('RuntimeConfection', () => {
       return {
         options,
         preferred: options.find((opt) => opt.id === preferredId),
-        raw: coatings
+        entity: coatings
       };
     },
     resolveMoldRefs: (
@@ -335,7 +335,7 @@ describe('RuntimeConfection', () => {
         id: ref.id,
         mold: mockContext.getRuntimeMold(ref.id).value!,
         notes: ref.notes,
-        raw: ref
+        entity: ref
       }));
       return {
         options,
@@ -350,7 +350,7 @@ describe('RuntimeConfection', () => {
       return additional.map((item) => ({
         chocolate: mockContext.resolveChocolateSpec(item.chocolate, confectionId),
         purpose: item.purpose,
-        raw: item
+        entity: item
       }));
     },
     resolveFillingSlots: (
@@ -368,7 +368,7 @@ describe('RuntimeConfection', () => {
                 id: opt.id,
                 filling: mockContext.getRuntimeFilling(opt.id).value!,
                 notes: opt.notes,
-                raw: opt
+                entity: opt
               };
             }
             return {
@@ -376,7 +376,7 @@ describe('RuntimeConfection', () => {
               id: opt.id,
               ingredient: mockContext.getRuntimeIngredient(opt.id).value!,
               notes: opt.notes,
-              raw: opt
+              entity: opt
             };
           }),
           preferredId: slot.filling.preferredId
@@ -391,7 +391,7 @@ describe('RuntimeConfection', () => {
         id: ref.id,
         procedure: mockContext.getRuntimeProcedure(ref.id).value!,
         notes: ref.notes,
-        raw: ref
+        entity: ref
       }));
       return {
         options,
@@ -407,27 +407,27 @@ describe('RuntimeConfection', () => {
   describe('RuntimeConfection.create', () => {
     test('creates RuntimeMoldedBonBon for molded-bonbon type', () => {
       expect(
-        RuntimeConfection.create(mockContext, 'test.test-bonbon' as ConfectionId, moldedBonBonData)
+        Confection.create(mockContext, 'test.test-bonbon' as ConfectionId, moldedBonBonData)
       ).toSucceedAndSatisfy((runtime) => {
-        expect(runtime).toBeInstanceOf(RuntimeMoldedBonBon);
+        expect(runtime).toBeInstanceOf(MoldedBonBon);
         expect(runtime.confectionType).toBe('molded-bonbon');
       });
     });
 
     test('creates RuntimeBarTruffle for bar-truffle type', () => {
       expect(
-        RuntimeConfection.create(mockContext, 'test.test-bar' as ConfectionId, barTruffleData)
+        Confection.create(mockContext, 'test.test-bar' as ConfectionId, barTruffleData)
       ).toSucceedAndSatisfy((runtime) => {
-        expect(runtime).toBeInstanceOf(RuntimeBarTruffle);
+        expect(runtime).toBeInstanceOf(BarTruffle);
         expect(runtime.confectionType).toBe('bar-truffle');
       });
     });
 
     test('creates RuntimeRolledTruffle for rolled-truffle type', () => {
       expect(
-        RuntimeConfection.create(mockContext, 'test.test-rolled' as ConfectionId, rolledTruffleData)
+        Confection.create(mockContext, 'test.test-rolled' as ConfectionId, rolledTruffleData)
       ).toSucceedAndSatisfy((runtime) => {
-        expect(runtime).toBeInstanceOf(RuntimeRolledTruffle);
+        expect(runtime).toBeInstanceOf(RolledTruffle);
         expect(runtime.confectionType).toBe('rolled-truffle');
       });
     });
@@ -438,10 +438,10 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('RuntimeMoldedBonBon', () => {
-    let runtime: RuntimeMoldedBonBon;
+    let runtime: MoldedBonBon;
 
     beforeEach(() => {
-      runtime = RuntimeMoldedBonBon.create(
+      runtime = MoldedBonBon.create(
         mockContext,
         'test.test-bonbon' as ConfectionId,
         moldedBonBonData
@@ -529,7 +529,7 @@ describe('RuntimeConfection', () => {
     });
 
     test('raw returns underlying data', () => {
-      expect(runtime.raw).toBe(moldedBonBonData);
+      expect(runtime.entity).toBe(moldedBonBonData);
     });
 
     test('procedures is undefined when not set', () => {
@@ -547,7 +547,7 @@ describe('RuntimeConfection', () => {
       expect(golden.versionSpec).toBe('2026-01-01-01');
       expect(golden.molds.options).toHaveLength(1);
       // shellChocolate is resolved with raw access for IDs
-      expect(golden.shellChocolate.raw.ids).toContain('common.chocolate-dark-64');
+      expect(golden.shellChocolate.entity.ids).toContain('common.chocolate-dark-64');
     });
 
     test('version exposes base properties', () => {
@@ -598,7 +598,7 @@ describe('RuntimeConfection', () => {
 
     test('version exposes raw data', () => {
       const golden = runtime.goldenVersion;
-      expect(golden.raw).toBe(moldedBonBonData.versions[0]);
+      expect(golden.entity).toBe(moldedBonBonData.versions[0]);
     });
 
     test('exposes typed versions array', () => {
@@ -648,14 +648,10 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('RuntimeBarTruffle', () => {
-    let runtime: RuntimeBarTruffle;
+    let runtime: BarTruffle;
 
     beforeEach(() => {
-      runtime = RuntimeBarTruffle.create(
-        mockContext,
-        'test.test-bar' as ConfectionId,
-        barTruffleData
-      ).orThrow();
+      runtime = BarTruffle.create(mockContext, 'test.test-bar' as ConfectionId, barTruffleData).orThrow();
     });
 
     test('exposes identity properties', () => {
@@ -686,7 +682,7 @@ describe('RuntimeConfection', () => {
     });
 
     test('raw returns underlying data', () => {
-      expect(runtime.raw).toBe(barTruffleData);
+      expect(runtime.entity).toBe(barTruffleData);
     });
 
     test('exposes typed versions array', () => {
@@ -707,7 +703,7 @@ describe('RuntimeConfection', () => {
       expect(parent.id).toBe('test.test-bar');
       expect(parent.confectionType).toBe('bar-truffle');
       // Test raw access
-      expect(golden.raw).toBe(barTruffleData.versions[0]);
+      expect(golden.entity).toBe(barTruffleData.versions[0]);
     });
 
     test('version type guards work correctly', () => {
@@ -746,10 +742,10 @@ describe('RuntimeConfection', () => {
   // ============================================================================
 
   describe('RuntimeRolledTruffle', () => {
-    let runtime: RuntimeRolledTruffle;
+    let runtime: RolledTruffle;
 
     beforeEach(() => {
-      runtime = RuntimeRolledTruffle.create(
+      runtime = RolledTruffle.create(
         mockContext,
         'test.test-rolled' as ConfectionId,
         rolledTruffleData
@@ -783,14 +779,14 @@ describe('RuntimeConfection', () => {
     });
 
     test('raw returns underlying data', () => {
-      expect(runtime.raw).toBe(rolledTruffleData);
+      expect(runtime.entity).toBe(rolledTruffleData);
     });
 
     test('exposes typed versions array', () => {
       const versions = runtime.versions;
       expect(versions).toHaveLength(1);
       expect(versions[0].versionSpec).toBe('2026-01-01-01');
-      expect(versions[0].coatings?.raw.ids).toHaveLength(1);
+      expect(versions[0].coatings?.entity.ids).toHaveLength(1);
     });
 
     test('version exposes base properties and parent navigation', () => {
@@ -804,7 +800,7 @@ describe('RuntimeConfection', () => {
       expect(parent.id).toBe('test.test-rolled');
       expect(parent.confectionType).toBe('rolled-truffle');
       // Test raw access
-      expect(golden.raw).toBe(rolledTruffleData.versions[0]);
+      expect(golden.entity).toBe(rolledTruffleData.versions[0]);
     });
 
     test('version type guards work correctly', () => {
@@ -817,7 +813,7 @@ describe('RuntimeConfection', () => {
     test('getVersion returns typed version', () => {
       expect(runtime.getVersion('2026-01-01-01' as ConfectionVersionSpec)).toSucceedAndSatisfy((version) => {
         expect(version.versionSpec).toBe('2026-01-01-01');
-        expect(version.coatings?.raw.ids).toHaveLength(1);
+        expect(version.coatings?.entity.ids).toHaveLength(1);
       });
     });
   });
@@ -849,7 +845,7 @@ describe('RuntimeConfection', () => {
 
     test('handles missing optional properties', () => {
       expect(
-        RuntimeMoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
+        MoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
       ).toSucceedAndSatisfy((runtime) => {
         expect(runtime.description).toBeUndefined();
         expect(runtime.tags).toBeUndefined();
@@ -862,7 +858,7 @@ describe('RuntimeConfection', () => {
 
     test('returns empty arrays for effectiveTags when no tags defined', () => {
       expect(
-        RuntimeMoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
+        MoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
       ).toSucceedAndSatisfy((runtime) => {
         // Tests both branches in getEffectiveTags: version undefined (uses golden) and tags undefined
         expect(runtime.getEffectiveTags()).toEqual([]);
@@ -872,7 +868,7 @@ describe('RuntimeConfection', () => {
 
     test('returns empty arrays for effectiveUrls when no urls defined', () => {
       expect(
-        RuntimeMoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
+        MoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
       ).toSucceedAndSatisfy((runtime) => {
         // Tests both branches in getEffectiveUrls: version undefined (uses golden) and urls undefined
         expect(runtime.getEffectiveUrls()).toEqual([]);
@@ -911,7 +907,7 @@ describe('RuntimeConfection', () => {
 
     test('handles missing enrobing chocolate', () => {
       expect(
-        RuntimeBarTruffle.create(mockContext, 'test.no-enrobing' as ConfectionId, barWithoutEnrobing)
+        BarTruffle.create(mockContext, 'test.no-enrobing' as ConfectionId, barWithoutEnrobing)
       ).toSucceedAndSatisfy((runtime) => {
         expect(runtime.enrobingChocolate).toBeUndefined();
       });
@@ -939,7 +935,7 @@ describe('RuntimeConfection', () => {
 
     test('handles missing coatings and enrobing', () => {
       expect(
-        RuntimeRolledTruffle.create(mockContext, 'test.no-coatings' as ConfectionId, rolledWithoutCoatings)
+        RolledTruffle.create(mockContext, 'test.no-coatings' as ConfectionId, rolledWithoutCoatings)
       ).toSucceedAndSatisfy((runtime) => {
         expect(runtime.coatings).toBeUndefined();
         expect(runtime.enrobingChocolate).toBeUndefined();

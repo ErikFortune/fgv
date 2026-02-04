@@ -59,6 +59,27 @@ Category is always fat for this type
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.ifatingredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IFatIngredientEntity](./ts-chocolate.entities.ifatingrediententity.md)
+
+
+</td><td>
+
+Gets the underlying ingredient entity data.
+
+
+</td></tr>
+<tr><td>
+
 [meltingPoint?](./ts-chocolate.libraryruntime.ifatingredient.meltingpoint.md)
 
 
@@ -75,27 +96,6 @@ Category is always fat for this type
 </td><td>
 
 _(Optional)_ Melting point in Celsius
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.ifatingredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IFatIngredientEntity](./ts-chocolate.entities.ifatingrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw ingredient data.
 
 
 </td></tr>

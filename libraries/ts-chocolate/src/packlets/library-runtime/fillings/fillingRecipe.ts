@@ -302,7 +302,7 @@ export class RuntimeFillingRecipe implements IFillingRecipe {
   /**
    * Gets the underlying raw recipe data
    */
-  public get raw(): IFillingRecipeEntity {
+  public get entity(): IFillingRecipeEntity {
     return this._recipe;
   }
 }

@@ -80,6 +80,27 @@ _(Optional)_ Resolved enrobing chocolate specification (optional)
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.ibartruffleversion.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.IBarTruffleVersionEntity](./ts-chocolate.entities.ibartruffleversionentity.md)
+
+
+</td><td>
+
+Entity data typed to [IBarTruffleVersionEntity](./ts-chocolate.entities.confections.ibartruffleversionentity.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [frameDimensions](./ts-chocolate.libraryruntime.ibartruffleversion.framedimensions.md)
 
 
@@ -117,27 +138,6 @@ Frame dimensions for ganache slab
 </td><td>
 
 Gets the preferred procedure, falling back to first available
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.ibartruffleversion.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.IBarTruffleVersionEntity](./ts-chocolate.entities.ibartruffleversionentity.md)
-
-
-</td><td>
-
-Raw version typed to IBarTruffleVersion
 
 
 </td></tr>

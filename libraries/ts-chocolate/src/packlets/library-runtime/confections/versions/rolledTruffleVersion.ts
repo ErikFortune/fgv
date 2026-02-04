@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeRolledTruffleVersion - runtime version for rolled truffle confections
+ * RolledTruffleVersion - runtime version for rolled truffle confections
  * @packageDocumentation
  */
 
@@ -35,20 +35,17 @@ import {
   IRolledTruffle,
   IRolledTruffleVersion
 } from '../../model';
-import { RuntimeConfectionVersionBase } from './confectionVersionBase';
+import { ConfectionVersionBase } from './confectionVersionBase';
 
 // ============================================================================
-// RuntimeRolledTruffleVersion Class
+// RolledTruffleVersion Class
 // ============================================================================
 
 /**
  * A resolved view of a rolled truffle version with all references resolved.
  * @public
  */
-export class RuntimeRolledTruffleVersion
-  extends RuntimeConfectionVersionBase
-  implements IRolledTruffleVersion
-{
+export class RolledTruffleVersion extends ConfectionVersionBase implements IRolledTruffleVersion {
   private readonly _rolledTruffleVersion: Confections.IRolledTruffleVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
@@ -56,8 +53,8 @@ export class RuntimeRolledTruffleVersion
   private _resolvedCoatings: IResolvedCoatings | undefined | null;
 
   /**
-   * Creates a RuntimeRolledTruffleVersion.
-   * Use RuntimeRolledTruffleVersion.create() instead.
+   * Creates a RolledTruffleVersion.
+   * Use RolledTruffleVersion.create() instead.
    * @internal
    */
   protected constructor(
@@ -70,18 +67,18 @@ export class RuntimeRolledTruffleVersion
   }
 
   /**
-   * Factory method for creating a RuntimeRolledTruffleVersion.
+   * Factory method for creating a RolledTruffleVersion.
    * @param context - The runtime context
    * @param confectionId - The parent confection ID
    * @param version - The rolled truffle version data
-   * @returns Success with RuntimeRolledTruffleVersion
+   * @returns Success with RolledTruffleVersion
    */
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
     version: Confections.IRolledTruffleVersionEntity
-  ): Result<RuntimeRolledTruffleVersion> {
-    return Success.with(new RuntimeRolledTruffleVersion(context, confectionId, version));
+  ): Result<RolledTruffleVersion> {
+    return Success.with(new RolledTruffleVersion(context, confectionId, version));
   }
 
   // ============================================================================
@@ -104,9 +101,9 @@ export class RuntimeRolledTruffleVersion
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
     if (this._resolvedEnrobingChocolate === undefined) {
-      const raw = this._rolledTruffleVersion.enrobingChocolate;
-      this._resolvedEnrobingChocolate = raw
-        ? this._context.resolveChocolateSpec(raw, this._confectionId)
+      const entity = this._rolledTruffleVersion.enrobingChocolate;
+      this._resolvedEnrobingChocolate = entity
+        ? this._context.resolveChocolateSpec(entity, this._confectionId)
         : null;
     }
     return this._resolvedEnrobingChocolate ?? undefined;
@@ -117,15 +114,11 @@ export class RuntimeRolledTruffleVersion
    */
   public get coatings(): IResolvedCoatings | undefined {
     if (this._resolvedCoatings === undefined) {
-      const raw = this._rolledTruffleVersion.coatings;
-      this._resolvedCoatings = raw ? this._context.resolveCoatings(raw) : null;
+      const entity = this._rolledTruffleVersion.coatings;
+      this._resolvedCoatings = entity ? this._context.resolveCoatings(entity) : null;
     }
     return this._resolvedCoatings ?? undefined;
   }
-
-  // ============================================================================
-  // Convenience Getters for Preferred Selections
-  // ============================================================================
 
   /**
    * Gets the preferred procedure, falling back to first available.
@@ -135,14 +128,10 @@ export class RuntimeRolledTruffleVersion
     return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw rolled truffle version data.
+   * Gets the underlying rolled truffle version entity data.
    */
-  public override get raw(): Confections.IRolledTruffleVersionEntity {
+  public override get entity(): Confections.IRolledTruffleVersionEntity {
     return this._rolledTruffleVersion;
   }
 }

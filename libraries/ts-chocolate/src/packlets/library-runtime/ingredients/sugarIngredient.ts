@@ -103,7 +103,7 @@ export class RuntimeSugarIngredient extends RuntimeIngredientBase implements ISu
   /**
    * Gets the underlying raw sugar ingredient data
    */
-  public get raw(): ISugarIngredientEntity {
+  public get entity(): ISugarIngredientEntity {
     return this._sugarIngredient;
   }
 }

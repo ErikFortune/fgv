@@ -143,6 +143,27 @@ Type of chocolate
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.ichocolateingredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IChocolateIngredientEntity](./ts-chocolate.entities.ichocolateingrediententity.md)
+
+
+</td><td>
+
+Gets the underlying ingredient entity data.
+
+
+</td></tr>
+<tr><td>
+
 [fluidityStars?](./ts-chocolate.libraryruntime.ichocolateingredient.fluiditystars.md)
 
 
@@ -180,27 +201,6 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_ Origin of the chocolate (optional)
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.ichocolateingredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IChocolateIngredientEntity](./ts-chocolate.entities.ichocolateingrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw ingredient data.
 
 
 </td></tr>

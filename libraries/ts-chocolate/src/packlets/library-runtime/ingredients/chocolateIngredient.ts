@@ -157,7 +157,7 @@ export class RuntimeChocolateIngredient extends RuntimeIngredientBase implements
   /**
    * Gets the underlying raw chocolate ingredient data
    */
-  public get raw(): IChocolateIngredientEntity {
+  public get entity(): IChocolateIngredientEntity {
     return this._chocolateIngredient;
   }
 }

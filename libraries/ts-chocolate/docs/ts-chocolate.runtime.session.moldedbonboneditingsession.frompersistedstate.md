@@ -9,7 +9,7 @@ Restores a MoldedBonBonEditingSession from persisted state. Note: Child filling 
 **Signature:**
 
 ```typescript
-static fromPersistedState(baseConfection: RuntimeMoldedBonBon, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+static fromPersistedState(baseConfection: MoldedBonBon, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseConfection
 
 </td><td>
 
-[RuntimeMoldedBonBon](./ts-chocolate.libraryruntime.runtimemoldedbonbon.md)
+[MoldedBonBon](./ts-chocolate.libraryruntime.moldedbonbon.md)
 
 
 </td><td>

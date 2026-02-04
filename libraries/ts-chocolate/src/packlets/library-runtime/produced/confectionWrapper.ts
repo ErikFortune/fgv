@@ -642,7 +642,7 @@ export class RuntimeProducedMoldedBonBon extends RuntimeProducedConfectionBase<I
             ?.chocolate.chocolate.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
-          notes: source.raw.notes
+          notes: source.entity.notes
         };
         return succeed(produced);
       });
@@ -928,7 +928,7 @@ export class RuntimeProducedBarTruffle extends RuntimeProducedConfectionBase<IPr
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
-          notes: source.raw.notes
+          notes: source.entity.notes
         };
         return succeed(produced);
       });
@@ -1125,7 +1125,7 @@ export class RuntimeProducedRolledTruffle extends RuntimeProducedConfectionBase<
           coatingId: source.coatings?.preferred?.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
-          notes: source.raw.notes
+          notes: source.entity.notes
         };
         return succeed(produced);
       });

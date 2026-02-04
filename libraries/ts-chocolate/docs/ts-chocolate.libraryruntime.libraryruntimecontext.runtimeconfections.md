@@ -9,5 +9,5 @@ Gets all runtime confections as an iterable map. Confections are resolved lazily
 **Signature:**
 
 ```typescript
-get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
+get runtimeConfections(): ReadonlyMap<ConfectionId, AnyConfection>;
 ```

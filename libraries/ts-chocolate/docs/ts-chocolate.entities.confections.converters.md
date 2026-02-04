@@ -140,12 +140,12 @@ Converter for [IBonBonDimensions](./ts-chocolate.entities.confections.ibonbondim
 </td></tr>
 <tr><td>
 
-[coatings](./ts-chocolate.entities.confections.converters.coatings.md)
+[coatingsEntity](./ts-chocolate.entities.confections.converters.coatingsentity.md)
 
 
 </td><td>
 
-Converter for [ICoatings](./ts-chocolate.entities.confections.icoatings.md) (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
+Converter for [ICoatingsEntity](./ts-chocolate.entities.confections.icoatingsentity.md) (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 
 </td></tr>

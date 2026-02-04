@@ -275,6 +275,29 @@ Optional description
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.runtimeingredientbase.entity.md)
+
+
+</td><td>
+
+`abstract`
+
+`readonly`
+
+
+</td><td>
+
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
+
+
+</td><td>
+
+Gets the underlying raw ingredient data (read-only)
+
+
+</td></tr>
+<tr><td>
+
 [ganacheCharacteristics](./ts-chocolate.libraryruntime.runtimeingredientbase.ganachecharacteristics.md)
 
 
@@ -354,29 +377,6 @@ string
 </td><td>
 
 Display name of the ingredient
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.runtimeingredientbase.raw.md)
-
-
-</td><td>
-
-`abstract`
-
-`readonly`
-
-
-</td><td>
-
-[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw ingredient data (read-only)
 
 
 </td></tr>

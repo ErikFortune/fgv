@@ -6,7 +6,7 @@
 
 A resolved runtime view of a confection version with resolved references.
 
-This interface provides runtime-layer access to version data with: - Parent confection reference (ID and resolved object) - Resolved filling slots and procedures - Effective tags/urls (merged from base confection + version) - Raw access to underlying version data
+This interface provides runtime-layer access to version data with: - Parent confection reference (ID and resolved object) - Resolved filling slots and procedures - Effective tags/urls (merged from base confection + version) - Access to underlying recipe version entity data
 
 **Signature:**
 
@@ -165,6 +165,27 @@ Effective URLs for this version (base confection URLs + version's additional URL
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iconfectionversionbase.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
+
+
+</td><td>
+
+Gets the underlying recipe version entity data.
+
+
+</td></tr>
+<tr><td>
+
 [fillings?](./ts-chocolate.libraryruntime.iconfectionversionbase.fillings.md)
 
 
@@ -228,27 +249,6 @@ _(Optional)_ Resolved procedures for this version. Undefined if the version has 
 </td></tr>
 <tr><td>
 
-[raw](./ts-chocolate.libraryruntime.iconfectionversionbase.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.AnyConfectionVersionEntity](./ts-chocolate.entities.anyconfectionversionentity.md)
-
-
-</td><td>
-
-Gets the underlying raw version data.
-
-
-</td></tr>
-<tr><td>
-
 [version](./ts-chocolate.libraryruntime.iconfectionversionbase.version.md)
 
 
@@ -264,7 +264,7 @@ Gets the underlying raw version data.
 
 </td><td>
 
-The underlying confection version. Use this to get the raw version data for persistence or journaling.
+The underlying confection version. Use this to get the version entity data for persistence or journaling.
 
 
 </td></tr>

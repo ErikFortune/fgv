@@ -6,7 +6,7 @@
 
 A resolved runtime view of an ingredient with navigation capabilities.
 
-This interface includes all properties from the data layer `IIngredientEntity` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Navigation to recipes that use this ingredient - Type narrowing methods for discriminated access - Raw access to underlying data
+This interface includes all properties from the data layer `IIngredientEntity` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Navigation to recipes that use this ingredient - Type narrowing methods for discriminated access - Access to underlying data entities
 
 Note: Does not extend `IIngredientEntity` directly because the class implementation provides the same shape but with additional runtime behavior.
 
@@ -167,6 +167,27 @@ _(Optional)_ Optional description
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iingredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
+
+
+</td><td>
+
+Gets the underlying ingredient entity data.
+
+
+</td></tr>
+<tr><td>
+
 [ganacheCharacteristics](./ts-chocolate.libraryruntime.iingredient.ganachecharacteristics.md)
 
 
@@ -246,27 +267,6 @@ string
 </td><td>
 
 Display name
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iingredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IngredientEntity](./ts-chocolate.entities.ingrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw ingredient data.
 
 
 </td></tr>

@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Confections.IConfectionMoldRef
+
+
+</td><td>
+
+The original mold entity reference data
+
+
+</td></tr>
+<tr><td>
+
 [id](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.id.md)
 
 
@@ -95,27 +116,6 @@ ReadonlyArray&lt;[CommonModel.ICategorizedNote](./ts-chocolate.model.icategorize
 </td><td>
 
 _(Optional)_ Optional notes specific to using this mold
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Confections.IConfectionMoldRef
-
-
-</td><td>
-
-The original raw mold reference data
 
 
 </td></tr>

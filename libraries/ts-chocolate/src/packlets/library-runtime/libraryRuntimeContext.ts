@@ -36,7 +36,7 @@ import {
   TaskId
 } from '../common';
 import { Confections, Fillings, IProcedureEntity, IRawTaskEntity } from '../entities';
-import { AnyRuntimeConfection, RuntimeConfection } from './confections';
+import { AnyConfection, Confection } from './confections';
 import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
@@ -142,7 +142,7 @@ export class LibraryRuntimeContext
   private readonly _runtimeTasks: Map<TaskId, RuntimeTask> = new Map();
   private readonly _runtimeProcedures: Map<ProcedureId, RuntimeProcedure> = new Map();
   private readonly _runtimeMolds: Map<MoldId, RuntimeMold> = new Map();
-  private _runtimeConfections: Map<ConfectionId, AnyRuntimeConfection> | undefined;
+  private _runtimeConfections: Map<ConfectionId, AnyConfection> | undefined;
 
   protected constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
@@ -234,7 +234,7 @@ export class LibraryRuntimeContext
    * @param id - The confection ID
    * @returns Success with runtime confection, or Failure if not found
    */
-  public getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection> {
+  public getRuntimeConfection(id: ConfectionId): Result<AnyConfection> {
     // Check cache first
     const cached = this._runtimeConfections?.get(id);
     if (cached) {
@@ -243,7 +243,7 @@ export class LibraryRuntimeContext
 
     // Resolve from library and cache
     return this._library.getConfection(id).onSuccess((confection) => {
-      return RuntimeConfection.create(this, id, confection).onSuccess((runtimeConfection) => {
+      return Confection.create(this, id, confection).onSuccess((runtimeConfection) => {
         // Ensure cache exists
         if (!this._runtimeConfections) {
           this._runtimeConfections = new Map();
@@ -260,7 +260,7 @@ export class LibraryRuntimeContext
    * @returns Read-only map of confection IDs to runtime confections
    * @throws Error if confection resolution fails (indicates library corruption)
    */
-  public get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection> {
+  public get runtimeConfections(): ReadonlyMap<ConfectionId, AnyConfection> {
     return this._resolveRuntimeConfections().orThrow();
   }
 
@@ -269,7 +269,7 @@ export class LibraryRuntimeContext
    * @returns Success with the resolved map, or Failure if any confection fails to resolve
    * @internal
    */
-  private _resolveRuntimeConfections(): Result<Map<ConfectionId, AnyRuntimeConfection>> {
+  private _resolveRuntimeConfections(): Result<Map<ConfectionId, AnyConfection>> {
     if (this._runtimeConfections === undefined) {
       this._runtimeConfections = new Map();
     }
@@ -277,7 +277,7 @@ export class LibraryRuntimeContext
     // Populate missing entries from library - report and fail on any creation errors
     for (const [id, confection] of this._library.confections.entries()) {
       if (!this._runtimeConfections.has(id)) {
-        const createResult = RuntimeConfection.create(this, id, confection).report(this.logger);
+        const createResult = Confection.create(this, id, confection).report(this.logger);
         /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
         if (createResult.isFailure()) {
           return Failure.with(`Failed to resolve confection ${id}: ${createResult.message}`);
@@ -339,7 +339,7 @@ export class LibraryRuntimeContext
     return {
       chocolate,
       alternates,
-      raw: spec
+      entity: spec
     };
   }
 
@@ -348,7 +348,7 @@ export class LibraryRuntimeContext
    * @param coatings - The raw coatings specification
    * @returns Resolved coatings specification
    */
-  public resolveCoatings(coatings: Confections.ICoatings): IResolvedCoatings {
+  public resolveCoatings(coatings: Confections.ICoatingsEntity): IResolvedCoatings {
     // Resolve all coating ingredient options
     const resolvedOptions: IResolvedCoatingOption[] = [];
     for (const id of coatings.ids) {
@@ -369,7 +369,7 @@ export class LibraryRuntimeContext
     return {
       options: resolvedOptions,
       preferred,
-      raw: coatings
+      entity: coatings
     };
   }
 
@@ -389,7 +389,7 @@ export class LibraryRuntimeContext
           id: ref.id,
           mold: moldResult.value,
           notes: ref.notes,
-          raw: ref
+          entity: ref
         });
       }
       // Skip molds that fail to resolve
@@ -418,7 +418,7 @@ export class LibraryRuntimeContext
     return additional.map((item) => ({
       chocolate: this.resolveChocolateSpec(item.chocolate, confectionId),
       purpose: item.purpose,
-      raw: item
+      entity: item
     }));
   }
 
@@ -461,7 +461,7 @@ export class LibraryRuntimeContext
           id: ref.id,
           procedure: procedureResult.value,
           notes: ref.notes,
-          raw: ref
+          entity: ref
         });
       }
       // Skip procedures that fail to resolve
@@ -518,7 +518,7 @@ export class LibraryRuntimeContext
         id: option.id,
         filling: filling.value,
         notes: option.notes,
-        raw: option
+        entity: option
       };
     } else {
       const ingredient = this.getRuntimeIngredient(option.id);
@@ -529,7 +529,7 @@ export class LibraryRuntimeContext
         id: option.id,
         ingredient: ingredient.value,
         notes: option.notes,
-        raw: option
+        entity: option
       };
     }
   }

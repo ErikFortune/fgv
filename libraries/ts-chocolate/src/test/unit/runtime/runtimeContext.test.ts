@@ -748,7 +748,7 @@ describe('RuntimeContext', () => {
           expect(coldResolved.notes).toEqual([
             { category: 'user', note: 'Preferred method for this recipe' }
           ]);
-          expect(coldResolved.raw.id).toBe('test.ganache-cold-method');
+          expect(coldResolved.entity.id).toBe('test.ganache-cold-method');
 
           // Check second procedure (hot method)
           const hotResolved = version.procedures!.procedures[1];
@@ -1128,7 +1128,7 @@ describe('RuntimeContext', () => {
         expect(resolved.chocolate.id).toBe('common.chocolate-dark-64');
         expect(resolved.alternates).toHaveLength(1);
         expect(resolved.alternates[0].id).toBe('common.chocolate-milk-38');
-        expect(resolved.raw).toBe(spec);
+        expect(resolved.entity).toBe(spec);
       });
 
       test('uses first id as primary when preferredId not set', () => {
@@ -1158,7 +1158,7 @@ describe('RuntimeContext', () => {
         expect(resolved.options[0].id).toBe('common.cocoa-powder');
         expect(resolved.preferred).toBeDefined();
         expect(resolved.preferred?.id).toBe('common.cocoa-powder');
-        expect(resolved.raw).toBe(coatings);
+        expect(resolved.entity).toBe(coatings);
       });
 
       test('uses first option as preferred when preferredId not set', () => {
@@ -1193,7 +1193,7 @@ describe('RuntimeContext', () => {
         expect(resolved.preferredId).toBe('common.dome-25mm');
         if (resolved.options.length > 0) {
           expect(resolved.options[0].mold).toBeDefined();
-          expect(resolved.options[0].raw).toBeDefined();
+          expect(resolved.options[0].entity).toBeDefined();
         }
       });
     });
@@ -1228,7 +1228,7 @@ describe('RuntimeContext', () => {
         expect(resolved).toHaveLength(1);
         expect(resolved![0].chocolate.chocolate.id).toBe('common.chocolate-dark-64');
         expect(resolved![0].purpose).toBe('decoration');
-        expect(resolved![0].raw).toBe(additional[0]);
+        expect(resolved![0].entity).toBe(additional[0]);
       });
     });
 

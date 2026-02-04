@@ -79,7 +79,7 @@ The preferred/primary chocolate ingredient (always chocolate category)
 </td></tr>
 <tr><td>
 
-[raw](./ts-chocolate.libraryruntime.iresolvedchocolatespec.raw.md)
+[entity](./ts-chocolate.libraryruntime.iresolvedchocolatespec.entity.md)
 
 
 </td><td>
@@ -94,7 +94,7 @@ Confections.IChocolateSpec
 
 </td><td>
 
-The original raw chocolate spec
+The original chocolate spec entity
 
 
 </td></tr>

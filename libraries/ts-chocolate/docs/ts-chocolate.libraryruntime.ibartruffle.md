@@ -80,6 +80,27 @@ _(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.ibartruffle.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.IBarTruffleEntity](./ts-chocolate.entities.ibartruffleentity.md)
+
+
+</td><td>
+
+Entity data typed to IBarTruffle
+
+
+</td></tr>
+<tr><td>
+
 [frameDimensions](./ts-chocolate.libraryruntime.ibartruffle.framedimensions.md)
 
 
@@ -117,27 +138,6 @@ Frame dimensions from the golden version
 </td><td>
 
 Golden version typed as IRuntimeBarTruffleVersion
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.ibartruffle.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.IBarTruffleEntity](./ts-chocolate.entities.ibartruffleentity.md)
-
-
-</td><td>
-
-Raw data typed to IBarTruffle
 
 
 </td></tr>

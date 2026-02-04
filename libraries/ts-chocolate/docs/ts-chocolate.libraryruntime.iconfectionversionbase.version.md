@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.IConfectionVersionBase.version property
 
-The underlying confection version. Use this to get the raw version data for persistence or journaling.
+The underlying confection version. Use this to get the version entity data for persistence or journaling.
 
 **Signature:**
 

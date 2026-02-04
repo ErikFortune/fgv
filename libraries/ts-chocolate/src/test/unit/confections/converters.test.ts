@@ -780,7 +780,7 @@ describe('Confections converters', () => {
         ids: ['common.cocoa-powder', 'common.chopped-nuts'],
         preferredId: 'common.cocoa-powder'
       };
-      expect(ConfectionConverters.coatings.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.coatingsEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.ids).toHaveLength(2);
         expect(result.preferredId).toBe('common.cocoa-powder');
       });
@@ -790,7 +790,7 @@ describe('Confections converters', () => {
       const input = {
         ids: ['common.cocoa-powder']
       };
-      expect(ConfectionConverters.coatings.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(ConfectionConverters.coatingsEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.ids).toHaveLength(1);
         expect(result.preferredId).toBeUndefined();
       });
@@ -801,7 +801,7 @@ describe('Confections converters', () => {
         ids: ['common.cocoa-powder'],
         preferredId: 'common.nonexistent-coating'
       };
-      expect(ConfectionConverters.coatings.convert(input)).toFailWith(
+      expect(ConfectionConverters.coatingsEntity.convert(input)).toFailWith(
         /coatings: preferredId 'common.nonexistent-coating' not found in ids/
       );
     });

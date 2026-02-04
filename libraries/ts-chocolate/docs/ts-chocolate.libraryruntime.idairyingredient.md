@@ -59,6 +59,27 @@ Category is always dairy for this type
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.idairyingredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IDairyIngredientEntity](./ts-chocolate.entities.idairyingrediententity.md)
+
+
+</td><td>
+
+Gets the underlying ingredient entity data.
+
+
+</td></tr>
+<tr><td>
+
 [fatContent?](./ts-chocolate.libraryruntime.idairyingredient.fatcontent.md)
 
 
@@ -75,27 +96,6 @@ Category is always dairy for this type
 </td><td>
 
 _(Optional)_ Fat content percentage
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.idairyingredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IDairyIngredientEntity](./ts-chocolate.entities.idairyingrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw ingredient data.
 
 
 </td></tr>

@@ -27,11 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
-import {
-  RuntimeRolledTruffle,
-  RuntimeRolledTruffleVersion,
-  RuntimeProducedRolledTruffle
-} from '../../library-runtime';
+import { RolledTruffle, RolledTruffleVersion, RuntimeProducedRolledTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -49,7 +45,7 @@ import { IConfectionEditingSessionParams } from './model';
  */
 export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
   IProducedRolledTruffleEntity,
-  RuntimeRolledTruffle
+  RolledTruffle
 > {
   /**
    * Creates a RolledTruffleEditingSession.
@@ -57,7 +53,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @internal
    */
   private constructor(
-    baseConfection: RuntimeRolledTruffle,
+    baseConfection: RolledTruffle,
     produced: RuntimeProducedRolledTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -82,12 +78,12 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static create(
-    baseConfection: RuntimeRolledTruffle,
+    baseConfection: RolledTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
     return RuntimeProducedRolledTruffle.fromSource(
-      baseConfection.goldenVersion as RuntimeRolledTruffleVersion
+      baseConfection.goldenVersion as RolledTruffleVersion
     ).onSuccess((produced) =>
       captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );
@@ -105,7 +101,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static fromPersistedState(
-    baseConfection: RuntimeRolledTruffle,
+    baseConfection: RolledTruffle,
     history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -167,7 +163,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
     }
 
     return this._context.getRuntimeFilling(fillingSlot.fillingId).onSuccess((filling) => {
-      return succeed(filling.goldenVersion.raw.baseWeight);
+      return succeed(filling.goldenVersion.entity.baseWeight);
     });
   }
 }

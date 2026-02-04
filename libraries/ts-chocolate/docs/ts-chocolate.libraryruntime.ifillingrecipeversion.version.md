@@ -4,7 +4,7 @@
 
 ## LibraryRuntime.IFillingRecipeVersion.version property
 
-The underlying filling recipe version. Use this to get the raw version data for persistence or journaling.
+The underlying filling recipe version. Use this to get the entity version data for persistence or journaling.
 
 **Signature:**
 

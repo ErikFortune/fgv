@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeConfectionVersionBase - abstract base class for runtime confection versions
+ * ConfectionVersionBase - abstract base class for runtime confection versions
  * @packageDocumentation
  */
 
@@ -34,20 +34,16 @@ import {
 } from '../../model';
 
 // Forward declarations to avoid circular imports
-import type { RuntimeMoldedBonBonVersion } from './moldedBonBonVersion';
-import type { RuntimeBarTruffleVersion } from './barTruffleVersion';
-import type { RuntimeRolledTruffleVersion } from './rolledTruffleVersion';
-
-// ============================================================================
-// RuntimeConfectionVersionBase Abstract Class
-// ============================================================================
+import type { MoldedBonBonVersion } from './moldedBonBonVersion';
+import type { BarTruffleVersion } from './barTruffleVersion';
+import type { RolledTruffleVersion } from './rolledTruffleVersion';
 
 /**
  * Abstract base class for runtime confection versions.
  * Provides common properties and resolution logic shared by all confection version types.
  * @public
  */
-export abstract class RuntimeConfectionVersionBase implements IConfectionVersionBase {
+export abstract class ConfectionVersionBase implements IConfectionVersionBase {
   protected readonly _context: IConfectionContext;
   protected readonly _confectionId: ConfectionId;
   protected readonly _version: Confections.AnyConfectionVersionEntity;
@@ -61,7 +57,7 @@ export abstract class RuntimeConfectionVersionBase implements IConfectionVersion
     | null;
 
   /**
-   * Creates a RuntimeConfectionVersionBase.
+   * Creates a ConfectionVersionBase.
    * @param context - The runtime context for navigation
    * @param confectionId - The parent confection ID
    * @param version - The version data
@@ -124,7 +120,7 @@ export abstract class RuntimeConfectionVersionBase implements IConfectionVersion
 
   /**
    * The underlying confection version.
-   * Use this to get the raw version data for persistence or journaling.
+   * Use this to get the version data entity for persistence or journaling.
    */
   public get version(): Confections.AnyConfectionVersionEntity {
     return this._version;
@@ -213,30 +209,26 @@ export abstract class RuntimeConfectionVersionBase implements IConfectionVersion
   /**
    * Returns true if this is a molded bonbon version.
    */
-  public isMoldedBonBonVersion(): this is RuntimeMoldedBonBonVersion {
+  public isMoldedBonBonVersion(): this is MoldedBonBonVersion {
     return Confections.isMoldedBonBonVersionEntity(this._version);
   }
 
   /**
    * Returns true if this is a bar truffle version.
    */
-  public isBarTruffleVersion(): this is RuntimeBarTruffleVersion {
+  public isBarTruffleVersion(): this is BarTruffleVersion {
     return Confections.isBarTruffleVersionEntity(this._version);
   }
 
   /**
    * Returns true if this is a rolled truffle version.
    */
-  public isRolledTruffleVersion(): this is RuntimeRolledTruffleVersion {
+  public isRolledTruffleVersion(): this is RolledTruffleVersion {
     return Confections.isRolledTruffleVersionEntity(this._version);
   }
 
-  // ============================================================================
-  // Raw Access - must be overridden by subclasses to return typed data
-  // ============================================================================
-
   /**
-   * Gets the underlying raw version data (read-only)
+   * Gets the underlying version data entity (read-only)
    */
-  public abstract get raw(): Confections.AnyConfectionVersionEntity;
+  public abstract get entity(): Confections.AnyConfectionVersionEntity;
 }

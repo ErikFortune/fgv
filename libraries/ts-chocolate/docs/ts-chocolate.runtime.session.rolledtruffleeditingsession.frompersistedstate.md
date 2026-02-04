@@ -9,7 +9,7 @@ Restores a RolledTruffleEditingSession from persisted state. Note: Child filling
 **Signature:**
 
 ```typescript
-static fromPersistedState(baseConfection: RuntimeRolledTruffle, history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+static fromPersistedState(baseConfection: RolledTruffle, history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseConfection
 
 </td><td>
 
-[RuntimeRolledTruffle](./ts-chocolate.libraryruntime.runtimerolledtruffle.md)
+[RolledTruffle](./ts-chocolate.libraryruntime.rolledtruffle.md)
 
 
 </td><td>

@@ -118,7 +118,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     const version = filling.goldenVersion;
 
     // Calculate scale factor to achieve target weight
-    const baseWeight = version.raw.baseWeight;
+    const baseWeight = version.entity.baseWeight;
     if (baseWeight <= 0) {
       return fail(`Cannot create session: base weight must be positive (got ${baseWeight})`);
     }

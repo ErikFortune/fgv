@@ -84,6 +84,27 @@ Date this version was created (ISO 8601 format)
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
+
+
+</td><td>
+
+Gets the underlying raw version data
+
+
+</td></tr>
+<tr><td>
+
 [fillingId](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.fillingid.md)
 
 
@@ -205,27 +226,6 @@ ReadonlyArray&lt;[IFillingRating](./ts-chocolate.entities.ifillingrating.md)<!--
 </td><td>
 
 Optional ratings for this version
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.runtimefillingrecipeversion.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IFillingRecipeVersionEntity](./ts-chocolate.entities.ifillingrecipeversionentity.md)
-
-
-</td><td>
-
-Gets the underlying raw version data
 
 
 </td></tr>

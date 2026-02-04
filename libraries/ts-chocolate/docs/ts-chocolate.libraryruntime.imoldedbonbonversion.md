@@ -80,6 +80,27 @@ Parent confection narrowed to molded bonbon type
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.imoldedbonbonversion.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.IMoldedBonBonVersionEntity](./ts-chocolate.entities.imoldedbonbonversionentity.md)
+
+
+</td><td>
+
+Entity data typed to [IMoldedBonBonVersionEntity](./ts-chocolate.entities.confections.imoldedbonbonversionentity.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [molds](./ts-chocolate.libraryruntime.imoldedbonbonversion.molds.md)
 
 
@@ -138,27 +159,6 @@ Gets the preferred mold, falling back to first available
 </td><td>
 
 Gets the preferred procedure, falling back to first available
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.imoldedbonbonversion.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.IMoldedBonBonVersionEntity](./ts-chocolate.entities.imoldedbonbonversionentity.md)
-
-
-</td><td>
-
-Raw version typed to IMoldedBonBonVersion
 
 
 </td></tr>

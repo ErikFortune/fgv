@@ -96,7 +96,7 @@ export class RuntimeFatIngredient extends RuntimeIngredientBase implements IFatI
   /**
    * Gets the underlying raw fat ingredient data
    */
-  public get raw(): IFatIngredientEntity {
+  public get entity(): IFatIngredientEntity {
     return this._fatIngredient;
   }
 }

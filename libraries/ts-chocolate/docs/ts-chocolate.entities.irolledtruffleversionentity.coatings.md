@@ -9,5 +9,5 @@ Optional coatings (cocoa powder, nuts, etc.)
 **Signature:**
 
 ```typescript
-readonly coatings?: ICoatings;
+readonly coatings?: ICoatingsEntity;
 ```

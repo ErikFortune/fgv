@@ -6,7 +6,7 @@
 
 A resolved runtime view of a confection with navigation capabilities.
 
-This interface includes all properties from the data layer `IConfectionEntityBase` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `collectionId`<!-- -->) for cross-source references - Version navigation with typed versions - Effective tags/urls (merged from base + version) - Type narrowing methods for discriminated access - Raw access to underlying data
+This interface includes all properties from the data layer `IConfectionEntityBase` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `collectionId`<!-- -->) for cross-source references - Version navigation with typed versions - Effective tags/urls (merged from base + version) - Type narrowing methods for discriminated access - Access to underlying entity data
 
 **Signature:**
 
@@ -186,6 +186,27 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iconfectionbase.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
+
+
+</td><td>
+
+Gets the underlying confection entity data.
+
+
+</td></tr>
+<tr><td>
+
 [fillings?](./ts-chocolate.libraryruntime.iconfectionbase.fillings.md)
 
 
@@ -307,27 +328,6 @@ Human-readable name
 </td><td>
 
 _(Optional)_ Resolved procedures from the golden version
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iconfectionbase.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)
-
-
-</td><td>
-
-Gets the underlying raw confection data.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Creates a confection editing session for the appropriate confection type. Dispat
 **Signature:**
 
 ```typescript
-static create(baseConfection: AnyRuntimeConfection, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
+static create(baseConfection: AnyConfection, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ baseConfection
 
 </td><td>
 
-[AnyRuntimeConfection](./ts-chocolate.libraryruntime.anyruntimeconfection.md)
+[AnyConfection](./ts-chocolate.libraryruntime.anyconfection.md)
 
 
 </td><td>

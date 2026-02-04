@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-ICoatings
+ICoatingsEntity
 
 
 </td><td>

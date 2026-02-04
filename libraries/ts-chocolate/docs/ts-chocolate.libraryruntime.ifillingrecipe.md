@@ -6,9 +6,9 @@
 
 A resolved runtime view of a recipe with navigation and version access.
 
-This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `collectionId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
+This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `collectionId`<!-- -->) for cross-source references - Resolved version access (full objects, not just entity data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
 
-Note: Does not extend [IFillingRecipeEntity](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) directly because `versions` has a different type (resolved vs raw versions).
+Note: Does not extend [IFillingRecipeEntity](./ts-chocolate.entities.fillings.ifillingrecipeentity.md) directly because `versions` has a different type (resolved vs data layer entity versions).
 
 **Signature:**
 
@@ -99,6 +99,27 @@ string
 </td><td>
 
 _(Optional)_ Optional description of the recipe.
+
+
+</td></tr>
+<tr><td>
+
+[entity](./ts-chocolate.libraryruntime.ifillingrecipe.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
+
+
+</td><td>
+
+Gets the underlying filling recipe entity data.
 
 
 </td></tr>
@@ -204,27 +225,6 @@ Gets the latest version (by created date).
 </td><td>
 
 Human-readable recipe name.
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.ifillingrecipe.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)
-
-
-</td><td>
-
-Gets the underlying raw recipe data.
 
 
 </td></tr>

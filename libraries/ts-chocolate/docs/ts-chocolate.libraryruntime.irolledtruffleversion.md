@@ -101,6 +101,27 @@ _(Optional)_ Resolved enrobing chocolate specification (optional)
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.irolledtruffleversion.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Confections.IRolledTruffleVersionEntity](./ts-chocolate.entities.irolledtruffleversionentity.md)
+
+
+</td><td>
+
+Entity data typed to [IRolledTruffleVersionEntity](./ts-chocolate.entities.confections.irolledtruffleversionentity.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [preferredProcedure](./ts-chocolate.libraryruntime.irolledtruffleversion.preferredprocedure.md)
 
 
@@ -117,27 +138,6 @@ _(Optional)_ Resolved enrobing chocolate specification (optional)
 </td><td>
 
 Gets the preferred procedure, falling back to first available
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.irolledtruffleversion.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Confections.IRolledTruffleVersionEntity](./ts-chocolate.entities.irolledtruffleversionentity.md)
-
-
-</td><td>
-
-Raw version typed to IRolledTruffleVersion
 
 
 </td></tr>

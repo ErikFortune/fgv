@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[entity](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Fillings.IProcedureRefEntity
+
+
+</td><td>
+
+The original procedure reference entity data
+
+
+</td></tr>
+<tr><td>
+
 [id](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.id.md)
 
 
@@ -95,27 +116,6 @@ _(Optional)_ Optional notes specific to using this procedure
 </td><td>
 
 The resolved procedure object
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.iresolvedconfectionprocedure.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-Fillings.IProcedureRefEntity
-
-
-</td><td>
-
-The original raw procedure reference data
 
 
 </td></tr>

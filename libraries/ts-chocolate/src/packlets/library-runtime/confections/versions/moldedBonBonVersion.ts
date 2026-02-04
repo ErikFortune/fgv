@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeMoldedBonBonVersion - runtime version for molded bonbon confections
+ * MoldedBonBonVersion - runtime version for molded bonbon confections
  * @packageDocumentation
  */
 
@@ -36,17 +36,17 @@ import {
   IMoldedBonBon,
   IMoldedBonBonVersion
 } from '../../model';
-import { RuntimeConfectionVersionBase } from './confectionVersionBase';
+import { ConfectionVersionBase } from './confectionVersionBase';
 
 // ============================================================================
-// RuntimeMoldedBonBonVersion Class
+// MoldedBonBonVersion Class
 // ============================================================================
 
 /**
  * A resolved view of a molded bonbon version with all references resolved.
  * @public
  */
-export class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase implements IMoldedBonBonVersion {
+export class MoldedBonBonVersion extends ConfectionVersionBase implements IMoldedBonBonVersion {
   private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved)
@@ -55,8 +55,8 @@ export class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase imp
   private _resolvedMolds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> | undefined;
 
   /**
-   * Creates a RuntimeMoldedBonBonVersion.
-   * Use RuntimeMoldedBonBonVersion.create() instead.
+   * Creates a MoldedBonBonVersion.
+   * Use MoldedBonBonVersion.create() instead.
    * @internal
    */
   protected constructor(
@@ -69,18 +69,18 @@ export class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase imp
   }
 
   /**
-   * Factory method for creating a RuntimeMoldedBonBonVersion.
+   * Factory method for creating a MoldedBonBonVersion.
    * @param context - The runtime context
    * @param confectionId - The parent confection ID
    * @param version - The molded bonbon version data
-   * @returns Success with RuntimeMoldedBonBonVersion
+   * @returns Success with MoldedBonBonVersion
    */
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
     version: Confections.IMoldedBonBonVersionEntity
-  ): Result<RuntimeMoldedBonBonVersion> {
-    return Success.with(new RuntimeMoldedBonBonVersion(context, confectionId, version));
+  ): Result<MoldedBonBonVersion> {
+    return Success.with(new MoldedBonBonVersion(context, confectionId, version));
   }
 
   // ============================================================================
@@ -155,14 +155,10 @@ export class RuntimeMoldedBonBonVersion extends RuntimeConfectionVersionBase imp
     return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw molded bonbon version data.
+   * Gets the underlying molded bonbon version entity data.
    */
-  public override get raw(): Confections.IMoldedBonBonVersionEntity {
+  public override get entity(): Confections.IMoldedBonBonVersionEntity {
     return this._moldedBonBonVersion;
   }
 }

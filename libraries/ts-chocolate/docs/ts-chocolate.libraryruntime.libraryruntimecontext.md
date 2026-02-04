@@ -255,7 +255,7 @@ Logger used by this runtime context and its libraries.
 
 </td><td>
 
-ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [AnyRuntimeConfection](./ts-chocolate.libraryruntime.anyruntimeconfection.md)<!-- -->&gt;
+ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.libraryruntime.anyconfection.md)<!-- -->&gt;
 
 
 </td><td>

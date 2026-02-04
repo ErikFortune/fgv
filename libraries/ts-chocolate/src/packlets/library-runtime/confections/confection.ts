@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeConfection - static factory for creating runtime confections
+ * Confection - static factory for creating runtime confections
  * @packageDocumentation
  */
 
@@ -28,23 +28,19 @@ import { Failure, Result } from '@fgv/ts-utils';
 import { ConfectionId } from '../../common';
 import { Confections } from '../../entities';
 import { IConfectionContext } from '../model';
-import { RuntimeMoldedBonBon } from './moldedBonBon';
-import { RuntimeBarTruffle } from './barTruffle';
-import { RuntimeRolledTruffle } from './rolledTruffle';
-
-// ============================================================================
-// AnyRuntimeConfection Union Type
-// ============================================================================
+import { MoldedBonBon } from './moldedBonBon';
+import { BarTruffle } from './barTruffle';
+import { RolledTruffle } from './rolledTruffle';
 
 /**
- * Union type of all concrete runtime confection classes.
- * Use this type when you need to work with any runtime confection.
+ * Union type of all concrete confection classes.
+ * Use this type when you need to work with any confection.
  * @public
  */
-export type AnyRuntimeConfection = RuntimeMoldedBonBon | RuntimeBarTruffle | RuntimeRolledTruffle;
+export type AnyConfection = MoldedBonBon | BarTruffle | RolledTruffle;
 
 // ============================================================================
-// RuntimeConfection Static Factory
+// Confection Static Factory
 // ============================================================================
 
 /**
@@ -53,18 +49,18 @@ export type AnyRuntimeConfection = RuntimeMoldedBonBon | RuntimeBarTruffle | Run
  *
  * @example
  * ```typescript
- * const result = RuntimeConfection.create(context, id, confection);
+ * const result = Confection.create(context, id, confection);
  * if (result.isSuccess()) {
- *   const runtimeConfection = result.value;
- *   if (runtimeConfection.isMoldedBonBon()) {
- *     console.log(runtimeConfection.shellChocolate);
+ *   const confection = result.value;
+ *   if (confection.isMoldedBonBon()) {
+ *     console.log(confection.shellChocolate);
  *   }
  * }
  * ```
  *
  * @public
  */
-export abstract class RuntimeConfection {
+export abstract class Confection {
   // Cannot be instantiated
   /* c8 ignore next 2 - abstract class cannot be instantiated */
   private constructor() {}
@@ -74,20 +70,20 @@ export abstract class RuntimeConfection {
    * @param context - The runtime context for navigation
    * @param id - The confection ID
    * @param confection - The confection data
-   * @returns Success with the appropriate concrete RuntimeConfection subclass, or Failure for unknown type
+   * @returns Success with the appropriate concrete Confection subclass, or Failure for unknown type
    */
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
     confection: Confections.AnyConfectionEntity
-  ): Result<AnyRuntimeConfection> {
+  ): Result<AnyConfection> {
     switch (confection.confectionType) {
       case 'molded-bonbon':
-        return RuntimeMoldedBonBon.create(context, id, confection);
+        return MoldedBonBon.create(context, id, confection);
       case 'bar-truffle':
-        return RuntimeBarTruffle.create(context, id, confection);
+        return BarTruffle.create(context, id, confection);
       case 'rolled-truffle':
-        return RuntimeRolledTruffle.create(context, id, confection);
+        return RolledTruffle.create(context, id, confection);
       /* c8 ignore next 2 - defensive coding: ConfectionData union type ensures all types are handled */
       default:
         return Failure.with(

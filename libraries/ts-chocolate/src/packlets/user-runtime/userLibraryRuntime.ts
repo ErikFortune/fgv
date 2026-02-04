@@ -36,12 +36,7 @@ import {
   Session as SessionEntities,
   SessionLibrary
 } from '../entities';
-import {
-  IConfectionBase,
-  RuntimeBarTruffle,
-  RuntimeMoldedBonBon,
-  RuntimeRolledTruffle
-} from '../library-runtime';
+import { IConfectionBase, BarTruffle, MoldedBonBon, RolledTruffle } from '../library-runtime';
 import { ISessionContext, Session } from '../runtime';
 import { IUserLibrary } from '../user-library';
 import { AnyMaterializedSession, ICreateFillingSessionOptions, IUserLibraryRuntime } from './model';
@@ -297,7 +292,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     confection: IConfectionBase
   ): Result<Session.MoldedBonBonEditingSession> {
     return Session.MoldedBonBonEditingSession.fromPersistedState(
-      confection as unknown as RuntimeMoldedBonBon,
+      confection as unknown as MoldedBonBon,
       history,
       this._sessionContext
     ).onSuccess((session) => {
@@ -316,7 +311,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     confection: IConfectionBase
   ): Result<Session.BarTruffleEditingSession> {
     return Session.BarTruffleEditingSession.fromPersistedState(
-      confection as unknown as RuntimeBarTruffle,
+      confection as unknown as BarTruffle,
       history,
       this._sessionContext
     ).onSuccess((session) => {
@@ -335,7 +330,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     confection: IConfectionBase
   ): Result<Session.RolledTruffleEditingSession> {
     return Session.RolledTruffleEditingSession.fromPersistedState(
-      confection as unknown as RuntimeRolledTruffle,
+      confection as unknown as RolledTruffle,
       history,
       this._sessionContext
     ).onSuccess((session) => {

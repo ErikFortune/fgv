@@ -68,16 +68,16 @@ export { RuntimeFillingRecipe, RuntimeFillingRecipeVersion } from './fillings';
 
 // Runtime confection classes
 export {
-  RuntimeConfectionBase,
-  RuntimeMoldedBonBon,
-  RuntimeBarTruffle,
-  RuntimeRolledTruffle,
-  RuntimeConfection,
-  AnyRuntimeConfection,
-  RuntimeConfectionVersionBase,
-  RuntimeMoldedBonBonVersion,
-  RuntimeBarTruffleVersion,
-  RuntimeRolledTruffleVersion
+  ConfectionBase,
+  MoldedBonBon,
+  BarTruffle,
+  RolledTruffle,
+  Confection,
+  AnyConfection,
+  ConfectionVersionBase,
+  MoldedBonBonVersion,
+  BarTruffleVersion,
+  RolledTruffleVersion
 } from './confections';
 
 // Query builders

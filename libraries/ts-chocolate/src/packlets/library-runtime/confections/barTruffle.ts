@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeBarTruffle - concrete bar truffle confection implementation
+ * BarTruffle - concrete bar truffle confection implementation
  * @packageDocumentation
  */
 
@@ -35,11 +35,11 @@ import {
   IBarTruffleVersion,
   IResolvedConfectionProcedure
 } from '../model';
-import { RuntimeConfectionBase } from './confectionBase';
-import { RuntimeBarTruffleVersion } from './versions';
+import { ConfectionBase } from './confectionBase';
+import { BarTruffleVersion } from './versions';
 
 // ============================================================================
-// RuntimeBarTruffle Class
+// BarTruffle Class
 // ============================================================================
 
 /**
@@ -47,12 +47,12 @@ import { RuntimeBarTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruffle {
+export class BarTruffle extends ConfectionBase implements IBarTruffle {
   private readonly _barTruffle: Confections.IBarTruffleEntity;
 
   /**
-   * Creates a RuntimeBarTruffle.
-   * Use RuntimeConfection.create() or RuntimeBarTruffle.create() instead.
+   * Creates a BarTruffle.
+   * Use Confection.create() or BarTruffle.create() instead.
    * @internal
    */
   protected constructor(
@@ -65,18 +65,18 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruf
   }
 
   /**
-   * Factory method for creating a RuntimeBarTruffle.
+   * Factory method for creating a BarTruffle.
    * @param context - The runtime context
    * @param id - The confection ID
    * @param confection - The bar truffle data
-   * @returns Success with RuntimeBarTruffle
+   * @returns Success with BarTruffle
    */
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
     confection: Confections.IBarTruffleEntity
-  ): Result<RuntimeBarTruffle> {
-    return Success.with(new RuntimeBarTruffle(context, id, confection));
+  ): Result<BarTruffle> {
+    return Success.with(new BarTruffle(context, id, confection));
   }
 
   // ============================================================================
@@ -95,14 +95,14 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruf
   // ============================================================================
 
   /**
-   * Golden version typed as IRuntimeBarTruffleVersion.
+   * Golden version typed as IBarTruffleVersion.
    */
   public override get goldenVersion(): IBarTruffleVersion {
     return super.goldenVersion as IBarTruffleVersion;
   }
 
   /**
-   * All versions typed as IRuntimeBarTruffleVersion.
+   * All versions typed as IBarTruffleVersion.
    */
   public override get versions(): ReadonlyArray<IBarTruffleVersion> {
     return super.versions as ReadonlyArray<IBarTruffleVersion>;
@@ -111,23 +111,23 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruf
   /**
    * Gets a specific version by version specifier.
    * @param versionSpec - The version specifier to find
-   * @returns Success with typed runtime version, or Failure if not found
+   * @returns Success with typed  version, or Failure if not found
    */
   public override getVersion(versionSpec: ConfectionVersionSpec): Result<IBarTruffleVersion> {
     return super.getVersion(versionSpec) as Result<IBarTruffleVersion>;
   }
 
   /**
-   * Creates a runtime version from a raw version.
-   * @param rawVersion - The raw version data
-   * @returns The runtime version
+   * Creates a runtime version from a data layer entity
+   * @param entity - The data layer entity
+   * @returns The new {@link LibraryRuntime.BarTruffle | BarTruffle}.
    * @internal
    */
-  protected override _createVersion(rawVersion: Confections.AnyConfectionVersionEntity): IBarTruffleVersion {
-    return RuntimeBarTruffleVersion.create(
+  protected override _createVersion(entity: Confections.AnyConfectionVersionEntity): IBarTruffleVersion {
+    return BarTruffleVersion.create(
       this._context,
       this._id,
-      rawVersion as Confections.IBarTruffleVersionEntity
+      entity as Confections.IBarTruffleVersionEntity
     ).orThrow();
   }
 
@@ -172,14 +172,10 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IBarTruf
     return this.goldenVersion.enrobingChocolate;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
    * Gets the underlying raw bar truffle data
    */
-  public get raw(): Confections.IBarTruffleEntity {
+  public get entity(): Confections.IBarTruffleEntity {
     return this._barTruffle;
   }
 }

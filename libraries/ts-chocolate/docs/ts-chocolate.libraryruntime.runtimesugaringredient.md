@@ -65,6 +65,27 @@ Category is always 'sugar' for this type
 </td></tr>
 <tr><td>
 
+[entity](./ts-chocolate.libraryruntime.runtimesugaringredient.entity.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ISugarIngredientEntity](./ts-chocolate.entities.isugaringrediententity.md)
+
+
+</td><td>
+
+Gets the underlying raw sugar ingredient data
+
+
+</td></tr>
+<tr><td>
+
 [hydrationNumber](./ts-chocolate.libraryruntime.runtimesugaringredient.hydrationnumber.md)
 
 
@@ -81,27 +102,6 @@ number \| undefined
 </td><td>
 
 Hydration number (water molecules per sugar molecule) (optional)
-
-
-</td></tr>
-<tr><td>
-
-[raw](./ts-chocolate.libraryruntime.runtimesugaringredient.raw.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ISugarIngredientEntity](./ts-chocolate.entities.isugaringrediententity.md)
-
-
-</td><td>
-
-Gets the underlying raw sugar ingredient data
 
 
 </td></tr>

@@ -22,7 +22,7 @@ export class RuntimeGenericIngredient extends RuntimeIngredientBase implements I
     return this._ingredient.category;
   }
 
-  public get raw(): IngredientEntity {
+  public get entity(): IngredientEntity {
     return this._ingredient;
   }
 }

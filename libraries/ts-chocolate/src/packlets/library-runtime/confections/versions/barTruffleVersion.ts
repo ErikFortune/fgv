@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeBarTruffleVersion - runtime version for bar truffle confections
+ * BarTruffleVersion - runtime version for bar truffle confections
  * @packageDocumentation
  */
 
@@ -34,25 +34,26 @@ import {
   IBarTruffle,
   IBarTruffleVersion
 } from '../../model';
-import { RuntimeConfectionVersionBase } from './confectionVersionBase';
+import { ConfectionVersionBase } from './confectionVersionBase';
 
 // ============================================================================
-// RuntimeBarTruffleVersion Class
+// BarTruffleVersion Class
 // ============================================================================
 
 /**
  * A resolved view of a bar truffle version with all references resolved.
  * @public
  */
-export class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase implements IBarTruffleVersion {
+export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruffleVersion {
   private readonly _barTruffleVersion: Confections.IBarTruffleVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
 
   /**
-   * Creates a RuntimeBarTruffleVersion.
-   * Use RuntimeBarTruffleVersion.create() instead.
+   * Creates a {@link LibraryRuntime.BarTruffleVersion | BarTruffleVersion}.
+   * For internal use. Use {@link LibraryRuntime.BarTruffleVersion.create | BarTruffleVersion.create()}
+   * instead.
    * @internal
    */
   protected constructor(
@@ -65,18 +66,18 @@ export class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase imple
   }
 
   /**
-   * Factory method for creating a RuntimeBarTruffleVersion.
+   * Factory method for creating a {@link LibraryRuntime.BarTruffleVersion | BarTruffleVersion}.
    * @param context - The runtime context
    * @param confectionId - The parent confection ID
    * @param version - The bar truffle version data
-   * @returns Success with RuntimeBarTruffleVersion
+   * @returns Success with {@link LibraryRuntime.BarTruffleVersion | BarTruffleVersion}
    */
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
     version: Confections.IBarTruffleVersionEntity
-  ): Result<RuntimeBarTruffleVersion> {
-    return Success.with(new RuntimeBarTruffleVersion(context, confectionId, version));
+  ): Result<BarTruffleVersion> {
+    return Success.with(new BarTruffleVersion(context, confectionId, version));
   }
 
   // ============================================================================
@@ -113,9 +114,9 @@ export class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase imple
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
     if (this._resolvedEnrobingChocolate === undefined) {
-      const raw = this._barTruffleVersion.enrobingChocolate;
-      this._resolvedEnrobingChocolate = raw
-        ? this._context.resolveChocolateSpec(raw, this._confectionId)
+      const entity = this._barTruffleVersion.enrobingChocolate;
+      this._resolvedEnrobingChocolate = entity
+        ? this._context.resolveChocolateSpec(entity, this._confectionId)
         : null;
     }
     return this._resolvedEnrobingChocolate ?? undefined;
@@ -133,14 +134,10 @@ export class RuntimeBarTruffleVersion extends RuntimeConfectionVersionBase imple
     return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
-  // ============================================================================
-  // Raw Access
-  // ============================================================================
-
   /**
-   * Gets the underlying raw bar truffle version data.
+   * Gets the underlying bar truffle version data entity.
    */
-  public override get raw(): Confections.IBarTruffleVersionEntity {
+  public override get entity(): Confections.IBarTruffleVersionEntity {
     return this._barTruffleVersion;
   }
 }
