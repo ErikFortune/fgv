@@ -4,7 +4,7 @@
 
 ## Entities.IngredientInventoryLibrary class
 
-A library for managing user [ingredient inventory entries](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->.
+A library for managing user [ingredient inventory entries](./ts-chocolate.entities.inventory.iingredientinventoryentryentity.md)<!-- -->.
 
 Inventory entries track which ingredients the user has on hand, including quantity, unit, and storage location. Each entry has its own base ID within the inventory collection, and contains an `ingredientId` field with the composite IngredientId of the ingredient being inventoried.
 
@@ -13,9 +13,9 @@ Provides: - Multi-collection storage with FileTree persistence - Direct lookup b
 **Signature:**
 
 ```typescript
-export declare class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntryId, IngredientInventoryEntryBaseId, IIngredientInventoryEntry> 
+export declare class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntryId, IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[IngredientInventoryEntryId](./ts-chocolate.entities.inventory.ingredientinventoryentryid.md)<!-- -->, [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->, [IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[IngredientInventoryEntryId](./ts-chocolate.entities.inventory.ingredientinventoryentryid.md)<!-- -->, [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->, [IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)<!-- -->&gt;
 
 ## Methods
 

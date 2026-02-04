@@ -9,7 +9,7 @@ Type for the collections in an IngredientInventoryLibrary.
 **Signature:**
 
 ```typescript
-export type IngredientInventoryCollection = SubLibraryCollection<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+export type IngredientInventoryCollection = SubLibraryCollection<IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->, [IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->, [IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)
 

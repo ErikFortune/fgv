@@ -9,11 +9,11 @@ Gets all inventory entries.
 **Signature:**
 
 ```typescript
-getAllEntries(): ReadonlyArray<IMoldInventoryEntry>;
+getAllEntries(): ReadonlyArray<IMoldInventoryEntryEntity>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->&gt;
+ReadonlyArray&lt;[IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)<!-- -->&gt;
 
 Array of all mold inventory entries
 

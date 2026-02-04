@@ -9,7 +9,7 @@ A single entry in a mold inventory collection. Keyed by the inventory entry's ba
 **Signature:**
 
 ```typescript
-export type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+export type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)
 

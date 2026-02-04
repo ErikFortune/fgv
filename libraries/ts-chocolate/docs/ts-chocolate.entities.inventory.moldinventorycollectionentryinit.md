@@ -9,7 +9,7 @@ Initialization type for a MoldInventoryLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+export type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)
 

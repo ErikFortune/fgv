@@ -30,8 +30,8 @@ import {
   SubLibraryEntryInit
 } from '../../library-data';
 import {
-  IIngredientInventoryEntry,
-  IMoldInventoryEntry,
+  IIngredientInventoryEntryEntity,
+  IMoldInventoryEntryEntity,
   IngredientInventoryEntryBaseId,
   MoldInventoryEntryBaseId
 } from './model';
@@ -48,7 +48,7 @@ import {
  */
 export type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<
   MoldInventoryEntryBaseId,
-  IMoldInventoryEntry
+  IMoldInventoryEntryEntity
 >;
 
 /**
@@ -57,7 +57,7 @@ export type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<
  */
 export type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<
   MoldInventoryEntryBaseId,
-  IMoldInventoryEntry
+  IMoldInventoryEntryEntity
 >;
 
 /**
@@ -66,14 +66,17 @@ export type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<
  */
 export type MoldInventoryCollectionValidator = SubLibraryCollectionValidator<
   MoldInventoryEntryBaseId,
-  IMoldInventoryEntry
+  IMoldInventoryEntryEntity
 >;
 
 /**
  * Type for the collections in a MoldInventoryLibrary.
  * @public
  */
-export type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+export type MoldInventoryCollection = SubLibraryCollection<
+  MoldInventoryEntryBaseId,
+  IMoldInventoryEntryEntity
+>;
 
 // ============================================================================
 // Ingredient Inventory Collection Types
@@ -87,7 +90,7 @@ export type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBas
  */
 export type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<
   IngredientInventoryEntryBaseId,
-  IIngredientInventoryEntry
+  IIngredientInventoryEntryEntity
 >;
 
 /**
@@ -96,7 +99,7 @@ export type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<
  */
 export type IngredientInventoryCollectionEntryInit = SubLibraryEntryInit<
   IngredientInventoryEntryBaseId,
-  IIngredientInventoryEntry
+  IIngredientInventoryEntryEntity
 >;
 
 /**
@@ -105,7 +108,7 @@ export type IngredientInventoryCollectionEntryInit = SubLibraryEntryInit<
  */
 export type IngredientInventoryCollectionValidator = SubLibraryCollectionValidator<
   IngredientInventoryEntryBaseId,
-  IIngredientInventoryEntry
+  IIngredientInventoryEntryEntity
 >;
 
 /**
@@ -114,5 +117,5 @@ export type IngredientInventoryCollectionValidator = SubLibraryCollectionValidat
  */
 export type IngredientInventoryCollection = SubLibraryCollection<
   IngredientInventoryEntryBaseId,
-  IIngredientInventoryEntry
+  IIngredientInventoryEntryEntity
 >;

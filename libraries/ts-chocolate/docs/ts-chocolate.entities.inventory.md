@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A library for managing user [ingredient inventory entries](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->.
+A library for managing user [ingredient inventory entries](./ts-chocolate.entities.inventory.iingredientinventoryentryentity.md)<!-- -->.
 
 Inventory entries track which ingredients the user has on hand, including quantity, unit, and storage location. Each entry has its own base ID within the inventory collection, and contains an `ingredientId` field with the composite IngredientId of the ingredient being inventoried.
 
@@ -39,7 +39,7 @@ Provides: - Multi-collection storage with FileTree persistence - Direct lookup b
 
 </td><td>
 
-A library for managing user [mold inventory entries](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->.
+A library for managing user [mold inventory entries](./ts-chocolate.entities.inventory.imoldinventoryentryentity.md)<!-- -->.
 
 Inventory entries track which molds the user has on hand, including quantity and storage location. Each entry has its own base ID within the inventory collection, and contains a `moldId` field with the composite MoldId of the mold being inventoried.
 
@@ -64,7 +64,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[isIngredientInventoryEntry(entry)](./ts-chocolate.entities.inventory.isingredientinventoryentry.md)
+[isIngredientInventoryEntryEntity(entry)](./ts-chocolate.entities.inventory.isingredientinventoryentryentity.md)
 
 
 </td><td>
@@ -75,7 +75,7 @@ Type guard for IIngredientInventoryEntry.
 </td></tr>
 <tr><td>
 
-[isMoldInventoryEntry(entry)](./ts-chocolate.entities.inventory.ismoldinventoryentry.md)
+[isMoldInventoryEntryEntity(entry)](./ts-chocolate.entities.inventory.ismoldinventoryentryentity.md)
 
 
 </td><td>
@@ -101,7 +101,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)
+[IIngredientInventoryEntryEntity](./ts-chocolate.entities.inventory.iingredientinventoryentryentity.md)
 
 
 </td><td>
@@ -114,7 +114,7 @@ The ingredientId is the full composite ID (e.g., 'builtin.cocoa-butter') identif
 </td></tr>
 <tr><td>
 
-[IInventoryEntryBase](./ts-chocolate.entities.inventory.iinventoryentrybase.md)
+[IInventoryEntryEntityBase](./ts-chocolate.entities.inventory.iinventoryentryentitybase.md)
 
 
 </td><td>
@@ -125,7 +125,7 @@ Common properties shared by all inventory entry types.
 </td></tr>
 <tr><td>
 
-[IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)
+[IMoldInventoryEntryEntity](./ts-chocolate.entities.inventory.imoldinventoryentryentity.md)
 
 
 </td><td>
@@ -214,7 +214,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[AnyInventoryEntry](./ts-chocolate.entities.inventory.anyinventoryentry.md)
+[AnyInventoryEntryEntity](./ts-chocolate.entities.inventory.anyinventoryentryentity.md)
 
 
 </td><td>

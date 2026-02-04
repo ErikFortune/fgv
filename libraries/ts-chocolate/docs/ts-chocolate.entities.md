@@ -50,7 +50,7 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.classic
 
 </td><td>
 
-A library for managing user [ingredient inventory entries](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->.
+A library for managing user [ingredient inventory entries](./ts-chocolate.entities.inventory.iingredientinventoryentryentity.md)<!-- -->.
 
 Inventory entries track which ingredients the user has on hand, including quantity, unit, and storage location. Each entry has its own base ID within the inventory collection, and contains an `ingredientId` field with the composite IngredientId of the ingredient being inventoried.
 
@@ -93,7 +93,7 @@ Provides: - Multi-collection storage with FileTree persistence - Cross-collectio
 
 </td><td>
 
-A library for managing user [mold inventory entries](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->.
+A library for managing user [mold inventory entries](./ts-chocolate.entities.inventory.imoldinventoryentryentity.md)<!-- -->.
 
 Inventory entries track which molds the user has on hand, including quantity and storage location. Each entry has its own base ID within the inventory collection, and contains a `moldId` field with the composite MoldId of the mold being inventoried.
 
@@ -370,6 +370,19 @@ Base ingredient interface All ingredients have these common properties
 </td></tr>
 <tr><td>
 
+[IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)
+
+
+</td><td>
+
+Inventory entry for ingredients.
+
+The ingredientId is the full composite ID (e.g., 'builtin.cocoa-butter') identifying which specific ingredient from which collection is being inventoried.
+
+
+</td></tr>
+<tr><td>
+
 [IInlineTask](./ts-chocolate.entities.iinlinetask.md)
 
 
@@ -409,6 +422,19 @@ Molded bonbon confection Uses chocolate molds for shell formation
 </td><td>
 
 Version interface for molded bonbon confections. Includes mold and chocolate shell specifications.
+
+
+</td></tr>
+<tr><td>
+
+[IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)
+
+
+</td><td>
+
+Inventory entry for molds.
+
+The moldId is the full composite ID (e.g., 'builtin.silicone-round') identifying which specific mold from which collection is being inventoried.
 
 
 </td></tr>

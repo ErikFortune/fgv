@@ -9,7 +9,7 @@ A single entry in an ingredient inventory collection. Keyed by the inventory ent
 **Signature:**
 
 ```typescript
-export type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+export type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->, [IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->, [IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)
 

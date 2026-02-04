@@ -82,7 +82,13 @@ export {
   PersistedSessionStatus
 } from './session';
 
-export { IngredientInventoryLibrary, MoldInventoryLibrary, InventoryType } from './inventory';
+export {
+  IngredientInventoryLibrary,
+  MoldInventoryLibrary,
+  IIngredientInventoryEntryEntity,
+  IMoldInventoryEntryEntity,
+  InventoryType
+} from './inventory';
 
 export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMold } from './molds';
 

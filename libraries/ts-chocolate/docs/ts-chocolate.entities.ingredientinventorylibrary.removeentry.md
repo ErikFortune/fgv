@@ -9,7 +9,7 @@ Removes an inventory entry by its composite entry ID.
 **Signature:**
 
 ```typescript
-removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntry>;
+removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The composite inventory entry ID to remove
 
 **Returns:**
 
-Result&lt;[IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->&gt;
+Result&lt;[IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)<!-- -->&gt;
 
 Success with the removed entry, or Failure if not found or remove fails
 

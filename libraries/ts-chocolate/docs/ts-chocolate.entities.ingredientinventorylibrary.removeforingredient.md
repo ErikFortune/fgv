@@ -9,7 +9,7 @@ Removes an inventory entry for a specific ingredient. Searches all collections f
 **Signature:**
 
 ```typescript
-removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry>;
+removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The composite IngredientId of the ingredient whose inventory to remove
 
 **Returns:**
 
-Result&lt;[IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->&gt;
+Result&lt;[IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)<!-- -->&gt;
 
 Success with the removed entry, or Failure if not found or remove fails
 

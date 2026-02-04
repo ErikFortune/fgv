@@ -9,7 +9,7 @@ Type for the collections in a MoldInventoryLibrary.
 **Signature:**
 
 ```typescript
-export type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+export type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)
 

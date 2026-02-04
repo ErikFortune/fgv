@@ -19,23 +19,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[anyInventoryEntry](./ts-chocolate.entities.inventory.converters.anyinventoryentry.md)
+[anyInventoryEntryEntity](./ts-chocolate.entities.inventory.converters.anyinventoryentryentity.md)
 
 
 </td><td>
 
-Converter for [AnyInventoryEntry](./ts-chocolate.entities.inventory.anyinventoryentry.md)<!-- -->. Uses the `inventoryType` property to determine which specific converter to use.
-
-
-</td></tr>
-<tr><td>
-
-[ingredientInventoryEntry](./ts-chocolate.entities.inventory.converters.ingredientinventoryentry.md)
-
-
-</td><td>
-
-Converter for [IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->.
+Converter for [AnyInventoryEntryEntity](./ts-chocolate.entities.inventory.anyinventoryentryentity.md)<!-- -->. Uses the `inventoryType` property to determine which specific converter to use.
 
 
 </td></tr>
@@ -47,6 +36,17 @@ Converter for [IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iing
 </td><td>
 
 Converter for [IngredientInventoryEntryBaseId](./ts-chocolate.entities.inventory.ingredientinventoryentrybaseid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ingredientInventoryEntryEntity](./ts-chocolate.entities.inventory.converters.ingredientinventoryentryentity.md)
+
+
+</td><td>
+
+Converter for [IIngredientInventoryEntryEntity](./ts-chocolate.entities.inventory.iingredientinventoryentryentity.md)<!-- -->.
 
 
 </td></tr>
@@ -74,23 +74,23 @@ Converter for [InventoryType](./ts-chocolate.entities.inventory.inventorytype.md
 </td></tr>
 <tr><td>
 
-[moldInventoryEntry](./ts-chocolate.entities.inventory.converters.moldinventoryentry.md)
-
-
-</td><td>
-
-Converter for [IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [moldInventoryEntryBaseId](./ts-chocolate.entities.inventory.converters.moldinventoryentrybaseid.md)
 
 
 </td><td>
 
 Converter for [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[moldInventoryEntryEntity](./ts-chocolate.entities.inventory.converters.moldinventoryentryentity.md)
+
+
+</td><td>
+
+Converter for [IMoldInventoryEntryEntity](./ts-chocolate.entities.inventory.imoldinventoryentryentity.md)<!-- -->.
 
 
 </td></tr>

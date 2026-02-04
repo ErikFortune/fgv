@@ -37,9 +37,9 @@ import {
   SubLibraryMergeSource
 } from '../../library-data';
 import { BuiltInData } from '../../built-in';
-import { IMoldInventoryEntry, MoldInventoryEntryBaseId, MoldInventoryEntryId } from './model';
+import { IMoldInventoryEntryEntity, MoldInventoryEntryBaseId, MoldInventoryEntryId } from './model';
 import {
-  moldInventoryEntry as moldInventoryEntryConverter,
+  moldInventoryEntryEntity as moldInventoryEntryConverter,
   moldInventoryEntryBaseId,
   moldInventoryEntryId,
   parsedMoldInventoryEntryId
@@ -96,7 +96,7 @@ export type IMoldInventoryLibraryAsyncParams = ISubLibraryAsyncParams<
 // ============================================================================
 
 /**
- * A library for managing user {@link Entities.Inventory.IMoldInventoryEntry | mold inventory entries}.
+ * A library for managing user {@link Entities.Inventory.IMoldInventoryEntryEntity | mold inventory entries}.
  *
  * Inventory entries track which molds the user has on hand, including quantity
  * and storage location. Each entry has its own base ID within the inventory collection,
@@ -112,7 +112,7 @@ export type IMoldInventoryLibraryAsyncParams = ISubLibraryAsyncParams<
 export class MoldInventoryLibrary extends SubLibraryBase<
   MoldInventoryEntryId,
   MoldInventoryEntryBaseId,
-  IMoldInventoryEntry
+  IMoldInventoryEntryEntity
 > {
   private constructor(params?: IMoldInventoryLibraryParams) {
     super({
@@ -148,7 +148,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
     const createParams: ISubLibraryCreateParams<
       MoldInventoryLibrary,
       MoldInventoryEntryBaseId,
-      IMoldInventoryEntry
+      IMoldInventoryEntryEntity
     > = {
       itemIdConverter: moldInventoryEntryBaseId,
       itemConverter: moldInventoryEntryConverter,
@@ -185,7 +185,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @returns Success with the inventory entry, or Failure if not found
    * @public
    */
-  public getForMold(moldId: MoldId): Result<IMoldInventoryEntry> {
+  public getForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity> {
     // Search all collections for an entry with matching moldId
     for (const [, entry] of this.entries()) {
       if (entry.moldId === moldId) {
@@ -210,7 +210,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @returns Array of all mold inventory entries
    * @public
    */
-  public getAllEntries(): ReadonlyArray<IMoldInventoryEntry> {
+  public getAllEntries(): ReadonlyArray<IMoldInventoryEntryEntity> {
     return Array.from(this.values());
   }
 
@@ -229,7 +229,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
   public addEntry(
     collectionId: SourceId,
     entryId: MoldInventoryEntryBaseId,
-    entry: IMoldInventoryEntry
+    entry: IMoldInventoryEntryEntity
   ): Result<MoldInventoryEntryId> {
     return this.addToCollection(collectionId, entryId, entry)
       .asResult.withErrorFormat((msg) => `Failed to add mold inventory ${entryId} to ${collectionId}: ${msg}`)
@@ -247,7 +247,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
   public upsertEntry(
     collectionId: SourceId,
     entryId: MoldInventoryEntryBaseId,
-    entry: IMoldInventoryEntry
+    entry: IMoldInventoryEntryEntity
   ): Result<MoldInventoryEntryId> {
     return this.setInCollection(collectionId, entryId, entry)
       .asResult.withErrorFormat(
@@ -262,7 +262,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @returns Success with the removed entry, or Failure if not found or remove fails
    * @public
    */
-  public removeEntry(entryId: MoldInventoryEntryId): Result<IMoldInventoryEntry> {
+  public removeEntry(entryId: MoldInventoryEntryId): Result<IMoldInventoryEntryEntity> {
     return this.get(entryId)
       .asResult.withErrorFormat((msg) => `Inventory entry ${entryId} not found: ${msg}`)
       .onSuccess((entry) => {
@@ -289,7 +289,7 @@ export class MoldInventoryLibrary extends SubLibraryBase<
    * @returns Success with the removed entry, or Failure if not found or remove fails
    * @public
    */
-  public removeForMold(moldId: MoldId): Result<IMoldInventoryEntry> {
+  public removeForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity> {
     // Find the entry with this moldId
     for (const [compositeId, entry] of this.entries()) {
       if (entry.moldId === moldId) {

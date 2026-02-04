@@ -9,7 +9,7 @@ Removes an inventory entry for a specific mold. Searches all collections for the
 **Signature:**
 
 ```typescript
-removeForMold(moldId: MoldId): Result<IMoldInventoryEntry>;
+removeForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The composite MoldId of the mold whose inventory to remove
 
 **Returns:**
 
-Result&lt;[IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->&gt;
+Result&lt;[IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)<!-- -->&gt;
 
 Success with the removed entry, or Failure if not found or remove fails
 

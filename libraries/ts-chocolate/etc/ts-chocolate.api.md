@@ -175,12 +175,12 @@ type AnyFillingOptionEntity = IRecipeFillingOptionEntity | IIngredientFillingOpt
 const anyFillingOptionEntity: Converter<AnyFillingOptionEntity>;
 
 // @public
-type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
+type AnyInventoryEntryEntity = IMoldInventoryEntryEntity | IIngredientInventoryEntryEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const anyInventoryEntry: Converter<AnyInventoryEntry>;
+const anyInventoryEntryEntity: Converter<AnyInventoryEntryEntity>;
 
 // @public
 type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
@@ -975,9 +975,9 @@ declare namespace Converters_3 {
         ParsedIngredientInventoryEntryId,
         parsedIngredientInventoryEntryId,
         inventoryType,
-        moldInventoryEntry,
-        ingredientInventoryEntry,
-        anyInventoryEntry
+        moldInventoryEntryEntity,
+        ingredientInventoryEntryEntity,
+        anyInventoryEntryEntity
     }
 }
 
@@ -1255,6 +1255,8 @@ declare namespace Entities {
         PersistedSessionStatus,
         IngredientInventoryLibrary,
         MoldInventoryLibrary,
+        IIngredientInventoryEntryEntity,
+        IMoldInventoryEntryEntity,
         InventoryType,
         MoldsLibrary,
         ICavities,
@@ -2568,7 +2570,7 @@ interface IIngredientFillingOptionEntity {
 }
 
 // @public
-interface IIngredientInventoryEntry extends IInventoryEntryBase {
+interface IIngredientInventoryEntryEntity extends IInventoryEntryEntityBase {
     readonly ingredientId: IngredientId;
     // (undocumented)
     readonly inventoryType: 'ingredient';
@@ -2663,7 +2665,7 @@ interface IInstantiatedUserLibrarySource {
 }
 
 // @public
-interface IInventoryEntryBase {
+interface IInventoryEntryEntityBase {
     readonly inventoryType: InventoryType;
     readonly location?: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
@@ -2817,7 +2819,7 @@ interface IMoldedBonBonYield {
 type IMoldFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-interface IMoldInventoryEntry extends IInventoryEntryBase {
+interface IMoldInventoryEntryEntity extends IInventoryEntryEntityBase {
     readonly count: number;
     // (undocumented)
     readonly inventoryType: 'mold';
@@ -2953,21 +2955,16 @@ class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngr
 }
 
 // @public
-type IngredientInventoryCollection = SubLibraryCollection<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+type IngredientInventoryCollection = SubLibraryCollection<IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity>;
 
 // @public
-type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+type IngredientInventoryCollectionEntry = SubLibraryCollectionEntry<IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity>;
 
 // @public
-type IngredientInventoryCollectionEntryInit = SubLibraryEntryInit<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
+type IngredientInventoryCollectionEntryInit = SubLibraryEntryInit<IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity>;
 
 // @public
-type IngredientInventoryCollectionValidator = SubLibraryCollectionValidator<IngredientInventoryEntryBaseId, IIngredientInventoryEntry>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const ingredientInventoryEntry: Converter<IIngredientInventoryEntry>;
+type IngredientInventoryCollectionValidator = SubLibraryCollectionValidator<IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity>;
 
 // @public
 type IngredientInventoryEntryBaseId = Brand<string, 'IngredientInventoryEntryBaseId'>;
@@ -2976,6 +2973,11 @@ type IngredientInventoryEntryBaseId = Brand<string, 'IngredientInventoryEntryBas
 //
 // @public
 const ingredientInventoryEntryBaseId: Converter<IngredientInventoryEntryBaseId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientInventoryEntryEntity: Converter<IIngredientInventoryEntryEntity>;
 
 // @public
 type IngredientInventoryEntryId = Brand<string, 'IngredientInventoryEntryId'>;
@@ -2988,20 +2990,20 @@ const ingredientInventoryEntryId: Converter<IngredientInventoryEntryId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntryId, IngredientInventoryEntryBaseId, IIngredientInventoryEntry> {
-    addEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntry): Result<IngredientInventoryEntryId>;
+class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntryId, IngredientInventoryEntryBaseId, IIngredientInventoryEntryEntity> {
+    addEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IIngredientInventoryLibraryParams): Result<IngredientInventoryLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: IIngredientInventoryLibraryAsyncParams): Promise<Result<IngredientInventoryLibrary>>;
     createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
-    getAllEntries(): ReadonlyArray<IIngredientInventoryEntry>;
-    getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry>;
+    getAllEntries(): ReadonlyArray<IIngredientInventoryEntryEntity>;
+    getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
     hasForIngredient(ingredientId: IngredientId): boolean;
-    removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntry>;
-    removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry>;
-    upsertEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntry): Result<IngredientInventoryEntryId>;
+    removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntryEntity>;
+    removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
+    upsertEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
 }
 
 // @public
@@ -3224,8 +3226,8 @@ declare namespace Inventory {
         IngredientInventoryMergeSource,
         IIngredientInventoryLibraryParams,
         IIngredientInventoryLibraryAsyncParams,
-        isMoldInventoryEntry,
-        isIngredientInventoryEntry,
+        isMoldInventoryEntryEntity,
+        isIngredientInventoryEntryEntity,
         MoldInventoryEntryBaseId,
         MoldInventoryEntryId,
         IngredientInventoryEntryBaseId,
@@ -3234,10 +3236,10 @@ declare namespace Inventory {
         InventorySchemaVersion,
         InventoryType,
         allInventoryTypes,
-        IInventoryEntryBase,
-        IMoldInventoryEntry,
-        IIngredientInventoryEntry,
-        AnyInventoryEntry,
+        IInventoryEntryEntityBase,
+        IMoldInventoryEntryEntity,
+        IIngredientInventoryEntryEntity,
+        AnyInventoryEntryEntity,
         MoldInventoryCollectionEntry,
         MoldInventoryCollectionEntryInit,
         MoldInventoryCollectionValidator,
@@ -4146,7 +4148,7 @@ function isFillingJournalEntry(entry: AnyJournalEntry): entry is AnyFillingJourn
 function isFillingProductionJournalEntry(entry: AnyJournalEntry): entry is IFillingProductionJournalEntry;
 
 // @public
-function isIngredientInventoryEntry(entry: AnyInventoryEntry): entry is IIngredientInventoryEntry;
+function isIngredientInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IIngredientInventoryEntryEntity;
 
 // @public
 function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
@@ -4166,7 +4168,7 @@ function isMoldedBonBonVersionEntity(version: AnyConfectionVersionEntity): versi
 function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMoldedBonBonYield;
 
 // @public
-function isMoldInventoryEntry(entry: AnyInventoryEntry): entry is IMoldInventoryEntry;
+function isMoldInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IMoldInventoryEntryEntity;
 
 // @public
 function isPersistedConfectionSession(session: AnyPersistedSession): session is IPersistedConfectionSession;
@@ -5064,21 +5066,16 @@ const moldId: Converter<MoldId>;
 const moldId_2: Validator<MoldId>;
 
 // @public
-type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+type MoldInventoryCollection = SubLibraryCollection<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 
 // @public
-type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+type MoldInventoryCollectionEntry = SubLibraryCollectionEntry<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 
 // @public
-type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
+type MoldInventoryCollectionEntryInit = SubLibraryEntryInit<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 
 // @public
-type MoldInventoryCollectionValidator = SubLibraryCollectionValidator<MoldInventoryEntryBaseId, IMoldInventoryEntry>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const moldInventoryEntry: Converter<IMoldInventoryEntry>;
+type MoldInventoryCollectionValidator = SubLibraryCollectionValidator<MoldInventoryEntryBaseId, IMoldInventoryEntryEntity>;
 
 // @public
 type MoldInventoryEntryBaseId = Brand<string, 'MoldInventoryEntryBaseId'>;
@@ -5087,6 +5084,11 @@ type MoldInventoryEntryBaseId = Brand<string, 'MoldInventoryEntryBaseId'>;
 //
 // @public
 const moldInventoryEntryBaseId: Converter<MoldInventoryEntryBaseId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldInventoryEntryEntity: Converter<IMoldInventoryEntryEntity>;
 
 // @public
 type MoldInventoryEntryId = Brand<string, 'MoldInventoryEntryId'>;
@@ -5099,20 +5101,20 @@ const moldInventoryEntryId: Converter<MoldInventoryEntryId>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInventoryEntryBaseId, IMoldInventoryEntry> {
-    addEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntry): Result<MoldInventoryEntryId>;
+class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInventoryEntryBaseId, IMoldInventoryEntryEntity> {
+    addEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntryEntity): Result<MoldInventoryEntryId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IMoldInventoryLibraryParams): Result<MoldInventoryLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: IMoldInventoryLibraryAsyncParams): Promise<Result<MoldInventoryLibrary>>;
     createCollection(collectionId: SourceId, metadata?: ICollectionSourceMetadata): Result<SourceId>;
-    getAllEntries(): ReadonlyArray<IMoldInventoryEntry>;
-    getForMold(moldId: MoldId): Result<IMoldInventoryEntry>;
+    getAllEntries(): ReadonlyArray<IMoldInventoryEntryEntity>;
+    getForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity>;
     hasForMold(moldId: MoldId): boolean;
-    removeEntry(entryId: MoldInventoryEntryId): Result<IMoldInventoryEntry>;
-    removeForMold(moldId: MoldId): Result<IMoldInventoryEntry>;
-    upsertEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntry): Result<MoldInventoryEntryId>;
+    removeEntry(entryId: MoldInventoryEntryId): Result<IMoldInventoryEntryEntity>;
+    removeForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity>;
+    upsertEntry(collectionId: SourceId, entryId: MoldInventoryEntryBaseId, entry: IMoldInventoryEntryEntity): Result<MoldInventoryEntryId>;
 }
 
 // @public

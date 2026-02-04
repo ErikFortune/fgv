@@ -9,11 +9,11 @@ Gets all inventory entries.
 **Signature:**
 
 ```typescript
-getAllEntries(): ReadonlyArray<IIngredientInventoryEntry>;
+getAllEntries(): ReadonlyArray<IIngredientInventoryEntryEntity>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->&gt;
+ReadonlyArray&lt;[IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)<!-- -->&gt;
 
 Array of all ingredient inventory entries
 

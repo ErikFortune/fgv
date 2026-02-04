@@ -9,7 +9,7 @@ Adds a new inventory entry.
 **Signature:**
 
 ```typescript
-addEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntry): Result<IngredientInventoryEntryId>;
+addEntry(collectionId: SourceId, entryId: IngredientInventoryEntryBaseId, entry: IIngredientInventoryEntryEntity): Result<IngredientInventoryEntryId>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ entry
 
 </td><td>
 
-[IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)
+[IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)
 
 
 </td><td>

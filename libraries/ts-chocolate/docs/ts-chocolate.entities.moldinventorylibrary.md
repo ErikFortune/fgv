@@ -4,7 +4,7 @@
 
 ## Entities.MoldInventoryLibrary class
 
-A library for managing user [mold inventory entries](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->.
+A library for managing user [mold inventory entries](./ts-chocolate.entities.inventory.imoldinventoryentryentity.md)<!-- -->.
 
 Inventory entries track which molds the user has on hand, including quantity and storage location. Each entry has its own base ID within the inventory collection, and contains a `moldId` field with the composite MoldId of the mold being inventoried.
 
@@ -13,9 +13,9 @@ Provides: - Multi-collection storage with FileTree persistence - Direct lookup b
 **Signature:**
 
 ```typescript
-export declare class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInventoryEntryBaseId, IMoldInventoryEntry> 
+export declare class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInventoryEntryBaseId, IMoldInventoryEntryEntity> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[MoldInventoryEntryId](./ts-chocolate.entities.inventory.moldinventoryentryid.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntry](./ts-chocolate.entities.inventory.imoldinventoryentry.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[MoldInventoryEntryId](./ts-chocolate.entities.inventory.moldinventoryentryid.md)<!-- -->, [MoldInventoryEntryBaseId](./ts-chocolate.entities.inventory.moldinventoryentrybaseid.md)<!-- -->, [IMoldInventoryEntryEntity](./ts-chocolate.entities.imoldinventoryentryentity.md)<!-- -->&gt;
 
 ## Methods
 

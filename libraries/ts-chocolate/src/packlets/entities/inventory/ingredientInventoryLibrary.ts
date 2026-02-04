@@ -38,12 +38,12 @@ import {
 } from '../../library-data';
 import { BuiltInData } from '../../built-in';
 import {
-  IIngredientInventoryEntry,
+  IIngredientInventoryEntryEntity,
   IngredientInventoryEntryBaseId,
   IngredientInventoryEntryId
 } from './model';
 import {
-  ingredientInventoryEntry as ingredientInventoryEntryConverter,
+  ingredientInventoryEntryEntity as ingredientInventoryEntryConverter,
   ingredientInventoryEntryBaseId,
   ingredientInventoryEntryId,
   parsedIngredientInventoryEntryId
@@ -100,7 +100,7 @@ export type IIngredientInventoryLibraryAsyncParams = ISubLibraryAsyncParams<
 // ============================================================================
 
 /**
- * A library for managing user {@link Entities.Inventory.IIngredientInventoryEntry | ingredient inventory entries}.
+ * A library for managing user {@link Entities.Inventory.IIngredientInventoryEntryEntity | ingredient inventory entries}.
  *
  * Inventory entries track which ingredients the user has on hand, including quantity,
  * unit, and storage location. Each entry has its own base ID within the inventory collection,
@@ -116,7 +116,7 @@ export type IIngredientInventoryLibraryAsyncParams = ISubLibraryAsyncParams<
 export class IngredientInventoryLibrary extends SubLibraryBase<
   IngredientInventoryEntryId,
   IngredientInventoryEntryBaseId,
-  IIngredientInventoryEntry
+  IIngredientInventoryEntryEntity
 > {
   private constructor(params?: IIngredientInventoryLibraryParams) {
     super({
@@ -152,7 +152,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
     const createParams: ISubLibraryCreateParams<
       IngredientInventoryLibrary,
       IngredientInventoryEntryBaseId,
-      IIngredientInventoryEntry
+      IIngredientInventoryEntryEntity
     > = {
       itemIdConverter: ingredientInventoryEntryBaseId,
       itemConverter: ingredientInventoryEntryConverter,
@@ -189,7 +189,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @returns Success with the inventory entry, or Failure if not found
    * @public
    */
-  public getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry> {
+  public getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity> {
     // Search all collections for an entry with matching ingredientId
     for (const [, entry] of this.entries()) {
       if (entry.ingredientId === ingredientId) {
@@ -214,7 +214,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @returns Array of all ingredient inventory entries
    * @public
    */
-  public getAllEntries(): ReadonlyArray<IIngredientInventoryEntry> {
+  public getAllEntries(): ReadonlyArray<IIngredientInventoryEntryEntity> {
     return Array.from(this.values());
   }
 
@@ -233,7 +233,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
   public addEntry(
     collectionId: SourceId,
     entryId: IngredientInventoryEntryBaseId,
-    entry: IIngredientInventoryEntry
+    entry: IIngredientInventoryEntryEntity
   ): Result<IngredientInventoryEntryId> {
     return this.addToCollection(collectionId, entryId, entry)
       .asResult.withErrorFormat(
@@ -253,7 +253,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
   public upsertEntry(
     collectionId: SourceId,
     entryId: IngredientInventoryEntryBaseId,
-    entry: IIngredientInventoryEntry
+    entry: IIngredientInventoryEntryEntity
   ): Result<IngredientInventoryEntryId> {
     return this.setInCollection(collectionId, entryId, entry)
       .asResult.withErrorFormat(
@@ -268,7 +268,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @returns Success with the removed entry, or Failure if not found or remove fails
    * @public
    */
-  public removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntry> {
+  public removeEntry(entryId: IngredientInventoryEntryId): Result<IIngredientInventoryEntryEntity> {
     return this.get(entryId)
       .asResult.withErrorFormat((msg) => `Inventory entry ${entryId} not found: ${msg}`)
       .onSuccess((entry) => {
@@ -295,7 +295,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    * @returns Success with the removed entry, or Failure if not found or remove fails
    * @public
    */
-  public removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry> {
+  public removeForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity> {
     // Find the entry with this ingredientId
     for (const [compositeId, entry] of this.entries()) {
       if (entry.ingredientId === ingredientId) {

@@ -9,7 +9,7 @@ Gets the inventory entry for a specific ingredient by searching all entries.
 **Signature:**
 
 ```typescript
-getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntry>;
+getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The composite IngredientId of the ingredient to look up
 
 **Returns:**
 
-Result&lt;[IIngredientInventoryEntry](./ts-chocolate.entities.inventory.iingredientinventoryentry.md)<!-- -->&gt;
+Result&lt;[IIngredientInventoryEntryEntity](./ts-chocolate.entities.iingredientinventoryentryentity.md)<!-- -->&gt;
 
 Success with the inventory entry, or Failure if not found
 

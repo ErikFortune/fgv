@@ -28,11 +28,11 @@ import { Converter, Converters, Failure, fail, Result, Success, succeed } from '
 import { Converters as CommonConverters, Model as CommonModel, SourceId } from '../../common';
 import {
   allInventoryTypes,
-  AnyInventoryEntry,
-  IIngredientInventoryEntry,
+  AnyInventoryEntryEntity,
+  IIngredientInventoryEntryEntity,
   IngredientInventoryEntryBaseId,
   IngredientInventoryEntryId,
-  IMoldInventoryEntry,
+  IMoldInventoryEntryEntity,
   InventoryType,
   MoldInventoryEntryBaseId,
   MoldInventoryEntryId
@@ -187,27 +187,28 @@ export const inventoryType: Converter<InventoryType> = Converters.enumeratedValu
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Inventory.IMoldInventoryEntry | IMoldInventoryEntry}.
+ * Converter for {@link Entities.Inventory.IMoldInventoryEntryEntity | IMoldInventoryEntryEntity}.
  * @public
  */
-export const moldInventoryEntry: Converter<IMoldInventoryEntry> = Converters.object<IMoldInventoryEntry>({
-  inventoryType: Converters.literal('mold'),
-  moldId: CommonConverters.moldId,
-  count: Converters.number,
-  location: Converters.string.optional(),
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const moldInventoryEntryEntity: Converter<IMoldInventoryEntryEntity> =
+  Converters.object<IMoldInventoryEntryEntity>({
+    inventoryType: Converters.literal('mold'),
+    moldId: CommonConverters.moldId,
+    count: Converters.number,
+    location: Converters.string.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
 
 // ============================================================================
 // Ingredient Inventory Entry Converter
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Inventory.IIngredientInventoryEntry | IIngredientInventoryEntry}.
+ * Converter for {@link Entities.Inventory.IIngredientInventoryEntryEntity | IIngredientInventoryEntryEntity}.
  * @public
  */
-export const ingredientInventoryEntry: Converter<IIngredientInventoryEntry> =
-  Converters.object<IIngredientInventoryEntry>({
+export const ingredientInventoryEntryEntity: Converter<IIngredientInventoryEntryEntity> =
+  Converters.object<IIngredientInventoryEntryEntity>({
     inventoryType: Converters.literal('ingredient'),
     ingredientId: CommonConverters.ingredientId,
     quantity: CommonConverters.measurement,
@@ -221,12 +222,12 @@ export const ingredientInventoryEntry: Converter<IIngredientInventoryEntry> =
 // ============================================================================
 
 /**
- * Converter for {@link Entities.Inventory.AnyInventoryEntry | AnyInventoryEntry}.
+ * Converter for {@link Entities.Inventory.AnyInventoryEntryEntity | AnyInventoryEntryEntity}.
  * Uses the `inventoryType` property to determine which specific converter to use.
  * @public
  */
-export const anyInventoryEntry: Converter<AnyInventoryEntry> = Converters.generic<AnyInventoryEntry>(
-  (from: unknown): Result<AnyInventoryEntry> => {
+export const anyInventoryEntryEntity: Converter<AnyInventoryEntryEntity> =
+  Converters.generic<AnyInventoryEntryEntity>((from: unknown): Result<AnyInventoryEntryEntity> => {
     // First validate it's an object with an inventoryType field
     const typeResult = Converters.object({ inventoryType })
       .convert(from)
@@ -239,13 +240,12 @@ export const anyInventoryEntry: Converter<AnyInventoryEntry> = Converters.generi
     // Dispatch to the appropriate converter based on type
     switch (typeResult.value) {
       case 'mold':
-        return moldInventoryEntry.convert(from);
+        return moldInventoryEntryEntity.convert(from);
       case 'ingredient':
-        return ingredientInventoryEntry.convert(from);
+        return ingredientInventoryEntryEntity.convert(from);
       /* c8 ignore next 3 - defensive coding: exhaustive check */
       default:
         // @ts-expect-error - exhaustive check
         return fail(`Unknown inventory type: ${typeResult.value}`);
     }
-  }
-);
+  });

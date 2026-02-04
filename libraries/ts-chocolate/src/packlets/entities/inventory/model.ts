@@ -103,7 +103,7 @@ export const allInventoryTypes: ReadonlyArray<InventoryType> = ['mold', 'ingredi
  * Common properties shared by all inventory entry types.
  * @public
  */
-export interface IInventoryEntryBase {
+export interface IInventoryEntryEntityBase {
   /** Inventory type discriminator */
   readonly inventoryType: InventoryType;
   /** Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet') */
@@ -124,7 +124,7 @@ export interface IInventoryEntryBase {
  *
  * @public
  */
-export interface IMoldInventoryEntry extends IInventoryEntryBase {
+export interface IMoldInventoryEntryEntity extends IInventoryEntryEntityBase {
   readonly inventoryType: 'mold';
   /** The composite ID of the mold being inventoried (collection.baseId) */
   readonly moldId: MoldId;
@@ -144,7 +144,7 @@ export interface IMoldInventoryEntry extends IInventoryEntryBase {
  *
  * @public
  */
-export interface IIngredientInventoryEntry extends IInventoryEntryBase {
+export interface IIngredientInventoryEntryEntity extends IInventoryEntryEntityBase {
   readonly inventoryType: 'ingredient';
   /** The composite ID of the ingredient being inventoried (collection.baseId) */
   readonly ingredientId: IngredientId;
@@ -163,7 +163,7 @@ export interface IIngredientInventoryEntry extends IInventoryEntryBase {
  * Use type guards to narrow to specific types.
  * @public
  */
-export type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
+export type AnyInventoryEntryEntity = IMoldInventoryEntryEntity | IIngredientInventoryEntryEntity;
 
 // ============================================================================
 // Type Guards
@@ -175,7 +175,9 @@ export type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
  * @returns True if the entry is a mold inventory entry
  * @public
  */
-export function isMoldInventoryEntry(entry: AnyInventoryEntry): entry is IMoldInventoryEntry {
+export function isMoldInventoryEntryEntity(
+  entry: AnyInventoryEntryEntity
+): entry is IMoldInventoryEntryEntity {
   return entry.inventoryType === 'mold';
 }
 
@@ -185,6 +187,8 @@ export function isMoldInventoryEntry(entry: AnyInventoryEntry): entry is IMoldIn
  * @returns True if the entry is an ingredient inventory entry
  * @public
  */
-export function isIngredientInventoryEntry(entry: AnyInventoryEntry): entry is IIngredientInventoryEntry {
+export function isIngredientInventoryEntryEntity(
+  entry: AnyInventoryEntryEntity
+): entry is IIngredientInventoryEntryEntity {
   return entry.inventoryType === 'ingredient';
 }
