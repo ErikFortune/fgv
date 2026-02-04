@@ -4,12 +4,12 @@
 
 ## ChocolateLibrary.getMold() method
 
-Gets a [mold](./ts-chocolate.entities.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
+Gets a [mold](./ts-chocolate.entities.molds.imoldentity.md) by its [composite ID](./ts-chocolate.moldid.md)
 
 **Signature:**
 
 ```typescript
-getMold(id: MoldId): Result<IMold>;
+getMold(id: MoldId): Result<IMoldEntity>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.moldid.md) of the mold to retrieve.
 
 **Returns:**
 
-Result&lt;[IMold](./ts-chocolate.entities.imold.md)<!-- -->&gt;
+Result&lt;[IMoldEntity](./ts-chocolate.entities.imoldentity.md)<!-- -->&gt;
 
 `Success` with mold data, or `Failure` if not found
 

@@ -52,12 +52,12 @@ Converter for [ICavityInfo](./ts-chocolate.entities.molds.icavityinfo.md)<!-- --
 </td></tr>
 <tr><td>
 
-[moldData](./ts-chocolate.entities.molds.converters.molddata.md)
+[moldEntity](./ts-chocolate.entities.molds.converters.moldentity.md)
 
 
 </td><td>
 
-Converter for [IMold](./ts-chocolate.entities.molds.imold.md) data structure.
+Converter for [IMoldEntity](./ts-chocolate.entities.molds.imoldentity.md) data structure.
 
 
 </td></tr>

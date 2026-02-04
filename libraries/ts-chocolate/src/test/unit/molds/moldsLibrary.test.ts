@@ -30,7 +30,7 @@ import {
   Model as CommonModel
 } from '../../../packlets/common';
 
-import { MoldsLibrary, IMold, Molds } from '../../../packlets/entities';
+import { MoldsLibrary, IMoldEntity, Molds } from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 
@@ -39,7 +39,7 @@ describe('MoldsLibrary', () => {
   // Test Data
   // ============================================================================
 
-  const testMoldData: IMold = {
+  const testMoldData: IMoldEntity = {
     baseId: 'test-mold' as BaseMoldId,
     manufacturer: 'Test Manufacturer',
     productNumber: 'TM-001',
@@ -62,7 +62,7 @@ describe('MoldsLibrary', () => {
   };
 
   // Create an IMold for mutation tests
-  const createTestMold = (): IMold => testMoldData;
+  const createTestMold = (): IMoldEntity => testMoldData;
 
   // ============================================================================
   // Creation Tests
@@ -224,7 +224,7 @@ describe('MoldsLibrary', () => {
       expect(library.set(id, createTestMold())).toSucceed();
       expect(library.has(id)).toBe(true);
 
-      const updatedMold: IMold = { ...testMoldData, description: 'Updated Description' };
+      const updatedMold: IMoldEntity = { ...testMoldData, description: 'Updated Description' };
       expect(library.set(id, updatedMold)).toSucceed();
       expect(library.get(id)).toSucceedAndSatisfy((mold) => {
         expect(mold.description).toBe('Updated Description');

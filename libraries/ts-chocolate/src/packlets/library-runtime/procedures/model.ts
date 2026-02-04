@@ -35,7 +35,7 @@ import {
   ProcedureType,
   TaskId
 } from '../../common';
-import { IMold } from '../../entities';
+import { IMoldEntity } from '../../entities';
 import { Fillings, IProcedure, IProcedureStep } from '../../entities';
 import { ITaskData } from '../../entities';
 import { RuntimeTask } from '../tasks';
@@ -92,7 +92,7 @@ export interface IRuntimeProcedureRenderContext {
   /**
    * Optional mold being used for this recipe
    */
-  readonly mold?: IMold;
+  readonly mold?: IMoldEntity;
 }
 
 // ============================================================================

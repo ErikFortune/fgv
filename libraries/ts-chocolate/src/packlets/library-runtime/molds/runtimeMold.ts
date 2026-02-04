@@ -34,7 +34,7 @@ import {
   MoldId,
   SourceId
 } from '../../common';
-import { ICavities, ICavityDimensions, IMold } from '../../entities';
+import { ICavities, ICavityDimensions, IMoldEntity } from '../../entities';
 import { IMoldContext, IRuntimeMold } from './model';
 
 // ============================================================================
@@ -54,10 +54,10 @@ import { IMoldContext, IRuntimeMold } from './model';
 export class RuntimeMold implements IRuntimeMold {
   private readonly _context: IMoldContext;
   private readonly _id: MoldId;
-  private readonly _mold: IMold;
+  private readonly _mold: IMoldEntity;
   private readonly _sourceId: SourceId;
 
-  private constructor(context: IMoldContext, id: MoldId, mold: IMold) {
+  private constructor(context: IMoldContext, id: MoldId, mold: IMoldEntity) {
     this._context = context;
     this._id = id;
     this._mold = mold;
@@ -72,7 +72,7 @@ export class RuntimeMold implements IRuntimeMold {
    * @param mold - The mold data
    * @returns Success with RuntimeMold
    */
-  public static create(context: IMoldContext, id: MoldId, mold: IMold): Result<RuntimeMold> {
+  public static create(context: IMoldContext, id: MoldId, mold: IMoldEntity): Result<RuntimeMold> {
     return Success.with(new RuntimeMold(context, id, mold));
   }
 
@@ -226,7 +226,7 @@ export class RuntimeMold implements IRuntimeMold {
   /**
    * Gets the underlying raw mold data
    */
-  public get raw(): IMold {
+  public get raw(): IMoldEntity {
     return this._mold;
   }
 

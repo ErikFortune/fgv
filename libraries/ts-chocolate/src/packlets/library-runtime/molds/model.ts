@@ -26,7 +26,7 @@
  */
 
 import { BaseMoldId, Measurement, Model as CommonModel, MoldFormat, MoldId, SourceId } from '../../common';
-import { ICavities, ICavityDimensions, IMold } from '../../entities';
+import { ICavities, ICavityDimensions, IMoldEntity } from '../../entities';
 
 // ============================================================================
 // Runtime Mold Context
@@ -131,5 +131,5 @@ export interface IRuntimeMold {
   /**
    * Gets the underlying raw mold data.
    */
-  readonly raw: IMold;
+  readonly raw: IMoldEntity;
 }

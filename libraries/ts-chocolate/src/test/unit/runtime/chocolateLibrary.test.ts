@@ -50,7 +50,7 @@ import {
   FillingsLibrary
 } from '../../../packlets/entities';
 
-import { IMold, MoldsLibrary } from '../../../packlets/entities';
+import { IMoldEntity, MoldsLibrary } from '../../../packlets/entities';
 
 import { IProcedure, ProceduresLibrary } from '../../../packlets/entities';
 
@@ -277,7 +277,7 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('mold lookup', () => {
-    const testMoldData: IMold = {
+    const testMoldData: IMoldEntity = {
       baseId: 'test-mold' as BaseMoldId,
       manufacturer: 'Test Manufacturer',
       productNumber: 'TM-001',

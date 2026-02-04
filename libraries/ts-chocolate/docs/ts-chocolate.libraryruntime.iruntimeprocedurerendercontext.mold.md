@@ -9,5 +9,5 @@ Optional mold being used for this recipe
 **Signature:**
 
 ```typescript
-readonly mold?: IMold;
+readonly mold?: IMoldEntity;
 ```

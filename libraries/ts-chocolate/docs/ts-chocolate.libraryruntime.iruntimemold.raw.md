@@ -9,5 +9,5 @@ Gets the underlying raw mold data.
 **Signature:**
 
 ```typescript
-readonly raw: IMold;
+readonly raw: IMoldEntity;
 ```

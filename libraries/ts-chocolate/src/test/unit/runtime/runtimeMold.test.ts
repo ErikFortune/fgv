@@ -28,7 +28,7 @@ import {
   MoldFormat,
   MoldId
 } from '../../../packlets/common';
-import { IMold } from '../../../packlets/entities';
+import { IMoldEntity } from '../../../packlets/entities';
 import { RuntimeMold, IMoldContext } from '../../../packlets/library-runtime';
 
 describe('RuntimeMold', () => {
@@ -36,7 +36,7 @@ describe('RuntimeMold', () => {
   const mockContext: IMoldContext = {};
 
   // Sample mold data
-  const simpleMold: IMold = {
+  const simpleMold: IMoldEntity = {
     baseId: 'cw-2227' as BaseMoldId,
     manufacturer: 'Chocolate World',
     productNumber: 'CW 2227',
@@ -58,7 +58,7 @@ describe('RuntimeMold', () => {
     notes: [{ category: 'user', note: 'Classic bar mold' }] as CommonModel.ICategorizedNote[]
   };
 
-  const moldWithoutWeight: IMold = {
+  const moldWithoutWeight: IMoldEntity = {
     baseId: 'custom-mold' as BaseMoldId,
     manufacturer: 'Custom',
     productNumber: 'CUSTOM-001',
@@ -66,7 +66,7 @@ describe('RuntimeMold', () => {
     format: 'custom' as MoldFormat
   };
 
-  const gridMold: IMold = {
+  const gridMold: IMoldEntity = {
     baseId: 'grid-mold' as BaseMoldId,
     manufacturer: 'Polycarbonate',
     productNumber: 'PC-GRID-001',

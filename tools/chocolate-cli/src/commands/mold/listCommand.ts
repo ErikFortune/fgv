@@ -56,7 +56,7 @@ interface IMoldListOptions extends IEntityListOptions {
 /**
  * Gets the cavity count from a mold
  */
-function getCavityCount(mold: Entities.Molds.IMold): number {
+function getCavityCount(mold: Entities.Molds.IMoldEntity): number {
   if (mold.cavities.kind === 'grid') {
     return mold.cavities.columns * mold.cavities.rows;
   }
@@ -67,7 +67,7 @@ function getCavityCount(mold: Entities.Molds.IMold): number {
  * Checks if a mold matches the specified filters
  */
 function matchesFilters(
-  mold: Entities.Molds.IMold,
+  mold: Entities.Molds.IMoldEntity,
   moldId: MoldId,
   sourceId: SourceId,
   options: IMoldListOptions

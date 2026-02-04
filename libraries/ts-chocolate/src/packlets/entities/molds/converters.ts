@@ -26,7 +26,7 @@
 import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
-import { ICavities, ICavityDimensions, ICavityInfo, IMold } from './model';
+import { ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } from './model';
 
 /**
  * Converter for {@link Entities.Molds.ICavityDimensions | ICavityDimensions}.
@@ -79,10 +79,10 @@ const cavitiesCount: Converter<Extract<ICavities, { kind: 'count' }>> = Converte
 export const cavities: Converter<ICavities> = Converters.oneOf<ICavities>([cavitiesGrid, cavitiesCount]);
 
 /**
- * Converter for {@link Entities.Molds.IMold | IMold} data structure.
+ * Converter for {@link Entities.Molds.IMoldEntity | IMoldEntity} data structure.
  * @public
  */
-export const moldData: Converter<IMold> = Converters.object<IMold>({
+export const moldEntity: Converter<IMoldEntity> = Converters.object<IMoldEntity>({
   baseId: CommonConverters.baseMoldId,
   manufacturer: Converters.string,
   productNumber: Converters.string,

@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { cavityDimensions, moldData } from '../../../packlets/entities/molds/converters';
+import { cavityDimensions, moldEntity } from '../../../packlets/entities/molds/converters';
 
 describe('Mold Converters', () => {
   // ============================================================================
@@ -120,7 +120,7 @@ describe('Mold Converters', () => {
 
   describe('moldData', () => {
     test('converts valid mold data with all fields', () => {
-      expect(moldData.convert(validMoldData)).toSucceedAndSatisfy((result) => {
+      expect(moldEntity.convert(validMoldData)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('chocolate-world-cw-2227');
         expect(result.manufacturer).toBe('Chocolate World');
         expect(result.productNumber).toBe('CW 2227');
@@ -144,7 +144,7 @@ describe('Mold Converters', () => {
         cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
-      expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(moldEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('test-mold');
         expect(result.manufacturer).toBe('Test Maker');
         expect(result.productNumber).toBe('TM-001');
@@ -166,7 +166,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         notes: [{ category: 'user', note: 'Great for pralines' }]
       };
-      expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(moldEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.notes).toEqual([{ category: 'user', note: 'Great for pralines' }]);
       });
     });
@@ -178,7 +178,7 @@ describe('Mold Converters', () => {
         cavities: { kind: 'count', count: 32 },
         format: 'series-2000'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for invalid baseId (contains dot)', () => {
@@ -186,7 +186,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         baseId: 'invalid.id'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for missing manufacturer', () => {
@@ -196,7 +196,7 @@ describe('Mold Converters', () => {
         cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for missing productNumber', () => {
@@ -206,7 +206,7 @@ describe('Mold Converters', () => {
         cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for missing cavities', () => {
@@ -216,7 +216,7 @@ describe('Mold Converters', () => {
         productNumber: 'TM-001',
         format: 'series-1000'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for missing format', () => {
@@ -226,7 +226,7 @@ describe('Mold Converters', () => {
         productNumber: 'TM-001',
         cavities: { kind: 'count', count: 24 }
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for invalid format', () => {
@@ -234,7 +234,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         format: 'invalid-format'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for non-numeric cavities.count', () => {
@@ -245,7 +245,7 @@ describe('Mold Converters', () => {
           count: 'thirty-two'
         }
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for non-numeric cavities.info.weight', () => {
@@ -259,7 +259,7 @@ describe('Mold Converters', () => {
           }
         }
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for invalid cavities.info.dimensions', () => {
@@ -273,7 +273,7 @@ describe('Mold Converters', () => {
           }
         }
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for non-array tags', () => {
@@ -281,7 +281,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         tags: 'not-an-array'
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('fails for non-string tag values', () => {
@@ -289,7 +289,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         tags: [123, 456]
       };
-      expect(moldData.convert(input)).toFail();
+      expect(moldEntity.convert(input)).toFail();
     });
 
     test('converts with series-1000 format', () => {
@@ -297,7 +297,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         format: 'series-1000'
       };
-      expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(moldEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.format).toBe('series-1000');
       });
     });
@@ -307,7 +307,7 @@ describe('Mold Converters', () => {
         ...validMoldData,
         format: 'other'
       };
-      expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(moldEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.format).toBe('other');
       });
     });

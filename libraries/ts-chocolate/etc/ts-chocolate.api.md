@@ -493,13 +493,13 @@ export class ChocolateLibrary {
     getEditableConfections(collectionId: SourceId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
     getEditableFillings(collectionId: SourceId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
     getEditableIngredients(collectionId: SourceId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
-    getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
+    getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
     getEditableProcedures(collectionId: SourceId): Result<EditableCollection<IProcedure, BaseProcedureId>>;
     getEditableTasks(collectionId: SourceId): Result<EditableCollection<ITaskData, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<IngredientEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getMold(id: MoldId): Result<IMold>;
+    getMold(id: MoldId): Result<IMoldEntity>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getProcedure(id: ProcedureId): Result<IProcedure>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1262,7 +1262,7 @@ declare namespace Entities {
         ICavities,
         ICavityDimensions,
         ICavityInfo,
-        IMold,
+        IMoldEntity,
         ProceduresLibrary,
         IProcedure,
         IProcedureStep,
@@ -2762,22 +2762,6 @@ interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
 }
 
 // @public
-interface IMold {
-    readonly baseId: BaseMoldId;
-    // (undocumented)
-    readonly cavities: ICavities;
-    readonly description?: string;
-    readonly format: MoldFormat;
-    readonly manufacturer: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly productNumber: string;
-    // (undocumented)
-    readonly related?: ReadonlyArray<MoldId>;
-    readonly tags?: ReadonlyArray<string>;
-    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
-}
-
-// @public
 interface IMoldChangeAnalysis {
     readonly fillingSessionsAffected: ReadonlyArray<SlotId>;
     readonly newMoldId: MoldId;
@@ -2813,6 +2797,20 @@ interface IMoldedBonBonYield {
     readonly unit?: string;
     readonly weightPerPiece?: Measurement;
     readonly yieldType: 'frames';
+}
+
+// @public
+interface IMoldEntity {
+    readonly baseId: BaseMoldId;
+    readonly cavities: ICavities;
+    readonly description?: string;
+    readonly format: MoldFormat;
+    readonly manufacturer: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly productNumber: string;
+    readonly related?: ReadonlyArray<MoldId>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
 }
 
 // @public
@@ -3825,7 +3823,7 @@ interface IRuntimeMold {
     readonly manufacturer: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly productNumber: string;
-    readonly raw: IMold;
+    readonly raw: IMoldEntity;
     readonly related?: ReadonlyArray<MoldId>;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
@@ -3881,7 +3879,7 @@ interface IRuntimeProcedureRenderContext {
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     readonly context: IProcedureContext;
-    readonly mold?: IMold;
+    readonly mold?: IMoldEntity;
     readonly recipe: Fillings_2.IProducedFillingEntity;
 }
 
@@ -5012,21 +5010,16 @@ declare namespace Model {
 }
 
 // @public
-type MoldCollection = SubLibraryCollection<BaseMoldId, IMold>;
+type MoldCollection = SubLibraryCollection<BaseMoldId, IMoldEntity>;
 
 // @public
-type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, IMold>;
+type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, IMoldEntity>;
 
 // @public
-type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMold>;
+type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMoldEntity>;
 
 // @public
-type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMold>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const moldData: Converter<IMold>;
+type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMoldEntity>;
 
 // @public
 class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, RuntimeMoldedBonBon> {
@@ -5057,6 +5050,11 @@ const moldedBonBonVersionEntity: Converter<IMoldedBonBonVersionEntity>;
 //
 // @public
 const moldedBonBonYield: Converter<IMoldedBonBonYield>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldEntity: Converter<IMoldEntity>;
 
 // @public
 export type MoldFormat = 'series-1000' | 'series-2000' | 'other';
@@ -5133,7 +5131,7 @@ declare namespace Molds {
         cavityDimensions,
         cavityInfo,
         cavities,
-        moldData
+        moldEntity
     }
 }
 
@@ -5143,7 +5141,7 @@ declare namespace Molds_2 {
         ICavityDimensions,
         ICavityInfo,
         ICavities,
-        IMold,
+        IMoldEntity,
         MoldCollectionEntry,
         MoldCollectionEntryInit,
         MoldCollectionValidator,
@@ -5157,7 +5155,7 @@ declare namespace Molds_2 {
 }
 
 // @public
-class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMold> {
+class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMoldEntity> {
     static create(params?: IMoldsLibraryParams): Result<MoldsLibrary>;
     static createAsync(params?: IMoldsLibraryAsyncParams): Promise<Result<MoldsLibrary>>;
 }
@@ -5890,7 +5888,7 @@ class RuntimeMold implements IRuntimeMold {
     protected get context(): IMoldContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
-    static create(context: IMoldContext, id: MoldId, mold: IMold): Result<RuntimeMold>;
+    static create(context: IMoldContext, id: MoldId, mold: IMoldEntity): Result<RuntimeMold>;
     get description(): string | undefined;
     get displayName(): string;
     get format(): MoldFormat;
@@ -5898,7 +5896,7 @@ class RuntimeMold implements IRuntimeMold {
     get manufacturer(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get productNumber(): string;
-    get raw(): IMold;
+    get raw(): IMoldEntity;
     // (undocumented)
     get related(): ReadonlyArray<MoldId> | undefined;
     get sourceId(): SourceId;

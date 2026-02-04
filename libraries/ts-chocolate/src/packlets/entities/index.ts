@@ -90,7 +90,7 @@ export {
   InventoryType
 } from './inventory';
 
-export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMold } from './molds';
+export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } from './molds';
 
 export { ProceduresLibrary, IProcedure, IProcedureStep } from './procedures';
 

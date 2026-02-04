@@ -302,7 +302,7 @@ Product number from the manufacturer
 
 </td><td>
 
-[IMold](./ts-chocolate.entities.imold.md)
+[IMoldEntity](./ts-chocolate.entities.imoldentity.md)
 
 
 </td><td>

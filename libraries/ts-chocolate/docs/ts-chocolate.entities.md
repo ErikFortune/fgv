@@ -394,17 +394,6 @@ An inline task defined directly in a procedure step. Contains a full ITaskData d
 </td></tr>
 <tr><td>
 
-[IMold](./ts-chocolate.entities.imold.md)
-
-
-</td><td>
-
-Represents a chocolate mold
-
-
-</td></tr>
-<tr><td>
-
 [IMoldedBonBonEntity](./ts-chocolate.entities.imoldedbonbonentity.md)
 
 
@@ -422,6 +411,17 @@ Molded bonbon confection Uses chocolate molds for shell formation
 </td><td>
 
 Version interface for molded bonbon confections. Includes mold and chocolate shell specifications.
+
+
+</td></tr>
+<tr><td>
+
+[IMoldEntity](./ts-chocolate.entities.imoldentity.md)
+
+
+</td><td>
+
+Represents a chocolate mold
 
 
 </td></tr>

@@ -27,8 +27,8 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseMoldId, MoldId } from '../../common';
 import { Converters as CommonConverters } from '../../common';
-import { IMold } from './model';
-import { moldData as moldConverter } from './converters';
+import { IMoldEntity } from './model';
+import { moldEntity as moldConverter } from './converters';
 import { MoldCollectionEntryInit } from './collection';
 import {
   getMoldsDirectory,
@@ -76,7 +76,7 @@ export type IMoldsLibraryAsyncParams = ISubLibraryAsyncParams<MoldsLibrary, Mold
  *
  * @public
  */
-export class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMold> {
+export class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMoldEntity> {
   private constructor(params?: IMoldsLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseMoldId,
@@ -111,7 +111,7 @@ export class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMold> {
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<MoldsLibrary, BaseMoldId, IMold> = {
+    const createParams: ISubLibraryCreateParams<MoldsLibrary, BaseMoldId, IMoldEntity> = {
       itemIdConverter: CommonConverters.baseMoldId,
       itemConverter: moldConverter,
       directoryNavigator: getMoldsDirectory,

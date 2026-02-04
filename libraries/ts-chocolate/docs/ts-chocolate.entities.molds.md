@@ -69,7 +69,7 @@ Information about a mold cavity
 </td></tr>
 <tr><td>
 
-[IMold](./ts-chocolate.entities.molds.imold.md)
+[IMoldEntity](./ts-chocolate.entities.molds.imoldentity.md)
 
 
 </td><td>

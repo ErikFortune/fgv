@@ -46,7 +46,7 @@ import * as Entities from '../entities';
 import { IngredientEntity, IngredientsLibrary } from '../entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../entities';
 import { Converters as EntityConverters } from '../entities';
-import { IMold, MoldsLibrary } from '../entities';
+import { IMoldEntity, MoldsLibrary } from '../entities';
 import { IProcedure, ProceduresLibrary } from '../entities';
 import { ITaskData, TasksLibrary } from '../entities';
 import { IGanacheCalculation, IngredientResolver } from './model';
@@ -369,11 +369,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Entities.Molds.IMold | mold} by its {@link MoldId | composite ID}
+   * Gets a {@link Entities.Molds.IMoldEntity | mold} by its {@link MoldId | composite ID}
    * @param id - The {@link MoldId | id} of the mold to retrieve.
    * @returns `Success` with mold data, or `Failure` if not found
    */
-  public getMold(id: MoldId): Result<IMold> {
+  public getMold(id: MoldId): Result<IMoldEntity> {
     return this._molds.get(id);
   }
 
@@ -524,12 +524,12 @@ export class ChocolateLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>> {
+  public getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>> {
     return EditableCollection.fromLibrary(
       this.molds,
       collectionId,
       CommonConverters.baseMoldId,
-      EntityConverters.Molds.moldData
+      EntityConverters.Molds.moldEntity
     );
   }
 

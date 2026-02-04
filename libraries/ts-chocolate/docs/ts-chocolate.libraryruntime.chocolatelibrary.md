@@ -384,7 +384,7 @@ Gets an [ingredient](./ts-chocolate.entities.ingredients.ingrediententity.md) by
 
 </td><td>
 
-Gets a [mold](./ts-chocolate.entities.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
+Gets a [mold](./ts-chocolate.entities.molds.imoldentity.md) by its [composite ID](./ts-chocolate.moldid.md)
 
 
 </td></tr>

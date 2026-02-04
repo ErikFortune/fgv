@@ -48,7 +48,7 @@ import {
   IFillingRecipeEntity,
   IGanacheCharacteristics,
   IIngredientEntity,
-  IMold,
+  IMoldEntity,
   IProcedure,
   ConfectionsLibrary,
   FillingsLibrary,
@@ -118,7 +118,7 @@ describe('ConfectionEditingSession Factory', () => {
     ]
   };
 
-  const squareMold: IMold = {
+  const squareMold: IMoldEntity = {
     baseId: 'square-24' as BaseMoldId,
     manufacturer: 'Test Mfg',
     productNumber: 'SQ-24',

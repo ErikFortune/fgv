@@ -9,7 +9,7 @@ Get an editable molds collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMold, BaseMoldId>>;
+getEditableMolds(collectionId: SourceId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ ID of the collection to make editable
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IMold](./ts-chocolate.entities.imold.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;[IMoldEntity](./ts-chocolate.entities.imoldentity.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->&gt;&gt;
 
 Result containing EditableCollection with persistence, or Failure
 

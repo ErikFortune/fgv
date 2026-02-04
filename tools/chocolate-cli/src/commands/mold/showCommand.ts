@@ -43,13 +43,13 @@ interface IMoldShowOptions extends IEntityBaseOptions {
  */
 interface IMoldSelectableItem extends ISelectableItem {
   id: MoldId;
-  mold: Entities.Molds.IMold;
+  mold: Entities.Molds.IMoldEntity;
 }
 
 /**
  * Gets the cavity count from a mold
  */
-function getCavityCount(mold: Entities.Molds.IMold): number {
+function getCavityCount(mold: Entities.Molds.IMoldEntity): number {
   if (mold.cavities.kind === 'grid') {
     return mold.cavities.columns * mold.cavities.rows;
   }
@@ -59,7 +59,7 @@ function getCavityCount(mold: Entities.Molds.IMold): number {
 /**
  * Formats a mold for human-readable output
  */
-export function formatMoldHuman(mold: Entities.Molds.IMold, moldId: MoldId): string {
+export function formatMoldHuman(mold: Entities.Molds.IMoldEntity, moldId: MoldId): string {
   const lines: string[] = [];
 
   lines.push(`Mold: ${mold.description ?? mold.productNumber}`);
@@ -149,7 +149,7 @@ export function createShowSubcommand(): Command {
 
       // Determine mold ID - either from argument or interactive selection
       let moldId: MoldId;
-      let mold: Entities.Molds.IMold;
+      let mold: Entities.Molds.IMoldEntity;
 
       if (localOptions.interactive || !moldIdArg) {
         if (!localOptions.interactive && !moldIdArg) {

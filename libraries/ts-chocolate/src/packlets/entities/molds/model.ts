@@ -76,7 +76,7 @@ export type ICavities =
  * Represents a chocolate mold
  * @public
  */
-export interface IMold {
+export interface IMoldEntity {
   /**
    * Base mold identifier (unique within source)
    */
@@ -97,6 +97,9 @@ export interface IMold {
    */
   readonly description?: string;
 
+  /**
+   * Cavities in the mold
+   */
   readonly cavities: ICavities;
 
   /**
@@ -109,6 +112,9 @@ export interface IMold {
    */
   readonly tags?: ReadonlyArray<string>;
 
+  /**
+   * Related molds (e.g., different sizes of the same mold)
+   */
   readonly related?: ReadonlyArray<MoldId>;
 
   /**

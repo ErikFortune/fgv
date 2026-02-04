@@ -9,7 +9,7 @@ Type for the collections in a MoldsLibrary.
 **Signature:**
 
 ```typescript
-export type MoldCollection = SubLibraryCollection<BaseMoldId, IMold>;
+export type MoldCollection = SubLibraryCollection<BaseMoldId, IMoldEntity>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMold](./ts-chocolate.entities.imold.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMoldEntity](./ts-chocolate.entities.imoldentity.md)
 

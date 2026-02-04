@@ -70,7 +70,7 @@ The procedure context for task resolution. This provides type-safe access to tas
 
 </td><td>
 
-[IMold](./ts-chocolate.entities.imold.md)
+[IMoldEntity](./ts-chocolate.entities.imoldentity.md)
 
 
 </td><td>
