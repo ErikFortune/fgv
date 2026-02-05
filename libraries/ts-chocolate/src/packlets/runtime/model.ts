@@ -28,15 +28,13 @@
  */
 
 import { Result } from '@fgv/ts-utils';
-import type { Collections } from '@fgv/ts-utils';
 
-import { ConfectionId, Measurement } from '../common';
+import { Measurement } from '../common';
 import type { EditingSession } from './session/editingSession';
 import {
   AnyConfectionVersion,
   IConfectionContext,
   ILibraryRuntimeContext,
-  IConfectionBase,
   IFillingRecipe
 } from '../library-runtime';
 

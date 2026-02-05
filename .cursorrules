@@ -68,10 +68,33 @@ function parse(input: string): Result<Data> {
   return succeed(data);
 }
 
-// Chaining
+// Chaining with error context
 return parseInput(input)
+  .withErrorFormat((msg) => `input '${input}': ${msg}`)
   .onSuccess(validate)
   .onSuccess(transform);
+
+// Converting DetailedResult to Result
+return this._context.items.get(id)
+  .asResult
+  .withErrorFormat((msg) => `item ${id}: ${msg}`)
+  .onSuccess((item) => succeed({ id, item }));
+
+// Array processing with mapResults and per-item helper
+function getItems(): Result<Item[]> {
+  const items = this._data.items ?? [];
+  return mapResults(items.map((item) => this._resolveItem(item)))
+    .onSuccess((resolved) => {
+      this._cached = resolved;
+      return succeed(resolved);
+    });
+}
+
+private _resolveItem(item: ItemEntity): Result<Item> {
+  return this._context.resolve(item.id)
+    .withErrorFormat((msg) => `item ${item.id}: ${msg}`)
+    .onSuccess((resolved) => succeed({ ...item, resolved }));
+}
 
 // Converters
 const converter = Converters.object<IConfig>({

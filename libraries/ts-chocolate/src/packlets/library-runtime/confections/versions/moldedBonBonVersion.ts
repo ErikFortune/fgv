@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, Success, fail, succeed } from '@fgv/ts-utils';
+import { Result, Success, fail, mapResults, succeed } from '@fgv/ts-utils';
 
 import { ConfectionId, Helpers, Model as CommonModel, MoldId } from '../../../common';
 import { Confections } from '../../../entities';
@@ -101,34 +101,32 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
   /**
    * Gets resolved molds with preferred selection (lazy-loaded).
    * @returns Result with resolved molds, or Failure if resolution fails
+   * @public
    */
   public getMolds(): Result<CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>> {
     if (this._resolvedMolds === undefined) {
       const moldRefs = this._moldedBonBonVersion.molds;
-      const resolved = this._context.molds.getRefsWithAlternates(moldRefs);
-
-      if (resolved.isFailure()) {
-        return fail(`Failed to resolve molds for confection ${this._confectionId}: ${resolved.message}`);
-      }
-
-      const options: IResolvedConfectionMoldRef[] = [
-        {
-          id: resolved.value.primaryId,
-          mold: resolved.value.primary,
-          notes: resolved.value.primaryNotes,
-          entity: moldRefs.options.find((r) => r.id === resolved.value.primaryId)!
-        },
-        ...resolved.value.alternates.map((alt) => ({
-          id: alt.id,
-          mold: alt.item,
-          notes: alt.notes,
-          entity: moldRefs.options.find((r) => r.id === alt.id)!
-        }))
-      ];
-      this._resolvedMolds = {
-        options,
-        preferredId: moldRefs.preferredId
-      };
+      return this._context.molds
+        .getRefsWithAlternates(moldRefs)
+        .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve molds: ${msg}`)
+        .onSuccess((resolved) => {
+          const options: IResolvedConfectionMoldRef[] = [
+            {
+              id: resolved.primaryId,
+              mold: resolved.primary,
+              notes: resolved.primaryNotes,
+              entity: moldRefs.options.find((r) => r.id === resolved.primaryId)!
+            },
+            ...resolved.alternates.map((alt) => ({
+              id: alt.id,
+              mold: alt.item,
+              notes: alt.notes,
+              entity: moldRefs.options.find((r) => r.id === alt.id)!
+            }))
+          ];
+          this._resolvedMolds = { options, preferredId: moldRefs.preferredId };
+          return succeed(this._resolvedMolds);
+        });
     }
     return succeed(this._resolvedMolds);
   }
@@ -144,27 +142,29 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
   /**
    * Gets resolved shell chocolate specification (lazy-loaded).
    * @returns Result with resolved chocolate spec, or Failure if resolution fails
+   * @public
    */
   public getShellChocolate(): Result<IResolvedChocolateSpec> {
     if (this._resolvedShellChocolate === undefined) {
       const spec = this._moldedBonBonVersion.shellChocolate;
-      const resolved = this._context.ingredients.getWithAlternates(spec);
-
-      if (resolved.isFailure()) {
-        return fail(
-          `Failed to resolve shell chocolate for confection ${this._confectionId}: ${resolved.message}`
-        );
-      }
-
-      if (!resolved.value.primary.isChocolate()) {
-        return fail(`Primary ingredient for shell chocolate is not a chocolate: ${this._confectionId}`);
-      }
-
-      this._resolvedShellChocolate = {
-        chocolate: resolved.value.primary,
-        alternates: resolved.value.alternates.filter((i) => i.isChocolate()),
-        entity: spec
-      };
+      return this._context.ingredients
+        .getWithAlternates(spec)
+        .withErrorFormat(
+          (msg) => `confection ${this._confectionId}: failed to resolve shell chocolate: ${msg}`
+        )
+        .onSuccess((resolved) => {
+          if (!resolved.primary.isChocolate()) {
+            return fail(
+              `confection ${this._confectionId}: primary ingredient for shell chocolate is not a chocolate`
+            );
+          }
+          this._resolvedShellChocolate = {
+            chocolate: resolved.primary,
+            alternates: resolved.alternates.filter((i) => i.isChocolate()),
+            entity: spec
+          };
+          return succeed(this._resolvedShellChocolate);
+        });
     }
     return succeed(this._resolvedShellChocolate);
   }
@@ -180,43 +180,49 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
   /**
    * Gets resolved additional chocolates (lazy-loaded).
    * @returns Result with resolved additional chocolates (may be empty array), or Failure if resolution fails
+   * @public
    */
   public getAdditionalChocolates(): Result<ReadonlyArray<IResolvedAdditionalChocolate>> {
     if (this._resolvedAdditionalChocolates === undefined) {
-      const additional = this._moldedBonBonVersion.additionalChocolates;
-      if (!additional || additional.length === 0) {
-        this._resolvedAdditionalChocolates = [];
-      } else {
-        const results: IResolvedAdditionalChocolate[] = [];
-        for (const item of additional) {
-          const resolved = this._context.ingredients.getWithAlternates(item.chocolate);
-
-          if (resolved.isFailure()) {
-            return fail(
-              `Failed to resolve additional chocolate for confection ${this._confectionId}: ${resolved.message}`
-            );
-          }
-
-          if (!resolved.value.primary.isChocolate()) {
-            return fail(
-              `Primary ingredient for additional chocolate is not a chocolate: ${this._confectionId}`
-            );
-          }
-
-          results.push({
-            chocolate: {
-              chocolate: resolved.value.primary,
-              alternates: resolved.value.alternates.filter((i) => i.isChocolate()),
-              entity: item.chocolate
-            },
-            purpose: item.purpose,
-            entity: item
-          });
+      const additional = this._moldedBonBonVersion.additionalChocolates ?? [];
+      return mapResults(additional.map((item) => this._resolveAdditionalChocolate(item))).onSuccess(
+        (chocolates) => {
+          this._resolvedAdditionalChocolates = chocolates;
+          return succeed(chocolates);
         }
-        this._resolvedAdditionalChocolates = results;
-      }
+      );
     }
     return succeed(this._resolvedAdditionalChocolates);
+  }
+
+  /**
+   * Resolves a single additional chocolate item.
+   * @internal
+   */
+  private _resolveAdditionalChocolate(
+    item: Confections.IAdditionalChocolateEntity
+  ): Result<IResolvedAdditionalChocolate> {
+    return this._context.ingredients
+      .getWithAlternates(item.chocolate)
+      .withErrorFormat(
+        (msg) => `confection ${this._confectionId}: failed to resolve additional chocolate: ${msg}`
+      )
+      .onSuccess((resolved) => {
+        if (!resolved.primary.isChocolate()) {
+          return fail(
+            `confection ${this._confectionId}: primary ingredient for additional chocolate is not a chocolate`
+          );
+        }
+        return succeed({
+          chocolate: {
+            chocolate: resolved.primary,
+            alternates: resolved.alternates.filter((i) => i.isChocolate()),
+            entity: item.chocolate
+          },
+          purpose: item.purpose,
+          entity: item
+        });
+      });
   }
 
   /**

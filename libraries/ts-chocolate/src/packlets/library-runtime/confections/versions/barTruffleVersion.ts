@@ -112,31 +112,34 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
   /**
    * Gets resolved enrobing chocolate specification (lazy-loaded).
    * @returns Result with resolved chocolate spec (or undefined if not specified), or Failure if resolution fails
+   * @public
    */
   public getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
     if (this._resolvedEnrobingChocolate === undefined) {
       const spec = this._barTruffleVersion.enrobingChocolate;
       if (!spec) {
         this._resolvedEnrobingChocolate = null;
-      } else {
-        const resolved = this._context.ingredients.getWithAlternates(spec);
-
-        if (resolved.isFailure()) {
-          return fail(
-            `Failed to resolve enrobing chocolate for confection ${this._confectionId}: ${resolved.message}`
-          );
-        }
-
-        if (!resolved.value.primary.isChocolate()) {
-          return fail(`Primary ingredient for enrobing chocolate is not a chocolate: ${this._confectionId}`);
-        }
-
-        this._resolvedEnrobingChocolate = {
-          chocolate: resolved.value.primary,
-          alternates: resolved.value.alternates.filter((i) => i.isChocolate()),
-          entity: spec
-        };
+        return succeed(undefined);
       }
+
+      return this._context.ingredients
+        .getWithAlternates(spec)
+        .withErrorFormat(
+          (msg) => `confection ${this._confectionId}: failed to resolve enrobing chocolate: ${msg}`
+        )
+        .onSuccess((resolved) => {
+          if (!resolved.primary.isChocolate()) {
+            return fail(
+              `confection ${this._confectionId}: primary ingredient for enrobing chocolate is not a chocolate`
+            );
+          }
+          this._resolvedEnrobingChocolate = {
+            chocolate: resolved.primary,
+            alternates: resolved.alternates.filter((i) => i.isChocolate()),
+            entity: spec
+          };
+          return succeed(this._resolvedEnrobingChocolate);
+        });
     }
     return succeed(this._resolvedEnrobingChocolate ?? undefined);
   }

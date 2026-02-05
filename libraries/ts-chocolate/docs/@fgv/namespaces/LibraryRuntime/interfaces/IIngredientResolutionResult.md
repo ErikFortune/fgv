@@ -1,0 +1,48 @@
+[**@fgv/ts-chocolate**](../../../../README.md)
+
+***
+
+[@fgv/ts-chocolate](../../../../README.md) / [LibraryRuntime](../README.md) / IIngredientResolutionResult
+
+# Interface: IIngredientResolutionResult\<TIngredient\>
+
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:725](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L725)
+
+Result of attempting to resolve an ingredient reference.
+Used when partial resolution is acceptable (e.g., for alternates).
+
+## Type Parameters
+
+### TIngredient
+
+`TIngredient` *extends* [`IIngredient`](IIngredient.md) = [`IIngredient`](IIngredient.md)
+
+## Properties
+
+### error?
+
+> `readonly` `optional` **error**: `string`
+
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:739](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L739)
+
+Error message (if status is 'missing' or 'error')
+
+***
+
+### ingredient?
+
+> `readonly` `optional` **ingredient**: `TIngredient`
+
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:734](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L734)
+
+The resolved ingredient (if status is 'resolved')
+
+***
+
+### status
+
+> `readonly` **status**: [`ResolutionStatus`](../type-aliases/ResolutionStatus.md)
+
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:729](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L729)
+
+The resolution status

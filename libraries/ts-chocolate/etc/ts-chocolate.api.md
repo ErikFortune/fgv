@@ -1015,6 +1015,8 @@ abstract class ConfectionVersionBase implements IConfectionVersionBase {
     get effectiveUrls(): ReadonlyArray<Model.ICategorizedUrl>;
     abstract get entity(): Confections_2.AnyConfectionVersionEntity;
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
+    getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>>;
+    getProcedures(): Result<Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined>;
     isBarTruffleVersion(): this is BarTruffleVersion;
     isMoldedBonBonVersion(): this is MoldedBonBonVersion;
     isRolledTruffleVersion(): this is RolledTruffleVersion;

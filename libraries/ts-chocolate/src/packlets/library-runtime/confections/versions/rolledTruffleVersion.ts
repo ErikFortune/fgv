@@ -100,31 +100,34 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
   /**
    * Gets resolved enrobing chocolate specification (lazy-loaded).
    * @returns Result with resolved chocolate spec (or undefined if not specified), or Failure if resolution fails
+   * @public
    */
   public getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
     if (this._resolvedEnrobingChocolate === undefined) {
       const spec = this._rolledTruffleVersion.enrobingChocolate;
       if (!spec) {
         this._resolvedEnrobingChocolate = null;
-      } else {
-        const resolved = this._context.ingredients.getWithAlternates(spec);
-
-        if (resolved.isFailure()) {
-          return fail(
-            `Failed to resolve enrobing chocolate for confection ${this._confectionId}: ${resolved.message}`
-          );
-        }
-
-        if (!resolved.value.primary.isChocolate()) {
-          return fail(`Primary ingredient for enrobing chocolate is not a chocolate: ${this._confectionId}`);
-        }
-
-        this._resolvedEnrobingChocolate = {
-          chocolate: resolved.value.primary,
-          alternates: resolved.value.alternates.filter((i) => i.isChocolate()),
-          entity: spec
-        };
+        return succeed(undefined);
       }
+
+      return this._context.ingredients
+        .getWithAlternates(spec)
+        .withErrorFormat(
+          (msg) => `confection ${this._confectionId}: failed to resolve enrobing chocolate: ${msg}`
+        )
+        .onSuccess((resolved) => {
+          if (!resolved.primary.isChocolate()) {
+            return fail(
+              `confection ${this._confectionId}: primary ingredient for enrobing chocolate is not a chocolate`
+            );
+          }
+          this._resolvedEnrobingChocolate = {
+            chocolate: resolved.primary,
+            alternates: resolved.alternates.filter((i) => i.isChocolate()),
+            entity: spec
+          };
+          return succeed(this._resolvedEnrobingChocolate);
+        });
     }
     return succeed(this._resolvedEnrobingChocolate ?? undefined);
   }
@@ -140,33 +143,35 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
   /**
    * Gets resolved coatings specification (lazy-loaded).
    * @returns Result with resolved coatings (or undefined if not specified), or Failure if resolution fails
+   * @public
    */
   public getCoatings(): Result<IResolvedCoatings | undefined> {
     if (this._resolvedCoatings === undefined) {
       const coatings = this._rolledTruffleVersion.coatings;
       if (!coatings) {
         this._resolvedCoatings = null;
-      } else {
-        const resolved = this._context.ingredients.getWithAlternates(coatings);
-        if (resolved.isFailure()) {
-          return fail(`Failed to resolve coatings for confection ${this._confectionId}: ${resolved.message}`);
-        }
-
-        const primaryId = coatings.preferredId ?? coatings.ids[0];
-        const resolvedOptions: IResolvedCoatingOption[] = [
-          { id: primaryId, ingredient: resolved.value.primary },
-          ...resolved.value.alternates.map((ingredient, idx) => ({
-            id: coatings.ids.filter((id) => id !== primaryId)[idx],
-            ingredient
-          }))
-        ];
-
-        this._resolvedCoatings = {
-          options: resolvedOptions,
-          preferred: { id: primaryId, ingredient: resolved.value.primary },
-          entity: coatings
-        };
+        return succeed(undefined);
       }
+
+      return this._context.ingredients
+        .getWithAlternates(coatings)
+        .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve coatings: ${msg}`)
+        .onSuccess((resolved) => {
+          const primaryId = coatings.preferredId ?? coatings.ids[0];
+          const resolvedOptions: IResolvedCoatingOption[] = [
+            { id: primaryId, ingredient: resolved.primary },
+            ...resolved.alternates.map((ingredient, idx) => ({
+              id: coatings.ids.filter((id) => id !== primaryId)[idx],
+              ingredient
+            }))
+          ];
+          this._resolvedCoatings = {
+            options: resolvedOptions,
+            preferred: { id: primaryId, ingredient: resolved.primary },
+            entity: coatings
+          };
+          return succeed(this._resolvedCoatings);
+        });
     }
     return succeed(this._resolvedCoatings ?? undefined);
   }

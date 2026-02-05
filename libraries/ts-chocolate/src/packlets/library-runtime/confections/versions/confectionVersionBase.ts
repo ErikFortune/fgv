@@ -23,6 +23,8 @@
  * @packageDocumentation
  */
 
+import { Result, mapResults, succeed } from '@fgv/ts-utils';
+
 import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../../common';
 import { Confections } from '../../../entities';
 import {
@@ -49,13 +51,12 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
   protected readonly _confectionId: ConfectionId;
   protected readonly _version: Confections.AnyConfectionVersionEntity;
 
-  // Lazy-resolved caches (undefined = not yet resolved, null = no data)
+  // Lazy-resolved caches (undefined = not yet resolved)
   private _confection: IConfectionBase | undefined;
-  private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined | null;
+  private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined;
   private _resolvedProcedures:
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
-    | undefined
-    | null;
+    | undefined;
 
   /**
    * Creates a ConfectionVersionBase.
@@ -157,100 +158,146 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
   // ============================================================================
 
   /**
-   * Resolved filling slots for this version.
-   * Undefined if the version has no fillings.
+   * Gets resolved filling slots for this version.
+   * @returns Result with resolved fillings (empty array if none), or Failure if resolution fails
+   * @public
    */
-  public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
+  public getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>> {
     if (this._resolvedFillings === undefined) {
-      const slots = this._version.fillings;
-      if (!slots || slots.length === 0) {
-        this._resolvedFillings = null;
-      } else {
-        this._resolvedFillings = slots.map((slot) => ({
+      const slots = this._version.fillings ?? [];
+      return mapResults(slots.map((slot) => this._resolveFillingSlot(slot))).onSuccess((slots) => {
+        this._resolvedFillings = slots;
+        return succeed(slots);
+      });
+    }
+    return succeed(this._resolvedFillings);
+  }
+
+  /**
+   * Resolves a single filling slot.
+   * @param slot - The filling slot to resolve
+   * @returns Result with resolved filling slot, or Failure if resolution fails
+   * @internal
+   */
+  private _resolveFillingSlot(slot: Confections.IFillingSlotEntity): Result<IResolvedFillingSlot> {
+    return this._resolveFillingOptions(slot.filling)
+      .withErrorFormat((msg) => `slot ${slot.name}: failed to resolve fillings: ${msg}`)
+      .onSuccess((filling) =>
+        succeed({
           slotId: slot.slotId,
           name: slot.name,
-          filling: this._resolveFillingOptions(slot.filling)
-        }));
+          filling
+        })
+      );
+  }
+
+  /**
+   * Resolved filling slots for this version.
+   * Undefined if the version has no fillings.
+   * @throws if resolution fails - prefer getFillings() for proper error handling
+   */
+  public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
+    const result = this.getFillings().orThrow();
+    return result.length > 0 ? result : undefined;
+  }
+
+  /**
+   * Gets resolved procedures for this version.
+   * @returns Result with resolved procedures (undefined if none), or Failure if resolution fails
+   * @public
+   */
+  public getProcedures(): Result<
+    CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined
+  > {
+    if (this._resolvedProcedures === undefined) {
+      const procedures = this._version.procedures;
+      if (!procedures || procedures.options.length === 0) {
+        return succeed(undefined);
       }
+
+      return this._context.procedures
+        .getRefsWithAlternates(procedures)
+        .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve procedures: ${msg}`)
+        .onSuccess((resolved) => {
+          const options: IResolvedConfectionProcedure[] = [
+            {
+              id: resolved.primaryId,
+              procedure: resolved.primary,
+              notes: resolved.primaryNotes,
+              entity: procedures.options.find((r) => r.id === resolved.primaryId)!
+            },
+            ...resolved.alternates.map((alt) => ({
+              id: alt.id,
+              procedure: alt.item,
+              notes: alt.notes,
+              entity: procedures.options.find((r) => r.id === alt.id)!
+            }))
+          ];
+          this._resolvedProcedures = { options, preferredId: procedures.preferredId };
+          return succeed(this._resolvedProcedures);
+        });
     }
-    return this._resolvedFillings ?? undefined;
+    return succeed(this._resolvedProcedures);
   }
 
   /**
    * Resolved procedures for this version.
    * Undefined if the version has no procedures.
+   * @throws if resolution fails - prefer getProcedures() for proper error handling
    */
   public get procedures():
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined {
-    if (this._resolvedProcedures === undefined) {
-      const procedures = this._version.procedures;
-      if (!procedures || procedures.options.length === 0) {
-        this._resolvedProcedures = null;
-      } else {
-        const resolvedOptions: IResolvedConfectionProcedure[] = [];
-        for (const ref of procedures.options) {
-          const procedureResult = this._context.procedures.get(ref.id);
-          if (procedureResult.isSuccess()) {
-            resolvedOptions.push({
-              id: ref.id,
-              procedure: procedureResult.value,
-              notes: ref.notes,
-              entity: ref
-            });
-          }
-        }
-        if (resolvedOptions.length === 0) {
-          this._resolvedProcedures = null;
-        } else {
-          this._resolvedProcedures = {
-            options: resolvedOptions,
-            preferredId: procedures.preferredId
-          };
-        }
-      }
-    }
-    return this._resolvedProcedures ?? undefined;
+    return this.getProcedures().orThrow();
   }
 
+  /**
+   * Resolves filling options for a slot.
+   * @internal
+   */
   private _resolveFillingOptions(
     options: CommonModel.IOptionsWithPreferred<
       Confections.AnyFillingOptionEntity,
       Confections.FillingOptionId
     >
-  ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId> {
-    const resolvedOptions: IResolvedFillingOption[] = [];
+  ): Result<CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId>> {
+    return mapResults(options.options.map((opt) => this._resolveFillingOption(opt))).onSuccess((resolved) =>
+      succeed({ options: resolved, preferredId: options.preferredId })
+    );
+  }
 
-    for (const opt of options.options) {
-      if (opt.type === 'recipe') {
-        const filling = this._context.fillings.get(opt.id);
-        if (filling.isSuccess()) {
-          resolvedOptions.push({
-            type: 'recipe',
+  /**
+   * Resolves a single filling option (recipe or ingredient).
+   * @internal
+   */
+  private _resolveFillingOption(opt: Confections.AnyFillingOptionEntity): Result<IResolvedFillingOption> {
+    if (opt.type === 'recipe') {
+      return this._context.fillings
+        .get(opt.id)
+        .asResult.withErrorFormat((msg) => `filling recipe '${opt.id}': ${msg}`)
+        .onSuccess((filling) =>
+          succeed({
+            type: 'recipe' as const,
             id: opt.id,
-            filling: filling.value,
+            filling,
             notes: opt.notes,
             entity: opt
-          });
-        }
-      } else {
-        const ingredient = this._context.ingredients.get(opt.id);
-        if (ingredient.isSuccess()) {
-          resolvedOptions.push({
-            type: 'ingredient',
+          })
+        );
+    } else {
+      return this._context.ingredients
+        .get(opt.id)
+        .asResult.withErrorFormat((msg) => `filling ingredient '${opt.id}': ${msg}`)
+        .onSuccess((ingredient) =>
+          succeed({
+            type: 'ingredient' as const,
             id: opt.id,
-            ingredient: ingredient.value,
+            ingredient,
             notes: opt.notes,
             entity: opt
-          });
-        }
-      }
+          })
+        );
     }
-
-    return {
-      options: resolvedOptions,
-      preferredId: options.preferredId
-    };
   }
 
   // ============================================================================

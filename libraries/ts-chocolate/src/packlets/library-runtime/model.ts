@@ -36,7 +36,6 @@ import type { IMold } from './molds/model';
 import type { IProcedure } from './procedures/model';
 import type { ITask } from './tasks/model';
 import type { AnyIngredient } from './ingredients/ingredient';
-import type { FillingRecipe } from './fillings/fillingRecipe';
 
 import {
   AdditionalChocolatePurpose,
