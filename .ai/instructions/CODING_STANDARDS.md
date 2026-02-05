@@ -118,6 +118,135 @@ function processData(input: string): Result<Output> {
 
 **Exception**: Complex conditional logic may be clearer with intermediate variables. Prioritize readability.
 
+### Converting DetailedResult to Result
+
+When chaining from `MaterializedLibrary.get()` (which returns `DetailedResult`), use `.asResult` to convert:
+
+```typescript
+// ✅ CORRECT - Use .asResult to strip detail before chaining
+function resolveItem(id: ItemId): Result<ResolvedItem> {
+  return this._context.items.get(id)
+    .asResult
+    .withErrorFormat((msg) => `item ${id}: ${msg}`)
+    .onSuccess((item) => succeed({ id, item }));
+}
+
+// ❌ AVOID - Type errors when chaining DetailedResult
+function resolveItem(id: ItemId): Result<ResolvedItem> {
+  return this._context.items.get(id)
+    .withErrorFormat((msg) => `item ${id}: ${msg}`) // Type error!
+    .onSuccess((item) => succeed({ id, item }));
+}
+```
+
+### Array Processing with Per-Item Helpers
+
+When processing arrays, use `mapResults()` with dedicated per-item helper methods:
+
+```typescript
+// ✅ EXCELLENT - mapResults with per-item helper
+function getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>> {
+  if (this._resolvedFillings === undefined) {
+    const slots = this._version.fillings ?? [];
+    return mapResults(slots.map((slot) => this._resolveFillingSlot(slot)))
+      .onSuccess((slots) => {
+        this._resolvedFillings = slots;
+        return succeed(slots);
+      });
+  }
+  return succeed(this._resolvedFillings);
+}
+
+private _resolveFillingSlot(slot: IFillingSlotEntity): Result<IResolvedFillingSlot> {
+  return this._resolveFillingOptions(slot.filling)
+    .withErrorFormat((msg) => `slot ${slot.name}: failed to resolve fillings: ${msg}`)
+    .onSuccess((filling) => succeed({
+      slotId: slot.slotId,
+      name: slot.name,
+      filling
+    }));
+}
+
+// ❌ AVOID - Imperative loop with manual error handling
+function getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>> {
+  if (this._resolvedFillings === undefined) {
+    const slots = this._version.fillings ?? [];
+    const results: IResolvedFillingSlot[] = [];
+    for (const slot of slots) {
+      const fillingResult = this._resolveFillingOptions(slot.filling);
+      if (fillingResult.isFailure()) {
+        return fail(`Failed to resolve fillings for slot '${slot.name}': ${fillingResult.message}`);
+      }
+      results.push({
+        slotId: slot.slotId,
+        name: slot.name,
+        filling: fillingResult.value
+      });
+    }
+    this._resolvedFillings = results;
+  }
+  return succeed(this._resolvedFillings);
+}
+```
+
+**Benefits of per-item helpers:**
+- Isolates single-item resolution logic
+- Enables better error context with `.withErrorFormat()`
+- More testable (can unit test individual item resolution)
+- More readable (declarative vs imperative)
+
+### Chaining with Early Returns
+
+For optional fields, handle the undefined case early:
+
+```typescript
+// ✅ GOOD - Early return for undefined, then chain
+function getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
+  if (this._resolvedEnrobingChocolate === undefined) {
+    const spec = this._version.enrobingChocolate;
+    if (!spec) {
+      this._resolvedEnrobingChocolate = null;
+      return succeed(undefined);
+    }
+
+    return this._context.ingredients.getWithAlternates(spec)
+      .withErrorFormat((msg) => `confection ${this._id}: failed to resolve enrobing chocolate: ${msg}`)
+      .onSuccess((resolved) => {
+        if (!resolved.primary.isChocolate()) {
+          return fail(`confection ${this._id}: primary ingredient is not a chocolate`);
+        }
+        this._resolvedEnrobingChocolate = {
+          chocolate: resolved.primary,
+          alternates: resolved.alternates.filter((i) => i.isChocolate()),
+          entity: spec
+        };
+        return succeed(this._resolvedEnrobingChocolate);
+      });
+  }
+  return succeed(this._resolvedEnrobingChocolate ?? undefined);
+}
+
+// ❌ AVOID - Nested conditionals with imperative checks
+function getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
+  if (this._resolvedEnrobingChocolate === undefined) {
+    const spec = this._version.enrobingChocolate;
+    if (!spec) {
+      this._resolvedEnrobingChocolate = null;
+    } else {
+      const resolved = this._context.ingredients.getWithAlternates(spec);
+      if (resolved.isFailure()) {
+        return fail(`Failed to resolve: ${resolved.message}`);
+      }
+      if (!resolved.value.primary.isChocolate()) {
+        return fail('Not a chocolate');
+      }
+      this._resolvedEnrobingChocolate = { /* ... */ };
+    }
+  }
+  return succeed(this._resolvedEnrobingChocolate ?? undefined);
+}
+```
+
 ### Avoid Result<void>
 
 **Never use `Result<void>`** - it's an anti-pattern. Operations should return meaningful values:
