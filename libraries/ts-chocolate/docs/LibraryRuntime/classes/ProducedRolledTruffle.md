@@ -88,7 +88,7 @@ Gets the current state as an immutable snapshot.
 
 </td><td>
 
-[ConfectionVersionId](../../type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](../../type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 

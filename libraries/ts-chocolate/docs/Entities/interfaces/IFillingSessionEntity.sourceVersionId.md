@@ -7,5 +7,5 @@ Source filling version being edited
 **Signature:**
 
 ```typescript
-readonly sourceVersionId: FillingVersionId;
+readonly sourceVersionId: FillingRecipeVariationId;
 ```

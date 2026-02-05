@@ -7,14 +7,14 @@ Gets all filling sessions for a specific filling version (across all collections
 **Signature:**
 
 ```typescript
-getSessionsForFillingVersion(versionId: FillingVersionId): readonly IFillingSessionEntity[];
+getSessionsForFillingVersion(versionId: FillingRecipeVariationId): readonly IFillingSessionEntity[];
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionId</td><td>FillingVersionId</td><td>The FillingVersionId | filling version ID to search for</td></tr>
+<tr><td>versionId</td><td>FillingRecipeVariationId</td><td>The FillingRecipeVariationId | filling version ID to search for</td></tr>
 </tbody></table>
 
 **Returns:**

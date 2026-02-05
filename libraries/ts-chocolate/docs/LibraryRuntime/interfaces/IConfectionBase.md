@@ -179,7 +179,7 @@ Base URLs (version may add more)
 
 </td><td>
 
-[ConfectionVersionSpec](../../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

@@ -7,5 +7,5 @@ Unique identifier for this version
 **Signature:**
 
 ```typescript
-readonly versionSpec: FillingVersionSpec;
+readonly versionSpec: FillingRecipeVariationSpec;
 ```

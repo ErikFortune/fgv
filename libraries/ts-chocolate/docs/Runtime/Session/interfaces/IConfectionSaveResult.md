@@ -68,7 +68,7 @@ The full journal entry if one was created
 
 </td><td>
 
-[ConfectionVersionSpec](../../../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../../../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

@@ -32,7 +32,7 @@ import {
   IngredientId,
   FillingId,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   CollectionId
 } from '../../common';
 import { IFillingRecipeEntity } from '../../entities';
@@ -149,7 +149,7 @@ export class FillingRecipe implements IFillingRecipe {
   /**
    * The golden version ID
    */
-  public get goldenVersionSpec(): FillingVersionSpec {
+  public get goldenVersionSpec(): FillingRecipeVariationSpec {
     return this._recipe.goldenVersionSpec;
   }
 
@@ -221,7 +221,7 @@ export class FillingRecipe implements IFillingRecipe {
    * @param versionSpec - The version ID to find
    * @returns Success with FillingRecipeVersion, or Failure if not found
    */
-  public getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion> {
+  public getVersion(versionSpec: FillingRecipeVariationSpec): Result<FillingRecipeVersion> {
     const version = this.versions.find((v) => v.versionSpec === versionSpec);
     if (!version) {
       return Failure.with(`Version ${versionSpec} not found in recipe ${this._id}`);

@@ -8,5 +8,5 @@ this is the ID of that new version
 **Signature:**
 
 ```typescript
-readonly modifiedVersionSpec: FillingVersionSpec;
+readonly modifiedVersionSpec: FillingRecipeVariationSpec;
 ```

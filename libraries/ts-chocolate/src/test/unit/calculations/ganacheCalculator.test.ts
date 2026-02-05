@@ -28,7 +28,7 @@ import {
   IngredientId,
   Percentage,
   FillingName,
-  FillingVersionSpec
+  FillingRecipeVariationSpec
 } from '../../../packlets/common';
 
 import { Ingredients, IngredientEntity } from '../../../packlets/entities';
@@ -207,7 +207,7 @@ describe('Ganache Calculator', () => {
 
   describe('calculateForFillingRecipe', () => {
     const testVersion: IFillingRecipeVersionEntity = {
-      versionSpec: '2026-01-01-01' as FillingVersionSpec,
+      versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
@@ -221,7 +221,7 @@ describe('Ganache Calculator', () => {
       name: 'Test Ganache' as FillingName,
       category: 'ganache',
       versions: [testVersion],
-      goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec
+      goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
     };
 
     test('calculates for golden version by default', () => {
@@ -237,7 +237,7 @@ describe('Ganache Calculator', () => {
         RuntimeInternal.calculateForFillingRecipe(
           testRecipe,
           testResolver,
-          '2026-01-01-01' as FillingVersionSpec
+          '2026-01-01-01' as FillingRecipeVariationSpec
         )
       ).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
@@ -249,7 +249,7 @@ describe('Ganache Calculator', () => {
         RuntimeInternal.calculateForFillingRecipe(
           testRecipe,
           testResolver,
-          '2026-12-31-99' as FillingVersionSpec
+          '2026-12-31-99' as FillingRecipeVariationSpec
         )
       ).toFailWith(/not found/);
     });
@@ -408,7 +408,7 @@ describe('Ganache Calculator', () => {
 
   describe('calculateGanache', () => {
     const testVersion: IFillingRecipeVersionEntity = {
-      versionSpec: '2026-01-01-01' as FillingVersionSpec,
+      versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
@@ -422,7 +422,7 @@ describe('Ganache Calculator', () => {
       name: 'Test' as FillingName,
       category: 'ganache',
       versions: [testVersion],
-      goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec
+      goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
     };
 
     test('returns complete calculation with analysis and validation', () => {

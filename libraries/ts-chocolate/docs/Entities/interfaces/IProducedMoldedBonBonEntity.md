@@ -121,7 +121,7 @@ Resolved decoration chocolate ingredient ID (if used)
 
 </td><td>
 
-[ConfectionVersionId](../../type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](../../type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 

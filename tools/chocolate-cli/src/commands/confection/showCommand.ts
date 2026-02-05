@@ -20,7 +20,7 @@
 
 import { Command } from 'commander';
 import * as yaml from 'yaml';
-import { ConfectionId, ConfectionVersionSpec, Converters, Entities } from '@fgv/ts-chocolate';
+import { ConfectionId, ConfectionRecipeVariationSpec, Converters, Entities } from '@fgv/ts-chocolate';
 
 import {
   IEntityBaseOptions,
@@ -53,7 +53,7 @@ interface IConfectionSelectableItem extends ISelectableItem {
 export function formatConfectionHuman(
   confection: Entities.Confections.AnyConfectionEntity,
   confectionId: ConfectionId,
-  versionSpec?: ConfectionVersionSpec
+  versionSpec?: ConfectionRecipeVariationSpec
 ): string {
   const lines: string[] = [];
 
@@ -327,9 +327,9 @@ export function createShowSubcommand(): Command {
         }
 
         // Validate version spec if provided
-        let versionSpec: ConfectionVersionSpec | undefined;
+        let versionSpec: ConfectionRecipeVariationSpec | undefined;
         if (options.version) {
-          const versionResult = Converters.confectionVersionSpec.convert(options.version);
+          const versionResult = Converters.confectionRecipeVariationSpec.convert(options.version);
           if (versionResult.isFailure()) {
             console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
             process.exit(1);

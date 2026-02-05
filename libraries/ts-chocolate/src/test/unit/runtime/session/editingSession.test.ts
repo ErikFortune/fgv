@@ -28,7 +28,7 @@ import {
   Percentage,
   FillingId,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   Model as CommonModel,
   NoteCategory,
   ProcedureId,
@@ -104,10 +104,10 @@ describe('EditingSession', () => {
     name: 'Test Ganache' as FillingName,
     category: 'ganache',
     description: 'A test ganache recipe',
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Original recipe' }] as CommonModel.ICategorizedNote[],
         ingredients: [
@@ -373,7 +373,7 @@ describe('EditingSession', () => {
 
       expect(
         session.saveAsNewVersion({
-          versionSpec: '2026-01-02-01' as FillingVersionSpec,
+          versionSpec: '2026-01-02-01' as FillingRecipeVariationSpec,
           baseWeight: 600 as Measurement
         })
       ).toSucceedAndSatisfy((result) => {
@@ -393,7 +393,7 @@ describe('EditingSession', () => {
 
       expect(
         session.saveAsAlternatives({
-          versionSpec: '2026-01-01-01' as FillingVersionSpec
+          versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
@@ -412,7 +412,7 @@ describe('EditingSession', () => {
       expect(
         session.saveAsNewRecipe({
           newId: 'test.new-ganache' as FillingId,
-          versionSpec: '2026-01-01-01' as FillingVersionSpec,
+          versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
           baseWeight: 600 as Measurement
         })
       ).toSucceedAndSatisfy((result) => {

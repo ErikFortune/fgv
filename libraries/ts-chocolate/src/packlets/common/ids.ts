@@ -133,12 +133,12 @@ export type TaskId = Brand<string, 'TaskId'>;
 export type FillingName = Brand<string, 'FillingName'>;
 
 /**
- * Specifier for a filling recipe version within a filling recipe
+ * Specifier for a filling recipe variation within a filling recipe
  * Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter
  * Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
  * @public
  */
-export type FillingVersionSpec = Brand<string, 'FillingVersionSpec'>;
+export type FillingRecipeVariationSpec = Brand<string, 'FillingRecipeVariationSpec'>;
 
 /**
  * Unique identifier for an indexer in the reverse index system
@@ -148,12 +148,12 @@ export type FillingVersionSpec = Brand<string, 'FillingVersionSpec'>;
 export type IndexerId = Brand<string, 'IndexerId'>;
 
 /**
- * Globally unique filling recipe version identifier (composite)
- * Format: "fillingId\@versionSpec" where fillingId is "collectionId.baseFillingId"
+ * Globally unique filling recipe variation identifier (composite)
+ * Format: "fillingId\@variationSpec" where fillingId is "collectionId.baseFillingId"
  * Examples: "user.ganache\@2026-01-03-01", "felchlin.truffle\@2026-01-03-02-less-sugar"
  * @public
  */
-export type FillingVersionId = Brand<string, 'FillingVersionId'>;
+export type FillingRecipeVariationId = Brand<string, 'FillingRecipeVariationId'>;
 
 /**
  * Journal identifier within a single collection
@@ -194,20 +194,20 @@ export type ConfectionId = Brand<string, 'ConfectionId'>;
 export type ConfectionName = Brand<string, 'ConfectionName'>;
 
 /**
- * Specifier for a confection version within a confection
+ * Specifier for a recipe variation within a confection
  * Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter
  * Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
  * @public
  */
-export type ConfectionVersionSpec = Brand<string, 'ConfectionVersionSpec'>;
+export type ConfectionRecipeVariationSpec = Brand<string, 'ConfectionRecipeVariationSpec'>;
 
 /**
- * Globally unique confection version identifier (composite)
- * Format: "confectionId\@versionSpec" where confectionId is "collectionId.baseConfectionId"
+ * Globally unique confection variation identifier (composite)
+ * Format: "confectionId\@variationSpec" where confectionId is "collectionId.baseConfectionId"
  * Examples: "user.dark-dome-bonbon\@2026-01-03-01"
  * @public
  */
-export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
+export type ConfectionRecipeVariationId = Brand<string, 'ConfectionRecipeVariationId'>;
 
 /**
  * Unique identifier for an editing session

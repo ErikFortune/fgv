@@ -145,29 +145,29 @@ Pattern for valid composite IDs (exactly one dot)
 </td></tr>
 <tr><td>
 
-[FILLING_VERSION_SPEC_PATTERN](./variables/FILLING_VERSION_SPEC_PATTERN.md)
+[FILLING_RECIPE_VARIATION_SPEC_PATTERN](./variables/FILLING_RECIPE_VARIATION_SPEC_PATTERN.md)
 
 </td><td>
 
-Pattern for valid filling version specs
+Pattern for valid filling variation specs
 
 </td></tr>
 <tr><td>
 
-[VERSION_ID_SEPARATOR](./variables/VERSION_ID_SEPARATOR.md)
+[VARIATION_ID_SEPARATOR](./variables/VARIATION_ID_SEPARATOR.md)
 
 </td><td>
 
-Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
+Separator character used in filling variation IDs (between FillingId and FillingVariationSpec)
 
 </td></tr>
 <tr><td>
 
-[FILLING_VERSION_ID_PATTERN](./variables/FILLING_VERSION_ID_PATTERN.md)
+[FILLING_RECIPE_VARIATION_ID_PATTERN](./variables/FILLING_RECIPE_VARIATION_ID_PATTERN.md)
 
 </td><td>
 
-Pattern for valid filling version IDs
+Pattern for valid filling variation IDs
 
 </td></tr>
 <tr><td>
@@ -217,20 +217,20 @@ Pattern for valid composite journal IDs
 </td></tr>
 <tr><td>
 
-[CONFECTION_VERSION_SPEC_PATTERN](./variables/CONFECTION_VERSION_SPEC_PATTERN.md)
+[CONFECTION_RECIPE_VARIATION_SPEC_PATTERN](./variables/CONFECTION_RECIPE_VARIATION_SPEC_PATTERN.md)
 
 </td><td>
 
-Pattern for valid confection version specs
+Pattern for valid confection variation specs
 
 </td></tr>
 <tr><td>
 
-[CONFECTION_VERSION_ID_PATTERN](./variables/CONFECTION_VERSION_ID_PATTERN.md)
+[CONFECTION_RECIPE_VARIATION_ID_PATTERN](./variables/CONFECTION_RECIPE_VARIATION_ID_PATTERN.md)
 
 </td><td>
 
-Pattern for valid confection version IDs
+Pattern for valid confection variation IDs
 
 </td></tr>
 </tbody></table>

@@ -123,7 +123,7 @@ Gets the underlying bar truffle version data entity.
 
 </td><td>
 
-[ConfectionVersionSpec](../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

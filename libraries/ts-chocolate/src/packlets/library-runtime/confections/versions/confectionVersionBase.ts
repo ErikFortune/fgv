@@ -25,7 +25,12 @@
 
 import { Result, mapResults, succeed } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../../common';
+import {
+  ConfectionId,
+  ConfectionRecipeVariationSpec,
+  Model as CommonModel,
+  ProcedureId
+} from '../../../common';
 import { Confections } from '../../../entities';
 import {
   IConfectionContext,
@@ -85,7 +90,7 @@ export abstract class ConfectionVersionBase<
   /**
    * Version specifier for this version.
    */
-  public get versionSpec(): ConfectionVersionSpec {
+  public get versionSpec(): ConfectionRecipeVariationSpec {
     return this._entity.versionSpec;
   }
 

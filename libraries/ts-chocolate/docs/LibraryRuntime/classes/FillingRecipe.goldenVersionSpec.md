@@ -7,5 +7,5 @@ The golden version ID
 **Signature:**
 
 ```typescript
-readonly goldenVersionSpec: FillingVersionSpec;
+readonly goldenVersionSpec: FillingRecipeVariationSpec;
 ```

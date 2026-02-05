@@ -68,7 +68,7 @@ Whether to create a new confection version from modifications
 
 </td><td>
 
-[ConfectionVersionSpec](../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

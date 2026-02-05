@@ -93,7 +93,7 @@ export const fillingRating: Converter<IFillingRating> = Converters.object<IFilli
  */
 export const fillingDerivationEntity: Converter<IFillingDerivationEntity> =
   Converters.object<IFillingDerivationEntity>({
-    sourceVersionId: CommonConverters.fillingVersionId,
+    sourceVersionId: CommonConverters.fillingRecipeVariationId,
     derivedDate: Converters.string, // ISO 8601 date string
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
@@ -120,7 +120,7 @@ export const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedure
  */
 export const fillingRecipeVersionEntity: Converter<IFillingRecipeVersionEntity> =
   Converters.object<IFillingRecipeVersionEntity>({
-    versionSpec: CommonConverters.fillingVersionSpec,
+    versionSpec: CommonConverters.fillingRecipeVariationSpec,
     createdDate: Converters.string, // ISO 8601 date string
     ingredients: Converters.arrayOf(fillingIngredientEntity),
     baseWeight: CommonConverters.measurement,
@@ -142,7 +142,7 @@ export const fillingRecipeRawEntity: Converter<IFillingRecipeEntity> =
     description: Converters.string.optional(),
     tags: Converters.arrayOf(Converters.string).optional(),
     versions: Converters.arrayOf(fillingRecipeVersionEntity),
-    goldenVersionSpec: CommonConverters.fillingVersionSpec,
+    goldenVersionSpec: CommonConverters.fillingRecipeVariationSpec,
     derivedFrom: fillingDerivationEntity.optional(),
     urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
   });
@@ -177,7 +177,7 @@ export const fillingRecipeEntity: Converter<IFillingRecipeEntity> = Converters.g
  * @public
  */
 export const scalingRefEntity: Converter<IScalingRefEntity> = Converters.object<IScalingRefEntity>({
-  sourceVersionId: CommonConverters.fillingVersionId,
+  sourceVersionId: CommonConverters.fillingRecipeVariationId,
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.measurement,
   createdDate: Converters.string

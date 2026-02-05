@@ -27,9 +27,9 @@ import { captureResult, fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
 import {
   ConfectionId,
-  ConfectionVersionId,
+  ConfectionRecipeVariationId,
   FillingId,
-  FillingVersionId,
+  FillingRecipeVariationId,
   SessionId,
   BaseSessionId,
   CollectionId,
@@ -125,10 +125,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   private readonly _byFillingId: Map<FillingId, Set<SessionId>>;
 
   /**
-   * Index from {@link FillingVersionId | filling version ID} to {@link SessionId | session IDs}
+   * Index from {@link FillingRecipeVariationId | filling version ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byFillingVersionId: Map<FillingVersionId, Set<SessionId>>;
+  private readonly _byFillingVersionId: Map<FillingRecipeVariationId, Set<SessionId>>;
 
   /**
    * Index from {@link ConfectionId | confection ID} to {@link SessionId | session IDs}
@@ -137,10 +137,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   private readonly _byConfectionId: Map<ConfectionId, Set<SessionId>>;
 
   /**
-   * Index from {@link ConfectionVersionId | confection version ID} to {@link SessionId | session IDs}
+   * Index from {@link ConfectionRecipeVariationId | confection version ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byConfectionVersionId: Map<ConfectionVersionId, Set<SessionId>>;
+  private readonly _byConfectionVersionId: Map<ConfectionRecipeVariationId, Set<SessionId>>;
 
   /**
    * Index from {@link PersistedSessionStatus | status} to {@link SessionId | session IDs}
@@ -321,15 +321,15 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   /**
    * Extracts the FillingId from a FillingVersionId
    */
-  private _extractFillingId(versionId: FillingVersionId): FillingId {
-    return CommonConverters.parsedFillingVersionId.convert(versionId).orThrow().collectionId;
+  private _extractFillingId(versionId: FillingRecipeVariationId): FillingId {
+    return CommonConverters.parsedFillingRecipeVariationId.convert(versionId).orThrow().collectionId;
   }
 
   /**
    * Extracts the ConfectionId from a ConfectionVersionId
    */
-  private _extractConfectionId(versionId: ConfectionVersionId): ConfectionId {
-    return CommonConverters.parsedConfectionVersionId.convert(versionId).orThrow().collectionId;
+  private _extractConfectionId(versionId: ConfectionRecipeVariationId): ConfectionId {
+    return CommonConverters.parsedConfectionRecipeVariationId.convert(versionId).orThrow().collectionId;
   }
 
   // ============================================================================
@@ -355,11 +355,13 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
 
   /**
    * Gets all filling sessions for a specific filling version (across all collections)
-   * @param versionId - The {@link FillingVersionId | filling version ID} to search for
+   * @param versionId - The {@link FillingRecipeVariationId | filling version ID} to search for
    * @returns Array of filling sessions (empty if none found)
    * @public
    */
-  public getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingSessionEntity> {
+  public getSessionsForFillingVersion(
+    versionId: FillingRecipeVariationId
+  ): ReadonlyArray<IFillingSessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byFillingVersionId.get(versionId);
     if (!sessionIds) {
@@ -389,12 +391,12 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
 
   /**
    * Gets all confection sessions for a specific confection version (across all collections)
-   * @param versionId - The {@link ConfectionVersionId | confection version ID} to search for
+   * @param versionId - The {@link ConfectionRecipeVariationId | confection version ID} to search for
    * @returns Array of confection sessions (empty if none found)
    * @public
    */
   public getSessionsForConfectionVersion(
-    versionId: ConfectionVersionId
+    versionId: ConfectionRecipeVariationId
   ): ReadonlyArray<IConfectionSessionEntity> {
     this._ensureIndicesValid();
     const sessionIds = this._byConfectionVersionId.get(versionId);

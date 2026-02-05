@@ -25,7 +25,13 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { BaseJournalId, ConfectionVersionId, FillingVersionId, Helpers, JournalId } from '../common';
+import {
+  BaseJournalId,
+  ConfectionRecipeVariationId,
+  FillingRecipeVariationId,
+  Helpers,
+  JournalId
+} from '../common';
 import {
   AnyJournalEntryEntity,
   IConfectionEditJournalEntryEntity,
@@ -62,7 +68,7 @@ export class FillingEditJournalEntry
   extends JournalEntryBase<
     IFillingRecipe,
     IFillingRecipeVersion,
-    FillingVersionId,
+    FillingRecipeVariationId,
     IFillingEditJournalEntryEntity
   >
   implements IFillingEditJournalEntry
@@ -97,13 +103,13 @@ export class FillingEditJournalEntry
     entity: IFillingEditJournalEntryEntity
   ): Result<FillingEditJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
-    const fillingId = Helpers.getFillingVersionFillingId(entity.versionId);
+    const fillingId = Helpers.getFillingRecipeVariationFillingId(entity.versionId);
 
     return context.fillings
       .get(fillingId)
       .asResult.withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((recipe) => {
-        const versionSpec = Helpers.getFillingVersionSpec(entity.versionId);
+        const versionSpec = Helpers.getFillingRecipeVariationSpec(entity.versionId);
         return recipe
           .getVersion(versionSpec)
           .withErrorFormat((msg) => `journal ${id}: ${msg}`)
@@ -130,7 +136,7 @@ export class ConfectionEditJournalEntry
   extends JournalEntryBase<
     IConfectionBase,
     IConfectionVersionBase,
-    ConfectionVersionId,
+    ConfectionRecipeVariationId,
     IConfectionEditJournalEntryEntity
   >
   implements IConfectionEditJournalEntry
@@ -166,7 +172,7 @@ export class ConfectionEditJournalEntry
   ): Result<ConfectionEditJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
 
-    return Helpers.parseConfectionVersionId(entity.versionId)
+    return Helpers.parseConfectionRecipeVariationId(entity.versionId)
       .withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((parsed) => {
         return context.confections
@@ -200,7 +206,7 @@ export class FillingProductionJournalEntry
   extends JournalEntryBase<
     IFillingRecipe,
     IFillingRecipeVersion,
-    FillingVersionId,
+    FillingRecipeVariationId,
     IFillingProductionJournalEntryEntity
   >
   implements IFillingProductionJournalEntry
@@ -235,13 +241,13 @@ export class FillingProductionJournalEntry
     entity: IFillingProductionJournalEntryEntity
   ): Result<FillingProductionJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
-    const fillingId = Helpers.getFillingVersionFillingId(entity.versionId);
+    const fillingId = Helpers.getFillingRecipeVariationFillingId(entity.versionId);
 
     return context.fillings
       .get(fillingId)
       .asResult.withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((recipe) => {
-        const versionSpec = Helpers.getFillingVersionSpec(entity.versionId);
+        const versionSpec = Helpers.getFillingRecipeVariationSpec(entity.versionId);
         return recipe
           .getVersion(versionSpec)
           .withErrorFormat((msg) => `journal ${id}: ${msg}`)
@@ -268,7 +274,7 @@ export class ConfectionProductionJournalEntry
   extends JournalEntryBase<
     IConfectionBase,
     IConfectionVersionBase,
-    ConfectionVersionId,
+    ConfectionRecipeVariationId,
     IConfectionProductionJournalEntryEntity
   >
   implements IConfectionProductionJournalEntry
@@ -304,7 +310,7 @@ export class ConfectionProductionJournalEntry
   ): Result<ConfectionProductionJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
 
-    return Helpers.parseConfectionVersionId(entity.versionId)
+    return Helpers.parseConfectionRecipeVariationId(entity.versionId)
       .withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((parsed) => {
         return context.confections

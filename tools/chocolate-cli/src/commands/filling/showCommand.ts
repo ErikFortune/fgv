@@ -24,8 +24,8 @@ import {
   Converters,
   Entities,
   FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   Measurement
 } from '@fgv/ts-chocolate';
 
@@ -179,9 +179,9 @@ export function createShowSubcommand(): Command {
         }
 
         // Validate version spec if provided
-        let versionSpec: FillingVersionSpec | undefined;
+        let versionSpec: FillingRecipeVariationSpec | undefined;
         if (options.version) {
-          const versionResult = Converters.fillingVersionSpec.convert(options.version);
+          const versionResult = Converters.fillingRecipeVariationSpec.convert(options.version);
           if (versionResult.isFailure()) {
             console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
             process.exit(1);
@@ -244,7 +244,7 @@ export function createShowSubcommand(): Command {
 
           const versionId = `${fillingId}@${sourceVersion.versionSpec}`;
           const producedFilling: Entities.Fillings.IProducedFillingEntity = {
-            versionId: versionId as FillingVersionId,
+            versionId: versionId as FillingRecipeVariationId,
             scaleFactor,
             targetWeight,
             ingredients: producedIngredients,

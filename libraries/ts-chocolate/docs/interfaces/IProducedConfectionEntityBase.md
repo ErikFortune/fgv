@@ -52,7 +52,7 @@ Confection type discriminator (matches ConfectionType)
 
 </td><td>
 
-[ConfectionVersionId](../type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](../type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 

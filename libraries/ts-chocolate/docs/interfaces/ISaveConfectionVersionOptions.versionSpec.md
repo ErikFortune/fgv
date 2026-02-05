@@ -7,5 +7,5 @@ Version spec for the new version
 **Signature:**
 
 ```typescript
-readonly versionSpec: ConfectionVersionSpec;
+readonly versionSpec: ConfectionRecipeVariationSpec;
 ```

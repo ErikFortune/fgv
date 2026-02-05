@@ -27,9 +27,9 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import {
   ConfectionId,
-  ConfectionVersionId,
+  ConfectionRecipeVariationId,
   FillingId,
-  FillingVersionId,
+  FillingRecipeVariationId,
   BaseJournalId,
   JournalId,
   Converters as CommonConverters
@@ -163,10 +163,10 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   private readonly _byFillingId: Map<FillingId, Set<JournalId>>;
 
   /**
-   * Index from {@link FillingVersionId | filling version ID} to {@link JournalId | journal IDs}
+   * Index from {@link FillingRecipeVariationId | filling version ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byFillingVersionId: Map<FillingVersionId, Set<JournalId>>;
+  private readonly _byFillingVersionId: Map<FillingRecipeVariationId, Set<JournalId>>;
 
   /**
    * Index from {@link ConfectionId | confection ID} to {@link JournalId | journal IDs}
@@ -175,10 +175,10 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   private readonly _byConfectionId: Map<ConfectionId, Set<JournalId>>;
 
   /**
-   * Index from {@link ConfectionVersionId | confection version ID} to {@link JournalId | journal IDs}
+   * Index from {@link ConfectionRecipeVariationId | confection version ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byConfectionVersionId: Map<ConfectionVersionId, Set<JournalId>>;
+  private readonly _byConfectionVersionId: Map<ConfectionRecipeVariationId, Set<JournalId>>;
 
   /**
    * Flag indicating whether indices are valid
@@ -337,15 +337,15 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   /**
    * Extracts the FillingId from a FillingVersionId
    */
-  private _extractFillingId(versionId: FillingVersionId): FillingId {
-    return CommonConverters.parsedFillingVersionId.convert(versionId).orThrow().collectionId;
+  private _extractFillingId(versionId: FillingRecipeVariationId): FillingId {
+    return CommonConverters.parsedFillingRecipeVariationId.convert(versionId).orThrow().collectionId;
   }
 
   /**
    * Extracts the ConfectionId from a ConfectionVersionId
    */
-  private _extractConfectionId(versionId: ConfectionVersionId): ConfectionId {
-    return CommonConverters.parsedConfectionVersionId.convert(versionId).orThrow().collectionId;
+  private _extractConfectionId(versionId: ConfectionRecipeVariationId): ConfectionId {
+    return CommonConverters.parsedConfectionRecipeVariationId.convert(versionId).orThrow().collectionId;
   }
 
   // ============================================================================
@@ -371,11 +371,13 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
 
   /**
    * Gets all filling journal entries for a specific filling version (across all collections)
-   * @param versionId - The {@link FillingVersionId | filling version ID} to search for
+   * @param versionId - The {@link FillingRecipeVariationId | filling version ID} to search for
    * @returns Array of filling journal entries (empty if none found)
    * @public
    */
-  public getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry> {
+  public getJournalsForFillingVersion(
+    versionId: FillingRecipeVariationId
+  ): ReadonlyArray<AnyFillingJournalEntry> {
     this._ensureIndicesValid();
     const journalIds = this._byFillingVersionId.get(versionId);
     if (!journalIds) {
@@ -405,12 +407,12 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
 
   /**
    * Gets all confection journal entries for a specific confection version (across all collections)
-   * @param versionId - The {@link ConfectionVersionId | confection version ID} to search for
+   * @param versionId - The {@link ConfectionRecipeVariationId | confection version ID} to search for
    * @returns Array of confection journal entries (empty if none found)
    * @public
    */
   public getJournalsForConfectionVersion(
-    versionId: ConfectionVersionId
+    versionId: ConfectionRecipeVariationId
   ): ReadonlyArray<AnyConfectionJournalEntry> {
     this._ensureIndicesValid();
     const journalIds = this._byConfectionVersionId.get(versionId);

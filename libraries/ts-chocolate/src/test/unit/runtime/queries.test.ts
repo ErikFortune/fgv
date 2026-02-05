@@ -27,7 +27,7 @@ import {
   IngredientId,
   Percentage,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   CollectionId
 } from '../../../packlets/common';
 
@@ -182,10 +182,10 @@ describe('Query Filters and Builders', () => {
     category: 'ganache',
     description: 'A classic dark chocolate ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -194,7 +194,7 @@ describe('Query Filters and Builders', () => {
         baseWeight: 300 as Measurement
       },
       {
-        versionSpec: '2026-02-01-01' as FillingVersionSpec,
+        versionSpec: '2026-02-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-02-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Measurement },
@@ -210,10 +210,10 @@ describe('Query Filters and Builders', () => {
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -229,10 +229,10 @@ describe('Query Filters and Builders', () => {
     name: 'White Ganache' as FillingName,
     category: 'ganache',
     tags: ['sweet', 'white'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.white-chocolate' as IngredientId] }, amount: 200 as Measurement },

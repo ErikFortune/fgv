@@ -30,8 +30,8 @@ import {
   Helpers,
   IngredientId,
   FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   Model as CommonModel
 } from '../../common';
 import { IFillingRecipeVersionEntity, IFillingRating } from '../../entities';
@@ -146,14 +146,14 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   /**
    * Qualified identifier for this version (fillingId\@versionSpec).
    */
-  public get versionId(): FillingVersionId {
-    return Helpers.createFillingVersionId(this._fillingId, this._version.versionSpec);
+  public get versionId(): FillingRecipeVariationId {
+    return Helpers.createFillingRecipeVariationId(this._fillingId, this._version.versionSpec);
   }
 
   /**
    * The version specifier
    */
-  public get versionSpec(): FillingVersionSpec {
+  public get versionSpec(): FillingRecipeVariationSpec {
     return this._version.versionSpec;
   }
 

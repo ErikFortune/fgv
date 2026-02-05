@@ -26,7 +26,7 @@
 import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
 
 import {
-  ConfectionVersionId,
+  ConfectionRecipeVariationId,
   FillingId,
   IngredientId,
   MoldId,
@@ -372,7 +372,7 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
    * Gets the version ID.
    * @public
    */
-  public get versionId(): ConfectionVersionId {
+  public get versionId(): ConfectionRecipeVariationId {
     return this._current.versionId;
   }
 
@@ -620,7 +620,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    */
   private static _convertFromSource(source: IMoldedBonBonVersion): Result<IProducedMoldedBonBonEntity> {
     // Create and validate version ID using helper
-    return Helpers.createConfectionVersionId({
+    return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
       itemId: source.versionSpec
     }).onSuccess((versionId) => {
@@ -911,7 +911,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    */
   private static _convertFromSource(source: IBarTruffleVersion): Result<IProducedBarTruffleEntity> {
     // Create and validate version ID using helper
-    return Helpers.createConfectionVersionId({
+    return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
       itemId: source.versionSpec
     }).onSuccess((versionId) => {
@@ -1107,7 +1107,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
    */
   private static _convertFromSource(source: IRolledTruffleVersion): Result<IProducedRolledTruffleEntity> {
     // Create and validate version ID using helper
-    return Helpers.createConfectionVersionId({
+    return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
       itemId: source.versionSpec
     }).onSuccess((versionId) => {

@@ -156,7 +156,7 @@ Optional categorized URLs for external resources (tutorials, videos, etc.)
 
 </td><td>
 
-[ConfectionVersionSpec](../../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

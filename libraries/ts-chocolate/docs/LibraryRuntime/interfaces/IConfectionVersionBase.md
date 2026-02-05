@@ -40,7 +40,7 @@ Description
 
 </td><td>
 
-[ConfectionVersionSpec](../../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

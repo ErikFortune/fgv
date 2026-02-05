@@ -25,7 +25,7 @@
 
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
-import { Measurement, Helpers, Percentage, FillingVersionSpec } from '../../common';
+import { Measurement, Helpers, Percentage, FillingRecipeVariationSpec } from '../../common';
 import { Ingredients, IngredientEntity } from '../../entities';
 import { IFillingRecipeEntity, Fillings } from '../../entities';
 import {
@@ -207,7 +207,7 @@ export function calculateFromFillingRecipeIngredients(
 export function calculateForFillingRecipe(
   recipe: IFillingRecipeEntity,
   resolver: IngredientResolver,
-  versionSpec?: FillingVersionSpec
+  versionSpec?: FillingRecipeVariationSpec
 ): Result<IGanacheAnalysis> {
   const targetVersionSpec = versionSpec ?? recipe.goldenVersionSpec;
   const version = recipe.versions.find((v) => v.versionSpec === targetVersionSpec);
@@ -338,7 +338,7 @@ export function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation 
 export function calculateGanache(
   recipe: IFillingRecipeEntity,
   resolver: IngredientResolver,
-  versionSpec?: FillingVersionSpec
+  versionSpec?: FillingRecipeVariationSpec
 ): Result<IGanacheCalculation> {
   return calculateForFillingRecipe(recipe, resolver, versionSpec).onSuccess((analysis) =>
     Success.with({

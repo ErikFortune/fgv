@@ -71,7 +71,7 @@ Optional coatings (cocoa powder, nuts, etc.)
 
 </td><td>
 
-[ConfectionVersionSpec](../../type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](../../type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 

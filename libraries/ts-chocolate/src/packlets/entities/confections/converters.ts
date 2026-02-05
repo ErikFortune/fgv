@@ -255,7 +255,7 @@ export const coatingsEntity: Converter<ICoatingsEntity> = CommonConverters.idsWi
  * @internal
  */
 const commonVersionFields: Conversion.FieldConverters<IConfectionVersionEntityBase> = {
-  versionSpec: CommonConverters.confectionVersionSpec,
+  versionSpec: CommonConverters.confectionRecipeVariationSpec,
   createdDate: Converters.string, // ISO 8601 date string
   yield: confectionYield,
   fillings: Converters.arrayOf(fillingSlotEntity).optional(),
@@ -328,7 +328,7 @@ const commonConfectionFields: Conversion.FieldConverters<
   description: Converters.string.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional(),
-  goldenVersionSpec: CommonConverters.confectionVersionSpec
+  goldenVersionSpec: CommonConverters.confectionRecipeVariationSpec
 };
 
 /**

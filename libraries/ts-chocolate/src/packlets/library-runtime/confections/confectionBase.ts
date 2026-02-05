@@ -30,7 +30,7 @@ import {
   ConfectionId,
   ConfectionName,
   ConfectionType,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationSpec,
   Converters,
   Model as CommonModel,
   ProcedureId,
@@ -77,7 +77,7 @@ export abstract class ConfectionBase<
   // Lazy-resolved version caches (undefined = not yet resolved)
   private _resolvedGoldenVersion: TVersion | undefined;
   private _resolvedVersions: ReadonlyArray<TVersion> | undefined;
-  private _versionCache: Map<ConfectionVersionSpec, TVersion> | undefined;
+  private _versionCache: Map<ConfectionRecipeVariationSpec, TVersion> | undefined;
 
   /**
    * Creates a ConfectionBase.
@@ -169,7 +169,7 @@ export abstract class ConfectionBase<
   /**
    * The ID of the golden (approved default) version
    */
-  public get goldenVersionSpec(): ConfectionVersionSpec {
+  public get goldenVersionSpec(): ConfectionRecipeVariationSpec {
     return this._confection.goldenVersionSpec;
   }
 
@@ -264,7 +264,7 @@ export abstract class ConfectionBase<
    * @param versionSpec - The version specifier to find
    * @returns Success with runtime version, or Failure if not found or creation fails
    */
-  public getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion> {
+  public getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion> {
     const entity = this._confection.versions.find((v) => v.versionSpec === versionSpec);
     if (!entity) {
       return Failure.with(`Version ${versionSpec} not found in confection ${this._id}`);

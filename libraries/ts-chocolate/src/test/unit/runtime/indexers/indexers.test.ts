@@ -29,7 +29,7 @@ import {
   Percentage,
   FillingId,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   CollectionId
 } from '../../../../packlets/common';
 
@@ -134,10 +134,10 @@ describe('Indexers', () => {
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           {
@@ -159,10 +159,10 @@ describe('Indexers', () => {
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -178,10 +178,10 @@ describe('Indexers', () => {
     name: 'Salted Caramel' as FillingName,
     category: 'caramel',
     tags: ['classic', 'salted'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [{ ingredient: { ids: ['test.cream' as IngredientId] }, amount: 200 as Measurement }],
         baseWeight: 200 as Measurement

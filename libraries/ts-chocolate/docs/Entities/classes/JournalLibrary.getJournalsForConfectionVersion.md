@@ -7,14 +7,14 @@ Gets all confection journal entries for a specific confection version (across al
 **Signature:**
 
 ```typescript
-getJournalsForConfectionVersion(versionId: ConfectionVersionId): readonly AnyConfectionJournalEntry[];
+getJournalsForConfectionVersion(versionId: ConfectionRecipeVariationId): readonly AnyConfectionJournalEntry[];
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionId</td><td>ConfectionVersionId</td><td>The ConfectionVersionId | confection version ID to search for</td></tr>
+<tr><td>versionId</td><td>ConfectionRecipeVariationId</td><td>The ConfectionRecipeVariationId | confection version ID to search for</td></tr>
 </tbody></table>
 
 **Returns:**

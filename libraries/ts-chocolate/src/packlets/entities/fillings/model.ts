@@ -26,8 +26,8 @@
 import {
   BaseFillingId,
   FillingName,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   IngredientId,
   Measurement,
   MeasurementUnit,
@@ -166,7 +166,7 @@ export interface IFillingUsageEntity {
   /**
    * Which version was used
    */
-  readonly versionSpec: FillingVersionSpec;
+  readonly versionSpec: FillingRecipeVariationSpec;
 
   /**
    * Scaled weight used for this production run
@@ -187,7 +187,7 @@ export interface IFillingUsageEntity {
    * If modifications were made during this usage that created a new version,
    * this is the ID of that new version
    */
-  readonly modifiedVersionSpec?: FillingVersionSpec;
+  readonly modifiedVersionSpec?: FillingRecipeVariationSpec;
 }
 
 /**
@@ -198,7 +198,7 @@ export interface IFillingRecipeVersionEntity {
   /**
    * Unique identifier for this version
    */
-  readonly versionSpec: FillingVersionSpec;
+  readonly versionSpec: FillingRecipeVariationSpec;
 
   /**
    * Date this version was created (ISO 8601 format)
@@ -246,7 +246,7 @@ export interface IFillingDerivationEntity {
   /**
    * Source filling recipe version ID (format: "sourceId.fillingId\@versionSpec")
    */
-  readonly sourceVersionId: FillingVersionId;
+  readonly sourceVersionId: FillingRecipeVariationId;
 
   /**
    * Date of derivation (ISO 8601 format)
@@ -304,7 +304,7 @@ export interface IFillingRecipeEntity {
   /**
    * The ID of the golden (approved default) version
    */
-  readonly goldenVersionSpec: FillingVersionSpec;
+  readonly goldenVersionSpec: FillingRecipeVariationSpec;
 
   /**
    * Optional derivation info - tracks lineage if this filling recipe was forked
@@ -327,7 +327,7 @@ export interface IScalingRefEntity {
   /**
    * Source filling recipe version ID (format: "sourceId.fillingId\@versionSpec")
    */
-  readonly sourceVersionId: FillingVersionId;
+  readonly sourceVersionId: FillingRecipeVariationId;
 
   /**
    * Scaling factor applied
@@ -402,7 +402,7 @@ export interface IProducedFillingIngredientEntity {
  */
 export interface IProducedFillingEntity {
   /** Filling version ID that was produced */
-  readonly versionId: FillingVersionId;
+  readonly versionId: FillingRecipeVariationId;
   /** Scale factor applied */
   readonly scaleFactor: number;
   /** Target weight for this production */

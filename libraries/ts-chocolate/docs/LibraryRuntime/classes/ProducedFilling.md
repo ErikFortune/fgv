@@ -52,7 +52,7 @@ Gets the current state as an immutable snapshot.
 
 </td><td>
 
-[FillingVersionId](../../type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](../../type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 

@@ -74,7 +74,7 @@ Confection type discriminator (for type-specific restoration)
 
 </td><td>
 
-[ConfectionVersionId](../../type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](../../type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 

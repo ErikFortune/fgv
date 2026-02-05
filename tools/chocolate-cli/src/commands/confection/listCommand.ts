@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { ConfectionId, ConfectionVersionSpec, Entities, CollectionId } from '@fgv/ts-chocolate';
+import { ConfectionId, ConfectionRecipeVariationSpec, Entities, CollectionId } from '@fgv/ts-chocolate';
 
 import {
   IEntityListOptions,
@@ -39,7 +39,7 @@ interface IConfectionListItem extends IGenericListItem {
   id: ConfectionId;
   confectionType: string;
   versionCount: number;
-  goldenVersionSpec: ConfectionVersionSpec;
+  goldenVersionSpec: ConfectionRecipeVariationSpec;
   yield?: string;
 }
 

@@ -4,7 +4,7 @@
 
 Journal entry for filling production sessions.
 
-**Extends:** [`IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId>`](../../interfaces/IJournalEntryEntityBase.md)
+**Extends:** [`IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId>`](../../interfaces/IJournalEntryEntityBase.md)
 
 ## Properties
 
@@ -121,7 +121,7 @@ Timestamp when this entry was created (ISO 8601 format)
 
 </td><td>
 
-[FillingVersionId](../../type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](../../type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 
@@ -172,7 +172,7 @@ Full updated version if modifications were made
 
 </td><td>
 
-[FillingVersionId](../../type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](../../type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 

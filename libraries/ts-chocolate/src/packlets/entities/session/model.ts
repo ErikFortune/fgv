@@ -30,8 +30,8 @@
 
 import {
   ConfectionType,
-  ConfectionVersionId,
-  FillingVersionId,
+  ConfectionRecipeVariationId,
+  FillingRecipeVariationId,
   Model as CommonModel,
   SessionId,
   BaseSessionId,
@@ -169,7 +169,7 @@ export interface ISessionEntityBase {
 export interface IFillingSessionEntity extends ISessionEntityBase {
   readonly sessionType: 'filling';
   /** Source filling version being edited */
-  readonly sourceVersionId: FillingVersionId;
+  readonly sourceVersionId: FillingRecipeVariationId;
   /** Full editing history including undo/redo stacks */
   readonly history: ISerializedEditingHistoryEntity<IProducedFillingEntity>;
 }
@@ -192,7 +192,7 @@ export interface IConfectionSessionEntity extends ISessionEntityBase {
   /** Confection type discriminator (for type-specific restoration) */
   readonly confectionType: ConfectionType;
   /** Source confection version being edited */
-  readonly sourceVersionId: ConfectionVersionId;
+  readonly sourceVersionId: ConfectionRecipeVariationId;
   /** Full editing history including undo/redo stacks */
   readonly history: ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>;
   /** Map of slot ID to child filling session ID */

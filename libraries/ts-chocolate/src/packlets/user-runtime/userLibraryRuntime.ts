@@ -25,7 +25,7 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { ConfectionType, FillingVersionId, Helpers, JournalId, SessionId } from '../common';
+import { ConfectionType, FillingRecipeVariationId, Helpers, JournalId, SessionId } from '../common';
 import {
   AnyJournalEntryEntity,
   AnySessionEntity,
@@ -164,12 +164,12 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * {@inheritDoc IUserLibraryRuntime.createFillingSession}
    */
   public createFillingSession(
-    versionId: FillingVersionId,
+    versionId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
   ): Result<IFillingSessionEntity> {
-    const fillingId = Helpers.getFillingVersionFillingId(versionId);
+    const fillingId = Helpers.getFillingRecipeVariationFillingId(versionId);
     return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
-      const versionSpec = Helpers.getFillingVersionSpec(versionId);
+      const versionSpec = Helpers.getFillingRecipeVariationSpec(versionId);
       return filling.getVersion(versionSpec).onSuccess((version) => {
         return Session.EditingSession.create(version).onSuccess((session) => {
           return session.toPersistedState({
@@ -327,9 +327,9 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * @internal
    */
   private _materializeFillingSession(persisted: IFillingSessionEntity): Result<Session.EditingSession> {
-    const fillingId = Helpers.getFillingVersionFillingId(persisted.sourceVersionId);
+    const fillingId = Helpers.getFillingRecipeVariationFillingId(persisted.sourceVersionId);
     return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
-      const versionSpec = Helpers.getFillingVersionSpec(persisted.sourceVersionId);
+      const versionSpec = Helpers.getFillingRecipeVariationSpec(persisted.sourceVersionId);
       return filling.getVersion(versionSpec).onSuccess((version) => {
         return Session.EditingSession.fromPersistedState(persisted, version);
       });
@@ -343,7 +343,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _materializeConfectionSession(
     persisted: IConfectionSessionEntity
   ): Result<Session.AnyConfectionEditingSession> {
-    return Helpers.parseConfectionVersionId(persisted.sourceVersionId).onSuccess((parsed) => {
+    return Helpers.parseConfectionRecipeVariationId(persisted.sourceVersionId).onSuccess((parsed) => {
       return this._sessionContext.confections.get(parsed.collectionId).asResult.onSuccess((confection) => {
         return this._materializeTypedConfectionSession(persisted, confection);
       });

@@ -68,7 +68,7 @@ Whether to create a new recipe version from modifications
 
 </td><td>
 
-[FillingVersionSpec](../../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 

@@ -491,9 +491,9 @@ export class EditingSession {
     return generateJournalId().onSuccess((baseId) => {
       // Create updated version ID if needed
       const updatedIdResult = updatedVersionSpec
-        ? CommonConverters.fillingVersionSpec.convert(updatedVersionSpec).onSuccess((versionSpec) =>
-            CommonHelpers.createFillingVersionIdValidated({
-              collectionId: CommonHelpers.getFillingVersionFillingId(this._baseRecipe.versionId),
+        ? CommonConverters.fillingRecipeVariationSpec.convert(updatedVersionSpec).onSuccess((versionSpec) =>
+            CommonHelpers.createFillingRecipeVariationIdValidated({
+              collectionId: CommonHelpers.getFillingRecipeVariationFillingId(this._baseRecipe.versionId),
               itemId: versionSpec
             })
           )

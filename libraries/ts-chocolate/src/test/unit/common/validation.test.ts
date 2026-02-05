@@ -26,8 +26,8 @@ import {
   BaseFillingId,
   ConfectionId,
   ConfectionName,
-  ConfectionVersionId,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   Converters as CommonConverters,
   Measurement,
   Helpers,
@@ -35,8 +35,8 @@ import {
   Percentage,
   RatingScore,
   FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   SessionSpec,
   SlotId,
   CollectionId,
@@ -52,7 +52,7 @@ const {
   isValidBaseProcedureId,
   isValidBaseFillingId,
   isValidFillingName,
-  isValidFillingVersionSpec,
+  isValidFillingRecipeVariationSpec: isValidFillingVersionSpec,
   isValidSessionSpec,
   isValidBaseJournalId,
   isValidRatingScore,
@@ -67,7 +67,7 @@ const {
   toBaseTaskId,
   toBaseFillingId,
   toFillingName,
-  toFillingVersionSpec,
+  toFillingRecipeVariationSpec: toFillingVersionSpec,
   toSessionSpec,
   toBaseJournalId,
   isValidSlotId,
@@ -79,7 +79,7 @@ const {
   toDegreesMacMichael,
   toBaseConfectionId,
   toConfectionName,
-  toConfectionVersionSpec,
+  toConvectionRecipeVariationSpec: toConfectionVersionSpec,
   isValidUrlCategory,
   toUrlCategory
 } = Validation;
@@ -90,24 +90,24 @@ const {
   procedureId: procedureIdConverter,
   taskId: taskIdConverter,
   fillingId: fillingIdConverter,
-  fillingVersionId: fillingVersionIdConverter,
+  fillingRecipeVariationId: fillingVersionIdConverter,
   confectionId: confectionIdConverter,
-  confectionVersionId: confectionVersionIdConverter
+  confectionRecipeVariationId: confectionVersionIdConverter
 } = CommonConverters;
 
 const {
   createIngredientId,
   createFillingId,
-  createFillingVersionId,
+  createFillingRecipeVariationId: createFillingVersionId,
   parseIngredientId,
   parseFillingId,
-  parseFillingVersionId,
+  parseFillingRecipeVariationId: parseFillingVersionId,
   getIngredientCollectionId: getIngredientSourceId,
   getIngredientBaseId,
   getFillingCollectionId: getFillingSourceId,
   getFillingBaseId,
-  getFillingVersionFillingId,
-  getFillingVersionSpec
+  getFillingRecipeVariationFillingId: getFillingVersionFillingId,
+  getFillingRecipeVariationSpec: getFillingVersionSpec
 } = Helpers;
 
 describe('Common validation', () => {
@@ -342,33 +342,35 @@ describe('Common validation', () => {
 
   describe('toFillingVersionSpec', () => {
     test('succeeds with valid basic version ID', () => {
-      expect(toFillingVersionSpec('2026-01-03-01')).toSucceedWith('2026-01-03-01' as FillingVersionSpec);
+      expect(toFillingVersionSpec('2026-01-03-01')).toSucceedWith(
+        '2026-01-03-01' as FillingRecipeVariationSpec
+      );
     });
 
     test('succeeds with version ID with label', () => {
       expect(toFillingVersionSpec('2026-01-03-02-tweaked')).toSucceedWith(
-        '2026-01-03-02-tweaked' as FillingVersionSpec
+        '2026-01-03-02-tweaked' as FillingRecipeVariationSpec
       );
     });
 
     test('fails with missing counter', () => {
-      expect(toFillingVersionSpec('2026-01-03')).toFailWith(/Invalid FillingVersionSpec/);
+      expect(toFillingVersionSpec('2026-01-03')).toFailWith(/Invalid FillingRecipeVariationSpec/);
     });
 
     test('fails with invalid format', () => {
-      expect(toFillingVersionSpec('invalid')).toFailWith(/Invalid FillingVersionSpec/);
+      expect(toFillingVersionSpec('invalid')).toFailWith(/Invalid FillingRecipeVariationSpec/);
     });
 
     test('fails with uppercase label', () => {
-      expect(toFillingVersionSpec('2026-01-03-01-WRONG')).toFailWith(/Invalid FillingVersionSpec/);
+      expect(toFillingVersionSpec('2026-01-03-01-WRONG')).toFailWith(/Invalid FillingRecipeVariationSpec/);
     });
 
     test('fails with empty string', () => {
-      expect(toFillingVersionSpec('')).toFailWith(/Invalid FillingVersionSpec/);
+      expect(toFillingVersionSpec('')).toFailWith(/Invalid FillingRecipeVariationSpec/);
     });
 
     test('fails with non-string', () => {
-      expect(toFillingVersionSpec(123)).toFailWith(/Invalid FillingVersionSpec/);
+      expect(toFillingVersionSpec(123)).toFailWith(/Invalid FillingRecipeVariationSpec/);
     });
   });
 
@@ -676,7 +678,7 @@ describe('Common validation', () => {
 
     describe('fillingVersionId converter', () => {
       test.each(validVersionIds)('%s: succeeds for valid FillingVersionId', (_name, value) => {
-        expect(fillingVersionIdConverter.convert(value)).toSucceedWith(value as FillingVersionId);
+        expect(fillingVersionIdConverter.convert(value)).toSucceedWith(value as FillingRecipeVariationId);
       });
 
       test.each(invalidVersionIds)('%s: fails for invalid FillingVersionId', (_name, value) => {
@@ -688,7 +690,7 @@ describe('Common validation', () => {
         const versionSpec = toFillingVersionSpec('2026-01-03-01').orThrow();
         expect(
           fillingVersionIdConverter.convert({ collectionId: fillingId, itemId: versionSpec })
-        ).toSucceedWith('user.ganache@2026-01-03-01' as FillingVersionId);
+        ).toSucceedWith('user.ganache@2026-01-03-01' as FillingRecipeVariationId);
       });
     });
   });
@@ -712,7 +714,7 @@ describe('Common validation', () => {
 
     describe('parseFillingVersionId', () => {
       test('parses composite ID', () => {
-        const id = 'user.ganache@2026-01-03-01' as FillingVersionId;
+        const id = 'user.ganache@2026-01-03-01' as FillingRecipeVariationId;
         expect(parseFillingVersionId(id)).toSucceedAndSatisfy((parsed) => {
           expect(parsed.collectionId).toBe('user.ganache');
           expect(parsed.itemId).toBe('2026-01-03-01');
@@ -721,7 +723,7 @@ describe('Common validation', () => {
       });
 
       test('parses composite ID with label', () => {
-        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingVersionId;
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingRecipeVariationId;
         expect(parseFillingVersionId(id)).toSucceedAndSatisfy((parsed) => {
           expect(parsed.collectionId).toBe('felchlin.truffle');
           expect(parsed.itemId).toBe('2026-01-03-02-less-sugar');
@@ -730,23 +732,25 @@ describe('Common validation', () => {
       });
 
       test('fails with invalid format', () => {
-        expect(parseFillingVersionId('invalid' as FillingVersionId)).toFailWith(/separator.*not found/i);
+        expect(parseFillingVersionId('invalid' as FillingRecipeVariationId)).toFailWith(
+          /separator.*not found/i
+        );
       });
     });
 
     describe('get helpers', () => {
       test('getFillingVersionFillingId extracts recipe ID', () => {
-        const id = 'user.ganache@2026-01-03-01' as FillingVersionId;
+        const id = 'user.ganache@2026-01-03-01' as FillingRecipeVariationId;
         expect(getFillingVersionFillingId(id)).toBe('user.ganache');
       });
 
       test('getFillingVersionSpec extracts version spec', () => {
-        const id = 'user.ganache@2026-01-03-01' as FillingVersionId;
+        const id = 'user.ganache@2026-01-03-01' as FillingRecipeVariationId;
         expect(getFillingVersionSpec(id)).toBe('2026-01-03-01');
       });
 
       test('getFillingVersionSpec extracts version spec with label', () => {
-        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingVersionId;
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingRecipeVariationId;
         expect(getFillingVersionSpec(id)).toBe('2026-01-03-02-less-sugar');
       });
     });
@@ -798,19 +802,19 @@ describe('Common validation', () => {
     describe('toConfectionVersionSpec', () => {
       test('succeeds with valid spec', () => {
         expect(toConfectionVersionSpec('2026-01-01-01')).toSucceedWith(
-          '2026-01-01-01' as ConfectionVersionSpec
+          '2026-01-01-01' as ConfectionRecipeVariationSpec
         );
       });
 
       test('fails with invalid format', () => {
-        expect(toConfectionVersionSpec('invalid')).toFailWith(/Invalid ConfectionVersionSpec/);
+        expect(toConfectionVersionSpec('invalid')).toFailWith(/Invalid ConfectionRecipeVariationSpec/);
       });
     });
 
     describe('confectionVersionId converter', () => {
       test('succeeds with valid ID', () => {
         expect(confectionVersionIdConverter.convert('common.bonbon@2026-01-01-01')).toSucceedWith(
-          'common.bonbon@2026-01-01-01' as ConfectionVersionId
+          'common.bonbon@2026-01-01-01' as ConfectionRecipeVariationId
         );
       });
 
@@ -823,7 +827,7 @@ describe('Common validation', () => {
         const versionSpec = toConfectionVersionSpec('2026-01-01-01').orThrow();
         expect(
           confectionVersionIdConverter.convert({ collectionId: confectionId, itemId: versionSpec })
-        ).toSucceedWith('common.bonbon@2026-01-01-01' as ConfectionVersionId);
+        ).toSucceedWith('common.bonbon@2026-01-01-01' as ConfectionRecipeVariationId);
       });
     });
   });

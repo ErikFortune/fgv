@@ -51,7 +51,7 @@ Base weight for the new version
 
 </td><td>
 
-[FillingVersionSpec](../../../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../../../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 

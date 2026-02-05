@@ -23,7 +23,7 @@ import {
   Entities,
   FillingId,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   Measurement,
   Model as CommonModel,
   ProcedureId,
@@ -59,7 +59,7 @@ export interface IFillingListItem {
   description?: string;
   tags?: ReadonlyArray<string>;
   versionCount: number;
-  goldenVersionSpec: FillingVersionSpec;
+  goldenVersionSpec: FillingRecipeVariationSpec;
 }
 
 /**
@@ -227,7 +227,7 @@ export function formatFillingList(fillings: IFillingListItem[], format: OutputFo
 function formatFillingHuman(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
-  versionSpec?: FillingVersionSpec,
+  versionSpec?: FillingRecipeVariationSpec,
   context?: IFillingRenderContext
 ): string {
   const lines: string[] = [];
@@ -328,7 +328,7 @@ function formatFillingHuman(
 function formatFillingTable(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
-  versionSpec?: FillingVersionSpec,
+  versionSpec?: FillingRecipeVariationSpec,
   context?: IFillingRenderContext
 ): string {
   return formatFillingHuman(filling, fillingId, versionSpec, context);
@@ -341,7 +341,7 @@ export function formatFilling(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
   format: OutputFormat,
-  versionSpec?: FillingVersionSpec,
+  versionSpec?: FillingRecipeVariationSpec,
   context?: IFillingRenderContext
 ): string {
   switch (format) {

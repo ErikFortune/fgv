@@ -139,7 +139,7 @@ Tags for categorization and search
 
 </td><td>
 
-[FillingVersionSpec](../../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 

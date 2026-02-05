@@ -7,5 +7,5 @@ Performs complete ganache calculation with validation
 ## Signature
 
 ```typescript
-function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec: FillingVersionSpec): Result<IGanacheCalculation>
+function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec: FillingRecipeVariationSpec): Result<IGanacheCalculation>
 ```

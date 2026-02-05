@@ -51,7 +51,7 @@ Date of use in ISO 8601 format
 
 </td><td>
 
-[FillingVersionSpec](../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 
@@ -119,7 +119,7 @@ Optional categorized notes about this usage
 
 </td><td>
 
-[FillingVersionSpec](../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 

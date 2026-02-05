@@ -24,8 +24,8 @@
  */
 
 import {
-  ConfectionVersionId,
-  FillingVersionId,
+  ConfectionRecipeVariationId,
+  FillingRecipeVariationId,
   BaseJournalId,
   Measurement,
   Model as CommonModel
@@ -82,7 +82,7 @@ export interface IJournalEntryEntityBase<TVersion, TVersionId> {
  * @public
  */
 export interface IFillingEditJournalEntryEntity
-  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
+  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId> {
   readonly type: 'filling-edit';
 }
 
@@ -91,7 +91,7 @@ export interface IFillingEditJournalEntryEntity
  * @public
  */
 export interface IConfectionEditJournalEntryEntity
-  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
+  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId> {
   readonly type: 'confection-edit';
 }
 
@@ -100,7 +100,7 @@ export interface IConfectionEditJournalEntryEntity
  * @public
  */
 export interface IFillingProductionJournalEntryEntity
-  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
+  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId> {
   readonly type: 'filling-production';
   /** Total yield weight of this production run */
   readonly yield: Measurement;
@@ -113,7 +113,7 @@ export interface IFillingProductionJournalEntryEntity
  * @public
  */
 export interface IConfectionProductionJournalEntryEntity
-  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
+  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId> {
   readonly type: 'confection-production';
   /** Yield specification for this production run */
   readonly yield: IConfectionYield;

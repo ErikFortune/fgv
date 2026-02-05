@@ -72,11 +72,11 @@ Type alias for parsed JournalId | JournalId components.
 </td></tr>
 <tr><td>
 
-[ParsedFillingVersionId](./type-aliases/ParsedFillingVersionId.md)
+[ParsedFillingRecipeVariationId](./type-aliases/ParsedFillingRecipeVariationId.md)
 
 </td><td>
 
-Type alias for parsed FillingVersionId | FillingVersionId components.
+Type alias for parsed FillingRecipeVariationId | FillingRecipeVariationId components.
 
 </td></tr>
 <tr><td>
@@ -99,11 +99,11 @@ Type alias for parsed ConfectionId | ConfectionId components.
 </td></tr>
 <tr><td>
 
-[ParsedConfectionVersionId](./type-aliases/ParsedConfectionVersionId.md)
+[ParsedConfectionRecipeVariationId](./type-aliases/ParsedConfectionRecipeVariationId.md)
 
 </td><td>
 
-Type alias for parsed ConfectionVersionId | ConfectionVersionId components.
+Type alias for parsed ConfectionRecipeVariationId | ConfectionRecipeVariationId components.
 
 </td></tr>
 </tbody></table>
@@ -370,29 +370,29 @@ Converter for FillingName | FillingName.
 </td></tr>
 <tr><td>
 
-[fillingVersionSpec](./variables/fillingVersionSpec.md)
+[fillingRecipeVariationSpec](./variables/fillingRecipeVariationSpec.md)
 
 </td><td>
 
-Converter for FillingVersionSpec | FillingVersionSpec.
+Converter for FillingRecipeVariationSpec | FillingRecipeVariationSpec.
 
 </td></tr>
 <tr><td>
 
-[fillingVersionId](./variables/fillingVersionId.md)
+[fillingRecipeVariationId](./variables/fillingRecipeVariationId.md)
 
 </td><td>
 
-Converter for FillingVersionId | FillingVersionId (composite string).
+Converter for FillingRecipeVariationId | FillingRecipeVariationId (composite string).
 
 </td></tr>
 <tr><td>
 
-[parsedFillingVersionId](./variables/parsedFillingVersionId.md)
+[parsedFillingRecipeVariationId](./variables/parsedFillingRecipeVariationId.md)
 
 </td><td>
 
-Converter that parses a FillingVersionId | FillingVersionId string into its component parts
+Converter that parses a FillingRecipeVariationId | FillingRecipeVariationId string into its component parts
 
 </td></tr>
 <tr><td>
@@ -460,29 +460,29 @@ Converter for ConfectionName | ConfectionName.
 </td></tr>
 <tr><td>
 
-[confectionVersionSpec](./variables/confectionVersionSpec.md)
+[confectionRecipeVariationSpec](./variables/confectionRecipeVariationSpec.md)
 
 </td><td>
 
-Converter for ConfectionVersionSpec | ConfectionVersionSpec.
+Converter for ConfectionRecipeVariationSpec | ConfectionRecipeVar.
 
 </td></tr>
 <tr><td>
 
-[confectionVersionId](./variables/confectionVersionId.md)
+[confectionRecipeVariationId](./variables/confectionRecipeVariationId.md)
 
 </td><td>
 
-Converter for ConfectionVersionId | ConfectionVersionId (composite string).
+Converter for ConfectionRecipeVariationId | ConfectionRecipeVariationId (composite string).
 
 </td></tr>
 <tr><td>
 
-[parsedConfectionVersionId](./variables/parsedConfectionVersionId.md)
+[parsedConfectionRecipeVariationId](./variables/parsedConfectionRecipeVariationId.md)
 
 </td><td>
 
-Converter that parses a ConfectionVersionId | ConfectionVersionId string into its component parts
+Converter that parses a ConfectionRecipeVariationId | ConfectionRecipeVariationId string into its component parts
 
 </td></tr>
 <tr><td>

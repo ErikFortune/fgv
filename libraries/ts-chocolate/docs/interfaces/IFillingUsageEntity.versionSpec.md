@@ -7,5 +7,5 @@ Which version was used
 **Signature:**
 
 ```typescript
-readonly versionSpec: FillingVersionSpec;
+readonly versionSpec: FillingRecipeVariationSpec;
 ```

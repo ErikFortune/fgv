@@ -7,5 +7,5 @@ The ID of the golden (approved default) version
 **Signature:**
 
 ```typescript
-readonly goldenVersionSpec: ConfectionVersionSpec;
+readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
 ```

@@ -7,5 +7,5 @@ The version specifier
 **Signature:**
 
 ```typescript
-readonly versionSpec: FillingVersionSpec;
+readonly versionSpec: FillingRecipeVariationSpec;
 ```

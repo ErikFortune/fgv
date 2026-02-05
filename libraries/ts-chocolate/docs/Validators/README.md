@@ -179,38 +179,38 @@ In-place `Validator` for SessionId | PersistedSessionId (composite string).
 </td></tr>
 <tr><td>
 
-[fillingVersionSpec](./variables/fillingVersionSpec.md)
+[fillingRecipeVariationSpec](./variables/fillingRecipeVariationSpec.md)
 
 </td><td>
 
-In-place `Validator` for FillingVersionSpec | FillingVersionSpec.
+In-place `Validator` for FillingRecipeVariationSpec | FillingRecipeVariationSpec.
 
 </td></tr>
 <tr><td>
 
-[confectionVersionSpec](./variables/confectionVersionSpec.md)
+[confectionRecipeVariationSpec](./variables/confectionRecipeVariationSpec.md)
 
 </td><td>
 
-In-place `Validator` for ConfectionVersionSpec | ConfectionVersionSpec.
+In-place `Validator` for ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec.
 
 </td></tr>
 <tr><td>
 
-[fillingVersionId](./variables/fillingVersionId.md)
+[fillingRecipeVariationId](./variables/fillingRecipeVariationId.md)
 
 </td><td>
 
-In-place `Validator` for FillingVersionId | FillingVersionId (composite string).
+In-place `Validator` for FillingRecipeVariationId | FillingRecipeVariationId (composite string).
 
 </td></tr>
 <tr><td>
 
-[confectionVersionId](./variables/confectionVersionId.md)
+[confectionRecipeVariationId](./variables/confectionRecipeVariationId.md)
 
 </td><td>
 
-In-place `Validator` for ConfectionVersionId | ConfectionVersionId (composite string).
+In-place `Validator` for ConfectionRecipeVariationId | ConfectionRecipeVariationId (composite string).
 
 </td></tr>
 </tbody></table>

@@ -26,7 +26,7 @@
 import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
 
 import {
-  FillingVersionId,
+  FillingRecipeVariationId,
   IngredientId,
   Measurement,
   MeasurementUnit,
@@ -464,7 +464,7 @@ export class ProducedFilling {
    * Gets the version ID.
    * @public
    */
-  public get versionId(): FillingVersionId {
+  public get versionId(): FillingRecipeVariationId {
     return this._current.versionId;
   }
 

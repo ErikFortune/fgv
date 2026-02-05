@@ -483,7 +483,7 @@ const cacaoVariety: Converter<CacaoVariety>;
 function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement;
 
 // @public
-function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver_2, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
+function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver_2, versionSpec?: FillingRecipeVariationSpec): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<Fillings_2.IFillingIngredientEntity>, resolver: IngredientResolver_2): Result<IGanacheAnalysis>;
@@ -492,7 +492,7 @@ function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
 
 // @public
-function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver_2, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
+function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver_2, versionSpec?: FillingRecipeVariationSpec): Result<IGanacheCalculation>;
 
 // @public
 function calculateIngredientWeight(ingredient: Fillings_2.IFillingIngredientEntity, context?: IWeightCalculationContext): IWeightContribution;
@@ -714,10 +714,10 @@ abstract class Confection {
 }
 
 // @public
-const CONFECTION_VERSION_ID_PATTERN: RegExp;
+const CONFECTION_RECIPE_VARIATION_ID_PATTERN: RegExp;
 
 // @public
-const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
+const CONFECTION_RECIPE_VARIATION_SPEC_PATTERN: RegExp;
 
 // @public
 abstract class ConfectionBase<TVersion extends AnyConfectionVersion = AnyConfectionVersion, TEntity extends Confections_2.AnyConfectionEntity = Confections_2.AnyConfectionEntity> implements IConfectionBase<TVersion> {
@@ -746,12 +746,12 @@ abstract class ConfectionBase<TVersion extends AnyConfectionVersion = AnyConfect
     getEffectiveTags(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<string>;
     getEffectiveUrls(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<Model.ICategorizedUrl>;
     getGoldenVersion(): Result<TVersion>;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
+    getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion>;
     getVersions(): Result<ReadonlyArray<TVersion>>;
     get goldenVersion(): TVersion;
     // (undocumented)
     protected readonly _goldenVersionEntity: Confections_2.AnyConfectionVersionEntity;
-    get goldenVersionSpec(): ConfectionVersionSpec;
+    get goldenVersionSpec(): ConfectionRecipeVariationSpec;
     get id(): ConfectionId;
     // (undocumented)
     protected readonly _id: ConfectionId;
@@ -869,6 +869,24 @@ const confectionName: Converter<ConfectionName>;
 //
 // @public
 const confectionProductionJournalEntryEntity: Converter<IConfectionProductionJournalEntryEntity>;
+
+// @public
+export type ConfectionRecipeVariationId = Brand<string, 'ConfectionRecipeVariationId'>;
+
+// @public
+const confectionRecipeVariationId: Converter<ConfectionRecipeVariationId>;
+
+// @public
+const confectionRecipeVariationId_2: Validator<ConfectionRecipeVariationId>;
+
+// @public
+export type ConfectionRecipeVariationSpec = Brand<string, 'ConfectionRecipeVariationSpec'>;
+
+// @public
+const confectionRecipeVariationSpec: Converter<ConfectionRecipeVariationSpec>;
+
+// @public
+const confectionRecipeVariationSpec_2: Validator<ConfectionRecipeVariationSpec>;
 
 declare namespace Confections {
     export {
@@ -1018,27 +1036,9 @@ abstract class ConfectionVersionBase<TConfection extends IConfectionBase = IConf
     isRolledTruffleVersion(): this is RolledTruffleVersion;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get versionSpec(): ConfectionVersionSpec;
+    get versionSpec(): ConfectionRecipeVariationSpec;
     get yield(): Confections_2.IConfectionYield;
 }
-
-// @public
-export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
-
-// @public
-const confectionVersionId: Converter<ConfectionVersionId>;
-
-// @public
-const confectionVersionId_2: Validator<ConfectionVersionId>;
-
-// @public
-export type ConfectionVersionSpec = Brand<string, 'ConfectionVersionSpec'>;
-
-// @public
-const confectionVersionSpec: Converter<ConfectionVersionSpec>;
-
-// @public
-const confectionVersionSpec_2: Validator<ConfectionVersionSpec>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1087,10 +1087,10 @@ declare namespace Converters {
         ParsedJournalId,
         parsedJournalId,
         fillingName,
-        fillingVersionSpec,
-        fillingVersionId,
-        ParsedFillingVersionId,
-        parsedFillingVersionId,
+        fillingRecipeVariationSpec,
+        fillingRecipeVariationId,
+        ParsedFillingRecipeVariationId,
+        parsedFillingRecipeVariationId,
         sessionSpec,
         baseSessionId,
         sessionId,
@@ -1100,10 +1100,10 @@ declare namespace Converters {
         ParsedConfectionId,
         parsedConfectionId,
         confectionName,
-        confectionVersionSpec,
-        confectionVersionId,
-        ParsedConfectionVersionId,
-        parsedConfectionVersionId,
+        confectionRecipeVariationSpec,
+        confectionRecipeVariationId,
+        ParsedConfectionRecipeVariationId,
+        parsedConfectionRecipeVariationId,
         measurement,
         percentage,
         celsius,
@@ -1198,22 +1198,22 @@ declare namespace Converters_6 {
 }
 
 // @public
-function createConfectionVersionId(parts: {
+function createConfectionRecipeVariationId(parts: {
     collectionId: ConfectionId;
-    itemId: ConfectionVersionSpec;
-}): Result<ConfectionVersionId>;
+    itemId: ConfectionRecipeVariationSpec;
+}): Result<ConfectionRecipeVariationId>;
 
 // @public
 function createFillingId(collectionId: CollectionId, baseId: BaseFillingId): FillingId;
 
 // @public
-function createFillingVersionId(fillingId: FillingId, versionSpec: FillingVersionSpec): FillingVersionId;
+function createFillingRecipeVariationId(fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): FillingRecipeVariationId;
 
 // @public
-function createFillingVersionIdValidated(parts: {
+function createFillingRecipeVariationIdValidated(parts: {
     collectionId: FillingId;
-    itemId: FillingVersionSpec;
-}): Result<FillingVersionId>;
+    itemId: FillingRecipeVariationSpec;
+}): Result<FillingRecipeVariationId>;
 
 // @public
 function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryLoadSpec<TCollectionId>, nameConverter: Converter<TCollectionId> | Validator<TCollectionId>): CollectionFilter<TCollectionId>;
@@ -1531,10 +1531,10 @@ class FatIngredient extends IngredientBase implements IFatIngredient {
 const fatIngredientEntity: Converter<IFatIngredientEntity>;
 
 // @public
-const FILLING_VERSION_ID_PATTERN: RegExp;
+const FILLING_RECIPE_VARIATION_ID_PATTERN: RegExp;
 
 // @public
-const FILLING_VERSION_SPEC_PATTERN: RegExp;
+const FILLING_RECIPE_VARIATION_SPEC_PATTERN: RegExp;
 
 // @public
 export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
@@ -1629,10 +1629,10 @@ class FillingRecipe implements IFillingRecipe {
     getGoldenVersion(): Result<FillingRecipeVersion>;
     getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
     getLatestVersion(): Result<FillingRecipeVersion>;
-    getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion>;
+    getVersion(versionSpec: FillingRecipeVariationSpec): Result<FillingRecipeVersion>;
     getVersions(): Result<ReadonlyArray<FillingRecipeVersion>>;
     get goldenVersion(): FillingRecipeVersion;
-    get goldenVersionSpec(): FillingVersionSpec;
+    get goldenVersionSpec(): FillingRecipeVariationSpec;
     get id(): FillingId;
     get latestVersion(): FillingRecipeVersion;
     get name(): FillingName;
@@ -1801,6 +1801,24 @@ class FillingRecipesByTagIndexer extends BaseIndexer<FillingId, IFillingRecipesB
 }
 
 // @public
+export type FillingRecipeVariationId = Brand<string, 'FillingRecipeVariationId'>;
+
+// @public
+const fillingRecipeVariationId: Converter<FillingRecipeVariationId>;
+
+// @public
+const fillingRecipeVariationId_2: Validator<FillingRecipeVariationId>;
+
+// @public
+export type FillingRecipeVariationSpec = Brand<string, 'FillingRecipeVariationSpec'>;
+
+// @public
+const fillingRecipeVariationSpec: Converter<FillingRecipeVariationSpec>;
+
+// @public
+const fillingRecipeVariationSpec_2: Validator<FillingRecipeVariationSpec>;
+
+// @public
 class FillingRecipeVersion implements IFillingRecipeVersion {
     // Warning: (ae-forgotten-export) The symbol "VersionContext" needs to be exported by the entry point index.d.ts
     //
@@ -1821,8 +1839,8 @@ class FillingRecipeVersion implements IFillingRecipeVersion {
     get ratings(): ReadonlyArray<IFillingRating>;
     usesIngredient(ingredientId: IngredientId): boolean;
     get version(): IFillingRecipeVersionEntity;
-    get versionId(): FillingVersionId;
-    get versionSpec(): FillingVersionSpec;
+    get versionId(): FillingRecipeVariationId;
+    get versionSpec(): FillingRecipeVariationSpec;
     get yield(): string | undefined;
 }
 
@@ -1900,24 +1918,6 @@ const fillingSlotEntity: Converter<IFillingSlotEntity>;
 type FillingsMergeSource = SubLibraryMergeSource<FillingsLibrary>;
 
 // @public
-export type FillingVersionId = Brand<string, 'FillingVersionId'>;
-
-// @public
-const fillingVersionId: Converter<FillingVersionId>;
-
-// @public
-const fillingVersionId_2: Validator<FillingVersionId>;
-
-// @public
-export type FillingVersionSpec = Brand<string, 'FillingVersionSpec'>;
-
-// @public
-const fillingVersionSpec: Converter<FillingVersionSpec>;
-
-// @public
-const fillingVersionSpec_2: Validator<FillingVersionSpec>;
-
-// @public
 type FilterPattern = string | RegExp;
 
 // @public
@@ -1968,13 +1968,13 @@ function getFillingBaseId(id: FillingId): BaseFillingId;
 function getFillingCollectionId(id: FillingId): CollectionId;
 
 // @public
+function getFillingRecipeVariationFillingId(id: FillingRecipeVariationId): FillingId;
+
+// @public
+function getFillingRecipeVariationSpec(id: FillingRecipeVariationId): FillingRecipeVariationSpec;
+
+// @public
 function getFillingsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
-
-// @public
-function getFillingVersionFillingId(id: FillingVersionId): FillingId;
-
-// @public
-function getFillingVersionSpec(id: FillingVersionId): FillingVersionSpec;
 
 // @public
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
@@ -2060,13 +2060,13 @@ declare namespace Helpers {
         parseSessionId,
         getSessionCollectionId,
         getSessionBaseId,
-        createFillingVersionId,
-        parseFillingVersionId,
-        getFillingVersionFillingId,
-        getFillingVersionSpec,
-        createConfectionVersionId,
-        parseConfectionVersionId,
-        createFillingVersionIdValidated,
+        createFillingRecipeVariationId,
+        parseFillingRecipeVariationId,
+        getFillingRecipeVariationFillingId,
+        getFillingRecipeVariationSpec,
+        createConfectionRecipeVariationId,
+        parseConfectionRecipeVariationId,
+        createFillingRecipeVariationIdValidated,
         getPreferred,
         getPreferredOrFirst,
         getPreferredId,
@@ -2340,9 +2340,9 @@ interface IConfectionBase<TVersion extends AnyConfectionVersion = AnyConfectionV
     readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     getEffectiveTags(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<string>;
     getEffectiveUrls(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<Model.ICategorizedUrl>;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
+    getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion>;
     readonly goldenVersion: TVersion;
-    readonly goldenVersionSpec: ConfectionVersionSpec;
+    readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
     readonly id: ConfectionId;
     isBarTruffle(): this is IBarTruffle;
     isMoldedBonBon(): this is IMoldedBonBon;
@@ -2391,11 +2391,11 @@ interface IConfectionEditingSessionParams {
 }
 
 // @public
-interface IConfectionEditJournalEntry extends IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionVersionId, IConfectionEditJournalEntryEntity> {
+interface IConfectionEditJournalEntry extends IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionRecipeVariationId, IConfectionEditJournalEntryEntity> {
 }
 
 // @public
-interface IConfectionEditJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
+interface IConfectionEditJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId> {
     // (undocumented)
     readonly type: 'confection-edit';
 }
@@ -2405,7 +2405,7 @@ interface IConfectionEntityBase {
     readonly baseId: BaseConfectionId;
     readonly confectionType: ConfectionType;
     readonly description?: string;
-    readonly goldenVersionSpec: ConfectionVersionSpec;
+    readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
     readonly name: ConfectionName;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
@@ -2419,11 +2419,11 @@ type IConfectionFileTreeSource = SubLibraryFileTreeSource;
 type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
 
 // @public
-interface IConfectionProductionJournalEntry extends IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionVersionId, IConfectionProductionJournalEntryEntity> {
+interface IConfectionProductionJournalEntry extends IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionRecipeVariationId, IConfectionProductionJournalEntryEntity> {
 }
 
 // @public
-interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
+interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId> {
     readonly produced: AnyProducedConfectionEntity;
     // (undocumented)
     readonly type: 'confection-production';
@@ -2436,7 +2436,7 @@ interface IConfectionSaveOptions {
     readonly createNewVersion?: boolean;
     readonly journalNotes?: string;
     readonly saveLinkedRecipeSessions?: boolean;
-    readonly versionLabel?: ConfectionVersionSpec;
+    readonly versionLabel?: ConfectionRecipeVariationSpec;
 }
 
 // @public
@@ -2444,7 +2444,7 @@ interface IConfectionSaveResult {
     readonly journalEntry?: IConfectionEditJournalEntryEntity;
     readonly journalId?: string;
     readonly linkedRecipeJournalIds?: ReadonlyArray<string>;
-    readonly newVersionSpec?: ConfectionVersionSpec;
+    readonly newVersionSpec?: ConfectionRecipeVariationSpec;
 }
 
 // @public
@@ -2454,7 +2454,7 @@ interface IConfectionSessionEntity extends ISessionEntityBase {
     readonly history: ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>;
     // (undocumented)
     readonly sessionType: 'confection';
-    readonly sourceVersionId: ConfectionVersionId;
+    readonly sourceVersionId: ConfectionRecipeVariationId;
 }
 
 // @public
@@ -2491,7 +2491,7 @@ interface IConfectionVersionBase<TConfection extends IConfectionBase = IConfecti
     isRolledTruffleVersion(): this is IRolledTruffleVersion;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
-    readonly versionSpec: ConfectionVersionSpec;
+    readonly versionSpec: ConfectionRecipeVariationSpec;
     readonly yield: Confections_2.IConfectionYield;
 }
 
@@ -2504,7 +2504,7 @@ interface IConfectionVersionEntityBase {
     readonly fillings?: ReadonlyArray<IFillingSlotEntity>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
-    readonly versionSpec: ConfectionVersionSpec;
+    readonly versionSpec: ConfectionRecipeVariationSpec;
     readonly yield: IConfectionYield;
 }
 
@@ -2690,15 +2690,15 @@ interface IFillingChanges {
 interface IFillingDerivationEntity {
     readonly derivedDate: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly sourceVersionId: FillingVersionId;
+    readonly sourceVersionId: FillingRecipeVariationId;
 }
 
 // @public
-interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingVersionId, IFillingEditJournalEntryEntity> {
+interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingRecipeVariationId, IFillingEditJournalEntryEntity> {
 }
 
 // @public
-interface IFillingEditJournalEntryEntity extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
+interface IFillingEditJournalEntryEntity extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId> {
     // (undocumented)
     readonly type: 'filling-edit';
 }
@@ -2716,11 +2716,11 @@ interface IFillingIngredientEntity {
 }
 
 // @public
-interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingVersionId, IFillingProductionJournalEntryEntity> {
+interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingRecipeVariationId, IFillingProductionJournalEntryEntity> {
 }
 
 // @public
-interface IFillingProductionJournalEntryEntity extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
+interface IFillingProductionJournalEntryEntity extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId> {
     readonly produced: IProducedFillingEntity;
     // (undocumented)
     readonly type: 'filling-production';
@@ -2743,9 +2743,9 @@ interface IFillingRecipe {
     readonly description?: string;
     readonly entity: IFillingRecipeEntity;
     getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
-    getVersion(versionSpec: FillingVersionSpec): Result<IFillingRecipeVersion>;
+    getVersion(versionSpec: FillingRecipeVariationSpec): Result<IFillingRecipeVersion>;
     readonly goldenVersion: IFillingRecipeVersion;
-    readonly goldenVersionSpec: FillingVersionSpec;
+    readonly goldenVersionSpec: FillingRecipeVariationSpec;
     readonly id: FillingId;
     readonly latestVersion: IFillingRecipeVersion;
     readonly name: FillingName;
@@ -2761,7 +2761,7 @@ interface IFillingRecipeEntity {
     readonly category: FillingCategory_2;
     readonly derivedFrom?: IFillingDerivationEntity;
     readonly description?: string;
-    readonly goldenVersionSpec: FillingVersionSpec;
+    readonly goldenVersionSpec: FillingRecipeVariationSpec;
     readonly name: FillingName;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
@@ -2803,7 +2803,7 @@ interface IFillingRecipesByTagConfig {
 
 // @public
 interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
-    readonly versionSpec?: FillingVersionSpec;
+    readonly versionSpec?: FillingRecipeVariationSpec;
 }
 
 // @public
@@ -2821,8 +2821,8 @@ interface IFillingRecipeVersion {
     readonly ratings: ReadonlyArray<IFillingRating>;
     usesIngredient(ingredientId: IngredientId): boolean;
     readonly version: IFillingRecipeVersionEntity;
-    readonly versionId: FillingVersionId;
-    readonly versionSpec: FillingVersionSpec;
+    readonly versionId: FillingRecipeVariationId;
+    readonly versionSpec: FillingRecipeVariationSpec;
     readonly yield?: string;
 }
 
@@ -2834,7 +2834,7 @@ interface IFillingRecipeVersionEntity {
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
     readonly ratings?: ReadonlyArray<IFillingRating>;
-    readonly versionSpec: FillingVersionSpec;
+    readonly versionSpec: FillingRecipeVariationSpec;
     readonly yield?: string;
 }
 
@@ -2843,7 +2843,7 @@ interface IFillingSessionEntity extends ISessionEntityBase {
     readonly history: ISerializedEditingHistoryEntity<IProducedFillingEntity>;
     // (undocumented)
     readonly sessionType: 'filling';
-    readonly sourceVersionId: FillingVersionId;
+    readonly sourceVersionId: FillingRecipeVariationId;
 }
 
 // @public
@@ -2865,11 +2865,11 @@ interface IFillingSlotEntity {
 // @public
 interface IFillingUsageEntity {
     readonly date: string;
-    readonly modifiedVersionSpec?: FillingVersionSpec;
+    readonly modifiedVersionSpec?: FillingRecipeVariationSpec;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly scaledWeight: Measurement;
     readonly scaleFactor?: number;
-    readonly versionSpec: FillingVersionSpec;
+    readonly versionSpec: FillingRecipeVariationSpec;
 }
 
 // @public
@@ -3964,7 +3964,7 @@ interface IProducedConfectionEntityBase {
     readonly fillings?: ReadonlyArray<AnyResolvedFillingSlotEntity>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedureId?: ProcedureId;
-    readonly versionId: ConfectionVersionId;
+    readonly versionId: ConfectionRecipeVariationId;
     readonly yield: IConfectionYield;
 }
 
@@ -3975,7 +3975,7 @@ interface IProducedFillingEntity {
     readonly procedureId?: ProcedureId;
     readonly scaleFactor: number;
     readonly targetWeight: Measurement;
-    readonly versionId: FillingVersionId;
+    readonly versionId: FillingRecipeVariationId;
 }
 
 // @public
@@ -4277,7 +4277,7 @@ function isAlcoholIngredientEntity(ingredient: IngredientEntity): ingredient is 
 // @public
 interface ISaveAlternativesOptions {
     readonly includeSessionNotes?: boolean;
-    readonly versionSpec: FillingVersionSpec;
+    readonly versionSpec: FillingRecipeVariationSpec;
 }
 
 // @public
@@ -4298,14 +4298,14 @@ interface ISaveAnalysis {
 // @public
 interface ISaveConfectionVersionOptions {
     readonly includeSessionNotes?: boolean;
-    readonly versionSpec: ConfectionVersionSpec;
+    readonly versionSpec: ConfectionRecipeVariationSpec;
 }
 
 // @public
 interface ISaveNewConfectionOptions {
     readonly includeSessionNotes?: boolean;
     readonly newId: ConfectionId;
-    readonly versionSpec: ConfectionVersionSpec;
+    readonly versionSpec: ConfectionRecipeVariationSpec;
 }
 
 // @public
@@ -4313,7 +4313,7 @@ interface ISaveNewRecipeOptions {
     readonly baseWeight: Measurement;
     readonly includeSessionNotes?: boolean;
     readonly newId: FillingId;
-    readonly versionSpec: FillingVersionSpec;
+    readonly versionSpec: FillingRecipeVariationSpec;
 }
 
 // @public
@@ -4321,21 +4321,21 @@ interface ISaveOptions {
     readonly createJournalRecord?: boolean;
     readonly createNewVersion?: boolean;
     readonly journalNotes?: string;
-    readonly versionLabel?: FillingVersionSpec;
+    readonly versionLabel?: FillingRecipeVariationSpec;
 }
 
 // @public
 interface ISaveResult {
     readonly journalEntry?: IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity;
     readonly journalId?: string;
-    readonly newVersionSpec?: FillingVersionSpec | ConfectionVersionSpec;
+    readonly newVersionSpec?: FillingRecipeVariationSpec | ConfectionRecipeVariationSpec;
 }
 
 // @public
 interface ISaveVersionOptions {
     readonly baseWeight: Measurement;
     readonly includeSessionNotes?: boolean;
-    readonly versionSpec: FillingVersionSpec;
+    readonly versionSpec: FillingRecipeVariationSpec;
 }
 
 // @public
@@ -4356,7 +4356,7 @@ interface IScaledAmount {
 interface IScalingRefEntity {
     readonly createdDate: string;
     readonly scaleFactor: number;
-    readonly sourceVersionId: FillingVersionId;
+    readonly sourceVersionId: FillingRecipeVariationId;
     readonly targetWeight: Measurement;
 }
 
@@ -4650,7 +4650,7 @@ function isValidCollectionId(from: unknown): from is CollectionId;
 function isValidConfectionName(from: unknown): from is ConfectionName;
 
 // @public
-function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionSpec;
+function isValidConfectionRecipeVariationSpec(from: unknown): from is ConfectionRecipeVariationSpec;
 
 // @public
 function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael;
@@ -4659,7 +4659,7 @@ function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael;
 function isValidFillingName(from: unknown): from is FillingName;
 
 // @public
-function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec;
+function isValidFillingRecipeVariationSpec(from: unknown): from is FillingRecipeVariationSpec;
 
 // @public
 function isValidJournalId(from: unknown): from is JournalId;
@@ -4788,7 +4788,7 @@ interface IUserLibraryCreateParams {
 
 // @public
 interface IUserLibraryRuntime {
-    createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createFillingSession(versionId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
@@ -4982,9 +4982,9 @@ class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, AnyJournal
     getAllJournals(): ReadonlyArray<AnyJournalEntryEntity>;
     getJournal(journalId: JournalId): Result<AnyJournalEntryEntity>;
     getJournalsForConfection(confectionId: ConfectionId): ReadonlyArray<AnyConfectionJournalEntry>;
-    getJournalsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<AnyConfectionJournalEntry>;
+    getJournalsForConfectionVersion(versionId: ConfectionRecipeVariationId): ReadonlyArray<AnyConfectionJournalEntry>;
     getJournalsForFilling(fillingId: FillingId): ReadonlyArray<AnyFillingJournalEntry>;
-    getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<AnyFillingJournalEntry>;
+    getJournalsForFillingVersion(versionId: FillingRecipeVariationId): ReadonlyArray<AnyFillingJournalEntry>;
     hasJournal(journalId: JournalId): boolean;
 }
 
@@ -5336,16 +5336,16 @@ declare namespace Model {
         ID_SEPARATOR,
         BASE_ID_PATTERN,
         COMPOSITE_ID_PATTERN,
-        FILLING_VERSION_SPEC_PATTERN,
-        VERSION_ID_SEPARATOR,
-        FILLING_VERSION_ID_PATTERN,
+        FILLING_RECIPE_VARIATION_SPEC_PATTERN,
+        VARIATION_ID_SEPARATOR,
+        FILLING_RECIPE_VARIATION_ID_PATTERN,
         SESSION_SPEC_PATTERN,
         BASE_SESSION_ID_PATTERN,
         SESSION_ID_PATTERN,
         BASE_JOURNAL_ID_PATTERN,
         JOURNAL_ID_PATTERN,
-        CONFECTION_VERSION_SPEC_PATTERN,
-        CONFECTION_VERSION_ID_PATTERN,
+        CONFECTION_RECIPE_VARIATION_SPEC_PATTERN,
+        CONFECTION_RECIPE_VARIATION_ID_PATTERN,
         IHasId,
         IOptionsWithPreferred,
         IIdsWithPreferred,
@@ -5620,7 +5620,7 @@ function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(o
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId>;
+function parseConfectionRecipeVariationId(id: ConfectionRecipeVariationId): Result<ParsedConfectionRecipeVariationId>;
 
 // @public
 type ParsedConfectionId = Converters_4.ICompositeId<CollectionId, BaseConfectionId>;
@@ -5629,10 +5629,10 @@ type ParsedConfectionId = Converters_4.ICompositeId<CollectionId, BaseConfection
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_4.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionRecipeVariationId = Converters_4.ICompositeId<ConfectionId, ConfectionRecipeVariationSpec>;
 
 // @public
-const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
+const parsedConfectionRecipeVariationId: Converter<ParsedConfectionRecipeVariationId>;
 
 // @public
 type ParsedFillingId = Converters_4.ICompositeId<CollectionId, BaseFillingId>;
@@ -5641,10 +5641,10 @@ type ParsedFillingId = Converters_4.ICompositeId<CollectionId, BaseFillingId>;
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_4.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingRecipeVariationId = Converters_4.ICompositeId<FillingId, FillingRecipeVariationSpec>;
 
 // @public
-const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
+const parsedFillingRecipeVariationId: Converter<ParsedFillingRecipeVariationId>;
 
 // @public
 type ParsedIngredientId = Converters_4.ICompositeId<CollectionId, BaseIngredientId>;
@@ -5706,7 +5706,7 @@ const parsedTaskId: Converter<ParsedTaskId>;
 function parseFillingId(id: FillingId): Result<ParsedFillingId>;
 
 // @public
-function parseFillingVersionId(id: FillingVersionId): Result<ParsedFillingVersionId>;
+function parseFillingRecipeVariationId(id: FillingRecipeVariationId): Result<ParsedFillingRecipeVariationId>;
 
 // @public
 function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
@@ -5925,7 +5925,7 @@ abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
     undo(): Result<boolean>;
     // (undocumented)
     protected _undoStack: T[];
-    get versionId(): ConfectionVersionId;
+    get versionId(): ConfectionRecipeVariationId;
     get yield(): Confections_2.IConfectionYield;
 }
 
@@ -5951,7 +5951,7 @@ class ProducedFilling {
     get snapshot(): IProducedFillingEntity;
     get targetWeight(): Measurement;
     undo(): Result<boolean>;
-    get versionId(): FillingVersionId;
+    get versionId(): FillingRecipeVariationId;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -6311,9 +6311,9 @@ class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySession
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnySessionEntity>;
     getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionSessionEntity>;
-    getSessionsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<IConfectionSessionEntity>;
+    getSessionsForConfectionVersion(versionId: ConfectionRecipeVariationId): ReadonlyArray<IConfectionSessionEntity>;
     getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IFillingSessionEntity>;
-    getSessionsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingSessionEntity>;
+    getSessionsForFillingVersion(versionId: FillingRecipeVariationId): ReadonlyArray<IFillingSessionEntity>;
     hasSession(sessionId: SessionId): boolean;
     removeSession(sessionId: SessionId): Result<AnySessionEntity>;
     upsertSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId>;
@@ -6581,7 +6581,7 @@ function toCollectionId(from: unknown): Result<CollectionId>;
 function toConfectionName(from: unknown): Result<ConfectionName>;
 
 // @public
-function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec>;
+function toConvectionRecipeVariationSpec(from: unknown): Result<ConfectionRecipeVariationSpec>;
 
 // @public
 function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael>;
@@ -6590,7 +6590,7 @@ function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael>;
 function toFillingName(from: unknown): Result<FillingName>;
 
 // @public
-function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec>;
+function toFillingRecipeVariationSpec(from: unknown): Result<FillingRecipeVariationSpec>;
 
 // @public
 function toJournalId(from: unknown): Result<JournalId>;
@@ -6682,7 +6682,7 @@ class UserLibraryRuntime implements IUserLibraryRuntime {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
-    createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createFillingSession(versionId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
@@ -6812,10 +6812,10 @@ declare namespace Validation {
         toFillingName,
         isValidConfectionName,
         toConfectionName,
-        isValidFillingVersionSpec,
-        toFillingVersionSpec,
-        isValidConfectionVersionSpec,
-        toConfectionVersionSpec,
+        isValidFillingRecipeVariationSpec,
+        toFillingRecipeVariationSpec,
+        isValidConfectionRecipeVariationSpec,
+        toConvectionRecipeVariationSpec,
         isValidSessionSpec,
         toSessionSpec,
         isValidBaseSessionId,
@@ -6902,10 +6902,10 @@ declare namespace Validators {
         confectionId_2 as confectionId,
         journalId_2 as journalId,
         sessionId_2 as sessionId,
-        fillingVersionSpec_2 as fillingVersionSpec,
-        confectionVersionSpec_2 as confectionVersionSpec,
-        fillingVersionId_2 as fillingVersionId,
-        confectionVersionId_2 as confectionVersionId
+        fillingRecipeVariationSpec_2 as fillingRecipeVariationSpec,
+        confectionRecipeVariationSpec_2 as confectionRecipeVariationSpec,
+        fillingRecipeVariationId_2 as fillingRecipeVariationId,
+        confectionRecipeVariationId_2 as confectionRecipeVariationId
     }
 }
 export { Validators }
@@ -6922,7 +6922,7 @@ declare namespace Validators_2 {
 }
 
 // @public
-const VERSION_ID_SEPARATOR: string;
+const VARIATION_ID_SEPARATOR: string;
 
 // @public
 export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';

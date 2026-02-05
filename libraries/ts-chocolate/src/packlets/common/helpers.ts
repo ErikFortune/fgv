@@ -31,17 +31,17 @@ import {
   IHasId,
   IIdsWithPreferred,
   IOptionsWithPreferred,
-  VERSION_ID_SEPARATOR
+  VARIATION_ID_SEPARATOR
 } from './model';
 import {
   BaseFillingId,
   BaseIngredientId,
   ConfectionId,
-  ConfectionVersionId,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   IngredientId,
   BaseJournalId,
   JournalId,
@@ -50,17 +50,17 @@ import {
   CollectionId
 } from './ids';
 import {
-  confectionVersionId as confectionVersionIdConverter,
-  fillingVersionId as fillingVersionIdConverter,
-  ParsedConfectionVersionId,
+  confectionRecipeVariationId,
+  fillingRecipeVariationId,
+  ParsedConfectionRecipeVariationId,
   ParsedFillingId,
-  ParsedFillingVersionId,
+  ParsedFillingRecipeVariationId,
   ParsedIngredientId,
   ParsedJournalId,
   ParsedSessionId,
-  parsedConfectionVersionId,
+  parsedConfectionRecipeVariationId,
   parsedFillingId,
-  parsedFillingVersionId,
+  parsedFillingRecipeVariationId,
   parsedIngredientId,
   parsedJournalId,
   parsedSessionId
@@ -245,91 +245,97 @@ export function getSessionBaseId(id: SessionId): BaseSessionId {
 }
 
 // ============================================================================
-// Filling Version ID Helpers
+// Filling Variation ID Helpers
 // ============================================================================
 
 /**
- * Creates a composite FillingVersionId from filling ID and version spec
+ * Creates a composite {@link FillingRecipeVariationId | FillingRecipeVariationId} from
+ * {@link FillingId | FillingID} and {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}.
  * @param fillingId - The filling identifier
- * @param versionSpec - The version specifier
- * @returns Composite filling version ID in format "fillingId\@versionSpec"
+ * @param variationSpec - The variation specifier
+ * @returns Composite filling variation ID in format "fillingId\@variationSpec"
  * @public
  */
-export function createFillingVersionId(
+export function createFillingRecipeVariationId(
   fillingId: FillingId,
-  versionSpec: FillingVersionSpec
-): FillingVersionId {
-  return `${fillingId}${VERSION_ID_SEPARATOR}${versionSpec}` as FillingVersionId;
+  variationSpec: FillingRecipeVariationSpec
+): FillingRecipeVariationId {
+  return `${fillingId}${VARIATION_ID_SEPARATOR}${variationSpec}` as FillingRecipeVariationId;
 }
 
 /**
- * Parses a composite FillingVersionId into its component parts
- * @param id - The composite filling version ID to parse
+ * Parses a composite {@link FillingRecipeVariationId | FillingRecipeVariationId} into its component parts
+ * @param id - The composite filling variation ID to parse
  * @returns Result with parsed composite ID or error
  * @public
  */
-export function parseFillingVersionId(id: FillingVersionId): Result<ParsedFillingVersionId> {
-  return parsedFillingVersionId.convert(id);
+export function parseFillingRecipeVariationId(
+  id: FillingRecipeVariationId
+): Result<ParsedFillingRecipeVariationId> {
+  return parsedFillingRecipeVariationId.convert(id);
 }
 
 /**
- * Gets the filling ID from a composite FillingVersionId
- * @param id - The composite filling version ID
+ * Gets the filling ID from a composite {@link FillingRecipeVariationId | FillingRecipeVariationId}
+ * @param id - The composite filling variation ID
  * @returns The filling ID portion
  * @public
  */
-export function getFillingVersionFillingId(id: FillingVersionId): FillingId {
-  return parsedFillingVersionId.convert(id).orThrow().collectionId;
+export function getFillingRecipeVariationFillingId(id: FillingRecipeVariationId): FillingId {
+  return parsedFillingRecipeVariationId.convert(id).orThrow().collectionId;
 }
 
 /**
- * Gets the version spec from a composite FillingVersionId
- * @param id - The composite filling version ID
- * @returns The version spec portion
+ * Gets the variation spec from a composite {@link FillingRecipeVariationId | FillingRecipeVariationId}
+ * @param id - The composite filling variation ID
+ * @returns The variation spec portion
  * @public
  */
-export function getFillingVersionSpec(id: FillingVersionId): FillingVersionSpec {
-  return parsedFillingVersionId.convert(id).orThrow().itemId;
+export function getFillingRecipeVariationSpec(id: FillingRecipeVariationId): FillingRecipeVariationSpec {
+  return parsedFillingRecipeVariationId.convert(id).orThrow().itemId;
 }
 
 /**
- * Creates and validates a confection version ID from component parts.
- * Uses converter to ensure the formatted ID is valid.
- * @param parts - Object with collectionId (ConfectionId) and itemId (ConfectionVersionSpec)
- * @returns Result with validated confection version ID or error
+ * Creates and validates a {@link ConfectionRecipeVariationId | confection variation ID}
+ * from component parts.
+ * @param parts - Object with `collectionId` of {@link ConfectionId | ConfectionId} and
+ * `itemId` of {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec}.
+ * @returns Result with validated confection variation ID or error
  * @public
  */
-export function createConfectionVersionId(parts: {
+export function createConfectionRecipeVariationId(parts: {
   collectionId: ConfectionId;
-  itemId: ConfectionVersionSpec;
-}): Result<ConfectionVersionId> {
-  const formatted = `${parts.collectionId}${VERSION_ID_SEPARATOR}${parts.itemId}`;
-  return confectionVersionIdConverter.convert(formatted);
+  itemId: ConfectionRecipeVariationSpec;
+}): Result<ConfectionRecipeVariationId> {
+  const formatted = `${parts.collectionId}${VARIATION_ID_SEPARATOR}${parts.itemId}`;
+  return confectionRecipeVariationId.convert(formatted);
 }
 
 /**
- * Parses a composite ConfectionVersionId into its component parts
- * @param id - The composite confection version ID to parse
+ * Parses a composite {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId} into its component parts
+ * @param id - The composite confection variation ID to parse
  * @returns Result with parsed composite ID or error
  * @public
  */
-export function parseConfectionVersionId(id: ConfectionVersionId): Result<ParsedConfectionVersionId> {
-  return parsedConfectionVersionId.convert(id);
+export function parseConfectionRecipeVariationId(
+  id: ConfectionRecipeVariationId
+): Result<ParsedConfectionRecipeVariationId> {
+  return parsedConfectionRecipeVariationId.convert(id);
 }
 
 /**
- * Creates and validates a filling version ID from component parts.
+ * Creates and validates a {@link FillingRecipeVariationId | filling variation ID} from component parts.
  * Uses converter to ensure the formatted ID is valid.
- * @param parts - Object with collectionId (FillingId) and itemId (FillingVersionSpec)
- * @returns Result with validated filling version ID or error
+ * @param parts - Object with `collectionId` of {@link FillingId | FillingId} and `itemId` of {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}
+ * @returns Result with validated filling variation ID or error
  * @public
  */
-export function createFillingVersionIdValidated(parts: {
+export function createFillingRecipeVariationIdValidated(parts: {
   collectionId: FillingId;
-  itemId: FillingVersionSpec;
-}): Result<FillingVersionId> {
-  const formatted = `${parts.collectionId}${VERSION_ID_SEPARATOR}${parts.itemId}`;
-  return fillingVersionIdConverter.convert(formatted);
+  itemId: FillingRecipeVariationSpec;
+}): Result<FillingRecipeVariationId> {
+  const formatted = `${parts.collectionId}${VARIATION_ID_SEPARATOR}${parts.itemId}`;
+  return fillingRecipeVariationId.convert(formatted);
 }
 
 // ============================================================================

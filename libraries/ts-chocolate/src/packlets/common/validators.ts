@@ -43,11 +43,11 @@ import {
   BaseProcedureId,
   BaseTaskId,
   ConfectionId,
-  ConfectionVersionId,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   IngredientId,
   BaseJournalId,
   JournalId,
@@ -58,7 +58,7 @@ import {
   CollectionId,
   TaskId
 } from './ids';
-import { ID_SEPARATOR, VERSION_ID_SEPARATOR } from './model';
+import { ID_SEPARATOR, VARIATION_ID_SEPARATOR } from './model';
 
 import {
   isValidBaseConfectionId,
@@ -67,8 +67,8 @@ import {
   isValidBaseMoldId,
   isValidBaseProcedureId,
   isValidBaseTaskId,
-  isValidConfectionVersionSpec,
-  isValidFillingVersionSpec,
+  isValidConfectionRecipeVariationSpec,
+  isValidFillingRecipeVariationSpec,
   isValidBaseJournalId,
   isValidBaseSessionId,
   isValidCollectionId
@@ -256,55 +256,54 @@ export const sessionId: Validator<SessionId> = Validators.compositeId<SessionId,
 );
 
 // ============================================================================
-// Version Spec Validators
+// Variation Spec Validators
 // ============================================================================
 
 /**
- * In-place `Validator` for {@link FillingVersionSpec | FillingVersionSpec}.
+ * In-place `Validator` for {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}.
  * @public
  */
-export const fillingVersionSpec: Validator<FillingVersionSpec> = Validators.isA<FillingVersionSpec>(
-  'FillingVersionSpec',
-  isValidFillingVersionSpec
-);
+export const fillingRecipeVariationSpec: Validator<FillingRecipeVariationSpec> =
+  Validators.isA<FillingRecipeVariationSpec>('FillingRecipeVariationSpec', isValidFillingRecipeVariationSpec);
 
 /**
- * In-place `Validator` for {@link ConfectionVersionSpec | ConfectionVersionSpec}.
+ * In-place `Validator` for {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec}.
  * @public
  */
-export const confectionVersionSpec: Validator<ConfectionVersionSpec> = Validators.isA<ConfectionVersionSpec>(
-  'ConfectionVersionSpec',
-  isValidConfectionVersionSpec
-);
+export const confectionRecipeVariationSpec: Validator<ConfectionRecipeVariationSpec> =
+  Validators.isA<ConfectionRecipeVariationSpec>(
+    'ConfectionRecipeVariationSpec',
+    isValidConfectionRecipeVariationSpec
+  );
 
 // ============================================================================
-// Version ID Validators (Composite)
+// Variation ID Validators (Composite)
 // ============================================================================
 
 /**
- * In-place `Validator` for {@link FillingVersionId | FillingVersionId} (composite string).
+ * In-place `Validator` for {@link FillingRecipeVariationId | FillingRecipeVariationId} (composite string).
  * @public
  */
-export const fillingVersionId: Validator<FillingVersionId> = Validators.compositeId<
-  FillingVersionId,
+export const fillingRecipeVariationId: Validator<FillingRecipeVariationId> = Validators.compositeId<
+  FillingRecipeVariationId,
   FillingId,
-  FillingVersionSpec
+  FillingRecipeVariationSpec
 >({
   collectionId: fillingId,
-  separator: VERSION_ID_SEPARATOR,
-  itemId: fillingVersionSpec
+  separator: VARIATION_ID_SEPARATOR,
+  itemId: fillingRecipeVariationSpec
 });
 
 /**
- * In-place `Validator` for {@link ConfectionVersionId | ConfectionVersionId} (composite string).
+ * In-place `Validator` for {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId} (composite string).
  * @public
  */
-export const confectionVersionId: Validator<ConfectionVersionId> = Validators.compositeId<
-  ConfectionVersionId,
+export const confectionRecipeVariationId: Validator<ConfectionRecipeVariationId> = Validators.compositeId<
+  ConfectionRecipeVariationId,
   ConfectionId,
-  ConfectionVersionSpec
+  ConfectionRecipeVariationSpec
 >({
   collectionId: confectionId,
-  separator: VERSION_ID_SEPARATOR,
-  itemId: confectionVersionSpec
+  separator: VARIATION_ID_SEPARATOR,
+  itemId: confectionRecipeVariationSpec
 });

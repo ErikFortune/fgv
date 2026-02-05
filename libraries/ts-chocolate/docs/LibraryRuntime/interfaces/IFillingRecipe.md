@@ -146,7 +146,7 @@ Optional tags for categorization and search.
 
 </td><td>
 
-[FillingVersionSpec](../../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 
@@ -266,7 +266,7 @@ Description
 
 </td><td>
 
-Gets a specific version by FillingVersionSpec | version specifier.
+Gets a specific version by FillingRecipeVariationSpec | version specifier.
 
 </td></tr>
 <tr><td>

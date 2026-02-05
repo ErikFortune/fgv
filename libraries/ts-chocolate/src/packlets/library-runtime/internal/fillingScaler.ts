@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { FillingVersionSpec, Measurement } from '../../common';
+import { FillingRecipeVariationSpec, Measurement } from '../../common';
 import { IFillingRecipeVersionEntity } from '../../entities';
 
 // ============================================================================
@@ -55,7 +55,7 @@ export interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
   /**
    * Filling recipe version to scale (default: golden version)
    */
-  readonly versionSpec?: FillingVersionSpec;
+  readonly versionSpec?: FillingRecipeVariationSpec;
 }
 
 // ============================================================================

@@ -7,5 +7,5 @@ Version spec portion of the identifier.
 **Signature:**
 
 ```typescript
-readonly versionSpec: FillingVersionSpec;
+readonly versionSpec: FillingRecipeVariationSpec;
 ```

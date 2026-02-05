@@ -7,5 +7,5 @@ Gets the version ID.
 **Signature:**
 
 ```typescript
-readonly versionId: ConfectionVersionId;
+readonly versionId: ConfectionRecipeVariationId;
 ```

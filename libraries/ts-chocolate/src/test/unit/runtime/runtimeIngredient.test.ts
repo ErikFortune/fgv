@@ -29,7 +29,7 @@ import {
   IngredientId,
   Percentage,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   CollectionId
 } from '../../../packlets/common';
 
@@ -206,10 +206,10 @@ describe('RuntimeIngredient', () => {
     baseId: 'ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
     category: 'ganache',
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },

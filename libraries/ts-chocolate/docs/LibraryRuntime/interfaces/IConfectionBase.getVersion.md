@@ -7,14 +7,14 @@ Gets a specific version by version specifier.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
+getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionSpec</td><td>ConfectionVersionSpec</td><td>The version specifier to find</td></tr>
+<tr><td>versionSpec</td><td>ConfectionRecipeVariationSpec</td><td>The version specifier to find</td></tr>
 </tbody></table>
 
 **Returns:**

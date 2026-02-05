@@ -124,7 +124,7 @@ export const producedFillingIngredientEntity: Converter<IProducedFillingIngredie
  */
 export const producedFillingEntity: Converter<IProducedFillingEntity> =
   Converters.object<IProducedFillingEntity>({
-    versionId: CommonConverters.fillingVersionId,
+    versionId: CommonConverters.fillingRecipeVariationId,
     scaleFactor: Converters.number,
     targetWeight: CommonConverters.measurement,
     ingredients: Converters.arrayOf(producedFillingIngredientEntity),
@@ -143,7 +143,7 @@ export const producedFillingEntity: Converter<IProducedFillingEntity> =
 export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> =
   Converters.object<IProducedMoldedBonBonEntity>({
     confectionType: Converters.literal('molded-bonbon'),
-    versionId: CommonConverters.confectionVersionId,
+    versionId: CommonConverters.confectionRecipeVariationId,
     yield: confectionYieldConverter,
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
@@ -161,7 +161,7 @@ export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> 
 export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
   Converters.object<IProducedBarTruffleEntity>({
     confectionType: Converters.literal('bar-truffle'),
-    versionId: CommonConverters.confectionVersionId,
+    versionId: CommonConverters.confectionRecipeVariationId,
     yield: confectionYieldConverter,
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
@@ -176,7 +176,7 @@ export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
 export const producedRolledTruffleEntity: Converter<IProducedRolledTruffleEntity> =
   Converters.object<IProducedRolledTruffleEntity>({
     confectionType: Converters.literal('rolled-truffle'),
-    versionId: CommonConverters.confectionVersionId,
+    versionId: CommonConverters.confectionRecipeVariationId,
     yield: confectionYieldConverter,
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
@@ -213,10 +213,10 @@ export const fillingEditJournalEntryEntity: Converter<IFillingEditJournalEntryEn
     type: Converters.literal('filling-edit'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
-    versionId: CommonConverters.fillingVersionId,
+    versionId: CommonConverters.fillingRecipeVariationId,
     recipe: fillingRecipeVersionConverter,
     updated: fillingRecipeVersionConverter.optional(),
-    updatedId: CommonConverters.fillingVersionId.optional(),
+    updatedId: CommonConverters.fillingRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
@@ -229,10 +229,10 @@ export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalE
     type: Converters.literal('confection-edit'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
-    versionId: CommonConverters.confectionVersionId,
+    versionId: CommonConverters.confectionRecipeVariationId,
     recipe: anyConfectionVersionConverter,
     updated: anyConfectionVersionConverter.optional(),
-    updatedId: CommonConverters.confectionVersionId.optional(),
+    updatedId: CommonConverters.confectionRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
@@ -245,10 +245,10 @@ export const fillingProductionJournalEntryEntity: Converter<IFillingProductionJo
     type: Converters.literal('filling-production'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
-    versionId: CommonConverters.fillingVersionId,
+    versionId: CommonConverters.fillingRecipeVariationId,
     recipe: fillingRecipeVersionConverter,
     updated: fillingRecipeVersionConverter.optional(),
-    updatedId: CommonConverters.fillingVersionId.optional(),
+    updatedId: CommonConverters.fillingRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     yield: CommonConverters.measurement,
     produced: producedFillingEntity
@@ -263,10 +263,10 @@ export const confectionProductionJournalEntryEntity: Converter<IConfectionProduc
     type: Converters.literal('confection-production'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
-    versionId: CommonConverters.confectionVersionId,
+    versionId: CommonConverters.confectionRecipeVariationId,
     recipe: anyConfectionVersionConverter,
     updated: anyConfectionVersionConverter.optional(),
-    updatedId: CommonConverters.confectionVersionId.optional(),
+    updatedId: CommonConverters.confectionRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     yield: confectionYieldConverter,
     produced: anyProducedConfectionEntity

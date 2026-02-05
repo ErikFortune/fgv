@@ -29,7 +29,7 @@ import {
   RatingScore,
   FillingId,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   Model as CommonModel,
   CollectionId
 } from '../../../packlets/common';
@@ -112,10 +112,10 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     category: 'ganache',
     description: 'Classic dark chocolate ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Original recipe' }] as CommonModel.ICategorizedNote[],
         yield: '50 bonbons',
@@ -140,7 +140,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
         ]
       },
       {
-        versionSpec: '2026-02-01-01' as FillingVersionSpec,
+        versionSpec: '2026-02-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-02-01',
         notes: [{ category: 'user', note: 'Revised with butter' }] as CommonModel.ICategorizedNote[],
         ingredients: [
@@ -157,10 +157,10 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     baseId: 'empty-recipe' as BaseFillingId,
     name: 'Empty Recipe' as FillingName,
     category: 'ganache',
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as FillingVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 100 as Measurement }
@@ -279,14 +279,14 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
 
       test('getVersion returns specific version', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(recipe.getVersion('2026-02-01-01' as FillingVersionSpec)).toSucceedAndSatisfy((v) => {
+        expect(recipe.getVersion('2026-02-01-01' as FillingRecipeVariationSpec)).toSucceedAndSatisfy((v) => {
           expect(v.versionSpec).toBe('2026-02-01-01');
         });
       });
 
       test('getVersion fails for non-existent version', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        expect(recipe.getVersion('nonexistent' as FillingVersionSpec)).toFailWith(/not found/);
+        expect(recipe.getVersion('nonexistent' as FillingRecipeVariationSpec)).toFailWith(/not found/);
       });
 
       test('latestVersion returns most recent by date', () => {

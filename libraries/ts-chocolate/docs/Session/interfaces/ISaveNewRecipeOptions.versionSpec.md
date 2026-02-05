@@ -7,5 +7,5 @@ Version spec for the new recipe's first version
 **Signature:**
 
 ```typescript
-readonly versionSpec: FillingVersionSpec;
+readonly versionSpec: FillingRecipeVariationSpec;
 ```

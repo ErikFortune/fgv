@@ -28,8 +28,8 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionType,
-  ConfectionVersionId,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   IngredientId,
   Measurement,
   Millimeters,
@@ -256,7 +256,7 @@ export type ICoatingsEntity = Model.IIdsWithPreferred<IngredientId>;
  */
 export interface IConfectionVersionEntityBase {
   /** Unique identifier for this version */
-  readonly versionSpec: ConfectionVersionSpec;
+  readonly versionSpec: ConfectionRecipeVariationSpec;
   /** Date this version was created (ISO 8601 format) */
   readonly createdDate: string;
   /** Yield specification for this version */
@@ -347,7 +347,7 @@ export interface IConfectionEntityBase {
   /** Optional categorized URLs for external resources (tutorials, videos, etc.) */
   readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
   /** The ID of the golden (approved default) version */
-  readonly goldenVersionSpec: ConfectionVersionSpec;
+  readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
   /** Version history - contains type-specific configuration details */
   readonly versions: ReadonlyArray<AnyConfectionVersionEntity>;
 }
@@ -563,7 +563,7 @@ export interface IProducedConfectionEntityBase {
   /** Confection type discriminator (matches ConfectionType) */
   readonly confectionType: ConfectionType;
   /** Confection version ID that was produced */
-  readonly versionId: ConfectionVersionId;
+  readonly versionId: ConfectionRecipeVariationId;
   /** Yield specification for this production */
   readonly yield: IConfectionYield;
   /** Resolved filling slots with concrete selections */

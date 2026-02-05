@@ -7,14 +7,14 @@ Gets all confection sessions for a specific confection version (across all colle
 **Signature:**
 
 ```typescript
-getSessionsForConfectionVersion(versionId: ConfectionVersionId): readonly IConfectionSessionEntity[];
+getSessionsForConfectionVersion(versionId: ConfectionRecipeVariationId): readonly IConfectionSessionEntity[];
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionId</td><td>ConfectionVersionId</td><td>The ConfectionVersionId | confection version ID to search for</td></tr>
+<tr><td>versionId</td><td>ConfectionRecipeVariationId</td><td>The ConfectionRecipeVariationId | confection version ID to search for</td></tr>
 </tbody></table>
 
 **Returns:**

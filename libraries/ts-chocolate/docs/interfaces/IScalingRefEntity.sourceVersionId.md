@@ -7,5 +7,5 @@ Source filling recipe version ID (format: "sourceId.fillingId@versionSpec")
 **Signature:**
 
 ```typescript
-readonly sourceVersionId: FillingVersionId;
+readonly sourceVersionId: FillingRecipeVariationId;
 ```

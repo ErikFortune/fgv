@@ -136,7 +136,7 @@ Version history
 
 </td><td>
 
-[FillingVersionSpec](../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 

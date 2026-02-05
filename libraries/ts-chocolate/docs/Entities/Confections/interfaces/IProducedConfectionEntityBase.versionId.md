@@ -7,5 +7,5 @@ Confection version ID that was produced
 **Signature:**
 
 ```typescript
-readonly versionId: ConfectionVersionId;
+readonly versionId: ConfectionRecipeVariationId;
 ```

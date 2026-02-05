@@ -7,5 +7,5 @@ Source confection version being edited
 **Signature:**
 
 ```typescript
-readonly sourceVersionId: ConfectionVersionId;
+readonly sourceVersionId: ConfectionRecipeVariationId;
 ```

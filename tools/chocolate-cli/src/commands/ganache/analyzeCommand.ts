@@ -20,7 +20,13 @@
 
 import { Command } from 'commander';
 import * as yaml from 'yaml';
-import { Converters, FillingId, FillingVersionSpec, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
+import {
+  Converters,
+  FillingId,
+  FillingRecipeVariationSpec,
+  IngredientId,
+  LibraryRuntime
+} from '@fgv/ts-chocolate';
 
 import {
   IEntityBaseOptions,
@@ -44,7 +50,7 @@ interface IGanacheAnalyzeOptions extends IEntityBaseOptions {
 function formatGanacheHuman(
   calculation: LibraryRuntime.IGanacheCalculation,
   fillingId: FillingId,
-  versionSpec: FillingVersionSpec
+  versionSpec: FillingRecipeVariationSpec
 ): string {
   const lines: string[] = [];
 
@@ -156,9 +162,9 @@ export function createAnalyzeSubcommand(): Command {
       const filling = fillingResult.value;
 
       // Validate version spec if provided
-      let versionSpec: FillingVersionSpec | undefined;
+      let versionSpec: FillingRecipeVariationSpec | undefined;
       if (options.version) {
-        const versionResult = Converters.fillingVersionSpec.convert(options.version);
+        const versionResult = Converters.fillingRecipeVariationSpec.convert(options.version);
         if (versionResult.isFailure()) {
           console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
           process.exit(1);

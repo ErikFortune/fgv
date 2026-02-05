@@ -4,7 +4,7 @@
 
 Materialized journal entry for confection edits.
 
-**Extends:** [`IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionVersionId, IConfectionEditJournalEntryEntity>`](IJournalEntryBase.md)
+**Extends:** [`IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionRecipeVariationId, IConfectionEditJournalEntryEntity>`](IJournalEntryBase.md)
 
 ## Properties
 
@@ -87,7 +87,7 @@ Timestamp when this entry was created (ISO 8601 format)
 
 </td><td>
 
-[ConfectionVersionId](../type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](../type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 
@@ -155,7 +155,7 @@ Resolved updated version if modifications were made
 
 </td><td>
 
-[ConfectionVersionId](../type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](../type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 

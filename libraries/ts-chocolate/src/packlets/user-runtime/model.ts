@@ -28,8 +28,8 @@ import { Result } from '@fgv/ts-utils';
 import {
   BaseJournalId,
   CollectionId,
-  ConfectionVersionId,
-  FillingVersionId,
+  ConfectionRecipeVariationId,
+  FillingRecipeVariationId,
   JournalId,
   SessionId,
   Model as CommonModel
@@ -129,7 +129,7 @@ export interface IFillingEditJournalEntry
   extends IJournalEntryBase<
     IFillingRecipe,
     IFillingRecipeVersion,
-    FillingVersionId,
+    FillingRecipeVariationId,
     IFillingEditJournalEntryEntity
   > {}
 
@@ -141,7 +141,7 @@ export interface IConfectionEditJournalEntry
   extends IJournalEntryBase<
     IConfectionBase,
     IConfectionVersionBase,
-    ConfectionVersionId,
+    ConfectionRecipeVariationId,
     IConfectionEditJournalEntryEntity
   > {}
 
@@ -153,7 +153,7 @@ export interface IFillingProductionJournalEntry
   extends IJournalEntryBase<
     IFillingRecipe,
     IFillingRecipeVersion,
-    FillingVersionId,
+    FillingRecipeVariationId,
     IFillingProductionJournalEntryEntity
   > {}
 
@@ -165,7 +165,7 @@ export interface IConfectionProductionJournalEntry
   extends IJournalEntryBase<
     IConfectionBase,
     IConfectionVersionBase,
-    ConfectionVersionId,
+    ConfectionRecipeVariationId,
     IConfectionProductionJournalEntryEntity
   > {}
 
@@ -286,7 +286,7 @@ export interface IUserLibraryRuntime {
    * @returns Result with the created persisted session
    */
   createFillingSession(
-    versionId: FillingVersionId,
+    versionId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
   ): Result<IFillingSessionEntity>;
 

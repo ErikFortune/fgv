@@ -51,12 +51,12 @@ import {
   ConfectionId,
   ConfectionName,
   ConfectionType,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationSpec,
   DegreesMacMichael,
   FillingId,
   FillingName,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   FluidityStars,
   IngredientCategory,
   IngredientId,
@@ -372,12 +372,12 @@ export interface IFillingRecipeVersion {
   /**
    * Qualified identifier for this version (recipeId\@versionSpec).
    */
-  readonly versionId: FillingVersionId;
+  readonly versionId: FillingRecipeVariationId;
 
   /**
    * Version spec portion of the identifier.
    */
-  readonly versionSpec: FillingVersionSpec;
+  readonly versionSpec: FillingRecipeVariationSpec;
 
   /**
    * Date this version was created (ISO 8601 format).
@@ -606,7 +606,7 @@ export interface IFillingRecipe {
   /**
    * The ID of the golden (approved default) version.
    */
-  readonly goldenVersionSpec: FillingVersionSpec;
+  readonly goldenVersionSpec: FillingRecipeVariationSpec;
 
   // ---- Version navigation (resolved) ----
 
@@ -621,11 +621,11 @@ export interface IFillingRecipe {
   readonly versions: ReadonlyArray<IFillingRecipeVersion>;
 
   /**
-   * Gets a specific version by {@link FillingVersionSpec | version specifier}.
+   * Gets a specific version by {@link FillingRecipeVariationSpec | version specifier}.
    * @param versionSpec - The version specifier to find
    * @returns Success with RuntimeFillingRecipeVersion, or Failure if not found
    */
-  getVersion(versionSpec: FillingVersionSpec): Result<IFillingRecipeVersion>;
+  getVersion(versionSpec: FillingRecipeVariationSpec): Result<IFillingRecipeVersion>;
 
   /**
    * Gets the latest version (by created date).
@@ -1063,7 +1063,7 @@ export interface IConfectionBase<
   readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   /** The ID of the golden (approved default) version */
-  readonly goldenVersionSpec: ConfectionVersionSpec;
+  readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
 
   // ---- Version navigation ----
 
@@ -1082,7 +1082,7 @@ export interface IConfectionBase<
    * @param versionSpec - The version specifier to find
    * @returns Success with runtime version, or Failure if not found
    */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
+  getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion>;
 
   // ---- Effective tags/urls (merged from base + version) ----
 
@@ -1384,7 +1384,7 @@ export interface IConfectionVersionBase<
   /**
    * Version specifier for this version.
    */
-  readonly versionSpec: ConfectionVersionSpec;
+  readonly versionSpec: ConfectionRecipeVariationSpec;
 
   /**
    * Date this version was created (ISO 8601 format).

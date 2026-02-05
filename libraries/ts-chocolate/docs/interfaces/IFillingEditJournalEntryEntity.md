@@ -4,7 +4,7 @@
 
 Journal entry for filling recipe edits.
 
-**Extends:** [`IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId>`](IJournalEntryEntityBase.md)
+**Extends:** [`IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId>`](IJournalEntryEntityBase.md)
 
 ## Properties
 
@@ -87,7 +87,7 @@ Timestamp when this entry was created (ISO 8601 format)
 
 </td><td>
 
-[FillingVersionId](../type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](../type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 
@@ -138,7 +138,7 @@ Full updated version if modifications were made
 
 </td><td>
 
-[FillingVersionId](../type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](../type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 

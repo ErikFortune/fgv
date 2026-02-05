@@ -7,5 +7,5 @@ Filling version ID that was produced
 **Signature:**
 
 ```typescript
-readonly versionId: FillingVersionId;
+readonly versionId: FillingRecipeVariationId;
 ```

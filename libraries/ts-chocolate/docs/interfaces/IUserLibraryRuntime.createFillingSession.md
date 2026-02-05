@@ -8,14 +8,14 @@ The session is created and persisted immediately.
 **Signature:**
 
 ```typescript
-createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+createFillingSession(versionId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionId</td><td>FillingVersionId</td><td>Source filling version to create session for</td></tr>
+<tr><td>versionId</td><td>FillingRecipeVariationId</td><td>Source filling version to create session for</td></tr>
 <tr><td>options</td><td>ICreateFillingSessionOptions</td><td>Creation options including target collection</td></tr>
 </tbody></table>
 

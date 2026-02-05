@@ -43,14 +43,14 @@ import {
   ConfectionId,
   ConfectionName,
   ConfectionType,
-  ConfectionVersionId,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   DegreesMacMichael,
   FillingCategory,
   FillingId,
   FillingName,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   FluidityStars,
   IngredientCategory,
   IngredientId,
@@ -103,7 +103,7 @@ import {
   IMeasurementUnitOption,
   IOptionsWithPreferred,
   IRefWithNotes,
-  VERSION_ID_SEPARATOR,
+  VARIATION_ID_SEPARATOR,
   ICategorizedNote
 } from './model';
 import {
@@ -116,10 +116,10 @@ import {
   toBaseJournalId,
   toCelsius,
   toConfectionName,
-  toConfectionVersionSpec,
+  toConvectionRecipeVariationSpec,
   toDegreesMacMichael,
   toFillingName,
-  toFillingVersionSpec,
+  toFillingRecipeVariationSpec,
   toMeasurement,
   toMillimeters,
   toMinutes,
@@ -396,39 +396,38 @@ export const parsedJournalId: Converter<ParsedJournalId> = Converters.compositeI
 export const fillingName: Converter<FillingName> = Converters.generic(toFillingName);
 
 /**
- * Converter for {@link FillingVersionSpec | FillingVersionSpec}.
+ * Converter for {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}.
  * @public
  */
-export const fillingVersionSpec: Converter<FillingVersionSpec> = Converters.generic(toFillingVersionSpec);
-
-/**
- * Converter for {@link FillingVersionId | FillingVersionId} (composite string).
- * Accepts either a {@link FillingVersionId | FillingVersionId} string or a `CompositeId` object representation.
- * @public
- */
-export const fillingVersionId: Converter<FillingVersionId> = Converters.compositeIdString(
-  CommonValidators.fillingVersionId,
-  fillingId,
-  VERSION_ID_SEPARATOR,
-  fillingVersionSpec
+export const fillingRecipeVariationSpec: Converter<FillingRecipeVariationSpec> = Converters.generic(
+  toFillingRecipeVariationSpec
 );
 
 /**
- * Type alias for parsed {@link FillingVersionId | FillingVersionId} components.
+ * Converter for {@link FillingRecipeVariationId | FillingRecipeVariationId} (composite string).
+ * Accepts either a {@link FillingRecipeVariationId | FillingRecipeVariationId} string or a `CompositeId` object representation.
  * @public
  */
-export type ParsedFillingVersionId = Converters.ICompositeId<FillingId, FillingVersionSpec>;
+export const fillingRecipeVariationId: Converter<FillingRecipeVariationId> = Converters.compositeIdString(
+  CommonValidators.fillingRecipeVariationId,
+  fillingId,
+  VARIATION_ID_SEPARATOR,
+  fillingRecipeVariationSpec
+);
 
 /**
- * Converter that parses a {@link FillingVersionId | FillingVersionId} string into its component parts
+ * Type alias for parsed {@link FillingRecipeVariationId | FillingRecipeVariationId} components.
+ * @public
+ */
+export type ParsedFillingRecipeVariationId = Converters.ICompositeId<FillingId, FillingRecipeVariationSpec>;
+
+/**
+ * Converter that parses a {@link FillingRecipeVariationId | FillingRecipeVariationId} string into its component parts
  * or validates a `CompositeId` object representation.
  * @public
  */
-export const parsedFillingVersionId: Converter<ParsedFillingVersionId> = Converters.compositeId(
-  fillingId,
-  VERSION_ID_SEPARATOR,
-  fillingVersionSpec
-);
+export const parsedFillingRecipeVariationId: Converter<ParsedFillingRecipeVariationId> =
+  Converters.compositeId(fillingId, VARIATION_ID_SEPARATOR, fillingRecipeVariationSpec);
 
 /**
  * Converter for {@link SessionSpec | SessionSpec}.
@@ -501,40 +500,42 @@ export const parsedConfectionId: Converter<ParsedConfectionId> = Converters.comp
 export const confectionName: Converter<ConfectionName> = Converters.generic(toConfectionName);
 
 /**
- * Converter for {@link ConfectionVersionSpec | ConfectionVersionSpec}.
+ * Converter for {@link ConfectionRecipeVariationSpec | ConfectionRecipeVar}.
  * @public
  */
-export const confectionVersionSpec: Converter<ConfectionVersionSpec> =
-  Converters.generic(toConfectionVersionSpec);
-
-/**
- * Converter for {@link ConfectionVersionId | ConfectionVersionId} (composite string).
- * Accepts either a {@link ConfectionVersionId | ConfectionVersionId} string or a `CompositeId` object representation.
- * @public
- */
-export const confectionVersionId: Converter<ConfectionVersionId> = Converters.compositeIdString(
-  CommonValidators.confectionVersionId,
-  confectionId,
-  VERSION_ID_SEPARATOR,
-  confectionVersionSpec
+export const confectionRecipeVariationSpec: Converter<ConfectionRecipeVariationSpec> = Converters.generic(
+  toConvectionRecipeVariationSpec
 );
 
 /**
- * Type alias for parsed {@link ConfectionVersionId | ConfectionVersionId} components.
+ * Converter for {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId} (composite string).
+ * Accepts either a {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId} string or a `CompositeId` object representation.
  * @public
  */
-export type ParsedConfectionVersionId = Converters.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+export const confectionRecipeVariationId: Converter<ConfectionRecipeVariationId> =
+  Converters.compositeIdString(
+    CommonValidators.confectionRecipeVariationId,
+    confectionId,
+    VARIATION_ID_SEPARATOR,
+    confectionRecipeVariationSpec
+  );
 
 /**
- * Converter that parses a {@link ConfectionVersionId | ConfectionVersionId} string into its component parts
+ * Type alias for parsed {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId} components.
+ * @public
+ */
+export type ParsedConfectionRecipeVariationId = Converters.ICompositeId<
+  ConfectionId,
+  ConfectionRecipeVariationSpec
+>;
+
+/**
+ * Converter that parses a {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId} string into its component parts
  * or validates a `CompositeId` object representation.
  * @public
  */
-export const parsedConfectionVersionId: Converter<ParsedConfectionVersionId> = Converters.compositeId(
-  confectionId,
-  VERSION_ID_SEPARATOR,
-  confectionVersionSpec
-);
+export const parsedConfectionRecipeVariationId: Converter<ParsedConfectionRecipeVariationId> =
+  Converters.compositeId(confectionId, VARIATION_ID_SEPARATOR, confectionRecipeVariationSpec);
 
 // ============================================================================
 // Numeric Converters

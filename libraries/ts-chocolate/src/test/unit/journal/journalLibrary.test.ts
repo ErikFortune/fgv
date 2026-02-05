@@ -24,8 +24,8 @@ import { FileTree } from '@fgv/ts-json-base';
 import { JournalLibrary } from '../../../packlets/entities';
 import {
   FillingId,
-  FillingVersionId,
-  FillingVersionSpec,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   Measurement,
   Converters as CommonConverters,
   Helpers as CommonHelpers
@@ -45,16 +45,16 @@ describe('JournalLibrary (Collection-Based)', () => {
     type: 'filling-production',
     baseId: CommonConverters.baseJournalId.convert(baseId).orThrow(),
     timestamp,
-    versionId: CommonConverters.fillingVersionId.convert(versionId).orThrow(),
+    versionId: CommonConverters.fillingRecipeVariationId.convert(versionId).orThrow(),
     recipe: {
-      versionSpec: '2026-01-01-01' as FillingVersionSpec,
+      versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [],
       baseWeight: 300 as Measurement
     },
     yield: 600 as Measurement,
     produced: {
-      versionId: versionId as FillingVersionId,
+      versionId: versionId as FillingRecipeVariationId,
       scaleFactor: 2,
       targetWeight: 600 as Measurement,
       ingredients: []
@@ -224,7 +224,9 @@ describe('JournalLibrary (Collection-Based)', () => {
 
       const lib = createLibraryWithJournals([journal1, journal2, journal3]);
 
-      const results = lib.getJournalsForFillingVersion('source.recipe-a@2026-01-01-01' as FillingVersionId);
+      const results = lib.getJournalsForFillingVersion(
+        'source.recipe-a@2026-01-01-01' as FillingRecipeVariationId
+      );
       expect(results).toHaveLength(2);
       expect(results.map((j) => j.baseId)).toContain(journal1.baseId);
       expect(results.map((j) => j.baseId)).toContain(journal2.baseId);
@@ -234,7 +236,9 @@ describe('JournalLibrary (Collection-Based)', () => {
       const journal = makeFillingJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
       const lib = createLibraryWithJournals([journal]);
 
-      const results = lib.getJournalsForFillingVersion('source.recipe-a@2026-99-99-99' as FillingVersionId);
+      const results = lib.getJournalsForFillingVersion(
+        'source.recipe-a@2026-99-99-99' as FillingRecipeVariationId
+      );
       expect(results).toHaveLength(0);
     });
   });

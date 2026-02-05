@@ -185,65 +185,65 @@ Gets the base ID from a composite SessionId | SessionId.
 </td></tr>
 <tr><td>
 
-[createFillingVersionId](./functions/createFillingVersionId.md)
+[createFillingRecipeVariationId](./functions/createFillingRecipeVariationId.md)
 
 </td><td>
 
-Creates a composite FillingVersionId from filling ID and version spec
+Creates a composite FillingRecipeVariationId | FillingRecipeVariationId from
 
 </td></tr>
 <tr><td>
 
-[parseFillingVersionId](./functions/parseFillingVersionId.md)
+[parseFillingRecipeVariationId](./functions/parseFillingRecipeVariationId.md)
 
 </td><td>
 
-Parses a composite FillingVersionId into its component parts
+Parses a composite FillingRecipeVariationId | FillingRecipeVariationId into its component parts
 
 </td></tr>
 <tr><td>
 
-[getFillingVersionFillingId](./functions/getFillingVersionFillingId.md)
+[getFillingRecipeVariationFillingId](./functions/getFillingRecipeVariationFillingId.md)
 
 </td><td>
 
-Gets the filling ID from a composite FillingVersionId
+Gets the filling ID from a composite FillingRecipeVariationId | FillingRecipeVariationId
 
 </td></tr>
 <tr><td>
 
-[getFillingVersionSpec](./functions/getFillingVersionSpec.md)
+[getFillingRecipeVariationSpec](./functions/getFillingRecipeVariationSpec.md)
 
 </td><td>
 
-Gets the version spec from a composite FillingVersionId
+Gets the variation spec from a composite FillingRecipeVariationId | FillingRecipeVariationId
 
 </td></tr>
 <tr><td>
 
-[createConfectionVersionId](./functions/createConfectionVersionId.md)
+[createConfectionRecipeVariationId](./functions/createConfectionRecipeVariationId.md)
 
 </td><td>
 
-Creates and validates a confection version ID from component parts.
+Creates and validates a ConfectionRecipeVariationId | confection variation ID
 
 </td></tr>
 <tr><td>
 
-[parseConfectionVersionId](./functions/parseConfectionVersionId.md)
+[parseConfectionRecipeVariationId](./functions/parseConfectionRecipeVariationId.md)
 
 </td><td>
 
-Parses a composite ConfectionVersionId into its component parts
+Parses a composite ConfectionRecipeVariationId | ConfectionRecipeVariationId into its component parts
 
 </td></tr>
 <tr><td>
 
-[createFillingVersionIdValidated](./functions/createFillingVersionIdValidated.md)
+[createFillingRecipeVariationIdValidated](./functions/createFillingRecipeVariationIdValidated.md)
 
 </td><td>
 
-Creates and validates a filling version ID from component parts.
+Creates and validates a FillingRecipeVariationId | filling variation ID from component parts.
 
 </td></tr>
 <tr><td>

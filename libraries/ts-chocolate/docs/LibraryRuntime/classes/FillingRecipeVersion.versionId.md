@@ -7,5 +7,5 @@ Qualified identifier for this version (fillingId@versionSpec).
 **Signature:**
 
 ```typescript
-readonly versionId: FillingVersionId;
+readonly versionId: FillingRecipeVariationId;
 ```

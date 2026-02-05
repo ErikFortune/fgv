@@ -2,19 +2,19 @@
 
 ## IFillingRecipe.getVersion() method
 
-Gets a specific version by FillingVersionSpec | version specifier.
+Gets a specific version by FillingRecipeVariationSpec | version specifier.
 
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: FillingVersionSpec): Result<IFillingRecipeVersion>;
+getVersion(versionSpec: FillingRecipeVariationSpec): Result<IFillingRecipeVersion>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionSpec</td><td>FillingVersionSpec</td><td>The version specifier to find</td></tr>
+<tr><td>versionSpec</td><td>FillingRecipeVariationSpec</td><td>The version specifier to find</td></tr>
 </tbody></table>
 
 **Returns:**

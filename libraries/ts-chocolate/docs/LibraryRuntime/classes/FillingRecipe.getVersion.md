@@ -7,14 +7,14 @@ Gets a specific version by ID.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion>;
+getVersion(versionSpec: FillingRecipeVariationSpec): Result<FillingRecipeVersion>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>versionSpec</td><td>FillingVersionSpec</td><td>The version ID to find</td></tr>
+<tr><td>versionSpec</td><td>FillingRecipeVariationSpec</td><td>The version ID to find</td></tr>
 </tbody></table>
 
 **Returns:**

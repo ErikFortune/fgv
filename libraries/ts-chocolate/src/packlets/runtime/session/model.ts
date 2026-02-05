@@ -26,9 +26,9 @@
 import {
   ChocolateRole,
   ConfectionId,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationSpec,
   FillingId,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   Measurement,
   IngredientId,
   MoldId,
@@ -101,7 +101,7 @@ export interface ISaveVersionOptions {
   /**
    * Version spec for the new version
    */
-  readonly versionSpec: FillingVersionSpec;
+  readonly versionSpec: FillingRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the recipe
@@ -117,7 +117,7 @@ export interface ISaveAlternativesOptions {
   /**
    * Version spec for the updated version
    */
-  readonly versionSpec: FillingVersionSpec;
+  readonly versionSpec: FillingRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the recipe
@@ -143,7 +143,7 @@ export interface ISaveNewRecipeOptions {
   /**
    * Version spec for the new recipe's first version
    */
-  readonly versionSpec: FillingVersionSpec;
+  readonly versionSpec: FillingRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the recipe
@@ -159,7 +159,7 @@ export interface ISaveConfectionVersionOptions {
   /**
    * Version spec for the new version
    */
-  readonly versionSpec: ConfectionVersionSpec;
+  readonly versionSpec: ConfectionRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the confection
@@ -180,7 +180,7 @@ export interface ISaveNewConfectionOptions {
   /**
    * Version spec for the new confection's first version
    */
-  readonly versionSpec: ConfectionVersionSpec;
+  readonly versionSpec: ConfectionRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the confection
@@ -206,7 +206,7 @@ export interface ISaveOptions {
   /**
    * Version label for the new version (required if createNewVersion is true)
    */
-  readonly versionLabel?: FillingVersionSpec;
+  readonly versionLabel?: FillingRecipeVariationSpec;
 
   /**
    * Optional notes for the journal record
@@ -233,7 +233,7 @@ export interface ISaveResult {
   /**
    * The new version spec if one was created
    */
-  readonly newVersionSpec?: FillingVersionSpec | ConfectionVersionSpec;
+  readonly newVersionSpec?: FillingRecipeVariationSpec | ConfectionRecipeVariationSpec;
 }
 
 // ============================================================================
@@ -463,7 +463,7 @@ export interface IConfectionSaveOptions {
   /**
    * Version label for the new version (required if createNewVersion is true)
    */
-  readonly versionLabel?: ConfectionVersionSpec;
+  readonly versionLabel?: ConfectionRecipeVariationSpec;
 
   /**
    * Optional notes for the journal record
@@ -494,7 +494,7 @@ export interface IConfectionSaveResult {
   /**
    * The new version spec if one was created
    */
-  readonly newVersionSpec?: ConfectionVersionSpec;
+  readonly newVersionSpec?: ConfectionRecipeVariationSpec;
 
   /**
    * Journal IDs of linked recipe sessions that were saved

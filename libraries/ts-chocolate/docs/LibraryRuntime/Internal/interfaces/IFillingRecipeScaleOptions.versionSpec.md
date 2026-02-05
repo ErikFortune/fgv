@@ -7,5 +7,5 @@ Filling recipe version to scale (default: golden version)
 **Signature:**
 
 ```typescript
-readonly versionSpec: FillingVersionSpec;
+readonly versionSpec: FillingRecipeVariationSpec;
 ```

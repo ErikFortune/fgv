@@ -27,7 +27,7 @@ import {
   IngredientId,
   FillingId,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   CollectionId
 } from '../../../packlets/common';
 
@@ -46,7 +46,7 @@ describe('FillingsLibrary', () => {
   // ============================================================================
 
   const testRecipeVersion: IFillingRecipeVersionEntity = {
-    versionSpec: '2026-01-01-01' as FillingVersionSpec,
+    versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     createdDate: '2026-01-01',
     ingredients: [
       { ingredient: { ids: ['felchlin.maracaibo-65' as IngredientId] }, amount: 100 as Measurement },
@@ -63,7 +63,7 @@ describe('FillingsLibrary', () => {
     description: 'A test ganache recipe',
     tags: ['test', 'dark'],
     versions: [testRecipeVersion],
-    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec
+    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
   };
 
   const testRecipe = testRecipeData;

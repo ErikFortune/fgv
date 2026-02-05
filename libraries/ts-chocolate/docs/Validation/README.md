@@ -216,38 +216,38 @@ Validates unknown value is a ConfectionName | ConfectionName.
 </td></tr>
 <tr><td>
 
-[isValidFillingVersionSpec](./functions/isValidFillingVersionSpec.md)
+[isValidFillingRecipeVariationSpec](./functions/isValidFillingRecipeVariationSpec.md)
 
 </td><td>
 
-Type guard for FillingVersionSpec | FillingVersionSpec.
+Type guard for FillingRecipeVariationSpec | FillingRecipeVariationSpec.
 
 </td></tr>
 <tr><td>
 
-[toFillingVersionSpec](./functions/toFillingVersionSpec.md)
+[toFillingRecipeVariationSpec](./functions/toFillingRecipeVariationSpec.md)
 
 </td><td>
 
-Validates unknown value is a FillingVersionSpec | FillingVersionSpec.
+Validates unknown value is a FillingRecipeVariationSpec | FillingRecipeVariationSpec.
 
 </td></tr>
 <tr><td>
 
-[isValidConfectionVersionSpec](./functions/isValidConfectionVersionSpec.md)
+[isValidConfectionRecipeVariationSpec](./functions/isValidConfectionRecipeVariationSpec.md)
 
 </td><td>
 
-Type guard for ConfectionVersionSpec | ConfectionVersionSpec.
+Type guard for ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec.
 
 </td></tr>
 <tr><td>
 
-[toConfectionVersionSpec](./functions/toConfectionVersionSpec.md)
+[toConvectionRecipeVariationSpec](./functions/toConvectionRecipeVariationSpec.md)
 
 </td><td>
 
-Validates unknown value is a ConfectionVersionSpec | ConfectionVersionSpec.
+Validates unknown value is a ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec.
 
 </td></tr>
 <tr><td>

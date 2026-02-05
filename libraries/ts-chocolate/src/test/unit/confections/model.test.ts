@@ -23,7 +23,7 @@ import { Confections } from '../../../packlets/entities';
 import {
   BaseConfectionId,
   ConfectionName,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationSpec,
   IngredientId,
   MoldId,
   FillingId,
@@ -38,7 +38,7 @@ describe('Confections model', () => {
   // ============================================================================
 
   const moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity = {
-    versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    versionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Basic dome bonbon with dark ganache filling' }
@@ -73,12 +73,12 @@ describe('Confections model', () => {
     name: 'Classic Dark Dome Bonbon' as ConfectionName,
     description: 'Traditional molded dark chocolate bonbon with dome shape',
     tags: ['classic', 'dark', 'molded', 'dome'],
-    goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     versions: [moldedBonBonVersion]
   };
 
   const barTruffleVersion: Confections.IBarTruffleVersionEntity = {
-    versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    versionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Standard 25mm square bar truffles' }
@@ -118,12 +118,12 @@ describe('Confections model', () => {
     name: 'Classic Dark Bar Truffle' as ConfectionName,
     description: 'Ganache slab cut into squares and enrobed',
     tags: ['classic', 'dark', 'bar', 'enrobed'],
-    goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     versions: [barTruffleVersion]
   };
 
   const rolledTruffleVersion: Confections.IRolledTruffleVersionEntity = {
-    versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    versionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Traditional rolled truffle with cocoa coating' }
@@ -154,7 +154,7 @@ describe('Confections model', () => {
     name: 'Classic Cocoa-Dusted Truffle' as ConfectionName,
     description: 'Hand-rolled ganache truffle dusted with cocoa powder',
     tags: ['classic', 'dark', 'rolled', 'cocoa'],
-    goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     versions: [rolledTruffleVersion]
   };
 

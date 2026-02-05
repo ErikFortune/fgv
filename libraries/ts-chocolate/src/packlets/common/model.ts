@@ -92,24 +92,24 @@ export const BASE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+$/;
 export const COMPOSITE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
 
 /**
- * Pattern for valid filling version specs
+ * Pattern for valid filling variation specs
  * Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
  * @public
  */
-export const FILLING_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+export const FILLING_RECIPE_VARIATION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
 
 /**
- * Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
+ * Separator character used in filling variation IDs (between FillingId and FillingVariationSpec)
  * @public
  */
-export const VERSION_ID_SEPARATOR: string = '@';
+export const VARIATION_ID_SEPARATOR: string = '@';
 
 /**
- * Pattern for valid filling version IDs
- * Format: fillingId\@versionSpec where fillingId is collectionId.baseFillingId
+ * Pattern for valid filling variation IDs
+ * Format: fillingId\@variationSpec where fillingId is collectionId.baseFillingId
  * @public
  */
-export const FILLING_VERSION_ID_PATTERN: RegExp =
+export const FILLING_RECIPE_VARIATION_ID_PATTERN: RegExp =
   /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
 
 /**
@@ -153,19 +153,19 @@ export const BASE_JOURNAL_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f
 export const JOURNAL_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
 
 /**
- * Pattern for valid confection version specs
+ * Pattern for valid confection variation specs
  * Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
- * Same pattern as recipe version specs
+ * Same pattern as recipe variation specs
  * @public
  */
-export const CONFECTION_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+export const CONFECTION_RECIPE_VARIATION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
 
 /**
- * Pattern for valid confection version IDs
- * Format: confectionId\@versionSpec where confectionId is collectionId.baseConfectionId
+ * Pattern for valid confection variation IDs
+ * Format: confectionId\@variationSpec where confectionId is collectionId.baseConfectionId
  * @public
  */
-export const CONFECTION_VERSION_ID_PATTERN: RegExp =
+export const CONFECTION_RECIPE_VARIATION_ID_PATTERN: RegExp =
   /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
 
 // ============================================================================

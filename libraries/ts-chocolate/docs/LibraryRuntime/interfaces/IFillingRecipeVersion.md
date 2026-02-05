@@ -42,7 +42,7 @@ Description
 
 </td><td>
 
-[FillingVersionId](../../type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](../../type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 
@@ -59,7 +59,7 @@ Qualified identifier for this version (recipeId@versionSpec).
 
 </td><td>
 
-[FillingVersionSpec](../../type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](../../type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 

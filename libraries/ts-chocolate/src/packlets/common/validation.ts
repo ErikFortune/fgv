@@ -27,8 +27,8 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BASE_ID_PATTERN,
-  CONFECTION_VERSION_SPEC_PATTERN,
-  FILLING_VERSION_SPEC_PATTERN,
+  CONFECTION_RECIPE_VARIATION_SPEC_PATTERN,
+  FILLING_RECIPE_VARIATION_SPEC_PATTERN,
   IHasId,
   IIdsWithPreferred,
   IOptionsWithPreferred,
@@ -47,10 +47,10 @@ import {
   BaseTaskId,
   Celsius,
   ConfectionName,
-  ConfectionVersionSpec,
+  ConfectionRecipeVariationSpec,
   DegreesMacMichael,
   FillingName,
-  FillingVersionSpec,
+  FillingRecipeVariationSpec,
   BaseJournalId,
   JournalId,
   Measurement,
@@ -352,54 +352,54 @@ export function toConfectionName(from: unknown): Result<ConfectionName> {
 }
 
 /**
- * Type guard for {@link FillingVersionSpec | FillingVersionSpec}.
+ * Type guard for {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}.
  * @param from - Value to check
- * @returns `true` if the value is a valid {@link FillingVersionSpec | FillingVersionSpec}.
+ * @returns `true` if the value is a valid {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}.
  * @public
  */
-export function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec {
-  return typeof from === 'string' && FILLING_VERSION_SPEC_PATTERN.test(from);
+export function isValidFillingRecipeVariationSpec(from: unknown): from is FillingRecipeVariationSpec {
+  return typeof from === 'string' && FILLING_RECIPE_VARIATION_SPEC_PATTERN.test(from);
 }
 
 /**
- * Validates unknown value is a {@link FillingVersionSpec | FillingVersionSpec}.
+ * Validates unknown value is a {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec}.
  * @param from - Value to validate
- * @returns `Success` with {@link FillingVersionSpec | FillingVersionSpec} or `Failure` with an error
+ * @returns `Success` with {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec} or `Failure` with an error
  * message if validation fails.
  * @public
  */
-export function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec> {
-  if (isValidFillingVersionSpec(from)) {
+export function toFillingRecipeVariationSpec(from: unknown): Result<FillingRecipeVariationSpec> {
+  if (isValidFillingRecipeVariationSpec(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid FillingVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+    'Invalid FillingRecipeVariationSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
   );
 }
 
 /**
- * Type guard for {@link ConfectionVersionSpec | ConfectionVersionSpec}.
+ * Type guard for {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec}.
  * @param from - Value to check
- * @returns `true` if the value is a valid {@link ConfectionVersionSpec | ConfectionVersionSpec}.
+ * @returns `true` if the value is a valid {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec}.
  * @public
  */
-export function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionSpec {
-  return typeof from === 'string' && CONFECTION_VERSION_SPEC_PATTERN.test(from);
+export function isValidConfectionRecipeVariationSpec(from: unknown): from is ConfectionRecipeVariationSpec {
+  return typeof from === 'string' && CONFECTION_RECIPE_VARIATION_SPEC_PATTERN.test(from);
 }
 
 /**
- * Validates unknown value is a {@link ConfectionVersionSpec | ConfectionVersionSpec}.
+ * Validates unknown value is a {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec}.
  * @param from - Value to validate
- * @returns `Success` with {@link ConfectionVersionSpec | ConfectionVersionSpec} or `Failure` with an error
+ * @returns `Success` with {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec} or `Failure` with an error
  * message if validation fails.
  * @public
  */
-export function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec> {
-  if (isValidConfectionVersionSpec(from)) {
+export function toConvectionRecipeVariationSpec(from: unknown): Result<ConfectionRecipeVariationSpec> {
+  if (isValidConfectionRecipeVariationSpec(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid ConfectionVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+    'Invalid ConfectionRecipeVariationSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
   );
 }
 

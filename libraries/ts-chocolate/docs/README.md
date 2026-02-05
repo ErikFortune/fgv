@@ -350,11 +350,11 @@ Non-unique filling recipe name used for display and grouping
 </td></tr>
 <tr><td>
 
-[FillingVersionSpec](./type-aliases/FillingVersionSpec.md)
+[FillingRecipeVariationSpec](./type-aliases/FillingRecipeVariationSpec.md)
 
 </td><td>
 
-Specifier for a filling recipe version within a filling recipe
+Specifier for a filling recipe variation within a filling recipe
 
 </td></tr>
 <tr><td>
@@ -368,11 +368,11 @@ Unique identifier for an indexer in the reverse index system
 </td></tr>
 <tr><td>
 
-[FillingVersionId](./type-aliases/FillingVersionId.md)
+[FillingRecipeVariationId](./type-aliases/FillingRecipeVariationId.md)
 
 </td><td>
 
-Globally unique filling recipe version identifier (composite)
+Globally unique filling recipe variation identifier (composite)
 
 </td></tr>
 <tr><td>
@@ -422,20 +422,20 @@ Non-unique confection name used for display
 </td></tr>
 <tr><td>
 
-[ConfectionVersionSpec](./type-aliases/ConfectionVersionSpec.md)
+[ConfectionRecipeVariationSpec](./type-aliases/ConfectionRecipeVariationSpec.md)
 
 </td><td>
 
-Specifier for a confection version within a confection
+Specifier for a recipe variation within a confection
 
 </td></tr>
 <tr><td>
 
-[ConfectionVersionId](./type-aliases/ConfectionVersionId.md)
+[ConfectionRecipeVariationId](./type-aliases/ConfectionRecipeVariationId.md)
 
 </td><td>
 
-Globally unique confection version identifier (composite)
+Globally unique confection variation identifier (composite)
 
 </td></tr>
 <tr><td>
