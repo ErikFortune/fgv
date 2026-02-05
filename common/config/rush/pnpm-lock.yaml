@@ -269,6 +269,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.28.2(@types/node@20.19.30)
@@ -1416,6 +1419,21 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  ../../plugins/typedoc-compact-theme:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.30
+      typedoc:
+        specifier: ~0.28.16
+        version: 0.28.16(typescript@5.9.3)
+      typedoc-plugin-markdown:
+        specifier: ~4.9.0
+        version: 4.9.0(typedoc@0.28.16)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   ../../rigs/heft-dual-rig:
     dependencies:
       '@rushstack/heft':
@@ -1424,6 +1442,10 @@ importers:
       '@rushstack/heft-node-rig':
         specifier: 2.11.12
         version: 2.11.12(@rushstack/heft@1.1.7)(@types/node@20.19.30)
+    devDependencies:
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
 
   ../../tools/chocolate-cli:
     dependencies:

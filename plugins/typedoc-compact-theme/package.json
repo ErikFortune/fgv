@@ -1,0 +1,29 @@
+{
+  "name": "@fgv/typedoc-compact-theme",
+  "version": "1.0.0",
+  "description": "A compact TypeDoc theme that renders API docs in table format similar to api-documenter",
+  "type": "module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf lib"
+  },
+  "keywords": [
+    "typedoc",
+    "theme",
+    "markdown",
+    "documentation"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "devDependencies": {
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0",
+    "typescript": "5.9.3",
+    "@types/node": "^20.14.9"
+  },
+  "peerDependencies": {
+    "typedoc": ">=0.28.0",
+    "typedoc-plugin-markdown": ">=4.0.0"
+  }
+}

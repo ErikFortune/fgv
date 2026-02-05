@@ -76,7 +76,8 @@
     "yaml": "~2.8.2",
     "@types/js-yaml": "~4.0.9",
     "typedoc": "~0.28.16",
-    "typedoc-plugin-markdown": "~4.9.0"
+    "typedoc-plugin-markdown": "~4.9.0",
+    "@fgv/typedoc-compact-theme": "workspace:*"
   },
   "repository": {
     "type": "git",

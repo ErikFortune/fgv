@@ -19,5 +19,8 @@
   "dependencies": {
     "@rushstack/heft-node-rig": "2.11.12",
     "@rushstack/heft": "1.1.7"
+  },
+  "devDependencies": {
+    "@fgv/typedoc-compact-theme": "workspace:*"
   }
 }

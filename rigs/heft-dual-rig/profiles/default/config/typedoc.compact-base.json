@@ -1,8 +1,8 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "plugin": ["typedoc-plugin-markdown"],
   "readme": "none",
   "excludePrivate": true,
+  "excludeProtected": true,
   "excludeInternal": true,
   "visibilityFilters": {
     "inherited": true,
@@ -10,18 +10,6 @@
   },
   "githubPages": false,
   "disableSources": true,
-  "sourceLinkTemplate": "https://github.com/ErikFortune/fgv/blob/main/{path}#L{line}",
-  "classPropertiesFormat": "table",
-  "interfacePropertiesFormat": "table",
-  "propertyMembersFormat": "table",
-  "typeDeclarationFormat": "table",
-  "parametersFormat": "table",
-  "enumMembersFormat": "table",
-  "tableColumnSettings": {
-    "hideInherited": true,
-    "hideSources": true,
-    "hideOverrides": true
-  },
   "externalSymbolLinkMappings": {
     "@fgv/ts-utils": {
       "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs"

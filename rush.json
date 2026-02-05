@@ -537,6 +537,12 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["tools", "cli"]
+    },
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "projectFolder": "plugins/typedoc-compact-theme",
+      "shouldPublish": false,
+      "tags": ["plugins", "typedoc"]
     }
   ]
 }
