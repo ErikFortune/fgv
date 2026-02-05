@@ -34,8 +34,7 @@ import {
   IResolvedCoatingOption,
   IResolvedConfectionProcedure,
   IRolledTruffle,
-  IRolledTruffleVersion,
-  IChocolateIngredient
+  IRolledTruffleVersion
 } from '../../model';
 import { ConfectionVersionBase } from './confectionVersionBase';
 
@@ -107,30 +106,16 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
       if (!spec) {
         this._resolvedEnrobingChocolate = null;
       } else {
-        const primaryId = spec.preferredId ?? spec.ids[0];
-        const primaryResult = this._context.ingredients.get(primaryId);
+        const resolved = this._context.ingredients.getWithAlternates(spec);
 
         /* c8 ignore next 3 - defensive */
-        if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
-          throw new Error(
-            `Failed to resolve enrobing chocolate ${primaryId} for confection ${this._confectionId}`
-          );
-        }
-
-        const chocolate = primaryResult.value;
-        const alternates: IChocolateIngredient[] = [];
-        for (const id of spec.ids) {
-          if (id !== primaryId) {
-            const altResult = this._context.ingredients.get(id);
-            if (altResult.isSuccess() && altResult.value.isChocolate()) {
-              alternates.push(altResult.value);
-            }
-          }
+        if (resolved.isFailure() || !resolved.value.primary.isChocolate()) {
+          throw new Error(`Failed to resolve enrobing chocolate for confection ${this._confectionId}`);
         }
 
         this._resolvedEnrobingChocolate = {
-          chocolate,
-          alternates,
+          chocolate: resolved.value.primary,
+          alternates: resolved.value.alternates.filter((i) => i.isChocolate()),
           entity: spec
         };
       }
@@ -147,25 +132,25 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
       if (!coatings) {
         this._resolvedCoatings = null;
       } else {
-        const resolvedOptions: IResolvedCoatingOption[] = [];
-        for (const id of coatings.ids) {
-          const ingredientResult = this._context.ingredients.get(id);
-          if (ingredientResult.isSuccess()) {
-            resolvedOptions.push({
-              id,
-              ingredient: ingredientResult.value
-            });
-          }
+        const resolved = this._context.ingredients.getWithAlternates(coatings);
+        if (resolved.isFailure()) {
+          this._resolvedCoatings = null;
+        } else {
+          const primaryId = coatings.preferredId ?? coatings.ids[0];
+          const resolvedOptions: IResolvedCoatingOption[] = [
+            { id: primaryId, ingredient: resolved.value.primary },
+            ...resolved.value.alternates.map((ingredient, idx) => ({
+              id: coatings.ids.filter((id) => id !== primaryId)[idx],
+              ingredient
+            }))
+          ];
+
+          this._resolvedCoatings = {
+            options: resolvedOptions,
+            preferred: { id: primaryId, ingredient: resolved.value.primary },
+            entity: coatings
+          };
         }
-
-        const preferredId = coatings.preferredId ?? coatings.ids[0];
-        const preferred = resolvedOptions.find((opt) => opt.id === preferredId);
-
-        this._resolvedCoatings = {
-          options: resolvedOptions,
-          preferred,
-          entity: coatings
-        };
       }
     }
     return this._resolvedCoatings ?? undefined;

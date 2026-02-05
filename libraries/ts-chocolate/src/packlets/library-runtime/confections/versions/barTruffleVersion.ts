@@ -32,8 +32,7 @@ import {
   IResolvedChocolateSpec,
   IResolvedConfectionProcedure,
   IBarTruffle,
-  IBarTruffleVersion,
-  IChocolateIngredient
+  IBarTruffleVersion
 } from '../../model';
 import { ConfectionVersionBase } from './confectionVersionBase';
 
@@ -119,30 +118,16 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
       if (!spec) {
         this._resolvedEnrobingChocolate = null;
       } else {
-        const primaryId = spec.preferredId ?? spec.ids[0];
-        const primaryResult = this._context.ingredients.get(primaryId);
+        const resolved = this._context.ingredients.getWithAlternates(spec);
 
         /* c8 ignore next 3 - defensive */
-        if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
-          throw new Error(
-            `Failed to resolve enrobing chocolate ${primaryId} for confection ${this._confectionId}`
-          );
-        }
-
-        const chocolate = primaryResult.value;
-        const alternates: IChocolateIngredient[] = [];
-        for (const id of spec.ids) {
-          if (id !== primaryId) {
-            const altResult = this._context.ingredients.get(id);
-            if (altResult.isSuccess() && altResult.value.isChocolate()) {
-              alternates.push(altResult.value);
-            }
-          }
+        if (resolved.isFailure() || !resolved.value.primary.isChocolate()) {
+          throw new Error(`Failed to resolve enrobing chocolate for confection ${this._confectionId}`);
         }
 
         this._resolvedEnrobingChocolate = {
-          chocolate,
-          alternates,
+          chocolate: resolved.value.primary,
+          alternates: resolved.value.alternates.filter((i) => i.isChocolate()),
           entity: spec
         };
       }

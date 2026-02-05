@@ -23,9 +23,42 @@
  * @packageDocumentation
  */
 
-import { Collections, Logging, Result, fail } from '@fgv/ts-utils';
+import { Collections, DetailedResult, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Model } from '../common';
 import { IFindOptions } from './indexers';
 import { IFindOrchestrator } from './validatingLibrary';
+
+/**
+ * Result of resolving an IIdsWithPreferred to materialized objects.
+ * @public
+ */
+export interface IResolvedWithAlternates<TMaterialized, TSpec> {
+  /** The primary/preferred materialized item */
+  readonly primary: TMaterialized;
+  /** All alternate materialized items (excluding primary) */
+  readonly alternates: ReadonlyArray<TMaterialized>;
+  /** The original specification entity */
+  readonly entity: TSpec;
+}
+
+/**
+ * Result of resolving an IOptionsWithPreferred (with notes) to materialized objects.
+ * @public
+ */
+export interface IResolvedRefWithAlternates<TId extends string, TMaterialized> {
+  /** The primary/preferred materialized item */
+  readonly primary: TMaterialized;
+  /** The ID of the primary item */
+  readonly primaryId: TId;
+  /** Notes associated with the primary reference, if any */
+  readonly primaryNotes?: ReadonlyArray<Model.ICategorizedNote>;
+  /** All alternate materialized items with their metadata */
+  readonly alternates: ReadonlyArray<{
+    readonly id: TId;
+    readonly item: TMaterialized;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+  }>;
+}
 
 /**
  * Parameters for constructing a MaterializedLibrary.
@@ -110,5 +143,152 @@ export class MaterializedLibrary<
    */
   public get hasFindSupport(): boolean {
     return this._orchestrator !== undefined;
+  }
+
+  // ============================================================================
+  // IIdsWithPreferred Resolution Helpers
+  // ============================================================================
+
+  /**
+   * Gets the preferred (or first) materialized item from an IIdsWithPreferred.
+   * @param spec - The IIdsWithPreferred specification
+   * @returns DetailedResult with the preferred materialized item
+   */
+  public getPreferred(
+    spec: Model.IIdsWithPreferred<TId>
+  ): DetailedResult<TMaterialized, Collections.ResultMapResultDetail> {
+    const primaryId = spec.preferredId ?? spec.ids[0];
+    if (!primaryId) {
+      return fail('No IDs provided in specification') as DetailedResult<
+        TMaterialized,
+        Collections.ResultMapResultDetail
+      >;
+    }
+    return this.get(primaryId);
+  }
+
+  /**
+   * Gets the preferred item and all alternates from an IIdsWithPreferred.
+   * Returns a structured result with the primary item, alternates array, and original entity.
+   *
+   * @param spec - The IIdsWithPreferred specification
+   * @returns Result with resolved primary, alternates, and entity
+   */
+  public getWithAlternates(
+    spec: Model.IIdsWithPreferred<TId>
+  ): Result<IResolvedWithAlternates<TMaterialized, Model.IIdsWithPreferred<TId>>> {
+    const primaryId = spec.preferredId ?? spec.ids[0];
+    if (!primaryId) {
+      return fail('No IDs provided in specification');
+    }
+
+    const primaryResult = this.get(primaryId);
+    if (primaryResult.isFailure()) {
+      return fail(`Failed to resolve primary item ${primaryId}: ${primaryResult.message}`);
+    }
+
+    const alternates: TMaterialized[] = [];
+    for (const id of spec.ids) {
+      if (id !== primaryId) {
+        const altResult = this.get(id);
+        if (altResult.isSuccess()) {
+          alternates.push(altResult.value);
+        }
+      }
+    }
+
+    return succeed({
+      primary: primaryResult.value,
+      alternates,
+      entity: spec
+    });
+  }
+
+  /**
+   * Gets the preferred (or first) materialized item from an IOptionsWithPreferred<IRefWithNotes>.
+   * Only materializes the primary item - more efficient when alternates aren't needed.
+   *
+   * @param spec - The IOptionsWithPreferred specification with refs
+   * @returns Result with the preferred materialized item and its notes
+   */
+  public getPreferredRef(
+    spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>
+  ): Result<{
+    readonly item: TMaterialized;
+    readonly id: TId;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+  }> {
+    const primaryId = spec.preferredId ?? spec.options[0]?.id;
+    if (!primaryId) {
+      return fail('No options provided in specification');
+    }
+
+    const primaryRef = spec.options.find((opt) => opt.id === primaryId);
+    if (!primaryRef) {
+      return fail(`Preferred ID ${primaryId} not found in options`);
+    }
+
+    const primaryResult = this.get(primaryId);
+    if (primaryResult.isFailure()) {
+      return fail(`Failed to resolve item ${primaryId}: ${primaryResult.message}`);
+    }
+
+    return succeed({
+      item: primaryResult.value,
+      id: primaryId,
+      notes: primaryRef.notes
+    });
+  }
+
+  /**
+   * Gets the preferred item and all alternates from an IOptionsWithPreferred containing IRefWithNotes.
+   * Preserves notes from each reference.
+   *
+   * @param spec - The IOptionsWithPreferred specification with refs containing notes
+   * @returns Result with resolved primary and alternates with their notes
+   */
+  public getRefsWithAlternates(
+    spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>
+  ): Result<IResolvedRefWithAlternates<TId, TMaterialized>> {
+    const primaryId = spec.preferredId ?? spec.options[0]?.id;
+    if (!primaryId) {
+      return fail('No options provided in specification');
+    }
+
+    const primaryRef = spec.options.find((opt) => opt.id === primaryId);
+    if (!primaryRef) {
+      return fail(`Preferred ID ${primaryId} not found in options`);
+    }
+
+    const primaryResult = this.get(primaryId);
+    if (primaryResult.isFailure()) {
+      return fail(`Failed to resolve primary item ${primaryId}: ${primaryResult.message}`);
+    }
+
+    const alternates: Array<{
+      readonly id: TId;
+      readonly item: TMaterialized;
+      readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    }> = [];
+
+    for (const ref of spec.options) {
+      if (ref.id !== primaryId) {
+        const altResult = this.get(ref.id);
+        if (altResult.isSuccess()) {
+          alternates.push({
+            id: ref.id,
+            item: altResult.value,
+            notes: ref.notes
+          });
+        }
+      }
+    }
+
+    return succeed({
+      primary: primaryResult.value,
+      primaryId,
+      primaryNotes: primaryRef.notes,
+      alternates
+    });
   }
 }

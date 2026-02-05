@@ -5261,6 +5261,16 @@ class LinearScaler implements IUnitScaler {
 class MaterializedLibrary<TId extends string, TEntity, TMaterialized, TQuerySpec = never> extends Collections.ReadOnlyConvertingResultMap<TId, TEntity, TMaterialized> {
     constructor(params: IMaterializedLibraryParams<TId, TEntity, TMaterialized, TQuerySpec>);
     find(spec: TQuerySpec, options?: IFindOptions): Result<ReadonlyArray<TMaterialized>>;
+    getPreferred(spec: Model.IIdsWithPreferred<TId>): DetailedResult<TMaterialized, Collections.ResultMapResultDetail>;
+    getPreferredRef(spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>): Result<{
+        readonly item: TMaterialized;
+        readonly id: TId;
+        readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    }>;
+    // Warning: (ae-forgotten-export) The symbol "IResolvedRefWithAlternates" needs to be exported by the entry point index.d.ts
+    getRefsWithAlternates(spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>): Result<IResolvedRefWithAlternates<TId, TMaterialized>>;
+    // Warning: (ae-forgotten-export) The symbol "IResolvedWithAlternates" needs to be exported by the entry point index.d.ts
+    getWithAlternates(spec: Model.IIdsWithPreferred<TId>): Result<IResolvedWithAlternates<TMaterialized, Model.IIdsWithPreferred<TId>>>;
     get hasFindSupport(): boolean;
 }
 

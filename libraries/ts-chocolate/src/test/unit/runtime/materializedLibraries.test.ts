@@ -44,7 +44,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
 
       expect(result).toSucceedAndSatisfy((ingredient) => {
         expect(ingredient.id).toBe('common.chocolate-dark-64');
-        expect(ingredient.name).toBe('Dark Chocolate 64%');
+        expect(ingredient.name).toBe('Generic Dark Chocolate (64%)');
         expect(ingredient.isChocolate()).toBe(true);
         // Verify it's a materialized class instance, not just JSON
         expect(typeof ingredient.isChocolate).toBe('function');
