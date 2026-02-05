@@ -6,7 +6,7 @@
 
 # Class: FillingRecipeIndexerOrchestrator
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:99](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L99)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:99](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L99)
 
 Orchestrator for filling recipe indexers.
 
@@ -24,7 +24,7 @@ to enable ID-to-entity resolution.
 
 > **new FillingRecipeIndexerOrchestrator**(`library`, `resolver`): `FillingRecipeIndexerOrchestrator`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:112](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L112)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:112](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L112)
 
 Creates a new FillingRecipeIndexerOrchestrator.
 
@@ -56,7 +56,7 @@ Function to resolve filling recipe IDs to entities
 
 > `protected` `readonly` **\_resolver**: [`IEntityResolver`](../interfaces/IEntityResolver.md)\<[`FillingRecipe`](../../../classes/FillingRecipe.md), [`FillingId`](../../../../../../type-aliases/FillingId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:48](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L48)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:48](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L48)
 
 The entity resolver for converting IDs to entities.
 
@@ -70,7 +70,7 @@ The entity resolver for converting IDs to entities.
 
 > `readonly` **library**: [`ChocolateLibrary`](../../../../../../classes/ChocolateLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:43](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L43)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:43](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L43)
 
 The chocolate library being indexed.
 
@@ -86,7 +86,7 @@ The chocolate library being indexed.
 
 > **get** `protected` **\_logger**(): [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:53](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L53)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:53](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L53)
 
 Logger for reporting indexer or orchestrator operations.
 
@@ -104,7 +104,7 @@ Logger for reporting indexer or orchestrator operations.
 
 > `protected` **\_intersect**(`sets`): `Set`\<[`FillingId`](../../../../../../type-aliases/FillingId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:75](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L75)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:75](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L75)
 
 Computes intersection of multiple sets.
 
@@ -132,7 +132,7 @@ Set containing IDs present in all input sets
 
 > `protected` **\_resolveToEntities**(`ids`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FillingRecipe`](../../../classes/FillingRecipe.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:117](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:117](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L117)
 
 Resolves a set of IDs to entities.
 
@@ -160,7 +160,7 @@ Array of resolved entities, or Failure if any resolution fails
 
 > `protected` **\_union**(`sets`): `Set`\<[`FillingId`](../../../../../../type-aliases/FillingId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:102](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L102)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L102)
 
 Computes union of multiple sets.
 
@@ -188,7 +188,7 @@ Set containing IDs present in any input set
 
 > **convertConfig**(`json`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFillingRecipeQuerySpec`](../interfaces/IFillingRecipeQuerySpec.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:196](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L196)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:196](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L196)
 
 Converts a JSON query specification to a typed config.
 
@@ -212,7 +212,7 @@ Typed query spec
 
 > **find**(`spec`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FillingRecipe`](../../../classes/FillingRecipe.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:132](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L132)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:132](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L132)
 
 Finds recipes matching a query specification.
 
@@ -242,7 +242,7 @@ Array of matching recipes
 
 > **invalidate**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:203](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L203)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:203](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L203)
 
 Invalidates all indexer caches.
 
@@ -256,7 +256,7 @@ Invalidates all indexer caches.
 
 > **warmUp**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:213](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L213)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:213](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L213)
 
 Pre-warms all indexers.
 

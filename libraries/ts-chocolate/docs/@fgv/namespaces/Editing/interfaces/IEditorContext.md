@@ -6,7 +6,7 @@
 
 # Interface: IEditorContext\<T, TBaseId, TId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:39](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L39)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:39](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L39)
 
 Generic editor context for entity collections.
 Provides CRUD operations and validation for pre-validated entities in a collection.
@@ -42,7 +42,7 @@ Composite ID type (e.g., IngredientId)
 
 > `readonly` **clearUnsavedChanges**: () => `void`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:108](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L108)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:108](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L108)
 
 Clear the unsaved changes flag.
 Typically called after successful export or when user discards changes.
@@ -57,7 +57,7 @@ Typically called after successful export or when user discards changes.
 
 > `readonly` **copyTo**: (`id`, `targetCollectionId`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:82](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L82)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:82](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L82)
 
 Copy entity to another collection.
 
@@ -87,7 +87,7 @@ Result containing the new entity ID in target collection or failure
 
 > `readonly` **create**: (`baseId`, `entity`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:59](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L59)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:59](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L59)
 
 Create new entity with specified base ID.
 
@@ -117,7 +117,7 @@ Result containing the generated entity ID or failure
 
 > `readonly` **delete**: (`id`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:74](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L74)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:74](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L74)
 
 Delete entity from collection.
 
@@ -141,7 +141,7 @@ Result indicating success or failure
 
 > `readonly` **exists**: (`id`) => `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:89](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L89)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:89](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L89)
 
 Check if entity exists in collection.
 
@@ -165,7 +165,7 @@ True if entity exists
 
 > `readonly` **get**: (`id`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:45](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L45)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:45](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L45)
 
 Get entity by ID.
 
@@ -189,7 +189,7 @@ Result containing the entity or failure
 
 > `readonly` **getAll**: () => readonly \[`TId`, `T`\][]
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:51](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L51)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:51](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L51)
 
 Get all entities in the collection.
 
@@ -205,7 +205,7 @@ Array of [id, entity] tuples
 
 > `readonly` **hasUnsavedChanges**: () => `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:102](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L102)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L102)
 
 Check if there are unsaved changes.
 
@@ -221,7 +221,7 @@ True if there are unsaved changes
 
 > `readonly` **update**: (`id`, `entity`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:67](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L67)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:67](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L67)
 
 Update existing entity.
 
@@ -251,7 +251,7 @@ Result indicating success or failure
 
 > `readonly` **validate**: (`entity`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IValidationReport`](IValidationReport.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:96](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L96)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:96](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L96)
 
 Validate pre-validated entity using semantic validator.
 

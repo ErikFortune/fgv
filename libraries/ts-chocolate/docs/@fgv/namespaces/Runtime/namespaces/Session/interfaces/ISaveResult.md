@@ -6,7 +6,7 @@
 
 # Interface: ISaveResult
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:221](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L221)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:221](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L221)
 
 Result of saving an editing session
 
@@ -16,7 +16,7 @@ Result of saving an editing session
 
 > `readonly` `optional` **journalEntry**: [`IFillingEditJournalEntryEntity`](../../../../Entities/interfaces/IFillingEditJournalEntryEntity.md) \| [`IConfectionEditJournalEntryEntity`](../../../../Entities/interfaces/IConfectionEditJournalEntryEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:231](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L231)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:231](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L231)
 
 The full journal entry if one was created.
 Callers can use this to persist the journal via `context.journals.addJournal(entry)`.
@@ -27,7 +27,7 @@ Callers can use this to persist the journal via `context.journals.addJournal(ent
 
 > `readonly` `optional` **journalId**: `string`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:225](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L225)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:225](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L225)
 
 The journal ID if a journal entry was created
 
@@ -37,6 +37,6 @@ The journal ID if a journal entry was created
 
 > `readonly` `optional` **newVersionSpec**: [`FillingVersionSpec`](../../../../../../type-aliases/FillingVersionSpec.md) \| [`ConfectionVersionSpec`](../../../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:236](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L236)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:236](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L236)
 
 The new version spec if one was created

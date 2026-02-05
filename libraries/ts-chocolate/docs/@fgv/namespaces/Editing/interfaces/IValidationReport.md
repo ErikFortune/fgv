@@ -6,7 +6,7 @@
 
 # Interface: IValidationReport
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:174](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L174)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:174](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L174)
 
 Validation report with detailed field-level errors.
 Provides comprehensive validation feedback for entity data.
@@ -17,7 +17,7 @@ Provides comprehensive validation feedback for entity data.
 
 > `readonly` **fieldErrors**: `ReadonlyMap`\<`string`, `string`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:185](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L185)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:185](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L185)
 
 Field-level validation errors.
 Map of field path to error message.
@@ -28,7 +28,7 @@ Map of field path to error message.
 
 > `readonly` **generalErrors**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:191](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L191)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:191](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L191)
 
 General validation errors not specific to a single field.
 Used for cross-field validations and collection-level constraints.
@@ -39,7 +39,7 @@ Used for cross-field validations and collection-level constraints.
 
 > `readonly` **isValid**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:179](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L179)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:179](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L179)
 
 Overall validation result.
 True if all validations passed, false if any failed.

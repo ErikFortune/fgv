@@ -6,7 +6,7 @@
 
 # Interface: IFindOrchestrator\<TEntity, TSpec\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:33](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L33)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:33](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L33)
 
 Interface for an orchestrator that provides find functionality.
 
@@ -26,7 +26,7 @@ Interface for an orchestrator that provides find functionality.
 
 > **convertConfig**(`json`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TSpec`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:47](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L47)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:47](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L47)
 
 Converts a JSON query specification to a typed config.
 
@@ -50,7 +50,7 @@ Typed query spec
 
 > **find**(`spec`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly `TEntity`[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:40](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L40)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:40](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L40)
 
 Finds entities matching a query specification.
 
@@ -80,7 +80,7 @@ Array of matching entities
 
 > **invalidate**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:52](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L52)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:52](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L52)
 
 Invalidates all indexer caches.
 
@@ -94,7 +94,7 @@ Invalidates all indexer caches.
 
 > **warmUp**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:57](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L57)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:57](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L57)
 
 Pre-warms all indexers.
 

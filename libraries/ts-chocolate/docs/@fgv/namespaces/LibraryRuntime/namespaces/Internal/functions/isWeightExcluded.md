@@ -8,7 +8,7 @@
 
 > **isWeightExcluded**(`unit`): `unit is WeightExcludedUnit`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:101](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L101)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:101](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L101)
 
 Check if a unit is excluded from weight calculations.
 

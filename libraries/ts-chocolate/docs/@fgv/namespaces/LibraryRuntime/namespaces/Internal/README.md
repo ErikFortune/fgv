@@ -8,10 +8,6 @@
 
 Internal calculation utilities for library-runtime
 
-## Namespaces
-
-- [ConfectionResolver](namespaces/ConfectionResolver/README.md)
-
 ## Classes
 
 - [LinearScaler](classes/LinearScaler.md)

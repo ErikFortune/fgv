@@ -8,7 +8,7 @@
 
 > **optionsWithPreferred**\<`TOption`, `TId`\>(`optionConverter`, `idConverter`, `context?`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<`TOption`, `TId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/common/converters.ts:714](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/common/converters.ts#L714)
+Defined in: [ts-chocolate/src/packlets/common/converters.ts:714](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/common/converters.ts#L714)
 
 Creates a converter for [IOptionsWithPreferred\\<TOption, TId\\>](../../Model/interfaces/IOptionsWithPreferred.md) collections.
 Validates that preferredId (if specified) exists in the options array.

@@ -6,7 +6,7 @@
 
 # Class: ProducedFilling
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:68](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L68)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:68](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L68)
 
 Mutable wrapper for IProducedFilling with undo/redo support.
 Provides editing methods that maintain history for undo/redo operations.
@@ -19,7 +19,7 @@ Provides editing methods that maintain history for undo/redo operations.
 
 > **get** **ingredients**(): readonly [`IProducedFillingIngredientEntity`](../../Entities/namespaces/Fillings/interfaces/IProducedFillingIngredientEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:483](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L483)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:483](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L483)
 
 Gets the ingredients as a readonly array.
 
@@ -35,7 +35,7 @@ readonly [`IProducedFillingIngredientEntity`](../../Entities/namespaces/Fillings
 
 > **get** **snapshot**(): [`IProducedFillingEntity`](../../Entities/interfaces/IProducedFillingEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:459](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L459)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:459](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L459)
 
 Gets the current state as an immutable snapshot.
 
@@ -51,7 +51,7 @@ Gets the current state as an immutable snapshot.
 
 > **get** **targetWeight**(): [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:475](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L475)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:475](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L475)
 
 Gets the target weight.
 
@@ -67,7 +67,7 @@ Gets the target weight.
 
 > **get** **versionId**(): [`FillingVersionId`](../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:467](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L467)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:467](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L467)
 
 Gets the version ID.
 
@@ -81,7 +81,7 @@ Gets the version ID.
 
 > **canRedo**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:282](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L282)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:282](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L282)
 
 Checks if redo is available.
 
@@ -97,7 +97,7 @@ True if redo stack is not empty
 
 > **canUndo**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:273](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L273)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:273](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L273)
 
 Checks if undo is available.
 
@@ -113,7 +113,7 @@ True if undo stack is not empty
 
 > **createSnapshot**(): [`IProducedFillingEntity`](../../Entities/interfaces/IProducedFillingEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:194](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L194)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:194](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L194)
 
 Creates an immutable snapshot of the current state.
 
@@ -129,7 +129,7 @@ Immutable copy of current produced filling
 
 > **getChanges**(`original`): [`IFillingChanges`](../interfaces/IFillingChanges.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:508](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L508)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:508](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L508)
 
 Gets detailed changes between current state and original.
 
@@ -153,7 +153,7 @@ Structure describing what changed
 
 > **getSerializedHistory**(`original`): [`ISerializedEditingHistoryEntity`](../../Entities/namespaces/Session/interfaces/ISerializedEditingHistoryEntity.md)\<[`IProducedFillingEntity`](../../Entities/interfaces/IProducedFillingEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:219](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L219)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:219](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L219)
 
 Serializes the complete editing history for persistence.
 Includes current state, original state, and undo/redo stacks.
@@ -178,7 +178,7 @@ Serialized editing history
 
 > **hasChanges**(`original`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:498](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L498)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:498](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L498)
 
 Checks if current state differs from original.
 Uses deep equality check.
@@ -203,7 +203,7 @@ True if changes were detected
 
 > **redo**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:257](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L257)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:257](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L257)
 
 Redoes the last undone change.
 Pops from redo stack, pushes current to undo, and restores future state.
@@ -220,7 +220,7 @@ Success with true if redo succeeded, Success with false if no future
 
 > **removeIngredient**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:344](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L344)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:344](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L344)
 
 Removes an ingredient.
 Pushes current state to undo before change, clears redo.
@@ -245,7 +245,7 @@ Success or failure
 
 > **restoreSnapshot**(`snapshot`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:205](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L205)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:205](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L205)
 
 Restores state from a snapshot.
 Pushes current state to undo stack and clears redo stack.
@@ -270,7 +270,7 @@ Success or failure
 
 > **scaleToTargetWeight**(`targetWeight`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Measurement`](../../../../type-aliases/Measurement.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:370](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L370)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:370](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L370)
 
 Scales all weight-contributing ingredients to achieve a target weight.
 Non-weight-contributing ingredients (tsp, Tbsp, pinch, seeds, pods) remain unchanged.
@@ -296,7 +296,7 @@ Success with actual achieved weight, or failure
 
 > **setIngredient**(`id`, `amount`, `unit?`, `modifiers?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:300](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L300)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:300](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L300)
 
 Sets or updates an ingredient.
 Pushes current state to undo before change, clears redo.
@@ -339,7 +339,7 @@ Success or failure
 
 > **setNotes**(`notes`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:420](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L420)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:420](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L420)
 
 Sets the notes.
 Pushes current state to undo before change, clears redo.
@@ -364,7 +364,7 @@ Success or failure
 
 > **setProcedure**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:439](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L439)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:439](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L439)
 
 Sets the procedure.
 Pushes current state to undo before change, clears redo.
@@ -389,7 +389,7 @@ Success or failure
 
 > **undo**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:240](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L240)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:240](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L240)
 
 Undoes the last change.
 Pops from undo stack, pushes current to redo, and restores previous state.
@@ -406,7 +406,7 @@ Success with true if undo succeeded, Success with false if no history
 
 > `static` **create**(`initial`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ProducedFilling`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:90](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L90)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:90](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L90)
 
 Factory method for creating a ProducedFilling from an existing produced filling.
 
@@ -430,7 +430,7 @@ Success with ProducedFilling
 
 > `static` **fromSource**(`source`, `scaleFactor`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ProducedFilling`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:101](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L101)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:101](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L101)
 
 Factory method for creating a ProducedFilling from a source recipe version.
 
@@ -460,7 +460,7 @@ Result containing ProducedFilling or error
 
 > `static` **restoreFromHistory**(`history`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ProducedFilling`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:117](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:117](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L117)
 
 Factory method for restoring a ProducedFilling from serialized history.
 Restores the complete editing state including undo/redo stacks.

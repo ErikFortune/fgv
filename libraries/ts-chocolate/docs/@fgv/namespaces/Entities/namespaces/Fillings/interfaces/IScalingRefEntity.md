@@ -6,7 +6,7 @@
 
 # Interface: IScalingRefEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:326](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L326)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:326](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L326)
 
 Lightweight scaling reference - the default storage format for scaled filling recipes.
 Stores only the reference and scale parameters, not ingredient snapshots.
@@ -17,7 +17,7 @@ Stores only the reference and scale parameters, not ingredient snapshots.
 
 > `readonly` **createdDate**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:345](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L345)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:345](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L345)
 
 Date the scaling was created (ISO 8601 format)
 
@@ -27,7 +27,7 @@ Date the scaling was created (ISO 8601 format)
 
 > `readonly` **scaleFactor**: `number`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:335](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L335)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:335](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L335)
 
 Scaling factor applied
 
@@ -37,7 +37,7 @@ Scaling factor applied
 
 > `readonly` **sourceVersionId**: [`FillingVersionId`](../../../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:330](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L330)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:330](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L330)
 
 Source filling recipe version ID (format: "sourceId.fillingId@versionSpec")
 
@@ -47,6 +47,6 @@ Source filling recipe version ID (format: "sourceId.fillingId@versionSpec")
 
 > `readonly` **targetWeight**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:340](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L340)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:340](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L340)
 
 Target weight requested

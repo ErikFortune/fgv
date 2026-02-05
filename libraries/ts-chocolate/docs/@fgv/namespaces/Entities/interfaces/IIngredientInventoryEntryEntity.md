@@ -6,7 +6,7 @@
 
 # Interface: IIngredientInventoryEntryEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:147](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L147)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:147](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L147)
 
 Inventory entry for ingredients.
 
@@ -23,7 +23,7 @@ identifying which specific ingredient from which collection is being inventoried
 
 > `readonly` **ingredientId**: [`IngredientId`](../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:150](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L150)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:150](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L150)
 
 The composite ID of the ingredient being inventoried (collection.baseId)
 
@@ -33,7 +33,7 @@ The composite ID of the ingredient being inventoried (collection.baseId)
 
 > `readonly` **inventoryType**: `"ingredient"`
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:148](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L148)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:148](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L148)
 
 Inventory type discriminator
 
@@ -47,7 +47,7 @@ Inventory type discriminator
 
 > `readonly` `optional` **location**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:110](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L110)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:110](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L110)
 
 Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet')
 
@@ -61,7 +61,7 @@ Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet')
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:112](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L112)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:112](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L112)
 
 Optional categorized notes about this inventory item
 
@@ -75,7 +75,7 @@ Optional categorized notes about this inventory item
 
 > `readonly` **quantity**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:152](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L152)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:152](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L152)
 
 Quantity on hand
 
@@ -85,6 +85,6 @@ Quantity on hand
 
 > `readonly` `optional` **unit**: [`MeasurementUnit`](../../../../type-aliases/MeasurementUnit.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:154](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L154)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:154](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L154)
 
 Unit for the quantity (defaults to 'g' if not specified)

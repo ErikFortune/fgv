@@ -6,7 +6,7 @@
 
 # Interface: ISessionProcedure
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:331](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L331)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:331](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L331)
 
 Tracks the selected procedure for a confection session
 
@@ -16,7 +16,7 @@ Tracks the selected procedure for a confection session
 
 > `readonly` `optional` **originalProcedureId**: [`ProcedureId`](../../../../../../type-aliases/ProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:340](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L340)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:340](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L340)
 
 The original procedure ID when the session started
 
@@ -26,7 +26,7 @@ The original procedure ID when the session started
 
 > `readonly` **procedureId**: [`ProcedureId`](../../../../../../type-aliases/ProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:335](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L335)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:335](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L335)
 
 The currently selected procedure ID
 
@@ -36,6 +36,6 @@ The currently selected procedure ID
 
 > `readonly` **status**: [`ConfectionSelectionStatus`](../type-aliases/ConfectionSelectionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:345](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L345)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:345](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L345)
 
 Current status of the procedure selection

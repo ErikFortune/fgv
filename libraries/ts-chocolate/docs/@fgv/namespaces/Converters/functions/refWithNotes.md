@@ -8,7 +8,7 @@
 
 > **refWithNotes**\<`TId`\>(`idConverter`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IRefWithNotes`](../../Model/interfaces/IRefWithNotes.md)\<`TId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/common/converters.ts:788](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/common/converters.ts#L788)
+Defined in: [ts-chocolate/src/packlets/common/converters.ts:788](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/common/converters.ts#L788)
 
 Creates a converter for [IRefWithNotes\\<TId\\>](../../Model/interfaces/IRefWithNotes.md) objects.
 A simple reference with an ID and optional notes.

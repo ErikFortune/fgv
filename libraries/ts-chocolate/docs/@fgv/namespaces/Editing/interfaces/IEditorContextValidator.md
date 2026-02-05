@@ -6,7 +6,7 @@
 
 # Interface: IEditorContextValidator\<T, TBaseId, TId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:122](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L122)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:122](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L122)
 
 Validating wrapper interface for editor context.
 Provides methods that accept raw (unknown) input, validate using converters,
@@ -38,7 +38,7 @@ Composite ID type (e.g., IngredientId)
 
 > `readonly` **create**: (`baseId`, `rawEntity`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:129](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L129)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:129](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L129)
 
 Create new entity with validation.
 
@@ -68,7 +68,7 @@ Result containing the generated entity ID or failure
 
 > `readonly` **update**: (`id`, `rawEntity`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:137](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L137)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:137](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L137)
 
 Update existing entity with validation.
 
@@ -98,7 +98,7 @@ Result indicating success or failure
 
 > `readonly` **validate**: (`rawEntity`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IValidationReport`](IValidationReport.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:144](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L144)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:144](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L144)
 
 Validate raw entity data using converter and semantic validator.
 

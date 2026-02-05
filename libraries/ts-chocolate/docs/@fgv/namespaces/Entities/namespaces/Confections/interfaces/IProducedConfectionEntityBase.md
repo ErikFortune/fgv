@@ -6,7 +6,7 @@
 
 # Interface: IProducedConfectionEntityBase
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:562](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L562)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:562](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L562)
 
 Base interface for all produced confection types.
 Contains common fields shared by all confection productions.
@@ -23,7 +23,7 @@ Contains common fields shared by all confection productions.
 
 > `readonly` **confectionType**: [`ConfectionType`](../../../../../../type-aliases/ConfectionType.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:564](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L564)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:564](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L564)
 
 Confection type discriminator (matches ConfectionType)
 
@@ -33,7 +33,7 @@ Confection type discriminator (matches ConfectionType)
 
 > `readonly` `optional` **fillings**: readonly [`AnyResolvedFillingSlotEntity`](../type-aliases/AnyResolvedFillingSlotEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:570](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L570)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:570](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L570)
 
 Resolved filling slots with concrete selections
 
@@ -43,7 +43,7 @@ Resolved filling slots with concrete selections
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:574](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L574)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:574](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L574)
 
 Optional categorized notes about production
 
@@ -53,7 +53,7 @@ Optional categorized notes about production
 
 > `readonly` `optional` **procedureId**: [`ProcedureId`](../../../../../../type-aliases/ProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:572](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L572)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:572](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L572)
 
 Resolved procedure ID if one was used
 
@@ -63,7 +63,7 @@ Resolved procedure ID if one was used
 
 > `readonly` **versionId**: [`ConfectionVersionId`](../../../../../../type-aliases/ConfectionVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:566](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L566)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:566](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L566)
 
 Confection version ID that was produced
 
@@ -73,6 +73,6 @@ Confection version ID that was produced
 
 > `readonly` **yield**: [`IConfectionYield`](../../../interfaces/IConfectionYield.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:568](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L568)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:568](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L568)
 
 Yield specification for this production

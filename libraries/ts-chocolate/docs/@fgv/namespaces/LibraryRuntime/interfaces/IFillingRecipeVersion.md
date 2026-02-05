@@ -6,7 +6,7 @@
 
 # Interface: IFillingRecipeVersion
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:369](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L369)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:369](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L369)
 
 A resolved runtime view of a recipe version with resolved ingredients.
 
@@ -24,7 +24,7 @@ type (resolved vs entity references).
 
 > `readonly` **baseWeight**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:409](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L409)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:409](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L409)
 
 Base weight of the recipe (sum of all ingredient amounts).
 
@@ -34,7 +34,7 @@ Base weight of the recipe (sum of all ingredient amounts).
 
 > `readonly` **createdDate**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:385](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L385)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:385](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L385)
 
 Date this version was created (ISO 8601 format).
 
@@ -44,7 +44,7 @@ Date this version was created (ISO 8601 format).
 
 > `readonly` **entity**: [`IFillingRecipeVersionEntity`](../../Entities/interfaces/IFillingRecipeVersionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:500](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L500)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:500](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L500)
 
 Gets the underlying entity version data.
 
@@ -54,7 +54,7 @@ Gets the underlying entity version data.
 
 > `readonly` **fillingId**: [`FillingId`](../../../../type-aliases/FillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:390](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L390)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:390](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L390)
 
 The parent filling ID.
 
@@ -64,7 +64,7 @@ The parent filling ID.
 
 > `readonly` **fillingRecipe**: [`IFillingRecipe`](IFillingRecipe.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:396](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L396)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:396](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L396)
 
 The parent filling recipe - resolved.
 Enables navigation: `version.fillingRecipe.name`
@@ -75,7 +75,7 @@ Enables navigation: `version.fillingRecipe.name`
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:419](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L419)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:419](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L419)
 
 Optional notes about this version.
 
@@ -85,7 +85,7 @@ Optional notes about this version.
 
 > `readonly` **preferredProcedure**: [`IResolvedFillingRecipeProcedure`](IResolvedFillingRecipeProcedure.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:493](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L493)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:493](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L493)
 
 Gets the preferred procedure, falling back to first available.
 
@@ -95,7 +95,7 @@ Gets the preferred procedure, falling back to first available.
 
 > `readonly` `optional` **procedures**: [`IResolvedProcedures`](IResolvedProcedures.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:488](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L488)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:488](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L488)
 
 Resolved procedures associated with this version.
 Undefined if the version has no associated procedures.
@@ -106,7 +106,7 @@ Undefined if the version has no associated procedures.
 
 > `readonly` **ratings**: readonly [`IFillingRating`](../../Entities/interfaces/IFillingRating.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:424](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L424)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:424](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L424)
 
 Optional ratings for this version.
 
@@ -116,7 +116,7 @@ Optional ratings for this version.
 
 > `readonly` **version**: [`IFillingRecipeVersionEntity`](../../Entities/interfaces/IFillingRecipeVersionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:402](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L402)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:402](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L402)
 
 The underlying filling recipe version.
 Use this to get the entity version data for persistence or journaling.
@@ -127,7 +127,7 @@ Use this to get the entity version data for persistence or journaling.
 
 > `readonly` **versionId**: [`FillingVersionId`](../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:375](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L375)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:375](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L375)
 
 Qualified identifier for this version (recipeId@versionSpec).
 
@@ -137,7 +137,7 @@ Qualified identifier for this version (recipeId@versionSpec).
 
 > `readonly` **versionSpec**: [`FillingVersionSpec`](../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:380](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L380)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:380](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L380)
 
 Version spec portion of the identifier.
 
@@ -147,7 +147,7 @@ Version spec portion of the identifier.
 
 > `readonly` `optional` **yield**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:414](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L414)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:414](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L414)
 
 Optional yield description (e.g., "50 bonbons").
 
@@ -157,7 +157,7 @@ Optional yield description (e.g., "50 bonbons").
 
 > **calculateGanache**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IGanacheCalculation`](IGanacheCalculation.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:480](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L480)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:480](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L480)
 
 Calculates ganache characteristics for this version.
 
@@ -173,7 +173,7 @@ Success with ganache calculation, or Failure if calculation fails
 
 > **getIngredients**(`filter?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`IterableIterator`\<[`IResolvedFillingIngredient`](IResolvedFillingIngredient.md)\<[`IIngredient`](IIngredient.md)\<[`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md)\>\>, `any`, `any`\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:461](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L461)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:461](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L461)
 
 Gets ingredients, optionally filtered.
 
@@ -224,7 +224,7 @@ version.getIngredients(['specific-id', { category: 'dairy' }, /^valrhona\./])
 
 > **usesIngredient**(`ingredientId`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:472](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L472)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:472](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L472)
 
 Checks if this version uses a specific ingredient (as primary).
 

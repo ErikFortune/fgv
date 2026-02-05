@@ -6,7 +6,7 @@
 
 # Class: IngredientEditorContext
 
-Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:43](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L43)
+Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:43](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L43)
 
 Editor context specialized for Ingredient entities.
 Extends ValidatingEditorContext to provide both pre-validated (base)
@@ -22,7 +22,7 @@ and raw input (validating) methods for ingredient CRUD operations.
 
 > `protected` **new IngredientEditorContext**(`params`): `IngredientEditorContext`
 
-Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:83](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L83)
+Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:83](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L83)
 
 Create a validating editor context.
 
@@ -50,7 +50,7 @@ Creation parameters including converters
 
 > **get** `protected` **collection**(): [`EditableCollection`](../../../classes/EditableCollection.md)\<`T`, `TBaseId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:129](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L129)
+Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:129](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L129)
 
 Get the underlying mutable collection.
 Useful for derived classes that need direct access.
@@ -73,7 +73,7 @@ The mutable collection
 
 > **get** **validating**(): [`IEditorContextValidator`](../../../interfaces/IEditorContextValidator.md)\<`T`, `TBaseId`, `TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:119](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L119)
+Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:119](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L119)
 
 Access validating methods that accept raw input.
 Methods on this property validate using converters before delegating to base methods.
@@ -99,7 +99,7 @@ Methods on this property validate using converters before delegating to base met
 
 > **clearUnsavedChanges**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:297](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L297)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:297](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L297)
 
 Clear the unsaved changes flag.
 
@@ -117,7 +117,7 @@ Clear the unsaved changes flag.
 
 > **copyTo**(`id`, `targetCollectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IngredientId`](../../../../../../type-aliases/IngredientId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:252](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L252)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:252](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L252)
 
 Copy entity to another collection.
 This method must be overridden by derived classes that need copy functionality.
@@ -152,7 +152,7 @@ Result containing the new entity ID in target collection or failure
 
 > **create**(`baseId`, `entity`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IngredientId`](../../../../../../type-aliases/IngredientId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:172](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L172)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:172](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L172)
 
 Create new entity with specified base ID.
 
@@ -186,7 +186,7 @@ Result containing the generated entity ID or failure
 
 > **delete**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IngredientEntity`](../../../../Entities/type-aliases/IngredientEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:236](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L236)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:236](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L236)
 
 Delete entity from collection.
 
@@ -214,7 +214,7 @@ Result indicating success or failure
 
 > **exists**(`id`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:261](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L261)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:261](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L261)
 
 Check if entity exists in collection.
 
@@ -242,7 +242,7 @@ True if entity exists
 
 > **get**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IngredientEntity`](../../../../Entities/type-aliases/IngredientEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:153](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L153)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:153](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L153)
 
 Get entity by ID.
 
@@ -270,7 +270,7 @@ Result containing the entity or failure
 
 > **getAll**(): readonly \[[`IngredientId`](../../../../../../type-aliases/IngredientId.md), [`IngredientEntity`](../../../../Entities/type-aliases/IngredientEntity.md)\][]
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:161](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L161)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:161](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L161)
 
 Get all entities in the collection.
 
@@ -290,7 +290,7 @@ Array of [id, entity] tuples
 
 > **getIngredientCategory**(`ingredient`): `string`
 
-Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:90](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L90)
+Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:90](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L90)
 
 Get the ingredient category.
 
@@ -314,7 +314,7 @@ Ingredient category
 
 > **getIngredientName**(`ingredient`): `string`
 
-Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:80](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L80)
+Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:80](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L80)
 
 Get the ingredient name for display purposes.
 
@@ -338,7 +338,7 @@ Ingredient name
 
 > **hasUnsavedChanges**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:290](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L290)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:290](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L290)
 
 Check if there are unsaved changes.
 
@@ -358,7 +358,7 @@ True if there are unsaved changes
 
 > **update**(`id`, `entity`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IngredientEntity`](../../../../Entities/type-aliases/IngredientEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:210](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L210)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:210](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L210)
 
 Update existing entity.
 
@@ -392,7 +392,7 @@ Result indicating success or failure
 
 > **validate**(`entity`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IValidationReport`](../../../interfaces/IValidationReport.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:272](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L272)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:272](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L272)
 
 Validate pre-validated entity using semantic validator.
 For full validation including converter, use validating.validate().
@@ -421,7 +421,7 @@ Result containing validation report or failure
 
 > `static` **create**\<`T`, `TBaseId`, `TId`\>(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditorContext`](../../../classes/EditorContext.md)\<`T`, `TBaseId`, `TId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:130](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L130)
+Defined in: [ts-chocolate/src/packlets/editing/editorContext.ts:130](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editorContext.ts#L130)
 
 Create a new editor context.
 
@@ -463,7 +463,7 @@ Result containing the editor context or failure
 
 > `static` **createFromCollection**(`collection`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`IngredientEditorContext`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L54)
+Defined in: [ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts:54](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/ingredients/ingredientEditorContext.ts#L54)
 
 Create an ingredient editor context from a collection.
 
@@ -487,7 +487,7 @@ Result containing the editor context or failure
 
 > `static` **createValidating**\<`T`, `TBaseId`, `TId`\>(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ValidatingEditorContext`](../../../classes/ValidatingEditorContext.md)\<`T`, `TBaseId`, `TId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:97](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L97)
+Defined in: [ts-chocolate/src/packlets/editing/validatingEditorContext.ts:97](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validatingEditorContext.ts#L97)
 
 Create a new validating editor context.
 

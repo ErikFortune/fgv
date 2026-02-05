@@ -6,7 +6,7 @@
 
 # Interface: ITaskRefValidation
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:139](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L139)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:139](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L139)
 
 Result of validating a task reference against a task definition.
 
@@ -16,7 +16,7 @@ Result of validating a task reference against a task definition.
 
 > `readonly` **extraVariables**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:158](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L158)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:158](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L158)
 
 Variables provided but not required (warning only)
 
@@ -26,7 +26,7 @@ Variables provided but not required (warning only)
 
 > `readonly` **isValid**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:143](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L143)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:143](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L143)
 
 Whether the reference is valid (all required variables provided)
 
@@ -36,7 +36,7 @@ Whether the reference is valid (all required variables provided)
 
 > `readonly` **messages**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:163](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L163)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:163](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L163)
 
 Human-readable validation messages
 
@@ -46,7 +46,7 @@ Human-readable validation messages
 
 > `readonly` **missingVariables**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:153](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L153)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:153](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L153)
 
 Variables that are missing from params
 
@@ -56,6 +56,6 @@ Variables that are missing from params
 
 > `readonly` **taskFound**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:148](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L148)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:148](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L148)
 
 True if the referenced task was found

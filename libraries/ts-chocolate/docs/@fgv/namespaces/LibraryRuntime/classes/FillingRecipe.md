@@ -6,7 +6,7 @@
 
 # Class: FillingRecipe
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:55](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L55)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:55](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L55)
 
 A resolved view of a recipe with navigation and version access.
 Immutable - does not allow modification of underlying data.
@@ -23,7 +23,7 @@ Immutable - does not allow modification of underlying data.
 
 > **get** **baseId**(): [`BaseFillingId`](../../../../type-aliases/BaseFillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:120](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L120)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:120](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L120)
 
 The base recipe ID within the source
 
@@ -45,7 +45,7 @@ The base recipe ID within the source.
 
 > **get** **collectionId**(): [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:113](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L113)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:113](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L113)
 
 The source ID part of the composite ID
 
@@ -67,7 +67,7 @@ The collection ID part of the composite ID.
 
 > **get** **description**(): `string` \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:138](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L138)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:138](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L138)
 
 Optional description of the recipe
 
@@ -89,7 +89,7 @@ Optional description of the recipe.
 
 > **get** **entity**(): [`IFillingRecipeEntity`](../../Entities/interfaces/IFillingRecipeEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:346](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L346)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:348](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L348)
 
 Gets the underlying recipe data entity
 
@@ -111,7 +111,7 @@ Gets the underlying filling recipe entity data.
 
 > **get** **goldenVersion**(): [`FillingRecipeVersion`](FillingRecipeVersion.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:186](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L186)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:188](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L188)
 
 The golden (default approved) version - resolved.
 Resolved lazily on first access.
@@ -138,7 +138,7 @@ The golden (default approved) version - resolved.
 
 > **get** **goldenVersionSpec**(): [`FillingVersionSpec`](../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:152](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L152)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:152](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L152)
 
 The golden version ID
 
@@ -160,7 +160,7 @@ The ID of the golden (approved default) version.
 
 > **get** **id**(): [`FillingId`](../../../../type-aliases/FillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:106](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L106)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:106](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L106)
 
 The composite recipe ID (e.g., "user.dark-ganache")
 
@@ -183,7 +183,7 @@ Combines source and base ID for unique identification across sources.
 
 > **get** **latestVersion**(): [`FillingRecipeVersion`](FillingRecipeVersion.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:266](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L266)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:268](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L268)
 
 Gets the latest version (by created date).
 Resolved lazily on first access.
@@ -210,7 +210,7 @@ Gets the latest version (by created date).
 
 > **get** **name**(): [`FillingName`](../../../../type-aliases/FillingName.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:131](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L131)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:131](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L131)
 
 Human-readable recipe name
 
@@ -232,7 +232,7 @@ Human-readable recipe name.
 
 > **get** **tags**(): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:145](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L145)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:145](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L145)
 
 Tags for categorization and search
 
@@ -254,7 +254,7 @@ Optional tags for categorization and search.
 
 > **get** **versionCount**(): `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:273](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L273)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:275](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L275)
 
 Number of versions
 
@@ -276,7 +276,7 @@ Number of versions.
 
 > **get** **versions**(): readonly [`FillingRecipeVersion`](FillingRecipeVersion.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:213](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L213)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:215](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L215)
 
 All versions - resolved.
 Resolved lazily on first access.
@@ -301,7 +301,7 @@ All versions - resolved.
 
 > **getGoldenVersion**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FillingRecipeVersion`](FillingRecipeVersion.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:166](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L166)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:166](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L166)
 
 Gets the golden (default approved) version - resolved.
 Resolved lazily on first access.
@@ -318,7 +318,7 @@ Result with golden version, or Failure if creation fails
 
 > **getIngredientIds**(`options?`): `ReadonlySet`\<[`IngredientId`](../../../../type-aliases/IngredientId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:288](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L288)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:290](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L290)
 
 Gets unique ingredient IDs used across all versions.
 By default, returns only preferred ingredients (primary choice for each ingredient slot).
@@ -348,7 +348,7 @@ Set of ingredient IDs
 
 > **getLatestVersion**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FillingRecipeVersion`](FillingRecipeVersion.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:236](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L236)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:238](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L238)
 
 Gets the latest version (by created date).
 Resolved lazily on first access.
@@ -365,7 +365,7 @@ Result with latest version, or Failure if creation fails
 
 > **getVersion**(`versionSpec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FillingRecipeVersion`](FillingRecipeVersion.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:222](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L222)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:224](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L224)
 
 Gets a specific version by ID.
 
@@ -393,7 +393,7 @@ Success with FillingRecipeVersion, or Failure if not found
 
 > **getVersions**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FillingRecipeVersion`](FillingRecipeVersion.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:196](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L196)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:198](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L198)
 
 Gets all versions - resolved.
 Resolved lazily on first access.
@@ -410,7 +410,7 @@ Result with all versions, or Failure if any version creation fails
 
 > **usesIngredient**(`ingredientId`, `options?`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:339](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L339)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:341](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L341)
 
 Checks if any version uses a specific ingredient.
 By default, only checks preferred ingredients.
@@ -446,7 +446,7 @@ True if the ingredient is used in any version
 
 > `static` **create**(`context`, `id`, `recipe`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`FillingRecipe`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:91](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L91)
+Defined in: [ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts:91](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/fillings/fillingRecipe.ts#L91)
 
 Factory method for creating a FillingRecipe.
 

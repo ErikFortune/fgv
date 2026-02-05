@@ -6,7 +6,7 @@
 
 # Interface: IHasId\<TId\>
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:181](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/common/model.ts#L181)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:181](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/common/model.ts#L181)
 
 Base interface that option types must extend for use with IOptionsWithPreferred.
 Enables generic helpers that work with any option type.
@@ -29,4 +29,4 @@ The type of the identifier
 
 > `readonly` **id**: `TId`
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:182](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/common/model.ts#L182)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:182](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/common/model.ts#L182)

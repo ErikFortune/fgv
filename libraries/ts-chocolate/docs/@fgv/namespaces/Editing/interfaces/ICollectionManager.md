@@ -6,7 +6,7 @@
 
 # Interface: ICollectionManager\<TBaseId, TItem\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:263](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L263)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:263](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L263)
 
 Manager for collection-level CRUD operations.
 Provides operations to create, delete, and rename collections within a sub-library.
@@ -27,7 +27,7 @@ Provides operations to create, delete, and rename collections within a sub-libra
 
 > `readonly` **create**: (`collectionId`, `metadata`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AggregatedResultMapEntry`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CollectionId`](../../../../type-aliases/CollectionId.md), `TBaseId`, `TItem`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:283](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L283)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:283](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L283)
 
 Create a new mutable collection.
 
@@ -57,7 +57,7 @@ Result indicating success or failure
 
 > `readonly` **delete**: (`collectionId`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AggregatedResultMapEntry`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CollectionId`](../../../../type-aliases/CollectionId.md), `TBaseId`, `TItem`, [`ICollectionSourceMetadata`](../../LibraryData/interfaces/ICollectionSourceMetadata.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:293](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L293)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:293](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L293)
 
 Delete a mutable collection.
 
@@ -81,7 +81,7 @@ Result indicating success or failure
 
 > `readonly` **exists**: (`collectionId`) => `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:313](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L313)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:313](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L313)
 
 Check if a collection exists.
 
@@ -105,7 +105,7 @@ True if collection exists
 
 > `readonly` **get**: (`collectionId`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollectionSourceMetadata`](../../LibraryData/interfaces/ICollectionSourceMetadata.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:275](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L275)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:275](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L275)
 
 Get metadata for a specific collection by ID.
 
@@ -129,7 +129,7 @@ Result containing the collection metadata or failure
 
 > `readonly` **getAll**: () => readonly [`CollectionId`](../../../../type-aliases/CollectionId.md)[]
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:268](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L268)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:268](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L268)
 
 Get all collection IDs in the library.
 
@@ -145,7 +145,7 @@ Array of collection IDs
 
 > `readonly` **isMutable**: (`collectionId`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:320](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L320)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:320](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L320)
 
 Check if a collection is mutable.
 
@@ -169,7 +169,7 @@ Result containing true if mutable, failure if not found
 
 > `readonly` **updateMetadata**: (`collectionId`, `metadata`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollectionSourceMetadata`](../../LibraryData/interfaces/ICollectionSourceMetadata.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:303](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/model.ts#L303)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:303](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L303)
 
 Update collection metadata.
 

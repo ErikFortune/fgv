@@ -6,7 +6,7 @@
 
 # Interface: IWeightCalculationContext
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:38](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L38)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:38](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L38)
 
 Context for weight calculations that provides ingredient density lookup.
 Implementations should resolve ingredient IDs to their density values.
@@ -17,7 +17,7 @@ Implementations should resolve ingredient IDs to their density values.
 
 > **getIngredientDensity**(`id`): `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:44](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L44)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:44](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L44)
 
 Get the density (g/mL) for an ingredient.
 

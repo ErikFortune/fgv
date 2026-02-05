@@ -6,7 +6,7 @@
 
 # Interface: IMoldInventoryEntryEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:127](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L127)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:127](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L127)
 
 Inventory entry for molds.
 
@@ -23,7 +23,7 @@ identifying which specific mold from which collection is being inventoried.
 
 > `readonly` **count**: `number`
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:132](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L132)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:132](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L132)
 
 Number of this mold the user owns
 
@@ -33,7 +33,7 @@ Number of this mold the user owns
 
 > `readonly` **inventoryType**: `"mold"`
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:128](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L128)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:128](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L128)
 
 Inventory type discriminator
 
@@ -47,7 +47,7 @@ Inventory type discriminator
 
 > `readonly` `optional` **location**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:110](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L110)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:110](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L110)
 
 Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet')
 
@@ -61,7 +61,7 @@ Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet')
 
 > `readonly` **moldId**: [`MoldId`](../../../../type-aliases/MoldId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:130](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L130)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:130](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L130)
 
 The composite ID of the mold being inventoried (collection.baseId)
 
@@ -71,7 +71,7 @@ The composite ID of the mold being inventoried (collection.baseId)
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:112](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L112)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/model.ts:112](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/inventory/model.ts#L112)
 
 Optional categorized notes about this inventory item
 

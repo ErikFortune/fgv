@@ -27,4 +27,3 @@ export * from './fillingWeightCalculator';
 export * from './fillingScaler';
 export * from './fillingUnitScaler';
 export * from './ganacheCalculator';
-export * as ConfectionResolver from './confectionResolver';

@@ -6,7 +6,7 @@
 
 # Interface: IProcedure
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:166](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L166)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:166](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L166)
 
 A resolved runtime view of a procedure with rendering capabilities.
 
@@ -21,7 +21,7 @@ This interface provides runtime-layer access to procedure data with:
 
 > `readonly` **baseId**: [`BaseProcedureId`](../../../../type-aliases/BaseProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:178](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L178)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:178](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L178)
 
 The base procedure ID within the source.
 
@@ -31,7 +31,7 @@ The base procedure ID within the source.
 
 > `readonly` `optional` **category**: [`ProcedureType`](../../../../type-aliases/ProcedureType.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:189](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L189)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:189](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L189)
 
 Optional category this procedure applies to
 
@@ -41,7 +41,7 @@ Optional category this procedure applies to
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:186](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L186)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:186](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L186)
 
 Optional description
 
@@ -51,7 +51,7 @@ Optional description
 
 > `readonly` **entity**: [`IProcedureEntity`](../../Entities/interfaces/IProcedureEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:233](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L233)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:233](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L233)
 
 Gets the underlying procedure data entity
 
@@ -61,7 +61,7 @@ Gets the underlying procedure data entity
 
 > `readonly` **id**: [`ProcedureId`](../../../../type-aliases/ProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:173](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L173)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:173](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L173)
 
 The composite procedure ID (e.g., "common.ganache-basic").
 Combines source and base ID for unique identification across sources.
@@ -72,7 +72,7 @@ Combines source and base ID for unique identification across sources.
 
 > `readonly` **isCategorySpecific**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:218](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L218)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:218](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L218)
 
 Whether this procedure is category-specific
 
@@ -82,7 +82,7 @@ Whether this procedure is category-specific
 
 > `readonly` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:183](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L183)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:183](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L183)
 
 Human-readable name
 
@@ -92,7 +92,7 @@ Human-readable name
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:198](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L198)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:198](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L198)
 
 Optional categorized notes
 
@@ -102,7 +102,7 @@ Optional categorized notes
 
 > `readonly` **stepCount**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:215](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L215)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:215](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L215)
 
 Number of steps
 
@@ -112,7 +112,7 @@ Number of steps
 
 > `readonly` **steps**: readonly [`IProcedureStepEntity`](../../Entities/interfaces/IProcedureStepEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:192](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L192)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:192](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L192)
 
 Steps of the procedure in order
 
@@ -122,7 +122,7 @@ Steps of the procedure in order
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:195](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L195)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:195](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L195)
 
 Optional tags
 
@@ -132,7 +132,7 @@ Optional tags
 
 > `readonly` **totalActiveTime**: [`Minutes`](../../../../type-aliases/Minutes.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:203](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L203)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:203](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L203)
 
 Total active time for all steps
 
@@ -142,7 +142,7 @@ Total active time for all steps
 
 > `readonly` **totalHoldTime**: [`Minutes`](../../../../type-aliases/Minutes.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:209](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L209)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:209](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L209)
 
 Total hold time for all steps
 
@@ -152,7 +152,7 @@ Total hold time for all steps
 
 > `readonly` **totalTime**: [`Minutes`](../../../../type-aliases/Minutes.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:212](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L212)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:212](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L212)
 
 Total time (active + wait + hold)
 
@@ -162,7 +162,7 @@ Total time (active + wait + hold)
 
 > `readonly` **totalWaitTime**: [`Minutes`](../../../../type-aliases/Minutes.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:206](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L206)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:206](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L206)
 
 Total wait time for all steps
 
@@ -172,7 +172,7 @@ Total wait time for all steps
 
 > **render**(`context`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IRenderedProcedure`](IRenderedProcedure.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:228](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L228)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:228](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L228)
 
 Renders the procedure with the given context.
 Resolves task references to actual task content (not placeholders).

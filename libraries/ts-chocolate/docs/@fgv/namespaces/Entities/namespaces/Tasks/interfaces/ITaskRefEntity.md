@@ -6,7 +6,7 @@
 
 # Interface: ITaskRefEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:113](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L113)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:113](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L113)
 
 Represents a step's reference to a reusable task with parameter values.
 
@@ -16,7 +16,7 @@ Represents a step's reference to a reusable task with parameter values.
 
 > `readonly` **params**: `Record`\<`string`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:125](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L125)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:125](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L125)
 
 Parameter values to pass to the task template.
 Keys are variable names, values can be primitives or nested objects.
@@ -29,6 +29,6 @@ Complex data can be dotted (e.g., ingredient: name: 'chocolate', type: 'dark')
 
 > `readonly` **taskId**: [`TaskId`](../../../../../../type-aliases/TaskId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:117](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L117)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/model.ts:117](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/tasks/model.ts#L117)
 
 Full task ID (collectionId.baseTaskId)

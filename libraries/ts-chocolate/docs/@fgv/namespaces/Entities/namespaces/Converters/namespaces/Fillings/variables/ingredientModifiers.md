@@ -8,6 +8,6 @@
 
 > `const` **ingredientModifiers**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IIngredientModifiers`](../../../../Fillings/interfaces/IIngredientModifiers.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/converters.ts:49](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/converters.ts#L49)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/converters.ts:49](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/converters.ts#L49)
 
 Converter for [IIngredientModifiers](../../../../Fillings/interfaces/IIngredientModifiers.md).

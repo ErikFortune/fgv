@@ -8,6 +8,6 @@
 
 > **ConfectionCollectionValidator** = [`SubLibraryCollectionValidator`](../../../../LibraryData/type-aliases/SubLibraryCollectionValidator.md)\<[`ConfectionId`](../../../../../../type-aliases/ConfectionId.md), [`AnyConfectionEntity`](../../../type-aliases/AnyConfectionEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/collection.ts:50](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/collection.ts#L50)
+Defined in: [ts-chocolate/src/packlets/entities/confections/collection.ts:50](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/collection.ts#L50)
 
 Validator type for ConfectionsLibrary collections.

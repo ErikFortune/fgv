@@ -864,17 +864,6 @@ const confectionName: Converter<ConfectionName>;
 // @public
 const confectionProductionJournalEntryEntity: Converter<IConfectionProductionJournalEntryEntity>;
 
-declare namespace ConfectionResolver {
-    export {
-        resolveChocolateSpec,
-        resolveCoatings,
-        resolveMoldRefs,
-        resolveAdditionalChocolates,
-        resolveFillingSlots,
-        resolveProcedures
-    }
-}
-
 declare namespace Confections {
     export {
         confectionYield,
@@ -3738,7 +3727,6 @@ function inRange<T>(min: number | undefined, max: number | undefined, getter: (i
 
 declare namespace Internal {
     export {
-        ConfectionResolver,
         contributesToWeight,
         isWeightExcluded,
         calculateIngredientWeight,
@@ -6011,17 +5999,8 @@ const renderOptions: Converter<IRenderOptions>;
 // @public
 type ResolutionStatus = 'resolved' | 'missing' | 'error';
 
-// @internal
-function resolveAdditionalChocolates(context: IConfectionContext, additional: ReadonlyArray<Confections_2.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-
 // @public
 function resolveBuiltInSpec<TCollectionId extends string = string>(spec: FullLibraryLoadSpec | undefined, subLibraryId: SubLibraryId): LibraryLoadSpec<TCollectionId>;
-
-// @internal
-function resolveChocolateSpec(context: IConfectionContext, spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-
-// @internal
-function resolveCoatings(context: IConfectionContext, coatings: Confections_2.ICoatingsEntity): IResolvedCoatings;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6047,20 +6026,11 @@ function resolveFileTreeSource(source: ILibraryFileTreeSource): Result<ReadonlyA
 // @public
 function resolveFileTreeSourceForSubLibrary(source: ILibraryFileTreeSource, subLibraryId: SubLibraryId): Result<IResolvedSubLibrarySource | undefined>;
 
-// @internal
-function resolveFillingSlots(context: IConfectionContext, slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-
 // @public
 function resolveImportRootForLibrary(root: FileTree.IFileTreeDirectoryItem, options?: Omit<IResolveImportRootOptions, 'allowLooseFiles'>): Result<IResolvedImportRoot>;
 
 // @public
 function resolveImportRootForSubLibrary(root: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId, options?: IResolveImportRootOptions): Result<IResolvedImportRoot>;
-
-// @internal
-function resolveMoldRefs(context: IConfectionContext, molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-
-// @internal
-function resolveProcedures(context: IConfectionContext, procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 
 // @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;

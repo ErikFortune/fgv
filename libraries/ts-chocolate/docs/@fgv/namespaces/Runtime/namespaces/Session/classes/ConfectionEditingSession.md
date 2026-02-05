@@ -6,7 +6,7 @@
 
 # Class: ConfectionEditingSession
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts:60](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts#L60)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts:60](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts#L60)
 
 Factory for creating type-specific confection editing sessions.
 Dispatches to specialized session classes based on confection type.
@@ -17,7 +17,7 @@ Dispatches to specialized session classes based on confection type.
 
 > `static` **create**(`baseConfection`, `context`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnyConfectionEditingSession`](../type-aliases/AnyConfectionEditingSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts:83](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts#L83)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts:83](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSession.ts#L83)
 
 Creates a confection editing session for the appropriate confection type.
 Dispatches to type-specific session classes:

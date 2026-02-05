@@ -6,7 +6,7 @@
 
 # Class: EditingSessionValidator
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:131](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L131)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:131](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L131)
 
 A wrapper for EditingSession that validates and converts weakly-typed inputs
 to strongly-typed branded types before delegating to the underlying session.
@@ -36,7 +36,7 @@ validator.removeIngredient('local.glucose-syrup');
 
 > **new EditingSessionValidator**(`session`): `EditingSessionValidator`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:138](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L138)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:138](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L138)
 
 Creates a new EditingSessionValidator
 
@@ -60,7 +60,7 @@ The EditingSession to wrap
 
 > **get** **session**(): [`EditingSession`](EditingSession.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:145](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L145)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:145](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L145)
 
 The underlying editing session
 
@@ -80,7 +80,7 @@ The underlying editing session
 
 > **removeIngredient**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:175](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L175)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:175](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L175)
 
 Removes an ingredient using a weakly-typed string
 
@@ -108,7 +108,7 @@ Success or Failure
 
 > **scaleToTargetWeight**(`targetWeight`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Measurement`](../../../../../../type-aliases/Measurement.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:186](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L186)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:186](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L186)
 
 Scales the filling to achieve a target weight using a weakly-typed number.
 
@@ -136,7 +136,7 @@ Success with actual achieved weight, or Failure
 
 > **setIngredient**(`id`, `amount`, `unit?`, `modifiers?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:157](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L157)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:157](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L157)
 
 Sets or updates an ingredient using weakly-typed inputs
 
@@ -182,7 +182,7 @@ Success or Failure
 
 > **setProcedure**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:197](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L197)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:197](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L197)
 
 Sets the procedure using a weakly-typed string
 
@@ -210,7 +210,7 @@ Success or Failure
 
 > **toReadOnly**(): [`IReadOnlyEditingSessionValidator`](../interfaces/IReadOnlyEditingSessionValidator.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:209](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L209)
+Defined in: [ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts:209](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/editingSessionValidator.ts#L209)
 
 Gets a read-only version of this validator
 

@@ -6,7 +6,7 @@
 
 # Interface: IFillingRecipeScaleOptions
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L54)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:54](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L54)
 
 Options for filling recipe scaling (extends version options with version selection)
 
@@ -20,7 +20,7 @@ Options for filling recipe scaling (extends version options with version selecti
 
 > `readonly` `optional` **minimumAmount**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:47](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L47)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:47](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L47)
 
 Minimum amount to show in scaled filling recipe (default: 0.1)
 Amounts below this threshold will be rounded up to it
@@ -35,7 +35,7 @@ Amounts below this threshold will be rounded up to it
 
 > `readonly` `optional` **precision**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:41](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L41)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:41](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L41)
 
 Number of decimal places for scaled amounts (default: 1)
 
@@ -49,6 +49,6 @@ Number of decimal places for scaled amounts (default: 1)
 
 > `readonly` `optional` **versionSpec**: [`FillingVersionSpec`](../../../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:58](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L58)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts:58](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingScaler.ts#L58)
 
 Filling recipe version to scale (default: golden version)

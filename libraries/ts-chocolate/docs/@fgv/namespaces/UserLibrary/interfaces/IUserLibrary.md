@@ -6,7 +6,7 @@
 
 # Interface: IUserLibrary
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:45](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L45)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:45](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L45)
 
 User-specific library data (journals, sessions, inventory).
 Separate from shared library data (ingredients, recipes, etc.).
@@ -17,7 +17,7 @@ Separate from shared library data (ingredients, recipes, etc.).
 
 > `readonly` **ingredientInventory**: [`IngredientInventoryLibrary`](../../Entities/classes/IngredientInventoryLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:64](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L64)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:64](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L64)
 
 Ingredient inventory library for tracking ingredient stock.
 
@@ -27,7 +27,7 @@ Ingredient inventory library for tracking ingredient stock.
 
 > `readonly` **journals**: [`JournalLibrary`](../../Entities/classes/JournalLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:49](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L49)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:49](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L49)
 
 Journal library for production records.
 
@@ -37,7 +37,7 @@ Journal library for production records.
 
 > `readonly` **moldInventory**: [`MoldInventoryLibrary`](../../Entities/classes/MoldInventoryLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:59](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L59)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:59](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L59)
 
 Mold inventory library for tracking owned molds.
 
@@ -47,6 +47,6 @@ Mold inventory library for tracking owned molds.
 
 > `readonly` **sessions**: [`SessionLibrary`](../../Entities/classes/SessionLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L54)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:54](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L54)
 
 Session library for persisted editing sessions.
