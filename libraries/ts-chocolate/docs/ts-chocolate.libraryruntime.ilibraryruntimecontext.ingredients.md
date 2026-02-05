@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.ILibraryRuntimeContext.ingredients property
 
-A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved lazily on access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 **Signature:**
 
 ```typescript
-readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IIngredient, IIngredientQuerySpec>;
+readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
 ```

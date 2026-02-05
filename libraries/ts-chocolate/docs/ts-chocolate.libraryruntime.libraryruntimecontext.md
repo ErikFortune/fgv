@@ -172,12 +172,12 @@ The confections library for accessing confection data.
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+[MaterializedLibrary](./ts-chocolate.libraryruntime.materializedlibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [Fillings.IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)<!-- -->, [FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached.
+A searchable library of all fillings, keyed by composite ID. Fillings are resolved lazily on access and cached.
 
 
 </td></tr>
@@ -193,12 +193,12 @@ A searchable library of all fillings, keyed by composite ID. Fillings are resolv
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
+[MaterializedLibrary](./ts-chocolate.libraryruntime.materializedlibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IngredientEntity](./ts-chocolate.entities.ingrediententity.md)<!-- -->, [AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved lazily on access and cached.
 
 
 </td></tr>
@@ -255,7 +255,7 @@ Logger used by this runtime context and its libraries.
 
 </td><td>
 
-ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [AnyConfection](./ts-chocolate.libraryruntime.anyconfection.md)<!-- -->&gt;
+[MaterializedLibrary](./ts-chocolate.libraryruntime.materializedlibrary.md)<!-- -->&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [Confections.AnyConfectionEntity](./ts-chocolate.entities.anyconfectionentity.md)<!-- -->, [AnyConfection](./ts-chocolate.libraryruntime.anyconfection.md)<!-- -->, never&gt;
 
 
 </td><td>

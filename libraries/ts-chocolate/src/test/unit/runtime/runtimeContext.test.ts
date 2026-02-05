@@ -969,10 +969,11 @@ describe('RuntimeContext', () => {
 
       test('confections in map are fully resolved RuntimeConfection instances', () => {
         const confections = ctx.runtimeConfections;
-        const confection = confections.get('common.dark-dome-bonbon' as ConfectionId);
-        expect(confection).toBeDefined();
-        expect(confection?.id).toBe('common.dark-dome-bonbon');
-        expect(confection?.name).toBe('Classic Dark Dome Bonbon');
+        const result = confections.get('common.dark-dome-bonbon' as ConfectionId);
+        expect(result).toSucceedAndSatisfy((confection) => {
+          expect(confection.id).toBe('common.dark-dome-bonbon');
+          expect(confection.name).toBe('Classic Dark Dome Bonbon');
+        });
       });
     });
 

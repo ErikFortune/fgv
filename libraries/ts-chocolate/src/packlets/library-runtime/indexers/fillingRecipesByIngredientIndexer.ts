@@ -26,7 +26,6 @@
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { Converters as ChocolateConverters, FillingId, Helpers, IngredientId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -117,7 +116,6 @@ interface IIngredientUsageEntry {
  * @public
  */
 export class FillingRecipesByIngredientIndexer extends BaseIndexer<
-  IFillingRecipe,
   FillingId,
   IFillingRecipesByIngredientConfig
 > {
@@ -162,9 +160,7 @@ export class FillingRecipesByIngredientIndexer extends BaseIndexer<
   }
 
   /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
-  protected _findInternal(
-    config: IFillingRecipesByIngredientConfig
-  ): Result<ReadonlyArray<IFillingRecipe | FillingId>> {
+  protected _findInternal(config: IFillingRecipesByIngredientConfig): Result<ReadonlyArray<FillingId>> {
     const usage = this._ingredientUsage!.get(config.ingredientId);
     if (!usage) {
       return this._emptyResult();

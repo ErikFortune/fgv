@@ -21,6 +21,7 @@
  */
 
 import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '../base';
+import { ILogger } from '../logging';
 import { KeyValueEntry } from './common';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
 
@@ -32,6 +33,15 @@ export type ConvertingResultMapValueConverter<TK extends string, TSRC, TTARGET> 
   src: TSRC,
   key: TK
 ) => Result<TTARGET>;
+
+/**
+ * Error handling behavior for conversion failures during iteration.
+ * - `'ignore'`: Silently skip failed conversions (default behavior)
+ * - `'warn'`: Log warning and skip failed conversions
+ * - `'fail'`: Throw error on first conversion failure
+ * @public
+ */
+export type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
 
 /**
  * Parameters for constructing a {@link Collections.ReadOnlyConvertingResultMap | ReadOnlyConvertingResultMap}.
@@ -47,6 +57,17 @@ export interface IReadOnlyConvertingResultMapConstructorParams<TK extends string
    * The converter function to transform source values to target values.
    */
   converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
+
+  /**
+   * Error handling behavior for conversion failures during iteration.
+   * Defaults to `'ignore'` (silently skip failed conversions).
+   */
+  onConversionError?: ConversionErrorHandling;
+
+  /**
+   * Optional logger for warnings when `onConversionError` is `'warn'`.
+   */
+  logger?: ILogger;
 }
 
 /**
@@ -73,6 +94,16 @@ export class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET>
   protected readonly _cache: Map<TK, TTARGET>;
 
   /**
+   * Error handling behavior for conversion failures during iteration.
+   */
+  protected readonly _onConversionError: ConversionErrorHandling;
+
+  /**
+   * Optional logger for warnings.
+   */
+  protected readonly _logger?: ILogger;
+
+  /**
    * Constructs a new {@link Collections.ReadOnlyConvertingResultMap | ReadOnlyConvertingResultMap}.
    * @param params - Parameters for constructing the map.
    */
@@ -80,6 +111,8 @@ export class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET>
     this._inner = params.inner;
     this._converter = params.converter;
     this._cache = new Map<TK, TTARGET>();
+    this._onConversionError = params.onConversionError ?? 'ignore';
+    this._logger = params.logger;
   }
 
   /**
@@ -208,10 +241,11 @@ export class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET>
 
   /**
    * Gets a cached value or converts and caches a source value.
-   * Used by iterators where we want to silently skip conversion failures.
+   * Used by iterators. Handles conversion failures according to `_onConversionError`.
    * @param key - The key of the value.
    * @param src - The source value to convert if not cached.
    * @returns The converted value, or `undefined` if conversion failed.
+   * @throws Error if `_onConversionError` is `'fail'` and conversion fails.
    */
   protected _getOrConvert(key: TK, src: TSRC): TTARGET | undefined {
     const cached = this._cache.get(key);
@@ -223,6 +257,14 @@ export class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET>
     if (result.isSuccess()) {
       this._cache.set(key, result.value);
       return result.value;
+    }
+
+    switch (this._onConversionError) {
+      case 'fail':
+        throw new Error(`Conversion failed for key '${key}': ${result.message}`);
+      case 'warn':
+        this._logger?.log('warning', `Conversion failed for key '${key}': ${result.message}`);
+        break;
     }
     return undefined;
   }

@@ -403,6 +403,7 @@ declare namespace Collections {
         ResultMapForEachCb,
         IReadOnlyResultMap,
         ConvertingResultMapValueConverter,
+        ConversionErrorHandling,
         IReadOnlyConvertingResultMapConstructorParams,
         ReadOnlyConvertingResultMap,
         IResultMapConstructorParams,
@@ -663,6 +664,9 @@ export { Conversion }
 
 // @public
 type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: string, context?: TC) => string;
+
+// @public
+type ConversionErrorHandling = 'ignore' | 'warn' | 'fail';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1516,6 +1520,8 @@ interface IReadOnlyCollectorValidator<TITEM extends ICollectible<any, any>> exte
 interface IReadOnlyConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET> {
     converter: ConvertingResultMapValueConverter<TK, TSRC, TTARGET>;
     inner: IReadOnlyResultMap<TK, TSRC>;
+    logger?: ILogger;
+    onConversionError?: ConversionErrorHandling;
 }
 
 // @public
@@ -2301,6 +2307,8 @@ class ReadOnlyConvertingResultMap<TK extends string, TSRC, TTARGET> implements I
     has(key: TK): boolean;
     protected readonly _inner: IReadOnlyResultMap<TK, TSRC>;
     keys(): IterableIterator<TK>;
+    protected readonly _logger?: ILogger;
+    protected readonly _onConversionError: ConversionErrorHandling;
     get size(): number;
     toReadOnly(): IReadOnlyResultMap<TK, TTARGET>;
     values(): IterableIterator<TTARGET>;

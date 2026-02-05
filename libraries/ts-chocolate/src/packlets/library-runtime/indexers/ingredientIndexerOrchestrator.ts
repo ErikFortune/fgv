@@ -26,7 +26,7 @@
 import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { IngredientId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IIngredient } from '../model';
+import { AnyIngredient } from '../ingredients/ingredient';
 import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 import { AggregationMode, IFindOptions } from './model';
 import {
@@ -68,7 +68,7 @@ export const ingredientQuerySpecConverter: Converter<IIngredientQuerySpec> =
  * Provided by RuntimeContext to resolve ingredient IDs to entities.
  * @public
  */
-export type IngredientResolver = (id: IngredientId) => Result<IIngredient>;
+export type IngredientResolver = (id: IngredientId) => Result<AnyIngredient>;
 
 /**
  * Orchestrator for ingredient indexers.
@@ -79,7 +79,7 @@ export type IngredientResolver = (id: IngredientId) => Result<IIngredient>;
  *
  * @public
  */
-export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IIngredient, IngredientId> {
+export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<AnyIngredient, IngredientId> {
   private readonly _indexers: {
     byTag: IngredientsByTagIndexer;
   };
@@ -107,11 +107,11 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IIngr
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching ingredients
    */
-  public find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IIngredient>> {
+  public find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyIngredient>> {
     const aggregation: AggregationMode = options?.aggregation ?? 'intersection';
 
     // Collect results from each specified indexer
-    const indexerResults: Array<Set<IngredientId | IIngredient>> = [];
+    const indexerResults: Array<Set<IngredientId>> = [];
     const errors = new MessageAggregator();
 
     if (spec.byTag !== undefined) {
@@ -131,7 +131,7 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IIngr
     }
 
     // Aggregate results
-    let aggregatedSet: Set<IngredientId | IIngredient>;
+    let aggregatedSet: Set<IngredientId>;
     if (aggregation === 'intersection') {
       aggregatedSet = this._intersect(indexerResults);
     } else {

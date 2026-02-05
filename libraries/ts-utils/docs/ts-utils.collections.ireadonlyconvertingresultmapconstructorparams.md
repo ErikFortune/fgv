@@ -73,5 +73,43 @@ The inner map containing source values.
 
 
 </td></tr>
+<tr><td>
+
+[logger?](./ts-utils.collections.ireadonlyconvertingresultmapconstructorparams.logger.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ILogger](./ts-utils.logging.ilogger.md)
+
+
+</td><td>
+
+_(Optional)_ Optional logger for warnings when `onConversionError` is `'warn'`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[onConversionError?](./ts-utils.collections.ireadonlyconvertingresultmapconstructorparams.onconversionerror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[ConversionErrorHandling](./ts-utils.collections.conversionerrorhandling.md)
+
+
+</td><td>
+
+_(Optional)_ Error handling behavior for conversion failures during iteration. Defaults to `'ignore'` (silently skip failed conversions).
+
+
+</td></tr>
 </tbody></table>
 

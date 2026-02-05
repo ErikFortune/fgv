@@ -23,19 +23,17 @@
  * @packageDocumentation
  */
 
-import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@fgv/ts-utils';
+import { Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
+import { ConfectionId, IngredientId, Model, MoldId, ProcedureId, FillingId, TaskId } from '../common';
 import {
-  ConfectionId,
-  Converters,
-  IngredientId,
-  Model as CommonModel,
-  MoldId,
-  ProcedureId,
-  FillingId,
-  TaskId
-} from '../common';
-import { Confections, Fillings, IProcedureEntity, IRawTaskEntity } from '../entities';
+  Confections,
+  Fillings,
+  IngredientEntity,
+  IMoldEntity,
+  IProcedureEntity,
+  IRawTaskEntity
+} from '../entities';
 import { AnyConfection, Confection } from './confections';
 import { IWeightCalculationContext } from './internal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -66,7 +64,7 @@ import {
   IngredientIndexerOrchestrator,
   FillingRecipeIndexerOrchestrator
 } from './indexers';
-import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibrary';
+import { MaterializedLibrary } from './materializedLibrary';
 import { ITaskContext, Task } from './tasks';
 import { IProcedureContext, Procedure } from './procedures';
 import { IMoldContext, Mold } from './molds';
@@ -125,24 +123,23 @@ export class LibraryRuntimeContext
    */
   public readonly logger: Logging.LogReporter<unknown>;
 
-  // Lazily-populated libraries with integrated find support
-  // The fourth type parameter is the orchestrator's entity type (interface type)
+  // Materialized libraries with lazy resolution, caching, and integrated find support
   private _ingredients:
-    | ValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec, IIngredient>
+    | MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>
     | undefined;
   private _recipes:
-    | ValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
+    | MaterializedLibrary<FillingId, Fillings.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>
+    | undefined;
+  private _tasks: MaterializedLibrary<TaskId, IRawTaskEntity, Task, never> | undefined;
+  private _procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never> | undefined;
+  private _molds: MaterializedLibrary<MoldId, IMoldEntity, Mold, never> | undefined;
+  private _confections:
+    | MaterializedLibrary<ConfectionId, Confections.AnyConfectionEntity, AnyConfection, never>
     | undefined;
 
   // Extensible indexer orchestrators
   private readonly _recipeOrchestrator: FillingRecipeIndexerOrchestrator;
   private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
-
-  // Cached runtime wrappers for tasks, procedures, molds, and confections
-  private readonly _runtimeTasks: Map<TaskId, Task> = new Map();
-  private readonly _runtimeProcedures: Map<ProcedureId, Procedure> = new Map();
-  private readonly _runtimeMolds: Map<MoldId, Mold> = new Map();
-  private _runtimeConfections: Map<ConfectionId, AnyConfection> | undefined;
 
   protected constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
@@ -152,11 +149,13 @@ export class LibraryRuntimeContext
 
     // Initialize orchestrators with resolver functions bound to this context
     // Orchestrators get logger from library automatically
-    this._recipeOrchestrator = new FillingRecipeIndexerOrchestrator(library, (id) =>
-      this._getFillingRecipe(id)
+    this._recipeOrchestrator = new FillingRecipeIndexerOrchestrator(
+      library,
+      (id) => this.fillings.get(id).asResult
     );
-    this._ingredientOrchestrator = new IngredientIndexerOrchestrator(library, (id) =>
-      this._getIngredient(id)
+    this._ingredientOrchestrator = new IngredientIndexerOrchestrator(
+      library,
+      (id) => this.ingredients.get(id).asResult
     );
 
     if (preWarm) {
@@ -235,23 +234,7 @@ export class LibraryRuntimeContext
    * @returns Success with runtime confection, or Failure if not found
    */
   public getRuntimeConfection(id: ConfectionId): Result<AnyConfection> {
-    // Check cache first
-    const cached = this._runtimeConfections?.get(id);
-    if (cached) {
-      return succeed(cached);
-    }
-
-    // Resolve from library and cache
-    return this._library.getConfection(id).onSuccess((confection) => {
-      return Confection.create(this, id, confection).onSuccess((runtimeConfection) => {
-        // Ensure cache exists
-        if (!this._runtimeConfections) {
-          this._runtimeConfections = new Map();
-        }
-        this._runtimeConfections.set(id, runtimeConfection);
-        return succeed(runtimeConfection);
-      });
-    });
+    return this._getConfections().get(id).asResult;
   }
 
   /**
@@ -260,41 +243,33 @@ export class LibraryRuntimeContext
    * @returns Read-only map of confection IDs to runtime confections
    * @throws Error if confection resolution fails (indicates library corruption)
    */
-  public get runtimeConfections(): ReadonlyMap<ConfectionId, AnyConfection> {
-    return this._resolveRuntimeConfections().orThrow();
+  public get runtimeConfections(): MaterializedLibrary<
+    ConfectionId,
+    Confections.AnyConfectionEntity,
+    AnyConfection,
+    never
+  > {
+    return this._getConfections();
   }
 
   /**
-   * Resolves and caches all confections from the library.
-   * @returns Success with the resolved map, or Failure if any confection fails to resolve
+   * Gets or creates the materialized confections library.
    * @internal
    */
-  private _resolveRuntimeConfections(): Result<Map<ConfectionId, AnyConfection>> {
-    if (this._runtimeConfections === undefined) {
-      this._runtimeConfections = new Map();
+  private _getConfections(): MaterializedLibrary<
+    ConfectionId,
+    Confections.AnyConfectionEntity,
+    AnyConfection,
+    never
+  > {
+    if (!this._confections) {
+      this._confections = new MaterializedLibrary({
+        inner: this._library.confections,
+        converter: (entity, id) => Confection.create(this, id, entity),
+        logger: this.logger
+      });
     }
-
-    // Populate missing entries from library - report and fail on any creation errors
-    for (const [id, confection] of this._library.confections.entries()) {
-      if (!this._runtimeConfections.has(id)) {
-        const createResult = Confection.create(this, id, confection).report(this.logger);
-        /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
-        if (createResult.isFailure()) {
-          return Failure.with(`Failed to resolve confection ${id}: ${createResult.message}`);
-        }
-        this._runtimeConfections.set(id, createResult.value);
-      }
-    }
-
-    // Remove stale cached entries (if underlying library changed)
-    for (const id of this._runtimeConfections.keys()) {
-      /* c8 ignore next 3 - defensive: stale cache cleanup after library mutation */
-      if (!this._library.confections.has(id)) {
-        this._runtimeConfections.delete(id);
-      }
-    }
-
-    return Success.with(this._runtimeConfections);
+    return this._confections;
   }
 
   // ============================================================================
@@ -379,8 +354,8 @@ export class LibraryRuntimeContext
    * @returns Resolved mold references
    */
   public resolveMoldRefs(
-    molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>
-  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
+    molds: Model.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>
+  ): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     const resolvedOptions: IResolvedConfectionMoldRef[] = [];
     for (const ref of molds.options) {
       const moldResult = this.getRuntimeMold(ref.id);
@@ -447,8 +422,8 @@ export class LibraryRuntimeContext
    * @returns Resolved procedures, or undefined if none
    */
   public resolveProcedures(
-    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined
-  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
+    procedures: Model.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined
+  ): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined {
     if (!procedures || procedures.options.length === 0) {
       return undefined;
     }
@@ -485,11 +460,8 @@ export class LibraryRuntimeContext
    * @internal
    */
   private _resolveFillingOptions(
-    options: CommonModel.IOptionsWithPreferred<
-      Confections.AnyFillingOptionEntity,
-      Confections.FillingOptionId
-    >
-  ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId> {
+    options: Model.IOptionsWithPreferred<Confections.AnyFillingOptionEntity, Confections.FillingOptionId>
+  ): Model.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId> {
     const resolvedOptions = options.options
       .map((opt) => this._resolveFillingOption(opt))
       .filter((r): r is IResolvedFillingOption => r !== undefined);
@@ -540,82 +512,70 @@ export class LibraryRuntimeContext
 
   /**
    * A searchable library of all ingredients, keyed by composite ID.
-   * Ingredients are resolved eagerly on first access and cached.
-   * @throws Error if ingredient resolution fails (indicates library corruption)
+   * Ingredients are resolved lazily on access and cached.
    */
-  public get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec> {
-    return this._resolveIngredients().orThrow();
+  public get ingredients(): MaterializedLibrary<
+    IngredientId,
+    IngredientEntity,
+    AnyIngredient,
+    IIngredientQuerySpec
+  > {
+    return this._getIngredients();
   }
 
   /**
    * A searchable library of all fillings, keyed by composite ID.
-   * Fillings are resolved eagerly on first access and cached.
-   * @throws Error if recipe resolution fails (indicates library corruption)
+   * Fillings are resolved lazily on access and cached.
    */
-  public get fillings(): IReadOnlyValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec> {
-    return this._resolveFillingRecipes().orThrow();
+  public get fillings(): MaterializedLibrary<
+    FillingId,
+    Fillings.IFillingRecipeEntity,
+    FillingRecipe,
+    IFillingRecipeQuerySpec
+  > {
+    return this._getFillingRecipes();
   }
 
   /**
-   * Resolves and caches all ingredients from the library.
-   * @returns Success with the resolved library, or Failure if any ingredient fails to resolve
+   * Gets or creates the materialized ingredients library.
    * @internal
    */
-  private _resolveIngredients(): Result<
-    ValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec, IIngredient>
+  private _getIngredients(): MaterializedLibrary<
+    IngredientId,
+    IngredientEntity,
+    AnyIngredient,
+    IIngredientQuerySpec
   > {
-    if (this._ingredients === undefined) {
-      this._ingredients = new ValidatingLibrary({
-        converters: new Collections.KeyValueConverters<IngredientId, AnyIngredient>({
-          key: (from: unknown) => Converters.ingredientId.convert(from),
-          /* c8 ignore next 4 - defensive code: value converter only used for external validation, not internal population */
-          value: (from: unknown) =>
-            from instanceof Ingredient ? succeed(from as AnyIngredient) : fail('not a runtime ingredient')
-        }),
-        orchestrator: this._ingredientOrchestrator
+    if (!this._ingredients) {
+      this._ingredients = new MaterializedLibrary({
+        inner: this._library.ingredients,
+        converter: (entity, id) => Ingredient.create(this, id, entity),
+        orchestrator: this._ingredientOrchestrator,
+        logger: this.logger
       });
-      // Populate from library - report and fail on any creation errors
-      for (const [id, ingredient] of this._library.ingredients.entries()) {
-        const createResult = Ingredient.create(this, id, ingredient).report(this.logger);
-        /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
-        if (createResult.isFailure()) {
-          return Failure.with(`Failed to resolve ingredient ${id}: ${createResult.message}`);
-        }
-        this._ingredients.set(id, createResult.value);
-      }
     }
-    return Success.with(this._ingredients);
+    return this._ingredients!;
   }
 
   /**
-   * Resolves and caches all recipes from the library.
-   * @returns Success with the resolved library, or Failure if any recipe fails to resolve
+   * Gets or creates the materialized filling recipes library.
    * @internal
    */
-  private _resolveFillingRecipes(): Result<
-    ValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec, IFillingRecipe>
+  private _getFillingRecipes(): MaterializedLibrary<
+    FillingId,
+    Fillings.IFillingRecipeEntity,
+    FillingRecipe,
+    IFillingRecipeQuerySpec
   > {
-    if (this._recipes === undefined) {
-      this._recipes = new ValidatingLibrary({
-        converters: new Collections.KeyValueConverters<FillingId, FillingRecipe>({
-          key: (from: unknown) => Converters.fillingId.convert(from),
-          /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
-          value: (from: unknown) =>
-            from instanceof FillingRecipe ? succeed(from) : fail('not a runtime recipe')
-        }),
-        orchestrator: this._recipeOrchestrator
+    if (!this._recipes) {
+      this._recipes = new MaterializedLibrary({
+        inner: this._library.fillings,
+        converter: (entity, id) => FillingRecipe.create(this, id, entity),
+        orchestrator: this._recipeOrchestrator,
+        logger: this.logger
       });
-      // Populate from library - report and fail on any creation errors
-      for (const [id, recipe] of this._library.fillings.entries()) {
-        const createResult = FillingRecipe.create(this, id, recipe).report(this.logger);
-        /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
-        if (createResult.isFailure()) {
-          return Failure.with(`Failed to resolve recipe ${id}: ${createResult.message}`);
-        }
-        this._recipes.set(id, createResult.value);
-      }
     }
-    return Success.with(this._recipes);
+    return this._recipes!;
   }
 
   /**
@@ -623,7 +583,7 @@ export class LibraryRuntimeContext
    * @internal - for use by orchestrators and internal navigation
    */
   public _getIngredient(id: IngredientId): Result<AnyIngredient> {
-    return this._resolveIngredients().onSuccess((lib) => lib.get(id).asResult);
+    return this._getIngredients().get(id).asResult;
   }
 
   /**
@@ -631,7 +591,7 @@ export class LibraryRuntimeContext
    * @internal - for use by orchestrators and internal navigation
    */
   public _getFillingRecipe(id: FillingId): Result<FillingRecipe> {
-    return this._resolveFillingRecipes().onSuccess((lib) => lib.get(id).asResult);
+    return this._getFillingRecipes().get(id).asResult;
   }
 
   // ============================================================================
@@ -694,19 +654,22 @@ export class LibraryRuntimeContext
    * @returns Success with RuntimeTask, or Failure if not found
    */
   public getTask(id: TaskId): Result<Task> {
-    // Check cache first
-    const cached = this._runtimeTasks.get(id);
-    if (cached) {
-      return succeed(cached);
-    }
+    return this._getTasks().get(id).asResult;
+  }
 
-    // Resolve from library and cache
-    return this._library.getTask(id).onSuccess((task) => {
-      return Task.create(this, id, task).onSuccess((runtimeTask) => {
-        this._runtimeTasks.set(id, runtimeTask);
-        return succeed(runtimeTask);
+  /**
+   * Gets or creates the materialized tasks library.
+   * @internal
+   */
+  private _getTasks(): MaterializedLibrary<TaskId, IRawTaskEntity, Task, never> {
+    if (!this._tasks) {
+      this._tasks = new MaterializedLibrary({
+        inner: this._library.tasks,
+        converter: (entity, id) => Task.create(this, id, entity),
+        logger: this.logger
       });
-    });
+    }
+    return this._tasks;
   }
 
   /**
@@ -715,19 +678,22 @@ export class LibraryRuntimeContext
    * @returns Success with RuntimeProcedure, or Failure if not found
    */
   public getRuntimeProcedure(id: ProcedureId): Result<Procedure> {
-    // Check cache first
-    const cached = this._runtimeProcedures.get(id);
-    if (cached) {
-      return succeed(cached);
-    }
+    return this._getProcedures().get(id).asResult;
+  }
 
-    // Resolve from library and cache
-    return this._library.getProcedure(id).onSuccess((procedure) => {
-      return Procedure.create(this, id, procedure).onSuccess((runtimeProcedure) => {
-        this._runtimeProcedures.set(id, runtimeProcedure);
-        return succeed(runtimeProcedure);
+  /**
+   * Gets or creates the materialized procedures library.
+   * @internal
+   */
+  private _getProcedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never> {
+    if (!this._procedures) {
+      this._procedures = new MaterializedLibrary({
+        inner: this._library.procedures,
+        converter: (entity, id) => Procedure.create(this, id, entity),
+        logger: this.logger
       });
-    });
+    }
+    return this._procedures;
   }
 
   /**
@@ -736,21 +702,22 @@ export class LibraryRuntimeContext
    * @returns Success with RuntimeMold, or Failure if not found
    */
   public getRuntimeMold(id: MoldId): Result<Mold> {
-    // Check cache first
-    const cached = this._runtimeMolds.get(id);
-    /* c8 ignore next 3 - cache hit path tested via integration */
-    if (cached) {
-      return succeed(cached);
-    }
+    return this._getMolds().get(id).asResult;
+  }
 
-    // Resolve from library and cache
-    return this._library.getMold(id).onSuccess((mold) => {
-      /* c8 ignore next 4 - cache population tested via integration */
-      return Mold.create(this, id, mold).onSuccess((runtimeMold) => {
-        this._runtimeMolds.set(id, runtimeMold);
-        return succeed(runtimeMold);
+  /**
+   * Gets or creates the materialized molds library.
+   * @internal
+   */
+  private _getMolds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never> {
+    if (!this._molds) {
+      this._molds = new MaterializedLibrary({
+        inner: this._library.molds,
+        converter: (entity, id) => Mold.create(this, id, entity),
+        logger: this.logger
       });
-    });
+    }
+    return this._molds;
   }
 
   // ============================================================================
@@ -796,7 +763,10 @@ export class LibraryRuntimeContext
   private _resolveFillingIds(fillingIds: ReadonlySet<FillingId>): FillingRecipe[] {
     const result: FillingRecipe[] = [];
     for (const id of fillingIds) {
-      this._getFillingRecipe(id).onSuccess((r: FillingRecipe) => Success.with(result.push(r)));
+      const getResult = this._getFillingRecipes().get(id);
+      if (getResult.isSuccess()) {
+        result.push(getResult.value);
+      }
     }
     return result;
   }
@@ -867,7 +837,7 @@ export class LibraryRuntimeContext
    * Gets the number of cached confections.
    */
   public get cachedConfectionCount(): number {
-    return this._runtimeConfections?.size ?? 0;
+    return this._confections?.size ?? 0;
   }
 
   /**
@@ -877,10 +847,10 @@ export class LibraryRuntimeContext
   public clearCache(): void {
     this._ingredients = undefined;
     this._recipes = undefined;
-    this._runtimeConfections = undefined;
-    this._runtimeTasks.clear();
-    this._runtimeProcedures.clear();
-    this._runtimeMolds.clear();
+    this._confections = undefined;
+    this._tasks = undefined;
+    this._procedures = undefined;
+    this._molds = undefined;
     this._reverseIndex.invalidate();
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();

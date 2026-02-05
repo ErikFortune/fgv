@@ -9,7 +9,7 @@ Computes union of multiple sets.
 **Signature:**
 
 ```typescript
-protected _union(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
+protected _union(sets: Array<Set<TId>>): Set<TId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ sets
 
 </td><td>
 
-Array&lt;Set&lt;TId \| TEntity&gt;&gt;
+Array&lt;Set&lt;TId&gt;&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ Array of sets to union
 
 **Returns:**
 
-Set&lt;TId \| TEntity&gt;
+Set&lt;TId&gt;
 
-Set containing items present in any input set
+Set containing IDs present in any input set
 

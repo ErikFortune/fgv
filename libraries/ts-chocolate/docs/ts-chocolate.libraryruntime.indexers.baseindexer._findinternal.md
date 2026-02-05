@@ -9,7 +9,7 @@ Executes the query against the built index.
 **Signature:**
 
 ```typescript
-protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
+protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The query configuration
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;TEntity \| TId&gt;&gt;
+Result&lt;ReadonlyArray&lt;TId&gt;&gt;
 
-Array of matching entities or IDs
+Array of matching IDs
 

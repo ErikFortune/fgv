@@ -28,6 +28,7 @@
  */
 
 import { Result } from '@fgv/ts-utils';
+import type { Collections } from '@fgv/ts-utils';
 
 import { ConfectionId, Measurement } from '../common';
 import type { EditingSession } from './session/editingSession';
@@ -90,7 +91,7 @@ export interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext
    * Gets all runtime confections as an iterable map.
    * Confections are resolved lazily and cached on first access.
    */
-  readonly runtimeConfections: ReadonlyMap<ConfectionId, IConfectionBase>;
+  readonly runtimeConfections: Collections.IReadOnlyResultMap<ConfectionId, IConfectionBase>;
 
   /**
    * Gets a runtime confection by ID (with lazy resolution and caching).

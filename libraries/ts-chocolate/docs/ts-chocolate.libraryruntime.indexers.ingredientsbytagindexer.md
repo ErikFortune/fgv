@@ -9,9 +9,9 @@ Indexer that finds ingredients with a specific tag. Tag matching is case-insensi
 **Signature:**
 
 ```typescript
-export declare class IngredientsByTagIndexer extends BaseIndexer<IIngredient, IngredientId, IIngredientsByTagConfig> 
+export declare class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredientsByTagConfig> 
 ```
-**Extends:** [BaseIndexer](./ts-chocolate.libraryruntime.indexers.baseindexer.md)<!-- -->&lt;[IIngredient](./ts-chocolate.libraryruntime.iingredient.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IIngredientsByTagConfig](./ts-chocolate.libraryruntime.indexers.iingredientsbytagconfig.md)<!-- -->&gt;
+**Extends:** [BaseIndexer](./ts-chocolate.libraryruntime.indexers.baseindexer.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IIngredientsByTagConfig](./ts-chocolate.libraryruntime.indexers.iingredientsbytagconfig.md)<!-- -->&gt;
 
 ## Constructors
 

@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.LibraryRuntimeContext.ingredients property
 
-A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved lazily on access and cached.
 
 **Signature:**
 
 ```typescript
-get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec>;
+get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
 ```

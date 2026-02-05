@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.LibraryRuntimeContext.fillings property
 
-A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached.
+A searchable library of all fillings, keyed by composite ID. Fillings are resolved lazily on access and cached.
 
 **Signature:**
 
 ```typescript
-get fillings(): IReadOnlyValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec>;
+get fillings(): MaterializedLibrary<FillingId, Fillings.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
 ```

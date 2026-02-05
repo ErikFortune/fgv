@@ -11,9 +11,9 @@ Subclasses must implement: - `_buildIndex()`<!-- -->: Build the internal index s
 **Signature:**
 
 ```typescript
-export declare abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> 
+export declare abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig> 
 ```
-**Implements:** [IIndexer](./ts-chocolate.libraryruntime.indexers.iindexer.md)<!-- -->&lt;TEntity, TId, TConfig&gt;
+**Implements:** [IIndexer](./ts-chocolate.libraryruntime.indexers.iindexer.md)<!-- -->&lt;TId, TConfig&gt;
 
 ## Constructors
 
@@ -310,7 +310,7 @@ Helper to get values from a Set-based index as an array.
 
 </td><td>
 
-Finds entities or IDs matching the given configuration.
+Finds IDs matching the given configuration.
 
 
 </td></tr>

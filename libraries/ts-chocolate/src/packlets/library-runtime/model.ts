@@ -28,12 +28,14 @@
  * @packageDocumentation
  */
 
-import { Collections, Result } from '@fgv/ts-utils';
+import { Result } from '@fgv/ts-utils';
 
 import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
-import { IReadOnlyValidatingLibrary } from './validatingLibrary';
+import type { MaterializedLibrary } from './materializedLibrary';
 import type { IMold } from './molds/model';
 import type { IProcedure } from './procedures/model';
+import type { AnyIngredient } from './ingredients/ingredient';
+import type { FillingRecipe } from './fillings/fillingRecipe';
 
 import {
   AdditionalChocolatePurpose,
@@ -859,9 +861,19 @@ export interface IIngredientUsageInfo {
  */
 export interface IVersionContext<TIngredient extends IIngredient = IIngredient> {
   /** Map of all ingredients, keyed by composite ID. */
-  readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
+  readonly ingredients: MaterializedLibrary<
+    IngredientId,
+    IngredientEntity,
+    TIngredient,
+    IIngredientQuerySpec
+  >;
   /** Map of all fillings, keyed by composite ID. */
-  readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IFillingRecipe>;
+  readonly fillings: MaterializedLibrary<
+    FillingId,
+    IFillingRecipeEntity,
+    FillingRecipe,
+    IFillingRecipeQuerySpec
+  >;
   /** Gets a procedure by its composite ID. */
   getProcedure(id: string): Result<IProcedureEntity>;
 }
@@ -913,19 +925,29 @@ export interface ILibraryRuntimeContext {
 
   /**
    * A searchable library of all ingredients, keyed by composite ID.
-   * Ingredients are resolved eagerly on first access and cached.
+   * Ingredients are resolved lazily on access and cached.
    * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
    * `.has(id)` for existence checks, `.values()` for iteration.
    */
-  readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IIngredient, IIngredientQuerySpec>;
+  readonly ingredients: MaterializedLibrary<
+    IngredientId,
+    IngredientEntity,
+    AnyIngredient,
+    IIngredientQuerySpec
+  >;
 
   /**
    * A searchable library of all fillings, keyed by composite ID.
-   * Fillings are resolved eagerly on first access and cached.
+   * Fillings are resolved lazily on access and cached.
    * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
    * `.has(id)` for existence checks, `.values()` for iteration.
    */
-  readonly fillings: IReadOnlyValidatingLibrary<FillingId, IFillingRecipe, IFillingRecipeQuerySpec>;
+  readonly fillings: MaterializedLibrary<
+    FillingId,
+    IFillingRecipeEntity,
+    FillingRecipe,
+    IFillingRecipeQuerySpec
+  >;
 
   /**
    * The confections library for accessing confection data.

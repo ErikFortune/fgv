@@ -9,7 +9,7 @@ Filling recipe resolver function type. Provided by RuntimeContext to resolve fil
 **Signature:**
 
 ```typescript
-export type FillingRecipeResolver = (id: FillingId) => Result<IFillingRecipe>;
+export type FillingRecipeResolver = (id: FillingId) => Result<FillingRecipe>;
 ```
-**References:** [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)
+**References:** [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)
 

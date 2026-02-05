@@ -345,15 +345,15 @@ const baseFillingId_2: Validator<BaseFillingId>;
 function baseIdExists(baseId: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>): boolean;
 
 // @public
-abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
+abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig> {
     protected constructor(library: ChocolateLibrary);
     protected _addToSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey, value: TValue): void;
     protected abstract _buildIndex(): void;
     protected abstract _clearIndex(): void;
-    protected _emptyResult(): Result<ReadonlyArray<TEntity | TId>>;
+    protected _emptyResult(): Result<ReadonlyArray<TId>>;
     protected _ensureBuilt(): void;
-    find(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
-    protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
+    find(config: TConfig): Result<ReadonlyArray<TId>>;
+    protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TId>>;
     protected _getFromSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey): ReadonlyArray<TValue>;
     protected get _indexerName(): string;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -372,12 +372,12 @@ abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, T
 // @public
 abstract class BaseIndexerOrchestrator<TEntity, TId> {
     protected constructor(library: ChocolateLibrary, resolver: IEntityResolver<TEntity, TId>);
-    protected _intersect(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
+    protected _intersect(sets: Array<Set<TId>>): Set<TId>;
     readonly library: ChocolateLibrary;
     protected get _logger(): Logging.LogReporter<unknown>;
     protected readonly _resolver: IEntityResolver<TEntity, TId>;
-    protected _resolveToEntities(items: Set<TId | TEntity>): Result<ReadonlyArray<TEntity>>;
-    protected _union(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
+    protected _resolveToEntities(ids: Set<TId>): Result<ReadonlyArray<TEntity>>;
+    protected _union(sets: Array<Set<TId>>): Set<TId>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1665,10 +1665,10 @@ type FillingRecipeFilter = FilterPredicate<FillingRecipe>;
 type FillingRecipeIndexerName = keyof IFillingRecipeQuerySpec;
 
 // @public
-class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IFillingRecipe, FillingId> {
+class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<FillingRecipe, FillingId> {
     constructor(library: ChocolateLibrary, resolver: FillingRecipeResolver);
     convertConfig(json: unknown): Result<IFillingRecipeQuerySpec>;
-    find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IFillingRecipe>>;
+    find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<FillingRecipe>>;
     invalidate(): void;
     warmUp(): void;
 }
@@ -1715,7 +1715,7 @@ const fillingRecipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec>;
 const fillingRecipeRawEntity: Converter<IFillingRecipeEntity>;
 
 // @public
-type FillingRecipeResolver = (id: FillingId) => Result<IFillingRecipe>;
+type FillingRecipeResolver = (id: FillingId) => Result<FillingRecipe>;
 
 // @public
 function fillingRecipesByCategoryConfig(category: FillingCategory_2): IFillingRecipesByCategoryConfig;
@@ -1724,7 +1724,7 @@ function fillingRecipesByCategoryConfig(category: FillingCategory_2): IFillingRe
 const fillingRecipesByCategoryConfigConverter: Converter<IFillingRecipesByCategoryConfig>;
 
 // @public
-class FillingRecipesByCategoryIndexer extends BaseIndexer<IFillingRecipe, FillingId, IFillingRecipesByCategoryConfig> {
+class FillingRecipesByCategoryIndexer extends BaseIndexer<FillingId, IFillingRecipesByCategoryConfig> {
     constructor(library: ChocolateLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1737,7 +1737,7 @@ class FillingRecipesByCategoryIndexer extends BaseIndexer<IFillingRecipe, Fillin
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _findInternal(config: IFillingRecipesByCategoryConfig): Result<ReadonlyArray<IFillingRecipe | FillingId>>;
+    protected _findInternal(config: IFillingRecipesByCategoryConfig): Result<ReadonlyArray<FillingId>>;
     getAllCategories(): ReadonlyArray<FillingCategory_2>;
 }
 
@@ -1748,7 +1748,7 @@ function fillingRecipesByChocolateTypeConfig(chocolateType: ChocolateType): IFil
 const fillingRecipesByChocolateTypeConfigConverter: Converter<IFillingRecipesByChocolateTypeConfig>;
 
 // @public
-class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<IFillingRecipe, FillingId, IFillingRecipesByChocolateTypeConfig> {
+class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<FillingId, IFillingRecipesByChocolateTypeConfig> {
     constructor(library: ChocolateLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1761,7 +1761,7 @@ class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<IFillingRecipe, F
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _findInternal(config: IFillingRecipesByChocolateTypeConfig): Result<ReadonlyArray<IFillingRecipe | FillingId>>;
+    protected _findInternal(config: IFillingRecipesByChocolateTypeConfig): Result<ReadonlyArray<FillingId>>;
 }
 
 // @public
@@ -1771,7 +1771,7 @@ function fillingRecipesByIngredientConfig(ingredientId: IngredientId, usageType?
 const fillingRecipesByIngredientConfigConverter: Converter<IFillingRecipesByIngredientConfig>;
 
 // @public
-class FillingRecipesByIngredientIndexer extends BaseIndexer<IFillingRecipe, FillingId, IFillingRecipesByIngredientConfig> {
+class FillingRecipesByIngredientIndexer extends BaseIndexer<FillingId, IFillingRecipesByIngredientConfig> {
     constructor(library: ChocolateLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1784,7 +1784,7 @@ class FillingRecipesByIngredientIndexer extends BaseIndexer<IFillingRecipe, Fill
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _findInternal(config: IFillingRecipesByIngredientConfig): Result<ReadonlyArray<IFillingRecipe | FillingId>>;
+    protected _findInternal(config: IFillingRecipesByIngredientConfig): Result<ReadonlyArray<FillingId>>;
 }
 
 // @public
@@ -1794,7 +1794,7 @@ function fillingRecipesByTagConfig(tag: string): IFillingRecipesByTagConfig;
 const fillingRecipesByTagConfigConverter: Converter<IFillingRecipesByTagConfig>;
 
 // @public
-class FillingRecipesByTagIndexer extends BaseIndexer<IFillingRecipe, FillingId, IFillingRecipesByTagConfig> {
+class FillingRecipesByTagIndexer extends BaseIndexer<FillingId, IFillingRecipesByTagConfig> {
     constructor(library: ChocolateLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1807,7 +1807,7 @@ class FillingRecipesByTagIndexer extends BaseIndexer<IFillingRecipe, FillingId, 
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _findInternal(config: IFillingRecipesByTagConfig): Result<ReadonlyArray<IFillingRecipe | FillingId>>;
+    protected _findInternal(config: IFillingRecipesByTagConfig): Result<ReadonlyArray<FillingId>>;
     getAllTags(): ReadonlyArray<string>;
 }
 
@@ -2987,8 +2987,8 @@ interface IImportRootCandidate {
 }
 
 // @public
-interface IIndexer<TEntity, TId, TConfig> {
-    find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
+interface IIndexer<TId, TConfig> {
+    find(config: TConfig): Result<ReadonlyArray<TId>> | undefined;
     invalidate(): void;
     warmUp(): void;
 }
@@ -3204,11 +3204,11 @@ interface ILibraryRuntimeContext {
     readonly cachedRecipeCount: number;
     clearCache(): void;
     readonly confections: Confections_2.ConfectionsLibrary;
-    readonly fillings: IReadOnlyValidatingLibrary<FillingId, IFillingRecipe, IFillingRecipeQuerySpec>;
+    readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IIngredient, IIngredientQuerySpec>;
+    readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
     readonly library: ChocolateLibrary;
     warmUp(): void;
 }
@@ -3234,6 +3234,15 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
     readonly onEncryptedFile?: EncryptedFileHandling;
     // (undocumented)
     readonly recurseWithDelimiter?: string;
+}
+
+// @public
+interface IMaterializedLibraryParams<TId extends string, TEntity, TMaterialized, TQuerySpec = never> {
+    converter: (entity: TEntity, id: TId) => Result<TMaterialized>;
+    inner: Collections.IReadOnlyResultMap<TId, TEntity>;
+    logger?: Logging.ILogger;
+    onConversionError?: Collections.ConversionErrorHandling;
+    orchestrator?: IFindOrchestrator<TMaterialized, TQuerySpec>;
 }
 
 // @public
@@ -3524,10 +3533,10 @@ const ingredientId_2: Validator<IngredientId>;
 type IngredientIndexerName = keyof IIngredientQuerySpec;
 
 // @public
-class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IIngredient, IngredientId> {
+class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<AnyIngredient, IngredientId> {
     constructor(library: ChocolateLibrary, resolver: IngredientResolver_2);
     convertConfig(json: unknown): Result<IIngredientQuerySpec>;
-    find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IIngredient>>;
+    find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyIngredient>>;
     invalidate(): void;
     warmUp(): void;
 }
@@ -3645,7 +3654,7 @@ const ingredientQuerySpecConverter: Converter<IIngredientQuerySpec>;
 type IngredientResolver = (id: IngredientId) => Result<IngredientEntity>;
 
 // @public
-type IngredientResolver_2 = (id: IngredientId) => Result<IIngredient>;
+type IngredientResolver_2 = (id: IngredientId) => Result<AnyIngredient>;
 
 declare namespace Ingredients {
     export {
@@ -3704,7 +3713,7 @@ function ingredientsByTagConfig(tag: string): IIngredientsByTagConfig;
 const ingredientsByTagConfigConverter: Converter<IIngredientsByTagConfig>;
 
 // @public
-class IngredientsByTagIndexer extends BaseIndexer<IIngredient, IngredientId, IIngredientsByTagConfig> {
+class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredientsByTagConfig> {
     constructor(library: ChocolateLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -3717,7 +3726,7 @@ class IngredientsByTagIndexer extends BaseIndexer<IIngredient, IngredientId, IIn
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    protected _findInternal(config: IIngredientsByTagConfig): Result<ReadonlyArray<IIngredient | IngredientId>>;
+    protected _findInternal(config: IIngredientsByTagConfig): Result<ReadonlyArray<IngredientId>>;
     getAllTags(): ReadonlyArray<string>;
 }
 
@@ -4242,7 +4251,7 @@ interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext {
     readonly cachedConfectionCount: number;
     getAllConfectionTags(): ReadonlyArray<string>;
     getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
-    readonly runtimeConfections: ReadonlyMap<ConfectionId, IConfectionBase>;
+    readonly runtimeConfections: Collections.IReadOnlyResultMap<ConfectionId, IConfectionBase>;
 }
 
 // @public
@@ -4807,9 +4816,9 @@ interface IValidationReport {
 
 // @internal
 interface IVersionContext<TIngredient extends IIngredient = IIngredient> {
-    readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IFillingRecipe>;
+    readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
     getProcedure(id: string): Result<IProcedureEntity>;
-    readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
+    readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, TIngredient, IIngredientQuerySpec>;
 }
 
 // @public
@@ -5091,6 +5100,8 @@ declare namespace LibraryRuntime {
         IReadOnlyValidatingLibrary,
         IValidatingLibraryParams,
         ValidatingLibrary,
+        MaterializedLibrary,
+        IMaterializedLibraryParams,
         IngredientBase,
         ChocolateIngredient,
         DairyIngredient,
@@ -5230,7 +5241,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     get confections(): Confections_2.ConfectionsLibrary;
     static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
     createWeightContext(): IWeightCalculationContext;
-    get fillings(): IReadOnlyValidatingLibrary<FillingId, FillingRecipe, IFillingRecipeQuerySpec>;
+    get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
@@ -5257,7 +5268,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     getTask(id: TaskId): Result<Task>;
     getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
     hasConfection(id: ConfectionId): boolean;
-    get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyIngredient, IIngredientQuerySpec>;
+    get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -5270,7 +5281,7 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
     resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get runtimeConfections(): ReadonlyMap<ConfectionId, AnyConfection>;
+    get runtimeConfections(): MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionEntity, AnyConfection, never>;
     warmUp(): void;
 }
 
@@ -5281,6 +5292,13 @@ class LinearScaler implements IUnitScaler {
     scale(amount: Measurement, factor: number): Result<IScaledAmount>;
     // (undocumented)
     readonly supportsScaling: boolean;
+}
+
+// @public
+class MaterializedLibrary<TId extends string, TEntity, TMaterialized, TQuerySpec = never> extends Collections.ReadOnlyConvertingResultMap<TId, TEntity, TMaterialized> {
+    constructor(params: IMaterializedLibraryParams<TId, TEntity, TMaterialized, TQuerySpec>);
+    find(spec: TQuerySpec, options?: IFindOptions): Result<ReadonlyArray<TMaterialized>>;
+    get hasFindSupport(): boolean;
 }
 
 // @public

@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.Indexers.BaseIndexerOrchestrator.\_resolveToEntities() method
 
-Resolves a set of entities/IDs to entities.
+Resolves a set of IDs to entities.
 
 **Signature:**
 
 ```typescript
-protected _resolveToEntities(items: Set<TId | TEntity>): Result<ReadonlyArray<TEntity>>;
+protected _resolveToEntities(ids: Set<TId>): Result<ReadonlyArray<TEntity>>;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-items
+ids
 
 
 </td><td>
 
-Set&lt;TId \| TEntity&gt;
+Set&lt;TId&gt;
 
 
 </td><td>
 
-Set of entities or IDs to resolve
+Set of IDs to resolve
 
 
 </td></tr>

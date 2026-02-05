@@ -11,9 +11,9 @@ Encapsulates all filling recipe-related indexers and provides a unified find int
 **Signature:**
 
 ```typescript
-export declare class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IFillingRecipe, FillingId> 
+export declare class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<FillingRecipe, FillingId> 
 ```
-**Extends:** [BaseIndexerOrchestrator](./ts-chocolate.libraryruntime.indexers.baseindexerorchestrator.md)<!-- -->&lt;[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->&gt;
+**Extends:** [BaseIndexerOrchestrator](./ts-chocolate.libraryruntime.indexers.baseindexerorchestrator.md)<!-- -->&lt;[FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->&gt;
 
 ## Constructors
 

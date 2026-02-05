@@ -9,9 +9,9 @@ Helper to return an empty success result.
 **Signature:**
 
 ```typescript
-protected _emptyResult(): Result<ReadonlyArray<TEntity | TId>>;
+protected _emptyResult(): Result<ReadonlyArray<TId>>;
 ```
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;TEntity \| TId&gt;&gt;
+Result&lt;ReadonlyArray&lt;TId&gt;&gt;
 

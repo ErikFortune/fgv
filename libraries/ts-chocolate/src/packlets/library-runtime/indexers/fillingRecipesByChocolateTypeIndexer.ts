@@ -27,7 +27,6 @@ import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { ChocolateType, Converters as ChocolateConverters, FillingId, Helpers } from '../../common';
 import { Ingredients } from '../../entities';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -71,7 +70,6 @@ export const fillingRecipesByChocolateTypeConfigConverter: Converter<IFillingRec
  * @public
  */
 export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
-  IFillingRecipe,
   FillingId,
   IFillingRecipesByChocolateTypeConfig
 > {
@@ -122,9 +120,7 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
   }
 
   /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
-  protected _findInternal(
-    config: IFillingRecipesByChocolateTypeConfig
-  ): Result<ReadonlyArray<IFillingRecipe | FillingId>> {
+  protected _findInternal(config: IFillingRecipesByChocolateTypeConfig): Result<ReadonlyArray<FillingId>> {
     const recipeIds = this._getFromSetIndex(this._typeToRecipes!, config.chocolateType);
     return Success.with(recipeIds);
   }

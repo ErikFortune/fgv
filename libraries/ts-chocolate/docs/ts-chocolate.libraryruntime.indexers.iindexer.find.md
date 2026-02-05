@@ -4,12 +4,12 @@
 
 ## LibraryRuntime.Indexers.IIndexer.find() method
 
-Finds entities or IDs matching the given configuration. Returns undefined if this indexer has no work to do (config not relevant). Returns empty array if config is relevant but no matches found.
+Finds IDs matching the given configuration. Returns undefined if this indexer has no work to do (config not relevant). Returns empty array if config is relevant but no matches found.
 
 **Signature:**
 
 ```typescript
-find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
+find(config: TConfig): Result<ReadonlyArray<TId>> | undefined;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The indexer-specific configuration
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;TEntity \| TId&gt;&gt; \| undefined
+Result&lt;ReadonlyArray&lt;TId&gt;&gt; \| undefined
 
-Array of entities or IDs, undefined if not applicable, or Failure on error
+Array of IDs, undefined if not applicable, or Failure on error
 

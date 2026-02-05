@@ -141,6 +141,52 @@ The inner map containing source values.
 </td></tr>
 <tr><td>
 
+[\_logger?](./ts-utils.collections.readonlyconvertingresultmap._logger.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+[ILogger](./ts-utils.logging.ilogger.md)
+
+
+</td><td>
+
+_(Optional)_ Optional logger for warnings.
+
+
+</td></tr>
+<tr><td>
+
+[\_onConversionError](./ts-utils.collections.readonlyconvertingresultmap._onconversionerror.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+[ConversionErrorHandling](./ts-utils.collections.conversionerrorhandling.md)
+
+
+</td><td>
+
+Error handling behavior for conversion failures during iteration.
+
+
+</td></tr>
+<tr><td>
+
 [size](./ts-utils.collections.readonlyconvertingresultmap.size.md)
 
 
@@ -240,7 +286,7 @@ Converts a source value to a target value and caches the result.
 
 </td><td>
 
-Gets a cached value or converts and caches a source value. Used by iterators where we want to silently skip conversion failures.
+Gets a cached value or converts and caches a source value. Used by iterators. Handles conversion failures according to `_onConversionError`<!-- -->.
 
 
 </td></tr>

@@ -11,9 +11,9 @@ Supports filtering by: - Primary usage only - Alternate usage only - Any usage
 **Signature:**
 
 ```typescript
-export declare class FillingRecipesByIngredientIndexer extends BaseIndexer<IFillingRecipe, FillingId, IFillingRecipesByIngredientConfig> 
+export declare class FillingRecipesByIngredientIndexer extends BaseIndexer<FillingId, IFillingRecipesByIngredientConfig> 
 ```
-**Extends:** [BaseIndexer](./ts-chocolate.libraryruntime.indexers.baseindexer.md)<!-- -->&lt;[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipesByIngredientConfig](./ts-chocolate.libraryruntime.indexers.ifillingrecipesbyingredientconfig.md)<!-- -->&gt;
+**Extends:** [BaseIndexer](./ts-chocolate.libraryruntime.indexers.baseindexer.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipesByIngredientConfig](./ts-chocolate.libraryruntime.indexers.ifillingrecipesbyingredientconfig.md)<!-- -->&gt;
 
 ## Constructors
 

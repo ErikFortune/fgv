@@ -51,6 +51,9 @@ export {
   ValidatingLibrary
 } from './validatingLibrary';
 
+// MaterializedLibrary - lazy, cached materialization with find support
+export { MaterializedLibrary, IMaterializedLibraryParams } from './materializedLibrary';
+
 // Ingredient classes
 export {
   IngredientBase,

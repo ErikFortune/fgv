@@ -4,16 +4,16 @@
 
 ## LibraryRuntime.Indexers.IIndexer interface
 
-Interface for a single indexer that can find entities matching a query config.
+Interface for a single indexer that can find entity IDs matching a query config.
 
-Indexers are templated by: - TEntity: The entity type returned (e.g., IRuntimeRecipe) - TId: The ID type for the entity (e.g., RecipeId) - TConfig: The specific config type for this indexer
+Indexers are templated by: - TId: The ID type for the entity (e.g., RecipeId) - TConfig: The specific config type for this indexer
 
-Indexers can return either entities or IDs - the orchestrator resolves IDs to entities.
+Indexers return only IDs - the orchestrator resolves IDs to entities.
 
 **Signature:**
 
 ```typescript
-export interface IIndexer<TEntity, TId, TConfig> 
+export interface IIndexer<TId, TConfig> 
 ```
 
 ## Methods
@@ -36,7 +36,7 @@ Description
 
 </td><td>
 
-Finds entities or IDs matching the given configuration. Returns undefined if this indexer has no work to do (config not relevant). Returns empty array if config is relevant but no matches found.
+Finds IDs matching the given configuration. Returns undefined if this indexer has no work to do (config not relevant). Returns empty array if config is relevant but no matches found.
 
 
 </td></tr>

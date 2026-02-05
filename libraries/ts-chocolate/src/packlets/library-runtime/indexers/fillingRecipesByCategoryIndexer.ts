@@ -27,7 +27,6 @@ import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { FillingId } from '../../common';
 import { Fillings, FillingCategory } from '../../entities';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -71,11 +70,7 @@ export const fillingRecipesByCategoryConfigConverter: Converter<IFillingRecipesB
  *
  * @public
  */
-export class FillingRecipesByCategoryIndexer extends BaseIndexer<
-  IFillingRecipe,
-  FillingId,
-  IFillingRecipesByCategoryConfig
-> {
+export class FillingRecipesByCategoryIndexer extends BaseIndexer<FillingId, IFillingRecipesByCategoryConfig> {
   // Index structure: category -> recipe IDs
   private _categoryToRecipes: Map<FillingCategory, Set<FillingId>> | undefined;
 
@@ -115,9 +110,7 @@ export class FillingRecipesByCategoryIndexer extends BaseIndexer<
   }
 
   /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
-  protected _findInternal(
-    config: IFillingRecipesByCategoryConfig
-  ): Result<ReadonlyArray<IFillingRecipe | FillingId>> {
+  protected _findInternal(config: IFillingRecipesByCategoryConfig): Result<ReadonlyArray<FillingId>> {
     const recipeIds = this._getFromSetIndex(this._categoryToRecipes!, config.category);
     return Success.with(recipeIds);
   }

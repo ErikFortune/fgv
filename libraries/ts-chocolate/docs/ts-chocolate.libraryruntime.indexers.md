@@ -308,11 +308,11 @@ Options for the find operation.
 
 </td><td>
 
-Interface for a single indexer that can find entities matching a query config.
+Interface for a single indexer that can find entity IDs matching a query config.
 
-Indexers are templated by: - TEntity: The entity type returned (e.g., IRuntimeRecipe) - TId: The ID type for the entity (e.g., RecipeId) - TConfig: The specific config type for this indexer
+Indexers are templated by: - TId: The ID type for the entity (e.g., RecipeId) - TConfig: The specific config type for this indexer
 
-Indexers can return either entities or IDs - the orchestrator resolves IDs to entities.
+Indexers return only IDs - the orchestrator resolves IDs to entities.
 
 
 </td></tr>

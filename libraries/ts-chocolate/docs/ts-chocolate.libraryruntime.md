@@ -157,6 +157,17 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 </td></tr>
 <tr><td>
 
+[MaterializedLibrary](./ts-chocolate.libraryruntime.materializedlibrary.md)
+
+
+</td><td>
+
+A read-only library providing lazily-materialized, cached runtime objects. Wraps a data-layer library and converts entities to materialized objects on demand.
+
+
+</td></tr>
+<tr><td>
+
 [Mold](./ts-chocolate.libraryruntime.mold.md)
 
 
@@ -882,6 +893,17 @@ Note: For session creation capabilities, use IRuntimeContext from the runtime pa
 </td><td>
 
 Parameters for creating a LibraryRuntimeContext with a new library
+
+
+</td></tr>
+<tr><td>
+
+[IMaterializedLibraryParams](./ts-chocolate.libraryruntime.imaterializedlibraryparams.md)
+
+
+</td><td>
+
+Parameters for constructing a MaterializedLibrary.
 
 
 </td></tr>

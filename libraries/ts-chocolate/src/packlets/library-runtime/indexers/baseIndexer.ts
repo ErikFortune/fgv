@@ -36,7 +36,7 @@ import { ChocolateLibrary } from '../chocolateLibrary';
  *
  * @public
  */
-export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
+export abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig> {
   /**
    * The chocolate library being indexed.
    */
@@ -63,11 +63,11 @@ export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEn
   }
 
   /**
-   * Finds entities or IDs matching the given configuration.
+   * Finds IDs matching the given configuration.
    * @param config - The indexer-specific configuration
-   * @returns Array of entities or IDs, or Failure on error
+   * @returns Array of IDs, or Failure on error
    */
-  public find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> {
+  public find(config: TConfig): Result<ReadonlyArray<TId>> {
     // Ensure index is built
     this._ensureBuilt();
 
@@ -122,9 +122,9 @@ export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEn
   /**
    * Executes the query against the built index.
    * @param config - The query configuration
-   * @returns Array of matching entities or IDs
+   * @returns Array of matching IDs
    */
-  protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
+  protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TId>>;
 
   // ============================================================================
   // Common Helper Methods
@@ -153,7 +153,7 @@ export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEn
   /**
    * Helper to return an empty success result.
    */
-  protected _emptyResult(): Result<ReadonlyArray<TEntity | TId>> {
+  protected _emptyResult(): Result<ReadonlyArray<TId>> {
     return Success.with([]);
   }
 }

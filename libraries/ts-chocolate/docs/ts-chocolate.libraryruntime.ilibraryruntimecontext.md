@@ -116,12 +116,12 @@ The confections library for accessing confection data. Use `.get(id)` for ID-bas
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+[MaterializedLibrary](./ts-chocolate.libraryruntime.materializedlibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipeEntity](./ts-chocolate.entities.ifillingrecipeentity.md)<!-- -->, [FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.libraryruntime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
+A searchable library of all fillings, keyed by composite ID. Fillings are resolved lazily on access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 
 </td></tr>
@@ -137,12 +137,12 @@ A searchable library of all fillings, keyed by composite ID. Fillings are resolv
 
 </td><td>
 
-[IReadOnlyValidatingLibrary](./ts-chocolate.libraryruntime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IIngredient](./ts-chocolate.libraryruntime.iingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
+[MaterializedLibrary](./ts-chocolate.libraryruntime.materializedlibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IngredientEntity](./ts-chocolate.entities.ingrediententity.md)<!-- -->, [AnyIngredient](./ts-chocolate.libraryruntime.anyingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.libraryruntime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved lazily on access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 
 </td></tr>

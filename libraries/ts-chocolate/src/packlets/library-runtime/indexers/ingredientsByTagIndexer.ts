@@ -26,7 +26,6 @@
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { IngredientId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IIngredient } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -71,7 +70,7 @@ export const ingredientsByTagConfigConverter: Converter<IIngredientsByTagConfig>
  *
  * @public
  */
-export class IngredientsByTagIndexer extends BaseIndexer<IIngredient, IngredientId, IIngredientsByTagConfig> {
+export class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredientsByTagConfig> {
   // Index structure: lowercase tag -> ingredient IDs
   private _tagToIngredients: Map<string, Set<IngredientId>> | undefined;
 
@@ -113,9 +112,7 @@ export class IngredientsByTagIndexer extends BaseIndexer<IIngredient, Ingredient
   }
 
   /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
-  protected _findInternal(
-    config: IIngredientsByTagConfig
-  ): Result<ReadonlyArray<IIngredient | IngredientId>> {
+  protected _findInternal(config: IIngredientsByTagConfig): Result<ReadonlyArray<IngredientId>> {
     const ingredientIds = this._getFromSetIndex(this._tagToIngredients!, config.tag.toLowerCase());
     return Success.with(ingredientIds);
   }

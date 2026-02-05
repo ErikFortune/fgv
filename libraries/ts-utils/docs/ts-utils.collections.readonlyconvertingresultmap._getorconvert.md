@@ -4,7 +4,7 @@
 
 ## Collections.ReadOnlyConvertingResultMap.\_getOrConvert() method
 
-Gets a cached value or converts and caches a source value. Used by iterators where we want to silently skip conversion failures.
+Gets a cached value or converts and caches a source value. Used by iterators. Handles conversion failures according to `_onConversionError`<!-- -->.
 
 **Signature:**
 
@@ -69,4 +69,8 @@ The source value to convert if not cached.
 TTARGET \| undefined
 
 The converted value, or `undefined` if conversion failed.
+
+## Exceptions
+
+Error if `_onConversionError` is `'fail'` and conversion fails.
 

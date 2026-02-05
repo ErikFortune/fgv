@@ -9,7 +9,7 @@ Finds recipes matching a query specification.
 **Signature:**
 
 ```typescript
-find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IFillingRecipe>>;
+find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<FillingRecipe>>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional find options (aggregation mode)
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[IFillingRecipe](./ts-chocolate.libraryruntime.ifillingrecipe.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[FillingRecipe](./ts-chocolate.libraryruntime.fillingrecipe.md)<!-- -->&gt;&gt;
 
 Array of matching recipes
 

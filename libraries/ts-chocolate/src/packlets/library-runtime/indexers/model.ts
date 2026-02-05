@@ -25,27 +25,26 @@
 
 import { Result } from '@fgv/ts-utils';
 /**
- * Interface for a single indexer that can find entities matching a query config.
+ * Interface for a single indexer that can find entity IDs matching a query config.
  *
  * Indexers are templated by:
- * - TEntity: The entity type returned (e.g., IRuntimeRecipe)
  * - TId: The ID type for the entity (e.g., RecipeId)
  * - TConfig: The specific config type for this indexer
  *
- * Indexers can return either entities or IDs - the orchestrator resolves IDs to entities.
+ * Indexers return only IDs - the orchestrator resolves IDs to entities.
  *
  * @public
  */
-export interface IIndexer<TEntity, TId, TConfig> {
+export interface IIndexer<TId, TConfig> {
   /**
-   * Finds entities or IDs matching the given configuration.
+   * Finds IDs matching the given configuration.
    * Returns undefined if this indexer has no work to do (config not relevant).
    * Returns empty array if config is relevant but no matches found.
    *
    * @param config - The indexer-specific configuration
-   * @returns Array of entities or IDs, undefined if not applicable, or Failure on error
+   * @returns Array of IDs, undefined if not applicable, or Failure on error
    */
-  find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
+  find(config: TConfig): Result<ReadonlyArray<TId>> | undefined;
 
   /**
    * Invalidates any cached index data.

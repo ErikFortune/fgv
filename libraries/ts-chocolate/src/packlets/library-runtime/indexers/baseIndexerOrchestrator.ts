@@ -70,9 +70,9 @@ export abstract class BaseIndexerOrchestrator<TEntity, TId> {
   /**
    * Computes intersection of multiple sets.
    * @param sets - Array of sets to intersect
-   * @returns Set containing items present in all input sets
+   * @returns Set containing IDs present in all input sets
    */
-  protected _intersect(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity> {
+  protected _intersect(sets: Array<Set<TId>>): Set<TId> {
     /* c8 ignore next 3 - defensive: orchestrators only call with non-empty results array */
     if (sets.length === 0) {
       return new Set();
@@ -97,10 +97,10 @@ export abstract class BaseIndexerOrchestrator<TEntity, TId> {
   /**
    * Computes union of multiple sets.
    * @param sets - Array of sets to union
-   * @returns Set containing items present in any input set
+   * @returns Set containing IDs present in any input set
    */
-  protected _union(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity> {
-    const result = new Set<TId | TEntity>();
+  protected _union(sets: Array<Set<TId>>): Set<TId> {
+    const result = new Set<TId>();
     for (const set of sets) {
       for (const item of set) {
         result.add(item);
@@ -110,25 +110,20 @@ export abstract class BaseIndexerOrchestrator<TEntity, TId> {
   }
 
   /**
-   * Resolves a set of entities/IDs to entities.
-   * @param items - Set of entities or IDs to resolve
+   * Resolves a set of IDs to entities.
+   * @param ids - Set of IDs to resolve
    * @returns Array of resolved entities, or Failure if any resolution fails
    */
-  protected _resolveToEntities(items: Set<TId | TEntity>): Result<ReadonlyArray<TEntity>> {
+  protected _resolveToEntities(ids: Set<TId>): Result<ReadonlyArray<TEntity>> {
     const entities: TEntity[] = [];
     const errors: string[] = [];
 
-    for (const item of items) {
-      if (this._resolver.isId(item)) {
-        const resolved = this._resolver.resolve(item);
-        if (resolved.isSuccess()) {
-          entities.push(resolved.value);
-        } else {
-          errors.push(resolved.message);
-        }
-        /* c8 ignore next 3 - defensive: current indexers return IDs not entities */
+    for (const id of ids) {
+      const resolved = this._resolver.resolve(id);
+      if (resolved.isSuccess()) {
+        entities.push(resolved.value);
       } else {
-        entities.push(item);
+        errors.push(resolved.message);
       }
     }
 

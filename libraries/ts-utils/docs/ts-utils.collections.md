@@ -713,6 +713,17 @@ Additional success or failure details for mutating collector calls.
 </td></tr>
 <tr><td>
 
+[ConversionErrorHandling](./ts-utils.collections.conversionerrorhandling.md)
+
+
+</td><td>
+
+Error handling behavior for conversion failures during iteration. - `'ignore'`<!-- -->: Silently skip failed conversions (default behavior) - `'warn'`<!-- -->: Log warning and skip failed conversions - `'fail'`<!-- -->: Throw error on first conversion failure
+
+
+</td></tr>
+<tr><td>
+
 [ConvertingResultMapValueConverter](./ts-utils.collections.convertingresultmapvalueconverter.md)
 
 

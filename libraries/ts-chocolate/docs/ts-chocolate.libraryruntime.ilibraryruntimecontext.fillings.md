@@ -4,10 +4,10 @@
 
 ## LibraryRuntime.ILibraryRuntimeContext.fillings property
 
-A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
+A searchable library of all fillings, keyed by composite ID. Fillings are resolved lazily on access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 **Signature:**
 
 ```typescript
-readonly fillings: IReadOnlyValidatingLibrary<FillingId, IFillingRecipe, IFillingRecipeQuerySpec>;
+readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
 ```

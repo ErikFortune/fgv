@@ -176,7 +176,7 @@ Computes intersection of multiple sets.
 </td></tr>
 <tr><td>
 
-[\_resolveToEntities(items)](./ts-chocolate.libraryruntime.indexers.baseindexerorchestrator._resolvetoentities.md)
+[\_resolveToEntities(ids)](./ts-chocolate.libraryruntime.indexers.baseindexerorchestrator._resolvetoentities.md)
 
 
 </td><td>
@@ -186,7 +186,7 @@ Computes intersection of multiple sets.
 
 </td><td>
 
-Resolves a set of entities/IDs to entities.
+Resolves a set of IDs to entities.
 
 
 </td></tr>

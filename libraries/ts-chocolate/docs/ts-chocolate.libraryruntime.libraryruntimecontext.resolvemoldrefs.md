@@ -9,7 +9,7 @@ Resolves mold references to runtime mold objects.
 **Signature:**
 
 ```typescript
-resolveMoldRefs(molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ molds
 
 </td><td>
 
-[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;Confections.IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;Confections.IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ The raw mold references with preferred selection
 
 **Returns:**
 
-[CommonModel.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[Model.IOptionsWithPreferred](./ts-chocolate.model.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.libraryruntime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 Resolved mold references
 
