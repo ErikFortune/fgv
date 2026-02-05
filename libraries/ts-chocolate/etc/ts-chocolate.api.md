@@ -300,6 +300,7 @@ class BarTruffleVersion extends ConfectionVersionBase implements IBarTruffleVers
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
     get entity(): Confections_2.IBarTruffleVersionEntity;
     get frameDimensions(): Confections_2.IFrameDimensions;
+    getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined>;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
     get singleBonBonDimensions(): Confections_2.IBonBonDimensions;
 }
@@ -5420,6 +5421,9 @@ class MoldedBonBonVersion extends ConfectionVersionBase implements IMoldedBonBon
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IMoldedBonBonVersionEntity): Result<MoldedBonBonVersion>;
     get entity(): Confections_2.IMoldedBonBonVersionEntity;
+    getAdditionalChocolates(): Result<ReadonlyArray<IResolvedAdditionalChocolate>>;
+    getMolds(): Result<Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>>;
+    getShellChocolate(): Result<IResolvedChocolateSpec>;
     get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get preferredMold(): IResolvedConfectionMoldRef | undefined;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
@@ -6128,6 +6132,8 @@ class RolledTruffleVersion extends ConfectionVersionBase implements IRolledTruff
     static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IRolledTruffleVersionEntity): Result<RolledTruffleVersion>;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
     get entity(): Confections_2.IRolledTruffleVersionEntity;
+    getCoatings(): Result<IResolvedCoatings | undefined>;
+    getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined>;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
 }
 

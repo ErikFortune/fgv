@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, Success } from '@fgv/ts-utils';
+import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
 import { ConfectionId, Helpers } from '../../../common';
 import { Confections } from '../../../entities';
@@ -110,9 +110,10 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
   }
 
   /**
-   * Resolved enrobing chocolate specification (lazy-loaded).
+   * Gets resolved enrobing chocolate specification (lazy-loaded).
+   * @returns Result with resolved chocolate spec (or undefined if not specified), or Failure if resolution fails
    */
-  public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
+  public getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
     if (this._resolvedEnrobingChocolate === undefined) {
       const spec = this._barTruffleVersion.enrobingChocolate;
       if (!spec) {
@@ -120,9 +121,14 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
       } else {
         const resolved = this._context.ingredients.getWithAlternates(spec);
 
-        /* c8 ignore next 3 - defensive */
-        if (resolved.isFailure() || !resolved.value.primary.isChocolate()) {
-          throw new Error(`Failed to resolve enrobing chocolate for confection ${this._confectionId}`);
+        if (resolved.isFailure()) {
+          return fail(
+            `Failed to resolve enrobing chocolate for confection ${this._confectionId}: ${resolved.message}`
+          );
+        }
+
+        if (!resolved.value.primary.isChocolate()) {
+          return fail(`Primary ingredient for enrobing chocolate is not a chocolate: ${this._confectionId}`);
         }
 
         this._resolvedEnrobingChocolate = {
@@ -132,7 +138,15 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
         };
       }
     }
-    return this._resolvedEnrobingChocolate ?? undefined;
+    return succeed(this._resolvedEnrobingChocolate ?? undefined);
+  }
+
+  /**
+   * Resolved enrobing chocolate specification (lazy-loaded).
+   * @throws if resolution fails - prefer getEnrobingChocolate() for proper error handling
+   */
+  public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
+    return this.getEnrobingChocolate().orThrow();
   }
 
   // ============================================================================
