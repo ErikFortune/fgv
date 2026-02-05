@@ -163,7 +163,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
       return succeed(ZeroMeasurement);
     }
 
-    return this._context.getRuntimeFilling(fillingSlot.fillingId).onSuccess((filling) => {
+    return this._context.fillings.get(fillingSlot.fillingId).asResult.onSuccess((filling) => {
       return succeed(filling.goldenVersion.entity.baseWeight);
     });
   }

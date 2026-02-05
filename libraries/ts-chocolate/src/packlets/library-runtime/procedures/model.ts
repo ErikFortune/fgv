@@ -39,6 +39,7 @@ import { IMoldEntity } from '../../entities';
 import { Fillings, IProcedureEntity, IProcedureStepEntity } from '../../entities';
 import { IRawTaskEntity } from '../../entities';
 import { Task } from '../tasks';
+import type { MaterializedLibrary } from '../materializedLibrary';
 
 // ============================================================================
 // Procedure Context
@@ -51,18 +52,9 @@ import { Task } from '../tasks';
  */
 export interface IProcedureContext {
   /**
-   * Gets a task by its composite ID.
-   * @param id - The task ID (composite format: collectionId.baseTaskId)
-   * @returns Success with IRawTaskEntity, or Failure if not found
+   * Materialized library of runtime tasks.
    */
-  getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
-
-  /**
-   * Gets a runtime task by its composite ID.
-   * @param id - The task ID (composite format: collectionId.baseTaskId)
-   * @returns Success with the task, or Failure if not found
-   */
-  getTask(id: TaskId): Result<Task>;
+  readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
 }
 
 // ============================================================================

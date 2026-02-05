@@ -29,6 +29,7 @@ import {
   IConfectionContext,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
+  IResolvedFillingOption,
   IConfectionBase,
   IConfectionVersionBase
 } from '../../model';
@@ -105,7 +106,7 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
   public get confection(): IConfectionBase {
     if (this._confection === undefined) {
       // orThrow is safe - version was created from a valid confection
-      this._confection = this._context.getRuntimeConfection(this._confectionId).value;
+      this._confection = this._context.confections.get(this._confectionId).value;
     }
     return this._confection!;
   }
@@ -161,7 +162,16 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
     if (this._resolvedFillings === undefined) {
-      this._resolvedFillings = this._context.resolveFillingSlots(this._version.fillings) ?? null;
+      const slots = this._version.fillings;
+      if (!slots || slots.length === 0) {
+        this._resolvedFillings = null;
+      } else {
+        this._resolvedFillings = slots.map((slot) => ({
+          slotId: slot.slotId,
+          name: slot.name,
+          filling: this._resolveFillingOptions(slot.filling)
+        }));
+      }
     }
     return this._resolvedFillings ?? undefined;
   }
@@ -174,9 +184,73 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined {
     if (this._resolvedProcedures === undefined) {
-      this._resolvedProcedures = this._context.resolveProcedures(this._version.procedures) ?? null;
+      const procedures = this._version.procedures;
+      if (!procedures || procedures.options.length === 0) {
+        this._resolvedProcedures = null;
+      } else {
+        const resolvedOptions: IResolvedConfectionProcedure[] = [];
+        for (const ref of procedures.options) {
+          const procedureResult = this._context.procedures.get(ref.id);
+          if (procedureResult.isSuccess()) {
+            resolvedOptions.push({
+              id: ref.id,
+              procedure: procedureResult.value,
+              notes: ref.notes,
+              entity: ref
+            });
+          }
+        }
+        if (resolvedOptions.length === 0) {
+          this._resolvedProcedures = null;
+        } else {
+          this._resolvedProcedures = {
+            options: resolvedOptions,
+            preferredId: procedures.preferredId
+          };
+        }
+      }
     }
     return this._resolvedProcedures ?? undefined;
+  }
+
+  private _resolveFillingOptions(
+    options: CommonModel.IOptionsWithPreferred<
+      Confections.AnyFillingOptionEntity,
+      Confections.FillingOptionId
+    >
+  ): CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId> {
+    const resolvedOptions: IResolvedFillingOption[] = [];
+
+    for (const opt of options.options) {
+      if (opt.type === 'recipe') {
+        const filling = this._context.fillings.get(opt.id);
+        if (filling.isSuccess()) {
+          resolvedOptions.push({
+            type: 'recipe',
+            id: opt.id,
+            filling: filling.value,
+            notes: opt.notes,
+            entity: opt
+          });
+        }
+      } else {
+        const ingredient = this._context.ingredients.get(opt.id);
+        if (ingredient.isSuccess()) {
+          resolvedOptions.push({
+            type: 'ingredient',
+            id: opt.id,
+            ingredient: ingredient.value,
+            notes: opt.notes,
+            entity: opt
+          });
+        }
+      }
+    }
+
+    return {
+      options: resolvedOptions,
+      preferredId: options.preferredId
+    };
   }
 
   // ============================================================================

@@ -126,7 +126,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   ): Result<IFillingSessionEntity> {
     // Get the filling version from the session context
     const fillingId = Helpers.getFillingVersionFillingId(versionId);
-    return this._sessionContext.getRuntimeFilling(fillingId).onSuccess((filling) => {
+    return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
       // Find the specific version
       const versionSpec = Helpers.getFillingVersionSpec(versionId);
       return filling.getVersion(versionSpec).onSuccess((version) => {
@@ -215,7 +215,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   ): Result<Session.EditingSession> {
     // Get the base recipe version from session context
     const fillingId = Helpers.getFillingVersionFillingId(persisted.sourceVersionId);
-    return this._sessionContext.getRuntimeFilling(fillingId).onSuccess((filling) => {
+    return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
       const versionSpec = Helpers.getFillingVersionSpec(persisted.sourceVersionId);
       return filling.getVersion(versionSpec).onSuccess((version) => {
         // Restore the editing session from persisted state
@@ -238,7 +238,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     // Parse the confection version ID to get confection ID and version spec
     return Helpers.parseConfectionVersionId(persisted.sourceVersionId).onSuccess((parsed) => {
       // Get the confection from session context
-      return this._sessionContext.getRuntimeConfection(parsed.collectionId).onSuccess((confection) => {
+      return this._sessionContext.confections.get(parsed.collectionId).asResult.onSuccess((confection) => {
         // Dispatch to type-specific materialization based on confection type
         return this._materializeTypedConfectionSession(sessionId, persisted, confection, parsed.itemId);
       });

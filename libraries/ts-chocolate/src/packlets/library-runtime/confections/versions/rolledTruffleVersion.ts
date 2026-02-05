@@ -31,9 +31,11 @@ import {
   IConfectionContext,
   IResolvedChocolateSpec,
   IResolvedCoatings,
+  IResolvedCoatingOption,
   IResolvedConfectionProcedure,
   IRolledTruffle,
-  IRolledTruffleVersion
+  IRolledTruffleVersion,
+  IChocolateIngredient
 } from '../../model';
 import { ConfectionVersionBase } from './confectionVersionBase';
 
@@ -101,10 +103,37 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
     if (this._resolvedEnrobingChocolate === undefined) {
-      const entity = this._rolledTruffleVersion.enrobingChocolate;
-      this._resolvedEnrobingChocolate = entity
-        ? this._context.resolveChocolateSpec(entity, this._confectionId)
-        : null;
+      const spec = this._rolledTruffleVersion.enrobingChocolate;
+      if (!spec) {
+        this._resolvedEnrobingChocolate = null;
+      } else {
+        const primaryId = spec.preferredId ?? spec.ids[0];
+        const primaryResult = this._context.ingredients.get(primaryId);
+
+        /* c8 ignore next 3 - defensive */
+        if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
+          throw new Error(
+            `Failed to resolve enrobing chocolate ${primaryId} for confection ${this._confectionId}`
+          );
+        }
+
+        const chocolate = primaryResult.value;
+        const alternates: IChocolateIngredient[] = [];
+        for (const id of spec.ids) {
+          if (id !== primaryId) {
+            const altResult = this._context.ingredients.get(id);
+            if (altResult.isSuccess() && altResult.value.isChocolate()) {
+              alternates.push(altResult.value);
+            }
+          }
+        }
+
+        this._resolvedEnrobingChocolate = {
+          chocolate,
+          alternates,
+          entity: spec
+        };
+      }
     }
     return this._resolvedEnrobingChocolate ?? undefined;
   }
@@ -114,8 +143,30 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
    */
   public get coatings(): IResolvedCoatings | undefined {
     if (this._resolvedCoatings === undefined) {
-      const entity = this._rolledTruffleVersion.coatings;
-      this._resolvedCoatings = entity ? this._context.resolveCoatings(entity) : null;
+      const coatings = this._rolledTruffleVersion.coatings;
+      if (!coatings) {
+        this._resolvedCoatings = null;
+      } else {
+        const resolvedOptions: IResolvedCoatingOption[] = [];
+        for (const id of coatings.ids) {
+          const ingredientResult = this._context.ingredients.get(id);
+          if (ingredientResult.isSuccess()) {
+            resolvedOptions.push({
+              id,
+              ingredient: ingredientResult.value
+            });
+          }
+        }
+
+        const preferredId = coatings.preferredId ?? coatings.ids[0];
+        const preferred = resolvedOptions.find((opt) => opt.id === preferredId);
+
+        this._resolvedCoatings = {
+          options: resolvedOptions,
+          preferred,
+          entity: coatings
+        };
+      }
     }
     return this._resolvedCoatings ?? undefined;
   }

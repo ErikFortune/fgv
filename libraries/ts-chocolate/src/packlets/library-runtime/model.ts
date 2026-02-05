@@ -34,6 +34,7 @@ import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import type { MaterializedLibrary } from './materializedLibrary';
 import type { IMold } from './molds/model';
 import type { IProcedure } from './procedures/model';
+import type { ITask } from './tasks/model';
 import type { AnyIngredient } from './ingredients/ingredient';
 import type { FillingRecipe } from './fillings/fillingRecipe';
 
@@ -65,6 +66,7 @@ import {
   Percentage,
   ProcedureId,
   SlotId,
+  TaskId,
   CollectionId,
   Model as CommonModel
 } from '../common';
@@ -80,9 +82,11 @@ import {
   IFillingRecipeEntity,
   IFillingRecipeVersionEntity,
   IngredientEntity,
-  ISugarIngredientEntity
+  ISugarIngredientEntity,
+  IMoldEntity,
+  IProcedureEntity,
+  IRawTaskEntity
 } from '../entities';
-import { IProcedureEntity } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================
@@ -871,11 +875,11 @@ export interface IVersionContext<TIngredient extends IIngredient = IIngredient> 
   readonly fillings: MaterializedLibrary<
     FillingId,
     IFillingRecipeEntity,
-    FillingRecipe,
+    IFillingRecipe,
     IFillingRecipeQuerySpec
   >;
-  /** Gets a procedure by its composite ID. */
-  getProcedure(id: string): Result<IProcedureEntity>;
+  /** Map of all procedures, keyed by composite ID. */
+  readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
 }
 
 /**
@@ -913,7 +917,7 @@ export interface IIngredientContext {
  *
  * @public
  */
-export interface ILibraryRuntimeContext {
+export interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
   // ---- Library Access ----
 
   /**
@@ -921,40 +925,42 @@ export interface ILibraryRuntimeContext {
    */
   readonly library: ChocolateLibrary;
 
-  // ---- Ingredients and Recipes ----
-
   /**
-   * A searchable library of all ingredients, keyed by composite ID.
-   * Ingredients are resolved lazily on access and cached.
-   * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
-   * `.has(id)` for existence checks, `.values()` for iteration.
-   */
-  readonly ingredients: MaterializedLibrary<
-    IngredientId,
-    IngredientEntity,
-    AnyIngredient,
-    IIngredientQuerySpec
-  >;
-
-  /**
-   * A searchable library of all fillings, keyed by composite ID.
-   * Fillings are resolved lazily on access and cached.
-   * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
-   * `.has(id)` for existence checks, `.values()` for iteration.
-   */
-  readonly fillings: MaterializedLibrary<
-    FillingId,
-    IFillingRecipeEntity,
-    FillingRecipe,
-    IFillingRecipeQuerySpec
-  >;
-
-  /**
-   * The confections library for accessing confection data.
+   * A materialized library of all molds, keyed by composite ID.
+   * Molds are resolved lazily on access and cached.
    * Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
    * `.values()` for iteration.
    */
-  readonly confections: Confections.ConfectionsLibrary;
+  readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
+
+  /**
+   * A materialized library of all procedures, keyed by composite ID.
+   * Procedures are resolved lazily on access and cached.
+   * Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
+   * `.values()` for iteration.
+   */
+  readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
+
+  /**
+   * A materialized library of all tasks, keyed by composite ID.
+   * Tasks are resolved lazily on access and cached.
+   * Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
+   * `.values()` for iteration.
+   */
+  readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
+
+  /**
+   * A materialized library of all confections, keyed by composite ID.
+   * Confections are resolved lazily on access and cached.
+   * Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
+   * `.values()` for iteration.
+   */
+  readonly confections: MaterializedLibrary<
+    ConfectionId,
+    Confections.AnyConfectionEntity,
+    IConfectionBase,
+    never
+  >;
 
   // ---- Journals ----
 
@@ -1581,96 +1587,26 @@ export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | I
 
 /**
  * Minimal context interface for RuntimeConfection and RuntimeConfectionVersion.
- * Provides what a confection and its versions need for resolution.
+ * Provides materialized libraries for resolution.
  * @internal
  */
-export interface IConfectionContext {
+export interface IConfectionContext extends IVersionContext<IIngredient> {
   /**
-   * Gets a runtime ingredient by ID.
-   * Used for resolving chocolate specifications and ingredient filling options.
-   */
-  getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
-
-  /**
-   * Gets a runtime filling recipe by ID.
-   * Used for resolving recipe filling options.
-   */
-  getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
-
-  /**
-   * Gets a runtime mold by ID.
+   * Materialized library of runtime molds.
    * Used for resolving mold references.
    */
-  getRuntimeMold(id: MoldId): Result<IMold>;
+  readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
 
   /**
-   * Gets a runtime procedure by ID.
-   * Used for resolving procedure references.
-   */
-  getRuntimeProcedure(id: ProcedureId): Result<IProcedure>;
-
-  /**
-   * Gets a runtime confection by ID.
+   * Materialized library of runtime confections.
    * Used for parent navigation from versions.
    */
-  getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
-
-  // ============================================================================
-  // Resolution Helpers
-  // ============================================================================
-
-  /**
-   * Resolves a chocolate specification to runtime ingredient objects.
-   * @param spec - The chocolate entity specification
-   * @param confectionId - The confection ID (for error messages)
-   * @returns Resolved chocolate specification with primary chocolate + alternates
-   */
-  resolveChocolateSpec(spec: Confections.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-
-  /**
-   * Resolves coating specifications to runtime ingredient objects.
-   * @param coatings - The coatings entity specification
-   * @returns Resolved coatings specification
-   */
-  resolveCoatings(coatings: Confections.ICoatingsEntity): IResolvedCoatings;
-
-  /**
-   * Resolves mold references to runtime mold objects.
-   * @param molds - The mold entity references with preferred selection
-   * @returns Resolved mold references
-   */
-  resolveMoldRefs(
-    molds: CommonModel.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>
-  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-
-  /**
-   * Resolves additional chocolates to runtime objects.
-   * @param additional - The additional chocolates entities
-   * @param confectionId - The confection ID (for error messages)
-   * @returns Resolved additional chocolates, or undefined if none
-   */
-  resolveAdditionalChocolates(
-    additional: ReadonlyArray<Confections.IAdditionalChocolateEntity> | undefined,
-    confectionId: ConfectionId
-  ): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-
-  /**
-   * Resolves filling slots to runtime objects.
-   * @param slots - The filling slots entities
-   * @returns Resolved filling slots, or undefined if none
-   */
-  resolveFillingSlots(
-    slots: ReadonlyArray<Confections.IFillingSlotEntity> | undefined
-  ): ReadonlyArray<IResolvedFillingSlot> | undefined;
-
-  /**
-   * Resolves procedure references to runtime objects.
-   * @param procedures - The procedure reference entities
-   * @returns Resolved procedures, or undefined if none
-   */
-  resolveProcedures(
-    procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined
-  ): CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+  readonly confections: MaterializedLibrary<
+    ConfectionId,
+    Confections.AnyConfectionEntity,
+    IConfectionBase,
+    never
+  >;
 }
 
 /**

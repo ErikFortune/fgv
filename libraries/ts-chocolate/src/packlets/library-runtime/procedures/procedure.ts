@@ -258,9 +258,9 @@ export class Procedure implements IProcedure {
     if (Tasks.isTaskRefEntity(invocation)) {
       // KEY FIX: Actually resolve the task reference using the context
       // This is what the data-layer couldn't do (returned placeholder instead)
-      return renderContext.context
-        .getTask(invocation.taskId as TaskId)
-        .onSuccess((runtimeTask) => {
+      return renderContext.context.tasks
+        .get(invocation.taskId as TaskId)
+        .asResult.onSuccess((runtimeTask) => {
           return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
             return succeed({
               ...step,

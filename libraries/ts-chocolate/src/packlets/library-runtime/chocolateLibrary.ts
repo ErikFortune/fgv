@@ -26,15 +26,8 @@
 import { Logging, Result, Success } from '@fgv/ts-utils';
 
 import {
-  ConfectionId,
   Converters as CommonConverters,
-  IngredientId,
-  MoldId,
-  ProcedureId,
-  FillingId,
-  FillingVersionSpec,
   CollectionId,
-  TaskId,
   BaseIngredientId,
   BaseFillingId,
   BaseMoldId,
@@ -49,8 +42,6 @@ import { Converters as EntityConverters } from '../entities';
 import { IMoldEntity, MoldsLibrary } from '../entities';
 import { IProcedureEntity, ProceduresLibrary } from '../entities';
 import { IRawTaskEntity, TasksLibrary } from '../entities';
-import { IGanacheCalculation, IngredientResolver } from './model';
-import { calculateGanache } from './internal';
 import { EditableCollection } from '../editing';
 import {
   FullLibraryLoadSpec,
@@ -155,8 +146,7 @@ export interface IChocolateLibraryCreateParams {
  * Provides unified access to:
  * - Ingredient management (multi-source with built-ins)
  * - Recipe management (multi-source)
- * - Recipe scaling
- * - Ganache characteristic calculations
+ * - Molds, procedures, tasks, and confections
  *
  * @public
  */
@@ -330,154 +320,6 @@ export class ChocolateLibrary {
    */
   public get confections(): Entities.Confections.ConfectionsLibrary {
     return this._confections;
-  }
-
-  /**
-   * Gets an {@link Entities.Ingredients.IngredientEntity | ingredient} by its {@link IngredientId | composite ID}
-   * @param id - The {@link IngredientId | id} of the ingredient to retrieve.
-   * @returns `Success` with ingredient, or `Failure` if not found
-   */
-  public getIngredient(id: IngredientId): Result<IngredientEntity> {
-    return this._ingredients.get(id);
-  }
-
-  /**
-   * Checks if an ingredient exists
-   * @param id - The {@link IngredientId | id} of the ingredient to check.
-   * @returns `true` if the ingredient exists
-   */
-  public hasIngredient(id: IngredientId): boolean {
-    return this._ingredients.has(id);
-  }
-
-  /**
-   * Gets a {@link Entities.Fillings.IFillingRecipeEntity | recipe} by its {@link FillingId | composite ID}
-   * @param id - The {@link FillingId | id} of the recipe to retrieve.
-   * @returns `Success` with recipe, or `Failure` if not found
-   */
-  public getRecipe(id: FillingId): Result<IFillingRecipeEntity> {
-    return this._recipes.get(id);
-  }
-
-  /**
-   * Checks if a recipe exists
-   * @param id - The {@link FillingId | id} of the recipe to check.
-   * @returns `true` if the recipe exists
-   */
-  public hasRecipe(id: FillingId): boolean {
-    return this._recipes.has(id);
-  }
-
-  /**
-   * Gets a {@link Entities.Molds.IMoldEntity | mold} by its {@link MoldId | composite ID}
-   * @param id - The {@link MoldId | id} of the mold to retrieve.
-   * @returns `Success` with mold data, or `Failure` if not found
-   */
-  public getMold(id: MoldId): Result<IMoldEntity> {
-    return this._molds.get(id);
-  }
-
-  /**
-   * Checks if a mold exists
-   * @param id - The {@link MoldId | id} of the mold to check.
-   * @returns `true` if the mold exists
-   */
-  public hasMold(id: MoldId): boolean {
-    return this._molds.has(id);
-  }
-
-  /**
-   * Gets a {@link Entities.Procedures.IProcedureEntity | procedure} by its {@link ProcedureId | composite ID}
-   * @param id - The {@link ProcedureId | id} of the procedure to retrieve.
-   * @returns `Success` with procedure, or `Failure` if not found
-   */
-  public getProcedure(id: ProcedureId): Result<IProcedureEntity> {
-    return this._procedures.get(id);
-  }
-
-  /**
-   * Checks if a procedure exists
-   * @param id - The {@link ProcedureId | id} of the procedure to check.
-   * @returns `true` if the procedure exists
-   */
-  public hasProcedure(id: ProcedureId): boolean {
-    return this._procedures.has(id);
-  }
-
-  /**
-   * Gets a {@link Entities.Tasks.IRawTaskEntity | task} by its {@link TaskId | composite ID}
-   * @param id - The {@link TaskId | id} of the task to retrieve.
-   * @returns `Success` with task data, or `Failure` if not found
-   */
-  public getTask(id: TaskId): Result<IRawTaskEntity> {
-    return this._tasks.get(id);
-  }
-
-  /**
-   * Checks if a task exists
-   * @param id - The {@link TaskId | id} of the task to check.
-   * @returns `true` if the task exists
-   */
-  public hasTask(id: TaskId): boolean {
-    return this._tasks.has(id);
-  }
-
-  /**
-   * Gets a {@link Entities.Confections.AnyConfectionEntity | confection} by its {@link ConfectionId | composite ID}
-   * @param id - The {@link ConfectionId | id} of the confection to retrieve.
-   * @returns `Success` with confection data, or `Failure` if not found
-   */
-  public getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfectionEntity> {
-    return this._confections.get(id);
-  }
-
-  /**
-   * Checks if a confection exists
-   * @param id - The {@link ConfectionId | id} of the confection to check.
-   * @returns `true` if the confection exists
-   */
-  public hasConfection(id: ConfectionId): boolean {
-    return this._confections.has(id);
-  }
-
-  // ============================================================================
-  // Ganache calculations
-  // ============================================================================
-
-  /**
-   * Creates an ingredient resolver that looks up ingredients from this library
-   * @returns Ingredient resolver function
-   */
-  public createIngredientResolver(): IngredientResolver {
-    return (id: IngredientId): Result<IngredientEntity> => this.getIngredient(id);
-  }
-
-  /**
-   * Calculates ganache characteristics for a recipe
-   *
-   * @param id - Recipe ID to analyze
-   * @param versionSpec - Optional version ID (default: golden version)
-   * @returns Success with ganache calculation, or Failure if recipe not found or ingredients missing
-   */
-  public calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation> {
-    return this.getRecipe(id).onSuccess((recipe) =>
-      calculateGanache(recipe, this.createIngredientResolver(), versionSpec)
-    );
-  }
-
-  /**
-   * Calculates ganache characteristics for a recipe object
-   * Useful when working with recipes not yet added to the library
-   *
-   * @param recipe - Recipe to analyze
-   * @param versionSpec - Optional version ID (default: golden version)
-   * @returns Success with ganache calculation, or Failure if ingredients missing
-   */
-  public calculateGanacheForRecipe(
-    recipe: IFillingRecipeEntity,
-    versionSpec?: FillingVersionSpec
-  ): Result<IGanacheCalculation> {
-    return calculateGanache(recipe, this.createIngredientResolver(), versionSpec);
   }
 
   // ============================================================================

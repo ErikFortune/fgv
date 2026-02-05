@@ -34,7 +34,8 @@ import {
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
   IMoldedBonBon,
-  IMoldedBonBonVersion
+  IMoldedBonBonVersion,
+  IChocolateIngredient
 } from '../../model';
 import { ConfectionVersionBase } from './confectionVersionBase';
 
@@ -103,7 +104,22 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
    */
   public get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     if (this._resolvedMolds === undefined) {
-      this._resolvedMolds = this._context.resolveMoldRefs(this._moldedBonBonVersion.molds);
+      const resolvedOptions: IResolvedConfectionMoldRef[] = [];
+      for (const ref of this._moldedBonBonVersion.molds.options) {
+        const moldResult = this._context.molds.get(ref.id);
+        if (moldResult.isSuccess()) {
+          resolvedOptions.push({
+            id: ref.id,
+            mold: moldResult.value,
+            notes: ref.notes,
+            entity: ref
+          });
+        }
+      }
+      this._resolvedMolds = {
+        options: resolvedOptions,
+        preferredId: this._moldedBonBonVersion.molds.preferredId
+      };
     }
     return this._resolvedMolds;
   }
@@ -113,10 +129,34 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
    */
   public get shellChocolate(): IResolvedChocolateSpec {
     if (this._resolvedShellChocolate === undefined) {
-      this._resolvedShellChocolate = this._context.resolveChocolateSpec(
-        this._moldedBonBonVersion.shellChocolate,
-        this._confectionId
-      );
+      const spec = this._moldedBonBonVersion.shellChocolate;
+      const primaryId = spec.preferredId ?? spec.ids[0];
+      const primaryResult = this._context.ingredients.get(primaryId);
+
+      /* c8 ignore next 3 - defensive: library validation ensures chocolate ingredients exist */
+      if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
+        throw new Error(
+          `Failed to resolve primary chocolate ${primaryId} for confection ${this._confectionId}`
+        );
+      }
+
+      const chocolate = primaryResult.value;
+      const alternates: IChocolateIngredient[] = [];
+      for (const id of spec.ids) {
+        /* c8 ignore next 6 - defensive: skip alternates that fail to resolve or aren't chocolate */
+        if (id !== primaryId) {
+          const altResult = this._context.ingredients.get(id);
+          if (altResult.isSuccess() && altResult.value.isChocolate()) {
+            alternates.push(altResult.value);
+          }
+        }
+      }
+
+      this._resolvedShellChocolate = {
+        chocolate,
+        alternates,
+        entity: spec
+      };
     }
     return this._resolvedShellChocolate;
   }
@@ -126,11 +166,38 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
    */
   public get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
     if (this._resolvedAdditionalChocolates === undefined) {
-      this._resolvedAdditionalChocolates =
-        this._context.resolveAdditionalChocolates(
-          this._moldedBonBonVersion.additionalChocolates,
-          this._confectionId
-        ) ?? null;
+      const additional = this._moldedBonBonVersion.additionalChocolates;
+      if (!additional || additional.length === 0) {
+        this._resolvedAdditionalChocolates = null;
+      } else {
+        this._resolvedAdditionalChocolates = additional.map((item) => {
+          const spec = item.chocolate;
+          const primaryId = spec.preferredId ?? spec.ids[0];
+          const primaryResult = this._context.ingredients.get(primaryId);
+
+          /* c8 ignore next 3 - defensive */
+          if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
+            throw new Error(`Failed to resolve chocolate ${primaryId} for confection ${this._confectionId}`);
+          }
+
+          const chocolate = primaryResult.value;
+          const alternates: IChocolateIngredient[] = [];
+          for (const id of spec.ids) {
+            if (id !== primaryId) {
+              const altResult = this._context.ingredients.get(id);
+              if (altResult.isSuccess() && altResult.value.isChocolate()) {
+                alternates.push(altResult.value);
+              }
+            }
+          }
+
+          return {
+            chocolate: { chocolate, alternates, entity: spec },
+            purpose: item.purpose,
+            entity: item
+          };
+        });
+      }
     }
     return this._resolvedAdditionalChocolates ?? undefined;
   }

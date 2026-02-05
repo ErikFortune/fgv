@@ -372,11 +372,11 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
 
     const resolvedProcedures: IResolvedFillingRecipeProcedure[] = [];
     for (const ref of procedureEntities.options) {
-      const procedureResult = this._context.getProcedure(ref.id);
+      const procedureResult = this._context.procedures.get(ref.id);
       if (procedureResult.isSuccess()) {
         resolvedProcedures.push({
           id: ref.id,
-          procedure: procedureResult.value,
+          procedure: procedureResult.value.entity,
           notes: ref.notes,
           entity: ref
         });
@@ -387,9 +387,9 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
     // Resolve preferred procedure if specified
     let recommendedProcedure = undefined;
     if (procedureEntities.preferredId) {
-      const recommendedResult = this._context.getProcedure(procedureEntities.preferredId);
+      const recommendedResult = this._context.procedures.get(procedureEntities.preferredId);
       if (recommendedResult.isSuccess()) {
-        recommendedProcedure = recommendedResult.value;
+        recommendedProcedure = recommendedResult.value.entity;
       }
     }
 

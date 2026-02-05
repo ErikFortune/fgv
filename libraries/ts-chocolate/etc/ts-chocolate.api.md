@@ -482,16 +482,16 @@ const cacaoVariety: Converter<CacaoVariety>;
 function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement;
 
 // @public
-function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
+function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver_2, versionSpec?: FillingVersionSpec): Result<IGanacheAnalysis>;
 
 // @public
-function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<Fillings_2.IFillingIngredientEntity>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
+function calculateFromFillingRecipeIngredients(recipeIngredients: ReadonlyArray<Fillings_2.IFillingIngredientEntity>, resolver: IngredientResolver_2): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
 
 // @public
-function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
+function calculateGanache(recipe: IFillingRecipeEntity, resolver: IngredientResolver_2, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
 
 // @public
 function calculateIngredientWeight(ingredient: Fillings_2.IFillingIngredientEntity, context?: IWeightCalculationContext): IWeightContribution;
@@ -577,40 +577,19 @@ const chocolateIngredientEntity: Converter<IChocolateIngredientEntity>;
 
 // @public
 export class ChocolateLibrary {
-    calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
-    calculateGanacheForRecipe(recipe: IFillingRecipeEntity, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get confections(): Entities.Confections.ConfectionsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
-    createIngredientResolver(): IngredientResolver;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getConfection(id: ConfectionId): Result<Entities.Confections.AnyConfectionEntity>;
     getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>>;
     getEditableFillings(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
     getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
     getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
     getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
     getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getIngredient(id: IngredientId): Result<IngredientEntity>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getMold(id: MoldId): Result<IMoldEntity>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getProcedure(id: ProcedureId): Result<IProcedureEntity>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getRecipe(id: FillingId): Result<IFillingRecipeEntity>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getTask(id: TaskId): Result<IRawTaskEntity>;
-    hasConfection(id: ConfectionId): boolean;
-    hasIngredient(id: IngredientId): boolean;
-    hasMold(id: MoldId): boolean;
-    hasProcedure(id: ProcedureId): boolean;
-    hasRecipe(id: FillingId): boolean;
-    hasTask(id: TaskId): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
     readonly logger: Logging.LogReporter<unknown>;
@@ -884,6 +863,17 @@ const confectionName: Converter<ConfectionName>;
 //
 // @public
 const confectionProductionJournalEntryEntity: Converter<IConfectionProductionJournalEntryEntity>;
+
+declare namespace ConfectionResolver {
+    export {
+        resolveChocolateSpec,
+        resolveCoatings,
+        resolveMoldRefs,
+        resolveAdditionalChocolates,
+        resolveFillingSlots,
+        resolveProcedures
+    }
+}
 
 declare namespace Confections {
     export {
@@ -2388,18 +2378,9 @@ interface IConfectionChanges {
 }
 
 // @internal
-interface IConfectionContext {
-    getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
-    getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
-    getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
-    getRuntimeMold(id: MoldId): Result<IMold>;
-    getRuntimeProcedure(id: ProcedureId): Result<IProcedure>;
-    resolveAdditionalChocolates(additional: ReadonlyArray<Confections_2.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-    resolveChocolateSpec(spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-    resolveCoatings(coatings: Confections_2.ICoatingsEntity): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
+interface IConfectionContext extends IVersionContext<IIngredient> {
+    readonly confections: MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionEntity, IConfectionBase, never>;
+    readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3198,18 +3179,22 @@ interface ILibraryLoadParams {
     readonly recurseWithDelimiter?: string;
 }
 
+// Warning: (ae-incompatible-release-tags) The symbol "ILibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ILibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
+//
 // @public
-interface ILibraryRuntimeContext {
+interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
     readonly cachedIngredientCount: number;
     readonly cachedRecipeCount: number;
     clearCache(): void;
-    readonly confections: Confections_2.ConfectionsLibrary;
-    readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
+    readonly confections: MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionEntity, IConfectionBase, never>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
     readonly library: ChocolateLibrary;
+    readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
+    readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
+    readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
     warmUp(): void;
 }
 
@@ -3419,7 +3404,7 @@ declare namespace Indexers {
         IIngredientQuerySpec,
         IngredientIndexerName,
         IngredientIndexerOrchestrator,
-        IngredientResolver_2 as IngredientResolver,
+        IngredientResolver,
         ingredientQuerySpecConverter,
         IIndexer,
         IEntityResolver,
@@ -3534,7 +3519,7 @@ type IngredientIndexerName = keyof IIngredientQuerySpec;
 
 // @public
 class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<AnyIngredient, IngredientId> {
-    constructor(library: ChocolateLibrary, resolver: IngredientResolver_2);
+    constructor(library: ChocolateLibrary, resolver: IngredientResolver);
     convertConfig(json: unknown): Result<IIngredientQuerySpec>;
     find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyIngredient>>;
     invalidate(): void;
@@ -3651,10 +3636,10 @@ class IngredientQuery {
 const ingredientQuerySpecConverter: Converter<IIngredientQuerySpec>;
 
 // @public
-type IngredientResolver = (id: IngredientId) => Result<IngredientEntity>;
+type IngredientResolver = (id: IngredientId) => Result<AnyIngredient>;
 
 // @public
-type IngredientResolver_2 = (id: IngredientId) => Result<AnyIngredient>;
+type IngredientResolver_2 = (id: IngredientId) => Result<IngredientEntity>;
 
 declare namespace Ingredients {
     export {
@@ -3763,6 +3748,7 @@ function inRange<T>(min: number | undefined, max: number | undefined, getter: (i
 
 declare namespace Internal {
     export {
+        ConfectionResolver,
         contributesToWeight,
         isWeightExcluded,
         calculateIngredientWeight,
@@ -3882,8 +3868,7 @@ interface IProcedure {
 
 // @internal
 interface IProcedureContext {
-    getTask(id: TaskId): Result<Task>;
-    getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
+    readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
 }
 
 // @public
@@ -4247,11 +4232,10 @@ interface IRuntimeCollection<T = JsonObject, TCOLLECTIONID extends string = stri
 }
 
 // @public
-interface IRuntimeContext extends ILibraryRuntimeContext, ISessionContext {
+interface IRuntimeContext extends ILibraryRuntimeContext {
     readonly cachedConfectionCount: number;
+    createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     getAllConfectionTags(): ReadonlyArray<string>;
-    getRuntimeConfection(id: ConfectionId): Result<IConfectionBase>;
-    readonly runtimeConfections: Collections.IReadOnlyResultMap<ConfectionId, IConfectionBase>;
 }
 
 // @public
@@ -4712,7 +4696,7 @@ interface ITask {
 
 // @internal
 interface ITaskContext {
-    getTask(id: TaskId): Result<IRawTaskEntity>;
+    readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
 }
 
 // @public
@@ -4816,9 +4800,9 @@ interface IValidationReport {
 
 // @internal
 interface IVersionContext<TIngredient extends IIngredient = IIngredient> {
-    readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
-    getProcedure(id: string): Result<IProcedureEntity>;
+    readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, IFillingRecipe, IFillingRecipeQuerySpec>;
     readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, TIngredient, IIngredientQuerySpec>;
+    readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
 }
 
 // @public
@@ -5187,7 +5171,7 @@ declare namespace LibraryRuntime {
         IGanacheValidation,
         IGanacheCalculation,
         IResolvedIngredient,
-        IngredientResolver,
+        IngredientResolver_2 as IngredientResolver,
         andFilters,
         orFilters,
         notFilter,
@@ -5220,25 +5204,19 @@ export { LibraryRuntime }
 
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 //
 // @public
-class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext, ILibraryRuntimeContext {
+class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext {
     protected constructor(library: ChocolateLibrary, preWarm: boolean);
     get cachedConfectionCount(): number;
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
-    get confections(): Confections_2.ConfectionsLibrary;
+    get confections(): MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionEntity, AnyConfection, never>;
     static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
     createWeightContext(): IWeightCalculationContext;
     get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
@@ -5246,7 +5224,6 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
-    getConfection(id: ConfectionId): Result<Confections_2.AnyConfectionEntity>;
     // @internal
     _getFillingRecipe(id: FillingId): Result<FillingRecipe>;
     // @internal
@@ -5258,16 +5235,6 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     // @internal
     _getIngredient(id: IngredientId): Result<AnyIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getProcedure(id: string): Result<IProcedureEntity>;
-    getRuntimeConfection(id: ConfectionId): Result<AnyConfection>;
-    getRuntimeFilling(id: FillingId): Result<IFillingRecipe>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getRuntimeIngredient(id: IngredientId): Result<IIngredient>;
-    getRuntimeMold(id: MoldId): Result<Mold>;
-    getRuntimeProcedure(id: ProcedureId): Result<Procedure>;
-    getTask(id: TaskId): Result<Task>;
-    getTaskEntity(id: TaskId): Result<IRawTaskEntity>;
-    hasConfection(id: ConfectionId): boolean;
     get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -5275,13 +5242,9 @@ class LibraryRuntimeContext implements IVersionContext<AnyIngredient>, IIngredie
     // (undocumented)
     get library(): ChocolateLibrary;
     readonly logger: Logging.LogReporter<unknown>;
-    resolveAdditionalChocolates(additional: ReadonlyArray<Confections_2.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-    resolveChocolateSpec(spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
-    resolveCoatings(coatings: Confections_2.ICoatingsEntity): IResolvedCoatings;
-    resolveFillingSlots(slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    resolveMoldRefs(molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    resolveProcedures(procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get runtimeConfections(): MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionEntity, AnyConfection, never>;
+    get molds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never>;
+    get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never>;
+    get tasks(): MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
     warmUp(): void;
 }
 
@@ -6056,8 +6019,17 @@ const renderOptions: Converter<IRenderOptions>;
 // @public
 type ResolutionStatus = 'resolved' | 'missing' | 'error';
 
+// @internal
+function resolveAdditionalChocolates(context: IConfectionContext, additional: ReadonlyArray<Confections_2.IAdditionalChocolateEntity> | undefined, confectionId: ConfectionId): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
+
 // @public
 function resolveBuiltInSpec<TCollectionId extends string = string>(spec: FullLibraryLoadSpec | undefined, subLibraryId: SubLibraryId): LibraryLoadSpec<TCollectionId>;
+
+// @internal
+function resolveChocolateSpec(context: IConfectionContext, spec: Confections_2.IChocolateSpec, confectionId: ConfectionId): IResolvedChocolateSpec;
+
+// @internal
+function resolveCoatings(context: IConfectionContext, coatings: Confections_2.ICoatingsEntity): IResolvedCoatings;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6083,11 +6055,20 @@ function resolveFileTreeSource(source: ILibraryFileTreeSource): Result<ReadonlyA
 // @public
 function resolveFileTreeSourceForSubLibrary(source: ILibraryFileTreeSource, subLibraryId: SubLibraryId): Result<IResolvedSubLibrarySource | undefined>;
 
+// @internal
+function resolveFillingSlots(context: IConfectionContext, slots: ReadonlyArray<Confections_2.IFillingSlotEntity> | undefined): ReadonlyArray<IResolvedFillingSlot> | undefined;
+
 // @public
 function resolveImportRootForLibrary(root: FileTree.IFileTreeDirectoryItem, options?: Omit<IResolveImportRootOptions, 'allowLooseFiles'>): Result<IResolvedImportRoot>;
 
 // @public
 function resolveImportRootForSubLibrary(root: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId, options?: IResolveImportRootOptions): Result<IResolvedImportRoot>;
+
+// @internal
+function resolveMoldRefs(context: IConfectionContext, molds: Model.IOptionsWithPreferred<Confections_2.IConfectionMoldRef, MoldId>): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+
+// @internal
+function resolveProcedures(context: IConfectionContext, procedures: Model.IOptionsWithPreferred<Fillings_2.IProcedureRefEntity, ProcedureId> | undefined): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 
 // @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;

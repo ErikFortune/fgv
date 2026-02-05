@@ -122,7 +122,7 @@ export abstract class ConfectionEditingSessionBase<
    */
   protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession> {
     // Get the filling recipe from context
-    return this._context.getRuntimeFilling(fillingId).onSuccess((filling) => {
+    return this._context.fillings.get(fillingId).asResult.onSuccess((filling) => {
       // Compute target weight for this slot
       return this._computeSlotTargetWeight(slotId).onSuccess((targetWeight) => {
         // Create session at target weight

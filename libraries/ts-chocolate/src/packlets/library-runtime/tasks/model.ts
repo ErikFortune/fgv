@@ -29,6 +29,7 @@ import { Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, Minutes, Model as CommonModel, TaskId } from '../../common';
 import { Tasks as TaskEntities, IRawTaskEntity } from '../../entities';
+import type { MaterializedLibrary } from '../materializedLibrary';
 
 // ============================================================================
 // Task Context
@@ -41,11 +42,9 @@ import { Tasks as TaskEntities, IRawTaskEntity } from '../../entities';
  */
 export interface ITaskContext {
   /**
-   * Gets a task by its composite ID.
-   * @param id - The task ID (composite format: sourceId.baseTaskId)
-   * @returns Success with ITaskData, or Failure if not found
+   * Materialized library of runtime tasks.
    */
-  getTask(id: TaskId): Result<IRawTaskEntity>;
+  readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
 }
 
 // ============================================================================

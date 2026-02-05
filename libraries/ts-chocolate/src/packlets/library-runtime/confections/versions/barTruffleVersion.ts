@@ -32,7 +32,8 @@ import {
   IResolvedChocolateSpec,
   IResolvedConfectionProcedure,
   IBarTruffle,
-  IBarTruffleVersion
+  IBarTruffleVersion,
+  IChocolateIngredient
 } from '../../model';
 import { ConfectionVersionBase } from './confectionVersionBase';
 
@@ -114,10 +115,37 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
     if (this._resolvedEnrobingChocolate === undefined) {
-      const entity = this._barTruffleVersion.enrobingChocolate;
-      this._resolvedEnrobingChocolate = entity
-        ? this._context.resolveChocolateSpec(entity, this._confectionId)
-        : null;
+      const spec = this._barTruffleVersion.enrobingChocolate;
+      if (!spec) {
+        this._resolvedEnrobingChocolate = null;
+      } else {
+        const primaryId = spec.preferredId ?? spec.ids[0];
+        const primaryResult = this._context.ingredients.get(primaryId);
+
+        /* c8 ignore next 3 - defensive */
+        if (primaryResult.isFailure() || !primaryResult.value.isChocolate()) {
+          throw new Error(
+            `Failed to resolve enrobing chocolate ${primaryId} for confection ${this._confectionId}`
+          );
+        }
+
+        const chocolate = primaryResult.value;
+        const alternates: IChocolateIngredient[] = [];
+        for (const id of spec.ids) {
+          if (id !== primaryId) {
+            const altResult = this._context.ingredients.get(id);
+            if (altResult.isSuccess() && altResult.value.isChocolate()) {
+              alternates.push(altResult.value);
+            }
+          }
+        }
+
+        this._resolvedEnrobingChocolate = {
+          chocolate,
+          alternates,
+          entity: spec
+        };
+      }
     }
     return this._resolvedEnrobingChocolate ?? undefined;
   }

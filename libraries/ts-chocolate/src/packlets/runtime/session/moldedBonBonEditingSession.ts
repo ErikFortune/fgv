@@ -207,7 +207,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public analyzeMoldChange(moldId: MoldId): Result<IMoldChangeAnalysis> {
-    return this._context.getRuntimeMold(moldId).onSuccess((newMold) => {
+    return this._context.molds.get(moldId).asResult.onSuccess((newMold) => {
       const oldTotal = this._computeTotalCavityWeight(this._currentMold);
       const newTotal = this._computeTotalCavityWeight(newMold);
 
@@ -363,7 +363,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @internal
    */
   private _loadMold(moldId: MoldId): Result<IMold> {
-    return this._context.getRuntimeMold(moldId);
+    return this._context.molds.get(moldId).asResult;
   }
 
   // ============================================================================
