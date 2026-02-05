@@ -6,7 +6,7 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "heft build --clean",
-    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build && rushx build-docs",
     "clean": "heft clean",
     "test": "heft test --clean",
@@ -74,7 +74,9 @@
     "@rushstack/heft-jest-plugin": "1.1.7",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",
-    "@testing-library/dom": "^10.4.0"
+    "@testing-library/dom": "^10.4.0",
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0"
   },
   "exports": {
     ".": {

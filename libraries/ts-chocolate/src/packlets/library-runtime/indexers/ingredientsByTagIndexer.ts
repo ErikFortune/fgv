@@ -92,7 +92,7 @@ export class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredie
     return Array.from(this._tagToIngredients!.keys());
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._tagToIngredients = new Map<string, Set<IngredientId>>();
     const ingredients = this.library.ingredients;
@@ -106,12 +106,12 @@ export class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredie
     }
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
   protected _clearIndex(): void {
     this._tagToIngredients = undefined;
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(config: IIngredientsByTagConfig): Result<ReadonlyArray<IngredientId>> {
     const ingredientIds = this._getFromSetIndex(this._tagToIngredients!, config.tag.toLowerCase());
     return Success.with(ingredientIds);

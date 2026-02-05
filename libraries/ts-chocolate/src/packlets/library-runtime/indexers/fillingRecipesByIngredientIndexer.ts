@@ -130,7 +130,7 @@ export class FillingRecipesByIngredientIndexer extends BaseIndexer<
     super(library);
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._ingredientUsage = new Map<IngredientId, IIngredientUsageEntry[]>();
     const recipes = this.library.fillings;
@@ -154,12 +154,12 @@ export class FillingRecipesByIngredientIndexer extends BaseIndexer<
     }
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
   protected _clearIndex(): void {
     this._ingredientUsage = undefined;
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(config: IFillingRecipesByIngredientConfig): Result<ReadonlyArray<FillingId>> {
     const usage = this._ingredientUsage!.get(config.ingredientId);
     if (!usage) {

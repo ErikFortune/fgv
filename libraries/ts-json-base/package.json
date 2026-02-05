@@ -21,7 +21,7 @@
     "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
-    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
@@ -68,7 +68,9 @@
     "@types/luxon": "^3.7.1",
     "@fgv/heft-dual-rig": "workspace:*",
     "@rushstack/heft-node-rig": "2.11.12",
-    "@microsoft/api-extractor": "^7.55.2"
+    "@microsoft/api-extractor": "^7.55.2",
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

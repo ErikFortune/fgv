@@ -193,7 +193,7 @@ export class LibraryRuntimeContext
   // ============================================================================
 
   /**
-   * {@inheritdoc LibraryRuntime.LibraryRuntimeContext.library}
+   * {@inheritDoc LibraryRuntime.ILibraryRuntimeContext.library}
    */
   public get library(): ChocolateLibrary {
     return this._library;

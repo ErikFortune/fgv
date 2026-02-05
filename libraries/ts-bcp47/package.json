@@ -21,7 +21,7 @@
     "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
-    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
@@ -76,7 +76,9 @@
     "@rushstack/heft-jest-plugin": "1.1.7",
     "@rushstack/heft-node-rig": "2.11.12",
     "@types/heft-jest": "1.0.6",
-    "eslint-plugin-tsdoc": "~0.4.0"
+    "eslint-plugin-tsdoc": "~0.4.0",
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0"
   },
   "dependencies": {
     "luxon": "^3.7.2"

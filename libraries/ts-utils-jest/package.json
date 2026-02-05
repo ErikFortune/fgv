@@ -22,7 +22,8 @@
     "update-snapshot": "jest --updateSnapshot",
     "coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
-    "fixlint": "eslint src --ext .ts --fix"
+    "fixlint": "eslint src --ext .ts --fix",
+    "build-docs": "typedoc --options ./config/typedoc.json"
   },
   "keywords": [
     "typescript",
@@ -65,7 +66,9 @@
     "eslint-plugin-n": "^17.23.1",
     "eslint-plugin-tsdoc": "~0.4.0",
     "@fgv/heft-dual-rig": "workspace:*",
-    "@microsoft/api-extractor": "^7.55.2"
+    "@microsoft/api-extractor": "^7.55.2",
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

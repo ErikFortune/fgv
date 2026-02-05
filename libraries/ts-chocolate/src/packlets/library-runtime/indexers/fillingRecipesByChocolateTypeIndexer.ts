@@ -84,7 +84,7 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
     super(library);
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._typeToRecipes = new Map<ChocolateType, Set<FillingId>>();
     const recipes = this.library.fillings;
@@ -114,12 +114,12 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
     }
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
   protected _clearIndex(): void {
     this._typeToRecipes = undefined;
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(config: IFillingRecipesByChocolateTypeConfig): Result<ReadonlyArray<FillingId>> {
     const recipeIds = this._getFromSetIndex(this._typeToRecipes!, config.chocolateType);
     return Success.with(recipeIds);

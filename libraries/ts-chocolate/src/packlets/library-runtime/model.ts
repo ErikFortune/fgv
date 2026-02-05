@@ -23,7 +23,7 @@
  *
  * These interfaces define the **semantic contract** for runtime objects.
  * They are the source of truth - classes implement these interfaces.
- * Documentation lives here, with `@inheritdoc` used in implementing classes.
+ * Documentation lives here, with `@inheritDoc` used in implementing classes.
  *
  * @packageDocumentation
  */
@@ -243,7 +243,7 @@ export interface IChocolateIngredient extends IIngredient {
   readonly origins?: ReadonlyArray<string>;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.entity}
+   * {@inheritDoc LibraryRuntime.IIngredient.entity}
    */
   readonly entity: IChocolateIngredientEntity;
 }
@@ -263,7 +263,7 @@ export interface IDairyIngredient extends IIngredient {
   readonly waterContent?: Percentage;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.entity}
+   * {@inheritDoc LibraryRuntime.IIngredient.entity}
    */
   readonly entity: IDairyIngredientEntity;
 }
@@ -283,7 +283,7 @@ export interface ISugarIngredient extends IIngredient {
   readonly sweetnessPotency?: number;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.entity}
+   * {@inheritDoc LibraryRuntime.IIngredient.entity}
    */
   readonly entity: ISugarIngredientEntity;
 }
@@ -300,7 +300,7 @@ export interface IFatIngredient extends IIngredient {
   readonly meltingPoint?: Celsius;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.entity}
+   * {@inheritDoc LibraryRuntime.IIngredient.entity}
    */
   readonly entity: IFatIngredientEntity;
 }
@@ -320,7 +320,7 @@ export interface IAlcoholIngredient extends IIngredient {
   readonly flavorProfile?: string;
 
   /**
-   * {@inheritdoc LibraryRuntime.IIngredient.entity}
+   * {@inheritDoc LibraryRuntime.IIngredient.entity}
    */
   readonly entity: IAlcoholIngredientEntity;
 }

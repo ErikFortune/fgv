@@ -8,7 +8,7 @@
     "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
-    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
@@ -57,7 +57,9 @@
     "@rushstack/eslint-config": "4.6.1",
     "eslint-plugin-tsdoc": "~0.4.0",
     "@rushstack/heft-jest-plugin": "1.1.7",
-    "@microsoft/api-extractor": "^7.55.2"
+    "@microsoft/api-extractor": "^7.55.2",
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",

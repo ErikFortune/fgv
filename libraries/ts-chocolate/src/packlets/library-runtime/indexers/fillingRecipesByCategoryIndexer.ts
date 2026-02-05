@@ -92,7 +92,7 @@ export class FillingRecipesByCategoryIndexer extends BaseIndexer<FillingId, IFil
     return Array.from(this._categoryToRecipes!.keys());
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._categoryToRecipes = new Map<FillingCategory, Set<FillingId>>();
     const recipes = this.library.fillings;
@@ -104,12 +104,12 @@ export class FillingRecipesByCategoryIndexer extends BaseIndexer<FillingId, IFil
     }
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
   protected _clearIndex(): void {
     this._categoryToRecipes = undefined;
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(config: IFillingRecipesByCategoryConfig): Result<ReadonlyArray<FillingId>> {
     const recipeIds = this._getFromSetIndex(this._categoryToRecipes!, config.category);
     return Success.with(recipeIds);

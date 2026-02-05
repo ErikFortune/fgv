@@ -23,7 +23,7 @@
     "build:data": "node scripts/build-library-data.js",
     "clean": "heft clean",
     "test": "heft test --clean",
-    "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
+    "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build && rushx build-docs",
     "coverage": "heft test --clean",
     "lint": "eslint src --ext .ts",
@@ -74,7 +74,9 @@
     "@rushstack/heft-jest-plugin": "1.1.7",
     "eslint-plugin-tsdoc": "~0.4.0",
     "yaml": "~2.8.2",
-    "@types/js-yaml": "~4.0.9"
+    "@types/js-yaml": "~4.0.9",
+    "typedoc": "~0.28.16",
+    "typedoc-plugin-markdown": "~4.9.0"
   },
   "repository": {
     "type": "git",

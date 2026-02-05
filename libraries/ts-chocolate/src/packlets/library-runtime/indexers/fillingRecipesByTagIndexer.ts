@@ -92,7 +92,7 @@ export class FillingRecipesByTagIndexer extends BaseIndexer<FillingId, IFillingR
     return Array.from(this._tagToRecipes!.keys());
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._tagToRecipes = new Map<string, Set<FillingId>>();
     const recipes = this.library.fillings;
@@ -106,12 +106,12 @@ export class FillingRecipesByTagIndexer extends BaseIndexer<FillingId, IFillingR
     }
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._clearIndex} */
   protected _clearIndex(): void {
     this._tagToRecipes = undefined;
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
+  /** {@inheritDoc LibraryRuntime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(config: IFillingRecipesByTagConfig): Result<ReadonlyArray<FillingId>> {
     const recipeIds = this._getFromSetIndex(this._tagToRecipes!, config.tag.toLowerCase());
     return Success.with(recipeIds);

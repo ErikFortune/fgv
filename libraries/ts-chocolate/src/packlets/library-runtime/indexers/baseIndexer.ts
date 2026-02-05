@@ -56,7 +56,7 @@ export abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig
 
   /**
    * Creates a new indexer with optional logging.
-   * @param logger - Optional logger for reporting index operations
+   * @param library - The library to index.
    */
   protected constructor(library: ChocolateLibrary) {
     this.library = library;
@@ -75,13 +75,13 @@ export abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig
     return this._findInternal(config);
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.IIndexer.invalidate} */
+  /** {@inheritDoc LibraryRuntime.Indexers.IIndexer.invalidate} */
   public invalidate(): void {
     this._isBuilt = false;
     this._clearIndex();
   }
 
-  /** {@inheritdoc LibraryRuntime.Indexers.IIndexer.warmUp} */
+  /** {@inheritDoc LibraryRuntime.Indexers.IIndexer.warmUp} */
   public warmUp(): void {
     this._ensureBuilt();
   }
