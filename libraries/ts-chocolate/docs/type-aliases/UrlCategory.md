@@ -1,15 +1,13 @@
-[**@fgv/ts-chocolate**](../README.md)
-
-***
-
-[@fgv/ts-chocolate](../README.md) / UrlCategory
+[Home](../README.md) > UrlCategory
 
 # Type Alias: UrlCategory
-
-> **UrlCategory** = [`Brand`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, `"UrlCategory"`\>
-
-Defined in: [ts-chocolate/src/packlets/common/ids.ts:499](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/common/ids.ts#L499)
 
 Category for a URL associated with an entity.
 Uses the standard base ID pattern (alphanumeric, dashes, underscores).
 Examples: 'manufacturer', 'product-page', 'documentation', 'video', 'purchase'
+
+## Type
+
+```typescript
+type UrlCategory = Brand<string, "UrlCategory">
+```

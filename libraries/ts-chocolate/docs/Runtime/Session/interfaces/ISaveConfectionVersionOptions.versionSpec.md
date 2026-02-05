@@ -1,0 +1,11 @@
+[Home](../../../README.md) > [Runtime](../../README.md) > [Session](../README.md) > [ISaveConfectionVersionOptions](./ISaveConfectionVersionOptions.md) > versionSpec
+
+## ISaveConfectionVersionOptions.versionSpec property
+
+Version spec for the new version
+
+**Signature:**
+
+```typescript
+readonly versionSpec: ConfectionVersionSpec;
+```

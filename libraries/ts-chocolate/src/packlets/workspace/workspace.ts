@@ -26,7 +26,6 @@
 import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { CryptoUtils } from '@fgv/ts-extras';
-import { JournalLibrary, SessionLibrary } from '../entities';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
@@ -254,20 +253,6 @@ export class Workspace implements IWorkspace {
    */
   public get runtime(): RuntimeContext {
     return this._runtime;
-  }
-
-  /**
-   * {@inheritDoc IWorkspace.journals}
-   */
-  public get journals(): JournalLibrary {
-    return this._userLibrary.journals;
-  }
-
-  /**
-   * {@inheritDoc IWorkspace.sessions}
-   */
-  public get sessions(): SessionLibrary {
-    return this._userLibrary.sessions;
   }
 
   /**

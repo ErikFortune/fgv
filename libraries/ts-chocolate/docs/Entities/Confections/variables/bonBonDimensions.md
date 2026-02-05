@@ -1,0 +1,9 @@
+[Home](../../../README.md) > [Entities](../../README.md) > [Confections](../README.md) > bonBonDimensions
+
+# Variable: bonBonDimensions
+
+Converter for Entities.Confections.IBonBonDimensions | IBonBonDimensions.
+
+## Type
+
+`Converter<IBonBonDimensions>`

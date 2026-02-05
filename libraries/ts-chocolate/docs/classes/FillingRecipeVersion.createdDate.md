@@ -1,0 +1,11 @@
+[Home](../README.md) > [FillingRecipeVersion](./FillingRecipeVersion.md) > createdDate
+
+## FillingRecipeVersion.createdDate property
+
+Date this version was created (ISO 8601 format)
+
+**Signature:**
+
+```typescript
+readonly createdDate: string;
+```

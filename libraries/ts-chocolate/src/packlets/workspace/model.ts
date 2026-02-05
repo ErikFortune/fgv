@@ -32,7 +32,7 @@
 import { Logging, Result } from '@fgv/ts-utils';
 
 import { CryptoUtils } from '@fgv/ts-extras';
-import { JournalLibrary, SessionLibrary } from '../entities';
+import { JournalLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
 import { IChocolateLibraryCreateParams, IInstantiatedLibrarySource } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
@@ -58,9 +58,10 @@ export type WorkspaceState = 'locked' | 'unlocked' | 'no-keystore';
  * The primary entry point for chocolate applications.
  *
  * A workspace provides unified access to:
- * - Library content (ingredients, fillings, confections, etc.)
- * - Session creation for editing
+ * - Library runtime for materialized library objects (ingredients, fillings, confections, etc.)
+ * - User runtime for materialized user data (sessions, journals, inventory)
  * - Key store for encrypted collection support
+ * - Settings management
  *
  * @public
  */
@@ -68,24 +69,14 @@ export interface IWorkspace {
   // ---- Core Access ----
 
   /**
-   * The runtime context providing library resolution and session capabilities.
-   * Access library data via `runtime.library`, queries via `runtime.ingredients`, etc.
+   * The runtime context providing materialized library objects.
+   * Access via `runtime.ingredients`, `runtime.fillings`, `runtime.confections`, etc.
    */
   readonly runtime: RuntimeContext;
 
   /**
-   * Journal library for production records (user-specific data).
-   */
-  readonly journals: JournalLibrary;
-
-  /**
-   * Session library for persisted editing sessions (user-specific data).
-   */
-  readonly sessions: SessionLibrary;
-
-  /**
-   * User library runtime for materializing persisted sessions.
-   * Provides session restoration and caching.
+   * User library runtime for materialized user data.
+   * Access via `userRuntime.sessions`, `userRuntime.journals`, `userRuntime.moldInventory`, etc.
    */
   readonly userRuntime: IUserLibraryRuntime;
 

@@ -1,0 +1,9 @@
+[Home](../../README.md) > [Validators](../README.md) > fillingVersionSpec
+
+# Variable: fillingVersionSpec
+
+In-place `Validator` for FillingVersionSpec | FillingVersionSpec.
+
+## Type
+
+`Validator<FillingVersionSpec>`

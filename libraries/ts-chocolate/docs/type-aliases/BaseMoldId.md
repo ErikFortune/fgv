@@ -1,15 +1,13 @@
-[**@fgv/ts-chocolate**](../README.md)
-
-***
-
-[@fgv/ts-chocolate](../README.md) / BaseMoldId
+[Home](../README.md) > BaseMoldId
 
 # Type Alias: BaseMoldId
-
-> **BaseMoldId** = [`Brand`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, `"BaseMoldId"`\>
-
-Defined in: [ts-chocolate/src/packlets/common/ids.ts:62](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/common/ids.ts#L62)
 
 Mold identifier within a single source
 Character restrictions: alphanumeric, dashes, underscores only (no dots)
 Pattern: /^[a-zA-Z0-9_-]+$/
+
+## Type
+
+```typescript
+type BaseMoldId = Brand<string, "BaseMoldId">
+```

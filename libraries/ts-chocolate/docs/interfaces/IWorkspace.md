@@ -1,145 +1,179 @@
-[**@fgv/ts-chocolate**](../README.md)
-
-***
-
-[@fgv/ts-chocolate](../README.md) / IWorkspace
+[Home](../README.md) > IWorkspace
 
 # Interface: IWorkspace
-
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:67](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L67)
 
 The primary entry point for chocolate applications.
 
 A workspace provides unified access to:
-- Library content (ingredients, fillings, confections, etc.)
-- Session creation for editing
+- Library runtime for materialized library objects (ingredients, fillings, confections, etc.)
+- User runtime for materialized user data (sessions, journals, inventory)
 - Key store for encrypted collection support
+- Settings management
 
 ## Properties
 
-### isReady
+<table><thead><tr><th>
 
-> `readonly` **isReady**: `boolean`
+Property
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:116](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L116)
+</th><th>
 
-Whether the workspace is ready for use (unlocked or no key store configured).
+Modifiers
 
-***
+</th><th>
 
-### journals
+Type
 
-> `readonly` **journals**: [`JournalLibrary`](../@fgv/namespaces/Entities/classes/JournalLibrary.md)
+</th><th>
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:79](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L79)
+Description
 
-Journal library for production records (user-specific data).
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-***
+[runtime](./IWorkspace.runtime.md)
 
-### keyStore
+</td><td>
 
-> `readonly` **keyStore**: [`KeyStore_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras/docs) \| `undefined`
+`readonly`
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:95](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L95)
+</td><td>
+
+[RuntimeContext](../classes/RuntimeContext.md)
+
+</td><td>
+
+The runtime context providing materialized library objects.
+
+</td></tr>
+<tr><td>
+
+[userRuntime](./IWorkspace.userRuntime.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IUserLibraryRuntime](IUserLibraryRuntime.md)
+
+</td><td>
+
+User library runtime for materialized user data.
+
+</td></tr>
+<tr><td>
+
+[keyStore](./IWorkspace.keyStore.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+KeyStore_2 | undefined
+
+</td><td>
 
 The key store for encryption key management, if configured.
 
-***
+</td></tr>
+<tr><td>
 
-### runtime
+[settings](./IWorkspace.settings.md)
 
-> `readonly` **runtime**: [`RuntimeContext`](../classes/RuntimeContext.md)
+</td><td>
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:74](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L74)
+`readonly`
 
-The runtime context providing library resolution and session capabilities.
-Access library data via `runtime.library`, queries via `runtime.ingredients`, etc.
+</td><td>
 
-***
+ISettingsManager | undefined
 
-### sessions
-
-> `readonly` **sessions**: [`SessionLibrary`](../@fgv/namespaces/Entities/classes/SessionLibrary.md)
-
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:84](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L84)
-
-Session library for persisted editing sessions (user-specific data).
-
-***
-
-### settings
-
-> `readonly` **settings**: [`ISettingsManager`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs) \| `undefined`
-
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:101](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L101)
+</td><td>
 
 The settings manager for workspace configuration.
-May be undefined if workspace was created without platform initialization.
 
-***
+</td></tr>
+<tr><td>
 
-### state
+[state](./IWorkspace.state.md)
 
-> `readonly` **state**: [`WorkspaceState`](../type-aliases/WorkspaceState.md)
+</td><td>
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:111](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L111)
+`readonly`
+
+</td><td>
+
+[WorkspaceState](../type-aliases/WorkspaceState.md)
+
+</td><td>
 
 Current state of the workspace with respect to key store.
-- `'locked'`: Key store is present but not unlocked
-- `'unlocked'`: Key store is present and unlocked
-- `'no-keystore'`: No key store configured
 
-***
+</td></tr>
+<tr><td>
 
-### userRuntime
+[isReady](./IWorkspace.isReady.md)
 
-> `readonly` **userRuntime**: [`IUserLibraryRuntime`](../@fgv/namespaces/UserRuntime/interfaces/IUserLibraryRuntime.md)
+</td><td>
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:90](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L90)
+`readonly`
 
-User library runtime for materializing persisted sessions.
-Provides session restoration and caching.
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether the workspace is ready for use (unlocked or no key store configured).
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### lock()
+<table><thead><tr><th>
 
-> **lock**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`IWorkspace`\>
+Method
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:134](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L134)
+</th><th>
 
-Locks the workspace.
-- Locks the key store, clearing secrets from memory
+Modifiers
 
-#### Returns
+</th><th>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`IWorkspace`\>
+Description
 
-Success with the workspace, or Failure if lock fails
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-***
+[unlock(password)](./IWorkspace.unlock.md)
 
-### unlock()
+</td><td>
 
-> **unlock**(`password`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`IWorkspace`\>\>
 
-Defined in: [ts-chocolate/src/packlets/workspace/model.ts:127](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/workspace/model.ts#L127)
+
+</td><td>
 
 Unlocks the workspace with a password.
-- Unlocks the key store
-- Loads any protected collections using the now-available secrets
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-##### password
+[lock()](./IWorkspace.lock.md)
 
-`string`
+</td><td>
 
-The master password for the key store
 
-#### Returns
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`IWorkspace`\>\>
+</td><td>
 
-Success with the workspace, or Failure if unlock fails
+Locks the workspace.
+
+</td></tr>
+</tbody></table>

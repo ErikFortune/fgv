@@ -1,0 +1,159 @@
+[Home](../README.md) > UserLibraryRuntime
+
+# Class: UserLibraryRuntime
+
+Implementation of user library runtime materialization.
+
+Follows the library-runtime pattern:
+- Exposes MaterializedLibrary instances for sessions, journals, and inventory
+- Lazy resolution and caching of materialized objects
+- Specialized methods for session creation and persistence
+
+**Implements:** [`IUserLibraryRuntime`](../interfaces/IUserLibraryRuntime.md)
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[sessions](./UserLibraryRuntime.sessions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](MaterializedLibrary.md)&lt;[SessionId](../type-aliases/SessionId.md), [AnySessionEntity](../type-aliases/AnySessionEntity.md), [AnyMaterializedSession](../type-aliases/AnyMaterializedSession.md), never&gt;
+
+</td><td>
+
+A materialized library of all sessions, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[journals](./UserLibraryRuntime.journals.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](MaterializedLibrary.md)&lt;[JournalId](../type-aliases/JournalId.md), [AnyJournalEntryEntity](../type-aliases/AnyJournalEntryEntity.md), [AnyJournalEntry](../type-aliases/AnyJournalEntry.md), never&gt;
+
+</td><td>
+
+A materialized library of all journal entries, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[moldInventory](./UserLibraryRuntime.moldInventory.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](MaterializedLibrary.md)&lt;[MoldInventoryEntryId](../type-aliases/MoldInventoryEntryId.md), [IMoldInventoryEntryEntity](../interfaces/IMoldInventoryEntryEntity.md), [IMoldInventoryEntry](../interfaces/IMoldInventoryEntry.md), never&gt;
+
+</td><td>
+
+A materialized library of mold inventory entries, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[ingredientInventory](./UserLibraryRuntime.ingredientInventory.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](MaterializedLibrary.md)&lt;[IngredientInventoryEntryId](../type-aliases/IngredientInventoryEntryId.md), [IIngredientInventoryEntryEntity](../interfaces/IIngredientInventoryEntryEntity.md), [IIngredientInventoryEntry](../interfaces/IIngredientInventoryEntry.md), never&gt;
+
+</td><td>
+
+A materialized library of ingredient inventory entries, keyed by composite ID.
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[create(userLibrary, sessionContext)](./UserLibraryRuntime.create.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new UserLibraryRuntime.
+
+</td></tr>
+<tr><td>
+
+[createFillingSession(versionId, options)](./UserLibraryRuntime.createFillingSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a new persisted filling session from a filling version.
+
+</td></tr>
+<tr><td>
+
+[saveSession(sessionId)](./UserLibraryRuntime.saveSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves an active session back to the library.
+
+</td></tr>
+</tbody></table>

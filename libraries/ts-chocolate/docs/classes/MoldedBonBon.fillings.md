@@ -1,0 +1,11 @@
+[Home](../README.md) > [MoldedBonBon](./MoldedBonBon.md) > fillings
+
+## MoldedBonBon.fillings property
+
+Resolved filling slots from the golden version.
+
+**Signature:**
+
+```typescript
+readonly fillings: readonly IResolvedFillingSlot[] | undefined;
+```

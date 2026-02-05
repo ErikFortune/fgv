@@ -1,0 +1,11 @@
+[Home](../README.md) > [IMoldedBonBonYield](./IMoldedBonBonYield.md) > frames
+
+## IMoldedBonBonYield.frames property
+
+Number of frames to produce (primary storage)
+
+**Signature:**
+
+```typescript
+readonly frames: number;
+```

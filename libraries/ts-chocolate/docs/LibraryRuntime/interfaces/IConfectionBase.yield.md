@@ -1,0 +1,11 @@
+[Home](../../README.md) > [LibraryRuntime](../README.md) > [IConfectionBase](./IConfectionBase.md) > yield
+
+## IConfectionBase.yield property
+
+Yield specification from the golden version
+
+**Signature:**
+
+```typescript
+readonly yield: IConfectionYield;
+```

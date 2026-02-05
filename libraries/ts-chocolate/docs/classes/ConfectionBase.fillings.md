@@ -1,0 +1,11 @@
+[Home](../README.md) > [ConfectionBase](./ConfectionBase.md) > fillings
+
+## ConfectionBase.fillings property
+
+Resolved filling slots from the golden version (lazy-loaded)
+
+**Signature:**
+
+```typescript
+readonly fillings: readonly IResolvedFillingSlot[] | undefined;
+```

@@ -1,0 +1,11 @@
+[Home](../../README.md) > [Runtime](../README.md) > [ISaveResult](./ISaveResult.md) > journalId
+
+## ISaveResult.journalId property
+
+The journal ID if a journal entry was created
+
+**Signature:**
+
+```typescript
+readonly journalId: string;
+```

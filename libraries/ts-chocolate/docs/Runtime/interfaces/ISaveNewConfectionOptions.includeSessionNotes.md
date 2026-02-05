@@ -1,0 +1,11 @@
+[Home](../../README.md) > [Runtime](../README.md) > [ISaveNewConfectionOptions](./ISaveNewConfectionOptions.md) > includeSessionNotes
+
+## ISaveNewConfectionOptions.includeSessionNotes property
+
+Whether to include session notes in the confection
+
+**Signature:**
+
+```typescript
+readonly includeSessionNotes: boolean;
+```
