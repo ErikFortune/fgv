@@ -6,7 +6,7 @@
 
 # Interface: IResolvedAdditionalChocolate
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1315](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1315)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1287](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1287)
 
 Resolved additional chocolate with purpose.
 
@@ -16,7 +16,7 @@ Resolved additional chocolate with purpose.
 
 > `readonly` **chocolate**: [`IResolvedChocolateSpec`](IResolvedChocolateSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1317](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1317)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1289](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1289)
 
 Resolved chocolate specification
 
@@ -26,7 +26,7 @@ Resolved chocolate specification
 
 > `readonly` **entity**: [`IAdditionalChocolateEntity`](../../Entities/namespaces/Confections/interfaces/IAdditionalChocolateEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1321](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1321)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1293](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1293)
 
 The original additional chocolate entity data
 
@@ -36,6 +36,6 @@ The original additional chocolate entity data
 
 > `readonly` **purpose**: [`AdditionalChocolatePurpose`](../../../../type-aliases/AdditionalChocolatePurpose.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1319](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1319)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1291](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1291)
 
 Purpose of this additional chocolate

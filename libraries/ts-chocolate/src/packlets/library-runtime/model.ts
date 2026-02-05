@@ -1013,9 +1013,10 @@ export interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
 // ============================================================================
 
 /**
- * A resolved runtime view of a confection with navigation capabilities.
+ * Base interface for all runtime confections.
+ * Provides common properties and version navigation shared by all confection types.
  *
- * This interface includes all properties from the data layer `IConfectionEntityBase`
+ * This interface includes all properties from the data layer `IConfectionEntity`
  * plus runtime-specific additions:
  * - Composite identity (`id`, `collectionId`) for cross-source references
  * - Version navigation with typed versions
@@ -1023,9 +1024,14 @@ export interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
  * - Type narrowing methods for discriminated access
  * - Access to underlying entity data
  *
+ * @typeParam TVersion - The specific version type for this confection
+ * @typeParam TEntity - The specific entity type for this confection
  * @public
  */
-export interface IConfectionBase {
+export interface IConfectionBase<
+  TVersion extends AnyConfectionVersion = AnyConfectionVersion,
+  TEntity extends Confections.AnyConfectionEntity = Confections.AnyConfectionEntity
+> {
   // ---- Composite Identity (runtime-specific) ----
 
   /**
@@ -1069,19 +1075,19 @@ export interface IConfectionBase {
   /**
    * The golden (default) version - resolved.
    */
-  readonly goldenVersion: AnyConfectionVersion;
+  readonly goldenVersion: TVersion;
 
   /**
    * All versions - resolved.
    */
-  readonly versions: ReadonlyArray<AnyConfectionVersion>;
+  readonly versions: ReadonlyArray<TVersion>;
 
   /**
    * Gets a specific version by version specifier.
    * @param versionSpec - The version specifier to find
    * @returns Success with runtime version, or Failure if not found
    */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+  getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
 
   // ---- Effective tags/urls (merged from base + version) ----
 
@@ -1146,25 +1152,17 @@ export interface IConfectionBase {
   /**
    * Gets the underlying confection entity data.
    */
-  readonly entity: Confections.AnyConfectionEntity;
+  readonly entity: TEntity;
 }
 
 /**
  * Runtime confection narrowed to molded bonbon type.
  * @public
  */
-export interface IMoldedBonBon extends IConfectionBase {
+export interface IMoldedBonBon
+  extends IConfectionBase<IMoldedBonBonVersion, Confections.IMoldedBonBonEntity> {
   /** Type is always 'molded-bonbon' for this confection */
   readonly confectionType: 'molded-bonbon';
-
-  /** Golden version typed as IRuntimeMoldedBonBonVersion */
-  readonly goldenVersion: IMoldedBonBonVersion;
-
-  /** All versions typed as IRuntimeMoldedBonBonVersion */
-  readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
-
-  /** Gets a specific version - returns typed version */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<IMoldedBonBonVersion>;
 
   /** Resolved molds with preferred selection (from golden version) */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
@@ -1174,27 +1172,15 @@ export interface IMoldedBonBon extends IConfectionBase {
 
   /** Resolved additional chocolates (from golden version) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
-
-  /** Entity data typed to IMoldedBonBon */
-  readonly entity: Confections.IMoldedBonBonEntity;
 }
 
 /**
  * Runtime confection narrowed to bar truffle type.
  * @public
  */
-export interface IBarTruffle extends IConfectionBase {
+export interface IBarTruffle extends IConfectionBase<IBarTruffleVersion, Confections.IBarTruffleEntity> {
   /** Type is always 'bar-truffle' for this confection */
   readonly confectionType: 'bar-truffle';
-
-  /** Golden version typed as IRuntimeBarTruffleVersion */
-  readonly goldenVersion: IBarTruffleVersion;
-
-  /** All versions typed as IRuntimeBarTruffleVersion */
-  readonly versions: ReadonlyArray<IBarTruffleVersion>;
-
-  /** Gets a specific version - returns typed version */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<IBarTruffleVersion>;
 
   /** Frame dimensions from the golden version */
   readonly frameDimensions: Confections.IFrameDimensions;
@@ -1204,36 +1190,22 @@ export interface IBarTruffle extends IConfectionBase {
 
   /** Resolved enrobing chocolate (from golden version, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
-
-  /** Entity data typed to IBarTruffle */
-  readonly entity: Confections.IBarTruffleEntity;
 }
 
 /**
  * Runtime confection narrowed to rolled truffle type.
  * @public
  */
-export interface IRolledTruffle extends IConfectionBase {
+export interface IRolledTruffle
+  extends IConfectionBase<IRolledTruffleVersion, Confections.IRolledTruffleEntity> {
   /** Type is always 'rolled-truffle' for this confection */
   readonly confectionType: 'rolled-truffle';
-
-  /** Golden version typed as IRuntimeRolledTruffleVersion */
-  readonly goldenVersion: IRolledTruffleVersion;
-
-  /** All versions typed as IRuntimeRolledTruffleVersion */
-  readonly versions: ReadonlyArray<IRolledTruffleVersion>;
-
-  /** Gets a specific version - returns typed version */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<IRolledTruffleVersion>;
 
   /** Resolved enrobing chocolate (from golden version, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
   /** Resolved coatings (from golden version, optional) */
   readonly coatings?: IResolvedCoatings;
-
-  /** Entity data typed to IRolledTruffle */
-  readonly entity: Confections.IRolledTruffleEntity;
 }
 
 /**
@@ -1345,7 +1317,7 @@ export interface IResolvedConfectionMoldRef {
 // ============================================================================
 
 /**
- * A resolved procedure reference for confections.
+ * Resolved procedure reference for confections.
  * Similar to IResolvedFillingRecipeProcedure but for confections.
  * @public
  */
@@ -1404,9 +1376,14 @@ export interface IResolvedCoatingOption {
  * - Effective tags/urls (merged from base confection + version)
  * - Access to underlying recipe version entity data
  *
+ * @typeParam TConfection - The specific confection type for this version
+ * @typeParam TEntity - The specific entity type for this version
  * @public
  */
-export interface IConfectionVersionBase {
+export interface IConfectionVersionBase<
+  TConfection extends IConfectionBase = IConfectionBase,
+  TEntity extends Confections.AnyConfectionVersionEntity = Confections.AnyConfectionVersionEntity
+> {
   // ---- Identity ----
 
   /**
@@ -1428,13 +1405,7 @@ export interface IConfectionVersionBase {
    * The parent confection - resolved.
    * Enables navigation: `version.confection.name`
    */
-  readonly confection: IConfectionBase;
-
-  /**
-   * The underlying confection version.
-   * Use this to get the version entity data for persistence or journaling.
-   */
-  readonly version: Confections.AnyConfectionVersionEntity;
+  readonly confection: TConfection;
 
   // ---- Version Properties ----
 
@@ -1499,17 +1470,15 @@ export interface IConfectionVersionBase {
   /**
    * Gets the underlying recipe version entity data.
    */
-  readonly entity: Confections.AnyConfectionVersionEntity;
+  readonly entity: TEntity;
 }
 
 /**
  * Runtime confection version narrowed to molded bonbon type.
  * @public
  */
-export interface IMoldedBonBonVersion extends IConfectionVersionBase {
-  /** Parent confection narrowed to molded bonbon type */
-  readonly confection: IMoldedBonBon;
-
+export interface IMoldedBonBonVersion
+  extends IConfectionVersionBase<IMoldedBonBon, Confections.IMoldedBonBonVersionEntity> {
   /** Resolved molds with preferred selection */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
@@ -1524,19 +1493,14 @@ export interface IMoldedBonBonVersion extends IConfectionVersionBase {
 
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-
-  /** Entity data typed to {@link Entities.Confections.IMoldedBonBonVersionEntity | IMoldedBonBonVersionEntity}. */
-  readonly entity: Confections.IMoldedBonBonVersionEntity;
 }
 
 /**
  * Runtime confection version narrowed to bar truffle type.
  * @public
  */
-export interface IBarTruffleVersion extends IConfectionVersionBase {
-  /** Parent confection narrowed to bar truffle type */
-  readonly confection: IBarTruffle;
-
+export interface IBarTruffleVersion
+  extends IConfectionVersionBase<IBarTruffle, Confections.IBarTruffleVersionEntity> {
   /** Frame dimensions for ganache slab */
   readonly frameDimensions: Confections.IFrameDimensions;
 
@@ -1548,19 +1512,14 @@ export interface IBarTruffleVersion extends IConfectionVersionBase {
 
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-
-  /** Entity data typed to {@link Entities.Confections.IBarTruffleVersionEntity | IBarTruffleVersionEntity}. */
-  readonly entity: Confections.IBarTruffleVersionEntity;
 }
 
 /**
  * Runtime confection version narrowed to rolled truffle type.
  * @public
  */
-export interface IRolledTruffleVersion extends IConfectionVersionBase {
-  /** Parent confection narrowed to rolled truffle type */
-  readonly confection: IRolledTruffle;
-
+export interface IRolledTruffleVersion
+  extends IConfectionVersionBase<IRolledTruffle, Confections.IRolledTruffleVersionEntity> {
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
@@ -1569,9 +1528,6 @@ export interface IRolledTruffleVersion extends IConfectionVersionBase {
 
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-
-  /** Entity data typed to {@link Entities.Confections.IRolledTruffleVersionEntity | IRolledTruffleVersionEntity}. */
-  readonly entity: Confections.IRolledTruffleVersionEntity;
 }
 
 /**

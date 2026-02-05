@@ -6,13 +6,13 @@
 
 # Class: RolledTruffleVersion
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:49](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L49)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:49](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L49)
 
 A resolved view of a rolled truffle version with all references resolved.
 
 ## Extends
 
-- [`ConfectionVersionBase`](ConfectionVersionBase.md)
+- [`ConfectionVersionBase`](ConfectionVersionBase.md)\<[`IRolledTruffle`](../interfaces/IRolledTruffle.md), [`IRolledTruffleVersionEntity`](../../Entities/interfaces/IRolledTruffleVersionEntity.md)\>
 
 ## Implements
 
@@ -24,7 +24,7 @@ A resolved view of a rolled truffle version with all references resolved.
 
 > `protected` `readonly` **\_confectionId**: [`ConfectionId`](../../../../type-aliases/ConfectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:51](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L51)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L57)
 
 #### Inherited from
 
@@ -36,7 +36,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/conf
 
 > `protected` `readonly` **\_context**: [`IConfectionContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:50](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L50)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L56)
 
 #### Inherited from
 
@@ -44,15 +44,15 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/conf
 
 ***
 
-### \_version
+### \_entity
 
-> `protected` `readonly` **\_version**: [`AnyConfectionVersionEntity`](../../Entities/type-aliases/AnyConfectionVersionEntity.md)
+> `protected` `readonly` **\_entity**: [`IRolledTruffleVersionEntity`](../../Entities/interfaces/IRolledTruffleVersionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:52](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L52)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L58)
 
 #### Inherited from
 
-[`ConfectionVersionBase`](ConfectionVersionBase.md).[`_version`](ConfectionVersionBase.md#_version)
+[`ConfectionVersionBase`](ConfectionVersionBase.md).[`_entity`](ConfectionVersionBase.md#_entity)
 
 ## Accessors
 
@@ -62,7 +62,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/conf
 
 > **get** **coatings**(): [`IResolvedCoatings`](../interfaces/IResolvedCoatings.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:177](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L177)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:180](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L180)
 
 Resolved coatings specification (lazy-loaded).
 
@@ -86,23 +86,25 @@ Resolved coatings (optional)
 
 #### Get Signature
 
-> **get** **confection**(): [`IRolledTruffle`](../interfaces/IRolledTruffle.md)
+> **get** **confection**(): `TConfection`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:92](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L92)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:109](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L109)
 
-Parent confection narrowed to rolled truffle type.
+The parent confection - resolved.
+Enables navigation: `version.confection.name`
 
 ##### Returns
 
-[`IRolledTruffle`](../interfaces/IRolledTruffle.md)
+`TConfection`
 
-Parent confection narrowed to rolled truffle type
+The parent confection - resolved.
+Enables navigation: `version.confection.name`
 
 #### Implementation of
 
 [`IRolledTruffleVersion`](../interfaces/IRolledTruffleVersion.md).[`confection`](../interfaces/IRolledTruffleVersion.md#confection)
 
-#### Overrides
+#### Inherited from
 
 [`ConfectionVersionBase`](ConfectionVersionBase.md).[`confection`](ConfectionVersionBase.md#confection)
 
@@ -114,7 +116,7 @@ Parent confection narrowed to rolled truffle type
 
 > **get** **confectionId**(): [`ConfectionId`](../../../../type-aliases/ConfectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:99](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L99)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:101](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L101)
 
 The parent confection ID.
 
@@ -140,7 +142,7 @@ The parent confection ID.
 
 > **get** **context**(): [`IConfectionContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:119](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L119)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:121](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L121)
 
 The runtime context for navigation and resource resolution.
 Used by editing sessions to access library resources.
@@ -161,7 +163,7 @@ Used by editing sessions to access library resources.
 
 > **get** **createdDate**(): `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:92](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L92)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:94](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L94)
 
 Date this version was created (ISO 8601 format).
 
@@ -187,7 +189,7 @@ Date this version was created (ISO 8601 format).
 
 > **get** **decorations**(): readonly [`IConfectionDecoration`](../../Entities/namespaces/Confections/interfaces/IConfectionDecoration.md)[] \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:145](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L145)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:147](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L147)
 
 Optional decorations for this version.
 
@@ -213,7 +215,7 @@ Optional decorations for this version.
 
 > **get** **effectiveTags**(): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:303](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L303)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:312](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L312)
 
 Effective tags for this version (base confection tags + version's additional tags).
 
@@ -239,7 +241,7 @@ Effective tags for this version (base confection tags + version's additional tag
 
 > **get** **effectiveUrls**(): readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:313](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L313)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:322](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L322)
 
 Effective URLs for this version (base confection URLs + version's additional URLs).
 
@@ -265,7 +267,7 @@ Effective URLs for this version (base confection URLs + version's additional URL
 
 > **get** **enrobingChocolate**(): [`IResolvedChocolateSpec`](../interfaces/IResolvedChocolateSpec.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:134](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L134)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:136](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L136)
 
 Resolved enrobing chocolate specification (lazy-loaded).
 
@@ -291,7 +293,7 @@ Resolved enrobing chocolate specification (optional)
 
 > **get** **entity**(): [`IRolledTruffleVersionEntity`](../../Entities/interfaces/IRolledTruffleVersionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:192](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L192)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:195](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L195)
 
 Gets the underlying rolled truffle version entity data.
 
@@ -299,7 +301,7 @@ Gets the underlying rolled truffle version entity data.
 
 [`IRolledTruffleVersionEntity`](../../Entities/interfaces/IRolledTruffleVersionEntity.md)
 
-Entity data typed to [IRolledTruffleVersionEntity](../../Entities/interfaces/IRolledTruffleVersionEntity.md).
+Gets the underlying recipe version entity data.
 
 #### Implementation of
 
@@ -317,7 +319,7 @@ Entity data typed to [IRolledTruffleVersionEntity](../../Entities/interfaces/IRo
 
 > **get** **fillings**(): readonly [`IResolvedFillingSlot`](../interfaces/IResolvedFillingSlot.md)[] \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:198](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L198)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:201](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L201)
 
 Resolved filling slots for this version.
 Undefined if the version has no fillings.
@@ -349,7 +351,7 @@ Undefined if the version has no fillings.
 
 > **get** **notes**(): readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[] \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:152](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L152)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:154](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L154)
 
 Optional categorized notes about this version.
 
@@ -375,7 +377,7 @@ Optional notes about this version.
 
 > **get** **preferredProcedure**(): [`IResolvedConfectionProcedure`](../interfaces/IResolvedConfectionProcedure.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:185](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L185)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:188](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L188)
 
 Gets the preferred procedure, falling back to first available.
 
@@ -397,7 +399,7 @@ Gets the preferred procedure, falling back to first available
 
 > **get** **procedures**(): [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IResolvedConfectionProcedure`](../interfaces/IResolvedConfectionProcedure.md), [`ProcedureId`](../../../../type-aliases/ProcedureId.md)\> \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:246](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L246)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:250](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L250)
 
 Resolved procedures for this version.
 Undefined if the version has no procedures.
@@ -423,41 +425,13 @@ Undefined if the version has no procedures.
 
 ***
 
-### version
-
-#### Get Signature
-
-> **get** **version**(): [`AnyConfectionVersionEntity`](../../Entities/type-aliases/AnyConfectionVersionEntity.md)
-
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:127](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L127)
-
-The underlying confection version.
-Use this to get the version data entity for persistence or journaling.
-
-##### Returns
-
-[`AnyConfectionVersionEntity`](../../Entities/type-aliases/AnyConfectionVersionEntity.md)
-
-The underlying confection version.
-Use this to get the version entity data for persistence or journaling.
-
-#### Implementation of
-
-[`IRolledTruffleVersion`](../interfaces/IRolledTruffleVersion.md).[`version`](../interfaces/IRolledTruffleVersion.md#version)
-
-#### Inherited from
-
-[`ConfectionVersionBase`](ConfectionVersionBase.md).[`version`](ConfectionVersionBase.md#version)
-
-***
-
 ### versionSpec
 
 #### Get Signature
 
 > **get** **versionSpec**(): [`ConfectionVersionSpec`](../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:85](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L85)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:87](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L87)
 
 Version specifier for this version.
 
@@ -483,7 +457,7 @@ Version specifier for this version.
 
 > **get** **yield**(): [`IConfectionYield`](../../Entities/interfaces/IConfectionYield.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:138](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L138)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:140](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L140)
 
 Yield specification for this version.
 
@@ -507,7 +481,7 @@ Yield specification for this version.
 
 > **getCoatings**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IResolvedCoatings`](../interfaces/IResolvedCoatings.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:143](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L143)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:145](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L145)
 
 Gets resolved coatings specification (lazy-loaded).
 
@@ -523,7 +497,7 @@ Result with resolved coatings (or undefined if not specified), or Failure if res
 
 > **getEnrobingChocolate**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IResolvedChocolateSpec`](../interfaces/IResolvedChocolateSpec.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:105](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L105)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:102](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L102)
 
 Gets resolved enrobing chocolate specification (lazy-loaded).
 
@@ -539,7 +513,7 @@ Result with resolved chocolate spec (or undefined if not specified), or Failure 
 
 > **getFillings**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`IResolvedFillingSlot`](../interfaces/IResolvedFillingSlot.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:165](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L165)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:167](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L167)
 
 Gets resolved filling slots for this version.
 
@@ -559,7 +533,7 @@ Result with resolved fillings (empty array if none), or Failure if resolution fa
 
 > **getProcedures**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IResolvedConfectionProcedure`](../interfaces/IResolvedConfectionProcedure.md), [`ProcedureId`](../../../../type-aliases/ProcedureId.md)\> \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:208](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L208)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:211](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L211)
 
 Gets resolved procedures for this version.
 
@@ -579,7 +553,7 @@ Result with resolved procedures (undefined if none), or Failure if resolution fa
 
 > **isBarTruffleVersion**(): `this is BarTruffleVersion`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:333](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L333)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:342](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L342)
 
 Returns true if this is a bar truffle version.
 
@@ -601,7 +575,7 @@ Returns true if this is a bar truffle version.
 
 > **isMoldedBonBonVersion**(): `this is MoldedBonBonVersion`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:326](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L326)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:335](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L335)
 
 Returns true if this is a molded bonbon version.
 
@@ -623,7 +597,7 @@ Returns true if this is a molded bonbon version.
 
 > **isRolledTruffleVersion**(): `this is RolledTruffleVersion`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:340](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L340)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts:349](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/confectionVersionBase.ts#L349)
 
 Returns true if this is a rolled truffle version.
 
@@ -645,7 +619,7 @@ Returns true if this is a rolled truffle version.
 
 > `static` **create**(`context`, `confectionId`, `version`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`RolledTruffleVersion`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:77](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L77)
+Defined in: [ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts:80](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/confections/versions/rolledTruffleVersion.ts#L80)
 
 Factory method for creating a RolledTruffleVersion.
 

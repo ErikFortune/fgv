@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, MoldId, ProcedureId } from '../../common';
+import { ConfectionId, Model as CommonModel, MoldId, ProcedureId } from '../../common';
 import { Confections } from '../../entities';
 import {
   IConfectionContext,
@@ -49,7 +49,10 @@ import { MoldedBonBonVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class MoldedBonBon extends ConfectionBase implements IMoldedBonBon {
+export class MoldedBonBon
+  extends ConfectionBase<IMoldedBonBonVersion, Confections.IMoldedBonBonEntity>
+  implements IMoldedBonBon
+{
   private readonly _moldedBonBon: Confections.IMoldedBonBonEntity;
 
   /**
@@ -97,40 +100,19 @@ export class MoldedBonBon extends ConfectionBase implements IMoldedBonBon {
   // ============================================================================
 
   /**
-   * Golden version typed as IMoldedBonBonVersion.
-   */
-  public override get goldenVersion(): IMoldedBonBonVersion {
-    return super.goldenVersion as IMoldedBonBonVersion;
-  }
-
-  /**
-   * All versions typed as IMoldedBonBonVersion.
-   */
-  public override get versions(): ReadonlyArray<IMoldedBonBonVersion> {
-    return super.versions as ReadonlyArray<IMoldedBonBonVersion>;
-  }
-
-  /**
-   * Gets a specific version by version specifier.
-   * @param versionSpec - The version specifier to find
-   * @returns Success with typed runtime version, or Failure if not found
-   */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IMoldedBonBonVersion> {
-    return super.getVersion(versionSpec) as Result<IMoldedBonBonVersion>;
-  }
-
-  /**
    * Creates a runtime version from a data layer entity.
    * @param entity - The data layer entity
-   * @returns The runtime version
+   * @returns Result with runtime version, or Failure if creation fails
    * @internal
    */
-  protected override _createVersion(entity: Confections.AnyConfectionVersionEntity): IMoldedBonBonVersion {
+  protected override _createVersion(
+    entity: Confections.AnyConfectionVersionEntity
+  ): Result<IMoldedBonBonVersion> {
     return MoldedBonBonVersion.create(
       this._context,
       this._id,
       entity as Confections.IMoldedBonBonVersionEntity
-    ).orThrow();
+    );
   }
 
   // ============================================================================

@@ -6,7 +6,7 @@
 
 # Class: ChocolateLibrary
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:153](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L153)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:153](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L153)
 
 Main entry point for the chocolate library
 
@@ -21,7 +21,7 @@ Provides unified access to:
 
 > `readonly` **logger**: [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:164](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L164)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:164](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L164)
 
 Logger used by this library and its sub-libraries.
 
@@ -33,7 +33,7 @@ Logger used by this library and its sub-libraries.
 
 > **get** **confections**(): [`ConfectionsLibrary`](../@fgv/namespaces/Entities/classes/ConfectionsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:321](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L321)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:321](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L321)
 
 The [confections library](../@fgv/namespaces/Entities/classes/ConfectionsLibrary.md).
 
@@ -49,7 +49,7 @@ The [confections library](../@fgv/namespaces/Entities/classes/ConfectionsLibrary
 
 > **get** **fillings**(): [`FillingsLibrary`](../@fgv/namespaces/Entities/classes/FillingsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:293](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L293)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:293](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L293)
 
 The [fillings library](../@fgv/namespaces/Entities/classes/FillingsLibrary.md).
 
@@ -65,7 +65,7 @@ The [fillings library](../@fgv/namespaces/Entities/classes/FillingsLibrary.md).
 
 > **get** **ingredients**(): [`IngredientsLibrary`](../@fgv/namespaces/Entities/classes/IngredientsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:286](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L286)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:286](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L286)
 
 The [ingredients library](../@fgv/namespaces/Entities/classes/IngredientsLibrary.md).
 
@@ -81,7 +81,7 @@ The [ingredients library](../@fgv/namespaces/Entities/classes/IngredientsLibrary
 
 > **get** **molds**(): [`MoldsLibrary`](../@fgv/namespaces/Entities/classes/MoldsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:300](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L300)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:300](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L300)
 
 The [molds library](../@fgv/namespaces/Entities/classes/MoldsLibrary.md).
 
@@ -97,7 +97,7 @@ The [molds library](../@fgv/namespaces/Entities/classes/MoldsLibrary.md).
 
 > **get** **procedures**(): [`ProceduresLibrary`](../@fgv/namespaces/Entities/classes/ProceduresLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:307](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L307)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:307](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L307)
 
 The [procedures library](../@fgv/namespaces/Entities/classes/ProceduresLibrary.md).
 
@@ -113,7 +113,7 @@ The [procedures library](../@fgv/namespaces/Entities/classes/ProceduresLibrary.m
 
 > **get** **tasks**(): [`TasksLibrary`](../@fgv/namespaces/Entities/classes/TasksLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:314](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L314)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:314](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L314)
 
 The [tasks library](../@fgv/namespaces/Entities/classes/TasksLibrary.md).
 
@@ -127,7 +127,7 @@ The [tasks library](../@fgv/namespaces/Entities/classes/TasksLibrary.md).
 
 > **getEditableConfections**(`collectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditableCollection`](../@fgv/namespaces/Editing/classes/EditableCollection.md)\<[`AnyConfectionEntity`](../@fgv/namespaces/Entities/type-aliases/AnyConfectionEntity.md), [`BaseConfectionId`](../type-aliases/BaseConfectionId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:418](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L418)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:418](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L418)
 
 Get an editable confections collection with persistence enabled.
 
@@ -151,7 +151,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > **getEditableFillings**(`collectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditableCollection`](../@fgv/namespaces/Editing/classes/EditableCollection.md)\<[`IFillingRecipeEntity`](../@fgv/namespaces/Entities/interfaces/IFillingRecipeEntity.md), [`BaseFillingId`](../type-aliases/BaseFillingId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:352](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L352)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:352](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L352)
 
 Get an editable fillings collection with persistence enabled.
 
@@ -175,7 +175,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > **getEditableIngredients**(`collectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditableCollection`](../@fgv/namespaces/Editing/classes/EditableCollection.md)\<[`IngredientEntity`](../@fgv/namespaces/Entities/type-aliases/IngredientEntity.md), [`BaseIngredientId`](../type-aliases/BaseIngredientId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:335](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L335)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:335](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L335)
 
 Get an editable ingredients collection with persistence enabled.
 
@@ -199,7 +199,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > **getEditableMolds**(`collectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditableCollection`](../@fgv/namespaces/Editing/classes/EditableCollection.md)\<[`IMoldEntity`](../@fgv/namespaces/Entities/interfaces/IMoldEntity.md), [`BaseMoldId`](../type-aliases/BaseMoldId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:369](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L369)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:369](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L369)
 
 Get an editable molds collection with persistence enabled.
 
@@ -223,7 +223,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > **getEditableProcedures**(`collectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditableCollection`](../@fgv/namespaces/Editing/classes/EditableCollection.md)\<[`IProcedureEntity`](../@fgv/namespaces/Entities/interfaces/IProcedureEntity.md), [`BaseProcedureId`](../type-aliases/BaseProcedureId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:384](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L384)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:384](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L384)
 
 Get an editable procedures collection with persistence enabled.
 
@@ -247,7 +247,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > **getEditableTasks**(`collectionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditableCollection`](../@fgv/namespaces/Editing/classes/EditableCollection.md)\<[`IRawTaskEntity`](../@fgv/namespaces/Entities/interfaces/IRawTaskEntity.md), [`BaseTaskId`](../type-aliases/BaseTaskId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:401](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L401)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:401](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L401)
 
 Get an editable tasks collection with persistence enabled.
 
@@ -271,7 +271,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > `static` **create**(`params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ChocolateLibrary`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:192](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L192)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:192](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L192)
 
 Creates a new ChocolateLibrary instance.
 

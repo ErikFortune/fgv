@@ -44,15 +44,22 @@ import type { RolledTruffleVersion } from './rolledTruffleVersion';
 /**
  * Abstract base class for runtime confection versions.
  * Provides common properties and resolution logic shared by all confection version types.
+ *
+ * @typeParam TConfection - The specific confection type for this version
+ * @typeParam TEntity - The specific entity type for this version
  * @public
  */
-export abstract class ConfectionVersionBase implements IConfectionVersionBase {
+export abstract class ConfectionVersionBase<
+  TConfection extends IConfectionBase = IConfectionBase,
+  TEntity extends Confections.AnyConfectionVersionEntity = Confections.AnyConfectionVersionEntity
+> implements IConfectionVersionBase<TConfection>
+{
   protected readonly _context: IConfectionContext;
   protected readonly _confectionId: ConfectionId;
-  protected readonly _version: Confections.AnyConfectionVersionEntity;
+  protected readonly _entity: TEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved)
-  private _confection: IConfectionBase | undefined;
+  private _confection: TConfection | undefined;
   private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined;
   private _resolvedProcedures:
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
@@ -62,17 +69,13 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    * Creates a ConfectionVersionBase.
    * @param context - The runtime context for navigation
    * @param confectionId - The parent confection ID
-   * @param version - The version data
+   * @param entity - The version entity data
    * @internal
    */
-  protected constructor(
-    context: IConfectionContext,
-    confectionId: ConfectionId,
-    version: Confections.AnyConfectionVersionEntity
-  ) {
+  protected constructor(context: IConfectionContext, confectionId: ConfectionId, entity: TEntity) {
     this._context = context;
     this._confectionId = confectionId;
-    this._version = version;
+    this._entity = entity;
   }
 
   // ============================================================================
@@ -83,14 +86,14 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    * Version specifier for this version.
    */
   public get versionSpec(): ConfectionVersionSpec {
-    return this._version.versionSpec;
+    return this._entity.versionSpec;
   }
 
   /**
    * Date this version was created (ISO 8601 format).
    */
   public get createdDate(): string {
-    return this._version.createdDate;
+    return this._entity.createdDate;
   }
 
   /**
@@ -104,12 +107,12 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    * The parent confection - resolved.
    * Enables navigation: `version.confection.name`
    */
-  public get confection(): IConfectionBase {
+  public get confection(): TConfection {
     if (this._confection === undefined) {
       // orThrow is safe - version was created from a valid confection
-      this._confection = this._context.confections.get(this._confectionId).value;
+      this._confection = this._context.confections.get(this._confectionId).value as TConfection;
     }
-    return this._confection!;
+    return this._confection;
   }
 
   /**
@@ -121,11 +124,11 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
   }
 
   /**
-   * The underlying confection version.
-   * Use this to get the version data entity for persistence or journaling.
+   * The underlying confection version entity.
+   * Use this to get the version entity data for persistence or journaling.
    */
-  public get version(): Confections.AnyConfectionVersionEntity {
-    return this._version;
+  public get entity(): TEntity {
+    return this._entity;
   }
 
   // ============================================================================
@@ -136,21 +139,21 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    * Yield specification for this version.
    */
   public get yield(): Confections.IConfectionYield {
-    return this._version.yield;
+    return this._entity.yield;
   }
 
   /**
    * Optional decorations for this version.
    */
   public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
-    return this._version.decorations;
+    return this._entity.decorations;
   }
 
   /**
    * Optional categorized notes about this version.
    */
   public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
-    return this._version.notes;
+    return this._entity.notes;
   }
 
   // ============================================================================
@@ -164,7 +167,7 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    */
   public getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>> {
     if (this._resolvedFillings === undefined) {
-      const slots = this._version.fillings ?? [];
+      const slots = this._entity.fillings ?? [];
       return mapResults(slots.map((slot) => this._resolveFillingSlot(slot))).onSuccess((slots) => {
         this._resolvedFillings = slots;
         return succeed(slots);
@@ -210,7 +213,7 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
     CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined
   > {
     if (this._resolvedProcedures === undefined) {
-      const procedures = this._version.procedures;
+      const procedures = this._entity.procedures;
       if (!procedures || procedures.options.length === 0) {
         return succeed(undefined);
       }
@@ -309,7 +312,7 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    */
   public get effectiveTags(): ReadonlyArray<string> {
     const baseTags = this.confection.tags ?? [];
-    const versionTags = this._version.additionalTags ?? [];
+    const versionTags = this._entity.additionalTags ?? [];
     // Deduplicate while preserving order (base first)
     return [...new Set([...baseTags, ...versionTags])];
   }
@@ -319,7 +322,7 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    */
   public get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl> {
     const baseUrls = this.confection.urls ?? [];
-    const versionUrls = this._version.additionalUrls ?? [];
+    const versionUrls = this._entity.additionalUrls ?? [];
     return [...baseUrls, ...versionUrls];
   }
 
@@ -331,25 +334,20 @@ export abstract class ConfectionVersionBase implements IConfectionVersionBase {
    * Returns true if this is a molded bonbon version.
    */
   public isMoldedBonBonVersion(): this is MoldedBonBonVersion {
-    return Confections.isMoldedBonBonVersionEntity(this._version);
+    return Confections.isMoldedBonBonVersionEntity(this._entity);
   }
 
   /**
    * Returns true if this is a bar truffle version.
    */
   public isBarTruffleVersion(): this is BarTruffleVersion {
-    return Confections.isBarTruffleVersionEntity(this._version);
+    return Confections.isBarTruffleVersionEntity(this._entity);
   }
 
   /**
    * Returns true if this is a rolled truffle version.
    */
   public isRolledTruffleVersion(): this is RolledTruffleVersion {
-    return Confections.isRolledTruffleVersionEntity(this._version);
+    return Confections.isRolledTruffleVersionEntity(this._entity);
   }
-
-  /**
-   * Gets the underlying version data entity (read-only)
-   */
-  public abstract get entity(): Confections.AnyConfectionVersionEntity;
 }

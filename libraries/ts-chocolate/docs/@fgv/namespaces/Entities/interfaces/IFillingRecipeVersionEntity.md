@@ -6,7 +6,7 @@
 
 # Interface: IFillingRecipeVersionEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:197](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L197)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:197](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L197)
 
 Complete details for a single version of a filling recipe
 
@@ -16,7 +16,7 @@ Complete details for a single version of a filling recipe
 
 > `readonly` **baseWeight**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:216](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L216)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:216](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L216)
 
 Base weight of the filling recipe (sum of all ingredient amounts)
 
@@ -26,7 +26,7 @@ Base weight of the filling recipe (sum of all ingredient amounts)
 
 > `readonly` **createdDate**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:206](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L206)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:206](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L206)
 
 Date this version was created (ISO 8601 format)
 
@@ -36,7 +36,7 @@ Date this version was created (ISO 8601 format)
 
 > `readonly` **ingredients**: readonly [`IFillingIngredientEntity`](../namespaces/Fillings/interfaces/IFillingIngredientEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:211](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L211)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:211](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L211)
 
 Ingredients used in this version of the filling recipe
 
@@ -46,7 +46,7 @@ Ingredients used in this version of the filling recipe
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:226](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L226)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:226](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L226)
 
 Optional categorized notes about this version
 
@@ -56,7 +56,7 @@ Optional categorized notes about this version
 
 > `readonly` `optional` **procedures**: [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IProcedureRefEntity`](../namespaces/Fillings/type-aliases/IProcedureRefEntity.md), [`ProcedureId`](../../../../type-aliases/ProcedureId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:237](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L237)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:237](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L237)
 
 Optional procedures associated with this version.
 Contains applicable procedures and the preferred default.
@@ -67,7 +67,7 @@ Contains applicable procedures and the preferred default.
 
 > `readonly` `optional` **ratings**: readonly [`IFillingRating`](IFillingRating.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:231](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L231)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:231](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L231)
 
 Optional ratings for this version
 
@@ -77,7 +77,7 @@ Optional ratings for this version
 
 > `readonly` **versionSpec**: [`FillingVersionSpec`](../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:201](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L201)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:201](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L201)
 
 Unique identifier for this version
 
@@ -87,6 +87,6 @@ Unique identifier for this version
 
 > `readonly` `optional` **yield**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:221](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L221)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:221](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L221)
 
 Optional yield description (e.g., "50 bonbons")

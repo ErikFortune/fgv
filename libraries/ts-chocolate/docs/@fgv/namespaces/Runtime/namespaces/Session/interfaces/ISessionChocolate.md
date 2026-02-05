@@ -6,7 +6,7 @@
 
 # Interface: ISessionChocolate
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:274](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L274)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:274](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L274)
 
 Tracks a chocolate selection by role for a confection session
 
@@ -16,7 +16,7 @@ Tracks a chocolate selection by role for a confection session
 
 > `readonly` **ingredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:283](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L283)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:283](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L283)
 
 The currently selected chocolate ingredient ID
 
@@ -26,7 +26,7 @@ The currently selected chocolate ingredient ID
 
 > `readonly` **originalIngredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:288](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L288)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:288](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L288)
 
 The original chocolate ingredient ID when the session started
 
@@ -36,7 +36,7 @@ The original chocolate ingredient ID when the session started
 
 > `readonly` **role**: [`ChocolateRole`](../../../../../../type-aliases/ChocolateRole.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:278](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L278)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:278](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L278)
 
 The role of this chocolate in the confection
 
@@ -46,6 +46,6 @@ The role of this chocolate in the confection
 
 > `readonly` **status**: [`ConfectionSelectionStatus`](../type-aliases/ConfectionSelectionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:293](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L293)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:293](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L293)
 
 Current status of this chocolate selection

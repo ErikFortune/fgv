@@ -6,7 +6,7 @@
 
 # Class: MoldInventoryLibrary
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:112](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L112)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:112](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L112)
 
 A library for managing user [mold inventory entries](../interfaces/IMoldInventoryEntryEntity.md).
 
@@ -72,7 +72,7 @@ Use `collections.has(id)` and `collections.get(id)` to check existence and retri
 
 > **get** **protectedCollections**(): readonly [`IProtectedCollectionInfo`](../../LibraryData/interfaces/IProtectedCollectionInfo.md)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
 
 Gets the list of protected collections that were captured but not decrypted.
 
@@ -291,7 +291,7 @@ Optional settings (isImmutable defaults to false).
 
 > **addEntry**(`collectionId`, `entryId`, `entry`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`MoldInventoryEntryId`](../namespaces/Inventory/type-aliases/MoldInventoryEntryId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:229](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L229)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:229](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L229)
 
 Adds a new inventory entry.
 
@@ -420,7 +420,7 @@ The item ID.
 
 > **createCollection**(`collectionId`, `metadata?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:309](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L309)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:309](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L309)
 
 Creates a new mutable collection for mold inventory.
 
@@ -590,7 +590,7 @@ The composite ID of the item.
 
 > **getAllEntries**(): readonly [`IMoldInventoryEntryEntity`](../interfaces/IMoldInventoryEntryEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:213](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L213)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:213](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L213)
 
 Gets all inventory entries.
 
@@ -634,7 +634,7 @@ The collection ID.
 
 > **getCollectionSourceItem**(`collectionId`): [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
 
 Get the FileTree source item for a collection, if available.
 
@@ -666,7 +666,7 @@ The FileTree source item, or undefined if not available
 
 > **getForMold**(`moldId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMoldInventoryEntryEntity`](../interfaces/IMoldInventoryEntryEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:188](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L188)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:188](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L188)
 
 Gets the inventory entry for a specific mold by searching all entries.
 
@@ -786,7 +786,7 @@ The composite ID of the item.
 
 > **hasForMold**(`moldId`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:204](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L204)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:204](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L204)
 
 Checks if inventory exists for a specific mold.
 
@@ -828,7 +828,7 @@ Iterates over all composite keys.
 
 > **loadFromFileTreeSource**(`source`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`number`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
 
 Loads collections from a file tree source and adds them to this library.
 
@@ -856,7 +856,7 @@ Success with the number of collections added, or Failure with error message
 
 > **loadProtectedCollectionAsync**(`encryption`, `filter?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`CollectionId`](../../../../type-aliases/CollectionId.md)[]\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
 
 Decrypts and loads one or more protected collections.
 
@@ -893,7 +893,7 @@ Promise resolving to Success with array of loaded collection IDs, or Failure wit
 
 > **removeEntry**(`entryId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMoldInventoryEntryEntity`](../interfaces/IMoldInventoryEntryEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:265](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L265)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:265](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L265)
 
 Removes an inventory entry by its composite entry ID.
 
@@ -917,7 +917,7 @@ Success with the removed entry, or Failure if not found or remove fails
 
 > **removeForMold**(`moldId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMoldInventoryEntryEntity`](../interfaces/IMoldInventoryEntryEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:292](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L292)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:292](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L292)
 
 Removes an inventory entry for a specific mold.
 Searches all collections for the entry with matching moldId.
@@ -1142,7 +1142,7 @@ The new value.
 
 > **upsertEntry**(`collectionId`, `entryId`, `entry`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`MoldInventoryEntryId`](../namespaces/Inventory/type-aliases/MoldInventoryEntryId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:247](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L247)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:247](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L247)
 
 Adds or updates an inventory entry.
 
@@ -1196,7 +1196,7 @@ Iterates over all values.
 
 > `static` **create**(`params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`MoldInventoryLibrary`\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:133](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L133)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:133](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L133)
 
 Creates a new MoldInventoryLibrary instance.
 
@@ -1220,7 +1220,7 @@ Optional [creation parameters](../namespaces/Inventory/type-aliases/IMoldInvento
 
 > `static` **createAsync**(`params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`MoldInventoryLibrary`\>\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:143](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L143)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts:143](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/moldInventoryLibrary.ts#L143)
 
 Creates a MoldInventoryLibrary instance asynchronously with encrypted file support.
 
@@ -1244,7 +1244,7 @@ Promise resolving to Success with new instance, or Failure
 
 > `protected` `static` **loadAllCollectionsAsync**\<`TLibrary`, `TBaseId`, `TItem`\>(`params`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ISubLibraryAsyncLoadResult`](../../LibraryData/interfaces/ISubLibraryAsyncLoadResult.md)\<`TBaseId`, `TItem`\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
 
 Loads all collections asynchronously with encryption support.
 

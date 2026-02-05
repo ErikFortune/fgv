@@ -8,6 +8,6 @@
 
 > **RatingCategory** = `"overall"` \| `"taste"` \| `"texture"` \| `"shelf-life"` \| `"appearance"` \| `"workability"`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:108](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L108)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:108](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L108)
 
 Categories for rating a filling recipe version

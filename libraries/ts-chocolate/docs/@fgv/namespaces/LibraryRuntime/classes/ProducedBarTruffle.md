@@ -6,7 +6,7 @@
 
 # Class: ProducedBarTruffle
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:869](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L869)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:869](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L869)
 
 Mutable wrapper for IProducedBarTruffle with undo/redo support.
 Provides bar truffle-specific editing methods.
@@ -21,7 +21,7 @@ Provides bar truffle-specific editing methods.
 
 > `protected` **\_current**: [`IProducedBarTruffleEntity`](../../Entities/interfaces/IProducedBarTruffleEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:93](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L93)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:93](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L93)
 
 #### Inherited from
 
@@ -33,7 +33,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrappe
 
 > `protected` **\_redoStack**: [`IProducedBarTruffleEntity`](../../Entities/interfaces/IProducedBarTruffleEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:95](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L95)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:95](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L95)
 
 #### Inherited from
 
@@ -45,7 +45,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrappe
 
 > `protected` **\_undoStack**: [`IProducedBarTruffleEntity`](../../Entities/interfaces/IProducedBarTruffleEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:94](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L94)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:94](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L94)
 
 #### Inherited from
 
@@ -59,7 +59,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrappe
 
 > **get** **current**(): `T`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:407](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L407)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:407](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L407)
 
 Gets the current produced confection.
 
@@ -79,7 +79,7 @@ Gets the current produced confection.
 
 > **get** **enrobingChocolateId**(): [`IngredientId`](../../../../type-aliases/IngredientId.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:1009](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L1009)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:1009](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L1009)
 
 Gets the enrobing chocolate ID.
 
@@ -95,7 +95,7 @@ Gets the enrobing chocolate ID.
 
 > **get** **fillings**(): readonly [`AnyResolvedFillingSlotEntity`](../../Entities/namespaces/Confections/type-aliases/AnyResolvedFillingSlotEntity.md)[] \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:391](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L391)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:391](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L391)
 
 Gets the fillings as a readonly array.
 
@@ -115,7 +115,7 @@ readonly [`AnyResolvedFillingSlotEntity`](../../Entities/namespaces/Confections/
 
 > **get** **notes**(): readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[] \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:399](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L399)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:399](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L399)
 
 Gets the notes as a readonly array.
 
@@ -135,7 +135,7 @@ readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[] \| `
 
 > **get** **procedureId**(): [`ProcedureId`](../../../../type-aliases/ProcedureId.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:415](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L415)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:415](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L415)
 
 Gets the procedure ID.
 
@@ -155,7 +155,7 @@ Gets the procedure ID.
 
 > **get** **snapshot**(): `T`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:367](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L367)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:367](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L367)
 
 Gets the current state as an immutable snapshot.
 
@@ -175,7 +175,7 @@ Gets the current state as an immutable snapshot.
 
 > **get** **versionId**(): [`ConfectionVersionId`](../../../../type-aliases/ConfectionVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:375](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L375)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:375](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L375)
 
 Gets the version ID.
 
@@ -195,7 +195,7 @@ Gets the version ID.
 
 > **get** **yield**(): [`IConfectionYield`](../../Entities/interfaces/IConfectionYield.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:383](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L383)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:383](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L383)
 
 Gets the yield specification.
 
@@ -213,7 +213,7 @@ Gets the yield specification.
 
 > `protected` **\_baseChanges**(`original`): `Partial`\<[`IConfectionChanges`](../interfaces/IConfectionChanges.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:465](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L465)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:465](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L465)
 
 Compares base confection properties for equality.
 
@@ -237,7 +237,7 @@ Compares base confection properties for equality.
 
 > `protected` **\_deepCopy**(`confection`): [`IProducedBarTruffleEntity`](../../Entities/interfaces/IProducedBarTruffleEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:1043](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L1043)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:1043](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L1043)
 
 Creates a deep copy of a produced confection.
 
@@ -261,7 +261,7 @@ Creates a deep copy of a produced confection.
 
 > `protected` **\_pushUndo**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:449](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L449)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:449](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L449)
 
 Pushes current state to undo stack, maintaining max size.
 
@@ -279,7 +279,7 @@ Pushes current state to undo stack, maintaining max size.
 
 > **canRedo**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:187](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L187)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:187](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L187)
 
 Checks if redo is available.
 
@@ -299,7 +299,7 @@ True if redo stack is not empty
 
 > **canUndo**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:178](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L178)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:178](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L178)
 
 Checks if undo is available.
 
@@ -319,7 +319,7 @@ True if undo stack is not empty
 
 > **createSnapshot**(): [`IProducedBarTruffleEntity`](../../Entities/interfaces/IProducedBarTruffleEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:117](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:117](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L117)
 
 Creates an immutable snapshot of the current state.
 
@@ -339,7 +339,7 @@ Immutable copy of current produced confection
 
 > **getChanges**(`original`): [`IConfectionChanges`](../interfaces/IConfectionChanges.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:1017](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L1017)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:1017](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L1017)
 
 Gets detailed changes between current state and original.
 
@@ -367,7 +367,7 @@ Structure describing what changed
 
 > **getSerializedHistory**(`original`): [`ISerializedEditingHistoryEntity`](../../Entities/namespaces/Session/interfaces/ISerializedEditingHistoryEntity.md)\<[`IProducedBarTruffleEntity`](../../Entities/interfaces/IProducedBarTruffleEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:202](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L202)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:202](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L202)
 
 Gets the serialized editing history for persistence.
 Captures current state, original state, and undo/redo stacks.
@@ -396,7 +396,7 @@ Serialized editing history
 
 > **hasChanges**(`original`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:430](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L430)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:430](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L430)
 
 Checks if current state differs from original.
 Uses deep equality check.
@@ -425,7 +425,7 @@ True if changes were detected
 
 > **redo**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:162](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L162)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:162](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L162)
 
 Redoes the last undone change.
 Pops from redo stack, pushes current to undo, and restores future state.
@@ -446,7 +446,7 @@ Success with true if redo succeeded, Success with false if no future
 
 > **removeFillingSlot**(`slotId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:335](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L335)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:335](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L335)
 
 Removes a filling slot.
 Pushes current state to undo before change, clears redo.
@@ -475,7 +475,7 @@ Success or failure
 
 > **restoreSnapshot**(`snapshot`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:128](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L128)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:128](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L128)
 
 Restores state from a snapshot.
 Pushes current state to undo stack and clears redo stack.
@@ -504,7 +504,7 @@ Success or failure
 
 > **scaleToYield**(`yieldSpec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IConfectionYield`](../../Entities/interfaces/IConfectionYield.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:264](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L264)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:264](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L264)
 
 Scales to a new yield specification.
 Pushes current state to undo before change, clears redo.
@@ -536,7 +536,7 @@ Success with actual achieved yield, or failure
 
 > **setEnrobingChocolate**(`chocolateId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:989](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L989)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:989](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L989)
 
 Sets the enrobing chocolate.
 Pushes current state to undo before change, clears redo.
@@ -561,7 +561,7 @@ Success or failure
 
 > **setFillingSlot**(`slotId`, `choice`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:291](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L291)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:291](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L291)
 
 Sets or updates a filling slot.
 Pushes current state to undo before change, clears redo.
@@ -596,7 +596,7 @@ Success or failure
 
 > **setNotes**(`notes`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:222](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L222)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:222](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L222)
 
 Sets the notes.
 Pushes current state to undo before change, clears redo.
@@ -625,7 +625,7 @@ Success or failure
 
 > **setProcedure**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:241](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L241)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:241](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L241)
 
 Sets the procedure.
 Pushes current state to undo before change, clears redo.
@@ -654,7 +654,7 @@ Success or failure
 
 > **undo**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:145](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L145)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:145](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L145)
 
 Undoes the last change.
 Pops from undo stack, pushes current to redo, and restores previous state.
@@ -675,7 +675,7 @@ Success with true if undo succeeded, Success with false if no history
 
 > `static` **create**(`initial`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ProducedBarTruffle`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:876](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L876)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:876](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L876)
 
 Factory method for creating a ProducedBarTruffle from an existing produced bar truffle.
 
@@ -699,7 +699,7 @@ Success with ProducedBarTruffle
 
 > `static` **fromSource**(`source`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ProducedBarTruffle`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:886](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L886)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:886](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L886)
 
 Factory method for creating a ProducedBarTruffle from a source version.
 
@@ -723,7 +723,7 @@ Result containing ProducedBarTruffle or error
 
 > `static` **restoreFromHistory**(`history`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`ProducedBarTruffle`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:898](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L898)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts:898](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/confectionWrapper.ts#L898)
 
 Restores a ProducedBarTruffle from serialized editing history.
 

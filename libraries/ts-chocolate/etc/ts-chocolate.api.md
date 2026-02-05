@@ -248,26 +248,21 @@ function atLeast<T>(min: number, getter: (item: T) => number | undefined): Filte
 function atMost<T>(max: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
-class BarTruffle extends ConfectionBase implements IBarTruffle {
+class BarTruffle extends ConfectionBase<IBarTruffleVersion, Confections_2.IBarTruffleEntity> implements IBarTruffle {
     // @internal
     protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IBarTruffleEntity);
     get confectionType(): 'bar-truffle';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IBarTruffleEntity): Result<BarTruffle>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
     // @internal
-    protected _createVersion(entity: Confections_2.AnyConfectionVersionEntity): IBarTruffleVersion;
+    protected _createVersion(entity: Confections_2.AnyConfectionVersionEntity): Result<IBarTruffleVersion>;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
     get entity(): Confections_2.IBarTruffleEntity;
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     get frameDimensions(): Confections_2.IFrameDimensions;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IBarTruffleVersion>;
-    get goldenVersion(): IBarTruffleVersion;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get singleBonBonDimensions(): Confections_2.IBonBonDimensions;
-    get versions(): ReadonlyArray<IBarTruffleVersion>;
 }
 
 // @public
@@ -285,13 +280,12 @@ class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBar
 const barTruffleEntity: Converter<IBarTruffleEntity>;
 
 // @public
-class BarTruffleVersion extends ConfectionVersionBase implements IBarTruffleVersion {
+class BarTruffleVersion extends ConfectionVersionBase<IBarTruffle, Confections_2.IBarTruffleVersionEntity> implements IBarTruffleVersion {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
     protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IBarTruffleVersionEntity);
-    get confection(): IBarTruffle;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -717,15 +711,15 @@ const CONFECTION_VERSION_ID_PATTERN: RegExp;
 const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
-abstract class ConfectionBase implements IConfectionBase {
+abstract class ConfectionBase<TVersion extends AnyConfectionVersion = AnyConfectionVersion, TEntity extends Confections_2.AnyConfectionEntity = Confections_2.AnyConfectionEntity> implements IConfectionBase<TVersion> {
     // @internal
-    protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.AnyConfectionEntity);
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: TEntity);
     get baseId(): BaseConfectionId;
     // (undocumented)
     protected readonly _baseId: BaseConfectionId;
     get collectionId(): CollectionId;
     // (undocumented)
-    protected readonly _confection: Confections_2.AnyConfectionEntity;
+    protected readonly _confection: TEntity;
     abstract get confectionType(): ConfectionType;
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -733,7 +727,7 @@ abstract class ConfectionBase implements IConfectionBase {
     // (undocumented)
     protected readonly _context: IConfectionContext;
     // @internal
-    protected abstract _createVersion(entity: Confections_2.AnyConfectionVersionEntity): AnyConfectionVersion;
+    protected abstract _createVersion(entity: Confections_2.AnyConfectionVersionEntity): Result<TVersion>;
     get decorations(): ReadonlyArray<Confections_2.IConfectionDecoration> | undefined;
     get description(): string | undefined;
     get effectiveTags(): ReadonlyArray<string>;
@@ -742,8 +736,10 @@ abstract class ConfectionBase implements IConfectionBase {
     abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getEffectiveTags(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<string>;
     getEffectiveUrls(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<Model.ICategorizedUrl>;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
-    get goldenVersion(): AnyConfectionVersion;
+    getGoldenVersion(): Result<TVersion>;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
+    getVersions(): Result<ReadonlyArray<TVersion>>;
+    get goldenVersion(): TVersion;
     // (undocumented)
     protected readonly _goldenVersionEntity: Confections_2.AnyConfectionVersionEntity;
     get goldenVersionSpec(): ConfectionVersionSpec;
@@ -759,7 +755,7 @@ abstract class ConfectionBase implements IConfectionBase {
     protected readonly _sourceId: CollectionId;
     get tags(): ReadonlyArray<string> | undefined;
     get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
-    get versions(): ReadonlyArray<AnyConfectionVersion>;
+    get versions(): ReadonlyArray<TVersion>;
     get yield(): Confections_2.IConfectionYield;
 }
 
@@ -994,10 +990,10 @@ export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
 const confectionType: Converter<ConfectionType>;
 
 // @public
-abstract class ConfectionVersionBase implements IConfectionVersionBase {
+abstract class ConfectionVersionBase<TConfection extends IConfectionBase = IConfectionBase, TEntity extends Confections_2.AnyConfectionVersionEntity = Confections_2.AnyConfectionVersionEntity> implements IConfectionVersionBase<TConfection> {
     // @internal
-    protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.AnyConfectionVersionEntity);
-    get confection(): IConfectionBase;
+    protected constructor(context: IConfectionContext, confectionId: ConfectionId, entity: TEntity);
+    get confection(): TConfection;
     get confectionId(): ConfectionId;
     // (undocumented)
     protected readonly _confectionId: ConfectionId;
@@ -1013,7 +1009,9 @@ abstract class ConfectionVersionBase implements IConfectionVersionBase {
     get decorations(): ReadonlyArray<Confections_2.IConfectionDecoration> | undefined;
     get effectiveTags(): ReadonlyArray<string>;
     get effectiveUrls(): ReadonlyArray<Model.ICategorizedUrl>;
-    abstract get entity(): Confections_2.AnyConfectionVersionEntity;
+    get entity(): TEntity;
+    // (undocumented)
+    protected readonly _entity: TEntity;
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>>;
     getProcedures(): Result<Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined>;
@@ -1022,9 +1020,6 @@ abstract class ConfectionVersionBase implements IConfectionVersionBase {
     isRolledTruffleVersion(): this is RolledTruffleVersion;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get version(): Confections_2.AnyConfectionVersionEntity;
-    // (undocumented)
-    protected readonly _version: Confections_2.AnyConfectionVersionEntity;
     get versionSpec(): ConfectionVersionSpec;
     get yield(): Confections_2.IConfectionYield;
 }
@@ -2113,15 +2108,11 @@ interface IAlcoholIngredientEntity extends IIngredientEntity {
 }
 
 // @public
-interface IBarTruffle extends IConfectionBase {
+interface IBarTruffle extends IConfectionBase<IBarTruffleVersion, Confections_2.IBarTruffleEntity> {
     readonly confectionType: 'bar-truffle';
     readonly enrobingChocolate?: IResolvedChocolateSpec;
-    readonly entity: Confections_2.IBarTruffleEntity;
     readonly frameDimensions: Confections_2.IFrameDimensions;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IBarTruffleVersion>;
-    readonly goldenVersion: IBarTruffleVersion;
     readonly singleBonBonDimensions: Confections_2.IBonBonDimensions;
-    readonly versions: ReadonlyArray<IBarTruffleVersion>;
 }
 
 // @public
@@ -2131,11 +2122,8 @@ interface IBarTruffleEntity extends IConfectionEntityBase {
 }
 
 // @public
-interface IBarTruffleVersion extends IConfectionVersionBase {
-    readonly confection: IBarTruffle;
+interface IBarTruffleVersion extends IConfectionVersionBase<IBarTruffle, Confections_2.IBarTruffleVersionEntity> {
     readonly enrobingChocolate?: IResolvedChocolateSpec;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly entity: Confections_2.IBarTruffleVersionEntity;
     readonly frameDimensions: Confections_2.IFrameDimensions;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly singleBonBonDimensions: Confections_2.IBonBonDimensions;
@@ -2338,7 +2326,7 @@ interface ICollectionSourceMetadata {
 }
 
 // @public
-interface IConfectionBase {
+interface IConfectionBase<TVersion extends AnyConfectionVersion = AnyConfectionVersion, TEntity extends Confections_2.AnyConfectionEntity = Confections_2.AnyConfectionEntity> {
     readonly baseId: BaseConfectionId;
     readonly collectionId: CollectionId;
     readonly confectionType: ConfectionType;
@@ -2346,12 +2334,12 @@ interface IConfectionBase {
     readonly description?: string;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
-    readonly entity: Confections_2.AnyConfectionEntity;
+    readonly entity: TEntity;
     readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     getEffectiveTags(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<string>;
     getEffectiveUrls(version?: Confections_2.AnyConfectionVersionEntity): ReadonlyArray<Model.ICategorizedUrl>;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
-    readonly goldenVersion: AnyConfectionVersion;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<TVersion>;
+    readonly goldenVersion: TVersion;
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly id: ConfectionId;
     isBarTruffle(): this is IBarTruffle;
@@ -2361,7 +2349,7 @@ interface IConfectionBase {
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
-    readonly versions: ReadonlyArray<AnyConfectionVersion>;
+    readonly versions: ReadonlyArray<TVersion>;
     readonly yield: Confections_2.IConfectionYield;
 }
 
@@ -2479,21 +2467,20 @@ type IConfectionsLibraryAsyncParams = ISubLibraryAsyncParams<ConfectionsLibrary,
 type IConfectionsLibraryParams = ISubLibraryParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
 
 // @public
-interface IConfectionVersionBase {
-    readonly confection: IConfectionBase;
+interface IConfectionVersionBase<TConfection extends IConfectionBase = IConfectionBase, TEntity extends Confections_2.AnyConfectionVersionEntity = Confections_2.AnyConfectionVersionEntity> {
+    readonly confection: TConfection;
     readonly confectionId: ConfectionId;
     readonly createdDate: string;
     readonly decorations?: ReadonlyArray<Confections_2.IConfectionDecoration>;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
-    readonly entity: Confections_2.AnyConfectionVersionEntity;
+    readonly entity: TEntity;
     readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     isBarTruffleVersion(): this is IBarTruffleVersion;
     isMoldedBonBonVersion(): this is IMoldedBonBonVersion;
     isRolledTruffleVersion(): this is IRolledTruffleVersion;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
-    readonly version: Confections_2.AnyConfectionVersionEntity;
     readonly versionSpec: ConfectionVersionSpec;
     readonly yield: Confections_2.IConfectionYield;
 }
@@ -3282,15 +3269,11 @@ interface IMoldContext {
 }
 
 // @public
-interface IMoldedBonBon extends IConfectionBase {
+interface IMoldedBonBon extends IConfectionBase<IMoldedBonBonVersion, Confections_2.IMoldedBonBonEntity> {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
-    readonly entity: Confections_2.IMoldedBonBonEntity;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IMoldedBonBonVersion>;
-    readonly goldenVersion: IMoldedBonBonVersion;
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly shellChocolate: IResolvedChocolateSpec;
-    readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
 }
 
 // @public
@@ -3300,11 +3283,8 @@ interface IMoldedBonBonEntity extends IConfectionEntityBase {
 }
 
 // @public
-interface IMoldedBonBonVersion extends IConfectionVersionBase {
+interface IMoldedBonBonVersion extends IConfectionVersionBase<IMoldedBonBon, Confections_2.IMoldedBonBonVersionEntity> {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
-    readonly confection: IMoldedBonBon;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly entity: Confections_2.IMoldedBonBonVersionEntity;
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly preferredMold: IResolvedConfectionMoldRef | undefined;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
@@ -4197,14 +4177,10 @@ interface IResolveImportRootOptions {
 }
 
 // @public
-interface IRolledTruffle extends IConfectionBase {
+interface IRolledTruffle extends IConfectionBase<IRolledTruffleVersion, Confections_2.IRolledTruffleEntity> {
     readonly coatings?: IResolvedCoatings;
     readonly confectionType: 'rolled-truffle';
     readonly enrobingChocolate?: IResolvedChocolateSpec;
-    readonly entity: Confections_2.IRolledTruffleEntity;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IRolledTruffleVersion>;
-    readonly goldenVersion: IRolledTruffleVersion;
-    readonly versions: ReadonlyArray<IRolledTruffleVersion>;
 }
 
 // @public
@@ -4214,12 +4190,9 @@ interface IRolledTruffleEntity extends IConfectionEntityBase {
 }
 
 // @public
-interface IRolledTruffleVersion extends IConfectionVersionBase {
+interface IRolledTruffleVersion extends IConfectionVersionBase<IRolledTruffle, Confections_2.IRolledTruffleVersionEntity> {
     readonly coatings?: IResolvedCoatings;
-    readonly confection: IRolledTruffle;
     readonly enrobingChocolate?: IResolvedChocolateSpec;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly entity: Confections_2.IRolledTruffleVersionEntity;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 }
 
@@ -5373,7 +5346,7 @@ type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMoldEntity>;
 type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMoldEntity>;
 
 // @public
-class MoldedBonBon extends ConfectionBase implements IMoldedBonBon {
+class MoldedBonBon extends ConfectionBase<IMoldedBonBonVersion, Confections_2.IMoldedBonBonEntity> implements IMoldedBonBon {
     // @internal
     protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IMoldedBonBonEntity);
     get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
@@ -5382,15 +5355,12 @@ class MoldedBonBon extends ConfectionBase implements IMoldedBonBon {
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IMoldedBonBonEntity): Result<MoldedBonBon>;
     // @internal
-    protected _createVersion(entity: Confections_2.AnyConfectionVersionEntity): IMoldedBonBonVersion;
+    protected _createVersion(entity: Confections_2.AnyConfectionVersionEntity): Result<IMoldedBonBonVersion>;
     get entity(): Confections_2.IMoldedBonBonEntity;
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IMoldedBonBonVersion>;
-    get goldenVersion(): IMoldedBonBonVersion;
     get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get shellChocolate(): IResolvedChocolateSpec;
-    get versions(): ReadonlyArray<IMoldedBonBonVersion>;
 }
 
 // @public
@@ -5414,11 +5384,10 @@ class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedM
 const moldedBonBonEntity: Converter<IMoldedBonBonEntity>;
 
 // @public
-class MoldedBonBonVersion extends ConfectionVersionBase implements IMoldedBonBonVersion {
+class MoldedBonBonVersion extends ConfectionVersionBase<IMoldedBonBon, Confections_2.IMoldedBonBonVersionEntity> implements IMoldedBonBonVersion {
     // @internal
     protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IMoldedBonBonVersionEntity);
     get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
-    get confection(): IMoldedBonBon;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IMoldedBonBonVersionEntity): Result<MoldedBonBonVersion>;
@@ -6090,7 +6059,7 @@ function resolveProcedures(context: IConfectionContext, procedures: Model.IOptio
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
 
 // @public
-class RolledTruffle extends ConfectionBase implements IRolledTruffle {
+class RolledTruffle extends ConfectionBase<IRolledTruffleVersion, Confections_2.IRolledTruffleEntity> implements IRolledTruffle {
     // @internal
     protected constructor(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IRolledTruffleEntity);
     get coatings(): IResolvedCoatings | undefined;
@@ -6099,14 +6068,11 @@ class RolledTruffle extends ConfectionBase implements IRolledTruffle {
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: Confections_2.IRolledTruffleEntity): Result<RolledTruffle>;
     // @internal
-    protected _createVersion(entity: Confections_2.AnyConfectionVersionEntity): IRolledTruffleVersion;
+    protected _createVersion(entity: Confections_2.AnyConfectionVersionEntity): Result<IRolledTruffleVersion>;
     get enrobingChocolate(): IResolvedChocolateSpec | undefined;
     get entity(): Confections_2.IRolledTruffleEntity;
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IRolledTruffleVersion>;
-    get goldenVersion(): IRolledTruffleVersion;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get versions(): ReadonlyArray<IRolledTruffleVersion>;
 }
 
 // @public
@@ -6124,11 +6090,10 @@ class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProduced
 const rolledTruffleEntity: Converter<IRolledTruffleEntity>;
 
 // @public
-class RolledTruffleVersion extends ConfectionVersionBase implements IRolledTruffleVersion {
+class RolledTruffleVersion extends ConfectionVersionBase<IRolledTruffle, Confections_2.IRolledTruffleVersionEntity> implements IRolledTruffleVersion {
     // @internal
     protected constructor(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IRolledTruffleVersionEntity);
     get coatings(): IResolvedCoatings | undefined;
-    get confection(): IRolledTruffle;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, confectionId: ConfectionId, version: Confections_2.IRolledTruffleVersionEntity): Result<RolledTruffleVersion>;

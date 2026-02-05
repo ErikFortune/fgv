@@ -6,7 +6,7 @@
 
 # Interface: IMeasurementUnitOption
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:36](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L36)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:36](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L36)
 
 Option wrapper for measurement units (for use with IOptionsWithPreferred).
 Wraps a MeasurementUnit to satisfy IHasId requirement.
@@ -17,6 +17,6 @@ Wraps a MeasurementUnit to satisfy IHasId requirement.
 
 > `readonly` **id**: [`MeasurementUnit`](../../../../type-aliases/MeasurementUnit.md)
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:38](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L38)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:38](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L38)
 
 The measurement unit

@@ -6,7 +6,7 @@
 
 # Interface: IIngredientSnapshotEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:353](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L353)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:353](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L353)
 
 Optional ingredient snapshot for archival purposes.
 Used when the source filling recipe might become unavailable.
@@ -17,7 +17,7 @@ Used when the source filling recipe might become unavailable.
 
 > `readonly` **ingredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:357](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L357)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:357](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L357)
 
 The ingredient ID
 
@@ -27,7 +27,7 @@ The ingredient ID
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:372](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L372)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:372](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L372)
 
 Optional categorized notes for this ingredient
 
@@ -37,7 +37,7 @@ Optional categorized notes for this ingredient
 
 > `readonly` **originalAmount**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:362](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L362)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:362](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L362)
 
 Original amount before scaling
 
@@ -47,6 +47,6 @@ Original amount before scaling
 
 > `readonly` **scaledAmount**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:367](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L367)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:367](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L367)
 
 Scaled amount after applying scale factor

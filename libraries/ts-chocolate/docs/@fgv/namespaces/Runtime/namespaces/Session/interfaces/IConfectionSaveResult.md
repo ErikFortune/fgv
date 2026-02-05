@@ -6,7 +6,7 @@
 
 # Interface: IConfectionSaveResult
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:483](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L483)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:483](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L483)
 
 Result of saving a confection editing session
 
@@ -16,7 +16,7 @@ Result of saving a confection editing session
 
 > `readonly` `optional` **journalEntry**: [`IConfectionEditJournalEntryEntity`](../../../../Entities/interfaces/IConfectionEditJournalEntryEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:492](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L492)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:492](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L492)
 
 The full journal entry if one was created
 
@@ -26,7 +26,7 @@ The full journal entry if one was created
 
 > `readonly` `optional` **journalId**: `string`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:487](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L487)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:487](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L487)
 
 The journal ID if a journal entry was created
 
@@ -36,7 +36,7 @@ The journal ID if a journal entry was created
 
 > `readonly` `optional` **linkedRecipeJournalIds**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:502](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L502)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:502](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L502)
 
 Journal IDs of linked recipe sessions that were saved
 
@@ -46,6 +46,6 @@ Journal IDs of linked recipe sessions that were saved
 
 > `readonly` `optional` **newVersionSpec**: [`ConfectionVersionSpec`](../../../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:497](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L497)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:497](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L497)
 
 The new version spec if one was created

@@ -6,7 +6,7 @@
 
 # Interface: IEncryptionConfig
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:414](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L414)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:414](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L414)
 
 Configuration for handling encrypted collections during loading.
 
@@ -16,7 +16,7 @@ Configuration for handling encrypted collections during loading.
 
 > `readonly` **cryptoProvider**: [`ICryptoProvider`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:431](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L431)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:431](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L431)
 
 The crypto provider to use for decryption.
 Use `nodeCryptoProvider` for Node.js or `BrowserCryptoProvider` for browsers.
@@ -27,7 +27,7 @@ Use `nodeCryptoProvider` for Node.js or `BrowserCryptoProvider` for browsers.
 
 > `readonly` `optional` **onDecryptionError**: [`EncryptedFileErrorMode`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:447](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L447)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:447](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L447)
 
 How to handle decryption errors (e.g., wrong key, corrupted data).
 - `'fail'` (default): Fail the entire load operation.
@@ -40,7 +40,7 @@ How to handle decryption errors (e.g., wrong key, corrupted data).
 
 > `readonly` `optional` **onMissingKey**: [`EncryptedFileErrorMode`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:439](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L439)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:439](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L439)
 
 How to handle encrypted files when the required secret is not available.
 - `'fail'` (default): Fail the entire load operation.
@@ -53,7 +53,7 @@ How to handle encrypted files when the required secret is not available.
 
 > `readonly` `optional` **secretProvider**: [`SecretProvider`](../type-aliases/SecretProvider.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:425](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L425)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:425](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L425)
 
 Optional function to dynamically provide keys by secret name.
 Called when a secret is not found in the `secrets` array.
@@ -64,7 +64,7 @@ Called when a secret is not found in the `secrets` array.
 
 > `readonly` `optional` **secrets**: readonly [`INamedSecret`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras/docs)[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:419](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L419)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:419](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L419)
 
 Array of named secrets to use for decryption.
 Each secret has a name and a 32-byte key for AES-256 encryption.

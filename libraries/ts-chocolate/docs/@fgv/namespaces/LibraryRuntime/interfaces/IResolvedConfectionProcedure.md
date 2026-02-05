@@ -6,9 +6,9 @@
 
 # Interface: IResolvedConfectionProcedure
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1352](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1352)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1324](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1324)
 
-A resolved procedure reference for confections.
+Resolved procedure reference for confections.
 Similar to IResolvedFillingRecipeProcedure but for confections.
 
 ## Properties
@@ -17,7 +17,7 @@ Similar to IResolvedFillingRecipeProcedure but for confections.
 
 > `readonly` **entity**: [`IProcedureRefEntity`](../../Entities/namespaces/Fillings/type-aliases/IProcedureRefEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1360](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1360)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1332](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1332)
 
 The original procedure reference entity data
 
@@ -27,7 +27,7 @@ The original procedure reference entity data
 
 > `readonly` **id**: [`ProcedureId`](../../../../type-aliases/ProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1354](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1354)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1326](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1326)
 
 The procedure ID (for IOptionsWithPreferred compatibility)
 
@@ -37,7 +37,7 @@ The procedure ID (for IOptionsWithPreferred compatibility)
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1358](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1358)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1330](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1330)
 
 Optional notes specific to using this procedure
 
@@ -47,6 +47,6 @@ Optional notes specific to using this procedure
 
 > `readonly` **procedure**: [`IProcedure`](IProcedure.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1356](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1356)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1328](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1328)
 
 The resolved procedure object

@@ -6,7 +6,7 @@
 
 # Interface: IRuntimeCollection\<T, TCOLLECTIONID, TITEMID\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:206](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L206)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:206](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L206)
 
 Runtime representation of a collection loaded from a FileTree.
 Extends the base collection data with a reference to the source FileTree item.
@@ -35,7 +35,7 @@ Extends the base collection data with a reference to the source FileTree item.
 
 > `readonly` **id**: `TCOLLECTIONID`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:187](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L187)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:187](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L187)
 
 #### Inherited from
 
@@ -47,7 +47,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/model.ts:187](https://github
 
 > `readonly` **isMutable**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:192](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L192)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:192](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L192)
 
 Whether this collection is mutable (can be edited in the application).
 This is application-level mutability controlled by MutabilitySpec.
@@ -62,7 +62,7 @@ This is application-level mutability controlled by MutabilitySpec.
 
 > `readonly` **items**: `Record`\<`TITEMID`, `T`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:193](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L193)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:193](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L193)
 
 #### Inherited from
 
@@ -74,7 +74,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/model.ts:193](https://github
 
 > `readonly` `optional` **metadata**: [`ICollectionSourceMetadata`](ICollectionSourceMetadata.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:198](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L198)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:198](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L198)
 
 Optional metadata from the source file.
 May be undefined for collections created programmatically.
@@ -89,7 +89,7 @@ May be undefined for collections created programmatically.
 
 > `readonly` **sourceItem**: [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:216](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L216)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:216](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L216)
 
 Reference to the source FileTree item for persistence.
 When present and the FileTree supports persistence, changes can be saved back to the file.

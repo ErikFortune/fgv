@@ -6,7 +6,7 @@
 
 # Interface: IWeightContribution
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:55](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L55)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:55](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L55)
 
 Result of calculating weight contribution for a single ingredient.
 
@@ -16,7 +16,7 @@ Result of calculating weight contribution for a single ingredient.
 
 > `readonly` **amount**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:59](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L59)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:59](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L59)
 
 Original amount in filling recipe
 
@@ -26,7 +26,7 @@ Original amount in filling recipe
 
 > `readonly` **contributesToWeight**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:65](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L65)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:65](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L65)
 
 Whether this ingredient contributes to total weight
 
@@ -36,7 +36,7 @@ Whether this ingredient contributes to total weight
 
 > `readonly` **ingredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:57](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L57)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L57)
 
 The preferred ingredient ID
 
@@ -46,7 +46,7 @@ The preferred ingredient ID
 
 > `readonly` **unit**: [`MeasurementUnit`](../../../../../../type-aliases/MeasurementUnit.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:61](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L61)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:61](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L61)
 
 Original unit in filling recipe
 
@@ -56,6 +56,6 @@ Original unit in filling recipe
 
 > `readonly` **weightGrams**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:63](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L63)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts:63](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingWeightCalculator.ts#L63)
 
 Weight contribution in grams (0 if excluded)

@@ -6,7 +6,7 @@
 
 # Class: BarTruffleEditingSession
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:46](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L46)
+Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:46](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L46)
 
 Editing session for bar truffle confections.
 Supports linear count-based scaling with proportional filling adjustment.
@@ -21,7 +21,7 @@ Supports linear count-based scaling with proportional filling adjustment.
 
 > `protected` `readonly` **\_baseConfection**: [`BarTruffle`](../../../../LibraryRuntime/classes/BarTruffle.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:56](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L56)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L56)
 
 #### Inherited from
 
@@ -33,7 +33,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_context**: [`ISessionContext`](../../../interfaces/ISessionContext.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:57](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L57)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L57)
 
 #### Inherited from
 
@@ -45,7 +45,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_fillingSessions**: `Map`\<[`SlotId`](../../../../../../type-aliases/SlotId.md), [`EditingSession`](EditingSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:61](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L61)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:61](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L61)
 
 #### Inherited from
 
@@ -57,7 +57,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_originalSnapshot**: [`IProducedBarTruffleEntity`](../../../../Entities/interfaces/IProducedBarTruffleEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:59](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L59)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:59](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L59)
 
 #### Inherited from
 
@@ -69,7 +69,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_produced**: [`ProducedConfectionBase`](../../../../LibraryRuntime/classes/ProducedConfectionBase.md)\<[`IProducedBarTruffleEntity`](../../../../Entities/interfaces/IProducedBarTruffleEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:58](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L58)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L58)
 
 #### Inherited from
 
@@ -81,7 +81,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_sessionId**: [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:60](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L60)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:60](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L60)
 
 #### Inherited from
 
@@ -95,7 +95,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > **get** **baseConfection**(): `TRuntime`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:308](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L308)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:308](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L308)
 
 Gets the base confection.
 
@@ -115,7 +115,7 @@ Gets the base confection.
 
 > **get** **context**(): [`ISessionContext`](../../../interfaces/ISessionContext.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:284](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L284)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:284](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L284)
 
 Gets the runtime context.
 
@@ -135,7 +135,7 @@ Gets the runtime context.
 
 > **get** **fillingSessions**(): [`IFillingSessionMap`](../type-aliases/IFillingSessionMap.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:276](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L276)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:276](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L276)
 
 Gets all filling sessions.
 
@@ -155,7 +155,7 @@ Gets all filling sessions.
 
 > **get** **produced**(): [`ProducedConfectionBase`](../../../../LibraryRuntime/classes/ProducedConfectionBase.md)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:300](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L300)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:300](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L300)
 
 Gets the produced confection wrapper.
 
@@ -175,7 +175,7 @@ Gets the produced confection wrapper.
 
 > **get** **sessionId**(): [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:292](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L292)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:292](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L292)
 
 Gets the session ID.
 
@@ -193,7 +193,7 @@ Gets the session ID.
 
 > **getFillingSession**(`slotId`): [`EditingSession`](EditingSession.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:268](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L268)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:268](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L268)
 
 Gets the filling session for a specific slot.
 
@@ -221,7 +221,7 @@ The editing session, or undefined if not found
 
 > **removeFillingSlot**(`slotId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](EditingSession.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:251](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L251)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:251](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L251)
 
 Removes a filling slot.
 
@@ -249,7 +249,7 @@ The slot identifier
 
 > **scaleToYield**(`yieldSpec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IConfectionYield`](../../../../Entities/interfaces/IConfectionYield.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:124](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L124)
+Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:124](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L124)
 
 Scales to new yield specification using linear count-based scaling.
 All filling sessions scale proportionally by the count ratio.
@@ -278,7 +278,7 @@ Success with updated yield, or Failure
 
 > **setFillingSlot**(`slotId`, `choice`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](EditingSession.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:228](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L228)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:228](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L228)
 
 Sets or updates a filling slot.
 Creates/updates filling session if recipe slot.
@@ -313,7 +313,7 @@ Recipe or ingredient choice
 
 > `static` **create**(`baseConfection`, `context`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`BarTruffleEditingSession`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:80](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L80)
+Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:80](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L80)
 
 Factory method for creating a BarTruffleEditingSession.
 
@@ -349,7 +349,7 @@ Success with BarTruffleEditingSession, or Failure
 
 > `static` **fromPersistedState**(`baseConfection`, `history`, `context`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`BarTruffleEditingSession`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:101](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L101)
+Defined in: [ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts:101](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/barTruffleEditingSession.ts#L101)
 
 Restores a BarTruffleEditingSession from persisted state.
 Note: Child filling sessions are persisted separately and should be accessed

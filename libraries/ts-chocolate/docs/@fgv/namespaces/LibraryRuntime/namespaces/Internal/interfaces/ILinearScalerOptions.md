@@ -6,7 +6,7 @@
 
 # Interface: ILinearScalerOptions
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:110](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L110)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:110](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L110)
 
 Options for linear scaling
 
@@ -16,7 +16,7 @@ Options for linear scaling
 
 > `readonly` `optional` **decimalPlaces**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:114](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L114)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:114](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L114)
 
 Number of decimal places to round to (default: 1)
 
@@ -26,7 +26,7 @@ Number of decimal places to round to (default: 1)
 
 > `readonly` `optional` **displaySuffix**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:116](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L116)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:116](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L116)
 
 Unit suffix for display (default: unit value)
 
@@ -36,6 +36,6 @@ Unit suffix for display (default: unit value)
 
 > `readonly` **unit**: [`MeasurementUnit`](../../../../../../type-aliases/MeasurementUnit.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:112](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L112)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:112](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L112)
 
 The unit this scaler handles

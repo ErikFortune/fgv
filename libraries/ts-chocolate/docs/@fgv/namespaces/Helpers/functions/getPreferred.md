@@ -8,7 +8,7 @@
 
 > **getPreferred**\<`TOption`, `TId`\>(`collection`): `TOption` \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/common/helpers.ts:348](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/helpers.ts#L348)
+Defined in: [ts-chocolate/src/packlets/common/helpers.ts:348](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/helpers.ts#L348)
 
 Gets the preferred option from a collection, if one is specified and exists.
 

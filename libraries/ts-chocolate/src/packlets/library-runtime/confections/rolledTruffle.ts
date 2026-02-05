@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
+import { ConfectionId, Model as CommonModel, ProcedureId } from '../../common';
 import { Confections } from '../../entities';
 import {
   IConfectionContext,
@@ -48,7 +48,10 @@ import { RolledTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RolledTruffle extends ConfectionBase implements IRolledTruffle {
+export class RolledTruffle
+  extends ConfectionBase<IRolledTruffleVersion, Confections.IRolledTruffleEntity>
+  implements IRolledTruffle
+{
   private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
 
   /**
@@ -96,40 +99,19 @@ export class RolledTruffle extends ConfectionBase implements IRolledTruffle {
   // ============================================================================
 
   /**
-   * Golden version typed as IRolledTruffleVersion.
-   */
-  public override get goldenVersion(): IRolledTruffleVersion {
-    return super.goldenVersion as IRolledTruffleVersion;
-  }
-
-  /**
-   * All versions typed as IRolledTruffleVersion.
-   */
-  public override get versions(): ReadonlyArray<IRolledTruffleVersion> {
-    return super.versions as ReadonlyArray<IRolledTruffleVersion>;
-  }
-
-  /**
-   * Gets a specific version by version specifier.
-   * @param versionSpec - The version specifier to find
-   * @returns Success with typed runtime version, or Failure if not found
-   */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IRolledTruffleVersion> {
-    return super.getVersion(versionSpec) as Result<IRolledTruffleVersion>;
-  }
-
-  /**
    * Creates a runtime version from a data layer entity.
    * @param entity - The data layer entity
-   * @returns The runtime version
+   * @returns Result with runtime version, or Failure if creation fails
    * @internal
    */
-  protected override _createVersion(entity: Confections.AnyConfectionVersionEntity): IRolledTruffleVersion {
+  protected override _createVersion(
+    entity: Confections.AnyConfectionVersionEntity
+  ): Result<IRolledTruffleVersion> {
     return RolledTruffleVersion.create(
       this._context,
       this._id,
       entity as Confections.IRolledTruffleVersionEntity
-    ).orThrow();
+    );
   }
 
   // ============================================================================

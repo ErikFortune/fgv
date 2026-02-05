@@ -6,7 +6,7 @@
 
 # Interface: IResolvedFillingSlotEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:500](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L500)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:500](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L500)
 
 Resolved slot with recipe filling.
 
@@ -16,7 +16,7 @@ Resolved slot with recipe filling.
 
 > `readonly` **fillingId**: [`FillingId`](../../../../../../type-aliases/FillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:506](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L506)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:506](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L506)
 
 Resolved filling recipe ID
 
@@ -26,7 +26,7 @@ Resolved filling recipe ID
 
 > `readonly` **slotId**: [`SlotId`](../../../../../../type-aliases/SlotId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:504](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L504)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:504](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L504)
 
 Slot identifier
 
@@ -36,6 +36,6 @@ Slot identifier
 
 > `readonly` **slotType**: `"recipe"`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:502](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L502)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:502](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L502)
 
 Slot type discriminator

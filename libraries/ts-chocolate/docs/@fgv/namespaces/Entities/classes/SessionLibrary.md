@@ -6,7 +6,7 @@
 
 # Class: SessionLibrary
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:120](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L120)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:120](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L120)
 
 A library for managing persisted [editing sessions](../type-aliases/AnySessionEntity.md).
 
@@ -75,7 +75,7 @@ Use `collections.has(id)` and `collections.get(id)` to check existence and retri
 
 > **get** **protectedCollections**(): readonly [`IProtectedCollectionInfo`](../../LibraryData/interfaces/IProtectedCollectionInfo.md)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
 
 Gets the list of protected collections that were captured but not decrypted.
 
@@ -294,7 +294,7 @@ Optional settings (isImmutable defaults to false).
 
 > **addSession**(`collectionId`, `session`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`SessionId`](../../../../type-aliases/SessionId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:476](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L476)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:476](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L476)
 
 Adds a new session to a collection.
 Fails if a session with the same baseId already exists in the collection.
@@ -418,7 +418,7 @@ The item ID.
 
 > **createCollection**(`collectionId`, `metadata?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:541](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L541)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:541](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L541)
 
 Creates a new mutable collection for sessions.
 
@@ -588,7 +588,7 @@ The composite ID of the item.
 
 > **getActiveSessions**(): readonly [`AnySessionEntity`](../type-aliases/AnySessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:431](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L431)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:431](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L431)
 
 Gets all active sessions (status === 'active') across all collections
 
@@ -604,7 +604,7 @@ Array of active sessions
 
 > **getAllSessions**(): readonly [`AnySessionEntity`](../type-aliases/AnySessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:450](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L450)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:450](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L450)
 
 Gets all sessions across all collections
 
@@ -648,7 +648,7 @@ The collection ID.
 
 > **getCollectionSourceItem**(`collectionId`): [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
 
 Get the FileTree source item for a collection, if available.
 
@@ -748,7 +748,7 @@ A factory function to create the value if not found. Receives the composite ID.
 
 > **getSession**(`sessionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnySessionEntity`](../type-aliases/AnySessionEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:441](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L441)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:441](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L441)
 
 Gets a session by ID (searches all collections)
 
@@ -772,7 +772,7 @@ Success with the session, or Failure if not found
 
 > **getSessionsByStatus**(`status`): readonly [`AnySessionEntity`](../type-aliases/AnySessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:415](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L415)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:415](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L415)
 
 Gets all sessions with a specific status (across all collections)
 
@@ -796,7 +796,7 @@ Array of sessions with that status (empty if none found)
 
 > **getSessionsForConfection**(`confectionId`): readonly [`IConfectionSessionEntity`](../interfaces/IConfectionSessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:379](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L379)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:379](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L379)
 
 Gets all confection sessions for a confection (across all versions and collections)
 
@@ -820,7 +820,7 @@ Array of confection sessions (empty if none found)
 
 > **getSessionsForConfectionVersion**(`versionId`): readonly [`IConfectionSessionEntity`](../interfaces/IConfectionSessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:396](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L396)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:396](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L396)
 
 Gets all confection sessions for a specific confection version (across all collections)
 
@@ -844,7 +844,7 @@ Array of confection sessions (empty if none found)
 
 > **getSessionsForFilling**(`fillingId`): readonly [`IFillingSessionEntity`](../interfaces/IFillingSessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:345](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L345)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:345](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L345)
 
 Gets all filling sessions for a filling (across all versions and collections)
 
@@ -868,7 +868,7 @@ Array of filling sessions (empty if none found)
 
 > **getSessionsForFillingVersion**(`versionId`): readonly [`IFillingSessionEntity`](../interfaces/IFillingSessionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:362](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L362)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:362](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L362)
 
 Gets all filling sessions for a specific filling version (across all collections)
 
@@ -920,7 +920,7 @@ The composite ID of the item.
 
 > **hasSession**(`sessionId`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:460](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L460)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:460](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L460)
 
 Checks if a session with the given ID exists (searches all collections)
 
@@ -962,7 +962,7 @@ Iterates over all composite keys.
 
 > **loadFromFileTreeSource**(`source`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`number`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
 
 Loads collections from a file tree source and adds them to this library.
 
@@ -990,7 +990,7 @@ Success with the number of collections added, or Failure with error message
 
 > **loadProtectedCollectionAsync**(`encryption`, `filter?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`CollectionId`](../../../../type-aliases/CollectionId.md)[]\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
 
 Decrypts and loads one or more protected collections.
 
@@ -1027,7 +1027,7 @@ Promise resolving to Success with array of loaded collection IDs, or Failure wit
 
 > **removeSession**(`sessionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnySessionEntity`](../type-aliases/AnySessionEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:510](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L510)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:510](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L510)
 
 Removes a session from its collection.
 
@@ -1251,7 +1251,7 @@ The new value.
 
 > **upsertSession**(`collectionId`, `session`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`SessionId`](../../../../type-aliases/SessionId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:493](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L493)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:493](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L493)
 
 Adds or updates a session in a collection.
 If a session with the same baseId exists, it will be replaced.
@@ -1300,7 +1300,7 @@ Iterates over all values.
 
 > `static` **create**(`params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`SessionLibrary`\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:178](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L178)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:178](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L178)
 
 Creates a new SessionLibrary instance.
 
@@ -1324,7 +1324,7 @@ Optional [creation parameters](../namespaces/Session/type-aliases/ISessionLibrar
 
 > `static` **createAsync**(`params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`SessionLibrary`\>\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:192](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L192)
+Defined in: [ts-chocolate/src/packlets/entities/session/library.ts:192](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/library.ts#L192)
 
 Creates a SessionLibrary instance asynchronously with encrypted file support.
 
@@ -1348,7 +1348,7 @@ Promise resolving to Success with new instance, or Failure
 
 > `protected` `static` **loadAllCollectionsAsync**\<`TLibrary`, `TBaseId`, `TItem`\>(`params`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ISubLibraryAsyncLoadResult`](../../LibraryData/interfaces/ISubLibraryAsyncLoadResult.md)\<`TBaseId`, `TItem`\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
 
 Loads all collections asynchronously with encryption support.
 

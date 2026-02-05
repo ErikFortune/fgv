@@ -46,7 +46,10 @@ import { ConfectionVersionBase } from './confectionVersionBase';
  * A resolved view of a rolled truffle version with all references resolved.
  * @public
  */
-export class RolledTruffleVersion extends ConfectionVersionBase implements IRolledTruffleVersion {
+export class RolledTruffleVersion
+  extends ConfectionVersionBase<IRolledTruffle, Confections.IRolledTruffleVersionEntity>
+  implements IRolledTruffleVersion
+{
   private readonly _rolledTruffleVersion: Confections.IRolledTruffleVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
@@ -85,13 +88,6 @@ export class RolledTruffleVersion extends ConfectionVersionBase implements IRoll
   // ============================================================================
   // Parent Navigation (narrowed type)
   // ============================================================================
-
-  /**
-   * Parent confection narrowed to rolled truffle type.
-   */
-  public override get confection(): IRolledTruffle {
-    return super.confection as IRolledTruffle;
-  }
 
   // ============================================================================
   // Rolled Truffle-Specific Properties (lazy)

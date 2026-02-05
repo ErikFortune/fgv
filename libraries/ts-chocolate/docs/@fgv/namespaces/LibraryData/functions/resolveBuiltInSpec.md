@@ -8,7 +8,7 @@
 
 > **resolveBuiltInSpec**\<`TCollectionId`\>(`spec`, `subLibraryId`): [`LibraryLoadSpec`](../type-aliases/LibraryLoadSpec.md)\<`TCollectionId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/libraryLoader.ts:235](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/libraryLoader.ts#L235)
+Defined in: [ts-chocolate/src/packlets/library-data/libraryLoader.ts:235](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/libraryLoader.ts#L235)
 
 Resolves a FullLibraryLoadSpec for built-in loading to individual sub-library specs.
 

@@ -8,7 +8,7 @@
 
 > **oneOf**\<`T`, `V`\>(`allowed`, `getter`): [`FilterPredicate`](../type-aliases/FilterPredicate.md)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/filters.ts:289](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/queries/filters.ts#L289)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/filters.ts:289](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/queries/filters.ts#L289)
 
 Creates a filter that checks if value is one of the allowed values.
 

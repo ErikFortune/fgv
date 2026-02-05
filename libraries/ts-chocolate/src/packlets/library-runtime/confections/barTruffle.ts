@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, ConfectionVersionSpec, Model as CommonModel, ProcedureId } from '../../common';
+import { ConfectionId, Model as CommonModel, ProcedureId } from '../../common';
 import { Confections } from '../../entities';
 import {
   IConfectionContext,
@@ -47,7 +47,10 @@ import { BarTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class BarTruffle extends ConfectionBase implements IBarTruffle {
+export class BarTruffle
+  extends ConfectionBase<IBarTruffleVersion, Confections.IBarTruffleEntity>
+  implements IBarTruffle
+{
   private readonly _barTruffle: Confections.IBarTruffleEntity;
 
   /**
@@ -95,40 +98,15 @@ export class BarTruffle extends ConfectionBase implements IBarTruffle {
   // ============================================================================
 
   /**
-   * Golden version typed as IBarTruffleVersion.
-   */
-  public override get goldenVersion(): IBarTruffleVersion {
-    return super.goldenVersion as IBarTruffleVersion;
-  }
-
-  /**
-   * All versions typed as IBarTruffleVersion.
-   */
-  public override get versions(): ReadonlyArray<IBarTruffleVersion> {
-    return super.versions as ReadonlyArray<IBarTruffleVersion>;
-  }
-
-  /**
-   * Gets a specific version by version specifier.
-   * @param versionSpec - The version specifier to find
-   * @returns Success with typed  version, or Failure if not found
-   */
-  public override getVersion(versionSpec: ConfectionVersionSpec): Result<IBarTruffleVersion> {
-    return super.getVersion(versionSpec) as Result<IBarTruffleVersion>;
-  }
-
-  /**
    * Creates a runtime version from a data layer entity
    * @param entity - The data layer entity
-   * @returns The new {@link LibraryRuntime.BarTruffle | BarTruffle}.
+   * @returns Result with runtime version, or Failure if creation fails
    * @internal
    */
-  protected override _createVersion(entity: Confections.AnyConfectionVersionEntity): IBarTruffleVersion {
-    return BarTruffleVersion.create(
-      this._context,
-      this._id,
-      entity as Confections.IBarTruffleVersionEntity
-    ).orThrow();
+  protected override _createVersion(
+    entity: Confections.AnyConfectionVersionEntity
+  ): Result<IBarTruffleVersion> {
+    return BarTruffleVersion.create(this._context, this._id, entity as Confections.IBarTruffleVersionEntity);
   }
 
   // ============================================================================

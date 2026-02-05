@@ -6,7 +6,7 @@
 
 # Interface: IFillingSessionEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:169](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L169)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:169](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L169)
 
 Persisted filling editing session with full editing state.
 
@@ -23,7 +23,7 @@ restored to its exact editing state.
 
 > `readonly` **baseId**: [`BaseSessionId`](../../../../type-aliases/BaseSessionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:141](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L141)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:141](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L141)
 
 Base identifier within the collection (no collection prefix)
 
@@ -37,7 +37,7 @@ Base identifier within the collection (no collection prefix)
 
 > `readonly` **createdAt**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:147](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L147)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:147](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L147)
 
 ISO 8601 timestamp when session was created
 
@@ -51,7 +51,7 @@ ISO 8601 timestamp when session was created
 
 > `readonly` `optional` **destination**: [`ISessionDestinationEntity`](../namespaces/Session/interfaces/ISessionDestinationEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:155](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L155)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:155](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L155)
 
 Destination configuration for saving derived entities
 
@@ -65,7 +65,7 @@ Destination configuration for saving derived entities
 
 > `readonly` **history**: [`ISerializedEditingHistoryEntity`](../namespaces/Session/interfaces/ISerializedEditingHistoryEntity.md)\<[`IProducedFillingEntity`](IProducedFillingEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:174](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L174)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:174](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L174)
 
 Full editing history including undo/redo stacks
 
@@ -75,7 +75,7 @@ Full editing history including undo/redo stacks
 
 > `readonly` `optional` **label**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:151](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L151)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:151](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L151)
 
 User-provided label for the session
 
@@ -89,7 +89,7 @@ User-provided label for the session
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:153](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L153)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:153](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L153)
 
 Optional categorized notes
 
@@ -103,7 +103,7 @@ Optional categorized notes
 
 > `readonly` **sessionType**: `"filling"`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:170](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L170)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:170](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L170)
 
 Session type discriminator
 
@@ -117,7 +117,7 @@ Session type discriminator
 
 > `readonly` **sourceVersionId**: [`FillingVersionId`](../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:172](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L172)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:172](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L172)
 
 Source filling version being edited
 
@@ -127,7 +127,7 @@ Source filling version being edited
 
 > `readonly` **status**: [`PersistedSessionStatus`](../type-aliases/PersistedSessionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:145](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L145)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:145](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L145)
 
 Current lifecycle status
 
@@ -141,7 +141,7 @@ Current lifecycle status
 
 > `readonly` **updatedAt**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:149](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L149)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:149](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L149)
 
 ISO 8601 timestamp when session was last updated
 

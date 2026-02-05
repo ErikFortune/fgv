@@ -8,7 +8,7 @@
 
 > **getFillingVersionSpec**(`id`): [`FillingVersionSpec`](../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/common/helpers.ts:291](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/helpers.ts#L291)
+Defined in: [ts-chocolate/src/packlets/common/helpers.ts:291](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/helpers.ts#L291)
 
 Gets the version spec from a composite FillingVersionId
 

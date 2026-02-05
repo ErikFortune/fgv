@@ -6,7 +6,7 @@
 
 # Interface: IValidatingLibraryParams\<TK, TV, TSpec, TOrchEntity\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:80](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L80)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:80](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L80)
 
 Parameters for ValidatingLibrary construction.
 
@@ -62,7 +62,7 @@ Defined in: ts-utils/dist/ts-utils.d.ts:3503
 
 > **orchestrator**: [`IFindOrchestrator`](IFindOrchestrator.md)\<`TOrchEntity`, `TSpec`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:87](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L87)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:87](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L87)
 
 The orchestrator that provides find functionality.
 The orchestrator's entity type (TOrchEntity) may be a supertype of TV

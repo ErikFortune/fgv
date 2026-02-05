@@ -8,7 +8,7 @@
 
 > `const` **SESSION\_SPEC\_PATTERN**: `RegExp`
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:121](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L121)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:121](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L121)
 
 Pattern for valid session specs
 Format: YYYY-MM-DD-HHMMSS-[0-9a-f]{8}

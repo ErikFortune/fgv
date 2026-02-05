@@ -6,7 +6,7 @@
 
 # Interface: ISaveVersionOptions
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:95](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L95)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:95](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L95)
 
 Options for saving as a new version of the original recipe.
 
@@ -16,7 +16,7 @@ Options for saving as a new version of the original recipe.
 
 > `readonly` **baseWeight**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:99](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L99)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:99](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L99)
 
 Base weight for the new version
 
@@ -26,7 +26,7 @@ Base weight for the new version
 
 > `readonly` `optional` **includeSessionNotes**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:109](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L109)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:109](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L109)
 
 Whether to include session notes in the recipe
 
@@ -36,6 +36,6 @@ Whether to include session notes in the recipe
 
 > `readonly` **versionSpec**: [`FillingVersionSpec`](../../../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:104](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L104)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:104](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L104)
 
 Version spec for the new version

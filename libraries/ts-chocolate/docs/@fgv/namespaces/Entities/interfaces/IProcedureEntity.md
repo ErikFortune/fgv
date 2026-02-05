@@ -6,7 +6,7 @@
 
 # Interface: IProcedureEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:108](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L108)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:108](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L108)
 
 Represents a procedure for making chocolate confections
 
@@ -16,7 +16,7 @@ Represents a procedure for making chocolate confections
 
 > `readonly` **baseId**: [`BaseProcedureId`](../../../../type-aliases/BaseProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:112](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L112)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:112](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L112)
 
 Base procedure identifier (unique within source)
 
@@ -26,7 +26,7 @@ Base procedure identifier (unique within source)
 
 > `readonly` `optional` **category**: [`ProcedureType`](../../../../type-aliases/ProcedureType.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:129](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L129)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:129](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L129)
 
 Optional procedure category this procedure applies to.
 Can be a filling category (ganache, caramel, gianduja), confection type, or 'other'.
@@ -38,7 +38,7 @@ If set, procedure is category-specific; if not, it's general/reusable.
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:122](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L122)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:122](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L122)
 
 Optional description of the procedure
 
@@ -48,7 +48,7 @@ Optional description of the procedure
 
 > `readonly` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:117](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L117)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:117](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L117)
 
 Human-readable name of the procedure
 
@@ -58,7 +58,7 @@ Human-readable name of the procedure
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:144](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L144)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:144](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L144)
 
 Optional categorized notes about the procedure
 
@@ -68,7 +68,7 @@ Optional categorized notes about the procedure
 
 > `readonly` **steps**: readonly [`IProcedureStepEntity`](IProcedureStepEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:134](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L134)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:134](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L134)
 
 Steps of the procedure in order
 
@@ -78,6 +78,6 @@ Steps of the procedure in order
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:139](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L139)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:139](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L139)
 
 Optional tags for categorization and search

@@ -8,7 +8,7 @@
 
 > **IResolvedFillingOption** = [`IResolvedRecipeFillingOption`](../interfaces/IResolvedRecipeFillingOption.md) \| [`IResolvedIngredientFillingOption`](../interfaces/IResolvedIngredientFillingOption.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1244](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1244)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1216](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1216)
 
 A resolved filling option with the full recipe or ingredient object.
 Discriminated union for type-safe access.

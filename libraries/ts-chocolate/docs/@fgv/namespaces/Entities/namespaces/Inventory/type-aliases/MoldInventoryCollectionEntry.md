@@ -8,7 +8,7 @@
 
 > **MoldInventoryCollectionEntry** = [`SubLibraryCollectionEntry`](../../../../LibraryData/type-aliases/SubLibraryCollectionEntry.md)\<[`MoldInventoryEntryBaseId`](MoldInventoryEntryBaseId.md), [`IMoldInventoryEntryEntity`](../../../interfaces/IMoldInventoryEntryEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/inventory/collection.ts:49](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/inventory/collection.ts#L49)
+Defined in: [ts-chocolate/src/packlets/entities/inventory/collection.ts:49](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/inventory/collection.ts#L49)
 
 A single entry in a mold inventory collection.
 Keyed by the inventory entry's base ID (not the mold's ID).

@@ -6,7 +6,7 @@
 
 # Interface: IResolvedIngredient
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1683](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1683)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1642](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1642)
 
 Resolved ingredient with its amount
 
@@ -16,7 +16,7 @@ Resolved ingredient with its amount
 
 > `readonly` **amount**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1685](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1685)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1644](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1644)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1685](https://gi
 
 > `readonly` **ingredient**: [`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1684](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1684)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1643](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1643)

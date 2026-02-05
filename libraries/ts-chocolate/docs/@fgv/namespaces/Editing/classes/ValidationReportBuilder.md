@@ -6,7 +6,7 @@
 
 # Class: ValidationReportBuilder
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:107](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L107)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:107](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L107)
 
 Builder for constructing validation reports.
 Allows accumulating errors before creating final report.
@@ -27,7 +27,7 @@ Allows accumulating errors before creating final report.
 
 > **addFieldError**(`fieldPath`, `errorMessage`): `this`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:116](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L116)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:116](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L116)
 
 Add a field error.
 
@@ -55,7 +55,7 @@ Error message
 
 > **addGeneralError**(`errorMessage`): `this`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:125](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L125)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:125](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L125)
 
 Add a general error.
 
@@ -77,7 +77,7 @@ Error message
 
 > **addValidationResult**(`fieldPath`, `result`): `this`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:136](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L136)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:136](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L136)
 
 Add errors from a validation result.
 If the result is a failure, adds it as a field error.
@@ -106,7 +106,7 @@ Validation result
 
 > **build**(): [`ValidationReport`](ValidationReport.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:155](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L155)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:155](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L155)
 
 Build the final validation report.
 
@@ -122,7 +122,7 @@ Validation report with all accumulated errors
 
 > **buildResult**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ValidationReport`](ValidationReport.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:164](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L164)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:164](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L164)
 
 Build and return as Result.
 Returns success(report) if no errors, fail with error summary if errors exist.
@@ -139,7 +139,7 @@ Result containing validation report or failure
 
 > **hasErrors**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:147](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/validation.ts#L147)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:147](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/validation.ts#L147)
 
 Check if any errors have been added.
 

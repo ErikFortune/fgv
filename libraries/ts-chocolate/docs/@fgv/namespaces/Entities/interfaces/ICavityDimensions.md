@@ -6,7 +6,7 @@
 
 # Interface: ICavityDimensions
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:32](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L32)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:32](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L32)
 
 Dimensions of a mold cavity in millimeters
 
@@ -16,7 +16,7 @@ Dimensions of a mold cavity in millimeters
 
 > `readonly` **depth**: [`Millimeters`](../../../../type-aliases/Millimeters.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:46](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L46)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:46](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L46)
 
 Depth of the cavity in millimeters
 
@@ -26,7 +26,7 @@ Depth of the cavity in millimeters
 
 > `readonly` **length**: [`Millimeters`](../../../../type-aliases/Millimeters.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:41](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L41)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:41](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L41)
 
 Length of the cavity in millimeters
 
@@ -36,6 +36,6 @@ Length of the cavity in millimeters
 
 > `readonly` **width**: [`Millimeters`](../../../../type-aliases/Millimeters.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:36](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L36)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:36](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L36)
 
 Width of the cavity in millimeters

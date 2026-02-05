@@ -8,7 +8,7 @@
 
 > **normalizeMergeSource**\<`TLibrary`, `TCollectionId`\>(`source`): [`INormalizedMergeSource`](../interfaces/INormalizedMergeSource.md)\<`TLibrary`, `TCollectionId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/libraryLoader.ts:355](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/libraryLoader.ts#L355)
+Defined in: [ts-chocolate/src/packlets/library-data/libraryLoader.ts:355](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/libraryLoader.ts#L355)
 
 Normalizes a merge source (library or {library, filter}) to a consistent shape.
 

@@ -6,7 +6,7 @@
 
 # Interface: IConfectionSessionState
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:397](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L397)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:397](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L397)
 
 Read-only view of confection session state
 
@@ -16,7 +16,7 @@ Read-only view of confection session state
 
 > `readonly` **chocolates**: `ReadonlyMap`\<[`ChocolateRole`](../../../../../../type-aliases/ChocolateRole.md), [`ISessionChocolate`](ISessionChocolate.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:416](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L416)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:416](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L416)
 
 Current chocolate selections by role
 
@@ -26,7 +26,7 @@ Current chocolate selections by role
 
 > `readonly` `optional` **coating**: [`ISessionCoating`](ISessionCoating.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:431](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L431)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:431](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L431)
 
 Current coating selection (for rolled truffles)
 
@@ -36,7 +36,7 @@ Current coating selection (for rolled truffles)
 
 > `readonly` **isDirty**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:436](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L436)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:436](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L436)
 
 Whether the session has unsaved modifications
 
@@ -46,7 +46,7 @@ Whether the session has unsaved modifications
 
 > `readonly` **isJournalingEnabled**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:441](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L441)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:441](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L441)
 
 Whether journaling is enabled
 
@@ -56,7 +56,7 @@ Whether journaling is enabled
 
 > `readonly` `optional` **mold**: [`ISessionMold`](ISessionMold.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:411](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L411)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:411](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L411)
 
 Current mold selection (for molded bonbons)
 
@@ -66,7 +66,7 @@ Current mold selection (for molded bonbons)
 
 > `readonly` `optional` **procedure**: [`ISessionProcedure`](ISessionProcedure.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:426](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L426)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:426](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L426)
 
 Current procedure selection (if applicable)
 
@@ -76,7 +76,7 @@ Current procedure selection (if applicable)
 
 > `readonly` **sessionId**: [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:401](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L401)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:401](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L401)
 
 Unique session identifier
 
@@ -86,7 +86,7 @@ Unique session identifier
 
 > `readonly` **sourceConfection**: [`IConfectionBase`](../../../../LibraryRuntime/interfaces/IConfectionBase.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:406](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L406)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:406](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L406)
 
 Source confection being edited
 
@@ -96,6 +96,6 @@ Source confection being edited
 
 > `readonly` **yield**: [`ISessionYield`](ISessionYield.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:421](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L421)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:421](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L421)
 
 Current yield state

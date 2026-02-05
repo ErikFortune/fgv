@@ -6,7 +6,7 @@
 
 # Interface: IRefWithNotes\<TId\>
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:224](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L224)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:224](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L224)
 
 Generic reference type with an ID and optional categorized notes.
 Use as base for mold refs, procedure refs, etc.
@@ -30,7 +30,7 @@ The ID type
 
 > `readonly` **id**: `TId`
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:226](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L226)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:226](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L226)
 
 The referenced entity's ID
 
@@ -44,6 +44,6 @@ The referenced entity's ID
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:228](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L228)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:228](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L228)
 
 Optional categorized notes specific to this reference

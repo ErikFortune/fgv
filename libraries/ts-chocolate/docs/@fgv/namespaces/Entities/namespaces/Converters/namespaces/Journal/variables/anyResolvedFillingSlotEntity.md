@@ -8,7 +8,7 @@
 
 > `const` **anyResolvedFillingSlotEntity**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnyResolvedFillingSlotEntity`](../../../../Confections/type-aliases/AnyResolvedFillingSlotEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/converters.ts:98](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/converters.ts#L98)
+Defined in: [ts-chocolate/src/packlets/entities/journal/converters.ts:98](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/converters.ts#L98)
 
 Converter for [AnyResolvedFillingSlot](../../../../Confections/type-aliases/AnyResolvedFillingSlotEntity.md).
 Uses discriminated object pattern on `slotType` field.

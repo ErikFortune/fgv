@@ -6,7 +6,7 @@
 
 # Interface: IAlcoholIngredient
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:315](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L315)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:315](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L315)
 
 Runtime ingredient narrowed to alcohol type.
 
@@ -20,7 +20,7 @@ Runtime ingredient narrowed to alcohol type.
 
 > `readonly` `optional` **alcoholByVolume**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:320](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L320)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:320](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L320)
 
 Alcohol by volume percentage
 
@@ -30,7 +30,7 @@ Alcohol by volume percentage
 
 > `readonly` `optional` **allergens**: readonly [`Allergen`](../../../../type-aliases/Allergen.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:147](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L147)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:147](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L147)
 
 Optional list of common allergens present in the ingredient
 
@@ -44,7 +44,7 @@ Optional list of common allergens present in the ingredient
 
 > `readonly` **baseId**: [`BaseIngredientId`](../../../../type-aliases/BaseIngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:127](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L127)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:127](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L127)
 
 The base ingredient ID within the source.
 
@@ -58,7 +58,7 @@ The base ingredient ID within the source.
 
 > `readonly` **category**: `"alcohol"`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:317](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L317)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:317](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L317)
 
 Category is always alcohol for this type
 
@@ -72,7 +72,7 @@ Category is always alcohol for this type
 
 > `readonly` `optional` **certifications**: readonly [`Certification`](../../../../type-aliases/Certification.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:153](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L153)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:153](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L153)
 
 Optional list of certifications the ingredient has
 
@@ -86,7 +86,7 @@ Optional list of certifications the ingredient has
 
 > `readonly` **collectionId**: [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:122](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L122)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:122](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L122)
 
 The collection ID part of the composite ID.
 
@@ -100,7 +100,7 @@ The collection ID part of the composite ID.
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:141](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L141)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:141](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L141)
 
 Optional description
 
@@ -114,7 +114,7 @@ Optional description
 
 > `readonly` **entity**: [`IAlcoholIngredientEntity`](../../Entities/interfaces/IAlcoholIngredientEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:328](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L328)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:328](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L328)
 
 Gets the underlying ingredient entity data.
 
@@ -128,7 +128,7 @@ Gets the underlying ingredient entity data.
 
 > `readonly` `optional` **flavorProfile**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:323](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L323)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:323](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L323)
 
 Flavor profile description (optional)
 
@@ -138,7 +138,7 @@ Flavor profile description (optional)
 
 > `readonly` **ganacheCharacteristics**: [`IGanacheCharacteristics`](../../Entities/interfaces/IGanacheCharacteristics.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:138](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L138)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:138](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L138)
 
 Ganache-relevant characteristics
 
@@ -152,7 +152,7 @@ Ganache-relevant characteristics
 
 > `readonly` **id**: [`IngredientId`](../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:117](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:117](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L117)
 
 The composite ingredient ID (e.g., "felchlin.maracaibo-65").
 Combines source and base ID for unique identification across sources.
@@ -167,7 +167,7 @@ Combines source and base ID for unique identification across sources.
 
 > `readonly` `optional` **manufacturer**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:144](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L144)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:144](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L144)
 
 Optional manufacturer
 
@@ -181,7 +181,7 @@ Optional manufacturer
 
 > `readonly` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:132](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L132)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:132](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L132)
 
 Display name
 
@@ -195,7 +195,7 @@ Display name
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:159](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L159)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:159](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L159)
 
 Optional tags for searching/filtering
 
@@ -209,7 +209,7 @@ Optional tags for searching/filtering
 
 > `readonly` `optional` **traceAllergens**: readonly [`Allergen`](../../../../type-aliases/Allergen.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:150](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L150)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:150](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L150)
 
 Optional list of trace allergens possibly present (e.g. due to contamination)
 
@@ -223,7 +223,7 @@ Optional list of trace allergens possibly present (e.g. due to contamination)
 
 > `readonly` `optional` **vegan**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:156](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L156)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:156](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L156)
 
 Optional indicator if the ingredient is vegan
 
@@ -237,7 +237,7 @@ Optional indicator if the ingredient is vegan
 
 > **alternateInFillings**(): [`IFillingRecipe`](IFillingRecipe.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:176](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L176)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:176](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L176)
 
 Gets filling recipes where this ingredient is listed as an alternate.
 
@@ -255,7 +255,7 @@ Gets filling recipes where this ingredient is listed as an alternate.
 
 > **isAlcohol**(): `this is IAlcoholIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:208](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L208)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:208](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L208)
 
 Returns true if this is an alcohol ingredient.
 When true, alcohol-specific properties are available.
@@ -274,7 +274,7 @@ When true, alcohol-specific properties are available.
 
 > **isChocolate**(): `this is IChocolateIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:184](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L184)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:184](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L184)
 
 Returns true if this is a chocolate ingredient.
 When true, chocolate-specific properties are available.
@@ -293,7 +293,7 @@ When true, chocolate-specific properties are available.
 
 > **isDairy**(): `this is IDairyIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:190](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L190)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:190](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L190)
 
 Returns true if this is a dairy ingredient.
 When true, dairy-specific properties are available.
@@ -312,7 +312,7 @@ When true, dairy-specific properties are available.
 
 > **isFat**(): `this is IFatIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:202](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L202)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:202](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L202)
 
 Returns true if this is a fat ingredient.
 When true, fat-specific properties are available.
@@ -331,7 +331,7 @@ When true, fat-specific properties are available.
 
 > **isSugar**(): `this is ISugarIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:196](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L196)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:196](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L196)
 
 Returns true if this is a sugar ingredient.
 When true, sugar-specific properties are available.
@@ -350,7 +350,7 @@ When true, sugar-specific properties are available.
 
 > **primaryInFillings**(): [`IFillingRecipe`](IFillingRecipe.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:171](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L171)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:171](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L171)
 
 Gets filling recipes where this ingredient is the primary choice.
 
@@ -368,7 +368,7 @@ Gets filling recipes where this ingredient is the primary choice.
 
 > **usedByFillings**(): [`IFillingRecipe`](IFillingRecipe.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:166](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L166)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:166](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L166)
 
 Gets all filling recipes that use this ingredient (primary or alternate).
 

@@ -6,7 +6,7 @@
 
 # Interface: ISaveNewConfectionOptions
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:174](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L174)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:174](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L174)
 
 Options for saving confection as entirely new.
 
@@ -16,7 +16,7 @@ Options for saving confection as entirely new.
 
 > `readonly` `optional` **includeSessionNotes**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:188](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L188)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:188](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L188)
 
 Whether to include session notes in the confection
 
@@ -26,7 +26,7 @@ Whether to include session notes in the confection
 
 > `readonly` **newId**: [`ConfectionId`](../../../../../../type-aliases/ConfectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:178](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L178)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:178](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L178)
 
 ID for the new confection
 
@@ -36,6 +36,6 @@ ID for the new confection
 
 > `readonly` **versionSpec**: [`ConfectionVersionSpec`](../../../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:183](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L183)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:183](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L183)
 
 Version spec for the new confection's first version

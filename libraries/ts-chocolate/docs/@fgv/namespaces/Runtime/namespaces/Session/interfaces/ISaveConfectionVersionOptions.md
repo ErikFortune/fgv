@@ -6,7 +6,7 @@
 
 # Interface: ISaveConfectionVersionOptions
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:158](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L158)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:158](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L158)
 
 Options for saving confection as a new version.
 
@@ -16,7 +16,7 @@ Options for saving confection as a new version.
 
 > `readonly` `optional` **includeSessionNotes**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:167](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L167)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:167](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L167)
 
 Whether to include session notes in the confection
 
@@ -26,6 +26,6 @@ Whether to include session notes in the confection
 
 > `readonly` **versionSpec**: [`ConfectionVersionSpec`](../../../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:162](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L162)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:162](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L162)
 
 Version spec for the new version

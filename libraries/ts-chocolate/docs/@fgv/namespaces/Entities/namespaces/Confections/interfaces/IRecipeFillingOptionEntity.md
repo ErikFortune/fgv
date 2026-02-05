@@ -6,7 +6,7 @@
 
 # Interface: IRecipeFillingOptionEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:130](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L130)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:130](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L130)
 
 Recipe filling option - references a recipe (e.g., ganache)
 
@@ -16,7 +16,7 @@ Recipe filling option - references a recipe (e.g., ganache)
 
 > `readonly` **id**: [`FillingId`](../../../../../../type-aliases/FillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:134](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L134)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:134](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L134)
 
 The filling recipe ID
 
@@ -26,7 +26,7 @@ The filling recipe ID
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:136](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L136)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:136](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L136)
 
 Optional categorized notes specific to this filling option
 
@@ -36,6 +36,6 @@ Optional categorized notes specific to this filling option
 
 > `readonly` **type**: `"recipe"`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:132](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L132)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:132](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L132)
 
 Discriminator for recipe filling

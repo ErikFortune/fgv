@@ -8,6 +8,6 @@
 
 > **ProcedureCollectionEntry** = [`SubLibraryCollectionEntry`](../../../../LibraryData/type-aliases/SubLibraryCollectionEntry.md)\<[`BaseProcedureId`](../../../../../../type-aliases/BaseProcedureId.md), [`IProcedureEntity`](../../../interfaces/IProcedureEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/collection.ts:38](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/procedures/collection.ts#L38)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/collection.ts:38](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/procedures/collection.ts#L38)
 
 A single entry in a procedures collection.

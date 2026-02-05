@@ -6,7 +6,7 @@
 
 # Interface: IEditorContextValidatorParams\<T, TBaseId, TId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:37](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L37)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:37](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L37)
 
 Parameters for creating an editor context validator.
 
@@ -36,7 +36,7 @@ Composite ID type (e.g., IngredientId)
 
 > `readonly` **context**: [`EditorContext`](../classes/EditorContext.md)\<`T`, `TBaseId`, `TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:45](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L45)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:45](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L45)
 
 The editor context to wrap with validation.
 
@@ -46,7 +46,7 @@ The editor context to wrap with validation.
 
 > `readonly` **entityConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:51](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L51)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:51](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L51)
 
 Converter for entity validation.
 Handles type validation, required fields, and constraints.
@@ -57,7 +57,7 @@ Handles type validation, required fields, and constraints.
 
 > `readonly` **keyConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TBaseId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:57](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L57)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L57)
 
 Converter for base ID validation.
 Validates and converts string input to the base ID type.

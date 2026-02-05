@@ -6,7 +6,7 @@
 
 # Interface: ICollectionFilterInitParams\<T\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:29](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L29)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:29](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L29)
 
 Parameters used to filter and validate collections imported from a file tree.
 
@@ -22,7 +22,7 @@ Parameters used to filter and validate collections imported from a file tree.
 
 > `readonly` `optional` **errorOnInvalidName**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:41](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L41)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:41](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L41)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:41](http
 
 > `readonly` `optional` **excluded**: readonly [`FilterPattern`](../type-aliases/FilterPattern.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:39](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L39)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:39](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L39)
 
 Patterns to exclude. Names matching any pattern are excluded (takes precedence over included).
 Strings are matched exactly, RegExp patterns use `.test()`.
@@ -41,7 +41,7 @@ Strings are matched exactly, RegExp patterns use `.test()`.
 
 > `readonly` `optional` **included**: readonly [`FilterPattern`](../type-aliases/FilterPattern.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:34](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L34)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:34](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L34)
 
 Patterns to include. If specified, only names matching at least one pattern are included.
 Strings are matched exactly, RegExp patterns use `.test()`.
@@ -52,4 +52,4 @@ Strings are matched exactly, RegExp patterns use `.test()`.
 
 > `readonly` **nameConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `unknown`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:40](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L40)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:40](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L40)

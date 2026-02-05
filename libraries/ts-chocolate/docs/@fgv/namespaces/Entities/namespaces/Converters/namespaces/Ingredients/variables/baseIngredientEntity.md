@@ -8,6 +8,6 @@
 
 > `const` **baseIngredientEntity**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IIngredientEntity`](../../../../../interfaces/IIngredientEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/converters.ts:110](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/ingredients/converters.ts#L110)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/converters.ts:110](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/converters.ts#L110)
 
 Converter for base [IIngredientEntity](../../../../../interfaces/IIngredientEntity.md) properties.

@@ -46,7 +46,10 @@ import { ConfectionVersionBase } from './confectionVersionBase';
  * A resolved view of a molded bonbon version with all references resolved.
  * @public
  */
-export class MoldedBonBonVersion extends ConfectionVersionBase implements IMoldedBonBonVersion {
+export class MoldedBonBonVersion
+  extends ConfectionVersionBase<IMoldedBonBon, Confections.IMoldedBonBonVersionEntity>
+  implements IMoldedBonBonVersion
+{
   private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved)
@@ -86,13 +89,6 @@ export class MoldedBonBonVersion extends ConfectionVersionBase implements IMolde
   // ============================================================================
   // Parent Navigation (narrowed type)
   // ============================================================================
-
-  /**
-   * Parent confection narrowed to molded bonbon type.
-   */
-  public override get confection(): IMoldedBonBon {
-    return super.confection as IMoldedBonBon;
-  }
 
   // ============================================================================
   // Molded BonBon-Specific Properties (lazy)

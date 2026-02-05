@@ -6,7 +6,7 @@
 
 # Interface: ISubLibraryParams\<TLibrary, TEntryInit\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:180](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L180)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:180](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L180)
 
 Parameters for creating a sub-library instance.
 
@@ -34,7 +34,7 @@ The collection entry initialization type (e.g., `IngredientCollectionEntryInit`)
 
 > `readonly` `optional` **builtin**: [`LibraryLoadSpec`](../type-aliases/LibraryLoadSpec.md)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:190](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L190)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:190](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L190)
 
 Controls which built-in collections are loaded.
 Built-in collections are always immutable.
@@ -50,7 +50,7 @@ Built-in collections are always immutable.
 
 > `readonly` `optional` **collections**: readonly `TEntryInit`[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:203](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L203)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:203](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L203)
 
 Optional additional collections.
 Each collection can be provided as a JSON entry or pre-built entry.
@@ -61,7 +61,7 @@ Each collection can be provided as a JSON entry or pre-built entry.
 
 > `readonly` `optional` **fileSources**: [`SubLibraryFileTreeSource`](../type-aliases/SubLibraryFileTreeSource.md) \| readonly [`SubLibraryFileTreeSource`](../type-aliases/SubLibraryFileTreeSource.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:197](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L197)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:197](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L197)
 
 File tree sources to load collections from.
 Collections are loaded and merged with built-in collections.
@@ -73,7 +73,7 @@ Duplicate collection IDs across sources cause an error.
 
 > `readonly` `optional` **logger**: [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:222](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L222)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:222](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L222)
 
 Optional logger for reporting loading progress and issues.
 
@@ -83,7 +83,7 @@ Optional logger for reporting loading progress and issues.
 
 > `readonly` `optional` **mergeLibraries**: [`SubLibraryMergeSource`](../type-aliases/SubLibraryMergeSource.md)\<`TLibrary`\> \| readonly [`SubLibraryMergeSource`](../type-aliases/SubLibraryMergeSource.md)\<`TLibrary`\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:217](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L217)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:217](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L217)
 
 Existing libraries to merge collections from.
 
@@ -102,7 +102,7 @@ Can be:
 
 > `readonly` `optional` **protectedCollections**: readonly [`IProtectedCollectionInternal`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:233](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L233)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:233](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L233)
 
 Protected collections that were captured during loading.
 

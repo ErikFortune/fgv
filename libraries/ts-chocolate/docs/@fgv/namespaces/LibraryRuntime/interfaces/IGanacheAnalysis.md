@@ -6,7 +6,7 @@
 
 # Interface: IGanacheAnalysis
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1615](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1615)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1574](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1574)
 
 Blended characteristics for a ganache recipe
 
@@ -16,7 +16,7 @@ Blended characteristics for a ganache recipe
 
 > `readonly` **characteristics**: [`IGanacheCharacteristics`](../../Entities/interfaces/IGanacheCharacteristics.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1619](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1619)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1578](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1578)
 
 Weighted average characteristics of all ingredients
 
@@ -26,7 +26,7 @@ Weighted average characteristics of all ingredients
 
 > `readonly` **fatToWaterRatio**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1629](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1629)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1588](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1588)
 
 Fat to water ratio (important for emulsion stability)
 
@@ -36,7 +36,7 @@ Fat to water ratio (important for emulsion stability)
 
 > `readonly` **sugarToWaterRatio**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1634](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1634)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1593](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1593)
 
 Sugar to water ratio (important for texture and preservation)
 
@@ -46,7 +46,7 @@ Sugar to water ratio (important for texture and preservation)
 
 > `readonly` **totalFat**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1624](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1624)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1583](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1583)
 
 Total fat percentage (cacaoFat + milkFat + otherFats)
 
@@ -56,6 +56,6 @@ Total fat percentage (cacaoFat + milkFat + otherFats)
 
 > `readonly` **totalWeight**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1639](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1639)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1598](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1598)
 
 Total weight of the recipe

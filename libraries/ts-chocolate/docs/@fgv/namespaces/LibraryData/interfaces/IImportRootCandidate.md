@@ -6,7 +6,7 @@
 
 # Interface: IImportRootCandidate
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:560](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L560)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:560](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L560)
 
 A candidate import root with directory and resolution kind.
 Used internally during BFS search and as the result of tryResolveAt.
@@ -21,7 +21,7 @@ Used internally during BFS search and as the result of tryResolveAt.
 
 > `readonly` **kind**: [`ImportRootKind`](../type-aliases/ImportRootKind.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:564](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L564)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:564](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L564)
 
 How the resolution was achieved.
 
@@ -31,6 +31,6 @@ How the resolution was achieved.
 
 > `readonly` **root**: [`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:562](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-data/model.ts#L562)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:562](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L562)
 
 The directory that can be treated as the library root.

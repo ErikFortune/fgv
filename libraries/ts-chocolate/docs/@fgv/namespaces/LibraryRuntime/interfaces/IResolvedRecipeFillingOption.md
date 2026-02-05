@@ -6,7 +6,7 @@
 
 # Interface: IResolvedRecipeFillingOption
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1250](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1250)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1222](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1222)
 
 Resolved recipe filling option.
 
@@ -16,7 +16,7 @@ Resolved recipe filling option.
 
 > `readonly` **entity**: [`IRecipeFillingOptionEntity`](../../Entities/namespaces/Confections/interfaces/IRecipeFillingOptionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1260](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1260)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1232](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1232)
 
 The original recipe filling option entity data
 
@@ -26,7 +26,7 @@ The original recipe filling option entity data
 
 > `readonly` **filling**: [`IFillingRecipe`](IFillingRecipe.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1256](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1256)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1228](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1228)
 
 The resolved filling recipe object
 
@@ -36,7 +36,7 @@ The resolved filling recipe object
 
 > `readonly` **id**: [`FillingId`](../../../../type-aliases/FillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1254](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1254)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1226](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1226)
 
 The filling ID (satisfies IHasId for IOptionsWithPreferred)
 
@@ -46,7 +46,7 @@ The filling ID (satisfies IHasId for IOptionsWithPreferred)
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1258](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1258)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1230](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1230)
 
 Optional notes specific to this filling option
 
@@ -56,6 +56,6 @@ Optional notes specific to this filling option
 
 > `readonly` **type**: `"recipe"`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1252](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1252)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1224](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1224)
 
 Discriminator for type-safe access

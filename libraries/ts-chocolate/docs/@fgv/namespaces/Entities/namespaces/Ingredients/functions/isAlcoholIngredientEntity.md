@@ -8,7 +8,7 @@
 
 > **isAlcoholIngredientEntity**(`ingredient`): `ingredient is IAlcoholIngredientEntity`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:276](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L276)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:276](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L276)
 
 Type guard for [IAlcoholIngredientEntity](../../../interfaces/IAlcoholIngredientEntity.md).
 

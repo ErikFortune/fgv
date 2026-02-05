@@ -44,7 +44,10 @@ import { ConfectionVersionBase } from './confectionVersionBase';
  * A resolved view of a bar truffle version with all references resolved.
  * @public
  */
-export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruffleVersion {
+export class BarTruffleVersion
+  extends ConfectionVersionBase<IBarTruffle, Confections.IBarTruffleVersionEntity>
+  implements IBarTruffleVersion
+{
   private readonly _barTruffleVersion: Confections.IBarTruffleVersionEntity;
 
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
@@ -83,13 +86,6 @@ export class BarTruffleVersion extends ConfectionVersionBase implements IBarTruf
   // ============================================================================
   // Parent Navigation (narrowed type)
   // ============================================================================
-
-  /**
-   * Parent confection narrowed to bar truffle type.
-   */
-  public override get confection(): IBarTruffle {
-    return super.confection as IBarTruffle;
-  }
 
   // ============================================================================
   // Bar Truffle-Specific Properties

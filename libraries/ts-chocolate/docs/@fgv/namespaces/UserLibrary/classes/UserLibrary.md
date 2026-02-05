@@ -6,7 +6,7 @@
 
 # Class: UserLibrary
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:50](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L50)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:50](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L50)
 
 Aggregates user-specific data libraries.
 
@@ -23,7 +23,7 @@ user/installation-specific data with no built-in collections.
 
 > `readonly` **logger**: [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:59](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L59)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:59](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L59)
 
 Logger used by this library and its sub-libraries.
 
@@ -35,7 +35,7 @@ Logger used by this library and its sub-libraries.
 
 > **get** **ingredientInventory**(): [`IngredientInventoryLibrary`](../../Entities/classes/IngredientInventoryLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:187](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L187)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:187](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L187)
 
 Ingredient inventory library for tracking ingredient stock.
 
@@ -57,7 +57,7 @@ Ingredient inventory library for tracking ingredient stock.
 
 > **get** **journals**(): [`JournalLibrary`](../../Entities/classes/JournalLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:166](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L166)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:166](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L166)
 
 Journal library for production records.
 
@@ -79,7 +79,7 @@ Journal library for production records.
 
 > **get** **moldInventory**(): [`MoldInventoryLibrary`](../../Entities/classes/MoldInventoryLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:180](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L180)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:180](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L180)
 
 Mold inventory library for tracking owned molds.
 
@@ -101,7 +101,7 @@ Mold inventory library for tracking owned molds.
 
 > **get** **sessions**(): [`SessionLibrary`](../../Entities/classes/SessionLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:173](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L173)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:173](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L173)
 
 Session library for persisted editing sessions.
 
@@ -121,7 +121,7 @@ Session library for persisted editing sessions.
 
 > `static` **create**(`params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`UserLibrary`\>
 
-Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:81](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L81)
+Defined in: [ts-chocolate/src/packlets/user-library/userLibrary.ts:81](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/userLibrary.ts#L81)
 
 Creates a new UserLibrary instance.
 

@@ -6,7 +6,7 @@
 
 # Interface: IOptionsWithPreferred\<TOption, TId\>
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:193](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L193)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:193](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L193)
 
 Collection of options (objects with IDs) with a preferred selection.
 Use when options are objects containing IDs plus additional metadata.
@@ -31,7 +31,7 @@ The ID type for the preferred selection
 
 > `readonly` **options**: readonly `TOption`[]
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:195](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L195)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:195](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L195)
 
 Available options
 
@@ -41,6 +41,6 @@ Available options
 
 > `readonly` `optional` **preferredId**: `TId`
 
-Defined in: [ts-chocolate/src/packlets/common/model.ts:197](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/common/model.ts#L197)
+Defined in: [ts-chocolate/src/packlets/common/model.ts:197](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/model.ts#L197)
 
 ID of the preferred/recommended option

@@ -6,7 +6,7 @@
 
 # Class: FillingRecipesByCategoryIndexer
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:73](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L73)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:73](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L73)
 
 Indexer that finds recipes with a specific category.
 
@@ -20,7 +20,7 @@ Indexer that finds recipes with a specific category.
 
 > **new FillingRecipesByCategoryIndexer**(`library`): `FillingRecipesByCategoryIndexer`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:81](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L81)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:81](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L81)
 
 Creates a new FillingRecipesByCategoryIndexer.
 
@@ -46,7 +46,7 @@ The chocolate library to index
 
 > `protected` **\_isBuilt**: `boolean` = `false`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:48](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L48)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:48](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L48)
 
 Flag indicating if the index has been built.
 
@@ -60,7 +60,7 @@ Flag indicating if the index has been built.
 
 > `readonly` **library**: [`ChocolateLibrary`](../../../../../../classes/ChocolateLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:43](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L43)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:43](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L43)
 
 The chocolate library being indexed.
 
@@ -76,7 +76,7 @@ The chocolate library being indexed.
 
 > **get** `protected` **\_indexerName**(): `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:106](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L106)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:106](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L106)
 
 Returns the name of this indexer for logging purposes.
 Subclasses should override to provide a meaningful name.
@@ -97,7 +97,7 @@ Subclasses should override to provide a meaningful name.
 
 > **get** `protected` **\_logger**(): [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:53](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L53)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:53](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L53)
 
 Logger for reporting index operations.
 
@@ -115,7 +115,7 @@ Logger for reporting index operations.
 
 > `protected` **\_addToSetIndex**\<`TKey`, `TValue`\>(`index`, `key`, `value`): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:136](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L136)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:136](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L136)
 
 Helper to add a value to a Set-based index.
 
@@ -157,7 +157,7 @@ Helper to add a value to a Set-based index.
 
 > `protected` **\_buildIndex**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:96](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L96)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:96](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L96)
 
 Builds the internal index structure.
 Called lazily on first query or explicitly via warmUp().
@@ -176,7 +176,7 @@ Called lazily on first query or explicitly via warmUp().
 
 > `protected` **\_clearIndex**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:108](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L108)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:108](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L108)
 
 Clears the internal index structure.
 Called when invalidating the index.
@@ -195,7 +195,7 @@ Called when invalidating the index.
 
 > `protected` **\_emptyResult**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FillingId`](../../../../../../type-aliases/FillingId.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:156](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L156)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:156](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L156)
 
 Helper to return an empty success result.
 
@@ -213,7 +213,7 @@ Helper to return an empty success result.
 
 > `protected` **\_ensureBuilt**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:92](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L92)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:92](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L92)
 
 Ensures the index is built before querying.
 
@@ -231,7 +231,7 @@ Ensures the index is built before querying.
 
 > `protected` **\_findInternal**(`config`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FillingId`](../../../../../../type-aliases/FillingId.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:113](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L113)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:113](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L113)
 
 Executes the query against the built index.
 
@@ -259,7 +259,7 @@ Array of matching IDs
 
 > `protected` **\_getFromSetIndex**\<`TKey`, `TValue`\>(`index`, `key`): readonly `TValue`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:148](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L148)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:148](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L148)
 
 Helper to get values from a Set-based index as an array.
 
@@ -297,7 +297,7 @@ readonly `TValue`[]
 
 > **find**(`config`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FillingId`](../../../../../../type-aliases/FillingId.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:70](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L70)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:70](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L70)
 
 Finds IDs matching the given configuration.
 
@@ -325,7 +325,7 @@ Array of IDs, or Failure on error
 
 > **getAllCategories**(): readonly [`FillingCategory`](../../../../Entities/type-aliases/FillingCategory.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:90](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L90)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts:90](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByCategoryIndexer.ts#L90)
 
 Gets all categories that have at least one recipe.
 Note: Forces index build if not already built.
@@ -342,7 +342,7 @@ Array of categories
 
 > **invalidate**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:79](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L79)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:79](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L79)
 
 Invalidates any cached index data.
 Called when underlying library data changes.
@@ -361,7 +361,7 @@ Called when underlying library data changes.
 
 > **warmUp**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:85](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L85)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts:85](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexer.ts#L85)
 
 Pre-builds the index for efficient queries.
 Called during warmup.

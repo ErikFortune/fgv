@@ -6,7 +6,7 @@
 
 # Interface: IResolvedConfectionMoldRef
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1332](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1332)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1304](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1304)
 
 A resolved mold reference with the full mold object.
 
@@ -16,7 +16,7 @@ A resolved mold reference with the full mold object.
 
 > `readonly` **entity**: [`IConfectionMoldRef`](../../Entities/namespaces/Confections/type-aliases/IConfectionMoldRef.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1340](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1340)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1312](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1312)
 
 The original mold entity reference data
 
@@ -26,7 +26,7 @@ The original mold entity reference data
 
 > `readonly` **id**: [`MoldId`](../../../../type-aliases/MoldId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1334](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1334)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1306](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1306)
 
 The mold ID (for IOptionsWithPreferred compatibility)
 
@@ -36,7 +36,7 @@ The mold ID (for IOptionsWithPreferred compatibility)
 
 > `readonly` **mold**: [`IMold`](IMold.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1336](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1336)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1308](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1308)
 
 The resolved mold object
 
@@ -46,6 +46,6 @@ The resolved mold object
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1338](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1338)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1310](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1310)
 
 Optional notes specific to using this mold

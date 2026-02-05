@@ -6,7 +6,7 @@
 
 # Interface: ICavityInfo
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:53](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L53)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:53](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L53)
 
 Information about a mold cavity
 
@@ -16,7 +16,7 @@ Information about a mold cavity
 
 > `readonly` `optional` **dimensions**: [`ICavityDimensions`](ICavityDimensions.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:55](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L55)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:55](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L55)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:55](https://githu
 
 > `readonly` `optional` **weight**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:54](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L54)
+Defined in: [ts-chocolate/src/packlets/entities/molds/model.ts:54](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/molds/model.ts#L54)

@@ -6,7 +6,7 @@
 
 # Interface: IMoldChangeAnalysis
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:521](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L521)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:521](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L521)
 
 Analysis of mold change impact on a molded bonbon confection.
 Returned by setMold() to show weight changes before confirmation.
@@ -17,7 +17,7 @@ Returned by setMold() to show weight changes before confirmation.
 
 > `readonly` **fillingSessionsAffected**: readonly [`SlotId`](../../../../../../type-aliases/SlotId.md)[]
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:550](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L550)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:550](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L550)
 
 Slot IDs of filling sessions that will be affected
 
@@ -27,7 +27,7 @@ Slot IDs of filling sessions that will be affected
 
 > `readonly` **newMoldId**: [`MoldId`](../../../../../../type-aliases/MoldId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:530](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L530)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:530](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L530)
 
 ID of the proposed new mold
 
@@ -37,7 +37,7 @@ ID of the proposed new mold
 
 > `readonly` **newTotalWeight**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:540](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L540)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:540](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L540)
 
 Total cavity weight with new mold
 
@@ -47,7 +47,7 @@ Total cavity weight with new mold
 
 > `readonly` **oldMoldId**: [`MoldId`](../../../../../../type-aliases/MoldId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:525](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L525)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:525](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L525)
 
 ID of the current mold
 
@@ -57,7 +57,7 @@ ID of the current mold
 
 > `readonly` **oldTotalWeight**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:535](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L535)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:535](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L535)
 
 Total cavity weight with current mold
 
@@ -67,7 +67,7 @@ Total cavity weight with current mold
 
 > `readonly` **requiresRescaling**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:555](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L555)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:555](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L555)
 
 Whether the weight change requires rescaling fillings
 
@@ -77,6 +77,6 @@ Whether the weight change requires rescaling fillings
 
 > `readonly` **weightDelta**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:545](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L545)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:545](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L545)
 
 Weight difference (positive = more filling needed)

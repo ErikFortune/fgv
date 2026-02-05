@@ -6,7 +6,7 @@
 
 # Interface: IProcedureRenderContext
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:72](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L72)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:72](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L72)
 
 Context for rendering a procedure with full library access.
 
@@ -19,7 +19,7 @@ this interface has properly typed library access for task resolution.
 
 > `readonly` **context**: [`IProcedureContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:77](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L77)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:77](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L77)
 
 The procedure context for task resolution.
 This provides type-safe access to tasks, unlike the data-layer's `unknown` library.
@@ -30,7 +30,7 @@ This provides type-safe access to tasks, unlike the data-layer's `unknown` libra
 
 > `readonly` `optional` **mold**: [`IMoldEntity`](../../Entities/interfaces/IMoldEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:87](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L87)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:87](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L87)
 
 Optional mold being used for this recipe
 
@@ -40,6 +40,6 @@ Optional mold being used for this recipe
 
 > `readonly` **recipe**: [`IProducedFillingEntity`](../../Entities/interfaces/IProducedFillingEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:82](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L82)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:82](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L82)
 
 The specific produced filling this procedure is being rendered for

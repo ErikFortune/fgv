@@ -6,7 +6,7 @@
 
 # Class: MoldedBonBonEditingSession
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:46](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L46)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:46](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L46)
 
 Editing session for molded bonbon confections.
 Supports frame-based yield specification and mold change workflow.
@@ -21,7 +21,7 @@ Supports frame-based yield specification and mold change workflow.
 
 > `protected` `readonly` **\_baseConfection**: [`MoldedBonBon`](../../../../LibraryRuntime/classes/MoldedBonBon.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:56](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L56)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L56)
 
 #### Inherited from
 
@@ -33,7 +33,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_context**: [`ISessionContext`](../../../interfaces/ISessionContext.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:57](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L57)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L57)
 
 #### Inherited from
 
@@ -45,7 +45,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_fillingSessions**: `Map`\<[`SlotId`](../../../../../../type-aliases/SlotId.md), [`EditingSession`](EditingSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:61](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L61)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:61](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L61)
 
 #### Inherited from
 
@@ -57,7 +57,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_originalSnapshot**: [`IProducedMoldedBonBonEntity`](../../../../Entities/interfaces/IProducedMoldedBonBonEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:59](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L59)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:59](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L59)
 
 #### Inherited from
 
@@ -69,7 +69,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_produced**: [`ProducedConfectionBase`](../../../../LibraryRuntime/classes/ProducedConfectionBase.md)\<[`IProducedMoldedBonBonEntity`](../../../../Entities/interfaces/IProducedMoldedBonBonEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:58](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L58)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L58)
 
 #### Inherited from
 
@@ -81,7 +81,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_sessionId**: [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:60](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L60)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:60](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L60)
 
 #### Inherited from
 
@@ -95,7 +95,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > **get** **baseConfection**(): `TRuntime`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:308](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L308)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:308](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L308)
 
 Gets the base confection.
 
@@ -115,7 +115,7 @@ Gets the base confection.
 
 > **get** **context**(): [`ISessionContext`](../../../interfaces/ISessionContext.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:284](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L284)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:284](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L284)
 
 Gets the runtime context.
 
@@ -135,7 +135,7 @@ Gets the runtime context.
 
 > **get** **currentMold**(): [`IMold`](../../../../LibraryRuntime/interfaces/IMold.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:377](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L377)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:377](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L377)
 
 Gets the current mold.
 
@@ -151,7 +151,7 @@ Gets the current mold.
 
 > **get** **fillingSessions**(): [`IFillingSessionMap`](../type-aliases/IFillingSessionMap.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:276](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L276)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:276](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L276)
 
 Gets all filling sessions.
 
@@ -171,7 +171,7 @@ Gets all filling sessions.
 
 > **get** **pendingMoldChange**(): [`IMoldChangeAnalysis`](../interfaces/IMoldChangeAnalysis.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:275](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L275)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:275](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L275)
 
 Gets pending mold change analysis, if any.
 
@@ -187,7 +187,7 @@ Gets pending mold change analysis, if any.
 
 > **get** **produced**(): [`ProducedConfectionBase`](../../../../LibraryRuntime/classes/ProducedConfectionBase.md)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:300](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L300)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:300](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L300)
 
 Gets the produced confection wrapper.
 
@@ -207,7 +207,7 @@ Gets the produced confection wrapper.
 
 > **get** **sessionId**(): [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:292](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L292)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:292](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L292)
 
 Gets the session ID.
 
@@ -225,7 +225,7 @@ Gets the session ID.
 
 > **analyzeMoldChange**(`moldId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMoldChangeAnalysis`](../interfaces/IMoldChangeAnalysis.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:209](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L209)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:209](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L209)
 
 Analyzes impact of changing to a new mold.
 Returns analysis for user review before confirmation.
@@ -250,7 +250,7 @@ Success with analysis, or Failure if mold not found
 
 > **cancelMoldChange**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:267](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L267)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:267](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L267)
 
 Cancels pending mold change.
 
@@ -264,7 +264,7 @@ Cancels pending mold change.
 
 > **confirmMoldChange**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:236](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L236)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:236](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L236)
 
 Confirms pending mold change and rescales fillings.
 Call analyzeMoldChange() first to set up the pending change.
@@ -281,7 +281,7 @@ Success with undefined, or Failure if no pending change or update fails
 
 > **getFillingSession**(`slotId`): [`EditingSession`](EditingSession.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:268](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L268)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:268](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L268)
 
 Gets the filling session for a specific slot.
 
@@ -309,7 +309,7 @@ The editing session, or undefined if not found
 
 > **removeFillingSlot**(`slotId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](EditingSession.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:251](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L251)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:251](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L251)
 
 Removes a filling slot.
 
@@ -337,7 +337,7 @@ The slot identifier
 
 > **scaleToYield**(`yieldSpec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IConfectionYield`](../../../../Entities/interfaces/IConfectionYield.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:162](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L162)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:162](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L162)
 
 Scales to new yield specification.
 Handles both frame-based and legacy count-based yield.
@@ -366,7 +366,7 @@ Success with updated yield, or Failure
 
 > **setFillingSlot**(`slotId`, `choice`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](EditingSession.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:228](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L228)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:228](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L228)
 
 Sets or updates a filling slot.
 Creates/updates filling session if recipe slot.
@@ -401,7 +401,7 @@ Recipe or ingredient choice
 
 > **setFrames**(`frames`, `bufferPercentage`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMoldedBonBonYield`](../../../../Entities/namespaces/Confections/interfaces/IMoldedBonBonYield.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:131](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L131)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:131](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L131)
 
 Sets frames and buffer percentage for yield calculation.
 Count is computed as: frames × cavitiesPerFrame
@@ -432,7 +432,7 @@ Success with computed yield, or Failure if invalid
 
 > `static` **create**(`baseConfection`, `context`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`MoldedBonBonEditingSession`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:86](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L86)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:86](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L86)
 
 Factory method for creating a MoldedBonBonEditingSession.
 
@@ -468,7 +468,7 @@ Success with MoldedBonBonEditingSession, or Failure
 
 > `static` **fromPersistedState**(`baseConfection`, `history`, `context`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`MoldedBonBonEditingSession`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:107](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L107)
+Defined in: [ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts:107](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/moldedBonBonEditingSession.ts#L107)
 
 Restores a MoldedBonBonEditingSession from persisted state.
 Note: Child filling sessions are persisted separately and should be accessed

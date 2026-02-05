@@ -6,7 +6,7 @@
 
 # Interface: IFillingRecipeQuerySpec
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:58](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L58)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L58)
 
 Query specification for filling recipe indexers.
 Each key corresponds to an indexer, and the value is that indexer's config.
@@ -17,7 +17,7 @@ Each key corresponds to an indexer, and the value is that indexer's config.
 
 > `readonly` `optional` **byCategory**: [`IFillingRecipesByCategoryConfig`](IFillingRecipesByCategoryConfig.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:62](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L62)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:62](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L62)
 
 ***
 
@@ -25,7 +25,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeInd
 
 > `readonly` `optional` **byChocolateType**: [`IFillingRecipesByChocolateTypeConfig`](IFillingRecipesByChocolateTypeConfig.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:61](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L61)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:61](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L61)
 
 ***
 
@@ -33,7 +33,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeInd
 
 > `readonly` `optional` **byIngredient**: [`IFillingRecipesByIngredientConfig`](IFillingRecipesByIngredientConfig.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:60](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L60)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:60](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L60)
 
 ***
 
@@ -41,4 +41,4 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeInd
 
 > `readonly` `optional` **byTag**: [`IFillingRecipesByTagConfig`](IFillingRecipesByTagConfig.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:59](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L59)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts:59](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipeIndexerOrchestrator.ts#L59)

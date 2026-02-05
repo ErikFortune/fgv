@@ -6,7 +6,7 @@
 
 # Interface: IQueryResult\<T\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:750](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L750)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:750](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L750)
 
 Result of a query execution with metadata
 
@@ -22,7 +22,7 @@ Result of a query execution with metadata
 
 > `readonly` **hasMore**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:764](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L764)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:764](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L764)
 
 Whether there are more items available (for pagination)
 
@@ -32,7 +32,7 @@ Whether there are more items available (for pagination)
 
 > `readonly` **items**: readonly `T`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:754](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L754)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:754](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L754)
 
 The matched items
 
@@ -42,6 +42,6 @@ The matched items
 
 > `readonly` **totalCount**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:759](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L759)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:759](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L759)
 
 Total count of items before pagination (if applicable)

@@ -6,7 +6,7 @@
 
 # Interface: IFillingEditJournalEntryEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:84](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L84)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:84](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L84)
 
 Journal entry for filling recipe edits.
 
@@ -20,7 +20,7 @@ Journal entry for filling recipe edits.
 
 > `readonly` **baseId**: [`BaseJournalId`](../../../../type-aliases/BaseJournalId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:65](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L65)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:65](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L65)
 
 Base identifier within collection (no collection prefix)
 
@@ -34,7 +34,7 @@ Base identifier within collection (no collection prefix)
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:77](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L77)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:77](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L77)
 
 Optional categorized notes about this entry
 
@@ -48,7 +48,7 @@ Optional categorized notes about this entry
 
 > `readonly` **recipe**: [`IFillingRecipeVersionEntity`](IFillingRecipeVersionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:71](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L71)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:71](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L71)
 
 Full source recipe/confection at the time of the entry
 
@@ -62,7 +62,7 @@ Full source recipe/confection at the time of the entry
 
 > `readonly` **timestamp**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:67](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L67)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:67](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L67)
 
 Timestamp when this entry was created (ISO 8601 format)
 
@@ -76,7 +76,7 @@ Timestamp when this entry was created (ISO 8601 format)
 
 > `readonly` **type**: `"filling-edit"`
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:86](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L86)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:86](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L86)
 
 Entry type discriminator
 
@@ -90,7 +90,7 @@ Entry type discriminator
 
 > `readonly` `optional` **updated**: [`IFillingRecipeVersionEntity`](IFillingRecipeVersionEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:73](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L73)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:73](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L73)
 
 Full updated version if modifications were made
 
@@ -104,7 +104,7 @@ Full updated version if modifications were made
 
 > `readonly` `optional` **updatedId**: [`FillingVersionId`](../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:75](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L75)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:75](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L75)
 
 ID of the updated version if it was saved
 
@@ -118,7 +118,7 @@ ID of the updated version if it was saved
 
 > `readonly` **versionId**: [`FillingVersionId`](../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:69](https://github.com/ErikFortune/fgv/blob/dea589ed45bb6093e848af2128364707c1440c79/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L69)
+Defined in: [ts-chocolate/src/packlets/entities/journal/model.ts:69](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/model.ts#L69)
 
 Source version ID for indexing and lookup
 
