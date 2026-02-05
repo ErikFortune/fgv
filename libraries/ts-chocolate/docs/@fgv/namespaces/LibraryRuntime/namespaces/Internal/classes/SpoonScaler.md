@@ -6,7 +6,7 @@
 
 # Class: SpoonScaler
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:199](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L199)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:199](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L199)
 
 Scaler for spoon measurements (tsp/Tbsp) with fractional support.
 Handles conversion between tsp and Tbsp (1 Tbsp = 3 tsp).
@@ -21,7 +21,7 @@ Handles conversion between tsp and Tbsp (1 Tbsp = 3 tsp).
 
 > **new SpoonScaler**(`sourceUnit`, `options`): `SpoonScaler`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:205](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L205)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:205](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L205)
 
 #### Parameters
 
@@ -43,7 +43,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScale
 
 > `readonly` **supportsScaling**: `boolean` = `true`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:200](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L200)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:200](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L200)
 
 Whether this unit supports scaling
 
@@ -57,7 +57,7 @@ Whether this unit supports scaling
 
 > **scale**(`amount`, `factor`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IScaledAmount`](../interfaces/IScaledAmount.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:213](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L213)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:213](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L213)
 
 Scale an amount by a factor
 

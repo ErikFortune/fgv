@@ -6,7 +6,7 @@
 
 # Interface: IIngredientQueryOptions
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:823](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L823)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:818](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L818)
 
 Options for ingredient queries on recipes.
 
@@ -16,7 +16,7 @@ Options for ingredient queries on recipes.
 
 > `readonly` `optional` **includeAlternates**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:828](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L828)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:823](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L823)
 
 If true, include alternate ingredients in addition to preferred.
 Default is false (only preferred ingredients).

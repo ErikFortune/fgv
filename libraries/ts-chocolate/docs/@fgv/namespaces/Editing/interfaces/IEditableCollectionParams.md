@@ -6,7 +6,7 @@
 
 # Interface: IEditableCollectionParams\<T, TBaseId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:53](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L53)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:53](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L53)
 
 Parameters for creating an editable collection.
 
@@ -30,7 +30,7 @@ Base ID type (e.g., BaseIngredientId)
 
 > `readonly` **collectionId**: [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L57)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:57](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L57)
 
 Collection identifier.
 
@@ -40,7 +40,7 @@ Collection identifier.
 
 > `readonly` **initialItems**: `ReadonlyMap`\<`TBaseId`, `T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:74](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L74)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:74](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L74)
 
 Initial items in the collection.
 Map of base ID to entity.
@@ -51,7 +51,7 @@ Map of base ID to entity.
 
 > `readonly` **isMutable**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:68](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L68)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:68](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L68)
 
 Whether this collection is mutable.
 If false, all mutation operations will fail.
@@ -62,7 +62,7 @@ If false, all mutation operations will fail.
 
 > `readonly` **keyConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TBaseId`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:79](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L79)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:79](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L79)
 
 Converter for validating base ID keys.
 
@@ -72,7 +72,7 @@ Converter for validating base ID keys.
 
 > `readonly` **metadata**: [`ICollectionSourceMetadata`](../../LibraryData/interfaces/ICollectionSourceMetadata.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:62](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L62)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:62](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L62)
 
 Collection metadata (name, description, etc.).
 
@@ -82,7 +82,7 @@ Collection metadata (name, description, etc.).
 
 > `readonly` `optional` **sourceItem**: [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:91](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L91)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:91](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L91)
 
 Optional reference to the source FileTree item for persistence.
 When present, enables direct save() functionality.
@@ -94,6 +94,6 @@ Collections loaded from FileTree will have this populated.
 
 > `readonly` **valueConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:84](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L84)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:84](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L84)
 
 Converter for validating values.

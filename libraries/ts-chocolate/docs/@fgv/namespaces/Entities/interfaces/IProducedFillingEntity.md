@@ -6,7 +6,7 @@
 
 # Interface: IProducedFillingEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:403](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L403)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:403](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L403)
 
 Produced filling with concrete choices.
 Captures what was actually made during a filling production session.
@@ -17,7 +17,7 @@ Captures what was actually made during a filling production session.
 
 > `readonly` **ingredients**: readonly [`IProducedFillingIngredientEntity`](../namespaces/Fillings/interfaces/IProducedFillingIngredientEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:411](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L411)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:411](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L411)
 
 Resolved ingredients with concrete selections
 
@@ -27,7 +27,7 @@ Resolved ingredients with concrete selections
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:415](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L415)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:415](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L415)
 
 Optional categorized notes about production
 
@@ -37,7 +37,7 @@ Optional categorized notes about production
 
 > `readonly` `optional` **procedureId**: [`ProcedureId`](../../../../type-aliases/ProcedureId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:413](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L413)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:413](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L413)
 
 Resolved procedure ID if one was used
 
@@ -47,7 +47,7 @@ Resolved procedure ID if one was used
 
 > `readonly` **scaleFactor**: `number`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:407](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L407)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:407](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L407)
 
 Scale factor applied
 
@@ -57,7 +57,7 @@ Scale factor applied
 
 > `readonly` **targetWeight**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:409](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L409)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:409](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L409)
 
 Target weight for this production
 
@@ -67,6 +67,6 @@ Target weight for this production
 
 > `readonly` **versionId**: [`FillingVersionId`](../../../../type-aliases/FillingVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:405](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L405)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:405](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L405)
 
 Filling version ID that was produced

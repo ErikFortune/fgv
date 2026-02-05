@@ -8,7 +8,7 @@
 
 > **validateNumberRange**(`value`, `fieldName`, `min`, `max`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`number`\>
 
-Defined in: [ts-chocolate/src/packlets/common/validation.ts:881](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/validation.ts#L881)
+Defined in: [ts-chocolate/src/packlets/common/validation.ts:881](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/common/validation.ts#L881)
 
 Validate that a value is a number within a range.
 

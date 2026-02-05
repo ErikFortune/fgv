@@ -6,7 +6,7 @@
 
 # Interface: IIterationOptions
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:803](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L803)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:798](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L798)
 
 Options for iterating over runtime entities
 
@@ -16,7 +16,7 @@ Options for iterating over runtime entities
 
 > `readonly` `optional` **limit**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:807](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L807)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:802](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L802)
 
 Maximum number of items to return
 
@@ -26,6 +26,6 @@ Maximum number of items to return
 
 > `readonly` `optional` **offset**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:812](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L812)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:807](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L807)
 
 Number of items to skip

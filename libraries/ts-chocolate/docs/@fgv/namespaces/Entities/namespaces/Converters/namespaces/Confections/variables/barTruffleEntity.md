@@ -8,6 +8,6 @@
 
 > `const` **barTruffleEntity**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IBarTruffleEntity`](../../../../../interfaces/IBarTruffleEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/converters.ts:363](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/converters.ts#L363)
+Defined in: [ts-chocolate/src/packlets/entities/confections/converters.ts:363](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/converters.ts#L363)
 
 Converter for [IBarTruffleEntity](../../../../../interfaces/IBarTruffleEntity.md)

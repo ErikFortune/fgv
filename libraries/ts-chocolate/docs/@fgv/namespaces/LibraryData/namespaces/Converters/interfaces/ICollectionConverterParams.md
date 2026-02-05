@@ -6,7 +6,7 @@
 
 # Interface: ICollectionConverterParams\<TCOLLECTIONID, TITEMID, TITEM\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:104](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L104)
+Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:104](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L104)
 
 Initialization parameters for the [collection](../functions/collection.md) converter.
 
@@ -30,7 +30,7 @@ Initialization parameters for the [collection](../functions/collection.md) conve
 
 > **collectionIdConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TCOLLECTIONID`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:105](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L105)
+Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:105](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L105)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:105](https://g
 
 > **itemConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TITEM`, `unknown`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TITEM`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:106](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L106)
+Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:106](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L106)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:106](https://g
 
 > **itemIdConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TITEMID`, `unknown`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TITEMID`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:107](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L107)
+Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:107](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L107)

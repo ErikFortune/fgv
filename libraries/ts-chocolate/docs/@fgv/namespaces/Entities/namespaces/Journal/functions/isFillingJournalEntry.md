@@ -8,7 +8,7 @@
 
 > **isFillingJournalEntry**(`entry`): `entry is AnyFillingJournalEntry`
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:96](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L96)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:96](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L96)
 
 Type guard for filling journal entries
 

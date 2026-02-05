@@ -93,21 +93,16 @@ import { ChocolateLibrary } from './chocolateLibrary';
 // ============================================================================
 
 /**
- * A resolved runtime view of an ingredient with navigation capabilities.
- *
- * This interface includes all properties from the data layer `IIngredientEntity`
- * plus runtime-specific additions:
- * - Composite identity (`id`, `sourceId`) for cross-source references
- * - Navigation to recipes that use this ingredient
- * - Type narrowing methods for discriminated access
- * - Access to underlying data entities
+ * Base interface for all runtime ingredients.
+ * Provides common properties and navigation shared by all ingredient types.
  *
  * Note: Does not extend `IIngredientEntity` directly because the class implementation
  * provides the same shape but with additional runtime behavior.
  *
+ * @typeParam TEntity - The specific entity type for this ingredient
  * @public
  */
-export interface IIngredient {
+export interface IIngredient<TEntity extends IngredientEntity = IngredientEntity> {
   // ---- Composite Identity (runtime-specific) ----
 
   /**
@@ -210,14 +205,14 @@ export interface IIngredient {
   /**
    * Gets the underlying ingredient entity data.
    */
-  readonly entity: IngredientEntity;
+  readonly entity: TEntity;
 }
 
 /**
  * Runtime ingredient narrowed to chocolate type.
  * @public
  */
-export interface IChocolateIngredient extends IIngredient {
+export interface IChocolateIngredient extends IIngredient<Ingredients.IChocolateIngredientEntity> {
   /** Category is always chocolate for this type */
   readonly category: 'chocolate';
 
@@ -255,7 +250,7 @@ export interface IChocolateIngredient extends IIngredient {
  * Runtime ingredient narrowed to dairy type.
  * @public
  */
-export interface IDairyIngredient extends IIngredient {
+export interface IDairyIngredient extends IIngredient<Ingredients.IDairyIngredientEntity> {
   /** Category is always dairy for this type */
   readonly category: 'dairy';
 
@@ -275,7 +270,7 @@ export interface IDairyIngredient extends IIngredient {
  * Runtime ingredient narrowed to sugar type.
  * @public
  */
-export interface ISugarIngredient extends IIngredient {
+export interface ISugarIngredient extends IIngredient<Ingredients.ISugarIngredientEntity> {
   /** Category is always sugar for this type */
   readonly category: 'sugar';
 
@@ -295,7 +290,7 @@ export interface ISugarIngredient extends IIngredient {
  * Runtime ingredient narrowed to fat type.
  * @public
  */
-export interface IFatIngredient extends IIngredient {
+export interface IFatIngredient extends IIngredient<Ingredients.IFatIngredientEntity> {
   /** Category is always fat for this type */
   readonly category: 'fat';
 
@@ -312,7 +307,7 @@ export interface IFatIngredient extends IIngredient {
  * Runtime ingredient narrowed to alcohol type.
  * @public
  */
-export interface IAlcoholIngredient extends IIngredient {
+export interface IAlcoholIngredient extends IIngredient<Ingredients.IAlcoholIngredientEntity> {
   /** Category is always alcohol for this type */
   readonly category: 'alcohol';
 

@@ -8,6 +8,6 @@
 
 > **TaskCollectionEntryInit** = [`SubLibraryEntryInit`](../../../../LibraryData/type-aliases/SubLibraryEntryInit.md)\<[`BaseTaskId`](../../../../../../type-aliases/BaseTaskId.md), [`IRawTaskEntity`](../../../interfaces/IRawTaskEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/collection.ts:44](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/tasks/collection.ts#L44)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/collection.ts:44](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/collection.ts#L44)
 
 Initialization type for a TasksLibrary collection entry.

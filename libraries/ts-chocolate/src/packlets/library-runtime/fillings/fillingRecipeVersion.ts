@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Failure, Result, Success } from '@fgv/ts-utils';
+import { Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 
 import {
   Measurement,
@@ -110,7 +110,6 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyIngredient>> | undefined;
-  private _resolutionError: string | undefined;
   private _recipe: IFillingRecipe | undefined;
   private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
 
@@ -243,12 +242,10 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   ): Result<IterableIterator<IResolvedFillingIngredient<AnyIngredient>>> {
     // Ensure ingredients are resolved
     if (this._resolvedIngredients === undefined) {
-      this._resolveIngredients();
-    }
-
-    /* c8 ignore next 3 - defensive coding: resolution errors would indicate data corruption */
-    if (this._resolutionError) {
-      return Failure.with(this._resolutionError);
+      const resolveResult = this._resolveIngredients();
+      if (resolveResult.isFailure()) {
+        return Failure.with(resolveResult.message);
+      }
     }
 
     const resolved = this._resolvedIngredients!;
@@ -323,16 +320,31 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   // ============================================================================
 
   /**
+   * Gets resolved procedures associated with this version.
+   * Returns Result with procedures, or Success with undefined if version has no procedures.
+   * Resolved lazily on first access.
+   * @returns Result with resolved procedures or undefined, or Failure if resolution fails
+   * @public
+   */
+  public getProcedures(): Result<IResolvedProcedures | undefined> {
+    // Use null to distinguish "not yet resolved" from "no procedures"
+    if (this._procedures === undefined) {
+      return this._resolveProcedures().onSuccess((resolved) => {
+        this._procedures = resolved;
+        return Success.with(resolved ?? undefined);
+      });
+    }
+    return Success.with(this._procedures ?? undefined);
+  }
+
+  /**
    * Resolved procedures associated with this version.
    * Undefined if the version has no associated procedures.
    * Resolved lazily on first access.
+   * @throws if procedure resolution fails - prefer getProcedures() for proper error handling
    */
   public get procedures(): IResolvedProcedures | undefined {
-    // Use null to distinguish "not yet resolved" from "no procedures"
-    if (this._procedures === undefined) {
-      this._procedures = this._resolveProcedures();
-    }
-    return this._procedures ?? undefined;
+    return this.getProcedures().orThrow();
   }
 
   // ============================================================================
@@ -362,46 +374,55 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
 
   /**
    * Resolves procedure references to full procedure objects.
-   * @returns Resolved procedures, or null if version has no procedures
+   * @returns Result with resolved procedures, or Success with null if version has no procedures
    */
-  private _resolveProcedures(): IResolvedProcedures | null {
+  private _resolveProcedures(): Result<IResolvedProcedures | null> {
     const procedureEntities = this._version.procedures;
     if (!procedureEntities || procedureEntities.options.length === 0) {
-      return null;
+      return Success.with(null);
     }
 
+    const errors = new MessageAggregator();
     const resolvedProcedures: IResolvedFillingRecipeProcedure[] = [];
+
     for (const ref of procedureEntities.options) {
-      const procedureResult = this._context.procedures.get(ref.id);
-      if (procedureResult.isSuccess()) {
-        resolvedProcedures.push({
-          id: ref.id,
-          procedure: procedureResult.value.entity,
-          notes: ref.notes,
-          entity: ref
-        });
-      }
-      // Skip procedures that fail to resolve (e.g., missing from library)
+      this._context.procedures
+        .get(ref.id)
+        .asResult.onSuccess((procedure) => {
+          resolvedProcedures.push({
+            id: ref.id,
+            procedure: procedure.entity,
+            notes: ref.notes,
+            entity: ref
+          });
+          return Success.with(undefined);
+        })
+        .aggregateError(errors, (msg) => `procedure ${ref.id}: ${msg}`);
     }
 
     // Resolve preferred procedure if specified
     let recommendedProcedure = undefined;
     if (procedureEntities.preferredId) {
-      const recommendedResult = this._context.procedures.get(procedureEntities.preferredId);
-      if (recommendedResult.isSuccess()) {
-        recommendedProcedure = recommendedResult.value.entity;
-      }
+      this._context.procedures
+        .get(procedureEntities.preferredId)
+        .asResult.onSuccess((procedure) => {
+          recommendedProcedure = procedure.entity;
+          return Success.with(undefined);
+        })
+        .aggregateError(errors, (msg) => `recommended procedure ${procedureEntities.preferredId}: ${msg}`);
     }
 
     // Return null if all procedures failed to resolve
     if (resolvedProcedures.length === 0 && !recommendedProcedure) {
-      return null;
+      return errors.returnOrReport(Success.with(null));
     }
 
-    return {
-      procedures: resolvedProcedures,
-      recommendedProcedure
-    };
+    return errors.returnOrReport(
+      Success.with({
+        procedures: resolvedProcedures,
+        recommendedProcedure
+      })
+    );
   }
 
   /**
@@ -415,26 +436,27 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   // Private Resolution
   // ============================================================================
 
-  private _resolveIngredients(): void {
+  private _resolveIngredients(): Result<void> {
     const resolved: IResolvedFillingIngredient<AnyIngredient>[] = [];
-    const errors: string[] = [];
+    const errors = new MessageAggregator();
 
     for (const ri of this._version.ingredients) {
       // Get primary ingredient ID (preferred or first)
       const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
       /* c8 ignore next 4 - defensive coding: empty ids array would indicate data corruption */
       if (primaryId === undefined) {
-        errors.push(`Recipe ingredient has no ingredient ids`);
+        errors.addMessage(`Recipe ingredient has no ingredient ids`);
         continue;
       }
 
       // Resolve primary ingredient
-      const ingredientResult = this._context.ingredients.get(primaryId);
-      /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
-      if (ingredientResult.isFailure()) {
-        errors.push(`Failed to resolve ingredient ${primaryId}: ${ingredientResult.message}`);
+      this._context.ingredients
+        .get(primaryId)
+        .aggregateError(errors, (msg) => `ingredient ${primaryId}: ${msg}`);
+      if (errors.hasMessages) {
         continue;
       }
+      const ingredient = this._context.ingredients.get(primaryId).orThrow();
 
       // Resolve alternates (all ids except primary, skip missing ones)
       const alternates: AnyIngredient[] = [];
@@ -449,7 +471,7 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
       }
 
       resolved.push({
-        ingredient: ingredientResult.value,
+        ingredient,
         amount: ri.amount,
         notes: ri.notes,
         alternates,
@@ -457,14 +479,9 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
       });
     }
 
-    /* c8 ignore next 4 - defensive coding: errors would indicate data corruption */
-    if (errors.length > 0) {
-      this._resolutionError = `Failed to resolve ingredients for version ${
-        this._version.versionSpec
-      }: ${errors.join('; ')}`;
-      this._resolvedIngredients = [];
-    } else {
+    return errors.returnOrReport(Success.with(undefined)).onSuccess(() => {
       this._resolvedIngredients = resolved;
-    }
+      return Success.with(undefined);
+    });
   }
 }

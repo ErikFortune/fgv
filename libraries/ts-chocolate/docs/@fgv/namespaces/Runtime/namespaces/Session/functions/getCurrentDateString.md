@@ -8,7 +8,7 @@
 
 > **getCurrentDateString**(): `string`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/sessionUtils.ts:101](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/sessionUtils.ts#L101)
+Defined in: [ts-chocolate/src/packlets/runtime/session/sessionUtils.ts:101](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/sessionUtils.ts#L101)
 
 Gets the current date as an ISO 8601 date string (YYYY-MM-DD)
 

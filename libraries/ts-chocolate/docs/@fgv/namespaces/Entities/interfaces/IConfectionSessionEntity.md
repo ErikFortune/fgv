@@ -6,7 +6,7 @@
 
 # Interface: IConfectionSessionEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:190](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L190)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:190](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L190)
 
 Persisted confection editing session with full editing state.
 
@@ -24,7 +24,7 @@ sessions by their persisted session IDs.
 
 > `readonly` **baseId**: [`BaseSessionId`](../../../../type-aliases/BaseSessionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:141](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L141)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:141](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L141)
 
 Base identifier within the collection (no collection prefix)
 
@@ -38,7 +38,7 @@ Base identifier within the collection (no collection prefix)
 
 > `readonly` **childSessionIds**: `Readonly`\<`Record`\<[`SlotId`](../../../../type-aliases/SlotId.md), [`SessionId`](../../../../type-aliases/SessionId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:199](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L199)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:199](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L199)
 
 Map of slot ID to child filling session ID
 
@@ -48,7 +48,7 @@ Map of slot ID to child filling session ID
 
 > `readonly` **confectionType**: [`ConfectionType`](../../../../type-aliases/ConfectionType.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:193](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L193)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:193](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L193)
 
 Confection type discriminator (for type-specific restoration)
 
@@ -58,7 +58,7 @@ Confection type discriminator (for type-specific restoration)
 
 > `readonly` **createdAt**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:147](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L147)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:147](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L147)
 
 ISO 8601 timestamp when session was created
 
@@ -72,7 +72,7 @@ ISO 8601 timestamp when session was created
 
 > `readonly` `optional` **destination**: [`ISessionDestinationEntity`](../namespaces/Session/interfaces/ISessionDestinationEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:155](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L155)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:155](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L155)
 
 Destination configuration for saving derived entities
 
@@ -86,7 +86,7 @@ Destination configuration for saving derived entities
 
 > `readonly` **history**: [`ISerializedEditingHistoryEntity`](../namespaces/Session/interfaces/ISerializedEditingHistoryEntity.md)\<[`AnyProducedConfectionEntity`](../type-aliases/AnyProducedConfectionEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:197](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L197)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:197](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L197)
 
 Full editing history including undo/redo stacks
 
@@ -96,7 +96,7 @@ Full editing history including undo/redo stacks
 
 > `readonly` `optional` **label**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:151](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L151)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:151](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L151)
 
 User-provided label for the session
 
@@ -110,7 +110,7 @@ User-provided label for the session
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:153](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L153)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:153](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L153)
 
 Optional categorized notes
 
@@ -124,7 +124,7 @@ Optional categorized notes
 
 > `readonly` **sessionType**: `"confection"`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:191](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L191)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:191](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L191)
 
 Session type discriminator
 
@@ -138,7 +138,7 @@ Session type discriminator
 
 > `readonly` **sourceVersionId**: [`ConfectionVersionId`](../../../../type-aliases/ConfectionVersionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:195](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L195)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:195](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L195)
 
 Source confection version being edited
 
@@ -148,7 +148,7 @@ Source confection version being edited
 
 > `readonly` **status**: [`PersistedSessionStatus`](../type-aliases/PersistedSessionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:145](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L145)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:145](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L145)
 
 Current lifecycle status
 
@@ -162,7 +162,7 @@ Current lifecycle status
 
 > `readonly` **updatedAt**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:149](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L149)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:149](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L149)
 
 ISO 8601 timestamp when session was last updated
 

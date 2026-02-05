@@ -6,7 +6,7 @@
 
 # Interface: IInstantiatedUserLibrarySource
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:75](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L75)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:75](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L75)
 
 Pre-built user library instances to include in a [UserLibrary](../classes/UserLibrary.md).
 
@@ -16,7 +16,7 @@ Pre-built user library instances to include in a [UserLibrary](../classes/UserLi
 
 > `readonly` `optional` **ingredientInventory**: [`IngredientInventoryLibrary`](../../Entities/classes/IngredientInventoryLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:94](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L94)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:94](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L94)
 
 Pre-built ingredient inventory library
 
@@ -26,7 +26,7 @@ Pre-built ingredient inventory library
 
 > `readonly` `optional` **journals**: [`JournalLibrary`](../../Entities/classes/JournalLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:79](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L79)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:79](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L79)
 
 Pre-built journals library
 
@@ -36,7 +36,7 @@ Pre-built journals library
 
 > `readonly` `optional` **moldInventory**: [`MoldInventoryLibrary`](../../Entities/classes/MoldInventoryLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:89](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L89)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:89](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L89)
 
 Pre-built mold inventory library
 
@@ -46,6 +46,6 @@ Pre-built mold inventory library
 
 > `readonly` `optional` **sessions**: [`SessionLibrary`](../../Entities/classes/SessionLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:84](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L84)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:84](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L84)
 
 Pre-built sessions library

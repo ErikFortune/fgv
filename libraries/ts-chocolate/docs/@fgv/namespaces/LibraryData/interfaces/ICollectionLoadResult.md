@@ -6,7 +6,7 @@
 
 # Interface: ICollectionLoadResult\<T, TCollectionId, TItemId\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:529](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L529)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:529](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L529)
 
 Result of loading collections from a file tree.
 
@@ -36,7 +36,7 @@ The item ID type
 
 > `readonly` **collections**: readonly [`IRuntimeCollection`](IRuntimeCollection.md)\<`T`, `TCollectionId`, `TItemId`\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:537](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L537)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:537](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L537)
 
 Successfully loaded collections with runtime FileTree references.
 
@@ -46,6 +46,6 @@ Successfully loaded collections with runtime FileTree references.
 
 > `readonly` **protectedCollections**: readonly [`IProtectedCollectionInternal`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)\<`TCollectionId`\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:542](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L542)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:542](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L542)
 
 Protected collections that were captured but not decrypted.

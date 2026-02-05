@@ -547,18 +547,21 @@ export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cre
 const chocolateApplication: Converter<ChocolateApplication>;
 
 // @public
-class ChocolateIngredient extends IngredientBase implements IChocolateIngredient {
+class ChocolateIngredient extends IngredientBase<IChocolateIngredientEntity> implements IChocolateIngredient {
     // @internal
     protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity);
     get applications(): ReadonlyArray<ChocolateApplication> | undefined;
     get beanVarieties(): ReadonlyArray<CacaoVariety> | undefined;
     get cacaoPercentage(): Percentage;
+    // @deprecated
+    get cacaoVariety(): CacaoVariety | undefined;
     get category(): 'chocolate';
     get chocolateType(): ChocolateType;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
     static create(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity): Result<ChocolateIngredient>;
-    get entity(): IChocolateIngredientEntity;
+    // @deprecated
+    get fluidityMacMichael(): DegreesMacMichael | undefined;
     get fluidityStars(): FluidityStars | undefined;
     get origins(): ReadonlyArray<string> | undefined;
     get temperatureCurve(): Ingredients_2.ITemperatureCurve | undefined;
@@ -1628,8 +1631,11 @@ class FillingRecipe implements IFillingRecipe {
     static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipeEntity): Result<FillingRecipe>;
     get description(): string | undefined;
     get entity(): IFillingRecipeEntity;
+    getGoldenVersion(): Result<FillingRecipeVersion>;
     getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
+    getLatestVersion(): Result<FillingRecipeVersion>;
     getVersion(versionSpec: FillingVersionSpec): Result<FillingRecipeVersion>;
+    getVersions(): Result<ReadonlyArray<FillingRecipeVersion>>;
     get goldenVersion(): FillingRecipeVersion;
     get goldenVersionSpec(): FillingVersionSpec;
     get id(): FillingId;
@@ -1813,6 +1819,7 @@ class FillingRecipeVersion implements IFillingRecipeVersion {
     get fillingId(): FillingId;
     get fillingRecipe(): IFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyIngredient>>>;
+    getProcedures(): Result<IResolvedProcedures | undefined>;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
@@ -2090,7 +2097,7 @@ interface IAdditionalChocolateEntity {
 }
 
 // @public
-interface IAlcoholIngredient extends IIngredient {
+interface IAlcoholIngredient extends IIngredient<Ingredients_2.IAlcoholIngredientEntity> {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2187,7 +2194,7 @@ interface ICavityInfo {
 }
 
 // @public
-interface IChocolateIngredient extends IIngredient {
+interface IChocolateIngredient extends IIngredient<Ingredients_2.IChocolateIngredientEntity> {
     readonly applications?: ReadonlyArray<ChocolateApplication>;
     readonly beanVarieties?: ReadonlyArray<CacaoVariety>;
     readonly cacaoPercentage: Percentage;
@@ -2518,7 +2525,7 @@ interface ICreateFillingSessionOptions {
 const ID_SEPARATOR: string;
 
 // @public
-interface IDairyIngredient extends IIngredient {
+interface IDairyIngredient extends IIngredient<Ingredients_2.IDairyIngredientEntity> {
     readonly category: 'dairy';
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -2645,7 +2652,7 @@ interface IExportOptions {
 }
 
 // @public
-interface IFatIngredient extends IIngredient {
+interface IFatIngredient extends IIngredient<Ingredients_2.IFatIngredientEntity> {
     readonly category: 'fat';
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -2965,7 +2972,7 @@ interface IIndexer<TId, TConfig> {
 }
 
 // @public
-interface IIngredient {
+interface IIngredient<TEntity extends IngredientEntity = IngredientEntity> {
     readonly allergens?: ReadonlyArray<Allergen>;
     alternateInFillings(): IFillingRecipe[];
     readonly baseId: BaseIngredientId;
@@ -2973,7 +2980,7 @@ interface IIngredient {
     readonly certifications?: ReadonlyArray<Certification>;
     readonly collectionId: CollectionId;
     readonly description?: string;
-    readonly entity: IngredientEntity;
+    readonly entity: TEntity;
     readonly ganacheCharacteristics: Ingredients_2.IGanacheCharacteristics;
     readonly id: IngredientId;
     isAlcohol(): this is IAlcoholIngredient;
@@ -3404,9 +3411,9 @@ abstract class Ingredient {
 }
 
 // @public
-abstract class IngredientBase implements IIngredient {
+abstract class IngredientBase<TEntity extends IngredientEntity = IngredientEntity> implements IIngredient<TEntity> {
     // @internal
-    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity);
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: TEntity);
     get allergens(): ReadonlyArray<Allergen>;
     alternateInFillings(): IFillingRecipe[];
     get baseId(): BaseIngredientId;
@@ -3421,13 +3428,13 @@ abstract class IngredientBase implements IIngredient {
     // (undocumented)
     protected readonly _context: IIngredientContext;
     get description(): string | undefined;
-    abstract get entity(): IngredientEntity;
+    get entity(): TEntity;
     get ganacheCharacteristics(): Ingredients_2.IGanacheCharacteristics;
     get id(): IngredientId;
     // (undocumented)
     protected readonly _id: IngredientId;
     // (undocumented)
-    protected readonly _ingredient: IngredientEntity;
+    protected readonly _ingredient: TEntity;
     isAlcohol(): this is AlcoholIngredient;
     isChocolate(): this is ChocolateIngredient;
     isDairy(): this is DairyIngredient;
@@ -4547,7 +4554,7 @@ interface ISubLibraryParams<TLibrary, TEntryInit> {
 }
 
 // @public
-interface ISugarIngredient extends IIngredient {
+interface ISugarIngredient extends IIngredient<Ingredients_2.ISugarIngredientEntity> {
     readonly category: 'sugar';
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //

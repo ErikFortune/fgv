@@ -6,7 +6,7 @@
 
 # Interface: IUserLibraryCreateParams
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:112](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L112)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:112](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L112)
 
 Parameters for creating a [UserLibrary](../classes/UserLibrary.md).
 
@@ -22,7 +22,7 @@ Sources are processed in order:
 
 > `readonly` `optional` **fileSources**: [`ILibraryFileTreeSource`](../../LibraryData/interfaces/ILibraryFileTreeSource.md) \| readonly [`ILibraryFileTreeSource`](../../LibraryData/interfaces/ILibraryFileTreeSource.md)[]
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:116](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L116)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:116](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L116)
 
 File tree sources to load data from.
 
@@ -32,7 +32,7 @@ File tree sources to load data from.
 
 > `readonly` `optional` **libraries**: [`IInstantiatedUserLibrarySource`](IInstantiatedUserLibrarySource.md)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:121](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L121)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:121](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L121)
 
 Pre-instantiated library sources.
 
@@ -42,6 +42,6 @@ Pre-instantiated library sources.
 
 > `readonly` `optional` **logger**: [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)
 
-Defined in: [ts-chocolate/src/packlets/user-library/model.ts:126](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-library/model.ts#L126)
+Defined in: [ts-chocolate/src/packlets/user-library/model.ts:126](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-library/model.ts#L126)
 
 Logger for library operations.

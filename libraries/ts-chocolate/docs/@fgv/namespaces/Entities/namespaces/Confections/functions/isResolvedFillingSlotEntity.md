@@ -8,7 +8,7 @@
 
 > **isResolvedFillingSlotEntity**(`slot`): `slot is IResolvedFillingSlotEntity`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:535](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L535)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:535](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L535)
 
 Type guard for IResolvedFillingSlot
 

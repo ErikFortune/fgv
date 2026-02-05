@@ -6,7 +6,7 @@
 
 # Interface: IResolvedFillingIngredient\<TIngredient\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:683](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L683)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:678](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L678)
 
 A resolved ingredient reference with full ingredient data and alternates.
 This is the primary interface for accessing recipe ingredients in the runtime layer.
@@ -23,7 +23,7 @@ This is the primary interface for accessing recipe ingredients in the runtime la
 
 > `readonly` **alternates**: readonly `TIngredient`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:702](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L702)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:697](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L697)
 
 Resolved alternate ingredients that can substitute for the primary
 
@@ -33,7 +33,7 @@ Resolved alternate ingredients that can substitute for the primary
 
 > `readonly` **amount**: [`Measurement`](../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:692](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L692)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:687](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L687)
 
 Amount in grams
 
@@ -43,7 +43,7 @@ Amount in grams
 
 > `readonly` **entity**: [`IFillingIngredientEntity`](../../Entities/namespaces/Fillings/interfaces/IFillingIngredientEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:707](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L707)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:702](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L702)
 
 The original ingredient entity reference data
 
@@ -53,7 +53,7 @@ The original ingredient entity reference data
 
 > `readonly` **ingredient**: `TIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:687](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L687)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:682](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L682)
 
 The fully resolved ingredient object
 
@@ -63,6 +63,6 @@ The fully resolved ingredient object
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:697](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L697)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:692](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L692)
 
 Optional notes for this specific ingredient usage

@@ -6,7 +6,7 @@
 
 # Interface: ISubLibraryCreateParams\<TLibrary, TBaseId, TItem\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:304](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L304)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:304](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L304)
 
 Parameters for constructing a SubLibrary with full loading support.
 
@@ -39,7 +39,7 @@ The item type stored in the collection (e.g., `Ingredient`)
 
 > `readonly` **builtInTreeProvider**: [`SubLibraryBuiltInTreeProvider`](../type-aliases/SubLibraryBuiltInTreeProvider.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:324](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L324)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:324](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L324)
 
 Function that provides the built-in library tree.
 Used to load built-in collections.
@@ -50,7 +50,7 @@ Used to load built-in collections.
 
 > `readonly` **directoryNavigator**: [`SubLibraryDirectoryNavigator`](../type-aliases/SubLibraryDirectoryNavigator.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:318](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L318)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:318](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L318)
 
 Function that navigates from library root to the data directory.
 
@@ -60,7 +60,7 @@ Function that navigates from library root to the data directory.
 
 > `readonly` **itemConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TItem`, `unknown`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TItem`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:313](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L313)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:313](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L313)
 
 Converter or validator for items within collections.
 
@@ -70,7 +70,7 @@ Converter or validator for items within collections.
 
 > `readonly` **itemIdConverter**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TBaseId`, `unknown`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TBaseId`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:308](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L308)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:308](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L308)
 
 Converter or validator for item IDs within collections.
 
@@ -80,7 +80,7 @@ Converter or validator for item IDs within collections.
 
 > `readonly` `optional` **libraryParams**: [`ISubLibraryParams`](ISubLibraryParams.md)\<`TLibrary`, [`SubLibraryEntryInit`](../type-aliases/SubLibraryEntryInit.md)\<`TBaseId`, `TItem`\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:329](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L329)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:329](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L329)
 
 Library creation parameters (builtin, fileSources, collections, mergeLibraries).
 
@@ -90,6 +90,6 @@ Library creation parameters (builtin, fileSources, collections, mergeLibraries).
 
 > `readonly` `optional` **logger**: [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`, `unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:332](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L332)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:332](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L332)
 
 Optional logger for reporting loading progress and issues.

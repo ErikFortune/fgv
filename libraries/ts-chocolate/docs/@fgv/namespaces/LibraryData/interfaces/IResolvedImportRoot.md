@@ -6,7 +6,7 @@
 
 # Interface: IResolvedImportRoot
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:571](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L571)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:571](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L571)
 
 Result of importing a directory for a specific sub-library.
 
@@ -20,7 +20,7 @@ Result of importing a directory for a specific sub-library.
 
 > `readonly` **kind**: [`ImportRootKind`](../type-aliases/ImportRootKind.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:564](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L564)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:564](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L564)
 
 How the resolution was achieved.
 
@@ -34,7 +34,7 @@ How the resolution was achieved.
 
 > `readonly` **matches**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:575](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L575)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:575](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L575)
 
 Number of matching candidates found.
 
@@ -44,7 +44,7 @@ Number of matching candidates found.
 
 > `readonly` **root**: [`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:562](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L562)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:562](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L562)
 
 The directory that can be treated as the library root.
 
@@ -58,6 +58,6 @@ The directory that can be treated as the library root.
 
 > `readonly` **visited**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:573](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L573)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:573](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L573)
 
 Number of directories visited during search.

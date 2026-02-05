@@ -6,7 +6,7 @@
 
 # Class: UserLibraryRuntime
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:54](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L54)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L54)
 
 Implementation of user library runtime materialization.
 
@@ -27,7 +27,7 @@ Provides:
 
 > **get** **materializedSessions**(): `ReadonlyMap`\<[`SessionId`](../../../../type-aliases/SessionId.md), [`AnyMaterializedSession`](../type-aliases/AnyMaterializedSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:201](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L201)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:201](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L201)
 
 All currently materialized sessions.
 
@@ -47,7 +47,7 @@ All currently materialized sessions.
 
 > **createFillingSession**(`versionId`, `options`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFillingSessionEntity`](../../Entities/interfaces/IFillingSessionEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:123](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L123)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:123](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L123)
 
 Creates a new persisted filling session from a filling version.
 The session is created and persisted immediately.
@@ -82,7 +82,7 @@ Result with the created persisted session
 
 > **evictSession**(`sessionId`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:194](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L194)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:194](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L194)
 
 Evicts a materialized session from the cache.
 The persisted session remains in the library.
@@ -111,7 +111,7 @@ True if session was cached and evicted
 
 > **getMaterializedSession**(`sessionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnyMaterializedSession`](../type-aliases/AnyMaterializedSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:93](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L93)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:93](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L93)
 
 Gets a materialized editing session from a persisted session.
 Returns cached session if already materialized, or materializes on demand.
@@ -140,7 +140,7 @@ Result with the materialized editing session (filling or confection)
 
 > **saveSession**(`sessionId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnySessionEntity`](../../Entities/type-aliases/AnySessionEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:149](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L149)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:149](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L149)
 
 Saves an active session back to the library.
 
@@ -168,7 +168,7 @@ Result with the updated persisted session
 
 > `static` **create**(`userLibrary`, `sessionContext`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`UserLibraryRuntime`\>
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:72](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L72)
+Defined in: [ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts:72](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/userLibraryRuntime.ts#L72)
 
 Creates a new UserLibraryRuntime.
 

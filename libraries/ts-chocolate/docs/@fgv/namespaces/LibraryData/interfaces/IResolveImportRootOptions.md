@@ -6,7 +6,7 @@
 
 # Interface: IResolveImportRootOptions
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:582](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L582)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:582](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L582)
 
 Options for importing a directory for a specific sub-library.
 
@@ -16,7 +16,7 @@ Options for importing a directory for a specific sub-library.
 
 > `readonly` `optional` **allowLooseFiles**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:590](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L590)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:590](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L590)
 
 Whether to treat loose *.json/*.yaml/*.yml files in a directory as collections. Default: true
 
@@ -26,7 +26,7 @@ Whether to treat loose *.json/*.yaml/*.yml files in a directory as collections. 
 
 > `readonly` `optional` **matchLimit**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:588](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L588)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:588](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L588)
 
 Maximum candidate matches to count before stopping. Default: 10
 
@@ -36,7 +36,7 @@ Maximum candidate matches to count before stopping. Default: 10
 
 > `readonly` `optional` **maxDepth**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:584](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L584)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:584](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L584)
 
 Maximum directory depth to search beneath the provided root. Default: 2
 
@@ -46,6 +46,6 @@ Maximum directory depth to search beneath the provided root. Default: 2
 
 > `readonly` `optional` **visitLimit**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:586](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L586)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:586](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L586)
 
 Maximum directories to visit. Default: 800

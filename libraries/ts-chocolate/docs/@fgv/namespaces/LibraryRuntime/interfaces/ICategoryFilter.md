@@ -6,7 +6,7 @@
 
 # Interface: ICategoryFilter
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:339](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L339)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:334](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L334)
 
 Filter by ingredient category.
 
@@ -16,7 +16,7 @@ Filter by ingredient category.
 
 > `readonly` **category**: `RegExp` \| [`IngredientCategory`](../../../../type-aliases/IngredientCategory.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:345](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L345)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:340](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L340)
 
 Category to match (literal or regex).
 - Literal: exact category match (e.g., 'chocolate')

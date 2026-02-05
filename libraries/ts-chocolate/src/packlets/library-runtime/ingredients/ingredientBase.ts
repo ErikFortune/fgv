@@ -49,12 +49,15 @@ import type { AlcoholIngredient } from './alcoholIngredient';
 /**
  * Abstract base class for runtime ingredients.
  * Provides common properties and navigation shared by all ingredient types.
+ * @typeParam TEntity - The specific entity type for this ingredient
  * @public
  */
-export abstract class IngredientBase implements IIngredient {
+export abstract class IngredientBase<TEntity extends IngredientEntity = IngredientEntity>
+  implements IIngredient<TEntity>
+{
   protected readonly _context: IIngredientContext;
   protected readonly _id: IngredientId;
-  protected readonly _ingredient: IngredientEntity;
+  protected readonly _ingredient: TEntity;
   protected readonly _sourceId: CollectionId;
   protected readonly _baseId: BaseIngredientId;
 
@@ -65,7 +68,7 @@ export abstract class IngredientBase implements IIngredient {
    * @param ingredient - The ingredient data entity
    * @internal
    */
-  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IngredientEntity) {
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: TEntity) {
     this._context = context;
     this._id = id;
     this._ingredient = ingredient;
@@ -240,5 +243,7 @@ export abstract class IngredientBase implements IIngredient {
   /**
    * Gets the underlying ingredient data entity (read-only)
    */
-  public abstract get entity(): IngredientEntity;
+  public get entity(): TEntity {
+    return this._ingredient;
+  }
 }

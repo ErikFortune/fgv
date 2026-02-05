@@ -6,7 +6,7 @@
 
 # Class: BuiltInData
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:79](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L79)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:79](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L79)
 
 Provides access to built-in chocolate library data as an InMemoryFileTree.
 
@@ -26,7 +26,7 @@ Provides access to built-in chocolate library data as an InMemoryFileTree.
 
 > `static` **getConfectionsDirectory**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:166](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L166)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:166](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L166)
 
 Gets the confections directory from the built-in library tree.
 
@@ -42,7 +42,7 @@ Gets the confections directory from the built-in library tree.
 
 > `static` **getFillingsDirectory**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:134](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L134)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:134](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L134)
 
 Gets the recipes directory from the built-in library tree.
 
@@ -58,7 +58,7 @@ Gets the recipes directory from the built-in library tree.
 
 > `static` **getIngredientsDirectory**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:126](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L126)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:126](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L126)
 
 Gets the ingredients directory from the built-in library tree.
 
@@ -74,7 +74,7 @@ Gets the ingredients directory from the built-in library tree.
 
 > `static` **getLibraryTree**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:104](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L104)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:104](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L104)
 
 Gets the full built-in library tree.
 The tree is structured to mirror a real filesystem library:
@@ -110,7 +110,7 @@ The tree is structured to mirror a real filesystem library:
 
 > `static` **getMoldsDirectory**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:142](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L142)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:142](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L142)
 
 Gets the molds directory from the built-in library tree.
 
@@ -126,7 +126,7 @@ Gets the molds directory from the built-in library tree.
 
 > `static` **getProceduresDirectory**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:150](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L150)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:150](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L150)
 
 Gets the procedures directory from the built-in library tree.
 
@@ -142,7 +142,7 @@ Gets the procedures directory from the built-in library tree.
 
 > `static` **getTasksDirectory**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\>\>
 
-Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:158](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L158)
+Defined in: [ts-chocolate/src/packlets/built-in/builtInData.ts:158](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/built-in/builtInData.ts#L158)
 
 Gets the tasks directory from the built-in library tree.
 

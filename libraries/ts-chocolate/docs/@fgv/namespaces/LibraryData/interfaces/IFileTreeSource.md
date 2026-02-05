@@ -6,7 +6,7 @@
 
 # Interface: IFileTreeSource\<TCollectionId\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:315](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L315)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:315](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L315)
 
 Specifies a file tree source for a single sub-library (ingredients or recipes).
 
@@ -28,7 +28,7 @@ The type of collection identifiers (defaults to SourceId)
 
 > `readonly` **directory**: [`IFileTreeDirectoryItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:320](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L320)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:320](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L320)
 
 Root directory of the library tree.
 The loader will navigate to the appropriate sub-path (e.g., 'data/ingredients' or 'data/recipes').
@@ -39,7 +39,7 @@ The loader will navigate to the appropriate sub-path (e.g., 'data/ingredients' o
 
 > `readonly` `optional` **load**: [`LibraryLoadSpec`](../type-aliases/LibraryLoadSpec.md)\<`TCollectionId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:330](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L330)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:330](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L330)
 
 Controls which collections to load from this source.
 
@@ -54,7 +54,7 @@ Controls which collections to load from this source.
 
 > `readonly` `optional` **mutable**: [`MutabilitySpec`](../type-aliases/MutabilitySpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:336](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L336)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:336](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L336)
 
 Mutability specification for collections from this source.
 Default: false (all collections immutable)

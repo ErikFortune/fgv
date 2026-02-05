@@ -6,7 +6,7 @@
 
 # Class: ValidatingLibrary\<TK, TV, TSpec, TOrchEntity\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:104](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L104)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:104](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L104)
 
 A ValidatingResultMap with integrated find functionality.
 Combines map-based access (get, has, values) with query-based search (find).
@@ -54,7 +54,7 @@ The orchestrator's entity type (defaults to TV, may be a supertype)
 
 > **new ValidatingLibrary**\<`TK`, `TV`, `TSpec`, `TOrchEntity`\>(`params`): `ValidatingLibrary`\<`TK`, `TV`, `TSpec`, `TOrchEntity`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:114](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L114)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:114](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L114)
 
 Creates a new ValidatingLibrary.
 
@@ -308,7 +308,7 @@ An iterator over the map entries.
 
 > **find**(`spec`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly `TV`[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:125](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L125)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:125](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L125)
 
 Finds entities matching a query specification.
 
@@ -579,7 +579,7 @@ key was found and updated, `Success` with the new value and detail
 
 > **toReadOnly**(): [`IReadOnlyValidatingLibrary`](../interfaces/IReadOnlyValidatingLibrary.md)\<`TK`, `TV`, `TSpec`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:139](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L139)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:139](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L139)
 
 Gets a read-only view of this library.
 

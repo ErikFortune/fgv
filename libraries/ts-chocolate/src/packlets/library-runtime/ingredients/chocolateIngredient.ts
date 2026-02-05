@@ -47,9 +47,10 @@ import { IngredientBase } from './ingredientBase';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class ChocolateIngredient extends IngredientBase implements IChocolateIngredient {
-  private readonly _chocolateIngredient: IChocolateIngredientEntity;
-
+export class ChocolateIngredient
+  extends IngredientBase<IChocolateIngredientEntity>
+  implements IChocolateIngredient
+{
   /**
    * Creates a ChocolateIngredient.
    * Use Ingredient.create() or ChocolateIngredient.create() instead.
@@ -61,7 +62,6 @@ export class ChocolateIngredient extends IngredientBase implements IChocolateIng
     ingredient: IChocolateIngredientEntity
   ) {
     super(context, id, ingredient);
-    this._chocolateIngredient = ingredient;
   }
 
   /**
@@ -98,62 +98,71 @@ export class ChocolateIngredient extends IngredientBase implements IChocolateIng
    * Type of chocolate (dark, milk, white, etc.)
    */
   public get chocolateType(): ChocolateType {
-    return this._chocolateIngredient.chocolateType;
+    return this._ingredient.chocolateType;
   }
 
   /**
    * Cacao percentage (e.g., 70 for 70% dark)
    */
   public get cacaoPercentage(): Percentage {
-    return this._chocolateIngredient.cacaoPercentage;
+    return this._ingredient.cacaoPercentage;
   }
 
   /**
    * Fluidity in Callebaut star ratings (optional)
    */
   public get fluidityStars(): FluidityStars | undefined {
-    return this._chocolateIngredient.fluidityStars;
+    return this._ingredient.fluidityStars;
   }
 
   /**
    * Viscosity in MacMichael degrees (optional)
    */
   public get viscosityMcM(): DegreesMacMichael | undefined {
-    return this._chocolateIngredient.viscosityMcM;
+    return this._ingredient.viscosityMcM;
+  }
+
+  /**
+   * Viscosity in MacMichael degrees (optional)
+   * @deprecated Use viscosityMcM instead
+   */
+  public get fluidityMacMichael(): DegreesMacMichael | undefined {
+    return this._ingredient.viscosityMcM;
   }
 
   /**
    * Tempering temperature curve (optional)
    */
   public get temperatureCurve(): Ingredients.ITemperatureCurve | undefined {
-    return this._chocolateIngredient.temperatureCurve;
+    return this._ingredient.temperatureCurve;
   }
 
   /**
    * Bean varieties used in the chocolate (optional)
    */
   public get beanVarieties(): ReadonlyArray<CacaoVariety> | undefined {
-    return this._chocolateIngredient.beanVarieties;
+    return this._ingredient.beanVarieties;
+  }
+
+  /**
+   * Cacao variety (optional)
+   * @deprecated Use beanVarieties instead
+   */
+  public get cacaoVariety(): CacaoVariety | undefined {
+    return this._ingredient.beanVarieties?.[0];
   }
 
   /**
    * Recommended applications for this chocolate (optional)
    */
   public get applications(): ReadonlyArray<ChocolateApplication> | undefined {
-    return this._chocolateIngredient.applications;
+    return this._ingredient.applications;
   }
 
   /**
    * Origin descriptions (optional)
    */
   public get origins(): ReadonlyArray<string> | undefined {
-    return this._chocolateIngredient.origins;
-  }
-
-  /**
-   * Gets the underlying chocolate ingredient data entity
-   */
-  public get entity(): IChocolateIngredientEntity {
-    return this._chocolateIngredient;
+    return this._ingredient.origins;
   }
 }

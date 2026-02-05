@@ -8,7 +8,7 @@
 
 > **toConfectionVersionSpec**(`from`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConfectionVersionSpec`](../../../../type-aliases/ConfectionVersionSpec.md)\>
 
-Defined in: [ts-chocolate/src/packlets/common/validation.ts:397](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/common/validation.ts#L397)
+Defined in: [ts-chocolate/src/packlets/common/validation.ts:397](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/common/validation.ts#L397)
 
 Validates unknown value is a [ConfectionVersionSpec](../../../../type-aliases/ConfectionVersionSpec.md).
 

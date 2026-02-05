@@ -8,7 +8,7 @@
 
 > `const` **fillingOptionEntities**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IOptionsWithPreferred`](../../../../../../Model/interfaces/IOptionsWithPreferred.md)\<[`AnyFillingOptionEntity`](../../../../Confections/type-aliases/AnyFillingOptionEntity.md), [`FillingOptionId`](../../../../Confections/type-aliases/FillingOptionId.md)\>\>
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/converters.ts:154](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/converters.ts#L154)
+Defined in: [ts-chocolate/src/packlets/entities/confections/converters.ts:154](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/converters.ts#L154)
 
 Converter for filling options with preferred selection.
 Validates that preferredId (if specified) exists in options.

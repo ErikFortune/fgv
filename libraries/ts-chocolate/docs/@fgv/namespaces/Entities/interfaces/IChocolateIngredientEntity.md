@@ -6,7 +6,7 @@
 
 # Interface: IChocolateIngredientEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:137](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L137)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:137](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L137)
 
 Chocolate-specific ingredient
 
@@ -20,7 +20,7 @@ Chocolate-specific ingredient
 
 > `readonly` `optional` **allergens**: readonly [`Allergen`](../../../../type-aliases/Allergen.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:107](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L107)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:107](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L107)
 
 Optional list of common allergens present in the ingredient
 
@@ -34,7 +34,7 @@ Optional list of common allergens present in the ingredient
 
 > `readonly` `optional` **applications**: readonly [`ChocolateApplication`](../../../../type-aliases/ChocolateApplication.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:153](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L153)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:153](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L153)
 
 Recommended applications for this chocolate (optional)
 
@@ -44,7 +44,7 @@ Recommended applications for this chocolate (optional)
 
 > `readonly` **baseId**: [`BaseIngredientId`](../../../../type-aliases/BaseIngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:95](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L95)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:95](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L95)
 
 Base identifier within source (no dots)
 
@@ -58,7 +58,7 @@ Base identifier within source (no dots)
 
 > `readonly` `optional` **beanVarieties**: readonly [`CacaoVariety`](../../../../type-aliases/CacaoVariety.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:151](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L151)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:151](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L151)
 
 Bean varieties used in the chocolate (optional)
 
@@ -68,7 +68,7 @@ Bean varieties used in the chocolate (optional)
 
 > `readonly` **cacaoPercentage**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:143](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L143)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:143](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L143)
 
 Cacao percentage (e.g., 70 for 70% dark)
 
@@ -78,7 +78,7 @@ Cacao percentage (e.g., 70 for 70% dark)
 
 > `readonly` **category**: `"chocolate"`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:139](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L139)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:139](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L139)
 
 Category is always Chocolate for this type
 
@@ -92,7 +92,7 @@ Category is always Chocolate for this type
 
 > `readonly` `optional` **certifications**: readonly [`Certification`](../../../../type-aliases/Certification.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:111](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L111)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:111](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L111)
 
 Optional list of certifications the ingredient has
 
@@ -106,7 +106,7 @@ Optional list of certifications the ingredient has
 
 > `readonly` **chocolateType**: [`ChocolateType`](../../../../type-aliases/ChocolateType.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:141](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L141)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:141](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L141)
 
 Type of chocolate
 
@@ -116,7 +116,7 @@ Type of chocolate
 
 > `readonly` `optional` **density**: `number`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:117](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L117)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:117](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L117)
 
 Density in g/mL for volume-to-weight conversion (default: 1.0)
 
@@ -130,7 +130,7 @@ Density in g/mL for volume-to-weight conversion (default: 1.0)
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:103](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L103)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:103](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L103)
 
 Optional description
 
@@ -144,7 +144,7 @@ Optional description
 
 > `readonly` `optional` **fluidityStars**: [`FluidityStars`](../../../../type-aliases/FluidityStars.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:145](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L145)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:145](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L145)
 
 Fluidity in Callebaut star ratings (optional)
 
@@ -154,7 +154,7 @@ Fluidity in Callebaut star ratings (optional)
 
 > `readonly` **ganacheCharacteristics**: [`IGanacheCharacteristics`](IGanacheCharacteristics.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:101](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L101)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:101](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L101)
 
 Ganache-relevant characteristics
 
@@ -168,7 +168,7 @@ Ganache-relevant characteristics
 
 > `readonly` `optional` **manufacturer**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:105](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L105)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:105](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L105)
 
 Optional manufacturer
 
@@ -182,7 +182,7 @@ Optional manufacturer
 
 > `readonly` `optional` **measurementUnits**: [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IMeasurementUnitOption`](../../Model/interfaces/IMeasurementUnitOption.md), [`MeasurementUnit`](../../../../type-aliases/MeasurementUnit.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:121](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L121)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:121](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L121)
 
 Preferred and acceptable measurement units for this ingredient
 
@@ -196,7 +196,7 @@ Preferred and acceptable measurement units for this ingredient
 
 > `readonly` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:97](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L97)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:97](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L97)
 
 Display name
 
@@ -210,7 +210,7 @@ Display name
 
 > `readonly` `optional` **origins**: `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:155](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L155)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:155](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L155)
 
 Origin of the chocolate (optional)
 
@@ -220,7 +220,7 @@ Origin of the chocolate (optional)
 
 > `readonly` `optional` **phase**: [`IngredientPhase`](../../../../type-aliases/IngredientPhase.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:119](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L119)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:119](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L119)
 
 Physical phase - display hint for UI (e.g., "pour" vs "add")
 
@@ -234,7 +234,7 @@ Physical phase - display hint for UI (e.g., "pour" vs "add")
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:115](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L115)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:115](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L115)
 
 Optional tags for searching/filtering
 
@@ -248,7 +248,7 @@ Optional tags for searching/filtering
 
 > `readonly` `optional` **temperatureCurve**: [`ITemperatureCurve`](../namespaces/Ingredients/interfaces/ITemperatureCurve.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:149](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L149)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:149](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L149)
 
 Tempering curve (optional)
 
@@ -258,7 +258,7 @@ Tempering curve (optional)
 
 > `readonly` `optional` **traceAllergens**: readonly [`Allergen`](../../../../type-aliases/Allergen.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:109](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L109)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:109](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L109)
 
 Optional list of trace allergens possibly present (e.g. due to contamination)
 
@@ -272,7 +272,7 @@ Optional list of trace allergens possibly present (e.g. due to contamination)
 
 > `readonly` `optional` **urls**: readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:126](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L126)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:126](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L126)
 
 Optional categorized URLs for external resources (manufacturer, product page, etc.)
 
@@ -286,7 +286,7 @@ Optional categorized URLs for external resources (manufacturer, product page, et
 
 > `readonly` `optional` **vegan**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:113](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L113)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:113](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L113)
 
 Optional indicator if the ingredient is vegan
 
@@ -300,6 +300,6 @@ Optional indicator if the ingredient is vegan
 
 > `readonly` `optional` **viscosityMcM**: [`DegreesMacMichael`](../../../../type-aliases/DegreesMacMichael.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:147](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L147)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:147](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L147)
 
 Viscosity in MacMichael degrees (optional)

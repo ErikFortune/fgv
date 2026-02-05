@@ -6,7 +6,7 @@
 
 # Interface: ISessionContext
 
-Defined in: [ts-chocolate/src/packlets/runtime/model.ts:53](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/model.ts#L53)
+Defined in: [ts-chocolate/src/packlets/runtime/model.ts:53](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/model.ts#L53)
 
 Context interface for session creation.
 Extends IConfectionContext with the ability to create filling editing sessions.
@@ -19,7 +19,7 @@ This interface is used by confection editing sessions to manage filling scaling.
 
 > `readonly` **confections**: [`MaterializedLibrary`](../../LibraryRuntime/classes/MaterializedLibrary.md)\<[`ConfectionId`](../../../../type-aliases/ConfectionId.md), [`AnyConfectionEntity`](../../Entities/type-aliases/AnyConfectionEntity.md), [`IConfectionBase`](../../LibraryRuntime/interfaces/IConfectionBase.md)\<[`AnyConfectionVersion`](../../LibraryRuntime/type-aliases/AnyConfectionVersion.md), [`AnyConfectionEntity`](../../Entities/type-aliases/AnyConfectionEntity.md)\>, `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1562](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1562)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1554](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1554)
 
 Materialized library of runtime confections.
 Used for parent navigation from versions.
@@ -34,7 +34,7 @@ Used for parent navigation from versions.
 
 > `readonly` **fillings**: [`MaterializedLibrary`](../../LibraryRuntime/classes/MaterializedLibrary.md)\<[`FillingId`](../../../../type-aliases/FillingId.md), [`IFillingRecipeEntity`](../../Entities/interfaces/IFillingRecipeEntity.md), [`IFillingRecipe`](../../LibraryRuntime/interfaces/IFillingRecipe.md), [`IFillingRecipeQuerySpec`](../../LibraryRuntime/namespaces/Indexers/interfaces/IFillingRecipeQuerySpec.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:874](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L874)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:869](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L869)
 
 Map of all fillings, keyed by composite ID.
 
@@ -46,9 +46,9 @@ Map of all fillings, keyed by composite ID.
 
 ### ingredients
 
-> `readonly` **ingredients**: [`MaterializedLibrary`](../../LibraryRuntime/classes/MaterializedLibrary.md)\<[`IngredientId`](../../../../type-aliases/IngredientId.md), [`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md), [`IIngredient`](../../LibraryRuntime/interfaces/IIngredient.md), [`IIngredientQuerySpec`](../../LibraryRuntime/namespaces/Indexers/interfaces/IIngredientQuerySpec.md)\>
+> `readonly` **ingredients**: [`MaterializedLibrary`](../../LibraryRuntime/classes/MaterializedLibrary.md)\<[`IngredientId`](../../../../type-aliases/IngredientId.md), [`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md), [`IIngredient`](../../LibraryRuntime/interfaces/IIngredient.md)\<[`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md)\>, [`IIngredientQuerySpec`](../../LibraryRuntime/namespaces/Indexers/interfaces/IIngredientQuerySpec.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:867](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L867)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:862](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L862)
 
 Map of all ingredients, keyed by composite ID.
 
@@ -62,7 +62,7 @@ Map of all ingredients, keyed by composite ID.
 
 > `readonly` **molds**: [`MaterializedLibrary`](../../LibraryRuntime/classes/MaterializedLibrary.md)\<[`MoldId`](../../../../type-aliases/MoldId.md), [`IMoldEntity`](../../Entities/interfaces/IMoldEntity.md), [`IMold`](../../LibraryRuntime/interfaces/IMold.md), `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1556](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1556)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1548](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1548)
 
 Materialized library of runtime molds.
 Used for resolving mold references.
@@ -77,7 +77,7 @@ Used for resolving mold references.
 
 > `readonly` **procedures**: [`MaterializedLibrary`](../../LibraryRuntime/classes/MaterializedLibrary.md)\<[`ProcedureId`](../../../../type-aliases/ProcedureId.md), [`IProcedureEntity`](../../Entities/interfaces/IProcedureEntity.md), [`IProcedure`](../../LibraryRuntime/interfaces/IProcedure.md), `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:881](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L881)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:876](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L876)
 
 Map of all procedures, keyed by composite ID.
 
@@ -91,7 +91,7 @@ Map of all procedures, keyed by composite ID.
 
 > **createFillingSession**(`filling`, `targetWeight`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](../namespaces/Session/classes/EditingSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/model.ts:61](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/model.ts#L61)
+Defined in: [ts-chocolate/src/packlets/runtime/model.ts:61](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/model.ts#L61)
 
 Creates an editing session for a filling recipe at a target weight.
 Used by confection sessions to manage filling scaling.

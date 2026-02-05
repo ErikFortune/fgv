@@ -6,7 +6,7 @@
 
 # Interface: IMergeLibrarySource\<TLibrary, TCollectionId\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:382](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L382)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:382](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L382)
 
 Specifies a library to merge with optional collection filtering.
 
@@ -34,7 +34,7 @@ The type of collection identifiers (defaults to string)
 
 > `readonly` `optional` **filter**: [`LibraryLoadSpec`](../type-aliases/LibraryLoadSpec.md)\<`TCollectionId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:396](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L396)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:396](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L396)
 
 Controls which collections to merge from this library.
 
@@ -49,6 +49,6 @@ Controls which collections to merge from this library.
 
 > `readonly` **library**: `TLibrary`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:386](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/model.ts#L386)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:386](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L386)
 
 The library to merge collections from.

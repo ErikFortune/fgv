@@ -8,6 +8,6 @@
 
 > **FillingCollection** = [`SubLibraryCollection`](../../../../LibraryData/type-aliases/SubLibraryCollection.md)\<[`BaseFillingId`](../../../../../../type-aliases/BaseFillingId.md), [`IFillingRecipeEntity`](../../../interfaces/IFillingRecipeEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/collection.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/fillings/collection.ts#L56)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/collection.ts:56](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/fillings/collection.ts#L56)
 
 Type for the collections in a FillingsLibrary.

@@ -6,7 +6,7 @@
 
 # Interface: IReadOnlyValidatingLibrary\<TK, TV, TSpec\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:65](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L65)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:65](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L65)
 
 Read-only interface for ValidatingLibrary.
 Extends IReadOnlyValidatingResultMap with a find method for query-based search.
@@ -95,7 +95,7 @@ Defined in: ts-utils/dist/ts-utils.d.ts:2945
 
 > **find**(`spec`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly `TV`[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:73](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L73)
+Defined in: [ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts:73](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/validatingLibrary.ts#L73)
 
 Finds entities matching a query specification.
 

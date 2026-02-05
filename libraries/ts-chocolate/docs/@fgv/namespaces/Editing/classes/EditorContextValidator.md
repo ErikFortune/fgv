@@ -6,7 +6,7 @@
 
 # Class: EditorContextValidator\<T, TBaseId, TId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:75](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L75)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:75](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L75)
 
 Validating wrapper for EditorContext.
 Provides methods that accept raw (unknown) input, validate using converters,
@@ -43,7 +43,7 @@ Composite ID type (e.g., IngredientId)
 
 > **new EditorContextValidator**\<`T`, `TBaseId`, `TId`\>(`params`): `EditorContextValidator`\<`T`, `TBaseId`, `TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:86](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L86)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:86](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L86)
 
 Create an editor context validator.
 
@@ -65,7 +65,7 @@ Validator parameters
 
 > **create**(`baseId`, `rawEntity`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TId`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:99](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L99)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:99](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L99)
 
 Create new entity with validation.
 Validates the raw entity using the converter, then delegates to the base context.
@@ -100,7 +100,7 @@ Result containing the generated entity ID or failure
 
 > **update**(`id`, `rawEntity`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:124](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L124)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:124](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L124)
 
 Update existing entity with validation.
 Validates the raw entity using the converter, then delegates to the base context.
@@ -135,7 +135,7 @@ Result indicating success or failure
 
 > **validate**(`rawEntity`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IValidationReport`](../interfaces/IValidationReport.md)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:136](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L136)
+Defined in: [ts-chocolate/src/packlets/editing/editorContextValidator.ts:136](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/editing/editorContextValidator.ts#L136)
 
 Validate raw entity data using converter and semantic validator.
 

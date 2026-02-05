@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, Success, fail, succeed } from '@fgv/ts-utils';
+import { Result, Success, fail, mapResults, succeed } from '@fgv/ts-utils';
 
 import {
   BaseProcedureId,
@@ -219,26 +219,18 @@ export class Procedure implements IProcedure {
    * @returns Success with rendered procedure, or Failure if rendering fails
    */
   public render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure> {
-    const renderedStepsResults: Result<IRenderedStep>[] = this._procedure.steps.map((step) =>
-      this._renderStep(renderContext, step)
+    return mapResults(this._procedure.steps.map((step) => this._renderStep(renderContext, step))).onSuccess(
+      (renderedSteps) => {
+        return succeed({
+          name: this.name,
+          description: this.description,
+          steps: renderedSteps,
+          totalActiveTime: this.totalActiveTime,
+          totalWaitTime: this.totalWaitTime,
+          totalHoldTime: this.totalHoldTime
+        });
+      }
     );
-
-    // Collect all failures
-    const failures = renderedStepsResults.filter((r) => r.isFailure());
-    if (failures.length > 0) {
-      return fail(`Failed to render procedure steps: ${failures.map((f) => f.message).join('; ')}`);
-    }
-
-    const renderedSteps = renderedStepsResults.map((r) => r.value as IRenderedStep);
-
-    return succeed({
-      name: this.name,
-      description: this.description,
-      steps: renderedSteps,
-      totalActiveTime: this.totalActiveTime,
-      totalWaitTime: this.totalWaitTime,
-      totalHoldTime: this.totalHoldTime
-    });
   }
 
   /**

@@ -6,7 +6,7 @@
 
 # Interface: IResolvedCoatings
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1344](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1344)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1339](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1339)
 
 Resolved coatings specification for rolled truffles.
 Coatings are ingredient-based (e.g., cocoa powder, chopped nuts).
@@ -17,7 +17,7 @@ Coatings are ingredient-based (e.g., cocoa powder, chopped nuts).
 
 > `readonly` **entity**: [`ICoatingsEntity`](../../Entities/namespaces/Confections/type-aliases/ICoatingsEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1350](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1350)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1345](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1345)
 
 The original coatings spec
 
@@ -27,7 +27,7 @@ The original coatings spec
 
 > `readonly` **options**: readonly [`IResolvedCoatingOption`](IResolvedCoatingOption.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1346](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1346)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1341](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1341)
 
 All available coating ingredient options
 
@@ -37,6 +37,6 @@ All available coating ingredient options
 
 > `readonly` `optional` **preferred**: [`IResolvedCoatingOption`](IResolvedCoatingOption.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1348](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1348)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1343](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1343)
 
 The preferred/default coating (resolved ingredient)

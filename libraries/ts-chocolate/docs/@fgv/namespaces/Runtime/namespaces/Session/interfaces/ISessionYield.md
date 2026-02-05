@@ -6,7 +6,7 @@
 
 # Interface: ISessionYield
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:300](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L300)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:300](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L300)
 
 Tracks yield modifications for a confection session
 
@@ -16,7 +16,7 @@ Tracks yield modifications for a confection session
 
 > `readonly` **count**: `number`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:304](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L304)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:304](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L304)
 
 Current yield count
 
@@ -26,7 +26,7 @@ Current yield count
 
 > `readonly` **originalCount**: `number`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:309](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L309)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:309](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L309)
 
 Original yield count when the session started
 
@@ -36,7 +36,7 @@ Original yield count when the session started
 
 > `readonly` `optional` **originalWeightPerPiece**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:319](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L319)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:319](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L319)
 
 Original weight per piece when the session started
 
@@ -46,7 +46,7 @@ Original weight per piece when the session started
 
 > `readonly` **status**: [`ConfectionSelectionStatus`](../type-aliases/ConfectionSelectionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:324](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L324)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:324](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L324)
 
 Current status of yield modifications
 
@@ -56,6 +56,6 @@ Current status of yield modifications
 
 > `readonly` `optional` **weightPerPiece**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:314](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L314)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:314](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L314)
 
 Current weight per piece (optional)

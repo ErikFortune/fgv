@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Failure, Result, Success } from '@fgv/ts-utils';
+import { Failure, Result, Success, mapResults } from '@fgv/ts-utils';
 
 import {
   BaseFillingId,
@@ -158,30 +158,62 @@ export class FillingRecipe implements IFillingRecipe {
   // ============================================================================
 
   /**
-   * The golden (default approved) version - resolved.
+   * Gets the golden (default approved) version - resolved.
    * Resolved lazily on first access.
+   * @returns Result with golden version, or Failure if creation fails
+   * @public
    */
-  public get goldenVersion(): FillingRecipeVersion {
+  public getGoldenVersion(): Result<FillingRecipeVersion> {
     if (this._goldenVersion === undefined) {
       const entity = this._recipe.versions.find((v) => v.versionSpec === this._recipe.goldenVersionSpec);
       /* c8 ignore next 3 - defensive coding: data validation ensures golden version exists */
       if (!entity) {
-        throw new Error(`Golden version ${this._recipe.goldenVersionSpec} not found in recipe ${this._id}`);
+        return Failure.with(
+          `Golden version ${this._recipe.goldenVersionSpec} not found in recipe ${this._id}`
+        );
       }
-      this._goldenVersion = new FillingRecipeVersion(this._context, this._id, entity);
+      return FillingRecipeVersion.create(this._context, this._id, entity).onSuccess((version) => {
+        this._goldenVersion = version;
+        return Success.with(version);
+      });
     }
-    return this._goldenVersion;
+    return Success.with(this._goldenVersion);
+  }
+
+  /**
+   * The golden (default approved) version - resolved.
+   * Resolved lazily on first access.
+   * @throws if version creation fails - prefer getGoldenVersion() for proper error handling
+   */
+  public get goldenVersion(): FillingRecipeVersion {
+    return this.getGoldenVersion().orThrow();
+  }
+
+  /**
+   * Gets all versions - resolved.
+   * Resolved lazily on first access.
+   * @returns Result with all versions, or Failure if any version creation fails
+   * @public
+   */
+  public getVersions(): Result<ReadonlyArray<FillingRecipeVersion>> {
+    if (this._versions === undefined) {
+      return mapResults(
+        this._recipe.versions.map((v) => FillingRecipeVersion.create(this._context, this._id, v))
+      ).onSuccess((versions) => {
+        this._versions = versions;
+        return Success.with(versions);
+      });
+    }
+    return Success.with(this._versions);
   }
 
   /**
    * All versions - resolved.
    * Resolved lazily on first access.
+   * @throws if version creation fails - prefer getVersions() for proper error handling
    */
   public get versions(): ReadonlyArray<FillingRecipeVersion> {
-    if (this._versions === undefined) {
-      this._versions = this._recipe.versions.map((v) => new FillingRecipeVersion(this._context, this._id, v));
-    }
-    return this._versions;
+    return this.getVersions().orThrow();
   }
 
   /**
@@ -200,8 +232,10 @@ export class FillingRecipe implements IFillingRecipe {
   /**
    * Gets the latest version (by created date).
    * Resolved lazily on first access.
+   * @returns Result with latest version, or Failure if creation fails
+   * @public
    */
-  public get latestVersion(): FillingRecipeVersion {
+  public getLatestVersion(): Result<FillingRecipeVersion> {
     if (this._latestVersion === undefined) {
       // Find version with latest created date
       let latestEntity = this._recipe.versions[0];
@@ -212,12 +246,27 @@ export class FillingRecipe implements IFillingRecipe {
       }
       // Check if it's the same as golden version to reuse
       if (latestEntity.versionSpec === this._recipe.goldenVersionSpec) {
-        this._latestVersion = this.goldenVersion;
+        return this.getGoldenVersion().onSuccess((version) => {
+          this._latestVersion = version;
+          return Success.with(version);
+        });
       } else {
-        this._latestVersion = new FillingRecipeVersion(this._context, this._id, latestEntity);
+        return FillingRecipeVersion.create(this._context, this._id, latestEntity).onSuccess((version) => {
+          this._latestVersion = version;
+          return Success.with(version);
+        });
       }
     }
-    return this._latestVersion;
+    return Success.with(this._latestVersion);
+  }
+
+  /**
+   * Gets the latest version (by created date).
+   * Resolved lazily on first access.
+   * @throws if version creation fails - prefer getLatestVersion() for proper error handling
+   */
+  public get latestVersion(): FillingRecipeVersion {
+    return this.getLatestVersion().orThrow();
   }
 
   /**

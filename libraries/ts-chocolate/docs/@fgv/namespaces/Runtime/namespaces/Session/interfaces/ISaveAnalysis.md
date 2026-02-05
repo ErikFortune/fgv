@@ -6,7 +6,7 @@
 
 # Interface: ISaveAnalysis
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:54](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L54)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L54)
 
 Analysis of save options and recommendations based on session changes.
 
@@ -16,7 +16,7 @@ Analysis of save options and recommendations based on session changes.
 
 > `readonly` **canAddAlternatives**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:63](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L63)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:63](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L63)
 
 Whether we can add ingredients as alternatives to the original recipe
 
@@ -26,7 +26,7 @@ Whether we can add ingredients as alternatives to the original recipe
 
 > `readonly` **canCreateVersion**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L58)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:58](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L58)
 
 Whether the original collection is mutable (allows creating new version)
 
@@ -36,7 +36,7 @@ Whether the original collection is mutable (allows creating new version)
 
 > `readonly` **changes**: `object`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:78](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L78)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:78](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L78)
 
 Detailed change information
 
@@ -66,7 +66,7 @@ Detailed change information
 
 > `readonly` **mustCreateNew**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:68](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L68)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:68](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L68)
 
 Whether we must create a new recipe (collection is immutable)
 
@@ -76,6 +76,6 @@ Whether we must create a new recipe (collection is immutable)
 
 > `readonly` **recommendedOption**: `"new"` \| `"version"` \| `"alternatives"`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:73](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L73)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:73](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L73)
 
 Recommended save option based on changes

@@ -6,7 +6,7 @@
 
 # Interface: IMoldedBonBon
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1162](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1162)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1157](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1157)
 
 Runtime confection narrowed to molded bonbon type.
 
@@ -20,7 +20,7 @@ Runtime confection narrowed to molded bonbon type.
 
 > `readonly` `optional` **additionalChocolates**: readonly [`IResolvedAdditionalChocolate`](IResolvedAdditionalChocolate.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1174](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1174)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1169](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1169)
 
 Resolved additional chocolates (from golden version)
 
@@ -30,7 +30,7 @@ Resolved additional chocolates (from golden version)
 
 > `readonly` **baseId**: [`BaseConfectionId`](../../../../type-aliases/BaseConfectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1051](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1051)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1046](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1046)
 
 The base confection ID within the source.
 
@@ -44,7 +44,7 @@ The base confection ID within the source.
 
 > `readonly` **collectionId**: [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1046](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1046)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1041](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1041)
 
 The collection ID part of the composite ID.
 
@@ -58,7 +58,7 @@ The collection ID part of the composite ID.
 
 > `readonly` **confectionType**: `"molded-bonbon"`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1165](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1165)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1160](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1160)
 
 Type is always 'molded-bonbon' for this confection
 
@@ -72,7 +72,7 @@ Type is always 'molded-bonbon' for this confection
 
 > `readonly` `optional` **decorations**: readonly [`IConfectionDecoration`](../../Entities/namespaces/Confections/interfaces/IConfectionDecoration.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1121](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1121)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1116](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1116)
 
 Decorations from the golden version
 
@@ -86,7 +86,7 @@ Decorations from the golden version
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1062](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1062)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1057](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1057)
 
 Optional description
 
@@ -100,7 +100,7 @@ Optional description
 
 > `readonly` **effectiveTags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1097](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1097)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1092](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1092)
 
 Gets effective tags for the golden version (base + version's additional tags).
 
@@ -114,7 +114,7 @@ Gets effective tags for the golden version (base + version's additional tags).
 
 > `readonly` **effectiveUrls**: readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1102](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1102)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1097](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1097)
 
 Gets effective URLs for the golden version (base + version's additional URLs).
 
@@ -128,7 +128,7 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 
 > `readonly` **entity**: [`IMoldedBonBonEntity`](../../Entities/interfaces/IMoldedBonBonEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1155](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1155)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1150](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1150)
 
 Gets the underlying confection entity data.
 
@@ -142,7 +142,7 @@ Gets the underlying confection entity data.
 
 > `readonly` `optional` **fillings**: readonly [`IResolvedFillingSlot`](IResolvedFillingSlot.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1127](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1127)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1122](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1122)
 
 Resolved filling slots from the golden version
 
@@ -156,7 +156,7 @@ Resolved filling slots from the golden version
 
 > `readonly` **goldenVersion**: [`IMoldedBonBonVersion`](IMoldedBonBonVersion.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1078](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1078)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1073](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1073)
 
 The golden (default) version - resolved.
 
@@ -170,7 +170,7 @@ The golden (default) version - resolved.
 
 > `readonly` **goldenVersionSpec**: [`ConfectionVersionSpec`](../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1071](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1071)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1066](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1066)
 
 The ID of the golden (approved default) version
 
@@ -184,7 +184,7 @@ The ID of the golden (approved default) version
 
 > `readonly` **id**: [`ConfectionId`](../../../../type-aliases/ConfectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1041](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1041)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1036](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1036)
 
 The composite confection ID (e.g., "common.dark-dome-bonbon").
 Combines source and base ID for unique identification across sources.
@@ -199,7 +199,7 @@ Combines source and base ID for unique identification across sources.
 
 > `readonly` **molds**: [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IResolvedConfectionMoldRef`](IResolvedConfectionMoldRef.md), [`MoldId`](../../../../type-aliases/MoldId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1168](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1168)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1163](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1163)
 
 Resolved molds with preferred selection (from golden version)
 
@@ -209,7 +209,7 @@ Resolved molds with preferred selection (from golden version)
 
 > `readonly` **name**: [`ConfectionName`](../../../../type-aliases/ConfectionName.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1059](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1059)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1054](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1054)
 
 Human-readable name
 
@@ -223,7 +223,7 @@ Human-readable name
 
 > `readonly` `optional` **procedures**: [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IResolvedConfectionProcedure`](IResolvedConfectionProcedure.md), [`ProcedureId`](../../../../type-aliases/ProcedureId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1130](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1130)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1125](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1125)
 
 Resolved procedures from the golden version
 
@@ -237,7 +237,7 @@ Resolved procedures from the golden version
 
 > `readonly` **shellChocolate**: [`IResolvedChocolateSpec`](IResolvedChocolateSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1171](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1171)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1166](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1166)
 
 Resolved shell chocolate specification (from golden version)
 
@@ -247,7 +247,7 @@ Resolved shell chocolate specification (from golden version)
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1065](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1065)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1060](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1060)
 
 Base tags for searching/filtering (version may add more)
 
@@ -261,7 +261,7 @@ Base tags for searching/filtering (version may add more)
 
 > `readonly` `optional` **urls**: readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1068](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1068)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1063](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1063)
 
 Base URLs (version may add more)
 
@@ -275,7 +275,7 @@ Base URLs (version may add more)
 
 > `readonly` **versions**: readonly [`IMoldedBonBonVersion`](IMoldedBonBonVersion.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1083](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1083)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1078](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1078)
 
 All versions - resolved.
 
@@ -289,7 +289,7 @@ All versions - resolved.
 
 > `readonly` **yield**: [`IConfectionYield`](../../Entities/interfaces/IConfectionYield.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1124](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1124)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1119](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1119)
 
 Yield specification from the golden version
 
@@ -303,7 +303,7 @@ Yield specification from the golden version
 
 > **getEffectiveTags**(`version?`): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1108](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1108)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1103](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1103)
 
 Gets effective tags for a specific version.
 
@@ -329,7 +329,7 @@ readonly `string`[]
 
 > **getEffectiveUrls**(`version?`): readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1114](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1114)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1109](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1109)
 
 Gets effective URLs for a specific version.
 
@@ -355,7 +355,7 @@ readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
 > **getVersion**(`versionSpec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMoldedBonBonVersion`](IMoldedBonBonVersion.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1090](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1090)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1085](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1085)
 
 Gets a specific version by version specifier.
 
@@ -383,7 +383,7 @@ Success with runtime version, or Failure if not found
 
 > **isBarTruffle**(): `this is IBarTruffle`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1144](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1144)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1139](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1139)
 
 Returns true if this is a bar truffle confection.
 When true, bar truffle-specific properties are available.
@@ -402,7 +402,7 @@ When true, bar truffle-specific properties are available.
 
 > **isMoldedBonBon**(): `this is IMoldedBonBon`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1138](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1138)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1133](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1133)
 
 Returns true if this is a molded bonbon confection.
 When true, molded bonbon-specific properties are available.
@@ -421,7 +421,7 @@ When true, molded bonbon-specific properties are available.
 
 > **isRolledTruffle**(): `this is IRolledTruffle`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1150](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1150)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1145](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1145)
 
 Returns true if this is a rolled truffle confection.
 When true, rolled truffle-specific properties are available.

@@ -8,6 +8,6 @@
 
 > **AnyMaterializedSession** = [`EditingSession`](../../Runtime/namespaces/Session/classes/EditingSession.md) \| [`AnyConfectionEditingSession`](../../Runtime/namespaces/Session/type-aliases/AnyConfectionEditingSession.md)
 
-Defined in: [ts-chocolate/src/packlets/user-runtime/model.ts:36](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/user-runtime/model.ts#L36)
+Defined in: [ts-chocolate/src/packlets/user-runtime/model.ts:36](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/user-runtime/model.ts#L36)
 
 Union type for any materialized editing session.

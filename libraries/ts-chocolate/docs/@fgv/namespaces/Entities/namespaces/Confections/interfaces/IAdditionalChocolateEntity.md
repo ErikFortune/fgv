@@ -6,7 +6,7 @@
 
 # Interface: IAdditionalChocolateEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:190](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L190)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:190](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L190)
 
 Additional chocolate specification with purpose.
 Used for seal chocolate, decoration chocolate, etc.
@@ -17,7 +17,7 @@ Used for seal chocolate, decoration chocolate, etc.
 
 > `readonly` **chocolate**: [`IIdsWithPreferred`](../../../../Model/interfaces/IIdsWithPreferred.md)\<[`IngredientId`](../../../../../../type-aliases/IngredientId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:192](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L192)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:192](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L192)
 
 Available chocolate options with preferred selection
 
@@ -27,6 +27,6 @@ Available chocolate options with preferred selection
 
 > `readonly` **purpose**: [`AdditionalChocolatePurpose`](../../../../../../type-aliases/AdditionalChocolatePurpose.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:194](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L194)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:194](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L194)
 
 Purpose of this additional chocolate

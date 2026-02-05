@@ -6,7 +6,7 @@
 
 # Interface: IFilterDirectoryParams
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:48](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L48)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:48](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L48)
 
 Parameters used to filter a directory.
 
@@ -16,7 +16,7 @@ Parameters used to filter a directory.
 
 > `readonly` `optional` **prefix**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:49](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L49)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:49](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L49)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:49](http
 
 > `readonly` `optional` **recurseWithDelimiter**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:50](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L50)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionFilter.ts:50](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-data/collectionFilter.ts#L50)

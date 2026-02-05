@@ -6,7 +6,7 @@
 
 # Abstract Class: ConfectionEditingSessionBase\<T, TRuntime\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:52](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L52)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:52](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L52)
 
 Abstract base class for confection editing sessions.
 Manages filling sessions and provides common editing operations.
@@ -38,7 +38,7 @@ Subclasses implement type-specific scaling logic:
 
 > `protected` `readonly` **\_baseConfection**: `TRuntime`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L56)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:56](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L56)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_context**: [`ISessionContext`](../../../interfaces/ISessionContext.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:57](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L57)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:57](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L57)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_fillingSessions**: `Map`\<[`SlotId`](../../../../../../type-aliases/SlotId.md), [`EditingSession`](EditingSession.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:61](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L61)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:61](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L61)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_originalSnapshot**: `T`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:59](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L59)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:59](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L59)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_produced**: [`ProducedConfectionBase`](../../../../LibraryRuntime/classes/ProducedConfectionBase.md)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L58)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:58](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L58)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > `protected` `readonly` **\_sessionId**: [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:60](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L60)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:60](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L60)
 
 ## Accessors
 
@@ -88,7 +88,7 @@ Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionB
 
 > **get** **baseConfection**(): `TRuntime`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:308](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L308)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:308](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L308)
 
 Gets the base confection.
 
@@ -104,7 +104,7 @@ Gets the base confection.
 
 > **get** **context**(): [`ISessionContext`](../../../interfaces/ISessionContext.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:284](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L284)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:284](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L284)
 
 Gets the runtime context.
 
@@ -120,7 +120,7 @@ Gets the runtime context.
 
 > **get** **fillingSessions**(): [`IFillingSessionMap`](../type-aliases/IFillingSessionMap.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:276](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L276)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:276](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L276)
 
 Gets all filling sessions.
 
@@ -136,7 +136,7 @@ Gets all filling sessions.
 
 > **get** **produced**(): [`ProducedConfectionBase`](../../../../LibraryRuntime/classes/ProducedConfectionBase.md)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:300](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L300)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:300](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L300)
 
 Gets the produced confection wrapper.
 
@@ -152,7 +152,7 @@ Gets the produced confection wrapper.
 
 > **get** **sessionId**(): [`SessionSpec`](../../../../../../type-aliases/SessionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:292](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L292)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:292](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L292)
 
 Gets the session ID.
 
@@ -166,7 +166,7 @@ Gets the session ID.
 
 > `abstract` **\_computeSlotTargetWeight**(`slotId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Measurement`](../../../../../../type-aliases/Measurement.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:199](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L199)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:199](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L199)
 
 Computes target weight for a specific filling slot based on current yield.
 Implementation is type-specific:
@@ -193,7 +193,7 @@ Success with target weight, or Failure
 
 > **getFillingSession**(`slotId`): [`EditingSession`](EditingSession.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:268](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L268)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:268](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L268)
 
 Gets the filling session for a specific slot.
 
@@ -217,7 +217,7 @@ The editing session, or undefined if not found
 
 > **removeFillingSlot**(`slotId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](EditingSession.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:251](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L251)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:251](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L251)
 
 Removes a filling slot.
 
@@ -241,7 +241,7 @@ The slot identifier
 
 > `abstract` **scaleToYield**(`yieldSpec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IConfectionYield`](../../../../Entities/interfaces/IConfectionYield.md)\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:211](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L211)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:211](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L211)
 
 Scales to a new yield specification.
 Implementation is type-specific:
@@ -268,7 +268,7 @@ Success with updated yield, or Failure
 
 > **setFillingSlot**(`slotId`, `choice`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`EditingSession`](EditingSession.md) \| `undefined`\>
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:228](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L228)
+Defined in: [ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts:228](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/runtime/session/confectionEditingSessionBase.ts#L228)
 
 Sets or updates a filling slot.
 Creates/updates filling session if recipe slot.

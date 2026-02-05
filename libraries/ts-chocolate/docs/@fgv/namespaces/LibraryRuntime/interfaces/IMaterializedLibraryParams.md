@@ -6,7 +6,7 @@
 
 # Interface: IMaterializedLibraryParams\<TId, TEntity, TMaterialized, TQuerySpec\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:67](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L67)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:67](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L67)
 
 Parameters for constructing a MaterializedLibrary.
 
@@ -34,7 +34,7 @@ Parameters for constructing a MaterializedLibrary.
 
 > **converter**: (`entity`, `id`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TMaterialized`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:76](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L76)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:76](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L76)
 
 Converter function: (entity, id) =\> Result\<TMaterialized\>
 
@@ -58,7 +58,7 @@ Converter function: (entity, id) =\> Result\<TMaterialized\>
 
 > **inner**: [`IReadOnlyResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TId`, `TEntity`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:71](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L71)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:71](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L71)
 
 The underlying data library (SubLibraryBase or similar).
 
@@ -68,7 +68,7 @@ The underlying data library (SubLibraryBase or similar).
 
 > `optional` **logger**: [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:86](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L86)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:86](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L86)
 
 Optional logger for conversion warnings.
 
@@ -78,7 +78,7 @@ Optional logger for conversion warnings.
 
 > `optional` **onConversionError**: [`ConversionErrorHandling`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:92](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L92)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:92](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L92)
 
 Error handling behavior for conversion failures during iteration.
 Defaults to `'warn'` for chocolate libraries.
@@ -89,6 +89,6 @@ Defaults to `'warn'` for chocolate libraries.
 
 > `optional` **orchestrator**: [`IFindOrchestrator`](IFindOrchestrator.md)\<`TMaterialized`, `TQuerySpec`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:81](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L81)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:81](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L81)
 
 Optional orchestrator for find/query support.

@@ -8,7 +8,7 @@
 
 > `const` **rawTaskEntity**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IRawTaskEntity`](../../../../../interfaces/IRawTaskEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/tasks/converters.ts:64](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/tasks/converters.ts#L64)
+Defined in: [ts-chocolate/src/packlets/entities/tasks/converters.ts:64](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/tasks/converters.ts#L64)
 
 Converter for [IRawTaskEntity](../../../../../interfaces/IRawTaskEntity.md) (persisted format from YAML/JSON).
 Does not include requiredVariables as those are extracted from the template at runtime.

@@ -8,6 +8,6 @@
 
 > `const` **childSessionIds**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Readonly`\<`Record`\<[`SlotId`](../../../../../../../../type-aliases/SlotId.md), [`SessionId`](../../../../../../../../type-aliases/SessionId.md)\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/converters.ts:113](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/session/converters.ts#L113)
+Defined in: [ts-chocolate/src/packlets/entities/session/converters.ts:113](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/session/converters.ts#L113)
 
 Converter for child session IDs mapping (SlotId to PersistedSessionId).

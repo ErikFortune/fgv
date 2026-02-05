@@ -6,7 +6,7 @@
 
 # Interface: IInstantiatedLibrarySource
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:64](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L64)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:64](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L64)
 
 Pre-built library instances to include in a [ChocolateLibrary](../../../../classes/ChocolateLibrary.md).
 Useful for testing or when libraries are constructed through other means.
@@ -17,7 +17,7 @@ Useful for testing or when libraries are constructed through other means.
 
 > `readonly` `optional` **confections**: [`ConfectionsLibrary`](../../Entities/classes/ConfectionsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:93](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L93)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:93](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L93)
 
 Pre-built confections library
 
@@ -27,7 +27,7 @@ Pre-built confections library
 
 > `readonly` `optional` **fillings**: [`FillingsLibrary`](../../Entities/classes/FillingsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:73](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L73)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:73](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L73)
 
 Pre-built fillings library
 
@@ -37,7 +37,7 @@ Pre-built fillings library
 
 > `readonly` `optional` **ingredients**: [`IngredientsLibrary`](../../Entities/classes/IngredientsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:68](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L68)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:68](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L68)
 
 Pre-built ingredients library
 
@@ -47,7 +47,7 @@ Pre-built ingredients library
 
 > `readonly` `optional` **molds**: [`MoldsLibrary`](../../Entities/classes/MoldsLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:78](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L78)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:78](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L78)
 
 Pre-built molds library
 
@@ -57,7 +57,7 @@ Pre-built molds library
 
 > `readonly` `optional` **procedures**: [`ProceduresLibrary`](../../Entities/classes/ProceduresLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:83](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L83)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:83](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L83)
 
 Pre-built procedures library
 
@@ -67,6 +67,6 @@ Pre-built procedures library
 
 > `readonly` `optional` **tasks**: [`TasksLibrary`](../../Entities/classes/TasksLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:88](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L88)
+Defined in: [ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts:88](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/chocolateLibrary.ts#L88)
 
 Pre-built tasks library

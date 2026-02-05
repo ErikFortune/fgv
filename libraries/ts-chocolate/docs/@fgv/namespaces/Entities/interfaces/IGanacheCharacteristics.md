@@ -6,7 +6,7 @@
 
 # Interface: IGanacheCharacteristics
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:52](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L52)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:52](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L52)
 
 Characteristics relevant to ganache calculations
 These percentages represent the composition of an ingredient
@@ -17,7 +17,7 @@ These percentages represent the composition of an ingredient
 
 > `readonly` **cacaoFat**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:54](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L54)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L54)
 
 Percentage of cacao fat (0-100)
 
@@ -27,7 +27,7 @@ Percentage of cacao fat (0-100)
 
 > `readonly` **milkFat**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L58)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:58](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L58)
 
 Percentage of milk fat (0-100)
 
@@ -37,7 +37,7 @@ Percentage of milk fat (0-100)
 
 > `readonly` **otherFats**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:64](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L64)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:64](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L64)
 
 Percentage of other fats (0-100)
 
@@ -47,7 +47,7 @@ Percentage of other fats (0-100)
 
 > `readonly` **solids**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:62](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L62)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:62](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L62)
 
 Percentage of solids (0-100)
 
@@ -57,7 +57,7 @@ Percentage of solids (0-100)
 
 > `readonly` **sugar**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L56)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:56](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L56)
 
 Percentage of sugar (0-100)
 
@@ -67,6 +67,6 @@ Percentage of sugar (0-100)
 
 > `readonly` **water**: [`Percentage`](../../../../type-aliases/Percentage.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:60](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L60)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:60](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L60)
 
 Percentage of water (0-100)

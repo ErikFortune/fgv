@@ -6,7 +6,7 @@
 
 # Interface: IFillingChanges
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:50](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L50)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:50](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L50)
 
 Structure describing what changed between two produced fillings
 
@@ -16,7 +16,7 @@ Structure describing what changed between two produced fillings
 
 > `readonly` **hasChanges**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:60](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L60)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:60](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L60)
 
 True if any changes were detected
 
@@ -26,7 +26,7 @@ True if any changes were detected
 
 > `readonly` **ingredientsChanged**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:54](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L54)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:54](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L54)
 
 True if ingredients changed (added, removed, or modified)
 
@@ -36,7 +36,7 @@ True if ingredients changed (added, removed, or modified)
 
 > `readonly` **notesChanged**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:56](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L56)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:56](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L56)
 
 True if notes changed
 
@@ -46,7 +46,7 @@ True if notes changed
 
 > `readonly` **procedureChanged**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:58](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L58)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:58](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L58)
 
 True if procedure changed
 
@@ -56,6 +56,6 @@ True if procedure changed
 
 > `readonly` **targetWeightChanged**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:52](https://github.com/ErikFortune/fgv/blob/6a81ac1979f777618ccb57679446c91700746f00/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L52)
+Defined in: [ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts:52](https://github.com/ErikFortune/fgv/blob/f0affaa177ad091881f5199fd53d6bab72652f4f/libraries/ts-chocolate/src/packlets/library-runtime/produced/fillingWrapper.ts#L52)
 
 True if target weight changed
