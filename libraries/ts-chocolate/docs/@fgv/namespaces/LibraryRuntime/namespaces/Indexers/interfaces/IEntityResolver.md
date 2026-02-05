@@ -6,7 +6,7 @@
 
 # Interface: IEntityResolver\<TEntity, TId\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/model.ts:68](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/model.ts#L68)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/model.ts:68](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/model.ts#L68)
 
 Interface for resolving entity IDs to entities.
 The orchestrator uses this to resolve any IDs returned by indexers.
@@ -27,7 +27,7 @@ The orchestrator uses this to resolve any IDs returned by indexers.
 
 > **isId**(`value`): `value is TId`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/model.ts:81](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/model.ts#L81)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/model.ts:81](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/model.ts#L81)
 
 Type guard to check if a value is an ID (not an entity).
 
@@ -51,7 +51,7 @@ True if the value is an ID
 
 > **resolve**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TEntity`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/model.ts:74](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/model.ts#L74)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/model.ts:74](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/model.ts#L74)
 
 Resolves an entity ID to an entity.
 

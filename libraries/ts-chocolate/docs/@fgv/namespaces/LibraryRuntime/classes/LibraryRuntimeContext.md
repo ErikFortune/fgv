@@ -6,7 +6,7 @@
 
 # Class: LibraryRuntimeContext
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:97](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L97)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:97](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L97)
 
 Central context for the library-runtime object access layer.
 Provides factory methods for runtime objects, caching, and reverse lookups.
@@ -30,7 +30,7 @@ For session creation capabilities, use RuntimeContext from the runtime packlet.
 
 > `protected` **new LibraryRuntimeContext**(`library`, `preWarm`): `LibraryRuntimeContext`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:126](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L126)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:126](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L126)
 
 #### Parameters
 
@@ -52,7 +52,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:
 
 > `readonly` **logger**: [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:106](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L106)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:106](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L106)
 
 Logger used by this runtime context and its libraries.
 
@@ -64,7 +64,7 @@ Logger used by this runtime context and its libraries.
 
 > **get** **cachedConfectionCount**(): `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:494](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L494)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:494](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L494)
 
 Gets the number of cached confections.
 
@@ -80,7 +80,7 @@ Gets the number of cached confections.
 
 > **get** **cachedIngredientCount**(): `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:480](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L480)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:480](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L480)
 
 Gets the number of cached ingredients.
 
@@ -102,7 +102,7 @@ Gets the number of cached ingredients.
 
 > **get** **cachedRecipeCount**(): `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:487](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L487)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:487](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L487)
 
 Gets the number of cached recipes.
 
@@ -124,7 +124,7 @@ Gets the number of cached recipes.
 
 > **get** **confections**(): [`MaterializedLibrary`](MaterializedLibrary.md)\<[`ConfectionId`](../../../../type-aliases/ConfectionId.md), [`AnyConfectionEntity`](../../Entities/type-aliases/AnyConfectionEntity.md), [`AnyConfection`](../type-aliases/AnyConfection.md), `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:192](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L192)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:192](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L192)
 
 A materialized library of all confections, keyed by composite ID.
 Confections are resolved lazily on access and cached.
@@ -150,7 +150,7 @@ Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
 
 > **get** **fillings**(): [`MaterializedLibrary`](MaterializedLibrary.md)\<[`FillingId`](../../../../type-aliases/FillingId.md), [`IFillingRecipeEntity`](../../Entities/interfaces/IFillingRecipeEntity.md), [`FillingRecipe`](FillingRecipe.md), [`IFillingRecipeQuerySpec`](../namespaces/Indexers/interfaces/IFillingRecipeQuerySpec.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:266](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L266)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:266](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L266)
 
 A searchable library of all fillings, keyed by composite ID.
 Fillings are resolved lazily on access and cached.
@@ -173,7 +173,7 @@ Map of all fillings, keyed by composite ID.
 
 > **get** **ingredients**(): [`MaterializedLibrary`](MaterializedLibrary.md)\<[`IngredientId`](../../../../type-aliases/IngredientId.md), [`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md), [`AnyIngredient`](../type-aliases/AnyIngredient.md), [`IIngredientQuerySpec`](../namespaces/Indexers/interfaces/IIngredientQuerySpec.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:253](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L253)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:253](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L253)
 
 A searchable library of all ingredients, keyed by composite ID.
 Ingredients are resolved lazily on access and cached.
@@ -196,7 +196,7 @@ Map of all ingredients, keyed by composite ID.
 
 > **get** **library**(): [`ChocolateLibrary`](../../../../classes/ChocolateLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:180](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L180)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:180](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L180)
 
 The underlying ChocolateLibrary for direct access when needed.
 
@@ -218,7 +218,7 @@ The underlying ChocolateLibrary for direct access when needed.
 
 > **get** **molds**(): [`MaterializedLibrary`](MaterializedLibrary.md)\<[`MoldId`](../../../../type-aliases/MoldId.md), [`IMoldEntity`](../../Entities/interfaces/IMoldEntity.md), [`Mold`](Mold.md), `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:205](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L205)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:205](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L205)
 
 A materialized library of all molds, keyed by composite ID.
 Molds are resolved lazily on access and cached.
@@ -244,7 +244,7 @@ Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
 
 > **get** **procedures**(): [`MaterializedLibrary`](MaterializedLibrary.md)\<[`ProcedureId`](../../../../type-aliases/ProcedureId.md), [`IProcedureEntity`](../../Entities/interfaces/IProcedureEntity.md), [`Procedure`](Procedure.md), `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:213](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L213)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:213](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L213)
 
 A materialized library of all procedures, keyed by composite ID.
 Procedures are resolved lazily on access and cached.
@@ -270,7 +270,7 @@ Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
 
 > **get** **tasks**(): [`MaterializedLibrary`](MaterializedLibrary.md)\<[`TaskId`](../../../../type-aliases/TaskId.md), [`IRawTaskEntity`](../../Entities/interfaces/IRawTaskEntity.md), [`Task`](Task.md), `never`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:221](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L221)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:221](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L221)
 
 A materialized library of all tasks, keyed by composite ID.
 Tasks are resolved lazily on access and cached.
@@ -294,7 +294,7 @@ Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
 
 > **clearCache**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:502](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L502)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:502](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L502)
 
 Clears all cached runtime objects.
 Use if underlying library data has changed.
@@ -313,7 +313,7 @@ Use if underlying library data has changed.
 
 > **createWeightContext**(): [`IWeightCalculationContext`](../namespaces/Internal/interfaces/IWeightCalculationContext.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:540](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L540)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:540](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L540)
 
 Creates a weight calculation context for unit-aware weight calculations.
 The context resolves ingredient IDs to their density values.
@@ -330,7 +330,7 @@ A weight calculation context bound to this runtime's library
 
 > **getAllConfectionTags**(): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:462](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L462)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:462](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L462)
 
 Gets all unique tags used across confections.
 
@@ -344,7 +344,7 @@ readonly `string`[]
 
 > **getAllFillingTags**(): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:448](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L448)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:448](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L448)
 
 Gets all unique tags used across fillings.
 
@@ -362,7 +362,7 @@ readonly `string`[]
 
 > **getAllIngredientTags**(): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:455](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L455)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:455](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L455)
 
 Gets all unique tags used across ingredients.
 
@@ -380,7 +380,7 @@ readonly `string`[]
 
 > **getIngredientUsage**(`ingredientId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`IIngredientUsageInfo`](../interfaces/IIngredientUsageInfo.md)[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:434](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L434)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:434](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L434)
 
 Gets detailed usage information for an ingredient.
 
@@ -408,7 +408,7 @@ Success with array of usage info, or Failure if ingredient doesn't exist
 
 > **invalidateIndexers**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:529](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L529)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:529](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L529)
 
 Invalidates all indexer caches.
 Call this when underlying library data changes.
@@ -423,7 +423,7 @@ Call this when underlying library data changes.
 
 > **warmUp**(): `void`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:518](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L518)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:518](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L518)
 
 Pre-warms the reverse indexes for efficient queries.
 
@@ -441,7 +441,7 @@ Pre-warms the reverse indexes for efficient queries.
 
 > `static` **create**(`params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`LibraryRuntimeContext`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:156](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L156)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:156](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L156)
 
 Creates a LibraryRuntimeContext with a new or default ChocolateLibrary.
 This is the primary factory method for most use cases.
@@ -466,7 +466,7 @@ Success with LibraryRuntimeContext, or Failure if library creation fails
 
 > `static` **fromLibrary**(`library`, `preWarm?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`LibraryRuntimeContext`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:169](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L169)
+Defined in: [ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts:169](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/libraryRuntimeContext.ts#L169)
 
 Creates a LibraryRuntimeContext wrapping an existing ChocolateLibrary.
 Use this when you already have a configured library instance.

@@ -6,7 +6,7 @@
 
 # Abstract Class: SubLibraryBase\<TCompositeId, TBaseId, TItem\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:356](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L356)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:356](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L356)
 
 Base class for sub-libraries that use SourceId as the collection ID.
 
@@ -62,7 +62,7 @@ The item type stored in collections (e.g., `Ingredient`)
 
 > `protected` **new SubLibraryBase**\<`TCompositeId`, `TBaseId`, `TItem`\>(`params`): `SubLibraryBase`\<`TCompositeId`, `TBaseId`, `TItem`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:411](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L411)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:411](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L411)
 
 Creates a new SubLibraryBase instance with full loading support.
 
@@ -141,7 +141,7 @@ Use `collections.has(id)` and `collections.get(id)` to check existence and retri
 
 > **get** **protectedCollections**(): readonly [`IProtectedCollectionInfo`](../interfaces/IProtectedCollectionInfo.md)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
 
 Gets the list of protected collections that were captured but not decrypted.
 
@@ -617,7 +617,7 @@ The collection ID.
 
 > **getCollectionSourceItem**(`collectionId`): [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
 
 Get the FileTree source item for a collection, if available.
 
@@ -759,7 +759,7 @@ Iterates over all composite keys.
 
 > **loadFromFileTreeSource**(`source`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`number`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
 
 Loads collections from a file tree source and adds them to this library.
 
@@ -783,7 +783,7 @@ Success with the number of collections added, or Failure with error message
 
 > **loadProtectedCollectionAsync**(`encryption`, `filter?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`CollectionId`](../../../../type-aliases/CollectionId.md)[]\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
 
 Decrypts and loads one or more protected collections.
 
@@ -1034,7 +1034,7 @@ Iterates over all values.
 
 > `protected` `static` **loadAllCollectionsAsync**\<`TLibrary`, `TBaseId`, `TItem`\>(`params`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ISubLibraryAsyncLoadResult`](../interfaces/ISubLibraryAsyncLoadResult.md)\<`TBaseId`, `TItem`\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
 
 Loads all collections asynchronously with encryption support.
 

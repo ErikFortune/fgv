@@ -8,7 +8,7 @@
 
 > **collection**\<`TCOLLECTIONID`, `TITEMID`, `TITEM`\>(`params`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollection`](../../../interfaces/ICollection.md)\<`TITEM`, `TCOLLECTIONID`, `TITEMID`\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:117](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-data/converters.ts:117](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/converters.ts#L117)
 
 Returns a converter that validates a [collection](../../../interfaces/ICollection.md) using the supplied converters.
 

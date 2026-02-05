@@ -6,7 +6,7 @@
 
 # Interface: IExportOptions
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:331](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L331)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:331](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L331)
 
 Options for exporting collections.
 
@@ -16,7 +16,7 @@ Options for exporting collections.
 
 > `readonly` **format**: `"json"` \| `"yaml"`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:335](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L335)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:335](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L335)
 
 Output format for export.
 
@@ -26,7 +26,7 @@ Output format for export.
 
 > `readonly` `optional` **prettyPrint**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:341](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L341)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:341](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L341)
 
 Whether to pretty-print the output.
 Defaults to true for better readability.

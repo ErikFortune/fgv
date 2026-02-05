@@ -6,7 +6,7 @@
 
 # Interface: ITask
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:64](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L64)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:64](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L64)
 
 A resolved view of a task with rendering capabilities.
 
@@ -21,7 +21,7 @@ This interface provides runtime-layer access to task data with:
 
 > `readonly` **baseId**: [`BaseTaskId`](../../../../type-aliases/BaseTaskId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:76](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L76)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:76](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L76)
 
 The base task ID within the source.
 
@@ -31,7 +31,7 @@ The base task ID within the source.
 
 > `readonly` `optional` **defaultActiveTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:90](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L90)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:90](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L90)
 
 Optional default active time
 
@@ -41,7 +41,7 @@ Optional default active time
 
 > `readonly` `optional` **defaultHoldTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:96](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L96)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:96](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L96)
 
 Optional default hold time
 
@@ -51,7 +51,7 @@ Optional default hold time
 
 > `readonly` `optional` **defaults**: `Readonly`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:108](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L108)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:108](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L108)
 
 Optional default values for template placeholders
 
@@ -61,7 +61,7 @@ Optional default values for template placeholders
 
 > `readonly` `optional` **defaultTemperature**: [`Celsius`](../../../../type-aliases/Celsius.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:99](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L99)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:99](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L99)
 
 Optional default temperature
 
@@ -71,7 +71,7 @@ Optional default temperature
 
 > `readonly` `optional` **defaultWaitTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:93](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L93)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:93](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L93)
 
 Optional default wait time
 
@@ -81,7 +81,7 @@ Optional default wait time
 
 > `readonly` **entity**: [`IRawTaskEntity`](../../Entities/interfaces/IRawTaskEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:136](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L136)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:136](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L136)
 
 Gets the underlying task data entity.
 
@@ -91,7 +91,7 @@ Gets the underlying task data entity.
 
 > `readonly` **id**: [`TaskId`](../../../../type-aliases/TaskId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:71](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L71)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:71](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L71)
 
 The composite task ID (e.g., "common.melt-chocolate").
 Combines source and base ID for unique identification across sources.
@@ -102,7 +102,7 @@ Combines source and base ID for unique identification across sources.
 
 > `readonly` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:81](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L81)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:81](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L81)
 
 Human-readable name
 
@@ -112,7 +112,7 @@ Human-readable name
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L102)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:102](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L102)
 
 Optional categorized notes
 
@@ -122,7 +122,7 @@ Optional categorized notes
 
 > `readonly` **requiredVariables**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:87](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L87)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:87](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L87)
 
 Required variables extracted from the template
 
@@ -132,7 +132,7 @@ Required variables extracted from the template
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:105](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L105)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:105](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L105)
 
 Optional tags
 
@@ -142,7 +142,7 @@ Optional tags
 
 > `readonly` **template**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:84](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L84)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:84](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L84)
 
 The Mustache template string
 
@@ -152,7 +152,7 @@ The Mustache template string
 
 > **render**(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:124](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L124)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:124](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L124)
 
 Renders the task template with the given params (merged with defaults).
 
@@ -176,7 +176,7 @@ Success with rendered string, or Failure if rendering fails
 
 > **validateAndRender**(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:131](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L131)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:131](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L131)
 
 Validates params and renders the template if validation passes.
 
@@ -200,7 +200,7 @@ Success with rendered string, or Failure with validation or render errors
 
 > **validateParams**(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ITaskRefValidation`](../../Entities/namespaces/Tasks/interfaces/ITaskRefValidation.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:117](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-runtime/tasks/model.ts:117](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/tasks/model.ts#L117)
 
 Validates that params (combined with defaults) satisfy required variables.
 

@@ -182,26 +182,25 @@ export class MaterializedLibrary<
       return fail('No IDs provided in specification');
     }
 
-    const primaryResult = this.get(primaryId);
-    if (primaryResult.isFailure()) {
-      return fail(`Failed to resolve primary item ${primaryId}: ${primaryResult.message}`);
-    }
-
-    const alternates: TMaterialized[] = [];
-    for (const id of spec.ids) {
-      if (id !== primaryId) {
-        const altResult = this.get(id);
-        if (altResult.isSuccess()) {
-          alternates.push(altResult.value);
+    return this.get(primaryId)
+      .asResult.withErrorFormat((msg) => `Failed to resolve primary item ${primaryId}: ${msg}`)
+      .onSuccess((primary) => {
+        const alternates: TMaterialized[] = [];
+        for (const id of spec.ids) {
+          if (id !== primaryId) {
+            const altResult = this.get(id);
+            if (altResult.isSuccess()) {
+              alternates.push(altResult.value);
+            }
+          }
         }
-      }
-    }
 
-    return succeed({
-      primary: primaryResult.value,
-      alternates,
-      entity: spec
-    });
+        return succeed({
+          primary,
+          alternates,
+          entity: spec
+        });
+      });
   }
 
   /**
@@ -211,9 +210,7 @@ export class MaterializedLibrary<
    * @param spec - The IOptionsWithPreferred specification with refs
    * @returns Result with the preferred materialized item and its notes
    */
-  public getPreferredRef(
-    spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>
-  ): Result<{
+  public getPreferredRef(spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>): Result<{
     readonly item: TMaterialized;
     readonly id: TId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
@@ -228,16 +225,15 @@ export class MaterializedLibrary<
       return fail(`Preferred ID ${primaryId} not found in options`);
     }
 
-    const primaryResult = this.get(primaryId);
-    if (primaryResult.isFailure()) {
-      return fail(`Failed to resolve item ${primaryId}: ${primaryResult.message}`);
-    }
-
-    return succeed({
-      item: primaryResult.value,
-      id: primaryId,
-      notes: primaryRef.notes
-    });
+    return this.get(primaryId)
+      .asResult.withErrorFormat((msg) => `Failed to resolve item ${primaryId}: ${msg}`)
+      .onSuccess((item) =>
+        succeed({
+          item,
+          id: primaryId,
+          notes: primaryRef.notes
+        })
+      );
   }
 
   /**
@@ -260,35 +256,34 @@ export class MaterializedLibrary<
       return fail(`Preferred ID ${primaryId} not found in options`);
     }
 
-    const primaryResult = this.get(primaryId);
-    if (primaryResult.isFailure()) {
-      return fail(`Failed to resolve primary item ${primaryId}: ${primaryResult.message}`);
-    }
+    return this.get(primaryId)
+      .asResult.withErrorFormat((msg) => `Failed to resolve primary item ${primaryId}: ${msg}`)
+      .onSuccess((primary) => {
+        const alternates: Array<{
+          readonly id: TId;
+          readonly item: TMaterialized;
+          readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+        }> = [];
 
-    const alternates: Array<{
-      readonly id: TId;
-      readonly item: TMaterialized;
-      readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    }> = [];
-
-    for (const ref of spec.options) {
-      if (ref.id !== primaryId) {
-        const altResult = this.get(ref.id);
-        if (altResult.isSuccess()) {
-          alternates.push({
-            id: ref.id,
-            item: altResult.value,
-            notes: ref.notes
-          });
+        for (const ref of spec.options) {
+          if (ref.id !== primaryId) {
+            const altResult = this.get(ref.id);
+            if (altResult.isSuccess()) {
+              alternates.push({
+                id: ref.id,
+                item: altResult.value,
+                notes: ref.notes
+              });
+            }
+          }
         }
-      }
-    }
 
-    return succeed({
-      primary: primaryResult.value,
-      primaryId,
-      primaryNotes: primaryRef.notes,
-      alternates
-    });
+        return succeed({
+          primary,
+          primaryId,
+          primaryNotes: primaryRef.notes,
+          alternates
+        });
+      });
   }
 }

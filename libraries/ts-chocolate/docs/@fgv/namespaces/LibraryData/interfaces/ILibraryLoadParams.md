@@ -6,7 +6,7 @@
 
 # Interface: ILibraryLoadParams
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:135](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L135)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:135](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L135)
 
 Fine-grained parameters for controlling which collections from a library to load.
 
@@ -16,7 +16,7 @@ Fine-grained parameters for controlling which collections from a library to load
 
 > `readonly` `optional` **excluded**: readonly [`FilterPattern`](../type-aliases/FilterPattern.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:145](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L145)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:145](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L145)
 
 Patterns to exclude. Collection names matching any pattern are excluded (takes precedence over included).
 Strings are matched exactly, RegExp patterns use `.test()`.
@@ -27,7 +27,7 @@ Strings are matched exactly, RegExp patterns use `.test()`.
 
 > `readonly` `optional` **included**: readonly [`FilterPattern`](../type-aliases/FilterPattern.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:140](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L140)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:140](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L140)
 
 Patterns to include. If specified, only collection names matching at least one pattern are included.
 Strings are matched exactly, RegExp patterns use `.test()`.
@@ -38,6 +38,6 @@ Strings are matched exactly, RegExp patterns use `.test()`.
 
 > `readonly` `optional` **recurseWithDelimiter**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:149](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L149)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:149](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L149)
 
 Whether to recurse into subdirectories and use a delimiter to form composite collection names.

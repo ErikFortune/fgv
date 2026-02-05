@@ -6,7 +6,7 @@
 
 # Interface: ISubLibraryAsyncLoadResult\<TBaseId, TItem\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:266](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L266)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:266](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L266)
 
 Result from async collection loading operations.
 
@@ -33,7 +33,7 @@ The item type stored in the collection (e.g., `Ingredient`)
 
 > `readonly` **collections**: readonly [`SubLibraryEntryInit`](../type-aliases/SubLibraryEntryInit.md)\<`TBaseId`, `TItem`\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:270](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L270)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:270](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L270)
 
 Successfully loaded collections ready to be added to the library.
 
@@ -43,7 +43,7 @@ Successfully loaded collections ready to be added to the library.
 
 > `readonly` **protectedCollections**: readonly [`IProtectedCollectionInternal`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:276](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L276)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:276](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L276)
 
 Protected collections that were captured but not decrypted.
 These can be decrypted later using `loadProtectedCollectionAsync`.

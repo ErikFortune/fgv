@@ -6,7 +6,7 @@
 
 # Interface: ISessionCoating
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:352](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L352)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:352](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L352)
 
 Tracks a coating selection for rolled truffles
 
@@ -16,7 +16,7 @@ Tracks a coating selection for rolled truffles
 
 > `readonly` **ingredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:356](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L356)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:356](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L356)
 
 The currently selected coating ingredient ID
 
@@ -26,7 +26,7 @@ The currently selected coating ingredient ID
 
 > `readonly` `optional` **originalIngredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:361](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L361)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:361](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L361)
 
 The original coating ingredient ID when the session started
 
@@ -36,6 +36,6 @@ The original coating ingredient ID when the session started
 
 > `readonly` **status**: [`ConfectionSelectionStatus`](../type-aliases/ConfectionSelectionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:366](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L366)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:366](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L366)
 
 Current status of the coating selection

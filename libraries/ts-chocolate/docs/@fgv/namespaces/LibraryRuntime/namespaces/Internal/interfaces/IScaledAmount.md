@@ -6,7 +6,7 @@
 
 # Interface: IScaledAmount
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:70](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L70)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:70](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L70)
 
 Result of scaling an amount in a specific unit.
 Contains both the raw scaled value and display-friendly representation.
@@ -17,7 +17,7 @@ Contains both the raw scaled value and display-friendly representation.
 
 > `readonly` **displayValue**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:76](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L76)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:76](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L76)
 
 Display string (e.g., "1 1/2 tsp" or "2 Tbsp")
 
@@ -27,7 +27,7 @@ Display string (e.g., "1 1/2 tsp" or "2 Tbsp")
 
 > `readonly` **scalable**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:78](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L78)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:78](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L78)
 
 Whether this unit supports scaling (false for pinch)
 
@@ -37,7 +37,7 @@ Whether this unit supports scaling (false for pinch)
 
 > `readonly` **unit**: [`MeasurementUnit`](../../../../../../type-aliases/MeasurementUnit.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:74](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L74)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:74](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L74)
 
 The unit of measurement
 
@@ -47,6 +47,6 @@ The unit of measurement
 
 > `readonly` **value**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:72](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L72)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:72](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L72)
 
 The raw scaled numeric value

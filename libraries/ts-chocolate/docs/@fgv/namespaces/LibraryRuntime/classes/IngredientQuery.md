@@ -6,7 +6,7 @@
 
 # Class: IngredientQuery
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:60](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L60)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:60](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L60)
 
 Fluent query builder for ingredients.
 Allows chaining filters to build complex queries.
@@ -17,7 +17,7 @@ Allows chaining filters to build complex queries.
 
 > **new IngredientQuery**(`context`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:68](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L68)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:68](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L68)
 
 Creates a new IngredientQuery.
 
@@ -39,7 +39,7 @@ The runtime context to query
 
 > **alcohol**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:108](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L108)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:108](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L108)
 
 Filter to only alcohol ingredients.
 
@@ -53,7 +53,7 @@ Filter to only alcohol ingredients.
 
 > **byManufacturer**(`manufacturer`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:273](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L273)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:273](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L273)
 
 Filter by manufacturer.
 
@@ -75,7 +75,7 @@ Manufacturer name (case-insensitive partial match)
 
 > **cacaoRange**(`min`, `max`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:161](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L161)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:161](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L161)
 
 Filter by cacao percentage range.
 
@@ -103,7 +103,7 @@ Maximum cacao percentage
 
 > **category**(`category`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:116](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L116)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:116](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L116)
 
 Filter by specific category.
 
@@ -125,7 +125,7 @@ The category to filter by
 
 > **chocolate**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:80](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L80)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:80](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L80)
 
 Filter to only chocolate ingredients.
 
@@ -139,7 +139,7 @@ Filter to only chocolate ingredients.
 
 > **chocolateType**(`type`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:129](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L129)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:129](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L129)
 
 Filter by chocolate type.
 Note: Automatically filters to chocolate category.
@@ -162,7 +162,7 @@ The chocolate type to filter by
 
 > **count**(): `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:413](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L413)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:413](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L413)
 
 Execute and return count of matching ingredients.
 
@@ -176,7 +176,7 @@ Execute and return count of matching ingredients.
 
 > **dairy**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:87](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L87)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:87](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L87)
 
 Filter to only dairy ingredients.
 
@@ -190,7 +190,7 @@ Filter to only dairy ingredients.
 
 > **descriptionContains**(`text`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:365](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L365)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:365](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L365)
 
 Search by description (case-insensitive partial match).
 
@@ -212,7 +212,7 @@ Text to search for
 
 > **execute**(): readonly [`AnyIngredient`](../type-aliases/AnyIngredient.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:388](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L388)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:388](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L388)
 
 Execute query and return matching ingredients.
 
@@ -226,7 +226,7 @@ readonly [`AnyIngredient`](../type-aliases/AnyIngredient.md)[]
 
 > **exists**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:426](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L426)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:426](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L426)
 
 Check if any ingredients match the query.
 
@@ -240,7 +240,7 @@ Check if any ingredients match the query.
 
 > **fat**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:101](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L101)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:101](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L101)
 
 Filter to only fat ingredients.
 
@@ -254,7 +254,7 @@ Filter to only fat ingredients.
 
 > **fatRange**(`min`, `max`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:216](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L216)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:216](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L216)
 
 Filter by fat content range.
 
@@ -282,7 +282,7 @@ Maximum percentage
 
 > **first**(): [`AnyIngredient`](../type-aliases/AnyIngredient.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:401](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L401)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:401](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L401)
 
 Execute and return first matching ingredient.
 
@@ -296,7 +296,7 @@ Execute and return first matching ingredient.
 
 > **forApplication**(`application`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:173](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L173)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:173](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L173)
 
 Filter by chocolate application.
 
@@ -318,7 +318,7 @@ The application to filter by
 
 > **fromSource**(`sourceId`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:281](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L281)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:281](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L281)
 
 Filter by source.
 
@@ -340,7 +340,7 @@ Source ID to filter by
 
 > **maxCacao**(`percentage`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:149](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L149)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:149](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L149)
 
 Filter by maximum cacao percentage.
 
@@ -362,7 +362,7 @@ Maximum cacao percentage
 
 > **maxFat**(`max`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:202](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L202)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:202](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L202)
 
 Filter by maximum fat content.
 
@@ -384,7 +384,7 @@ Maximum total fat percentage
 
 > **maxWater**(`max`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:229](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L229)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:229](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L229)
 
 Filter by maximum water content.
 
@@ -406,7 +406,7 @@ Maximum water percentage
 
 > **minCacao**(`percentage`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:138](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L138)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:138](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L138)
 
 Filter by minimum cacao percentage.
 Note: Only applies to chocolate ingredients.
@@ -429,7 +429,7 @@ Minimum cacao percentage
 
 > **minFat**(`min`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:189](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L189)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:189](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L189)
 
 Filter by minimum fat content (cacaoFat + milkFat + otherFats).
 
@@ -451,7 +451,7 @@ Minimum total fat percentage
 
 > **minWater**(`min`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:237](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L237)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:237](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L237)
 
 Filter by minimum water content.
 
@@ -473,7 +473,7 @@ Minimum water percentage
 
 > **nameContains**(`text`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:357](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L357)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:357](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L357)
 
 Search by name (case-insensitive partial match).
 
@@ -495,7 +495,7 @@ Text to search for
 
 > **sugar**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:94](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L94)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:94](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L94)
 
 Filter to only sugar ingredients.
 
@@ -509,7 +509,7 @@ Filter to only sugar ingredients.
 
 > **unused**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:337](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L337)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:337](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L337)
 
 Filter to ingredients not used in any filling recipe.
 
@@ -523,7 +523,7 @@ Filter to ingredients not used in any filling recipe.
 
 > **usedInAtLeast**(`count`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:345](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L345)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:345](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L345)
 
 Filter to ingredients used in at least N filling recipes.
 
@@ -545,7 +545,7 @@ Minimum number of filling recipes
 
 > **usedInFillings**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:330](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L330)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:330](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L330)
 
 Filter to ingredients used in at least one filling recipe.
 
@@ -559,7 +559,7 @@ Filter to ingredients used in at least one filling recipe.
 
 > **vegan**(): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:292](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L292)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:292](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L292)
 
 Filter to only vegan ingredients.
 
@@ -573,7 +573,7 @@ Filter to only vegan ingredients.
 
 > **where**(`predicate`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:377](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L377)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:377](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L377)
 
 Apply a custom filter predicate.
 
@@ -595,7 +595,7 @@ Custom filter function
 
 > **withAllTags**(`tags`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:265](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L265)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:265](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L265)
 
 Filter by all of the given tags.
 
@@ -617,7 +617,7 @@ Tags that must all be present
 
 > **withAnyTag**(`tags`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:257](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L257)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:257](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L257)
 
 Filter by any of the given tags.
 
@@ -639,7 +639,7 @@ Tags to search for
 
 > **withCertification**(`certification`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:319](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L319)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:319](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L319)
 
 Filter by certification.
 
@@ -661,7 +661,7 @@ Certification that must be present
 
 > **withoutAllergen**(`allergen`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:300](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L300)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:300](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L300)
 
 Filter to ingredients without specific allergen.
 
@@ -683,7 +683,7 @@ Allergen that must not be present
 
 > **withoutAllergens**(`allergens`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:308](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L308)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:308](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L308)
 
 Filter to ingredients without any of the specified allergens.
 
@@ -705,7 +705,7 @@ Allergens that must not be present
 
 > **withTag**(`tag`): `IngredientQuery`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:249](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L249)
+Defined in: [ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts:249](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/queries/ingredientQuery.ts#L249)
 
 Filter by tag (ingredient has this tag).
 

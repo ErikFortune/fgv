@@ -6,7 +6,7 @@
 
 # Interface: IEditableCollection\<T, TBaseId, TId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:209](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L209)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:209](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L209)
 
 Editable collection wrapper.
 Wraps a ValidatingResultMap with metadata and export functionality
@@ -56,7 +56,7 @@ Protected raw access to the inner `Map<TK, TV>` object.
 
 > `readonly` **collectionId**: [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:214](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L214)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:214](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L214)
 
 Collection identifier.
 
@@ -66,7 +66,7 @@ Collection identifier.
 
 > `readonly` **export**: () => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollectionSourceFile`](../../LibraryData/interfaces/ICollectionSourceFile.md)\<`T`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:251](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L251)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:251](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L251)
 
 Export collection to ICollectionSourceFile format.
 
@@ -82,7 +82,7 @@ Result containing collection source file or failure
 
 > `readonly` **isMutable**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:225](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L225)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:225](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L225)
 
 Whether this collection is mutable.
 Immutable collections cannot be modified.
@@ -93,7 +93,7 @@ Immutable collections cannot be modified.
 
 > `readonly` **items**: `ReadonlyMap`\<`TBaseId`, `T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:231](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L231)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:231](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L231)
 
 All items in the collection.
 Map of base ID to entity.
@@ -104,7 +104,7 @@ Map of base ID to entity.
 
 > `readonly` **metadata**: [`ICollectionSourceMetadata`](../../LibraryData/interfaces/ICollectionSourceMetadata.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:219](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L219)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:219](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L219)
 
 Collection metadata (name, description, etc.).
 
@@ -114,7 +114,7 @@ Collection metadata (name, description, etc.).
 
 > `readonly` **remove**: (`baseId`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:238](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L238)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:238](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L238)
 
 Remove item from collection.
 
@@ -138,7 +138,7 @@ Result indicating success or failure
 
 > `readonly` **updateMetadata**: (`metadata`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/model.ts:245](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/model.ts#L245)
+Defined in: [ts-chocolate/src/packlets/editing/model.ts:245](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/model.ts#L245)
 
 Update collection metadata.
 

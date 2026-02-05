@@ -6,7 +6,7 @@
 
 # Interface: IMoldedBonBonEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:364](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L364)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:364](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L364)
 
 Molded bonbon confection
 Uses chocolate molds for shell formation
@@ -21,7 +21,7 @@ Uses chocolate molds for shell formation
 
 > `readonly` **baseId**: [`BaseConfectionId`](../../../../type-aliases/BaseConfectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:338](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L338)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:338](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L338)
 
 Base identifier within source (no dots)
 
@@ -35,7 +35,7 @@ Base identifier within source (no dots)
 
 > `readonly` **confectionType**: `"molded-bonbon"`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:366](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L366)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:366](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L366)
 
 Type discriminator
 
@@ -49,7 +49,7 @@ Type discriminator
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:344](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L344)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:344](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L344)
 
 Optional description
 
@@ -63,7 +63,7 @@ Optional description
 
 > `readonly` **goldenVersionSpec**: [`ConfectionVersionSpec`](../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:350](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L350)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:350](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L350)
 
 The ID of the golden (approved default) version
 
@@ -77,7 +77,7 @@ The ID of the golden (approved default) version
 
 > `readonly` **name**: [`ConfectionName`](../../../../type-aliases/ConfectionName.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:342](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L342)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:342](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L342)
 
 Human-readable name
 
@@ -91,7 +91,7 @@ Human-readable name
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:346](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L346)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:346](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L346)
 
 Optional tags for searching/filtering
 
@@ -105,7 +105,7 @@ Optional tags for searching/filtering
 
 > `readonly` `optional` **urls**: readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:348](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L348)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:348](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L348)
 
 Optional categorized URLs for external resources (tutorials, videos, etc.)
 
@@ -119,7 +119,7 @@ Optional categorized URLs for external resources (tutorials, videos, etc.)
 
 > `readonly` **versions**: readonly [`IMoldedBonBonVersionEntity`](IMoldedBonBonVersionEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:368](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L368)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:368](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L368)
 
 Version history with molded bonbon specific details
 

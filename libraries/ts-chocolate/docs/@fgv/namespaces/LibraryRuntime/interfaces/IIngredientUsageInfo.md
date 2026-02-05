@@ -6,7 +6,7 @@
 
 # Interface: IIngredientUsageInfo
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:834](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L834)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:834](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L834)
 
 Information about how an ingredient is used in a recipe.
 
@@ -16,7 +16,7 @@ Information about how an ingredient is used in a recipe.
 
 > `readonly` **fillingId**: [`FillingId`](../../../../type-aliases/FillingId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:838](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L838)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:838](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L838)
 
 The filling ID where the ingredient is used.
 
@@ -26,6 +26,6 @@ The filling ID where the ingredient is used.
 
 > `readonly` **isPrimary**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:843](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L843)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:843](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L843)
 
 Whether this is a primary ingredient (vs alternate).

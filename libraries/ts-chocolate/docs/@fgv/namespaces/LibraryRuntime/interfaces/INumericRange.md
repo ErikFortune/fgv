@@ -6,7 +6,7 @@
 
 # Interface: INumericRange
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:778](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L778)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:778](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L778)
 
 Range specification for numeric filtering
 
@@ -16,7 +16,7 @@ Range specification for numeric filtering
 
 > `readonly` `optional` **max**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:787](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L787)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:787](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L787)
 
 Maximum value (inclusive)
 
@@ -26,6 +26,6 @@ Maximum value (inclusive)
 
 > `readonly` `optional` **min**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:782](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L782)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:782](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L782)
 
 Minimum value (inclusive)

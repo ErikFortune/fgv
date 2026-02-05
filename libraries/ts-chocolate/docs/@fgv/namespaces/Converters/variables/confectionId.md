@@ -8,7 +8,7 @@
 
 > `const` **confectionId**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConfectionId`](../../../../type-aliases/ConfectionId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/common/converters.ts:267](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/common/converters.ts#L267)
+Defined in: [ts-chocolate/src/packlets/common/converters.ts:267](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/common/converters.ts#L267)
 
 Converter for [ConfectionId](../../../../type-aliases/ConfectionId.md) (composite string).
 Accepts either an [ConfectionId](../../../../type-aliases/ConfectionId.md) string or a `CompositeId` object representation.

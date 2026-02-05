@@ -6,7 +6,7 @@
 
 # Class: CollectionLoader\<T, TCOLLECTIONID, TITEMID\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:128](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L128)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:128](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L128)
 
 Loads collections from a file tree, validating with supplied converters and filtering as specified.
 
@@ -30,7 +30,7 @@ Loads collections from a file tree, validating with supplied converters and filt
 
 > **new CollectionLoader**\<`T`, `TCOLLECTIONID`, `TITEMID`\>(`params`): `CollectionLoader`\<`T`, `TCOLLECTIONID`, `TITEMID`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:142](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L142)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:142](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L142)
 
 #### Parameters
 
@@ -48,7 +48,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:142](htt
 
 > **loadFromFileTree**(`fileTree`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollectionLoadResult`](../interfaces/ICollectionLoadResult.md)\<`T`, `TCOLLECTIONID`, `TITEMID`\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:177](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L177)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:177](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L177)
 
 Loads collections from a `FileTree` using optional filtering parameters.
 
@@ -88,7 +88,7 @@ Success with load result containing collections and captured protected collectio
 
 > **loadFromFileTreeAsync**(`fileTree`, `params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollectionLoadResult`](../interfaces/ICollectionLoadResult.md)\<`T`, `TCOLLECTIONID`, `TITEMID`\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:292](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L292)
+Defined in: [ts-chocolate/src/packlets/library-data/collectionLoader.ts:292](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/collectionLoader.ts#L292)
 
 Loads collections from a `FileTree` asynchronously, supporting encrypted files.
 

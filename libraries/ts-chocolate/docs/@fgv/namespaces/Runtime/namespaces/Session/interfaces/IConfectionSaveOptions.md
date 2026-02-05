@@ -6,7 +6,7 @@
 
 # Interface: IConfectionSaveOptions
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:452](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L452)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:452](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L452)
 
 Options for saving a confection editing session
 
@@ -16,7 +16,7 @@ Options for saving a confection editing session
 
 > `readonly` `optional` **createJournalRecord**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:456](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L456)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:456](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L456)
 
 Whether to create a journal record
 
@@ -26,7 +26,7 @@ Whether to create a journal record
 
 > `readonly` `optional` **createNewVersion**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:461](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L461)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:461](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L461)
 
 Whether to create a new confection version from modifications
 
@@ -36,7 +36,7 @@ Whether to create a new confection version from modifications
 
 > `readonly` `optional` **journalNotes**: `string`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:471](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L471)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:471](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L471)
 
 Optional notes for the journal record
 
@@ -46,7 +46,7 @@ Optional notes for the journal record
 
 > `readonly` `optional` **saveLinkedRecipeSessions**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:476](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L476)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:476](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L476)
 
 Whether to save linked recipe sessions (default: true)
 
@@ -56,6 +56,6 @@ Whether to save linked recipe sessions (default: true)
 
 > `readonly` `optional` **versionLabel**: [`ConfectionVersionSpec`](../../../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:466](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L466)
+Defined in: [ts-chocolate/src/packlets/runtime/session/model.ts:466](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/runtime/session/model.ts#L466)
 
 Version label for the new version (required if createNewVersion is true)

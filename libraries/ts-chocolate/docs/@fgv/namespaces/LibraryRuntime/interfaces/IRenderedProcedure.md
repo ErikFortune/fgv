@@ -6,7 +6,7 @@
 
 # Interface: IRenderedProcedure
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:120](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L120)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:120](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L120)
 
 A rendered procedure with all template values resolved.
 
@@ -16,7 +16,7 @@ A rendered procedure with all template values resolved.
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:129](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L129)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:129](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L129)
 
 Optional description
 
@@ -26,7 +26,7 @@ Optional description
 
 > `readonly` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:124](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L124)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:124](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L124)
 
 Name of the procedure
 
@@ -36,7 +36,7 @@ Name of the procedure
 
 > `readonly` **steps**: readonly [`IRenderedStep`](IRenderedStep.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:134](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L134)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:134](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L134)
 
 Rendered steps with resolved task templates
 
@@ -46,7 +46,7 @@ Rendered steps with resolved task templates
 
 > `readonly` `optional` **totalActiveTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:139](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L139)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:139](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L139)
 
 Total active time for all steps
 
@@ -56,7 +56,7 @@ Total active time for all steps
 
 > `readonly` `optional` **totalHoldTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:149](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L149)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:149](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L149)
 
 Total hold time for all steps
 
@@ -66,6 +66,6 @@ Total hold time for all steps
 
 > `readonly` `optional` **totalWaitTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:144](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L144)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:144](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L144)
 
 Total wait time for all steps

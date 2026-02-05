@@ -6,7 +6,7 @@
 
 # Class: ValidationReport
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:33](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L33)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:33](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L33)
 
 Implementation of IValidationReport.
 Immutable validation report with field and general errors.
@@ -21,7 +21,7 @@ Immutable validation report with field and general errors.
 
 > **new ValidationReport**(`fieldErrors`, `generalErrors`): `ValidationReport`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:49](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L49)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:49](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L49)
 
 Create a validation report.
 
@@ -49,7 +49,7 @@ Array of general error messages
 
 > `readonly` **fieldErrors**: `ReadonlyMap`\<`string`, `string`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:37](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L37)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:37](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L37)
 
 Map of field paths to error messages.
 
@@ -63,7 +63,7 @@ Map of field paths to error messages.
 
 > `readonly` **generalErrors**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:42](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L42)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:42](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L42)
 
 Array of general error messages.
 
@@ -79,7 +79,7 @@ Array of general error messages.
 
 > **get** **isValid**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:57](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L57)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:57](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L57)
 
 Overall validation status.
 
@@ -100,7 +100,7 @@ True if all validations passed, false if any failed.
 
 > `static` **success**(): `ValidationReport`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:65](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L65)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:65](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L65)
 
 Create a successful (no errors) validation report.
 
@@ -116,7 +116,7 @@ Empty validation report
 
 > `static` **withErrors**(`fieldErrors`, `generalErrors`): `ValidationReport`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:93](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L93)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:93](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L93)
 
 Create a validation report with both field and general errors.
 
@@ -146,7 +146,7 @@ Validation report with all errors
 
 > `static` **withFieldErrors**(`errors`): `ValidationReport`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:74](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L74)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:74](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L74)
 
 Create a validation report with field errors.
 
@@ -170,7 +170,7 @@ Validation report with field errors
 
 > `static` **withGeneralErrors**(`errors`): `ValidationReport`
 
-Defined in: [ts-chocolate/src/packlets/editing/validation.ts:83](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/validation.ts#L83)
+Defined in: [ts-chocolate/src/packlets/editing/validation.ts:83](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/validation.ts#L83)
 
 Create a validation report with general errors.
 

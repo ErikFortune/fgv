@@ -6,7 +6,7 @@
 
 # Interface: IFillingRecipesByIngredientConfig
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts:45](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts#L45)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts:45](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts#L45)
 
 Configuration for the RecipesByIngredient indexer.
 
@@ -16,7 +16,7 @@ Configuration for the RecipesByIngredient indexer.
 
 > `readonly` **ingredientId**: [`IngredientId`](../../../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts:49](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts#L49)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts:49](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts#L49)
 
 The ingredient ID to search for.
 
@@ -26,7 +26,7 @@ The ingredient ID to search for.
 
 > `readonly` `optional` **usageType**: [`IngredientUsageType`](../type-aliases/IngredientUsageType.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts:58](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts#L58)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts:58](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/fillingRecipesByIngredientIndexer.ts#L58)
 
 Filter by usage type.
 - 'primary': Only recipes where ingredient is primary

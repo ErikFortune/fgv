@@ -6,7 +6,7 @@
 
 # Interface: ICollectionSourceMetadata
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:77](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L77)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:77](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L77)
 
 Optional metadata for collection source files.
 When present in source files, provides additional information about the collection.
@@ -17,7 +17,7 @@ When present in source files, provides additional information about the collecti
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:92](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L92)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:92](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L92)
 
 Description of the collection's purpose/contents.
 
@@ -27,7 +27,7 @@ Description of the collection's purpose/contents.
 
 > `readonly` `optional` **name**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:87](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L87)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:87](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L87)
 
 Human-readable name for the collection.
 
@@ -37,7 +37,7 @@ Human-readable name for the collection.
 
 > `readonly` `optional` **secretName**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:82](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L82)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:82](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L82)
 
 Secret name for encryption/decryption.
 If provided, the publish command uses this to look up the encryption key.
@@ -48,7 +48,7 @@ If provided, the publish command uses this to look up the encryption key.
 
 > `readonly` `optional` **tags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L102)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:102](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L102)
 
 Tags for categorization/search.
 
@@ -58,6 +58,6 @@ Tags for categorization/search.
 
 > `readonly` `optional` **version**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:97](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L97)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:97](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L97)
 
 Version identifier for the collection.

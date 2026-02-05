@@ -6,7 +6,7 @@
 
 # Class: AlcoholIngredient
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:42](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L42)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:42](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L42)
 
 A resolved view of an alcohol ingredient with navigation capabilities.
 Immutable - does not allow modification of underlying data.
@@ -25,7 +25,7 @@ Immutable - does not allow modification of underlying data.
 
 > `protected` `readonly` **\_baseId**: [`BaseIngredientId`](../../../../type-aliases/BaseIngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:62](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L62)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:62](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L62)
 
 #### Inherited from
 
@@ -37,7 +37,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBas
 
 > `protected` `readonly` **\_context**: [`IIngredientContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:58](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L58)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:58](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L58)
 
 #### Inherited from
 
@@ -49,7 +49,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBas
 
 > `protected` `readonly` **\_id**: [`IngredientId`](../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:59](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L59)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:59](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L59)
 
 #### Inherited from
 
@@ -61,7 +61,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBas
 
 > `protected` `readonly` **\_ingredient**: [`IngredientEntity`](../../Entities/type-aliases/IngredientEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:60](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L60)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:60](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L60)
 
 #### Inherited from
 
@@ -73,7 +73,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBas
 
 > `protected` `readonly` **\_sourceId**: [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:61](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L61)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:61](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L61)
 
 #### Inherited from
 
@@ -87,7 +87,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBas
 
 > **get** **alcoholByVolume**(): [`Percentage`](../../../../type-aliases/Percentage.md) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:88](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L88)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:88](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L88)
 
 Alcohol by volume percentage (optional)
 
@@ -109,7 +109,7 @@ Alcohol by volume percentage
 
 > **get** **allergens**(): readonly [`Allergen`](../../../../type-aliases/Allergen.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:153](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L153)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:153](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L153)
 
 Common allergens present
 
@@ -135,7 +135,7 @@ Optional list of common allergens present in the ingredient
 
 > **get** **baseId**(): [`BaseIngredientId`](../../../../type-aliases/BaseIngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L102)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:102](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L102)
 
 The base ingredient ID within the source
 
@@ -161,7 +161,7 @@ The base ingredient ID within the source.
 
 > **get** **category**(): `"alcohol"`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:77](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L77)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:77](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L77)
 
 Category is always 'alcohol' for this type
 
@@ -187,7 +187,7 @@ Category is always alcohol for this type
 
 > **get** **certifications**(): readonly [`Certification`](../../../../type-aliases/Certification.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:168](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L168)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:168](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L168)
 
 Certifications the ingredient has
 
@@ -213,7 +213,7 @@ Optional list of certifications the ingredient has
 
 > **get** **collectionId**(): [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:95](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L95)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:95](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L95)
 
 The source ID part of the composite ID
 
@@ -239,7 +239,7 @@ The collection ID part of the composite ID.
 
 > **get** **description**(): `string` \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:125](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L125)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:125](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L125)
 
 Optional description
 
@@ -265,7 +265,7 @@ Optional description
 
 > **get** **entity**(): [`IAlcoholIngredientEntity`](../../Entities/interfaces/IAlcoholIngredientEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L102)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:102](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L102)
 
 Gets the underlying alcohol ingredient data entity
 
@@ -291,7 +291,7 @@ Gets the underlying ingredient entity data.
 
 > **get** **flavorProfile**(): `string` \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:95](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L95)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:95](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L95)
 
 Flavor profile description (optional)
 
@@ -313,7 +313,7 @@ Flavor profile description (optional)
 
 > **get** **ganacheCharacteristics**(): [`IGanacheCharacteristics`](../../Entities/interfaces/IGanacheCharacteristics.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:139](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L139)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:139](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L139)
 
 Ganache-relevant characteristics
 
@@ -339,7 +339,7 @@ Ganache-relevant characteristics
 
 > **get** **id**(): [`IngredientId`](../../../../type-aliases/IngredientId.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:88](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L88)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:88](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L88)
 
 The composite ingredient ID (e.g., "felchlin.maracaibo-65")
 
@@ -366,7 +366,7 @@ Combines source and base ID for unique identification across sources.
 
 > **get** **manufacturer**(): `string` \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:132](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L132)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:132](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L132)
 
 Optional manufacturer
 
@@ -392,7 +392,7 @@ Optional manufacturer
 
 > **get** **name**(): `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:113](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L113)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:113](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L113)
 
 Display name of the ingredient
 
@@ -418,7 +418,7 @@ Display name
 
 > **get** **tags**(): readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:146](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L146)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:146](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L146)
 
 Tags for searching/filtering
 
@@ -444,7 +444,7 @@ Optional tags for searching/filtering
 
 > **get** **traceAllergens**(): readonly [`Allergen`](../../../../type-aliases/Allergen.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:160](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L160)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:160](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L160)
 
 Trace allergens (possible contamination)
 
@@ -470,7 +470,7 @@ Optional list of trace allergens possibly present (e.g. due to contamination)
 
 > **get** **vegan**(): `boolean` \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:175](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L175)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:175](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L175)
 
 Whether the ingredient is vegan
 
@@ -494,7 +494,7 @@ Optional indicator if the ingredient is vegan
 
 > **alternateInFillings**(): [`IFillingRecipe`](../interfaces/IFillingRecipe.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:239](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L239)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:239](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L239)
 
 Gets filling recipes where this ingredient is listed as an alternate.
 
@@ -516,7 +516,7 @@ Gets filling recipes where this ingredient is listed as an alternate.
 
 > **isAlcohol**(): `this is AlcoholIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:214](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L214)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:214](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L214)
 
 Returns true if this is an alcohol ingredient.
 
@@ -538,7 +538,7 @@ Returns true if this is an alcohol ingredient.
 
 > **isChocolate**(): `this is ChocolateIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:186](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L186)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:186](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L186)
 
 Returns true if this is a chocolate ingredient.
 
@@ -560,7 +560,7 @@ Returns true if this is a chocolate ingredient.
 
 > **isDairy**(): `this is DairyIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:193](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L193)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:193](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L193)
 
 Returns true if this is a dairy ingredient.
 
@@ -582,7 +582,7 @@ Returns true if this is a dairy ingredient.
 
 > **isFat**(): `this is FatIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:207](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L207)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:207](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L207)
 
 Returns true if this is a fat ingredient.
 
@@ -604,7 +604,7 @@ Returns true if this is a fat ingredient.
 
 > **isSugar**(): `this is SugarIngredient`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:200](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L200)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:200](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L200)
 
 Returns true if this is a sugar ingredient.
 
@@ -626,7 +626,7 @@ Returns true if this is a sugar ingredient.
 
 > **primaryInFillings**(): [`IFillingRecipe`](../interfaces/IFillingRecipe.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:232](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L232)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:232](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L232)
 
 Gets filling recipes where this ingredient is the primary choice.
 
@@ -648,7 +648,7 @@ Gets filling recipes where this ingredient is the primary choice.
 
 > **usedByFillings**(): [`IFillingRecipe`](../interfaces/IFillingRecipe.md)[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:225](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L225)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts:225](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/ingredientBase.ts#L225)
 
 Gets all filling recipes that use this ingredient (primary or alternate).
 
@@ -670,7 +670,7 @@ Gets all filling recipes that use this ingredient (primary or alternate).
 
 > `static` **create**(`context`, `id`, `ingredient`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`AlcoholIngredient`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:62](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L62)
+Defined in: [ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts:62](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/ingredients/alcoholIngredient.ts#L62)
 
 Factory method for creating a AlcoholIngredient.
 

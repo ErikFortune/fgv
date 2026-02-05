@@ -6,7 +6,7 @@
 
 # Abstract Class: BaseIndexerOrchestrator\<TEntity, TId\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:39](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L39)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:39](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L39)
 
 Base class for index orchestrators that provides common
 set operations and entity resolution logic.
@@ -36,7 +36,7 @@ The ID type (e.g., RecipeId)
 
 > `protected` **new BaseIndexerOrchestrator**\<`TEntity`, `TId`\>(`library`, `resolver`): `BaseIndexerOrchestrator`\<`TEntity`, `TId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:61](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L61)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:61](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L61)
 
 Creates a new BaseIndexerOrchestrator.
 
@@ -62,7 +62,7 @@ The entity resolver
 
 > `protected` `readonly` **\_resolver**: [`IEntityResolver`](../interfaces/IEntityResolver.md)\<`TEntity`, `TId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:48](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L48)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:48](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L48)
 
 The entity resolver for converting IDs to entities.
 
@@ -72,7 +72,7 @@ The entity resolver for converting IDs to entities.
 
 > `readonly` **library**: [`ChocolateLibrary`](../../../../../../classes/ChocolateLibrary.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:43](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L43)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:43](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L43)
 
 The chocolate library being indexed.
 
@@ -84,7 +84,7 @@ The chocolate library being indexed.
 
 > **get** `protected` **\_logger**(): [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:53](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L53)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:53](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L53)
 
 Logger for reporting indexer or orchestrator operations.
 
@@ -98,7 +98,7 @@ Logger for reporting indexer or orchestrator operations.
 
 > `protected` **\_intersect**(`sets`): `Set`\<`TId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:75](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L75)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:75](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L75)
 
 Computes intersection of multiple sets.
 
@@ -122,7 +122,7 @@ Set containing IDs present in all input sets
 
 > `protected` **\_resolveToEntities**(`ids`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly `TEntity`[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:117](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L117)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:117](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L117)
 
 Resolves a set of IDs to entities.
 
@@ -146,7 +146,7 @@ Array of resolved entities, or Failure if any resolution fails
 
 > `protected` **\_union**(`sets`): `Set`\<`TId`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L102)
+Defined in: [ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts:102](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/indexers/baseIndexerOrchestrator.ts#L102)
 
 Computes union of multiple sets.
 

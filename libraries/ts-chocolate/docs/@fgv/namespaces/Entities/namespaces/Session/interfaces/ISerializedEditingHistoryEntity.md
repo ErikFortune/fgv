@@ -6,7 +6,7 @@
 
 # Interface: ISerializedEditingHistoryEntity\<T\>
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:120](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L120)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:120](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L120)
 
 Serialized undo/redo history for any editable entity.
 Captures the full editing state for restoration.
@@ -25,7 +25,7 @@ The type of the state being tracked
 
 > `readonly` **current**: `T`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:122](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L122)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:122](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L122)
 
 Current editing state
 
@@ -35,7 +35,7 @@ Current editing state
 
 > `readonly` **original**: `T`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:124](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L124)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:124](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L124)
 
 Original state when session started (for change detection)
 
@@ -45,7 +45,7 @@ Original state when session started (for change detection)
 
 > `readonly` **redoStack**: readonly `T`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:128](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L128)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:128](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L128)
 
 Redo stack - states that were undone and can be reapplied
 
@@ -55,6 +55,6 @@ Redo stack - states that were undone and can be reapplied
 
 > `readonly` **undoStack**: readonly `T`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:126](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L126)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:126](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L126)
 
 Undo stack - states that can be restored

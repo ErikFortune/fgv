@@ -6,7 +6,7 @@
 
 # Interface: ICollection\<T, TCOLLECTIONID, TITEMID\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:182](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L182)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:182](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L182)
 
 Representation of a collection of items as serialized data.
 This is the base data interface without runtime-only properties.
@@ -35,7 +35,7 @@ This is the base data interface without runtime-only properties.
 
 > `readonly` **id**: `TCOLLECTIONID`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:187](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L187)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:187](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L187)
 
 ***
 
@@ -43,7 +43,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/model.ts:187](https://github
 
 > `readonly` **isMutable**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:192](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L192)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:192](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L192)
 
 Whether this collection is mutable (can be edited in the application).
 This is application-level mutability controlled by MutabilitySpec.
@@ -54,7 +54,7 @@ This is application-level mutability controlled by MutabilitySpec.
 
 > `readonly` **items**: `Record`\<`TITEMID`, `T`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:193](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L193)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:193](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L193)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [ts-chocolate/src/packlets/library-data/model.ts:193](https://github
 
 > `readonly` `optional` **metadata**: [`ICollectionSourceMetadata`](ICollectionSourceMetadata.md)
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:198](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L198)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:198](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L198)
 
 Optional metadata from the source file.
 May be undefined for collections created programmatically.

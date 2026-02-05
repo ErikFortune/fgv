@@ -6,7 +6,7 @@
 
 # Class: PinchScaler
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:163](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L163)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:163](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L163)
 
 Scaler for pinch measurements - always returns the original amount.
 Pinch is an imprecise measurement that doesn't scale linearly.
@@ -31,7 +31,7 @@ Pinch is an imprecise measurement that doesn't scale linearly.
 
 > `readonly` **supportsScaling**: `boolean` = `false`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:164](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L164)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:164](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L164)
 
 Whether this unit supports scaling
 
@@ -45,7 +45,7 @@ Whether this unit supports scaling
 
 > **scale**(`amount`, `_factor`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IScaledAmount`](../interfaces/IScaledAmount.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:166](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L166)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:166](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L166)
 
 Scale an amount by a factor
 

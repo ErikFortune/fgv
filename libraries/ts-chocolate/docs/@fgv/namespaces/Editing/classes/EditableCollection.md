@@ -6,7 +6,7 @@
 
 # Class: EditableCollection\<T, TBaseId\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:110](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L110)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:110](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L110)
 
 An extension of ValidatingResultMap that adds collection metadata,
 mutability control, and export functionality for entity editing workflows.
@@ -56,7 +56,7 @@ Protected raw access to the inner `Map<TK, TV>` object.
 
 > `readonly` **collectionId**: [`CollectionId`](../../../../type-aliases/CollectionId.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:114](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L114)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:114](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L114)
 
 Collection identifier.
 
@@ -66,7 +66,7 @@ Collection identifier.
 
 > `readonly` **isMutable**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:119](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L119)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:119](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L119)
 
 Whether collection is mutable.
 
@@ -76,7 +76,7 @@ Whether collection is mutable.
 
 > `readonly` `optional` **sourceItem**: [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:124](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L124)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:124](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L124)
 
 Optional reference to the source FileTree item for persistence.
 
@@ -103,7 +103,7 @@ before inserting them into this collection.
 
 > **get** **metadata**(): [`ICollectionSourceMetadata`](../../LibraryData/interfaces/ICollectionSourceMetadata.md)
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:375](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L375)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:375](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L375)
 
 Collection metadata.
 
@@ -196,7 +196,7 @@ An iterator over the map entries.
 
 > **add**(`key`, `value`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, [`ResultMapResultDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:550](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L550)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:550](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L550)
 
 Add item only if key doesn't exist.
 Fails if collection is immutable.
@@ -225,7 +225,7 @@ Fails if collection is immutable.
 
 > **canSave**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:455](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L455)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:455](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L455)
 
 Check if this collection can be saved to its source file.
 Returns true if the collection has a sourceItem and the FileTree supports persistence.
@@ -242,7 +242,7 @@ True if the collection can be saved, false otherwise
 
 > **clear**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:574](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L574)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:574](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L574)
 
 Clear all items from collection.
 Fails if collection is immutable.
@@ -261,7 +261,7 @@ Fails if collection is immutable.
 
 > **delete**(`key`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, [`ResultMapResultDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:566](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L566)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:566](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L566)
 
 Delete item from collection.
 Fails if collection is immutable.
@@ -306,7 +306,7 @@ An iterator over the map entries.
 
 > **export**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICollectionSourceFile`](../../LibraryData/interfaces/ICollectionSourceFile.md)\<`T`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:400](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L400)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:400](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L400)
 
 Export collection to ICollectionSourceFile format.
 
@@ -486,7 +486,7 @@ The key to check.
 
 > **isDirty**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:470](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L470)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:470](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L470)
 
 Check if the source file has unsaved changes.
 Only applicable if the collection has a persistent FileTree source.
@@ -525,7 +525,7 @@ An iterator over the map keys.
 
 > **save**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:481](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L481)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:481](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L481)
 
 Save the collection to its source file using FileTree persistence.
 Requires a sourceItem with a mutable FileTree.
@@ -542,7 +542,7 @@ Result indicating success or failure
 
 > **serialize**(`format`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:439](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L439)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:439](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L439)
 
 Serialize collection to string based on format.
 
@@ -572,7 +572,7 @@ Result containing serialized string or failure
 
 > **serializeToJson**(`options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:429](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L429)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:429](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L429)
 
 Serialize collection to JSON string.
 
@@ -596,7 +596,7 @@ Result containing JSON string or failure
 
 > **serializeToYaml**(`options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:420](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L420)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:420](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L420)
 
 Serialize collection to YAML string.
 
@@ -620,7 +620,7 @@ Result containing YAML string or failure
 
 > **set**(`key`, `value`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, [`ResultMapResultDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:542](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L542)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:542](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L542)
 
 Add or update item in collection.
 Fails if collection is immutable.
@@ -667,7 +667,7 @@ Gets a read-only version of this map.
 
 > **update**(`key`, `value`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, [`ResultMapResultDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:558](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L558)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:558](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L558)
 
 Update item only if key exists.
 Fails if collection is immutable.
@@ -696,7 +696,7 @@ Fails if collection is immutable.
 
 > **updateMetadata**(`metadata`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:384](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L384)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:384](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L384)
 
 Update collection metadata.
 
@@ -818,7 +818,7 @@ if an error occurred.
 
 > `static` **createEditable**\<`T`, `TBaseId`\>(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`EditableCollection`\<`T`, `TBaseId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:151](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L151)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:151](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L151)
 
 Create a new editable collection.
 
@@ -890,7 +890,7 @@ Required parameters for constructing the map.
 
 > `static` **fromJson**\<`T`, `TBaseId`\>(`content`, `params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`EditableCollection`\<`T`, `TBaseId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:248](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L248)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:248](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L248)
 
 Parse a JSON string and create an editable collection.
 
@@ -930,7 +930,7 @@ Result containing EditableCollection or failure
 
 > `static` **fromLibrary**\<`T`, `TBaseId`, `TItem`\>(`library`, `collectionId`, `keyConverter`, `valueConverter`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`EditableCollection`\<`T`, `TBaseId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:333](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L333)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:333](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L333)
 
 Create an editable collection from a SubLibrary collection with persistence enabled.
 
@@ -989,7 +989,7 @@ Result containing EditableCollection with persistence, or Failure
 
 > `static` **fromYaml**\<`T`, `TBaseId`\>(`content`, `params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`EditableCollection`\<`T`, `TBaseId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:218](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L218)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:218](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L218)
 
 Parse a YAML string and create an editable collection.
 
@@ -1029,7 +1029,7 @@ Result containing EditableCollection or failure
 
 > `static` **parse**\<`T`, `TBaseId`\>(`content`, `params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`EditableCollection`\<`T`, `TBaseId`\>\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:279](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L279)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:279](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L279)
 
 Parse content (auto-detecting format) and create an editable collection.
 Tries JSON first if content looks like JSON, otherwise tries YAML with JSON fallback.
@@ -1070,7 +1070,7 @@ Result containing EditableCollection or failure
 
 > `static` **validateStructure**(`data`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`true`\>
 
-Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:187](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L187)
+Defined in: [ts-chocolate/src/packlets/editing/editableCollection.ts:187](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/editing/editableCollection.ts#L187)
 
 Validate collection structure.
 

@@ -6,7 +6,7 @@
 
 # Interface: IFillingUsageEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:160](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L160)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:160](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L160)
 
 Record of a filling recipe being used (for production tracking)
 
@@ -16,7 +16,7 @@ Record of a filling recipe being used (for production tracking)
 
 > `readonly` **date**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:164](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L164)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:164](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L164)
 
 Date of use in ISO 8601 format
 
@@ -26,7 +26,7 @@ Date of use in ISO 8601 format
 
 > `readonly` `optional` **modifiedVersionSpec**: [`FillingVersionSpec`](../../../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:190](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L190)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:190](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L190)
 
 If modifications were made during this usage that created a new version,
 this is the ID of that new version
@@ -37,7 +37,7 @@ this is the ID of that new version
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:184](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L184)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:184](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L184)
 
 Optional categorized notes about this usage
 
@@ -47,7 +47,7 @@ Optional categorized notes about this usage
 
 > `readonly` **scaledWeight**: [`Measurement`](../../../../../../type-aliases/Measurement.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:174](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L174)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:174](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L174)
 
 Scaled weight used for this production run
 
@@ -57,7 +57,7 @@ Scaled weight used for this production run
 
 > `readonly` `optional` **scaleFactor**: `number`
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:179](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L179)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:179](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L179)
 
 Optional scale factor for reference
 
@@ -67,6 +67,6 @@ Optional scale factor for reference
 
 > `readonly` **versionSpec**: [`FillingVersionSpec`](../../../../../../type-aliases/FillingVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:169](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L169)
+Defined in: [ts-chocolate/src/packlets/entities/fillings/model.ts:169](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/fillings/model.ts#L169)
 
 Which version was used

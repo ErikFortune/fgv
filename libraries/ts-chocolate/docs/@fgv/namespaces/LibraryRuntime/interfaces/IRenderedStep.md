@@ -6,7 +6,7 @@
 
 # Interface: IRenderedStep
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:98](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L98)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:98](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L98)
 
 A rendered procedure step with resolved template values.
 
@@ -20,7 +20,7 @@ A rendered procedure step with resolved template values.
 
 > `readonly` `optional` **activeTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:48](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L48)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:48](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L48)
 
 Time actively working on this step (overrides task default)
 
@@ -34,7 +34,7 @@ Time actively working on this step (overrides task default)
 
 > `readonly` `optional` **holdTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:58](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L58)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:58](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L58)
 
 Time to hold at a temperature (overrides task default)
 
@@ -48,7 +48,7 @@ Time to hold at a temperature (overrides task default)
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:68](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L68)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:68](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L68)
 
 Optional categorized notes for this step
 
@@ -62,7 +62,7 @@ Optional categorized notes for this step
 
 > `readonly` **order**: `number`
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:38](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L38)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:38](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L38)
 
 Order number of this step (1-based)
 
@@ -76,7 +76,7 @@ Order number of this step (1-based)
 
 > `readonly` **renderedDescription**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:103](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L103)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:103](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L103)
 
 The rendered description with all template values resolved.
 Unlike the data-layer placeholder, this contains actual rendered content.
@@ -87,7 +87,7 @@ Unlike the data-layer placeholder, this contains actual rendered content.
 
 > `readonly` `optional` **resolvedTask**: [`Task`](../classes/Task.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:109](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L109)
+Defined in: [ts-chocolate/src/packlets/library-runtime/procedures/model.ts:109](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/procedures/model.ts#L109)
 
 The resolved task that was used for rendering (if a task ref was used).
 Undefined for inline tasks.
@@ -98,7 +98,7 @@ Undefined for inline tasks.
 
 > `readonly` **task**: [`ITaskEntityInvocation`](../../Entities/type-aliases/ITaskEntityInvocation.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:43](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L43)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:43](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L43)
 
 The task for this step - either a reference to a public task or an inline task definition
 
@@ -112,7 +112,7 @@ The task for this step - either a reference to a public task or an inline task d
 
 > `readonly` `optional` **temperature**: [`Celsius`](../../../../type-aliases/Celsius.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:63](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L63)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:63](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L63)
 
 Target temperature for this step (overrides task default)
 
@@ -126,7 +126,7 @@ Target temperature for this step (overrides task default)
 
 > `readonly` `optional` **waitTime**: [`Minutes`](../../../../type-aliases/Minutes.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:53](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L53)
+Defined in: [ts-chocolate/src/packlets/entities/procedures/model.ts:53](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/procedures/model.ts#L53)
 
 Passive waiting time (overrides task default)
 

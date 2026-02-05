@@ -6,7 +6,7 @@
 
 # Interface: IEncryptedCollectionMetadata
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:34](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L34)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:34](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L34)
 
 Optional unencrypted metadata for encrypted collection files.
 Allows filtering/display without decryption.
@@ -17,7 +17,7 @@ Allows filtering/display without decryption.
 
 > `readonly` `optional` **collectionId**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:38](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L38)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:38](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L38)
 
 Collection ID (unencrypted for filtering/display).
 
@@ -27,7 +27,7 @@ Collection ID (unencrypted for filtering/display).
 
 > `readonly` `optional` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:43](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L43)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:43](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L43)
 
 Human-readable description.
 
@@ -37,6 +37,6 @@ Human-readable description.
 
 > `readonly` `optional` **itemCount**: `number`
 
-Defined in: [ts-chocolate/src/packlets/library-data/model.ts:48](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/model.ts#L48)
+Defined in: [ts-chocolate/src/packlets/library-data/model.ts:48](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/model.ts#L48)
 
 Number of items in the collection.

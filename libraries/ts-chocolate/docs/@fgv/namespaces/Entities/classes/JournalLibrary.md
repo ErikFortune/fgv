@@ -6,7 +6,7 @@
 
 # Class: JournalLibrary
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:158](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L158)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:158](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L158)
 
 A library for managing cooking [journal entries](../type-aliases/AnyJournalEntryEntity.md).
 
@@ -74,7 +74,7 @@ Use `collections.has(id)` and `collections.get(id)` to check existence and retri
 
 > **get** **protectedCollections**(): readonly [`IProtectedCollectionInfo`](../../LibraryData/interfaces/IProtectedCollectionInfo.md)\<[`CollectionId`](../../../../type-aliases/CollectionId.md)\>[]
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1000](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1000)
 
 Gets the list of protected collections that were captured but not decrypted.
 
@@ -526,7 +526,7 @@ The composite ID of the item.
 
 > **getAllJournals**(): readonly [`AnyJournalEntryEntity`](../type-aliases/AnyJournalEntryEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:440](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L440)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:440](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L440)
 
 Gets all journal entries across all collections
 
@@ -570,7 +570,7 @@ The collection ID.
 
 > **getCollectionSourceItem**(`collectionId`): [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1202](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1202)
 
 Get the FileTree source item for a collection, if available.
 
@@ -602,7 +602,7 @@ The FileTree source item, or undefined if not available
 
 > **getJournal**(`journalId`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AnyJournalEntryEntity`](../type-aliases/AnyJournalEntryEntity.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:431](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L431)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:431](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L431)
 
 Gets a journal entry by ID (searches all collections)
 
@@ -626,7 +626,7 @@ Success with the journal entry, or Failure if not found
 
 > **getJournalsForConfection**(`confectionId`): readonly [`AnyConfectionJournalEntry`](../type-aliases/AnyConfectionJournalEntry.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:395](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L395)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:395](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L395)
 
 Gets all confection journal entries for a confection (across all versions and collections)
 
@@ -650,7 +650,7 @@ Array of confection journal entries (empty if none found)
 
 > **getJournalsForConfectionVersion**(`versionId`): readonly [`AnyConfectionJournalEntry`](../type-aliases/AnyConfectionJournalEntry.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:412](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L412)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:412](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L412)
 
 Gets all confection journal entries for a specific confection version (across all collections)
 
@@ -674,7 +674,7 @@ Array of confection journal entries (empty if none found)
 
 > **getJournalsForFilling**(`fillingId`): readonly [`AnyFillingJournalEntry`](../type-aliases/AnyFillingJournalEntry.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:361](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L361)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:361](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L361)
 
 Gets all filling journal entries for a filling (across all versions and collections)
 
@@ -698,7 +698,7 @@ Array of filling journal entries (empty if none found)
 
 > **getJournalsForFillingVersion**(`versionId`): readonly [`AnyFillingJournalEntry`](../type-aliases/AnyFillingJournalEntry.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:378](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L378)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:378](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L378)
 
 Gets all filling journal entries for a specific filling version (across all collections)
 
@@ -818,7 +818,7 @@ The composite ID of the item.
 
 > **hasJournal**(`journalId`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:450](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L450)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:450](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L450)
 
 Checks if a journal with the given ID exists (searches all collections)
 
@@ -860,7 +860,7 @@ Iterates over all composite keys.
 
 > **loadFromFileTreeSource**(`source`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`number`\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:950](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L950)
 
 Loads collections from a file tree source and adds them to this library.
 
@@ -888,7 +888,7 @@ Success with the number of collections added, or Failure with error message
 
 > **loadProtectedCollectionAsync**(`encryption`, `filter?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`CollectionId`](../../../../type-aliases/CollectionId.md)[]\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:1019](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L1019)
 
 Decrypts and loads one or more protected collections.
 
@@ -1143,7 +1143,7 @@ Iterates over all values.
 
 > `static` **create**(`params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`JournalLibrary`\>
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:209](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L209)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:209](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L209)
 
 Creates a new JournalLibrary instance.
 
@@ -1167,7 +1167,7 @@ Optional [creation parameters](../namespaces/Journal/type-aliases/IJournalLibrar
 
 > `static` **createAsync**(`params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`JournalLibrary`\>\>
 
-Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:223](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L223)
+Defined in: [ts-chocolate/src/packlets/entities/journal/library.ts:223](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/journal/library.ts#L223)
 
 Creates a JournalLibrary instance asynchronously with encrypted file support.
 
@@ -1191,7 +1191,7 @@ Promise resolving to Success with new instance, or Failure
 
 > `protected` `static` **loadAllCollectionsAsync**\<`TLibrary`, `TBaseId`, `TItem`\>(`params`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ISubLibraryAsyncLoadResult`](../../LibraryData/interfaces/ISubLibraryAsyncLoadResult.md)\<`TBaseId`, `TItem`\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
+Defined in: [ts-chocolate/src/packlets/library-data/subLibrary.ts:828](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-data/subLibrary.ts#L828)
 
 Loads all collections asynchronously with encryption support.
 

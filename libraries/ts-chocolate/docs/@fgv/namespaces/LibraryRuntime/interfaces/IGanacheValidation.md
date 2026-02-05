@@ -6,7 +6,7 @@
 
 # Interface: IGanacheValidation
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1597](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1597)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1597](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1597)
 
 Validation result for ganache ratios
 
@@ -16,7 +16,7 @@ Validation result for ganache ratios
 
 > `readonly` **errors**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1611](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1611)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1611](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1611)
 
 Specific validation errors
 
@@ -26,7 +26,7 @@ Specific validation errors
 
 > `readonly` **isValid**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1601](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1601)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1601](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1601)
 
 Overall validity
 
@@ -36,6 +36,6 @@ Overall validity
 
 > `readonly` **warnings**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1606](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1606)
+Defined in: [ts-chocolate/src/packlets/library-runtime/model.ts:1606](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/model.ts#L1606)
 
 Specific validation warnings

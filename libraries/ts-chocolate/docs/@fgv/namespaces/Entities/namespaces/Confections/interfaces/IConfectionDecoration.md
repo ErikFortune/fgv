@@ -6,7 +6,7 @@
 
 # Interface: IConfectionDecoration
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:102](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L102)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:102](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L102)
 
 Decoration specification for a [confection](../../../type-aliases/AnyConfectionEntity.md).
 
@@ -16,7 +16,7 @@ Decoration specification for a [confection](../../../type-aliases/AnyConfectionE
 
 > `readonly` **description**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:104](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L104)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:104](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L104)
 
 Description of the decoration
 
@@ -26,6 +26,6 @@ Description of the decoration
 
 > `readonly` `optional` **preferred**: `boolean`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:106](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L106)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:106](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L106)
 
 Whether this is the preferred/recommended decoration

@@ -6,7 +6,7 @@
 
 # Class: MaterializedLibrary\<TId, TEntity, TMaterialized, TQuerySpec\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:106](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L106)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:106](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L106)
 
 A read-only library providing lazily-materialized, cached runtime objects.
 Wraps a data-layer library and converts entities to materialized objects on demand.
@@ -47,7 +47,7 @@ The query specification type (for find support)
 
 > **new MaterializedLibrary**\<`TId`, `TEntity`, `TMaterialized`, `TQuerySpec`\>(`params`): `MaterializedLibrary`\<`TId`, `TEntity`, `TMaterialized`, `TQuerySpec`\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:118](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L118)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:118](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L118)
 
 Creates a new MaterializedLibrary.
 
@@ -145,7 +145,7 @@ Error handling behavior for conversion failures during iteration.
 
 > **get** **hasFindSupport**(): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:144](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L144)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:144](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L144)
 
 Whether find is supported on this library.
 
@@ -336,7 +336,7 @@ An iterator over the map entries.
 
 > **find**(`spec`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly `TMaterialized`[]\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:134](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L134)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:134](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L134)
 
 Finds materialized objects matching a query specification.
 
@@ -428,7 +428,7 @@ detail `invalid-value` if conversion failed.
 
 > **getPreferred**(`spec`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TMaterialized`, [`ResultMapResultDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:157](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L157)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:157](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L157)
 
 Gets the preferred (or first) materialized item from an IIdsWithPreferred.
 
@@ -452,7 +452,7 @@ DetailedResult with the preferred materialized item
 
 > **getPreferredRef**(`spec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<\{ `id`: `TId`; `item`: `TMaterialized`; `notes?`: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]; \}\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:214](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L214)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:213](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L213)
 
 Gets the preferred (or first) materialized item from an IOptionsWithPreferred<IRefWithNotes>.
 Only materializes the primary item - more efficient when alternates aren't needed.
@@ -477,7 +477,7 @@ Result with the preferred materialized item and its notes
 
 > **getRefsWithAlternates**(`spec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IResolvedRefWithAlternates`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)\<`TId`, `TMaterialized`\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:250](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L250)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:248](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L248)
 
 Gets the preferred item and all alternates from an IOptionsWithPreferred containing IRefWithNotes.
 Preserves notes from each reference.
@@ -502,7 +502,7 @@ Result with resolved primary and alternates with their notes
 
 > **getWithAlternates**(`spec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IResolvedWithAlternates`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs)\<`TMaterialized`, [`IIdsWithPreferred`](../../Model/interfaces/IIdsWithPreferred.md)\<`TId`\>\>\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:177](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L177)
+Defined in: [ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts:177](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/materializedLibrary.ts#L177)
 
 Gets the preferred item and all alternates from an IIdsWithPreferred.
 Returns a structured result with the primary item, alternates array, and original entity.

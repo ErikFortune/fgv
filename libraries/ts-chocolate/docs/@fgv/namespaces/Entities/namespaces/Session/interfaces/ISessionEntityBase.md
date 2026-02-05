@@ -6,7 +6,7 @@
 
 # Interface: ISessionEntityBase
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:139](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L139)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:139](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L139)
 
 Common properties shared by all persisted session types.
 
@@ -21,7 +21,7 @@ Common properties shared by all persisted session types.
 
 > `readonly` **baseId**: [`BaseSessionId`](../../../../../../type-aliases/BaseSessionId.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:141](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L141)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:141](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L141)
 
 Base identifier within the collection (no collection prefix)
 
@@ -31,7 +31,7 @@ Base identifier within the collection (no collection prefix)
 
 > `readonly` **createdAt**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:147](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L147)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:147](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L147)
 
 ISO 8601 timestamp when session was created
 
@@ -41,7 +41,7 @@ ISO 8601 timestamp when session was created
 
 > `readonly` `optional` **destination**: [`ISessionDestinationEntity`](ISessionDestinationEntity.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:155](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L155)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:155](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L155)
 
 Destination configuration for saving derived entities
 
@@ -51,7 +51,7 @@ Destination configuration for saving derived entities
 
 > `readonly` `optional` **label**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:151](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L151)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:151](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L151)
 
 User-provided label for the session
 
@@ -61,7 +61,7 @@ User-provided label for the session
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:153](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L153)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:153](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L153)
 
 Optional categorized notes
 
@@ -71,7 +71,7 @@ Optional categorized notes
 
 > `readonly` **sessionType**: [`PersistedSessionType`](../type-aliases/PersistedSessionType.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:143](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L143)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:143](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L143)
 
 Session type discriminator
 
@@ -81,7 +81,7 @@ Session type discriminator
 
 > `readonly` **status**: [`PersistedSessionStatus`](../../../type-aliases/PersistedSessionStatus.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:145](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L145)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:145](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L145)
 
 Current lifecycle status
 
@@ -91,6 +91,6 @@ Current lifecycle status
 
 > `readonly` **updatedAt**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:149](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L149)
+Defined in: [ts-chocolate/src/packlets/entities/session/model.ts:149](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/session/model.ts#L149)
 
 ISO 8601 timestamp when session was last updated

@@ -6,7 +6,7 @@
 
 # Class: UnitScalerRegistry
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:323](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L323)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:323](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L323)
 
 Registry of unit scalers.
 Maps measurement units to their appropriate scalers.
@@ -18,7 +18,7 @@ Falls back to a default linear scaler for unknown units.
 
 > **new UnitScalerRegistry**(): `UnitScalerRegistry`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:327](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L327)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:327](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L327)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScale
 
 > **getScaler**(`unit`): [`IUnitScaler`](../interfaces/IUnitScaler.md)
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:349](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L349)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:349](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L349)
 
 Get the scaler for a specific unit
 
@@ -54,7 +54,7 @@ The appropriate scaler (falls back to linear scaler for unknown units)
 
 > **scale**(`amount`, `unit`, `factor`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IScaledAmount`](../interfaces/IScaledAmount.md)\>
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:369](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L369)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:369](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L369)
 
 Scale an amount in the specified unit
 
@@ -90,7 +90,7 @@ The scaled amount with display information
 
 > **supportsScaling**(`unit`): `boolean`
 
-Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:358](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L358)
+Defined in: [ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts:358](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/library-runtime/internal/fillingUnitScaler.ts#L358)
 
 Check if a unit supports scaling
 

@@ -6,7 +6,7 @@
 
 # Interface: ITemperatureCurve
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:75](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L75)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:75](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L75)
 
 Temperature curve for chocolate tempering
 
@@ -16,7 +16,7 @@ Temperature curve for chocolate tempering
 
 > `readonly` **cool**: [`Celsius`](../../../../../../type-aliases/Celsius.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:79](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L79)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:79](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L79)
 
 Temperature to cool chocolate to (crystallization)
 
@@ -26,7 +26,7 @@ Temperature to cool chocolate to (crystallization)
 
 > `readonly` **melt**: [`Celsius`](../../../../../../type-aliases/Celsius.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:77](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L77)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:77](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L77)
 
 Temperature to fully melt chocolate
 
@@ -36,6 +36,6 @@ Temperature to fully melt chocolate
 
 > `readonly` **working**: [`Celsius`](../../../../../../type-aliases/Celsius.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:81](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L81)
+Defined in: [ts-chocolate/src/packlets/entities/ingredients/model.ts:81](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/ingredients/model.ts#L81)
 
 Final working temperature

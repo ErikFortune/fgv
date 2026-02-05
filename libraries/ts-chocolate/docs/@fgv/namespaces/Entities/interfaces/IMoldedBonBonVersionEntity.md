@@ -6,7 +6,7 @@
 
 # Interface: IMoldedBonBonVersionEntity
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:283](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L283)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:283](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L283)
 
 Version interface for molded bonbon confections.
 Includes mold and chocolate shell specifications.
@@ -21,7 +21,7 @@ Includes mold and chocolate shell specifications.
 
 > `readonly` `optional` **additionalChocolates**: readonly [`IAdditionalChocolateEntity`](../namespaces/Confections/interfaces/IAdditionalChocolateEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:289](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L289)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:289](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L289)
 
 Optional additional chocolates (seal, decoration)
 
@@ -31,7 +31,7 @@ Optional additional chocolates (seal, decoration)
 
 > `readonly` `optional` **additionalTags**: readonly `string`[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:273](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L273)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:273](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L273)
 
 Additional tags (merged with base confection tags)
 
@@ -45,7 +45,7 @@ Additional tags (merged with base confection tags)
 
 > `readonly` `optional` **additionalUrls**: readonly [`ICategorizedUrl`](../../Model/interfaces/ICategorizedUrl.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:275](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L275)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:275](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L275)
 
 Additional URLs (merged with base confection URLs)
 
@@ -59,7 +59,7 @@ Additional URLs (merged with base confection URLs)
 
 > `readonly` **createdDate**: `string`
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:261](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L261)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:261](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L261)
 
 Date this version was created (ISO 8601 format)
 
@@ -73,7 +73,7 @@ Date this version was created (ISO 8601 format)
 
 > `readonly` `optional` **decorations**: readonly [`IConfectionDecoration`](../namespaces/Confections/interfaces/IConfectionDecoration.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:267](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L267)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:267](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L267)
 
 Optional decorations for this version
 
@@ -87,7 +87,7 @@ Optional decorations for this version
 
 > `readonly` `optional` **fillings**: readonly [`IFillingSlotEntity`](../namespaces/Confections/interfaces/IFillingSlotEntity.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:265](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L265)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:265](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L265)
 
 Optional filling slots - each slot has independent options with a preferred selection
 
@@ -101,7 +101,7 @@ Optional filling slots - each slot has independent options with a preferred sele
 
 > `readonly` **molds**: [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IConfectionMoldRef`](../namespaces/Confections/type-aliases/IConfectionMoldRef.md), [`MoldId`](../../../../type-aliases/MoldId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:285](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L285)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:285](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L285)
 
 Required molds with preferred selection
 
@@ -111,7 +111,7 @@ Required molds with preferred selection
 
 > `readonly` `optional` **notes**: readonly [`ICategorizedNote`](../../Model/interfaces/ICategorizedNote.md)[]
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:271](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L271)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:271](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L271)
 
 Optional categorized notes about this version
 
@@ -125,7 +125,7 @@ Optional categorized notes about this version
 
 > `readonly` `optional` **procedures**: [`IOptionsWithPreferred`](../../Model/interfaces/IOptionsWithPreferred.md)\<[`IProcedureRefEntity`](../namespaces/Fillings/type-aliases/IProcedureRefEntity.md), [`ProcedureId`](../../../../type-aliases/ProcedureId.md)\>
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:269](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L269)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:269](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L269)
 
 Optional procedures with preferred selection
 
@@ -139,7 +139,7 @@ Optional procedures with preferred selection
 
 > `readonly` **shellChocolate**: [`IChocolateSpec`](../namespaces/Confections/type-aliases/IChocolateSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:287](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L287)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:287](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L287)
 
 Required shell chocolate specification
 
@@ -149,7 +149,7 @@ Required shell chocolate specification
 
 > `readonly` **versionSpec**: [`ConfectionVersionSpec`](../../../../type-aliases/ConfectionVersionSpec.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:259](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L259)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:259](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L259)
 
 Unique identifier for this version
 
@@ -163,7 +163,7 @@ Unique identifier for this version
 
 > `readonly` **yield**: [`IConfectionYield`](IConfectionYield.md)
 
-Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:263](https://github.com/ErikFortune/fgv/blob/d51b0929f72c9206f7fc8c54016db3ae08502b0f/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L263)
+Defined in: [ts-chocolate/src/packlets/entities/confections/model.ts:263](https://github.com/ErikFortune/fgv/blob/4be6f2d0ab84c3f4b78ffd3f9b262279d2ab7172/libraries/ts-chocolate/src/packlets/entities/confections/model.ts#L263)
 
 Yield specification for this version
 
