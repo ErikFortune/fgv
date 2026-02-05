@@ -199,12 +199,18 @@ const anyFillingOptionEntity: Converter<AnyFillingOptionEntity>;
 type AnyIngredient = ChocolateIngredient | DairyIngredient | SugarIngredient | FatIngredient | AlcoholIngredient | GenericIngredient;
 
 // @public
+type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
+
+// @public
 type AnyInventoryEntryEntity = IMoldInventoryEntryEntity | IIngredientInventoryEntryEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const anyInventoryEntryEntity: Converter<AnyInventoryEntryEntity>;
+
+// @public
+type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
 
 // @public
 type AnyJournalEntryEntity = IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity | IFillingProductionJournalEntryEntity | IConfectionProductionJournalEntryEntity;
@@ -2385,6 +2391,10 @@ interface IConfectionEditingSessionParams {
 }
 
 // @public
+interface IConfectionEditJournalEntry extends IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionVersionId, IConfectionEditJournalEntryEntity> {
+}
+
+// @public
 interface IConfectionEditJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
     // (undocumented)
     readonly type: 'confection-edit';
@@ -2407,6 +2417,10 @@ type IConfectionFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
 type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
+
+// @public
+interface IConfectionProductionJournalEntry extends IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionVersionId, IConfectionProductionJournalEntryEntity> {
+}
 
 // @public
 interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionVersionId> {
@@ -2680,6 +2694,10 @@ interface IFillingDerivationEntity {
 }
 
 // @public
+interface IFillingEditJournalEntry extends IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingVersionId, IFillingEditJournalEntryEntity> {
+}
+
+// @public
 interface IFillingEditJournalEntryEntity extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingVersionId> {
     // (undocumented)
     readonly type: 'filling-edit';
@@ -2695,6 +2713,10 @@ interface IFillingIngredientEntity {
     readonly modifiers?: IIngredientModifiers;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly unit?: MeasurementUnit;
+}
+
+// @public
+interface IFillingProductionJournalEntry extends IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingVersionId, IFillingProductionJournalEntryEntity> {
 }
 
 // @public
@@ -3023,6 +3045,10 @@ interface IIngredientFillingOptionEntity {
 }
 
 // @public
+interface IIngredientInventoryEntry extends IInventoryEntryBase<Inventory.IngredientInventoryEntryId, IIngredient, IIngredientInventoryEntryEntity> {
+}
+
+// @public
 interface IIngredientInventoryEntryEntity extends IInventoryEntryEntityBase {
     readonly ingredientId: IngredientId;
     // (undocumented)
@@ -3118,6 +3144,16 @@ interface IInstantiatedUserLibrarySource {
 }
 
 // @public
+interface IInventoryEntryBase<TId, TItem, TEntity> {
+    readonly entity: TEntity;
+    readonly id: TId;
+    readonly item: TItem;
+    readonly location?: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly quantity: number;
+}
+
+// @public
 interface IInventoryEntryEntityBase {
     readonly inventoryType: InventoryType;
     readonly location?: string;
@@ -3128,6 +3164,20 @@ interface IInventoryEntryEntityBase {
 interface IIterationOptions {
     readonly limit?: number;
     readonly offset?: number;
+}
+
+// @public
+interface IJournalEntryBase<TRecipe, TVersion, TVersionId, TEntity extends AnyJournalEntryEntity = AnyJournalEntryEntity> {
+    readonly baseId: BaseJournalId;
+    readonly entity: TEntity;
+    readonly id: JournalId;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly recipe: TRecipe;
+    readonly timestamp: string;
+    readonly updated?: TVersion;
+    readonly updatedId?: TVersionId;
+    readonly version: TVersion;
+    readonly versionId: TVersionId;
 }
 
 // @public
@@ -3320,6 +3370,10 @@ interface IMoldEntity {
 
 // @public
 type IMoldFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IMoldInventoryEntry extends IInventoryEntryBase<Inventory.MoldInventoryEntryId, IMold, IMoldInventoryEntryEntity> {
+}
 
 // @public
 interface IMoldInventoryEntryEntity extends IInventoryEntryEntityBase {
@@ -4735,10 +4789,11 @@ interface IUserLibraryCreateParams {
 // @public
 interface IUserLibraryRuntime {
     createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
-    evictSession(sessionId: SessionId): boolean;
-    getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession>;
-    readonly materializedSessions: ReadonlyMap<SessionId, AnyMaterializedSession>;
+    readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
+    readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
+    readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
     saveSession(sessionId: SessionId): Result<AnySessionEntity>;
+    readonly sessions: MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
 }
 
 // @public
@@ -6626,32 +6681,46 @@ class UserLibrary_2 implements IUserLibrary {
 // @public
 class UserLibraryRuntime implements IUserLibraryRuntime {
     static create(userLibrary: IUserLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
     createFillingSession(versionId: FillingVersionId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
-    evictSession(sessionId: SessionId): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get ingredientInventory(): MaterializedLibrary<Inventory.IngredientInventoryEntryId, Inventory.IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
-    getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get journals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
-    get materializedSessions(): ReadonlyMap<SessionId, AnyMaterializedSession>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get moldInventory(): MaterializedLibrary<Inventory.MoldInventoryEntryId, Inventory.IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
     saveSession(sessionId: SessionId): Result<AnySessionEntity>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    //
+    // (undocumented)
+    get sessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
 }
 
 declare namespace UserRuntime {
     export {
         AnyMaterializedSession,
         ICreateFillingSessionOptions,
+        IJournalEntryBase,
+        IFillingEditJournalEntry,
+        IConfectionEditJournalEntry,
+        IFillingProductionJournalEntry,
+        IConfectionProductionJournalEntry,
+        AnyJournalEntry,
+        IInventoryEntryBase,
+        IMoldInventoryEntry,
+        IIngredientInventoryEntry,
+        AnyInventoryEntry,
         IUserLibraryRuntime,
         UserLibraryRuntime
     }

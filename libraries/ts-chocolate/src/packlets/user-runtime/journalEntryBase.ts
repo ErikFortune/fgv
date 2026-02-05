@@ -1,0 +1,169 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Base class for materialized journal entries with resolved references.
+ * @packageDocumentation
+ */
+
+import { Result, fail } from '@fgv/ts-utils';
+
+import { BaseJournalId, JournalId } from '../common';
+import { AnyJournalEntryEntity } from '../entities';
+import { ISessionContext } from '../runtime';
+import { IJournalEntryBase } from './model';
+
+/**
+ * Abstract base class for materialized journal entries.
+ * Provides common properties shared by all journal entry types.
+ *
+ * @typeParam TRecipe - The recipe/confection interface type
+ * @typeParam TVersion - The version interface type
+ * @typeParam TVersionId - The version ID type
+ * @typeParam TEntity - The specific journal entry entity type
+ * @internal
+ */
+export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity extends AnyJournalEntryEntity>
+  implements IJournalEntryBase<TRecipe, TVersion, TVersionId, TEntity>
+{
+  protected readonly _context: ISessionContext;
+  protected readonly _id: JournalId;
+  protected readonly _baseId: BaseJournalId;
+  protected readonly _entity: TEntity;
+  protected readonly _recipe: TRecipe;
+  protected readonly _version: TVersion;
+  protected readonly _updated: TVersion | undefined;
+
+  /**
+   * Creates a JournalEntryBase.
+   * @param context - Session context for resolving references
+   * @param id - Composite journal entry ID
+   * @param baseId - Base ID within collection
+   * @param entity - Journal entry entity
+   * @param recipe - Resolved recipe/confection
+   * @param version - Resolved version
+   * @param updated - Resolved updated version (if any)
+   * @internal
+   */
+  protected constructor(
+    context: ISessionContext,
+    id: JournalId,
+    baseId: BaseJournalId,
+    entity: TEntity,
+    recipe: TRecipe,
+    version: TVersion,
+    updated?: TVersion
+  ) {
+    this._context = context;
+    this._id = id;
+    this._baseId = baseId;
+    this._entity = entity;
+    this._recipe = recipe;
+    this._version = version;
+    this._updated = updated;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.id}
+   */
+  public get id(): JournalId {
+    return this._id;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.baseId}
+   */
+  public get baseId(): BaseJournalId {
+    return this._baseId;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.timestamp}
+   */
+  public get timestamp(): string {
+    return this._entity.timestamp;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.versionId}
+   */
+  public get versionId(): TVersionId {
+    return this._entity.versionId as TVersionId;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.recipe}
+   */
+  public get recipe(): TRecipe {
+    return this._recipe;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.version}
+   */
+  public get version(): TVersion {
+    return this._version;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.updated}
+   */
+  public get updated(): TVersion | undefined {
+    return this._updated;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.updatedId}
+   */
+  public get updatedId(): TVersionId | undefined {
+    return this._entity.updatedId as TVersionId | undefined;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.notes}
+   */
+  public get notes(): ReadonlyArray<import('../common').Model.ICategorizedNote> | undefined {
+    return this._entity.notes;
+  }
+
+  /**
+   * {@inheritDoc IJournalEntryBase.entity}
+   */
+  public get entity(): TEntity {
+    return this._entity;
+  }
+
+  /**
+   * Factory method to create a materialized journal entry from an entity.
+   * Resolves all recipe/confection/version references.
+   * @param context - Session context for resolving references
+   * @param id - Composite journal entry ID
+   * @param entity - Journal entry entity to materialize
+   * @returns Result with materialized journal entry
+   * @internal
+   */
+  public static create(
+    context: ISessionContext,
+    id: JournalId,
+    entity: AnyJournalEntryEntity
+  ): Result<JournalEntryBase<unknown, unknown, unknown, AnyJournalEntryEntity>> {
+    return fail(`JournalEntryBase.create must be implemented by subclasses for entity type ${entity.type}`);
+  }
+}

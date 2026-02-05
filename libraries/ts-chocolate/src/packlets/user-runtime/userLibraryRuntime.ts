@@ -19,52 +19,90 @@
 // SOFTWARE.
 
 /**
- * UserLibraryRuntime - materializes persisted sessions into runtime editing sessions.
+ * UserLibraryRuntime - materializes user library data with resolved references.
  * @packageDocumentation
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { ConfectionType, FillingVersionId, Helpers, SessionId } from '../common';
+import { ConfectionType, FillingVersionId, Helpers, JournalId, SessionId } from '../common';
 import {
+  AnyJournalEntryEntity,
   AnySessionEntity,
   IConfectionSessionEntity,
   IFillingSessionEntity,
   IProducedBarTruffleEntity,
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
-  Session as SessionEntities,
-  SessionLibrary
+  Inventory,
+  Session as SessionEntities
 } from '../entities';
-import { IConfectionBase, BarTruffle, MoldedBonBon, RolledTruffle } from '../library-runtime';
+import {
+  BarTruffle,
+  IConfectionBase,
+  MaterializedLibrary,
+  MoldedBonBon,
+  RolledTruffle
+} from '../library-runtime';
 import { ISessionContext, Session } from '../runtime';
 import { IUserLibrary } from '../user-library';
-import { AnyMaterializedSession, ICreateFillingSessionOptions, IUserLibraryRuntime } from './model';
+import { createJournalEntry } from './journalEntry';
+import { IngredientInventoryEntry, MoldInventoryEntry } from './inventoryEntry';
+import {
+  AnyJournalEntry,
+  AnyMaterializedSession,
+  ICreateFillingSessionOptions,
+  IIngredientInventoryEntry,
+  IMoldInventoryEntry,
+  IUserLibraryRuntime
+} from './model';
 
 /**
  * Implementation of user library runtime materialization.
  *
- * Provides:
- * - On-demand materialization of persisted sessions
- * - Caching of materialized sessions
- * - Creation and persistence of new sessions
+ * Follows the library-runtime pattern:
+ * - Exposes MaterializedLibrary instances for sessions, journals, and inventory
+ * - Lazy resolution and caching of materialized objects
+ * - Specialized methods for session creation and persistence
  *
  * @public
  */
 export class UserLibraryRuntime implements IUserLibraryRuntime {
   private readonly _userLibrary: IUserLibrary;
   private readonly _sessionContext: ISessionContext;
-  private readonly _materializedSessions: Map<SessionId, AnyMaterializedSession>;
+
+  // Lazy-initialized MaterializedLibrary instances
+  private _sessions:
+    | MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>
+    | undefined;
+  private _journals:
+    | MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>
+    | undefined;
+  private _moldInventory:
+    | MaterializedLibrary<
+        Inventory.MoldInventoryEntryId,
+        Inventory.IMoldInventoryEntryEntity,
+        IMoldInventoryEntry,
+        never
+      >
+    | undefined;
+  private _ingredientInventory:
+    | MaterializedLibrary<
+        Inventory.IngredientInventoryEntryId,
+        Inventory.IIngredientInventoryEntryEntity,
+        IIngredientInventoryEntry,
+        never
+      >
+    | undefined;
 
   private constructor(userLibrary: IUserLibrary, sessionContext: ISessionContext) {
     this._userLibrary = userLibrary;
     this._sessionContext = sessionContext;
-    this._materializedSessions = new Map();
   }
 
   /**
    * Creates a new UserLibraryRuntime.
-   * @param userLibrary - The user library containing persisted sessions
+   * @param userLibrary - The user library containing persisted data
    * @param sessionContext - The session context for materializing recipes and confections
    * @returns Result with the UserLibraryRuntime
    * @public
@@ -76,63 +114,64 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     return succeed(new UserLibraryRuntime(userLibrary, sessionContext));
   }
 
-  /**
-   * Gets the sessions library from the user library.
-   */
-  private get _sessions(): SessionLibrary {
-    return this._userLibrary.sessions;
-  }
-
   // ============================================================================
-  // IUserLibraryRuntime Implementation
+  // MaterializedLibrary Properties (IUserLibraryRuntime)
   // ============================================================================
 
   /**
-   * {@inheritDoc UserRuntime.IUserLibraryRuntime.getMaterializedSession}
+   * {@inheritDoc IUserLibraryRuntime.sessions}
    */
-  public getMaterializedSession(sessionId: SessionId): Result<AnyMaterializedSession> {
-    // Check cache first
-    const cached = this._materializedSessions.get(sessionId);
-    if (cached !== undefined) {
-      return succeed(cached);
-    }
-
-    // Get persisted session from library
-    const persistedResult = this._sessions.get(sessionId);
-    if (persistedResult.isFailure()) {
-      return fail(`Session ${sessionId} not found: ${persistedResult.message}`);
-    }
-
-    const persisted = persistedResult.value;
-
-    // Dispatch to type-specific materialization
-    if (SessionEntities.isFillingSessionEntity(persisted)) {
-      return this._materializeFillingSession(sessionId, persisted);
-    }
-
-    if (SessionEntities.isConfectionSessionEntity(persisted)) {
-      return this._materializeConfectionSession(sessionId, persisted);
-    }
-
-    return fail(`Unknown session type for ${sessionId}`);
+  public get sessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never> {
+    return this._getSessions();
   }
 
   /**
-   * {@inheritDoc UserRuntime.IUserLibraryRuntime.createFillingSession}
+   * {@inheritDoc IUserLibraryRuntime.journals}
+   */
+  public get journals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never> {
+    return this._getJournals();
+  }
+
+  /**
+   * {@inheritDoc IUserLibraryRuntime.moldInventory}
+   */
+  public get moldInventory(): MaterializedLibrary<
+    Inventory.MoldInventoryEntryId,
+    Inventory.IMoldInventoryEntryEntity,
+    IMoldInventoryEntry,
+    never
+  > {
+    return this._getMoldInventory();
+  }
+
+  /**
+   * {@inheritDoc IUserLibraryRuntime.ingredientInventory}
+   */
+  public get ingredientInventory(): MaterializedLibrary<
+    Inventory.IngredientInventoryEntryId,
+    Inventory.IIngredientInventoryEntryEntity,
+    IIngredientInventoryEntry,
+    never
+  > {
+    return this._getIngredientInventory();
+  }
+
+  // ============================================================================
+  // Specialized Session Methods (IUserLibraryRuntime)
+  // ============================================================================
+
+  /**
+   * {@inheritDoc IUserLibraryRuntime.createFillingSession}
    */
   public createFillingSession(
     versionId: FillingVersionId,
     options: ICreateFillingSessionOptions
   ): Result<IFillingSessionEntity> {
-    // Get the filling version from the session context
     const fillingId = Helpers.getFillingVersionFillingId(versionId);
     return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
-      // Find the specific version
       const versionSpec = Helpers.getFillingVersionSpec(versionId);
       return filling.getVersion(versionSpec).onSuccess((version) => {
-        // Create editing session
         return Session.EditingSession.create(version).onSuccess((session) => {
-          // Convert to persisted state
           return session.toPersistedState({
             collectionId: options.collectionId,
             status: options.status,
@@ -144,24 +183,26 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * {@inheritDoc UserRuntime.IUserLibraryRuntime.saveSession}
+   * {@inheritDoc IUserLibraryRuntime.saveSession}
    */
   public saveSession(sessionId: SessionId): Result<AnySessionEntity> {
-    // Get the materialized session
-    const session = this._materializedSessions.get(sessionId);
-    if (session === undefined) {
-      return fail(`Session ${sessionId} is not materialized`);
+    // Get the materialized session from the cache
+    const sessionResult = this._getSessions().get(sessionId);
+    if (sessionResult.isFailure()) {
+      return fail(`Session ${sessionId} is not materialized: ${sessionResult.message}`);
     }
 
-    // Currently only filling sessions are supported
+    const session = sessionResult.value;
+
+    // Currently only filling sessions support persistence
     if (!('toPersistedState' in session)) {
       return fail(
         `Session ${sessionId} does not support persistence (confection sessions not yet implemented)`
       );
     }
 
-    // Get the existing persisted session to get the base ID
-    const existingResult = this._sessions.get(sessionId);
+    // Get the existing persisted session
+    const existingResult = this._userLibrary.sessions.get(sessionId);
     if (existingResult.isFailure()) {
       return fail(`Session ${sessionId} not found: ${existingResult.message}`);
     }
@@ -170,7 +211,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     const collectionId = Helpers.getSessionCollectionId(sessionId);
     const baseId = Helpers.getSessionBaseId(sessionId);
 
-    // Create updated persisted state (only EditingSession has toPersistedState for now)
+    // Create updated persisted state
     const fillingSession = session as Session.EditingSession;
     return fillingSession
       .toPersistedState({
@@ -181,161 +222,166 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
         notes: existing.notes ? [...existing.notes] : undefined
       })
       .onSuccess((persisted) => {
-        // Persist to the library
-        return this._sessions.upsertSession(collectionId, persisted).onSuccess(() => {
+        return this._userLibrary.sessions.upsertSession(collectionId, persisted).onSuccess(() => {
           return succeed(persisted as AnySessionEntity);
         });
       });
   }
 
+  // ============================================================================
+  // Private MaterializedLibrary Factories
+  // ============================================================================
+
   /**
-   * {@inheritDoc UserRuntime.IUserLibraryRuntime.evictSession}
+   * Gets or creates the materialized sessions library.
+   * @internal
    */
-  public evictSession(sessionId: SessionId): boolean {
-    return this._materializedSessions.delete(sessionId);
+  private _getSessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never> {
+    if (!this._sessions) {
+      this._sessions = new MaterializedLibrary({
+        inner: this._userLibrary.sessions,
+        converter: (entity, id) => this._materializeSession(id, entity)
+      });
+    }
+    return this._sessions;
   }
 
   /**
-   * {@inheritDoc UserRuntime.IUserLibraryRuntime.materializedSessions}
+   * Gets or creates the materialized journals library.
+   * @internal
    */
-  public get materializedSessions(): ReadonlyMap<SessionId, AnyMaterializedSession> {
-    return this._materializedSessions;
+  private _getJournals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never> {
+    if (!this._journals) {
+      this._journals = new MaterializedLibrary({
+        inner: this._userLibrary.journals,
+        converter: (entity, id) => createJournalEntry(this._sessionContext, id, entity)
+      });
+    }
+    return this._journals;
+  }
+
+  /**
+   * Gets or creates the materialized mold inventory library.
+   * @internal
+   */
+  private _getMoldInventory(): MaterializedLibrary<
+    Inventory.MoldInventoryEntryId,
+    Inventory.IMoldInventoryEntryEntity,
+    IMoldInventoryEntry,
+    never
+  > {
+    if (!this._moldInventory) {
+      this._moldInventory = new MaterializedLibrary({
+        inner: this._userLibrary.moldInventory,
+        converter: (entity, id) => MoldInventoryEntry.create(this._sessionContext, id, entity)
+      });
+    }
+    return this._moldInventory;
+  }
+
+  /**
+   * Gets or creates the materialized ingredient inventory library.
+   * @internal
+   */
+  private _getIngredientInventory(): MaterializedLibrary<
+    Inventory.IngredientInventoryEntryId,
+    Inventory.IIngredientInventoryEntryEntity,
+    IIngredientInventoryEntry,
+    never
+  > {
+    if (!this._ingredientInventory) {
+      this._ingredientInventory = new MaterializedLibrary({
+        inner: this._userLibrary.ingredientInventory,
+        converter: (entity, id) => IngredientInventoryEntry.create(this._sessionContext, id, entity)
+      });
+    }
+    return this._ingredientInventory;
   }
 
   // ============================================================================
-  // Private Helpers
+  // Private Session Materialization Helpers
   // ============================================================================
+
+  /**
+   * Materializes a session from persisted state.
+   * Dispatches to type-specific materialization.
+   * @internal
+   */
+  private _materializeSession(
+    sessionId: SessionId,
+    entity: AnySessionEntity
+  ): Result<AnyMaterializedSession> {
+    if (SessionEntities.isFillingSessionEntity(entity)) {
+      return this._materializeFillingSession(entity);
+    }
+
+    if (SessionEntities.isConfectionSessionEntity(entity)) {
+      return this._materializeConfectionSession(entity);
+    }
+
+    return fail(`Unknown session type for ${sessionId}`);
+  }
 
   /**
    * Materializes a filling session from persisted state.
+   * @internal
    */
-  private _materializeFillingSession(
-    sessionId: SessionId,
-    persisted: IFillingSessionEntity
-  ): Result<Session.EditingSession> {
-    // Get the base recipe version from session context
+  private _materializeFillingSession(persisted: IFillingSessionEntity): Result<Session.EditingSession> {
     const fillingId = Helpers.getFillingVersionFillingId(persisted.sourceVersionId);
     return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
       const versionSpec = Helpers.getFillingVersionSpec(persisted.sourceVersionId);
       return filling.getVersion(versionSpec).onSuccess((version) => {
-        // Restore the editing session from persisted state
-        return Session.EditingSession.fromPersistedState(persisted, version).onSuccess((session) => {
-          // Cache the materialized session
-          this._materializedSessions.set(sessionId, session);
-          return succeed(session);
-        });
+        return Session.EditingSession.fromPersistedState(persisted, version);
       });
     });
   }
 
   /**
    * Materializes a confection session from persisted state.
+   * @internal
    */
   private _materializeConfectionSession(
-    sessionId: SessionId,
     persisted: IConfectionSessionEntity
   ): Result<Session.AnyConfectionEditingSession> {
-    // Parse the confection version ID to get confection ID and version spec
     return Helpers.parseConfectionVersionId(persisted.sourceVersionId).onSuccess((parsed) => {
-      // Get the confection from session context
       return this._sessionContext.confections.get(parsed.collectionId).asResult.onSuccess((confection) => {
-        // Dispatch to type-specific materialization based on confection type
-        return this._materializeTypedConfectionSession(sessionId, persisted, confection, parsed.itemId);
+        return this._materializeTypedConfectionSession(persisted, confection);
       });
     });
   }
 
   /**
    * Dispatches to type-specific confection session materialization.
+   * @internal
    */
   private _materializeTypedConfectionSession(
-    sessionId: SessionId,
     persisted: IConfectionSessionEntity,
-    confection: IConfectionBase,
-    _versionSpec: string
+    confection: IConfectionBase
   ): Result<Session.AnyConfectionEditingSession> {
-    // Narrow the confection type and history type together
     if (confection.isMoldedBonBon() && persisted.confectionType === ('moldedBonBon' as ConfectionType)) {
-      return this._materializeMoldedBonBonSession(
-        sessionId,
+      return Session.MoldedBonBonEditingSession.fromPersistedState(
+        confection as unknown as MoldedBonBon,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
-        confection
+        this._sessionContext
       );
     }
 
     if (confection.isBarTruffle() && persisted.confectionType === ('barTruffle' as ConfectionType)) {
-      return this._materializeBarTruffleSession(
-        sessionId,
+      return Session.BarTruffleEditingSession.fromPersistedState(
+        confection as unknown as BarTruffle,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
-        confection
+        this._sessionContext
       );
     }
 
     if (confection.isRolledTruffle() && persisted.confectionType === ('rolledTruffle' as ConfectionType)) {
-      return this._materializeRolledTruffleSession(
-        sessionId,
+      return Session.RolledTruffleEditingSession.fromPersistedState(
+        confection as unknown as RolledTruffle,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
-        confection
+        this._sessionContext
       );
     }
 
     return fail(`Confection type mismatch: expected ${persisted.confectionType}`);
-  }
-
-  /**
-   * Materializes a molded bonbon editing session.
-   * Note: Type assertion is safe because isMoldedBonBon() ensures the runtime type is RuntimeMoldedBonBon.
-   */
-  private _materializeMoldedBonBonSession(
-    sessionId: SessionId,
-    history: SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
-    confection: IConfectionBase
-  ): Result<Session.MoldedBonBonEditingSession> {
-    return Session.MoldedBonBonEditingSession.fromPersistedState(
-      confection as unknown as MoldedBonBon,
-      history,
-      this._sessionContext
-    ).onSuccess((session) => {
-      this._materializedSessions.set(sessionId, session);
-      return succeed(session);
-    });
-  }
-
-  /**
-   * Materializes a bar truffle editing session.
-   * Note: Type assertion is safe because isBarTruffle() ensures the runtime type is RuntimeBarTruffle.
-   */
-  private _materializeBarTruffleSession(
-    sessionId: SessionId,
-    history: SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
-    confection: IConfectionBase
-  ): Result<Session.BarTruffleEditingSession> {
-    return Session.BarTruffleEditingSession.fromPersistedState(
-      confection as unknown as BarTruffle,
-      history,
-      this._sessionContext
-    ).onSuccess((session) => {
-      this._materializedSessions.set(sessionId, session);
-      return succeed(session);
-    });
-  }
-
-  /**
-   * Materializes a rolled truffle editing session.
-   * Note: Type assertion is safe because isRolledTruffle() ensures the runtime type is RuntimeRolledTruffle.
-   */
-  private _materializeRolledTruffleSession(
-    sessionId: SessionId,
-    history: SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
-    confection: IConfectionBase
-  ): Result<Session.RolledTruffleEditingSession> {
-    return Session.RolledTruffleEditingSession.fromPersistedState(
-      confection as unknown as RolledTruffle,
-      history,
-      this._sessionContext
-    ).onSuccess((session) => {
-      this._materializedSessions.set(sessionId, session);
-      return succeed(session);
-    });
   }
 }
