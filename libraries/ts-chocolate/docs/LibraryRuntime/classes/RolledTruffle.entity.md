@@ -7,5 +7,5 @@ Gets the underlying rolled truffle data entity
 **Signature:**
 
 ```typescript
-readonly entity: IRolledTruffleEntity;
+readonly entity: RolledTruffleRecipeEntity;
 ```

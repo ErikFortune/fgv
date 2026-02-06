@@ -2,7 +2,7 @@
 
 ## IConfectionBase.effectiveTags property
 
-Gets effective tags for the golden version (base + version's additional tags).
+Gets effective tags for the golden variation (base + variation's additional tags).
 
 **Signature:**
 

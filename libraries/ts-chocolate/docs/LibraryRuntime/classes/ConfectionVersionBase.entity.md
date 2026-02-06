@@ -2,8 +2,8 @@
 
 ## ConfectionVersionBase.entity property
 
-The underlying confection version entity.
-Use this to get the version entity data for persistence or journaling.
+The underlying confection variation entity.
+Use this to get the variation entity data for persistence or journaling.
 
 **Signature:**
 

@@ -221,7 +221,7 @@ export class RuntimeReverseIndex {
 
     for (const [fillingId, recipe] of recipes.entries()) {
       // Index ingredients from all versions
-      for (const version of recipe.versions) {
+      for (const version of recipe.variations) {
         for (const ri of version.ingredients) {
           // Index all ingredient IDs (primary and alternates)
           for (const id of ri.ingredient.ids) {
@@ -243,7 +243,7 @@ export class RuntimeReverseIndex {
 
     for (const [fillingId, recipe] of recipes.entries()) {
       // Index ingredients from all versions
-      for (const version of recipe.versions) {
+      for (const version of recipe.variations) {
         for (const ri of version.ingredients) {
           // Get the primary ingredient ID (preferred or first)
           const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
@@ -305,7 +305,7 @@ export class RuntimeReverseIndex {
 
     for (const [fillingId, recipe] of recipes.entries()) {
       // Check golden version for chocolate types
-      const goldenVersion = recipe.versions.find((v) => v.versionSpec === recipe.goldenVersionSpec);
+      const goldenVersion = recipe.variations.find((v) => v.variationSpec === recipe.goldenVariationSpec);
       /* c8 ignore next - defensive: data validation ensures golden version exists */
       if (!goldenVersion) continue;
 

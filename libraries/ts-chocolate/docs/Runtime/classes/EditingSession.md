@@ -57,7 +57,7 @@ Unique session identifier.
 
 </td><td>
 
-[IFillingRecipeVersion](../../interfaces/IFillingRecipeVersion.md)
+[IFillingRecipeVariation](../../interfaces/IFillingRecipeVariation.md)
 
 </td><td>
 
@@ -291,7 +291,7 @@ Analyzes current changes and recommends save options.
 </td></tr>
 <tr><td>
 
-[saveAsNewVersion(options)](./EditingSession.saveAsNewVersion.md)
+[saveAsNewVariation(options)](./EditingSession.saveAsNewVariation.md)
 
 </td><td>
 

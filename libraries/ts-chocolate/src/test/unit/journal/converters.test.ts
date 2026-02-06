@@ -53,9 +53,9 @@ describe('Journal Converters', () => {
         type: 'filling-edit',
         baseId: '2024-01-01-100000-00000001',
         timestamp: '2024-01-01T00:00:00Z',
-        versionId: 'source.filling@2024-01-01-01',
+        variationId: 'source.filling@2024-01-01-01',
         recipe: {
-          versionSpec: '2024-01-01-01',
+          variationSpec: '2024-01-01-01',
           createdDate: '2024-01-01',
           ingredients: [],
           baseWeight: 100
@@ -73,9 +73,9 @@ describe('Journal Converters', () => {
         type: 'confection-edit',
         baseId: '2024-01-01-100000-00000002',
         timestamp: '2024-01-01T00:00:00Z',
-        versionId: 'source.confection@2024-01-01-01',
+        variationId: 'source.confection@2024-01-01-01',
         recipe: {
-          versionSpec: '2024-01-01-01',
+          variationSpec: '2024-01-01-01',
           createdDate: '2024-01-01',
           yield: { count: 10 },
           molds: { preferredId: 'mold-1', options: [] },

@@ -8,14 +8,14 @@ Requires that the collection is mutable.
 **Signature:**
 
 ```typescript
-saveAsNewVersion(options: ISaveVersionOptions): Result<ISaveResult>;
+saveAsNewVersion(options: ISaveVariationOptions): Result<ISaveResult>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>options</td><td>ISaveVersionOptions</td><td>Save options including version spec and base weight</td></tr>
+<tr><td>options</td><td>ISaveVariationOptions</td><td>Save options including version spec and base weight</td></tr>
 </tbody></table>
 
 **Returns:**

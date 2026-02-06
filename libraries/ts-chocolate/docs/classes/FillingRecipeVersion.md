@@ -2,9 +2,9 @@
 
 # Class: FillingRecipeVersion
 
-A resolved view of a recipe version with all ingredients resolved.
+A resolved view of a recipe variation with all ingredients resolved.
 
-**Implements:** [`IFillingRecipeVersion`](../interfaces/IFillingRecipeVersion.md)
+**Implements:** [`IFillingRecipeVariation`](../interfaces/IFillingRecipeVariation.md)
 
 ## Properties
 
@@ -28,7 +28,7 @@ Description
 <tbody>
 <tr><td>
 
-[versionId](./FillingRecipeVersion.versionId.md)
+[variationId](./FillingRecipeVersion.variationId.md)
 
 </td><td>
 
@@ -40,12 +40,12 @@ Description
 
 </td><td>
 
-Qualified identifier for this version (fillingId@versionSpec).
+Qualified identifier for this variation (fillingId@variationSpec).
 
 </td></tr>
 <tr><td>
 
-[versionSpec](./FillingRecipeVersion.versionSpec.md)
+[variationSpec](./FillingRecipeVersion.variationSpec.md)
 
 </td><td>
 
@@ -57,7 +57,7 @@ Qualified identifier for this version (fillingId@versionSpec).
 
 </td><td>
 
-The version specifier
+The variation specifier
 
 </td></tr>
 <tr><td>
@@ -74,7 +74,7 @@ string
 
 </td><td>
 
-Date this version was created (ISO 8601 format)
+Date this variation was created (ISO 8601 format)
 
 </td></tr>
 <tr><td>
@@ -109,23 +109,6 @@ The parent filling ID
 </td><td>
 
 The parent filling recipe - resolved.
-
-</td></tr>
-<tr><td>
-
-[version](./FillingRecipeVersion.version.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IFillingRecipeVersionEntity](../interfaces/IFillingRecipeVersionEntity.md)
-
-</td><td>
-
-The underlying filling recipe version.
 
 </td></tr>
 <tr><td>
@@ -176,7 +159,7 @@ readonly [ICategorizedNote](../interfaces/ICategorizedNote.md)[] | undefined
 
 </td><td>
 
-Optional categorized notes about this version
+Optional categorized notes about this variation
 
 </td></tr>
 <tr><td>
@@ -193,7 +176,7 @@ readonly [IFillingRating](../interfaces/IFillingRating.md)[]
 
 </td><td>
 
-Optional ratings for this version
+Optional ratings for this variation
 
 </td></tr>
 <tr><td>
@@ -210,7 +193,7 @@ Optional ratings for this version
 
 </td><td>
 
-Resolved procedures associated with this version.
+Resolved procedures associated with this variation.
 
 </td></tr>
 <tr><td>
@@ -240,11 +223,11 @@ Gets the preferred procedure, falling back to first available.
 
 </td><td>
 
-[IFillingRecipeVersionEntity](../interfaces/IFillingRecipeVersionEntity.md)
+[IFillingRecipeVariationEntity](../interfaces/IFillingRecipeVariationEntity.md)
 
 </td><td>
 
-Gets the underlying version entity data
+Gets the underlying variation entity data
 
 </td></tr>
 </tbody></table>
@@ -267,7 +250,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(context, fillingId, version)](./FillingRecipeVersion.create.md)
+[create(context, fillingId, variation)](./FillingRecipeVersion.create.md)
 
 </td><td>
 
@@ -275,7 +258,7 @@ Description
 
 </td><td>
 
-Factory method for creating a RuntimeFillingRecipeVersion.
+Factory method for creating a LibraryRuntime.RuntimeFillingRecipeVariation.
 
 </td></tr>
 <tr><td>
@@ -301,7 +284,7 @@ Gets ingredients, optionally filtered.
 
 </td><td>
 
-Checks if this version uses a specific ingredient (as primary).
+Checks if this variation uses a specific ingredient (as primary).
 
 </td></tr>
 <tr><td>
@@ -314,7 +297,7 @@ Checks if this version uses a specific ingredient (as primary).
 
 </td><td>
 
-Calculates ganache characteristics for this version.
+Calculates ganache characteristics for this variation.
 
 </td></tr>
 <tr><td>
@@ -327,7 +310,7 @@ Calculates ganache characteristics for this version.
 
 </td><td>
 
-Gets resolved procedures associated with this version.
+Gets resolved procedures associated with this variation.
 
 </td></tr>
 </tbody></table>

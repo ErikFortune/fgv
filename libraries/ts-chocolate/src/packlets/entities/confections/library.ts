@@ -28,7 +28,7 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 import { BaseConfectionId, ConfectionId } from '../../common';
 import { Converters as CommonConverters } from '../../common';
 import { anyConfectionEntity as confectionConverter } from './converters';
-import { AnyConfectionEntity } from './model';
+import { AnyConfectionRecipeEntity } from './model';
 import { ConfectionCollectionEntryInit } from './collection';
 import {
   getConfectionsDirectory,
@@ -90,7 +90,11 @@ export type IConfectionsLibraryAsyncParams = ISubLibraryAsyncParams<
  *
  * @public
  */
-export class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, AnyConfectionEntity> {
+export class ConfectionsLibrary extends SubLibraryBase<
+  ConfectionId,
+  BaseConfectionId,
+  AnyConfectionRecipeEntity
+> {
   private constructor(params?: IConfectionsLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseConfectionId,
@@ -127,7 +131,11 @@ export class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfect
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<ConfectionsLibrary, BaseConfectionId, AnyConfectionEntity> = {
+    const createParams: ISubLibraryCreateParams<
+      ConfectionsLibrary,
+      BaseConfectionId,
+      AnyConfectionRecipeEntity
+    > = {
       itemIdConverter: CommonConverters.baseConfectionId,
       itemConverter: confectionConverter,
       directoryNavigator: getConfectionsDirectory,

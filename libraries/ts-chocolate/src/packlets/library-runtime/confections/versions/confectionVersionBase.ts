@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * ConfectionVersionBase - abstract base class for runtime confection versions
+ * ConfectionRecipeVariationBase - abstract base class for runtime confection recipe variations.
  * @packageDocumentation
  */
 
@@ -38,26 +38,26 @@ import {
   IResolvedFillingSlot,
   IResolvedFillingOption,
   IConfectionBase,
-  IConfectionVersionBase
+  IConfectionRecipeVariationBase
 } from '../../model';
 
 // Forward declarations to avoid circular imports
-import type { MoldedBonBonVersion } from './moldedBonBonVersion';
-import type { BarTruffleVersion } from './barTruffleVersion';
-import type { RolledTruffleVersion } from './rolledTruffleVersion';
+import type { MoldedBonBonRecipeVariation } from './moldedBonBonVersion';
+import type { BarTruffleRecipeVariation } from './barTruffleVersion';
+import type { RolledTruffleRecipeVariation } from './rolledTruffleVersion';
 
 /**
- * Abstract base class for runtime confection versions.
- * Provides common properties and resolution logic shared by all confection version types.
+ * Abstract base class for runtime confection variations.
+ * Provides common properties and resolution logic shared by all confection variation types.
  *
- * @typeParam TConfection - The specific confection type for this version
- * @typeParam TEntity - The specific entity type for this version
+ * @typeParam TConfection - The specific confection type for this variation
+ * @typeParam TEntity - The specific entity type for this variation
  * @public
  */
-export abstract class ConfectionVersionBase<
+export abstract class ConfectionRecipeVariationBase<
   TConfection extends IConfectionBase = IConfectionBase,
-  TEntity extends Confections.AnyConfectionVersionEntity = Confections.AnyConfectionVersionEntity
-> implements IConfectionVersionBase<TConfection>
+  TEntity extends Confections.AnyConfectionRecipeVariationEntity = Confections.AnyConfectionRecipeVariationEntity
+> implements IConfectionRecipeVariationBase<TConfection>
 {
   protected readonly _context: IConfectionContext;
   protected readonly _confectionId: ConfectionId;
@@ -71,10 +71,10 @@ export abstract class ConfectionVersionBase<
     | undefined;
 
   /**
-   * Creates a ConfectionVersionBase.
+   * Initializes a ConfectionRecipeVariationBase.
    * @param context - The runtime context for navigation
    * @param confectionId - The parent confection ID
-   * @param entity - The version entity data
+   * @param entity - The variation entity data
    * @internal
    */
   protected constructor(context: IConfectionContext, confectionId: ConfectionId, entity: TEntity) {
@@ -88,14 +88,14 @@ export abstract class ConfectionVersionBase<
   // ============================================================================
 
   /**
-   * Version specifier for this version.
+   * Variation specifier for this variation.
    */
-  public get versionSpec(): ConfectionRecipeVariationSpec {
-    return this._entity.versionSpec;
+  public get variationSpec(): ConfectionRecipeVariationSpec {
+    return this._entity.variationSpec;
   }
 
   /**
-   * Date this version was created (ISO 8601 format).
+   * Date this variation was created (ISO 8601 format).
    */
   public get createdDate(): string {
     return this._entity.createdDate;
@@ -110,11 +110,11 @@ export abstract class ConfectionVersionBase<
 
   /**
    * The parent confection - resolved.
-   * Enables navigation: `version.confection.name`
+   * Enables navigation: `variation.confection.name`
    */
   public get confection(): TConfection {
     if (this._confection === undefined) {
-      // orThrow is safe - version was created from a valid confection
+      // orThrow is safe - variation was created from a valid confection
       this._confection = this._context.confections.get(this._confectionId).value as TConfection;
     }
     return this._confection;
@@ -129,33 +129,33 @@ export abstract class ConfectionVersionBase<
   }
 
   /**
-   * The underlying confection version entity.
-   * Use this to get the version entity data for persistence or journaling.
+   * The underlying confection variation entity.
+   * Use this to get the variation entity data for persistence or journaling.
    */
   public get entity(): TEntity {
     return this._entity;
   }
 
   // ============================================================================
-  // Version Properties
+  // Variation Properties
   // ============================================================================
 
   /**
-   * Yield specification for this version.
+   * Yield specification for this variation.
    */
   public get yield(): Confections.IConfectionYield {
     return this._entity.yield;
   }
 
   /**
-   * Optional decorations for this version.
+   * Optional decorations for this variation.
    */
   public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
     return this._entity.decorations;
   }
 
   /**
-   * Optional categorized notes about this version.
+   * Optional categorized notes about this variation.
    */
   public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
     return this._entity.notes;
@@ -166,7 +166,7 @@ export abstract class ConfectionVersionBase<
   // ============================================================================
 
   /**
-   * Gets resolved filling slots for this version.
+   * Gets resolved filling slots for this variation.
    * @returns Result with resolved fillings (empty array if none), or Failure if resolution fails
    * @public
    */
@@ -200,8 +200,8 @@ export abstract class ConfectionVersionBase<
   }
 
   /**
-   * Resolved filling slots for this version.
-   * Undefined if the version has no fillings.
+   * Resolved filling slots for this variation.
+   * Undefined if the variation has no fillings.
    * @throws if resolution fails - prefer getFillings() for proper error handling
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
@@ -210,7 +210,7 @@ export abstract class ConfectionVersionBase<
   }
 
   /**
-   * Gets resolved procedures for this version.
+   * Gets resolved procedures for this variation.
    * @returns Result with resolved procedures (undefined if none), or Failure if resolution fails
    * @public
    */
@@ -249,8 +249,8 @@ export abstract class ConfectionVersionBase<
   }
 
   /**
-   * Resolved procedures for this version.
-   * Undefined if the version has no procedures.
+   * Resolved procedures for this variation.
+   * Undefined if the variation has no procedures.
    * @throws if resolution fails - prefer getProcedures() for proper error handling
    */
   public get procedures():
@@ -313,46 +313,42 @@ export abstract class ConfectionVersionBase<
   // ============================================================================
 
   /**
-   * Effective tags for this version (base confection tags + version's additional tags).
+   * Effective tags for this variation (base confection tags + variation's additional tags).
    */
   public get effectiveTags(): ReadonlyArray<string> {
     const baseTags = this.confection.tags ?? [];
-    const versionTags = this._entity.additionalTags ?? [];
+    const variationTags = this._entity.additionalTags ?? [];
     // Deduplicate while preserving order (base first)
-    return [...new Set([...baseTags, ...versionTags])];
+    return [...new Set([...baseTags, ...variationTags])];
   }
 
   /**
-   * Effective URLs for this version (base confection URLs + version's additional URLs).
+   * Effective URLs for this variation (base confection URLs + variation's additional URLs).
    */
   public get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl> {
     const baseUrls = this.confection.urls ?? [];
-    const versionUrls = this._entity.additionalUrls ?? [];
-    return [...baseUrls, ...versionUrls];
-  }
-
-  // ============================================================================
-  // Type Guards
-  // ============================================================================
-
-  /**
-   * Returns true if this is a molded bonbon version.
-   */
-  public isMoldedBonBonVersion(): this is MoldedBonBonVersion {
-    return Confections.isMoldedBonBonVersionEntity(this._entity);
+    const variationUrls = this._entity.additionalUrls ?? [];
+    return [...baseUrls, ...variationUrls];
   }
 
   /**
-   * Returns true if this is a bar truffle version.
+   * Returns true if this is a molded bonbon variation.
    */
-  public isBarTruffleVersion(): this is BarTruffleVersion {
-    return Confections.isBarTruffleVersionEntity(this._entity);
+  public isMoldedBonBonVariation(): this is MoldedBonBonRecipeVariation {
+    return Confections.isMoldedBonBonRecipeVariationEntity(this._entity);
   }
 
   /**
-   * Returns true if this is a rolled truffle version.
+   * Returns true if this is a bar truffle variation.
    */
-  public isRolledTruffleVersion(): this is RolledTruffleVersion {
-    return Confections.isRolledTruffleVersionEntity(this._entity);
+  public isBarTruffleVariation(): this is BarTruffleRecipeVariation {
+    return Confections.isBarTruffleRecipeVariationEntity(this._entity);
+  }
+
+  /**
+   * Returns true if this is a rolled truffle variation.
+   */
+  public isRolledTruffleVariation(): this is RolledTruffleRecipeVariation {
+    return Confections.isRolledTruffleRecipeVariationEntity(this._entity);
   }
 }

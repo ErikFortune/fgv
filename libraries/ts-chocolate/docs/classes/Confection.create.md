@@ -7,7 +7,7 @@ Factory method that auto-detects confection type and returns appropriate concret
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, id: ConfectionId, confection: AnyConfectionEntity): Result<AnyConfection>;
+static create(context: IConfectionContext, id: ConfectionId, confection: AnyConfectionRecipeEntity): Result<AnyConfection>;
 ```
 
 **Parameters:**
@@ -16,7 +16,7 @@ static create(context: IConfectionContext, id: ConfectionId, confection: AnyConf
 <tbody>
 <tr><td>context</td><td>IConfectionContext</td><td>The runtime context for navigation</td></tr>
 <tr><td>id</td><td>ConfectionId</td><td>The confection ID</td></tr>
-<tr><td>confection</td><td>AnyConfectionEntity</td><td>The confection data</td></tr>
+<tr><td>confection</td><td>AnyConfectionRecipeEntity</td><td>The confection data</td></tr>
 </tbody></table>
 
 **Returns:**

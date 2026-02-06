@@ -2,8 +2,8 @@
 
 ## FillingRecipeVersion.getProcedures() method
 
-Gets resolved procedures associated with this version.
-Returns Result with procedures, or Success with undefined if version has no procedures.
+Gets resolved procedures associated with this variation.
+Returns Result with procedures, or Success with undefined if variation has no procedures.
 Resolved lazily on first access.
 
 **Signature:**

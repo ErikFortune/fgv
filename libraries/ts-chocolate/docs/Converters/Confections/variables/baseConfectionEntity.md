@@ -6,4 +6,4 @@ Converter for base Entities.Confections.IConfectionEntityBase | IConfectionEntit
 
 ## Type
 
-`Converter<IConfectionEntityBase>`
+`Converter<IConfectionRecipeEntityBase>`

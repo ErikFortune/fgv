@@ -2,10 +2,10 @@
 
 # Function: calculateBaseWeight
 
-Calculates the base weight from filling recipe version (sum of ingredient amounts)
+Calculates the base weight from filling recipe variation (sum of ingredient amounts)
 
 ## Signature
 
 ```typescript
-function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement
+function calculateBaseWeight(variation: IFillingRecipeVariationEntity): Measurement
 ```

@@ -280,7 +280,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    * Adds a filling session to the filling-specific indices
    */
   private _addFillingSessionToIndices(sessionId: SessionId, session: IFillingSessionEntity): void {
-    const fillingId = this._extractFillingId(session.sourceVersionId);
+    const fillingId = this._extractFillingId(session.sourceVariationId);
 
     let fillingSessions = this._byFillingId.get(fillingId);
     if (!fillingSessions) {
@@ -289,10 +289,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     }
     fillingSessions.add(sessionId);
 
-    let versionSessions = this._byFillingVersionId.get(session.sourceVersionId);
+    let versionSessions = this._byFillingVersionId.get(session.sourceVariationId);
     if (!versionSessions) {
       versionSessions = new Set();
-      this._byFillingVersionId.set(session.sourceVersionId, versionSessions);
+      this._byFillingVersionId.set(session.sourceVariationId, versionSessions);
     }
     versionSessions.add(sessionId);
   }
@@ -301,7 +301,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    * Adds a confection session to the confection-specific indices
    */
   private _addConfectionSessionToIndices(sessionId: SessionId, session: IConfectionSessionEntity): void {
-    const confectionId = this._extractConfectionId(session.sourceVersionId);
+    const confectionId = this._extractConfectionId(session.sourceVariationId);
 
     let confectionSessions = this._byConfectionId.get(confectionId);
     if (!confectionSessions) {
@@ -310,10 +310,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     }
     confectionSessions.add(sessionId);
 
-    let versionSessions = this._byConfectionVersionId.get(session.sourceVersionId);
+    let versionSessions = this._byConfectionVersionId.get(session.sourceVariationId);
     if (!versionSessions) {
       versionSessions = new Set();
-      this._byConfectionVersionId.set(session.sourceVersionId, versionSessions);
+      this._byConfectionVersionId.set(session.sourceVariationId, versionSessions);
     }
     versionSessions.add(sessionId);
   }

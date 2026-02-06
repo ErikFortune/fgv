@@ -2,7 +2,7 @@
 
 ## FillingRecipeVersion.calculateGanache() method
 
-Calculates ganache characteristics for this version.
+Calculates ganache characteristics for this variation.
 
 **Signature:**
 

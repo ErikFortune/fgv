@@ -2,10 +2,10 @@
 
 ## FillingRecipeVersion.entity property
 
-Gets the underlying version entity data
+Gets the underlying variation entity data
 
 **Signature:**
 
 ```typescript
-readonly entity: IFillingRecipeVersionEntity;
+readonly entity: IFillingRecipeVariationEntity;
 ```

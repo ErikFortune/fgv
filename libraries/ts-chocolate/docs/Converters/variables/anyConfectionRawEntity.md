@@ -7,4 +7,4 @@ Dispatches to the appropriate type-specific converter based on confectionType
 
 ## Type
 
-`Converter<AnyConfectionEntity>`
+`Converter<AnyConfectionRecipeEntity>`

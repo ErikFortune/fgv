@@ -96,13 +96,13 @@ export function createShowSubcommand(): Command {
     .description('Display details of a specific filling')
     .argument('[fillingId]', 'Filling ID (e.g., "common.dark-ganache-classic")')
     .option('-i, --interactive', 'Interactively select a filling')
-    .option('--version <spec>', 'Show a specific version (default: golden version)')
+    .option('--variation <spec>', 'Show a specific variation (default: golden variation)')
     .option('--scale <target>', 'Scale filling to target weight or multiplier (e.g., "500g" or "2x")')
     .option('--precision <n>', 'Decimal places for scaled amounts (default: 1)')
     .action(
       async (
         fillingIdArg: string | undefined,
-        localOptions: { interactive?: boolean; version?: string; scale?: string; precision?: string }
+        localOptions: { interactive?: boolean; variation?: string; scale?: string; precision?: string }
       ) => {
         // Merge with parent options
         const parentOptions = cmd.optsWithGlobals() as IFillingShowOptions;
@@ -178,21 +178,23 @@ export function createShowSubcommand(): Command {
           filling = fillingResult.value;
         }
 
-        // Validate version spec if provided
-        let versionSpec: FillingRecipeVariationSpec | undefined;
-        if (options.version) {
-          const versionResult = Converters.fillingRecipeVariationSpec.convert(options.version);
-          if (versionResult.isFailure()) {
-            console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
+        // Validate variation spec if provided
+        let variationSpec: FillingRecipeVariationSpec | undefined;
+        if (options.variation) {
+          const variationResult = Converters.fillingRecipeVariationSpec.convert(options.variation);
+          if (variationResult.isFailure()) {
+            console.error(`Invalid variation spec "${options.variation}": ${variationResult.message}`);
             process.exit(1);
           }
-          versionSpec = versionResult.value;
+          variationSpec = variationResult.value;
 
-          // Check that the version exists
-          const version = filling.versions.find((v) => v.versionSpec === versionSpec);
-          if (!version) {
-            console.error(`Version ${versionSpec} not found in filling ${fillingId}`);
-            console.error(`Available versions: ${filling.versions.map((v) => v.versionSpec).join(', ')}`);
+          // Check that the variation exists
+          const variation = filling.variations.find((v) => v.variationSpec === variationSpec);
+          if (!variation) {
+            console.error(`Variation ${variationSpec} not found in filling ${fillingId}`);
+            console.error(
+              `Available variations: ${filling.variations.map((v) => v.variationSpec).join(', ')}`
+            );
             process.exit(1);
           }
         }
@@ -208,18 +210,18 @@ export function createShowSubcommand(): Command {
           }
           const target = targetResult.value;
 
-          // Get the version to scale
-          const sourceVersion = versionSpec
-            ? filling.versions.find((v) => v.versionSpec === versionSpec)
-            : filling.versions.find((v) => v.versionSpec === filling.goldenVersionSpec);
+          // Get the variation to scale
+          const sourceVariation = variationSpec
+            ? filling.variations.find((v) => v.variationSpec === variationSpec)
+            : filling.variations.find((v) => v.variationSpec === filling.goldenVariationSpec);
 
-          if (!sourceVersion) {
-            console.error(`Version not found`);
+          if (!sourceVariation) {
+            console.error(`Variation not found`);
             process.exit(1);
           }
 
           // Calculate scale factor and target weight
-          const sourceWeight = sourceVersion.baseWeight;
+          const sourceWeight = sourceVariation.baseWeight;
           let scaleFactor: number;
           let targetWeight: Measurement;
 
@@ -233,7 +235,7 @@ export function createShowSubcommand(): Command {
 
           // Create produced filling snapshot directly
           const producedIngredients: Entities.Fillings.IProducedFillingIngredientEntity[] =
-            sourceVersion.ingredients.map((ing) => {
+            sourceVariation.ingredients.map((ing) => {
               const ingredientId = ing.ingredient.preferredId ?? ing.ingredient.ids[0];
               return {
                 ingredientId,
@@ -242,22 +244,22 @@ export function createShowSubcommand(): Command {
               };
             });
 
-          const versionId = `${fillingId}@${sourceVersion.versionSpec}`;
+          const variationId = `${fillingId}@${sourceVariation.variationSpec}`;
           const producedFilling: Entities.Fillings.IProducedFillingEntity = {
-            versionId: versionId as FillingRecipeVariationId,
+            variationId: variationId as FillingRecipeVariationId,
             scaleFactor,
             targetWeight,
             ingredients: producedIngredients,
-            procedureId: sourceVersion.procedures?.preferredId,
-            notes: sourceVersion.notes
+            procedureId: sourceVariation.procedures?.preferredId,
+            notes: sourceVariation.notes
           };
 
           const precision = localOptions.precision ? parseInt(localOptions.precision, 10) : undefined;
-          const output = formatProducedFilling(producedFilling, sourceVersion, format, precision);
+          const output = formatProducedFilling(producedFilling, sourceVariation, format, precision);
           console.log(output);
         } else {
           // Show regular filling details
-          const output = formatFilling(filling, fillingId, format, versionSpec);
+          const output = formatFilling(filling, fillingId, format, variationSpec);
           console.log(output);
         }
       }

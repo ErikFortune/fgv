@@ -133,7 +133,7 @@ export const fillingSessionEntity: Converter<IFillingSessionEntity> =
     label: Converters.string.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     destination: persistedSessionDestinationEntity.optional(),
-    sourceVersionId: CommonConverters.fillingRecipeVariationId,
+    sourceVariationId: CommonConverters.fillingRecipeVariationId,
     history: serializedFillingHistoryEntity
   });
 
@@ -152,7 +152,7 @@ export const confectionSessionEntity: Converter<IConfectionSessionEntity> =
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     destination: persistedSessionDestinationEntity.optional(),
     confectionType: CommonConverters.confectionType,
-    sourceVersionId: CommonConverters.confectionRecipeVariationId,
+    sourceVariationId: CommonConverters.confectionRecipeVariationId,
     history: serializedConfectionHistoryEntity,
     childSessionIds
   });

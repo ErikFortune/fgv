@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.decorations property
 
-Optional decorations for this version.
+Optional decorations for this variation.
 
 **Signature:**
 

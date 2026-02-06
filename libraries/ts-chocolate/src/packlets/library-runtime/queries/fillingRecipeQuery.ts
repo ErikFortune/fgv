@@ -193,7 +193,7 @@ export class FillingRecipeQuery {
    */
   public ganacheFatContent(min: Percentage, max?: Percentage): FillingRecipeQuery {
     return this._addFilter((r) => {
-      const result = r.goldenVersion.calculateGanache();
+      const result = r.goldenVariation.calculateGanache();
       /* c8 ignore next 3 - defensive coding: calculateGanache succeeds for valid recipes */
       if (result.isFailure()) {
         return false;
@@ -211,7 +211,7 @@ export class FillingRecipeQuery {
    */
   public validGanache(): FillingRecipeQuery {
     return this._addFilter((r) => {
-      const result = r.goldenVersion.calculateGanache();
+      const result = r.goldenVariation.calculateGanache();
       /* c8 ignore next 3 - defensive coding: calculateGanache succeeds for valid recipes */
       if (result.isFailure()) {
         return false;
@@ -225,7 +225,7 @@ export class FillingRecipeQuery {
    */
   public ganacheWithWarnings(): FillingRecipeQuery {
     return this._addFilter((r) => {
-      const result = r.goldenVersion.calculateGanache();
+      const result = r.goldenVariation.calculateGanache();
       /* c8 ignore next 3 - defensive coding: calculateGanache succeeds for valid recipes */
       if (result.isFailure()) {
         return false;
@@ -243,7 +243,7 @@ export class FillingRecipeQuery {
    * Filter to recipes with multiple versions.
    */
   public hasMultipleVersions(): FillingRecipeQuery {
-    return this._addFilter((r) => r.versionCount > 1);
+    return this._addFilter((r) => r.variationCount > 1);
   }
 
   /**
@@ -251,7 +251,7 @@ export class FillingRecipeQuery {
    * @param count - Minimum number of versions
    */
   public minVersions(count: number): FillingRecipeQuery {
-    return this._addFilter(atLeast(count, (r) => r.versionCount));
+    return this._addFilter(atLeast(count, (r) => r.variationCount));
   }
 
   // ============================================================================

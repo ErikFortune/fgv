@@ -82,7 +82,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
-    return ProducedRolledTruffle.fromSource(baseConfection.goldenVersion as RolledTruffleVersion).onSuccess(
+    return ProducedRolledTruffle.fromSource(baseConfection.goldenVariation as RolledTruffleVersion).onSuccess(
       (produced) =>
         captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );
@@ -162,7 +162,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
     }
 
     return this._context.fillings.get(fillingSlot.fillingId).asResult.onSuccess((filling) => {
-      return succeed(filling.goldenVersion.entity.baseWeight);
+      return succeed(filling.goldenVariation.entity.baseWeight);
     });
   }
 }

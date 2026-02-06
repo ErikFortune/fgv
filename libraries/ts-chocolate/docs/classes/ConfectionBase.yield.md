@@ -2,7 +2,7 @@
 
 ## ConfectionBase.yield property
 
-Yield specification from the golden version
+Yield specification from the golden variation
 
 **Signature:**
 

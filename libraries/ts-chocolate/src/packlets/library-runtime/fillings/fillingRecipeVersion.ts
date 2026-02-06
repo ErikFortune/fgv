@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RuntimeFillingRecipeVersion - resolved recipe version view
+ * RuntimeFillingRecipeVariation - resolved view of a recipe variation
  * @packageDocumentation
  */
 
@@ -34,7 +34,7 @@ import {
   FillingRecipeVariationSpec,
   Model as CommonModel
 } from '../../common';
-import { IFillingRecipeVersionEntity, IFillingRating } from '../../entities';
+import { IFillingRecipeVariationEntity, IFillingRating } from '../../entities';
 import { calculateFromIngredients, validateGanache } from '../internal';
 import {
   ICategoryFilter,
@@ -44,14 +44,14 @@ import {
   IResolvedIngredient,
   IResolvedProcedures,
   IFillingRecipe,
-  IFillingRecipeVersion,
-  IVersionContext,
+  IFillingRecipeVariation,
+  IVariationContext,
   FillingRecipeIngredientsFilter
 } from '../model';
 import { AnyIngredient } from '../ingredients';
 
 // Specialize the context interface with concrete ingredient type
-type VersionContext = IVersionContext<AnyIngredient>;
+type VariationContext = IVariationContext<AnyIngredient>;
 
 // ============================================================================
 // Filter Helpers
@@ -95,18 +95,14 @@ function matchesFilter(
 }
 /* c8 ignore end */
 
-// ============================================================================
-// RuntimeFillingRecipeVersion Class
-// ============================================================================
-
 /**
- * A resolved view of a recipe version with all ingredients resolved.
+ * A resolved view of a recipe variation with all ingredients resolved.
  * @public
  */
-export class FillingRecipeVersion implements IFillingRecipeVersion {
-  private readonly _context: VersionContext;
+export class FillingRecipeVariation implements IFillingRecipeVariation {
+  private readonly _context: VariationContext;
   private readonly _fillingId: FillingId;
-  private readonly _version: IFillingRecipeVersionEntity;
+  private readonly _entity: IFillingRecipeVariationEntity;
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyIngredient>> | undefined;
@@ -114,29 +110,29 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
 
   /**
-   * Creates a RuntimeFillingRecipeVersion.
-   * Use RuntimeFillingRecipe.getVersion() or goldenVersion instead of calling this directly.
+   * Creates a {@link LibraryRuntime.RuntimeFillingRecipeVariation}.
+   * Use {@link LibraryRuntime.RuntimeFillingRecipe.getVariation} or {@link LibraryRuntime.RuntimeFillingRecipe.goldenVariation} instead of calling this directly.
    * @internal
    */
-  public constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersionEntity) {
+  public constructor(context: VariationContext, fillingId: FillingId, entity: IFillingRecipeVariationEntity) {
     this._context = context;
     this._fillingId = fillingId;
-    this._version = version;
+    this._entity = entity;
   }
 
   /**
-   * Factory method for creating a RuntimeFillingRecipeVersion.
+   * Factory method for creating a {@link LibraryRuntime.RuntimeFillingRecipeVariation}.
    * @param context - The runtime context
    * @param fillingId - The parent recipe ID
-   * @param version - The data layer version entity
-   * @returns Success with RuntimeFillingRecipeVersion
+   * @param variation - The data layer variation entity
+   * @returns Success with {@link LibraryRuntime.RuntimeFillingRecipeVariation}
    */
   public static create(
-    context: VersionContext,
+    context: VariationContext,
     fillingId: FillingId,
-    version: IFillingRecipeVersionEntity
-  ): Result<FillingRecipeVersion> {
-    return Success.with(new FillingRecipeVersion(context, fillingId, version));
+    variation: IFillingRecipeVariationEntity
+  ): Result<FillingRecipeVariation> {
+    return Success.with(new FillingRecipeVariation(context, fillingId, variation));
   }
 
   // ============================================================================
@@ -144,24 +140,24 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   // ============================================================================
 
   /**
-   * Qualified identifier for this version (fillingId\@versionSpec).
+   * Qualified identifier for this variation (fillingId\@variationSpec).
    */
-  public get versionId(): FillingRecipeVariationId {
-    return Helpers.createFillingRecipeVariationId(this._fillingId, this._version.versionSpec);
+  public get variationId(): FillingRecipeVariationId {
+    return Helpers.createFillingRecipeVariationId(this._fillingId, this._entity.variationSpec);
   }
 
   /**
-   * The version specifier
+   * The variation specifier
    */
-  public get versionSpec(): FillingRecipeVariationSpec {
-    return this._version.versionSpec;
+  public get variationSpec(): FillingRecipeVariationSpec {
+    return this._entity.variationSpec;
   }
 
   /**
-   * Date this version was created (ISO 8601 format)
+   * Date this variation was created (ISO 8601 format)
    */
   public get createdDate(): string {
-    return this._version.createdDate;
+    return this._entity.createdDate;
   }
 
   /**
@@ -173,24 +169,15 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
 
   /**
    * The parent filling recipe - resolved.
-   * Enables navigation: `version.fillingRecipe.name`
+   * Enables navigation: `variation.fillingRecipe.name`
    */
   public get fillingRecipe(): IFillingRecipe {
     if (this._recipe === undefined) {
-      // orThrow is safe - version was created from a valid recipe
+      // orThrow is safe - variation was created from a valid recipe
       this._recipe = this._context.fillings.get(this._fillingId).value;
     }
     return this._recipe!;
   }
-
-  /**
-   * The underlying filling recipe version.
-   * Use this to get the data layer version entity for persistence or journaling.
-   */
-  public get version(): IFillingRecipeVersionEntity {
-    return this._version;
-  }
-
   // ============================================================================
   // Computed Properties
   // ============================================================================
@@ -199,28 +186,28 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
    * Base weight of the recipe (sum of all ingredient amounts)
    */
   public get baseWeight(): Measurement {
-    return this._version.baseWeight;
+    return this._entity.baseWeight;
   }
 
   /**
    * Optional yield description (e.g., "50 bonbons")
    */
   public get yield(): string | undefined {
-    return this._version.yield;
+    return this._entity.yield;
   }
 
   /**
-   * Optional categorized notes about this version
+   * Optional categorized notes about this variation
    */
   public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
-    return this._version.notes;
+    return this._entity.notes;
   }
 
   /**
-   * Optional ratings for this version
+   * Optional ratings for this variation
    */
   public get ratings(): ReadonlyArray<IFillingRating> {
-    return this._version.ratings ?? [];
+    return this._entity.ratings ?? [];
   }
 
   // ============================================================================
@@ -281,12 +268,12 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   // ============================================================================
 
   /**
-   * Checks if this version uses a specific ingredient (as primary).
+   * Checks if this variation uses a specific ingredient (as primary).
    * @param ingredientId - The ingredient ID to check
-   * @returns True if the ingredient is used in this version
+   * @returns True if the ingredient is used in this variation
    */
   public usesIngredient(ingredientId: IngredientId): boolean {
-    return this._version.ingredients.some((ri) => ri.ingredient.ids.includes(ingredientId));
+    return this._entity.ingredients.some((ri) => ri.ingredient.ids.includes(ingredientId));
   }
 
   // ============================================================================
@@ -294,7 +281,7 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   // ============================================================================
 
   /**
-   * Calculates ganache characteristics for this version.
+   * Calculates ganache characteristics for this variation.
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
   public calculateGanache(): Result<IGanacheCalculation> {
@@ -320,8 +307,8 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   // ============================================================================
 
   /**
-   * Gets resolved procedures associated with this version.
-   * Returns Result with procedures, or Success with undefined if version has no procedures.
+   * Gets resolved procedures associated with this variation.
+   * Returns Result with procedures, or Success with undefined if variation has no procedures.
    * Resolved lazily on first access.
    * @returns Result with resolved procedures or undefined, or Failure if resolution fails
    * @public
@@ -338,8 +325,8 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   }
 
   /**
-   * Resolved procedures associated with this version.
-   * Undefined if the version has no associated procedures.
+   * Resolved procedures associated with this variation.
+   * Undefined if the variation has no associated procedures.
    * Resolved lazily on first access.
    * @throws if procedure resolution fails - prefer getProcedures() for proper error handling
    */
@@ -374,10 +361,10 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
 
   /**
    * Resolves procedure references to full procedure objects.
-   * @returns Result with resolved procedures, or Success with null if version has no procedures
+   * @returns Result with resolved procedures, or Success with null if variation has no procedures
    */
   private _resolveProcedures(): Result<IResolvedProcedures | null> {
-    const procedureEntities = this._version.procedures;
+    const procedureEntities = this._entity.procedures;
     if (!procedureEntities || procedureEntities.options.length === 0) {
       return Success.with(null);
     }
@@ -426,10 +413,10 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
   }
 
   /**
-   * Gets the underlying version entity data
+   * Gets the underlying variation entity data
    */
-  public get entity(): IFillingRecipeVersionEntity {
-    return this._version;
+  public get entity(): IFillingRecipeVariationEntity {
+    return this._entity;
   }
 
   // ============================================================================
@@ -440,7 +427,7 @@ export class FillingRecipeVersion implements IFillingRecipeVersion {
     const resolved: IResolvedFillingIngredient<AnyIngredient>[] = [];
     const errors = new MessageAggregator();
 
-    for (const ri of this._version.ingredients) {
+    for (const ri of this._entity.ingredients) {
       // Get primary ingredient ID (preferred or first)
       const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
       /* c8 ignore next 4 - defensive coding: empty ids array would indicate data corruption */

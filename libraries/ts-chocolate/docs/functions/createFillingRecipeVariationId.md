@@ -2,7 +2,7 @@
 
 # Function: createFillingRecipeVariationId
 
-Creates a composite FillingRecipeVariationId | FillingRecipeVariationId from 
+Creates a composite FillingRecipeVariationId | FillingRecipeVariationId from
 FillingId | FillingID and FillingRecipeVariationSpec | FillingRecipeVariationSpec.
 
 ## Signature

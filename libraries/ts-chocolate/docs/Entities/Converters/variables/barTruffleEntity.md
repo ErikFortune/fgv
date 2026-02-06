@@ -6,4 +6,4 @@ Converter for Entities.Confections.IBarTruffleEntity | IBarTruffleEntity
 
 ## Type
 
-`Converter<IBarTruffleEntity>`
+`Converter<BarTruffleRecipeEntity>`

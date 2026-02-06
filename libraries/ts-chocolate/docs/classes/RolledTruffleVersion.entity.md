@@ -2,10 +2,10 @@
 
 ## RolledTruffleVersion.entity property
 
-Gets the underlying rolled truffle version entity data.
+Gets the underlying rolled truffle variation entity data.
 
 **Signature:**
 
 ```typescript
-readonly entity: IRolledTruffleVersionEntity;
+readonly entity: IRolledTruffleRecipeVariationEntity;
 ```

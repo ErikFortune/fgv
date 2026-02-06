@@ -14,8 +14,8 @@ items:
       - dark
       - truffle
       - bonbon
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -47,7 +47,7 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01
   milk-ganache-classic:
     baseId: milk-ganache-classic
     name: Classic Milk Ganache
@@ -58,8 +58,8 @@ items:
       - milk
       - truffle
       - bonbon
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -89,7 +89,7 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01
   white-ganache-classic:
     baseId: white-ganache-classic
     name: Classic White Ganache
@@ -102,8 +102,8 @@ items:
       - white
       - truffle
       - bonbon
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -133,7 +133,7 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01
   vegan-ganache-coconut-cream:
     baseId: vegan-ganache-coconut-cream
     name: Vegan Ganache (Coconut Cream)
@@ -144,8 +144,8 @@ items:
       - dairy-free
       - dark
       - coconut
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -168,7 +168,7 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01
   vegan-ganache-coconut-oil:
     baseId: vegan-ganache-coconut-oil
     name: Vegan Ganache (Coconut Oil)
@@ -179,8 +179,8 @@ items:
       - dairy-free
       - dark
       - neutral
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -213,7 +213,7 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01
   caramelized-ganache:
     baseId: caramelized-ganache
     name: Caramelized Ganache
@@ -225,8 +225,8 @@ items:
       - truffle
       - bonbon
       - salted-caramel
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -256,7 +256,7 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01
   gianduja-basic:
     baseId: gianduja-basic
     name: Basic Gianduja
@@ -267,8 +267,8 @@ items:
       - hazelnut
       - italian
       - praline
-    versions:
-      - versionSpec: 2026-01-01-01
+    variations:
+      - variationSpec: 2026-01-01-01
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -298,4 +298,4 @@ items:
           options:
             - id: common.gianduja
           preferredId: common.gianduja
-    goldenVersionSpec: 2026-01-01-01
+    goldenVariationSpec: 2026-01-01-01

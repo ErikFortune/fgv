@@ -2,8 +2,8 @@
 
 ## ConfectionVersionBase.fillings property
 
-Resolved filling slots for this version.
-Undefined if the version has no fillings.
+Resolved filling slots for this variation.
+Undefined if the variation has no fillings.
 
 **Signature:**
 

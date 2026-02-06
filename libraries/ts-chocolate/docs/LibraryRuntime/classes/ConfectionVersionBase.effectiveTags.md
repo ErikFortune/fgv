@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.effectiveTags property
 
-Effective tags for this version (base confection tags + version's additional tags).
+Effective tags for this variation (base confection tags + variation's additional tags).
 
 **Signature:**
 

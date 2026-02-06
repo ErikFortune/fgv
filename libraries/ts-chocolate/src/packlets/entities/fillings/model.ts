@@ -102,7 +102,7 @@ export interface IFillingIngredientEntity {
 }
 
 /**
- * Categories for rating a filling recipe version
+ * Categories for rating a filling recipe variation
  * @public
  */
 export type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
@@ -133,7 +133,7 @@ export const allRatingCategories: RatingCategory[] = [
 ];
 
 /**
- * Rating for a specific category of a filling recipe version
+ * Rating for a specific category of a filling recipe variation
  * @public
  */
 export interface IFillingRating {
@@ -164,9 +164,9 @@ export interface IFillingUsageEntity {
   readonly date: string;
 
   /**
-   * Which version was used
+   * Which variation was used
    */
-  readonly versionSpec: FillingRecipeVariationSpec;
+  readonly variationSpec: FillingRecipeVariationSpec;
 
   /**
    * Scaled weight used for this production run
@@ -184,29 +184,29 @@ export interface IFillingUsageEntity {
   readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 
   /**
-   * If modifications were made during this usage that created a new version,
-   * this is the ID of that new version
+   * If modifications were made during this usage that created a new variation,
+   * this is the ID of that new variation
    */
-  readonly modifiedVersionSpec?: FillingRecipeVariationSpec;
+  readonly modifiedVariationSpec?: FillingRecipeVariationSpec;
 }
 
 /**
- * Complete details for a single version of a filling recipe
+ * Complete details for a single variation of a filling recipe
  * @public
  */
-export interface IFillingRecipeVersionEntity {
+export interface IFillingRecipeVariationEntity {
   /**
-   * Unique identifier for this version
+   * Unique identifier for this variation
    */
-  readonly versionSpec: FillingRecipeVariationSpec;
+  readonly variationSpec: FillingRecipeVariationSpec;
 
   /**
-   * Date this version was created (ISO 8601 format)
+   * Date this variation was created (ISO 8601 format)
    */
   readonly createdDate: string;
 
   /**
-   * Ingredients used in this version of the filling recipe
+   * Ingredients used in this variation of the filling recipe
    */
   readonly ingredients: ReadonlyArray<IFillingIngredientEntity>;
 
@@ -221,32 +221,32 @@ export interface IFillingRecipeVersionEntity {
   readonly yield?: string;
 
   /**
-   * Optional categorized notes about this version
+   * Optional categorized notes about this variation
    */
   readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 
   /**
-   * Optional ratings for this version
+   * Optional ratings for this variation
    */
   readonly ratings?: ReadonlyArray<IFillingRating>;
 
   /**
-   * Optional procedures associated with this version.
+   * Optional procedures associated with this variation.
    * Contains applicable procedures and the preferred default.
    */
   readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
 }
 /**
- * Reference to a source filling recipe+version from which a filling recipe was derived.
+ * Reference to a source filling recipe+variation from which a filling recipe was derived.
  * Used to track lineage when a user edits a read-only filling recipe and creates
  * a new filling recipe in a writable collection.
  * @public
  */
 export interface IFillingDerivationEntity {
   /**
-   * Source filling recipe version ID (format: "sourceId.fillingId\@versionSpec")
+   * Source filling recipe variation ID (format: "sourceId.fillingId\@variationSpec")
    */
-  readonly sourceVersionId: FillingRecipeVariationId;
+  readonly sourceVariationId: FillingRecipeVariationId;
 
   /**
    * Date of derivation (ISO 8601 format)
@@ -267,7 +267,7 @@ export interface IFillingDerivationEntity {
 export type IProcedureRefEntity = Model.IRefWithNotes<ProcedureId>;
 
 /**
- * Complete filling recipe with version history
+ * Complete filling recipe with all variations
  * @public
  */
 export interface IFillingRecipeEntity {
@@ -297,14 +297,14 @@ export interface IFillingRecipeEntity {
   readonly tags?: ReadonlyArray<string>;
 
   /**
-   * Version history
+   * Variations
    */
-  readonly versions: ReadonlyArray<IFillingRecipeVersionEntity>;
+  readonly variations: ReadonlyArray<IFillingRecipeVariationEntity>;
 
   /**
-   * The ID of the golden (approved default) version
+   * The ID of the golden (approved default) variation
    */
-  readonly goldenVersionSpec: FillingRecipeVariationSpec;
+  readonly goldenVariationSpec: FillingRecipeVariationSpec;
 
   /**
    * Optional derivation info - tracks lineage if this filling recipe was forked
@@ -325,9 +325,9 @@ export interface IFillingRecipeEntity {
  */
 export interface IScalingRefEntity {
   /**
-   * Source filling recipe version ID (format: "sourceId.fillingId\@versionSpec")
+   * Source filling recipe variation ID (format: "sourceId.fillingId\@variationSpec")
    */
-  readonly sourceVersionId: FillingRecipeVariationId;
+  readonly sourceVariationId: FillingRecipeVariationId;
 
   /**
    * Scaling factor applied
@@ -401,8 +401,8 @@ export interface IProducedFillingIngredientEntity {
  * @public
  */
 export interface IProducedFillingEntity {
-  /** Filling version ID that was produced */
-  readonly versionId: FillingRecipeVariationId;
+  /** Filling variation ID that was produced */
+  readonly variationId: FillingRecipeVariationId;
   /** Scale factor applied */
   readonly scaleFactor: number;
   /** Target weight for this production */

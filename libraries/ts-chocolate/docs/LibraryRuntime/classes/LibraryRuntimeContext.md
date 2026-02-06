@@ -76,7 +76,7 @@ The underlying ChocolateLibrary for direct access when needed.
 
 </td><td>
 
-[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[ConfectionId](../../type-aliases/ConfectionId.md), [AnyConfectionEntity](../../type-aliases/AnyConfectionEntity.md), [AnyConfection](../../type-aliases/AnyConfection.md), never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[ConfectionId](../../type-aliases/ConfectionId.md), [AnyConfectionRecipeEntity](../../type-aliases/AnyConfectionRecipeEntity.md), [AnyConfection](../../type-aliases/AnyConfection.md), never&gt;
 
 </td><td>
 

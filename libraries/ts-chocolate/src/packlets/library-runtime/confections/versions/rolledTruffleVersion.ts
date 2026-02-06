@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * RolledTruffleVersion - runtime version for rolled truffle confections
+ * RolledTruffleRecipeVariation - one variation of a rolled truffle recipe
  * @packageDocumentation
  */
 
@@ -33,65 +33,50 @@ import {
   IResolvedCoatings,
   IResolvedCoatingOption,
   IResolvedConfectionProcedure,
-  IRolledTruffle,
-  IRolledTruffleVersion
+  IRolledTruffleRecipe,
+  IRolledTruffleRecipeVariation
 } from '../../model';
-import { ConfectionVersionBase } from './confectionVersionBase';
-
-// ============================================================================
-// RolledTruffleVersion Class
-// ============================================================================
+import { ConfectionRecipeVariationBase } from './confectionVersionBase';
 
 /**
- * A resolved view of a rolled truffle version with all references resolved.
+ * A view of a rolled truffle recipe variation with all references resolved.
  * @public
  */
-export class RolledTruffleVersion
-  extends ConfectionVersionBase<IRolledTruffle, Confections.IRolledTruffleVersionEntity>
-  implements IRolledTruffleVersion
+export class RolledTruffleRecipeVariation
+  extends ConfectionRecipeVariationBase<IRolledTruffleRecipe, Confections.IRolledTruffleRecipeVariationEntity>
+  implements IRolledTruffleRecipeVariation
 {
-  private readonly _rolledTruffleVersion: Confections.IRolledTruffleVersionEntity;
-
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
   private _resolvedCoatings: IResolvedCoatings | undefined | null;
 
   /**
-   * Creates a RolledTruffleVersion.
-   * Use RolledTruffleVersion.create() instead.
+   * Creates a {@link LibraryRuntime.Confections.RolledTruffleRecipeVariation}.
+   * Use {@link LibraryRuntime.Confections.RolledTruffleRecipeVariation.create} instead.
    * @internal
    */
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IRolledTruffleVersionEntity
+    variation: Confections.IRolledTruffleRecipeVariationEntity
   ) {
-    super(context, confectionId, version);
-    this._rolledTruffleVersion = version;
+    super(context, confectionId, variation);
   }
 
   /**
-   * Factory method for creating a RolledTruffleVersion.
+   * Factory method for creating a {@link LibraryRuntime.Confections.RolledTruffleRecipeVariation}.
    * @param context - The runtime context
    * @param confectionId - The parent confection ID
-   * @param version - The rolled truffle version data
-   * @returns Success with RolledTruffleVersion
+   * @param variation - The rolled truffle variation data
+   * @returns Success with {@link LibraryRuntime.Confections.RolledTruffleRecipeVariation}
    */
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IRolledTruffleVersionEntity
-  ): Result<RolledTruffleVersion> {
-    return Success.with(new RolledTruffleVersion(context, confectionId, version));
+    variation: Confections.IRolledTruffleRecipeVariationEntity
+  ): Result<RolledTruffleRecipeVariation> {
+    return Success.with(new RolledTruffleRecipeVariation(context, confectionId, variation));
   }
-
-  // ============================================================================
-  // Parent Navigation (narrowed type)
-  // ============================================================================
-
-  // ============================================================================
-  // Rolled Truffle-Specific Properties (lazy)
-  // ============================================================================
 
   /**
    * Gets resolved enrobing chocolate specification (lazy-loaded).
@@ -100,7 +85,7 @@ export class RolledTruffleVersion
    */
   public getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
     if (this._resolvedEnrobingChocolate === undefined) {
-      const spec = this._rolledTruffleVersion.enrobingChocolate;
+      const spec = this._entity.enrobingChocolate;
       if (!spec) {
         this._resolvedEnrobingChocolate = null;
         return succeed(undefined);
@@ -143,7 +128,7 @@ export class RolledTruffleVersion
    */
   public getCoatings(): Result<IResolvedCoatings | undefined> {
     if (this._resolvedCoatings === undefined) {
-      const coatings = this._rolledTruffleVersion.coatings;
+      const coatings = this._entity.coatings;
       if (!coatings) {
         this._resolvedCoatings = null;
         return succeed(undefined);
@@ -189,9 +174,9 @@ export class RolledTruffleVersion
   }
 
   /**
-   * Gets the underlying rolled truffle version entity data.
+   * Gets the underlying rolled truffle variation entity data.
    */
-  public override get entity(): Confections.IRolledTruffleVersionEntity {
-    return this._rolledTruffleVersion;
+  public override get entity(): Confections.IRolledTruffleRecipeVariationEntity {
+    return this._entity;
   }
 }

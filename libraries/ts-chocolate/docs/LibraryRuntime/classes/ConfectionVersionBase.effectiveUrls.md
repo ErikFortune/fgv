@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.effectiveUrls property
 
-Effective URLs for this version (base confection URLs + version's additional URLs).
+Effective URLs for this variation (base confection URLs + variation's additional URLs).
 
 **Signature:**
 

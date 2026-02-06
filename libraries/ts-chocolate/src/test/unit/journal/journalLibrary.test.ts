@@ -39,22 +39,22 @@ describe('JournalLibrary (Collection-Based)', () => {
 
   const makeFillingJournal = (
     baseId: string,
-    versionId: string,
+    variationId: string,
     timestamp: string = '2026-01-15T10:00:00Z'
   ): IFillingProductionJournalEntryEntity => ({
     type: 'filling-production',
     baseId: CommonConverters.baseJournalId.convert(baseId).orThrow(),
     timestamp,
-    versionId: CommonConverters.fillingRecipeVariationId.convert(versionId).orThrow(),
+    variationId: CommonConverters.fillingRecipeVariationId.convert(variationId).orThrow(),
     recipe: {
-      versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+      variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [],
       baseWeight: 300 as Measurement
     },
     yield: 600 as Measurement,
     produced: {
-      versionId: versionId as FillingRecipeVariationId,
+      variationId: variationId as FillingRecipeVariationId,
       scaleFactor: 2,
       targetWeight: 600 as Measurement,
       ingredients: []
@@ -224,7 +224,7 @@ describe('JournalLibrary (Collection-Based)', () => {
 
       const lib = createLibraryWithJournals([journal1, journal2, journal3]);
 
-      const results = lib.getJournalsForFillingVersion(
+      const results = lib.getJournalsForFillingVariation(
         'source.recipe-a@2026-01-01-01' as FillingRecipeVariationId
       );
       expect(results).toHaveLength(2);
@@ -236,7 +236,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       const journal = makeFillingJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
       const lib = createLibraryWithJournals([journal]);
 
-      const results = lib.getJournalsForFillingVersion(
+      const results = lib.getJournalsForFillingVariation(
         'source.recipe-a@2026-99-99-99' as FillingRecipeVariationId
       );
       expect(results).toHaveLength(0);

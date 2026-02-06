@@ -2,10 +2,10 @@
 
 ## IJournalEntryEntityBase.updatedId property
 
-ID of the updated version if it was saved
+ID of the updated variation if it was saved
 
 **Signature:**
 
 ```typescript
-readonly updatedId: TVersionId;
+readonly updatedId: TVariationId;
 ```

@@ -7,5 +7,5 @@ Gets the underlying confection data entity (read-only)
 **Signature:**
 
 ```typescript
-readonly entity: AnyConfectionEntity;
+readonly entity: AnyConfectionRecipeEntity;
 ```

@@ -43,7 +43,7 @@ Date of use in ISO 8601 format
 </td></tr>
 <tr><td>
 
-[versionSpec](./IFillingUsageEntity.versionSpec.md)
+[variationSpec](./IFillingUsageEntity.variationSpec.md)
 
 </td><td>
 
@@ -55,7 +55,7 @@ Date of use in ISO 8601 format
 
 </td><td>
 
-Which version was used
+Which variation was used
 
 </td></tr>
 <tr><td>
@@ -111,7 +111,7 @@ Optional categorized notes about this usage
 </td></tr>
 <tr><td>
 
-[modifiedVersionSpec](./IFillingUsageEntity.modifiedVersionSpec.md)
+[modifiedVariationSpec](./IFillingUsageEntity.modifiedVariationSpec.md)
 
 </td><td>
 
@@ -123,7 +123,7 @@ Optional categorized notes about this usage
 
 </td><td>
 
-If modifications were made during this usage that created a new version,
+If modifications were made during this usage that created a new variation,
 
 </td></tr>
 </tbody></table>

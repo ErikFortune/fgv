@@ -26,7 +26,7 @@ Description
 <tbody>
 <tr><td>
 
-[canCreateVersion](./ISaveAnalysis.canCreateVersion.md)
+[canCreateVariation](./ISaveAnalysis.canCreateVariation.md)
 
 </td><td>
 
@@ -38,7 +38,7 @@ boolean
 
 </td><td>
 
-Whether the original collection is mutable (allows creating new version)
+Whether the original collection is mutable (allows creating new variation)
 
 </td></tr>
 <tr><td>
@@ -85,7 +85,7 @@ Whether we must create a new recipe (collection is immutable)
 
 </td><td>
 
-"new" | "version" | "alternatives"
+"new" | "variation" | "alternatives"
 
 </td><td>
 

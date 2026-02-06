@@ -2,7 +2,7 @@
 
 ## MoldedBonBon.fillings property
 
-Resolved filling slots from the golden version.
+Resolved filling slots from the golden variation.
 
 **Signature:**
 

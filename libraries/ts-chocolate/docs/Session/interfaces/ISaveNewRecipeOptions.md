@@ -60,7 +60,7 @@ Base weight for the new recipe
 </td></tr>
 <tr><td>
 
-[versionSpec](./ISaveNewRecipeOptions.versionSpec.md)
+[variationSpec](./ISaveNewRecipeOptions.variationSpec.md)
 
 </td><td>
 
@@ -72,7 +72,7 @@ Base weight for the new recipe
 
 </td><td>
 
-Version spec for the new recipe's first version
+Variation spec for the new recipe's first variation
 
 </td></tr>
 <tr><td>

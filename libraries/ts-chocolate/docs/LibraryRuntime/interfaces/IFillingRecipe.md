@@ -2,17 +2,17 @@
 
 # Interface: IFillingRecipe
 
-A resolved runtime view of a recipe with navigation and version access.
+A resolved runtime view of a recipe with navigation and variation access.
 
 This interface provides runtime-layer access to recipe data with:
 - Composite identity (`id`, `collectionId`) for cross-source references
-- Resolved version access (full objects, not just entity data)
+- Resolved variation access (full objects, not just entity data)
 - Scaling and calculation operations
 - Usage and ingredient queries
 - Resolved procedure access
 
 Note: Does not extend Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity
-directly because `versions` has a different type (resolved vs data layer entity versions).
+directly because `variations` has a different type (resolved vs data layer entity variations).
 
 ## Properties
 
@@ -138,7 +138,7 @@ Optional tags for categorization and search.
 </td></tr>
 <tr><td>
 
-[goldenVersionSpec](./IFillingRecipe.goldenVersionSpec.md)
+[goldenVariationSpec](./IFillingRecipe.goldenVariationSpec.md)
 
 </td><td>
 
@@ -150,12 +150,12 @@ Optional tags for categorization and search.
 
 </td><td>
 
-The ID of the golden (approved default) version.
+The ID of the golden (approved default) variation.
 
 </td></tr>
 <tr><td>
 
-[goldenVersion](./IFillingRecipe.goldenVersion.md)
+[goldenVariation](./IFillingRecipe.goldenVariation.md)
 
 </td><td>
 
@@ -163,16 +163,16 @@ The ID of the golden (approved default) version.
 
 </td><td>
 
-[IFillingRecipeVersion](../../interfaces/IFillingRecipeVersion.md)
+[IFillingRecipeVariation](../../interfaces/IFillingRecipeVariation.md)
 
 </td><td>
 
-The golden (default approved) version - resolved.
+The golden (default approved) variation - resolved.
 
 </td></tr>
 <tr><td>
 
-[versions](./IFillingRecipe.versions.md)
+[variations](./IFillingRecipe.variations.md)
 
 </td><td>
 
@@ -180,16 +180,16 @@ The golden (default approved) version - resolved.
 
 </td><td>
 
-readonly [IFillingRecipeVersion](../../interfaces/IFillingRecipeVersion.md)[]
+readonly [IFillingRecipeVariation](../../interfaces/IFillingRecipeVariation.md)[]
 
 </td><td>
 
-All versions - resolved.
+All variations - resolved.
 
 </td></tr>
 <tr><td>
 
-[latestVersion](./IFillingRecipe.latestVersion.md)
+[latestVariation](./IFillingRecipe.latestVariation.md)
 
 </td><td>
 
@@ -197,16 +197,16 @@ All versions - resolved.
 
 </td><td>
 
-[IFillingRecipeVersion](../../interfaces/IFillingRecipeVersion.md)
+[IFillingRecipeVariation](../../interfaces/IFillingRecipeVariation.md)
 
 </td><td>
 
-Gets the latest version (by created date).
+Gets the latest variation (by created date).
 
 </td></tr>
 <tr><td>
 
-[versionCount](./IFillingRecipe.versionCount.md)
+[variationCount](./IFillingRecipe.variationCount.md)
 
 </td><td>
 
@@ -218,7 +218,7 @@ number
 
 </td><td>
 
-Number of versions.
+Number of variations.
 
 </td></tr>
 <tr><td>
@@ -258,7 +258,7 @@ Description
 <tbody>
 <tr><td>
 
-[getVersion(versionSpec)](./IFillingRecipe.getVersion.md)
+[getVariation(variationSpec)](./IFillingRecipe.getVariation.md)
 
 </td><td>
 
@@ -266,7 +266,7 @@ Description
 
 </td><td>
 
-Gets a specific version by FillingRecipeVariationSpec | version specifier.
+Gets a specific variation by FillingRecipeVariationSpec | variation specifier.
 
 </td></tr>
 <tr><td>
@@ -279,7 +279,7 @@ Gets a specific version by FillingRecipeVariationSpec | version specifier.
 
 </td><td>
 
-Gets unique ingredient IDs used across all versions.
+Gets unique ingredient IDs used across all variations.
 
 </td></tr>
 <tr><td>
@@ -292,7 +292,7 @@ Gets unique ingredient IDs used across all versions.
 
 </td><td>
 
-Checks if any version uses a specific ingredient.
+Checks if any variation uses a specific ingredient.
 
 </td></tr>
 </tbody></table>

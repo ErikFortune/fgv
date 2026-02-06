@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * ConfectionBase - abstract base class for runtime confections
+ * ConfectionRecipeBase - abstract base class for runtime confections
  * @packageDocumentation
  */
 
@@ -38,7 +38,7 @@ import {
 } from '../../common';
 import { Confections } from '../../entities';
 import {
-  AnyConfectionVersion,
+  AnyConfectionRecipeVariation,
   IConfectionContext,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
@@ -46,38 +46,38 @@ import {
 } from '../model';
 
 // Forward declarations to avoid circular imports
-import type { MoldedBonBon } from './moldedBonBon';
-import type { BarTruffle } from './barTruffle';
-import type { RolledTruffle } from './rolledTruffle';
+import type { MoldedBonBonRecipe } from './moldedBonBon';
+import type { BarTruffleRecipe } from './barTruffle';
+import type { RolledTruffleRecipe } from './rolledTruffle';
 
 // ============================================================================
-// ConfectionBase Abstract Class
+// ConfectionRecipeBase Abstract Class
 // ============================================================================
 
 /**
  * Abstract base class for runtime confections.
- * Provides common properties and version navigation shared by all confection types.
+ * Provides common properties and variation navigation shared by all confection types.
  *
- * @typeParam TVersion - The specific version type for this confection
+ * @typeParam TVariation - The specific variation type for this confection
  * @typeParam TEntity - The specific entity type for this confection
  * @public
  */
 export abstract class ConfectionBase<
-  TVersion extends AnyConfectionVersion = AnyConfectionVersion,
-  TEntity extends Confections.AnyConfectionEntity = Confections.AnyConfectionEntity
-> implements IConfectionBase<TVersion>
+  TVariation extends AnyConfectionRecipeVariation = AnyConfectionRecipeVariation,
+  TEntity extends Confections.AnyConfectionRecipeEntity = Confections.AnyConfectionRecipeEntity
+> implements IConfectionBase<TVariation>
 {
   protected readonly _context: IConfectionContext;
   protected readonly _id: ConfectionId;
   protected readonly _confection: TEntity;
   protected readonly _sourceId: CollectionId;
   protected readonly _baseId: BaseConfectionId;
-  protected readonly _goldenVersionEntity: Confections.AnyConfectionVersionEntity;
+  protected readonly _goldenVariationEntity: Confections.AnyConfectionRecipeVariationEntity;
 
-  // Lazy-resolved version caches (undefined = not yet resolved)
-  private _resolvedGoldenVersion: TVersion | undefined;
-  private _resolvedVersions: ReadonlyArray<TVersion> | undefined;
-  private _versionCache: Map<ConfectionRecipeVariationSpec, TVersion> | undefined;
+  // Lazy-resolved variation caches (undefined = not yet resolved)
+  private _resolvedGoldenVariation: TVariation | undefined;
+  private _resolvedVariations: ReadonlyArray<TVariation> | undefined;
+  private _variationCache: Map<ConfectionRecipeVariationSpec, TVariation> | undefined;
 
   /**
    * Creates a ConfectionBase.
@@ -95,18 +95,16 @@ export abstract class ConfectionBase<
     this._sourceId = parsed.collectionId;
     this._baseId = parsed.itemId;
 
-    // Find and cache the golden version entity
-    const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
-    /* c8 ignore next 3 - defensive: converter validates golden version exists */
-    if (!goldenVersion) {
-      throw new Error(`Golden version ${confection.goldenVersionSpec} not found in confection ${id}`);
+    // Find and cache the golden variation entity
+    const goldenVariation = confection.variations.find(
+      (v) => v.variationSpec === confection.goldenVariationSpec
+    );
+    /* c8 ignore next 3 - defensive: converter validates golden variation exists */
+    if (!goldenVariation) {
+      throw new Error(`Golden variation ${confection.goldenVariationSpec} not found in confection ${id}`);
     }
-    this._goldenVersionEntity = goldenVersion;
+    this._goldenVariationEntity = goldenVariation;
   }
-
-  // ============================================================================
-  // Identity
-  // ============================================================================
 
   /**
    * The composite confection ID (e.g., "common.dark-dome-bonbon")
@@ -130,7 +128,7 @@ export abstract class ConfectionBase<
   }
 
   // ============================================================================
-  // Core Properties (identity/metadata from confection, config from golden version)
+  // Core Properties (identity/metadata from confection, config from golden variation)
   // ============================================================================
 
   /**
@@ -153,200 +151,202 @@ export abstract class ConfectionBase<
   }
 
   /**
-   * Base tags for searching/filtering (version may add more via additionalTags)
+   * Base tags for searching/filtering (variation may add more via additionalTags)
    */
   public get tags(): ReadonlyArray<string> | undefined {
     return this._confection.tags;
   }
 
   /**
-   * Base URLs (version may add more via additionalUrls)
+   * Base URLs (variation may add more via additionalUrls)
    */
   public get urls(): ReadonlyArray<CommonModel.ICategorizedUrl> | undefined {
     return this._confection.urls;
   }
 
   /**
-   * The ID of the golden (approved default) version
+   * The ID of the golden (approved default) variation
    */
-  public get goldenVersionSpec(): ConfectionRecipeVariationSpec {
-    return this._confection.goldenVersionSpec;
+  public get goldenVariationSpec(): ConfectionRecipeVariationSpec {
+    return this._confection.goldenVariationSpec;
   }
 
   // ============================================================================
-  // Properties from Golden Version (convenience accessors)
+  // Properties from Golden Variation (convenience accessors)
   // ============================================================================
 
   /**
-   * Decorations from the golden version
+   * Decorations from the golden variation
    */
   public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
-    return this._goldenVersionEntity.decorations;
+    return this._goldenVariationEntity.decorations;
   }
 
   /**
-   * Yield specification from the golden version
+   * Yield specification from the golden variation
    */
   public get yield(): Confections.IConfectionYield {
-    return this._goldenVersionEntity.yield;
+    return this._goldenVariationEntity.yield;
   }
 
   /**
-   * Resolved filling slots from the golden version (lazy-loaded)
+   * Resolved filling slots from the golden variation (lazy-loaded)
    */
   public abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
 
   /**
-   * Resolved procedures from the golden version (lazy-loaded)
+   * Resolved procedures from the golden variation (lazy-loaded)
    */
   public abstract get procedures():
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined;
 
   // ============================================================================
-  // Version Navigation (lazy)
+  // Variation Navigation (lazy)
   // ============================================================================
 
   /**
-   * Gets the golden (default) version - resolved.
+   * Gets the golden (default) variation - resolved.
    * Resolved lazily on first access.
-   * @returns Result with golden version, or Failure if creation fails
+   * @returns Result with golden variation, or Failure if creation fails
    * @public
    */
-  public getGoldenVersion(): Result<TVersion> {
-    if (this._resolvedGoldenVersion === undefined) {
-      return this._createVersion(this._goldenVersionEntity).onSuccess((version) => {
-        this._resolvedGoldenVersion = version;
-        return Success.with(version);
+  public getGoldenVariation(): Result<TVariation> {
+    if (this._resolvedGoldenVariation === undefined) {
+      return this._createVariation(this._goldenVariationEntity).onSuccess((variation) => {
+        this._resolvedGoldenVariation = variation;
+        return Success.with(variation);
       });
     }
-    return Success.with(this._resolvedGoldenVersion);
+    return Success.with(this._resolvedGoldenVariation);
   }
 
   /**
-   * The golden (default) version - resolved.
+   * The golden (default) variation - resolved.
    * Resolved lazily on first access.
-   * @throws if version creation fails - prefer getGoldenVersion() for proper error handling
+   * @throws if variation creation fails - prefer getGoldenVariation() for proper error handling
    */
-  public get goldenVersion(): TVersion {
-    return this.getGoldenVersion().orThrow();
+  public get goldenVariation(): TVariation {
+    return this.getGoldenVariation().orThrow();
   }
 
   /**
-   * Gets all versions - resolved.
+   * Gets all variations - resolved.
    * Resolved lazily on first access.
-   * @returns Result with all versions, or Failure if any version creation fails
+   * @returns Result with all variations, or Failure if any variation creation fails
    * @public
    */
-  public getVersions(): Result<ReadonlyArray<TVersion>> {
-    if (this._resolvedVersions === undefined) {
-      return mapResults(this._confection.versions.map((v) => this._getOrCreateVersion(v))).onSuccess(
-        (versions) => {
-          this._resolvedVersions = versions;
-          return Success.with(versions);
+  public getVariations(): Result<ReadonlyArray<TVariation>> {
+    if (this._resolvedVariations === undefined) {
+      return mapResults(this._confection.variations.map((v) => this._getOrCreateVariation(v))).onSuccess(
+        (variations) => {
+          this._resolvedVariations = variations;
+          return Success.with(variations);
         }
       );
     }
-    return Success.with(this._resolvedVersions);
+    return Success.with(this._resolvedVariations);
   }
 
   /**
-   * All versions - resolved.
+   * All variations - resolved.
    * Resolved lazily on first access.
-   * @throws if version creation fails - prefer getVersions() for proper error handling
+   * @throws if variation creation fails - prefer getVariations() for proper error handling
    */
-  public get versions(): ReadonlyArray<TVersion> {
-    return this.getVersions().orThrow();
+  public get variations(): ReadonlyArray<TVariation> {
+    return this.getVariations().orThrow();
   }
 
   /**
-   * Gets a specific version by version specifier.
-   * @param versionSpec - The version specifier to find
-   * @returns Success with runtime version, or Failure if not found or creation fails
+   * Gets a specific variation by variation specifier.
+   * @param variationSpec - The variation specifier to find
+   * @returns Success with runtime variation, or Failure if not found or creation fails
    */
-  public getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion> {
-    const entity = this._confection.versions.find((v) => v.versionSpec === versionSpec);
+  public getVariation(variationSpec: ConfectionRecipeVariationSpec): Result<TVariation> {
+    const entity = this._confection.variations.find((v) => v.variationSpec === variationSpec);
     if (!entity) {
-      return Failure.with(`Version ${versionSpec} not found in confection ${this._id}`);
+      return Failure.with(`Variation ${variationSpec} not found in confection ${this._id}`);
     }
-    return this._getOrCreateVersion(entity);
+    return this._getOrCreateVariation(entity);
   }
 
   /**
-   * Gets or creates a runtime version from a data layer entity, using caching.
+   * Gets or creates a runtime variation from a data layer entity, using caching.
    * @param entity - The data layer entity
-   * @returns Result with runtime version (from cache or newly created), or Failure if creation fails
+   * @returns Result with runtime variation (from cache or newly created), or Failure if creation fails
    * @internal
    */
-  private _getOrCreateVersion(entity: Confections.AnyConfectionVersionEntity): Result<TVersion> {
+  private _getOrCreateVariation(entity: Confections.AnyConfectionRecipeVariationEntity): Result<TVariation> {
     // Initialize cache if needed
-    if (this._versionCache === undefined) {
-      this._versionCache = new Map();
+    if (this._variationCache === undefined) {
+      this._variationCache = new Map();
     }
 
     // Check cache
-    const cached = this._versionCache.get(entity.versionSpec);
+    const cached = this._variationCache.get(entity.variationSpec);
     if (cached !== undefined) {
       return Success.with(cached);
     }
 
-    // Create new version and cache it
-    return this._createVersion(entity).onSuccess((version) => {
-      this._versionCache!.set(entity.versionSpec, version);
-      return Success.with(version);
+    // Create new variation and cache it
+    return this._createVariation(entity).onSuccess((variation) => {
+      this._variationCache!.set(entity.variationSpec, variation);
+      return Success.with(variation);
     });
   }
 
   /**
-   * Creates a runtime version from a data layer entity.
-   * Must be overridden by subclasses to return the appropriate typed version.
+   * Creates a runtime variation from a data layer entity.
+   * Must be overridden by subclasses to return the appropriate typed variation.
    * @param entity - The data layer entity
-   * @returns Result with runtime version, or Failure if creation fails
+   * @returns Result with runtime variation, or Failure if creation fails
    * @internal
    */
-  protected abstract _createVersion(entity: Confections.AnyConfectionVersionEntity): Result<TVersion>;
+  protected abstract _createVariation(
+    entity: Confections.AnyConfectionRecipeVariationEntity
+  ): Result<TVariation>;
 
   // ============================================================================
-  // Effective Tags/URLs (merged from base + version)
+  // Effective Tags/URLs (merged from base + variation)
   // ============================================================================
 
   /**
-   * Gets effective tags for the golden version (base tags + version's additional tags).
+   * Gets effective tags for the golden variation (base tags + variation's additional tags).
    */
   public get effectiveTags(): ReadonlyArray<string> {
-    return this.getEffectiveTags(this._goldenVersionEntity);
+    return this.getEffectiveTags(this._goldenVariationEntity);
   }
 
   /**
-   * Gets effective URLs for the golden version (base URLs + version's additional URLs).
+   * Gets effective URLs for the golden variation (base URLs + variation's additional URLs).
    */
   public get effectiveUrls(): ReadonlyArray<CommonModel.ICategorizedUrl> {
-    return this.getEffectiveUrls(this._goldenVersionEntity);
+    return this.getEffectiveUrls(this._goldenVariationEntity);
   }
 
   /**
-   * Gets effective tags for a specific version (base tags + version's additional tags).
-   * @param version - The version to get tags for (defaults to golden version)
+   * Gets effective tags for a specific variation (base tags + variation's additional tags).
+   * @param variation - The variation to get tags for (defaults to golden variation)
    */
-  public getEffectiveTags(version?: Confections.AnyConfectionVersionEntity): ReadonlyArray<string> {
-    const targetVersion = version ?? this._goldenVersionEntity;
+  public getEffectiveTags(variation?: Confections.AnyConfectionRecipeVariationEntity): ReadonlyArray<string> {
+    const targetVariation = variation ?? this._goldenVariationEntity;
     const baseTags = this._confection.tags ?? [];
-    const versionTags = targetVersion.additionalTags ?? [];
+    const variationTags = targetVariation.additionalTags ?? [];
     // Deduplicate while preserving order (base first)
-    return [...new Set([...baseTags, ...versionTags])];
+    return [...new Set([...baseTags, ...variationTags])];
   }
 
   /**
-   * Gets effective URLs for a specific version (base URLs + version's additional URLs).
-   * @param version - The version to get URLs for (defaults to golden version)
+   * Gets effective URLs for a specific variation (base URLs + variation's additional URLs).
+   * @param variation - The variation to get URLs for (defaults to golden variation)
    */
   public getEffectiveUrls(
-    version?: Confections.AnyConfectionVersionEntity
+    variation?: Confections.AnyConfectionRecipeVariationEntity
   ): ReadonlyArray<CommonModel.ICategorizedUrl> {
-    const targetVersion = version ?? this._goldenVersionEntity;
+    const targetVariation = variation ?? this._goldenVariationEntity;
     const baseUrls = this._confection.urls ?? [];
-    const versionUrls = targetVersion.additionalUrls ?? [];
-    return [...baseUrls, ...versionUrls];
+    const variationUrls = targetVariation.additionalUrls ?? [];
+    return [...baseUrls, ...variationUrls];
   }
 
   // ============================================================================
@@ -356,26 +356,26 @@ export abstract class ConfectionBase<
   /**
    * Returns true if this is a molded bonbon confection.
    */
-  public isMoldedBonBon(): this is MoldedBonBon {
-    return Confections.isMoldedBonBonEntity(this._confection);
+  public isMoldedBonBon(): this is MoldedBonBonRecipe {
+    return Confections.isMoldedBonBonRecipeEntity(this._confection);
   }
 
   /**
    * Returns true if this is a bar truffle confection.
    */
-  public isBarTruffle(): this is BarTruffle {
+  public isBarTruffle(): this is BarTruffleRecipe {
     return Confections.isBarTruffleEntity(this._confection);
   }
 
   /**
    * Returns true if this is a rolled truffle confection.
    */
-  public isRolledTruffle(): this is RolledTruffle {
-    return Confections.isRolledTruffleEntity(this._confection);
+  public isRolledTruffle(): this is RolledTruffleRecipe {
+    return Confections.isRolledTruffleRecipeEntity(this._confection);
   }
 
   /**
    * Gets the underlying confection data entity (read-only)
    */
-  public abstract get entity(): Confections.AnyConfectionEntity;
+  public abstract get entity(): Confections.AnyConfectionRecipeEntity;
 }

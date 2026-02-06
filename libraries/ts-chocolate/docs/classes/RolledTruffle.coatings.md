@@ -2,7 +2,7 @@
 
 ## RolledTruffle.coatings property
 
-Resolved coating specification (from golden version, optional).
+Resolved coating specification (from golden variation, optional).
 
 **Signature:**
 

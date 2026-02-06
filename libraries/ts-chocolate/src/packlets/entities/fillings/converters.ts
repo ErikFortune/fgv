@@ -34,7 +34,7 @@ import {
   IFillingIngredientEntity,
   IFillingRating,
   IFillingRecipeEntity,
-  IFillingRecipeVersionEntity,
+  IFillingRecipeVariationEntity,
   IIngredientModifiers,
   IIngredientSnapshotEntity,
   IProcedureRefEntity,
@@ -93,7 +93,7 @@ export const fillingRating: Converter<IFillingRating> = Converters.object<IFilli
  */
 export const fillingDerivationEntity: Converter<IFillingDerivationEntity> =
   Converters.object<IFillingDerivationEntity>({
-    sourceVersionId: CommonConverters.fillingRecipeVariationId,
+    sourceVariationId: CommonConverters.fillingRecipeVariationId,
     derivedDate: Converters.string, // ISO 8601 date string
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
@@ -115,12 +115,12 @@ export const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedure
   CommonConverters.optionsWithPreferred(procedureRefEntity, CommonConverters.procedureId, 'procedures');
 
 /**
- * Converter for {@link Entities.Fillings.IFillingRecipeVersionEntity | IFillingRecipeVersionEntity}.
+ * Converter for {@link Entities.Fillings.IFillingRecipeVariationEntity | IFillingRecipeVariationEntity}.
  * @public
  */
-export const fillingRecipeVersionEntity: Converter<IFillingRecipeVersionEntity> =
-  Converters.object<IFillingRecipeVersionEntity>({
-    versionSpec: CommonConverters.fillingRecipeVariationSpec,
+export const fillingRecipeVariationEntity: Converter<IFillingRecipeVariationEntity> =
+  Converters.object<IFillingRecipeVariationEntity>({
+    variationSpec: CommonConverters.fillingRecipeVariationSpec,
     createdDate: Converters.string, // ISO 8601 date string
     ingredients: Converters.arrayOf(fillingIngredientEntity),
     baseWeight: CommonConverters.measurement,
@@ -141,29 +141,29 @@ export const fillingRecipeRawEntity: Converter<IFillingRecipeEntity> =
     category: fillingCategory,
     description: Converters.string.optional(),
     tags: Converters.arrayOf(Converters.string).optional(),
-    versions: Converters.arrayOf(fillingRecipeVersionEntity),
-    goldenVersionSpec: CommonConverters.fillingRecipeVariationSpec,
+    variations: Converters.arrayOf(fillingRecipeVariationEntity),
+    goldenVariationSpec: CommonConverters.fillingRecipeVariationSpec,
     derivedFrom: fillingDerivationEntity.optional(),
     urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
   });
 
 /**
  * Converter for {@link Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity} with validation.
- * Validates that goldenVersionSpec exists in versions and returns the plain data object.
+ * Validates that goldenVariationSpec exists in variations and returns the plain data object.
  * @public
  */
 export const fillingRecipeEntity: Converter<IFillingRecipeEntity> = Converters.generic<IFillingRecipeEntity>(
   (from: unknown): Result<IFillingRecipeEntity> => {
     return fillingRecipeRawEntity.convert(from).onSuccess((data) => {
-      if (data.versions.length === 0) {
-        return Failure.with('Filling recipe must have at least one version');
+      if (data.variations.length === 0) {
+        return Failure.with<IFillingRecipeEntity>('Filling recipe must have at least one variation');
       }
 
-      // Validate that goldenVersionSpec exists in versions
-      const goldenExists = data.versions.some((v) => v.versionSpec === data.goldenVersionSpec);
+      // Validate that goldenVariationSpec exists in variations
+      const goldenExists = data.variations.some((v) => v.variationSpec === data.goldenVariationSpec);
       if (!goldenExists) {
         return Failure.with(
-          `Golden version ${data.goldenVersionSpec} not found in versions for filling recipe ${data.baseId}`
+          `Golden variation ${data.goldenVariationSpec} not found in variations for filling recipe ${data.baseId}`
         );
       }
 
@@ -177,7 +177,7 @@ export const fillingRecipeEntity: Converter<IFillingRecipeEntity> = Converters.g
  * @public
  */
 export const scalingRefEntity: Converter<IScalingRefEntity> = Converters.object<IScalingRefEntity>({
-  sourceVersionId: CommonConverters.fillingRecipeVariationId,
+  sourceVariationId: CommonConverters.fillingRecipeVariationId,
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.measurement,
   createdDate: Converters.string

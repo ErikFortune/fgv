@@ -10,7 +10,7 @@ Wraps AggregatedResultMap to provide:
 - Mutable vs immutable collection distinction
 - Weakly-typed validating access for external data
 
-**Extends:** [`SubLibraryBase<ConfectionId, BaseConfectionId, AnyConfectionEntity>`](SubLibraryBase.md)
+**Extends:** [`SubLibraryBase<ConfectionId, BaseConfectionId, AnyConfectionRecipeEntity>`](SubLibraryBase.md)
 
 ## Properties
 

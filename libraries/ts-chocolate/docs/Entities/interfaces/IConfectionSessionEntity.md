@@ -66,7 +66,7 @@ Confection type discriminator (for type-specific restoration)
 </td></tr>
 <tr><td>
 
-[sourceVersionId](./IConfectionSessionEntity.sourceVersionId.md)
+[sourceVariationId](./IConfectionSessionEntity.sourceVariationId.md)
 
 </td><td>
 
@@ -78,7 +78,7 @@ Confection type discriminator (for type-specific restoration)
 
 </td><td>
 
-Source confection version being edited
+Source confection variation being edited
 
 </td></tr>
 <tr><td>

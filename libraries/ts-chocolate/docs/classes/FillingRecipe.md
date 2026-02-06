@@ -2,7 +2,7 @@
 
 # Class: FillingRecipe
 
-A resolved view of a recipe with navigation and version access.
+A resolved view of a recipe with navigation and variation access.
 Immutable - does not allow modification of underlying data.
 
 **Implements:** [`IFillingRecipe`](../interfaces/IFillingRecipe.md)
@@ -131,7 +131,7 @@ Tags for categorization and search
 </td></tr>
 <tr><td>
 
-[goldenVersionSpec](./FillingRecipe.goldenVersionSpec.md)
+[goldenVariationSpec](./FillingRecipe.goldenVariationSpec.md)
 
 </td><td>
 
@@ -143,12 +143,12 @@ Tags for categorization and search
 
 </td><td>
 
-The golden version ID
+The golden variation ID
 
 </td></tr>
 <tr><td>
 
-[goldenVersion](./FillingRecipe.goldenVersion.md)
+[goldenVariation](./FillingRecipe.goldenVariation.md)
 
 </td><td>
 
@@ -160,12 +160,12 @@ The golden version ID
 
 </td><td>
 
-The golden (default approved) version - resolved.
+The golden (default approved) variation - resolved.
 
 </td></tr>
 <tr><td>
 
-[versions](./FillingRecipe.versions.md)
+[variations](./FillingRecipe.variations.md)
 
 </td><td>
 
@@ -177,12 +177,12 @@ readonly [FillingRecipeVersion](FillingRecipeVersion.md)[]
 
 </td><td>
 
-All versions - resolved.
+All variations - resolved.
 
 </td></tr>
 <tr><td>
 
-[latestVersion](./FillingRecipe.latestVersion.md)
+[latestVariation](./FillingRecipe.latestVariation.md)
 
 </td><td>
 
@@ -194,12 +194,12 @@ All versions - resolved.
 
 </td><td>
 
-Gets the latest version (by created date).
+Gets the latest variation (by created date).
 
 </td></tr>
 <tr><td>
 
-[versionCount](./FillingRecipe.versionCount.md)
+[variationCount](./FillingRecipe.variationCount.md)
 
 </td><td>
 
@@ -211,7 +211,7 @@ number
 
 </td><td>
 
-Number of versions
+Number of variations
 
 </td></tr>
 <tr><td>
@@ -264,7 +264,7 @@ Factory method for creating a FillingRecipe.
 </td></tr>
 <tr><td>
 
-[getGoldenVersion()](./FillingRecipe.getGoldenVersion.md)
+[getGoldenVariation()](./FillingRecipe.getGoldenVariation.md)
 
 </td><td>
 
@@ -272,12 +272,12 @@ Factory method for creating a FillingRecipe.
 
 </td><td>
 
-Gets the golden (default approved) version - resolved.
+Gets the golden (default approved) variation - resolved.
 
 </td></tr>
 <tr><td>
 
-[getVersions()](./FillingRecipe.getVersions.md)
+[getVariations()](./FillingRecipe.getVariations.md)
 
 </td><td>
 
@@ -285,12 +285,12 @@ Gets the golden (default approved) version - resolved.
 
 </td><td>
 
-Gets all versions - resolved.
+Gets all variations - resolved.
 
 </td></tr>
 <tr><td>
 
-[getVersion(versionSpec)](./FillingRecipe.getVersion.md)
+[getVariation(variationSpec)](./FillingRecipe.getVariation.md)
 
 </td><td>
 
@@ -298,12 +298,12 @@ Gets all versions - resolved.
 
 </td><td>
 
-Gets a specific version by ID.
+Gets a specific variation by ID.
 
 </td></tr>
 <tr><td>
 
-[getLatestVersion()](./FillingRecipe.getLatestVersion.md)
+[getLatestVariation()](./FillingRecipe.getLatestVariation.md)
 
 </td><td>
 
@@ -311,7 +311,7 @@ Gets a specific version by ID.
 
 </td><td>
 
-Gets the latest version (by created date).
+Gets the latest variation (by created date).
 
 </td></tr>
 <tr><td>
@@ -324,7 +324,7 @@ Gets the latest version (by created date).
 
 </td><td>
 
-Gets unique ingredient IDs used across all versions.
+Gets unique ingredient IDs used across all variations.
 
 </td></tr>
 <tr><td>
@@ -337,7 +337,7 @@ Gets unique ingredient IDs used across all versions.
 
 </td><td>
 
-Checks if any version uses a specific ingredient.
+Checks if any variation uses a specific ingredient.
 
 </td></tr>
 </tbody></table>

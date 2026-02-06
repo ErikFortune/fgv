@@ -3,7 +3,7 @@
 # Variable: fillingRecipeEntity
 
 Converter for Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity with validation.
-Validates that goldenVersionSpec exists in versions and returns the plain data object.
+Validates that goldenVariationSpec exists in variations and returns the plain data object.
 
 ## Type
 

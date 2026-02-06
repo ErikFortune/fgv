@@ -27,31 +27,31 @@ import { Conversion, Converter, Converters, Failure, Result, Success } from '@fg
 
 import { Converters as CommonConverters, Model, MoldId } from '../../common';
 import {
-  AnyConfectionVersionEntity,
+  AnyConfectionRecipeVariationEntity,
   AnyFillingOptionEntity,
-  AnyConfectionEntity,
+  AnyConfectionRecipeEntity,
   FillingOptionId,
   IAdditionalChocolateEntity,
-  IBarTruffleEntity,
-  IBarTruffleVersionEntity,
+  BarTruffleRecipeEntity,
+  IBarTruffleRecipeVariationEntity,
   IBonBonDimensions,
   IChocolateSpec,
   ICoatingsEntity,
-  IConfectionEntityBase,
+  IConfectionRecipeEntityBase,
   IConfectionDecoration,
   IConfectionMoldRef,
-  IConfectionVersionEntityBase,
+  IConfectionRecipeVariationEntityBase,
   IConfectionYield,
   IMoldedBonBonYield,
   AnyConfectionYield,
   IFillingSlotEntity,
   IFrameDimensions,
   IIngredientFillingOptionEntity,
-  IMoldedBonBonEntity,
-  IMoldedBonBonVersionEntity,
+  MoldedBonBonRecipeEntity,
+  IMoldedBonBonRecipeVariationEntity,
   IRecipeFillingOptionEntity,
-  IRolledTruffleEntity,
-  IRolledTruffleVersionEntity
+  RolledTruffleRecipeEntity,
+  IRolledTruffleRecipeVariationEntity
 } from './model';
 import { Converters as RecipeConverters } from '../fillings';
 
@@ -247,15 +247,15 @@ export const coatingsEntity: Converter<ICoatingsEntity> = CommonConverters.idsWi
 );
 
 // ============================================================================
-// Version Converters
+// Variation Converters
 // ============================================================================
 
 /**
- * Common fields shared by all version types
+ * Common fields shared by all variation types
  * @internal
  */
-const commonVersionFields: Conversion.FieldConverters<IConfectionVersionEntityBase> = {
-  versionSpec: CommonConverters.confectionRecipeVariationSpec,
+const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariationEntityBase> = {
+  variationSpec: CommonConverters.confectionRecipeVariationSpec,
   createdDate: Converters.string, // ISO 8601 date string
   yield: confectionYield,
   fillings: Converters.arrayOf(fillingSlotEntity).optional(),
@@ -267,49 +267,49 @@ const commonVersionFields: Conversion.FieldConverters<IConfectionVersionEntityBa
 };
 
 /**
- * Converter for {@link Entities.Confections.IMoldedBonBonVersionEntity | IMoldedBonBonVersionEntity}.
+ * Converter for {@link Entities.Confections.IMoldedBonBonVariationEntity | IMoldedBonBonRecipeVariationEntity}.
  * @public
  */
-export const moldedBonBonVersionEntity: Converter<IMoldedBonBonVersionEntity> =
-  Converters.object<IMoldedBonBonVersionEntity>({
-    ...commonVersionFields,
+export const moldedBonBonRecipeVariationEntity: Converter<IMoldedBonBonRecipeVariationEntity> =
+  Converters.object<IMoldedBonBonRecipeVariationEntity>({
+    ...commonVariationFields,
     molds: confectionMolds,
     shellChocolate: chocolateSpec,
     additionalChocolates: Converters.arrayOf(additionalChocolateEntity).optional()
   });
 
 /**
- * Converter for {@link Entities.Confections.IBarTruffleVersionEntity | IBarTruffleVersionEntity}.
+ * Converter for {@link Entities.Confections.IBarTruffleRecipeVariationEntity | IBarTruffleRecipeVariationEntity}.
  * @public
  */
-export const barTruffleVersionEntity: Converter<IBarTruffleVersionEntity> =
-  Converters.object<IBarTruffleVersionEntity>({
-    ...commonVersionFields,
+export const barTruffleRecipeVariationEntity: Converter<IBarTruffleRecipeVariationEntity> =
+  Converters.object<IBarTruffleRecipeVariationEntity>({
+    ...commonVariationFields,
     frameDimensions,
     singleBonBonDimensions: bonBonDimensions,
     enrobingChocolate: chocolateSpec.optional()
   });
 
 /**
- * Converter for {@link Entities.Confections.IRolledTruffleVersionEntity | IRolledTruffleVersionEntity}.
+ * Converter for {@link Entities.Confections.IRolledTruffleRecipeVariationEntity | IRolledTruffleRecipeVariationEntity}.
  * @public
  */
-export const rolledTruffleVersionEntity: Converter<IRolledTruffleVersionEntity> =
-  Converters.object<IRolledTruffleVersionEntity>({
-    ...commonVersionFields,
+export const rolledTruffleRecipeVariationEntity: Converter<IRolledTruffleRecipeVariationEntity> =
+  Converters.object<IRolledTruffleRecipeVariationEntity>({
+    ...commonVariationFields,
     enrobingChocolate: chocolateSpec.optional(),
     coatings: coatingsEntity.optional()
   });
 
 /**
- * Converter for {@link Entities.Confections.AnyConfectionVersionEntity | AnyConfectionVersionEntity} (discriminated by presence of type-specific fields)
+ * Converter for {@link Entities.Confections.AnyConfectionRecipeVariationEntity | AnyConfectionRecipeVariationEntity} (discriminated by presence of type-specific fields)
  * @public
  */
-export const anyConfectionVersionEntity: Converter<AnyConfectionVersionEntity> =
-  Converters.oneOf<AnyConfectionVersionEntity>([
-    moldedBonBonVersionEntity,
-    barTruffleVersionEntity,
-    rolledTruffleVersionEntity
+export const anyConfectionRecipeVariationEntity: Converter<AnyConfectionRecipeVariationEntity> =
+  Converters.oneOf<AnyConfectionRecipeVariationEntity>([
+    moldedBonBonRecipeVariationEntity,
+    barTruffleRecipeVariationEntity,
+    rolledTruffleRecipeVariationEntity
   ]);
 
 // ============================================================================
@@ -321,25 +321,25 @@ export const anyConfectionVersionEntity: Converter<AnyConfectionVersionEntity> =
  * @internal
  */
 const commonConfectionFields: Conversion.FieldConverters<
-  Omit<IConfectionEntityBase, 'confectionType' | 'versions'>
+  Omit<IConfectionRecipeEntityBase, 'confectionType' | 'variations'>
 > = {
   baseId: CommonConverters.baseConfectionId,
   name: CommonConverters.confectionName,
   description: Converters.string.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional(),
-  goldenVersionSpec: CommonConverters.confectionRecipeVariationSpec
+  goldenVariationSpec: CommonConverters.confectionRecipeVariationSpec
 };
 
 /**
  * Converter for base {@link Entities.Confections.IConfectionEntityBase | IConfectionEntityBase} properties.
  * @public
  */
-export const baseConfectionEntity: Converter<IConfectionEntityBase> =
-  Converters.object<IConfectionEntityBase>({
+export const baseConfectionEntity: Converter<IConfectionRecipeEntityBase> =
+  Converters.object<IConfectionRecipeEntityBase>({
     ...commonConfectionFields,
     confectionType: CommonConverters.confectionType,
-    versions: Converters.arrayOf(anyConfectionVersionEntity)
+    variations: Converters.arrayOf(anyConfectionRecipeVariationEntity)
   });
 
 // ============================================================================
@@ -350,31 +350,33 @@ export const baseConfectionEntity: Converter<IConfectionEntityBase> =
  * Converter for {@link Entities.Confections.IMoldedBonBonEntity | IMoldedBonBonEntity}
  * @public
  */
-export const moldedBonBonEntity: Converter<IMoldedBonBonEntity> = Converters.object<IMoldedBonBonEntity>({
-  ...commonConfectionFields,
-  confectionType: Converters.literal('molded-bonbon'),
-  versions: Converters.arrayOf(moldedBonBonVersionEntity)
-});
+export const moldedBonBonEntity: Converter<MoldedBonBonRecipeEntity> =
+  Converters.object<MoldedBonBonRecipeEntity>({
+    ...commonConfectionFields,
+    confectionType: Converters.literal('molded-bonbon'),
+    variations: Converters.arrayOf(moldedBonBonRecipeVariationEntity)
+  });
 
 /**
  * Converter for {@link Entities.Confections.IBarTruffleEntity | IBarTruffleEntity}
  * @public
  */
-export const barTruffleEntity: Converter<IBarTruffleEntity> = Converters.object<IBarTruffleEntity>({
+export const barTruffleEntity: Converter<BarTruffleRecipeEntity> = Converters.object<BarTruffleRecipeEntity>({
   ...commonConfectionFields,
   confectionType: Converters.literal('bar-truffle'),
-  versions: Converters.arrayOf(barTruffleVersionEntity)
+  variations: Converters.arrayOf(barTruffleRecipeVariationEntity)
 });
 
 /**
  * Converter for {@link Entities.Confections.IRolledTruffleEntity | IRolledTruffleEntity}
  * @public
  */
-export const rolledTruffleEntity: Converter<IRolledTruffleEntity> = Converters.object<IRolledTruffleEntity>({
-  ...commonConfectionFields,
-  confectionType: Converters.literal('rolled-truffle'),
-  versions: Converters.arrayOf(rolledTruffleVersionEntity)
-});
+export const rolledTruffleEntity: Converter<RolledTruffleRecipeEntity> =
+  Converters.object<RolledTruffleRecipeEntity>({
+    ...commonConfectionFields,
+    confectionType: Converters.literal('rolled-truffle'),
+    variations: Converters.arrayOf(rolledTruffleRecipeVariationEntity)
+  });
 
 // ============================================================================
 // Discriminated Union Converter
@@ -385,34 +387,30 @@ export const rolledTruffleEntity: Converter<IRolledTruffleEntity> = Converters.o
  * Dispatches to the appropriate type-specific converter based on confectionType
  * @public
  */
-export const anyConfectionRawEntity: Converter<AnyConfectionEntity> = Converters.oneOf<AnyConfectionEntity>([
-  moldedBonBonEntity,
-  barTruffleEntity,
-  rolledTruffleEntity
-]);
+export const anyConfectionRawEntity: Converter<AnyConfectionRecipeEntity> =
+  Converters.oneOf<AnyConfectionRecipeEntity>([moldedBonBonEntity, barTruffleEntity, rolledTruffleEntity]);
 
 /**
  * Converter for {@link Entities.Confections.AnyConfectionEntity | AnyConfectionEntity} with validation.
- * Validates that goldenVersionSpec exists in versions.
+ * Validates that goldenVariationSpec exists in variations.
  * Returns the plain data object (discriminated union), not a class instance.
  * @public
  */
-export const anyConfectionEntity: Converter<AnyConfectionEntity> = Converters.generic<AnyConfectionEntity>(
-  (from: unknown): Result<AnyConfectionEntity> => {
+export const anyConfectionEntity: Converter<AnyConfectionRecipeEntity> =
+  Converters.generic<AnyConfectionRecipeEntity>((from: unknown): Result<AnyConfectionRecipeEntity> => {
     return anyConfectionRawEntity.convert(from).onSuccess((data) => {
-      if (data.versions.length === 0) {
-        return Failure.with('Confection must have at least one version');
+      if (data.variations.length === 0) {
+        return Failure.with('Confection must have at least one variation');
       }
 
-      // Validate that goldenVersionSpec exists in versions
-      const goldenExists = data.versions.some((v) => v.versionSpec === data.goldenVersionSpec);
+      // Validate that goldenVariationSpec exists in variations
+      const goldenExists = data.variations.some((v) => v.variationSpec === data.goldenVariationSpec);
       if (!goldenExists) {
         return Failure.with(
-          `Golden version ${data.goldenVersionSpec} not found in versions for confection ${data.baseId}`
+          `Golden variation ${data.goldenVariationSpec} not found in variations for confection ${data.baseId}`
         );
       }
 
       return Success.with(data);
     });
-  }
-);
+  });

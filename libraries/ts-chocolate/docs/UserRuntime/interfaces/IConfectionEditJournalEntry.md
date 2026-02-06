@@ -4,7 +4,7 @@
 
 Materialized journal entry for confection edits.
 
-**Extends:** [`IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionRecipeVariationId, IConfectionEditJournalEntryEntity>`](../../interfaces/IJournalEntryBase.md)
+**Extends:** [`IJournalEntryBase<IConfectionBase, IConfectionRecipeVariationBase, ConfectionRecipeVariationId, IConfectionEditJournalEntryEntity>`](../../interfaces/IJournalEntryBase.md)
 
 ## Properties
 
@@ -121,7 +121,7 @@ Resolved source recipe/confection
 
 </td><td>
 
-[IConfectionVersionBase](../../interfaces/IConfectionVersionBase.md)
+[IConfectionRecipeVariationBase](../../interfaces/IConfectionRecipeVariationBase.md)
 
 </td><td>
 
@@ -138,7 +138,7 @@ Resolved source version
 
 </td><td>
 
-[IConfectionVersionBase](../../interfaces/IConfectionVersionBase.md)&lt;[IConfectionBase](../../interfaces/IConfectionBase.md)&lt;[AnyConfectionVersion](../../type-aliases/AnyConfectionVersion.md), [AnyConfectionEntity](../../type-aliases/AnyConfectionEntity.md)&gt;, [AnyConfectionVersionEntity](../../type-aliases/AnyConfectionVersionEntity.md)&gt;
+[IConfectionRecipeVariationBase](../../interfaces/IConfectionRecipeVariationBase.md)&lt;[IConfectionBase](../../interfaces/IConfectionBase.md)&lt;[AnyConfectionRecipeVariation](../../type-aliases/AnyConfectionRecipeVariation.md), [AnyConfectionRecipeEntity](../../type-aliases/AnyConfectionRecipeEntity.md)&gt;, [AnyConfectionRecipeVariationEntity](../../type-aliases/AnyConfectionRecipeVariationEntity.md)&gt;
 
 </td><td>
 

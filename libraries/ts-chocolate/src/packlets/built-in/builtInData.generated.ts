@@ -1287,9 +1287,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         description:
           'Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.',
         tags: ['classic', 'dark', 'truffle', 'bonbon'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1338,7 +1338,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       },
       'milk-ganache-classic': {
         baseId: 'milk-ganache-classic',
@@ -1347,9 +1347,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         description:
           'Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.',
         tags: ['classic', 'milk', 'truffle', 'bonbon'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1398,7 +1398,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       },
       'white-ganache-classic': {
         baseId: 'white-ganache-classic',
@@ -1407,9 +1407,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         description:
           'Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.',
         tags: ['classic', 'white', 'truffle', 'bonbon'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1458,7 +1458,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       },
       'vegan-ganache-coconut-cream': {
         baseId: 'vegan-ganache-coconut-cream',
@@ -1467,9 +1467,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         description:
           'Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.',
         tags: ['vegan', 'dairy-free', 'dark', 'coconut'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1509,7 +1509,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       },
       'vegan-ganache-coconut-oil': {
         baseId: 'vegan-ganache-coconut-oil',
@@ -1518,9 +1518,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         description:
           'Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.',
         tags: ['vegan', 'dairy-free', 'dark', 'neutral'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1575,7 +1575,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       },
       'caramelized-ganache': {
         baseId: 'caramelized-ganache',
@@ -1584,9 +1584,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         description:
           'Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.',
         tags: ['caramelized', 'blonde', 'truffle', 'bonbon', 'salted-caramel'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1635,7 +1635,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       },
       'gianduja-basic': {
         baseId: 'gianduja-basic',
@@ -1643,9 +1643,9 @@ export const fillingCollections: Record<string, JsonObject> = {
         category: 'gianduja',
         description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
         tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
-        versions: [
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1697,7 +1697,7 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           }
         ],
-        goldenVersionSpec: '2026-01-01-01'
+        goldenVariationSpec: '2026-01-01-01'
       }
     }
   },
@@ -2533,10 +2533,10 @@ export const confectionCollections: Record<string, JsonObject> = {
         name: 'Classic Dark Dome Bonbon',
         description: 'Traditional molded dark chocolate bonbon with dome shape',
         tags: ['classic', 'dark', 'molded', 'dome'],
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
+        goldenVariationSpec: '2026-01-01-01',
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             notes: [
               {
@@ -2601,10 +2601,10 @@ export const confectionCollections: Record<string, JsonObject> = {
         name: 'Classic Dark Bar Truffle',
         description: 'Ganache slab cut into squares and enrobed',
         tags: ['classic', 'dark', 'bar', 'enrobed'],
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
+        goldenVariationSpec: '2026-01-01-01',
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             notes: [
               {
@@ -2670,10 +2670,10 @@ export const confectionCollections: Record<string, JsonObject> = {
         name: 'Classic Cocoa-Dusted Truffle',
         description: 'Hand-rolled ganache truffle dusted with cocoa powder',
         tags: ['classic', 'dark', 'rolled', 'cocoa'],
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
+        goldenVariationSpec: '2026-01-01-01',
+        variations: [
           {
-            versionSpec: '2026-01-01-01',
+            variationSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             notes: [
               {

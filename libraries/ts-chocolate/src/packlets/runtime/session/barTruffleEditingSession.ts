@@ -82,7 +82,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
-    return ProducedBarTruffle.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+    return ProducedBarTruffle.fromSource(baseConfection.goldenVariation).onSuccess((produced) =>
       captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
     );
   }
@@ -164,7 +164,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     }
 
     return this._context.fillings.get(fillingSlot.fillingId).asResult.onSuccess((filling) => {
-      return succeed(filling.goldenVersion.entity.baseWeight);
+      return succeed(filling.goldenVariation.entity.baseWeight);
     });
   }
 }

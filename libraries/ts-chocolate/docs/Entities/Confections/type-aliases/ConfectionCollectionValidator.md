@@ -7,5 +7,5 @@ Validator type for ConfectionsLibrary collections.
 ## Type
 
 ```typescript
-type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfectionEntity>
+type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, AnyConfectionRecipeEntity>
 ```

@@ -8,9 +8,9 @@ When true, rolled truffle-specific properties are available.
 **Signature:**
 
 ```typescript
-isRolledTruffle(): this is IRolledTruffle;
+isRolledTruffle(): this is IRolledTruffleRecipe;
 ```
 
 **Returns:**
 
-this is [IRolledTruffle](../../interfaces/IRolledTruffle.md)
+this is [IRolledTruffleRecipe](../../interfaces/IRolledTruffleRecipe.md)

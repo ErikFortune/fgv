@@ -6,4 +6,4 @@ Converter for Entities.Confections.IMoldedBonBonEntity | IMoldedBonBonEntity
 
 ## Type
 
-`Converter<IMoldedBonBonEntity>`
+`Converter<MoldedBonBonRecipeEntity>`

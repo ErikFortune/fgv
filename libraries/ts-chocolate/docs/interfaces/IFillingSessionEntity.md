@@ -48,7 +48,7 @@ Session type discriminator
 </td></tr>
 <tr><td>
 
-[sourceVersionId](./IFillingSessionEntity.sourceVersionId.md)
+[sourceVariationId](./IFillingSessionEntity.sourceVariationId.md)
 
 </td><td>
 
@@ -60,7 +60,7 @@ Session type discriminator
 
 </td><td>
 
-Source filling version being edited
+Source filling variation being edited
 
 </td></tr>
 <tr><td>

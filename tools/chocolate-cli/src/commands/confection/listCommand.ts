@@ -38,8 +38,8 @@ import {
 interface IConfectionListItem extends IGenericListItem {
   id: ConfectionId;
   confectionType: string;
-  versionCount: number;
-  goldenVersionSpec: ConfectionRecipeVariationSpec;
+  variationCount: number;
+  goldenVariationSpec: ConfectionRecipeVariationSpec;
   yield?: string;
 }
 
@@ -53,14 +53,16 @@ interface IConfectionListOptions extends IEntityListOptions {
 }
 
 /**
- * Gets yield string from a confection version
+ * Gets yield string from a confection variation
  */
-function getYieldString(confection: Entities.Confections.AnyConfectionEntity): string {
-  const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
-  if (!goldenVersion) {
+function getYieldString(confection: Entities.Confections.AnyConfectionRecipeEntity): string {
+  const goldenVariation = confection.variations.find(
+    (v) => v.variationSpec === confection.goldenVariationSpec
+  );
+  if (!goldenVariation) {
     return '';
   }
-  const yieldInfo = goldenVersion.yield;
+  const yieldInfo = goldenVariation.yield;
   return `${yieldInfo.count} ${yieldInfo.unit ?? 'pieces'}`;
 }
 
@@ -68,7 +70,7 @@ function getYieldString(confection: Entities.Confections.AnyConfectionEntity): s
  * Checks if a confection matches the specified filters
  */
 function matchesFilters(
-  confection: Entities.Confections.AnyConfectionEntity,
+  confection: Entities.Confections.AnyConfectionRecipeEntity,
   confectionId: ConfectionId,
   collectionId: CollectionId,
   options: IConfectionListOptions
@@ -94,14 +96,16 @@ function matchesFilters(
 
   // Filter by mold (for molded bonbons)
   if (options.mold) {
-    if (!Entities.Confections.isMoldedBonBonEntity(confection)) {
+    if (!Entities.Confections.isMoldedBonBonRecipeEntity(confection)) {
       return false;
     }
-    const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
-    if (!goldenVersion) {
+    const goldenVariation = confection.variations.find(
+      (v) => v.variationSpec === confection.goldenVariationSpec
+    );
+    if (!goldenVariation) {
       return false;
     }
-    const hasMold = goldenVersion.molds.options.some((m) => m.id === options.mold);
+    const hasMold = goldenVariation.molds.options.some((m) => m.id === options.mold);
     if (!hasMold) {
       return false;
     }
@@ -109,11 +113,13 @@ function matchesFilters(
 
   // Filter by filling
   if (options.filling) {
-    const goldenVersion = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
-    if (!goldenVersion?.fillings) {
+    const goldenVariation = confection.variations.find(
+      (v) => v.variationSpec === confection.goldenVariationSpec
+    );
+    if (!goldenVariation?.fillings) {
       return false;
     }
-    const hasFilling = goldenVersion.fillings.some((slot) =>
+    const hasFilling = goldenVariation.fillings.some((slot) =>
       slot.filling.options.some((opt) => opt.id === options.filling)
     );
     if (!hasFilling) {
@@ -142,7 +148,7 @@ const confectionColumns: IColumnConfig[] = [
   { header: 'Name', getValue: (item) => item.name, minWidth: 4 },
   { header: 'Type', getValue: (item) => (item as IConfectionListItem).confectionType, minWidth: 4 },
   { header: 'Yield', getValue: (item) => (item as IConfectionListItem).yield ?? '', minWidth: 5 },
-  { header: 'Golden', getValue: (item) => (item as IConfectionListItem).goldenVersionSpec, minWidth: 6 },
+  { header: 'Golden', getValue: (item) => (item as IConfectionListItem).goldenVariationSpec, minWidth: 6 },
   { header: 'Tags', getValue: (item) => (item.tags ?? []).join(', '), minWidth: 4 }
 ];
 
@@ -208,8 +214,8 @@ export function createListSubcommand(): Command {
           description: confection.description,
           tags: confection.tags,
           confectionType: confection.confectionType,
-          versionCount: confection.versions.length,
-          goldenVersionSpec: confection.goldenVersionSpec,
+          variationCount: confection.variations.length,
+          goldenVariationSpec: confection.goldenVariationSpec,
           yield: getYieldString(confection)
         });
       }

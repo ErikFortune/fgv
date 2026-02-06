@@ -115,7 +115,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
    */
   public createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession> {
     // Get the golden version (now safe - no cast needed)
-    const version = filling.goldenVersion;
+    const version = filling.goldenVariation;
 
     // Calculate scale factor to achieve target weight
     const baseWeight = version.entity.baseWeight;

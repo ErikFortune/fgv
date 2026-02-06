@@ -34,11 +34,11 @@ import {
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IMoldedBonBon,
-  IMoldedBonBonVersion
+  IMoldedBonBonRecipe,
+  IMoldedBonBonRecipeVariation
 } from '../model';
 import { ConfectionBase } from './confectionBase';
-import { MoldedBonBonVersion } from './versions';
+import { MoldedBonBonRecipeVariation } from './versions';
 
 // ============================================================================
 // RuntimeMoldedBonBon Class
@@ -49,11 +49,11 @@ import { MoldedBonBonVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class MoldedBonBon
-  extends ConfectionBase<IMoldedBonBonVersion, Confections.IMoldedBonBonEntity>
-  implements IMoldedBonBon
+export class MoldedBonBonRecipe
+  extends ConfectionBase<IMoldedBonBonRecipeVariation, Confections.MoldedBonBonRecipeEntity>
+  implements IMoldedBonBonRecipe
 {
-  private readonly _moldedBonBon: Confections.IMoldedBonBonEntity;
+  private readonly _moldedBonBon: Confections.MoldedBonBonRecipeEntity;
 
   /**
    * Creates a MoldedBonBon.
@@ -63,7 +63,7 @@ export class MoldedBonBon
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IMoldedBonBonEntity
+    confection: Confections.MoldedBonBonRecipeEntity
   ) {
     super(context, id, confection);
     this._moldedBonBon = confection;
@@ -79,9 +79,9 @@ export class MoldedBonBon
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IMoldedBonBonEntity
-  ): Result<MoldedBonBon> {
-    return Success.with(new MoldedBonBon(context, id, confection));
+    confection: Confections.MoldedBonBonRecipeEntity
+  ): Result<MoldedBonBonRecipe> {
+    return Success.with(new MoldedBonBonRecipe(context, id, confection));
   }
 
   // ============================================================================
@@ -96,70 +96,70 @@ export class MoldedBonBon
   }
 
   // ============================================================================
-  // Version Access (typed)
+  // Variation Access (typed)
   // ============================================================================
 
   /**
-   * Creates a runtime version from a data layer entity.
+   * Creates a runtime variation from a data layer entity.
    * @param entity - The data layer entity
-   * @returns Result with runtime version, or Failure if creation fails
+   * @returns Result with runtime variation, or Failure if creation fails
    * @internal
    */
-  protected override _createVersion(
-    entity: Confections.AnyConfectionVersionEntity
-  ): Result<IMoldedBonBonVersion> {
-    return MoldedBonBonVersion.create(
+  protected override _createVariation(
+    entity: Confections.AnyConfectionRecipeVariationEntity
+  ): Result<IMoldedBonBonRecipeVariation> {
+    return MoldedBonBonRecipeVariation.create(
       this._context,
       this._id,
-      entity as Confections.IMoldedBonBonVersionEntity
+      entity as Confections.IMoldedBonBonRecipeVariationEntity
     );
   }
 
   // ============================================================================
-  // Molded BonBon-Specific Properties (delegate to golden version)
+  // Molded BonBon-Specific Properties (delegate to golden variation)
   // ============================================================================
 
   /**
-   * Resolved filling slots from the golden version.
+   * Resolved filling slots from the golden variation.
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
-    return this.goldenVersion.fillings;
+    return this.goldenVariation.fillings;
   }
 
   /**
-   * Resolved procedures from the golden version.
+   * Resolved procedures from the golden variation.
    */
   public get procedures():
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined {
-    return this.goldenVersion.procedures;
+    return this.goldenVariation.procedures;
   }
 
   /**
-   * Resolved molds with preferred selection (from golden version).
+   * Resolved molds with preferred selection (from golden variation).
    */
   public get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
-    return this.goldenVersion.molds;
+    return this.goldenVariation.molds;
   }
 
   /**
-   * Resolved shell chocolate specification (from golden version).
+   * Resolved shell chocolate specification (from golden variation).
    */
   public get shellChocolate(): IResolvedChocolateSpec {
-    return this.goldenVersion.shellChocolate;
+    return this.goldenVariation.shellChocolate;
   }
 
   /**
-   * Resolved additional chocolates (from golden version).
+   * Resolved additional chocolates (from golden variation).
    */
   public get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
-    return this.goldenVersion.additionalChocolates;
+    return this.goldenVariation.additionalChocolates;
   }
 
   /**
    * Gets the underlying molded bonbon data entity
    */
-  public get entity(): Confections.IMoldedBonBonEntity {
+  public get entity(): Confections.MoldedBonBonRecipeEntity {
     return this._moldedBonBon;
   }
 }

@@ -2,7 +2,7 @@
 
 ## ConfectionBase.effectiveUrls property
 
-Gets effective URLs for the golden version (base URLs + version's additional URLs).
+Gets effective URLs for the golden variation (base URLs + variation's additional URLs).
 
 **Signature:**
 

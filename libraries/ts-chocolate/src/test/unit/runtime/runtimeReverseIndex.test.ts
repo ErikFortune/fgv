@@ -104,10 +104,10 @@ describe('RuntimeReverseIndex', () => {
     name: 'Dark Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
-    versions: [
+    goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    variations: [
       {
-        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+        variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           {
@@ -129,10 +129,10 @@ describe('RuntimeReverseIndex', () => {
     name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
-    versions: [
+    goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    variations: [
       {
-        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+        variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },

@@ -2,7 +2,7 @@
 
 # Type Alias: RatingCategory
 
-Categories for rating a filling recipe version
+Categories for rating a filling recipe variation
 
 ## Type
 

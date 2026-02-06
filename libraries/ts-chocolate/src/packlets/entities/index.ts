@@ -27,15 +27,15 @@
 
 export {
   ConfectionsLibrary,
-  AnyConfectionVersionEntity,
-  AnyConfectionEntity,
+  AnyConfectionRecipeVariationEntity,
+  AnyConfectionRecipeEntity,
   AnyProducedConfectionEntity,
-  IBarTruffleEntity,
-  IMoldedBonBonEntity,
-  IRolledTruffleEntity,
-  IBarTruffleVersionEntity,
-  IMoldedBonBonVersionEntity,
-  IRolledTruffleVersionEntity,
+  BarTruffleRecipeEntity,
+  MoldedBonBonRecipeEntity,
+  RolledTruffleRecipeEntity,
+  IBarTruffleRecipeVariationEntity,
+  IMoldedBonBonRecipeVariationEntity,
+  IRolledTruffleRecipeVariationEntity,
   IProducedBarTruffleEntity,
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
@@ -45,7 +45,7 @@ export {
   FillingsLibrary,
   FillingCategory,
   IFillingRecipeEntity,
-  IFillingRecipeVersionEntity,
+  IFillingRecipeVariationEntity,
   IFillingRating,
   IProducedFillingEntity
 } from './fillings';

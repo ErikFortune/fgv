@@ -32,7 +32,7 @@ import { Result } from '@fgv/ts-utils';
 import { Measurement } from '../common';
 import type { EditingSession } from './session/editingSession';
 import {
-  AnyConfectionVersion,
+  AnyConfectionRecipeVariation,
   IConfectionContext,
   ILibraryRuntimeContext,
   IFillingRecipe
@@ -99,4 +99,4 @@ export interface IRuntimeContext extends ILibraryRuntimeContext {
 }
 
 // Re-export confection version type for convenience
-export type { AnyConfectionVersion as AnyRuntimeConfectionVersion };
+export type { AnyConfectionRecipeVariation as AnyRuntimeConfectionVersion };

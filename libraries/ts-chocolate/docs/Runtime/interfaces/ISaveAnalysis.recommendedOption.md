@@ -7,5 +7,5 @@ Recommended save option based on changes
 **Signature:**
 
 ```typescript
-readonly recommendedOption: "new" | "version" | "alternatives";
+readonly recommendedOption: "new" | "variation" | "alternatives";
 ```

@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.getFillings() method
 
-Gets resolved filling slots for this version.
+Gets resolved filling slots for this variation.
 
 **Signature:**
 

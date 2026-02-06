@@ -2,12 +2,12 @@
 
 ## BarTruffleVersion.create() method
 
-Factory method for creating a LibraryRuntime.BarTruffleVersion | BarTruffleVersion.
+Factory method for creating a LibraryRuntime.BarTruffleRecipeVariation | BarTruffleRecipeVariation.
 
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, confectionId: ConfectionId, version: IBarTruffleVersionEntity): Result<BarTruffleVersion>;
+static create(context: IConfectionContext, confectionId: ConfectionId, variation: IBarTruffleRecipeVariationEntity): Result<BarTruffleVersion>;
 ```
 
 **Parameters:**
@@ -16,11 +16,11 @@ static create(context: IConfectionContext, confectionId: ConfectionId, version: 
 <tbody>
 <tr><td>context</td><td>IConfectionContext</td><td>The runtime context</td></tr>
 <tr><td>confectionId</td><td>ConfectionId</td><td>The parent confection ID</td></tr>
-<tr><td>version</td><td>IBarTruffleVersionEntity</td><td>The bar truffle version data</td></tr>
+<tr><td>variation</td><td>IBarTruffleRecipeVariationEntity</td><td>The bar truffle variation data</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;[BarTruffleVersion](BarTruffleVersion.md)&gt;
 
-Success with LibraryRuntime.BarTruffleVersion | BarTruffleVersion
+Success with LibraryRuntime.BarTruffleRecipeVariation | BarTruffleRecipeVariation

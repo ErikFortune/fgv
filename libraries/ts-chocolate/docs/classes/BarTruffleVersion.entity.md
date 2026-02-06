@@ -2,10 +2,10 @@
 
 ## BarTruffleVersion.entity property
 
-Gets the underlying bar truffle version data entity.
+Gets the underlying bar truffle recipe variation data entity.
 
 **Signature:**
 
 ```typescript
-readonly entity: IBarTruffleVersionEntity;
+readonly entity: IBarTruffleRecipeVariationEntity;
 ```

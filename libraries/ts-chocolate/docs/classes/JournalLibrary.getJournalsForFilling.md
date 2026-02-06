@@ -2,7 +2,7 @@
 
 ## JournalLibrary.getJournalsForFilling() method
 
-Gets all filling journal entries for a filling (across all versions and collections)
+Gets all filling journal entries for a filling (across all variations and collections)
 
 **Signature:**
 

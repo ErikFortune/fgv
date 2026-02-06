@@ -29,7 +29,7 @@ import {
   IFillingProductionJournalEntryEntity,
   IConfectionEditJournalEntryEntity,
   IConfectionProductionJournalEntryEntity,
-  IFillingRecipeVersionEntity,
+  IFillingRecipeVariationEntity,
   IProducedFillingEntity,
   IProducedMoldedBonBonEntity
 } from '../../../packlets/entities';
@@ -74,15 +74,15 @@ describe('Journal Model', () => {
   });
 
   describe('type guards for journal entries', () => {
-    const fillingRecipe: IFillingRecipeVersionEntity = {
-      versionSpec: 'v1' as IFillingRecipeVersionEntity['versionSpec'],
+    const fillingRecipe: IFillingRecipeVariationEntity = {
+      variationSpec: 'v1' as IFillingRecipeVariationEntity['variationSpec'],
       createdDate: '2026-01-15',
       ingredients: [],
-      baseWeight: 300 as IFillingRecipeVersionEntity['baseWeight']
+      baseWeight: 300 as IFillingRecipeVariationEntity['baseWeight']
     };
 
     const producedFilling: IProducedFillingEntity = {
-      versionId: 'source.recipe@2026-01-01-01' as IProducedFillingEntity['versionId'],
+      variationId: 'source.recipe@2026-01-01-01' as IProducedFillingEntity['variationId'],
       scaleFactor: 1.0,
       targetWeight: 300 as IProducedFillingEntity['targetWeight'],
       ingredients: []
@@ -91,7 +91,7 @@ describe('Journal Model', () => {
     const fillingEditEntry: IFillingEditJournalEntryEntity = {
       type: 'filling-edit',
       baseId: '2026-01-15-100000-00000001' as IFillingEditJournalEntryEntity['baseId'],
-      versionId: 'source.recipe@2026-01-01-01' as IFillingEditJournalEntryEntity['versionId'],
+      variationId: 'source.recipe@2026-01-01-01' as IFillingEditJournalEntryEntity['variationId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: fillingRecipe
     };
@@ -99,29 +99,29 @@ describe('Journal Model', () => {
     const fillingProductionEntry: IFillingProductionJournalEntryEntity = {
       type: 'filling-production',
       baseId: '2026-01-15-100000-00000002' as IFillingProductionJournalEntryEntity['baseId'],
-      versionId: 'source.recipe@2026-01-01-01' as IFillingProductionJournalEntryEntity['versionId'],
+      variationId: 'source.recipe@2026-01-01-01' as IFillingProductionJournalEntryEntity['variationId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: fillingRecipe,
       yield: 300 as IFillingProductionJournalEntryEntity['yield'],
       produced: producedFilling
     };
 
-    const confectionRecipe: Confections.IMoldedBonBonVersionEntity = {
-      versionSpec: 'v1' as Confections.IMoldedBonBonVersionEntity['versionSpec'],
+    const confectionRecipe: Confections.IMoldedBonBonRecipeVariationEntity = {
+      variationSpec: 'v1' as Confections.IMoldedBonBonRecipeVariationEntity['variationSpec'],
       createdDate: '2026-01-15',
       yield: { count: 24 },
       molds: {
-        preferredId: 'mold-1' as Confections.IMoldedBonBonVersionEntity['molds']['preferredId'],
+        preferredId: 'mold-1' as Confections.IMoldedBonBonRecipeVariationEntity['molds']['preferredId'],
         options: []
       },
       shellChocolate: {
-        ids: ['choc-1' as Confections.IMoldedBonBonVersionEntity['shellChocolate']['ids'][number]]
+        ids: ['choc-1' as Confections.IMoldedBonBonRecipeVariationEntity['shellChocolate']['ids'][number]]
       }
     };
 
     const producedConfection: IProducedMoldedBonBonEntity = {
       confectionType: 'molded-bonbon',
-      versionId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBonEntity['versionId'],
+      variationId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBonEntity['variationId'],
       yield: { count: 24 },
       moldId: 'mold-1' as IProducedMoldedBonBonEntity['moldId'],
       shellChocolateId: 'choc-1' as IProducedMoldedBonBonEntity['shellChocolateId']
@@ -130,7 +130,7 @@ describe('Journal Model', () => {
     const confectionEditEntry: IConfectionEditJournalEntryEntity = {
       type: 'confection-edit',
       baseId: '2026-01-15-100000-00000003' as IConfectionEditJournalEntryEntity['baseId'],
-      versionId: 'source.truffle@2026-01-01-01' as IConfectionEditJournalEntryEntity['versionId'],
+      variationId: 'source.truffle@2026-01-01-01' as IConfectionEditJournalEntryEntity['variationId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe
     };
@@ -138,7 +138,7 @@ describe('Journal Model', () => {
     const confectionProductionEntry: IConfectionProductionJournalEntryEntity = {
       type: 'confection-production',
       baseId: '2026-01-15-100000-00000004' as IConfectionProductionJournalEntryEntity['baseId'],
-      versionId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntryEntity['versionId'],
+      variationId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntryEntity['variationId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe,
       yield: { count: 24 },
@@ -160,7 +160,7 @@ describe('Journal Model', () => {
         const entry: AnyJournalEntryEntity = fillingEditEntry;
         if (Journal.isFillingEditJournalEntryEntity(entry)) {
           expect(entry.type).toBe('filling-edit');
-          expect(entry.versionId).toBe('source.recipe@2026-01-01-01');
+          expect(entry.variationId).toBe('source.recipe@2026-01-01-01');
         }
       });
     });
@@ -200,7 +200,7 @@ describe('Journal Model', () => {
         const entry: AnyJournalEntryEntity = confectionEditEntry;
         if (Journal.isConfectionEditJournalEntryEntity(entry)) {
           expect(entry.type).toBe('confection-edit');
-          expect(entry.versionId).toBe('source.truffle@2026-01-01-01');
+          expect(entry.variationId).toBe('source.truffle@2026-01-01-01');
         }
       });
     });

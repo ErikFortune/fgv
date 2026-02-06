@@ -10,9 +10,9 @@ The library provides cross-collection indexing for efficient queries by filling/
 Provides:
 - Multi-collection storage with FileTree persistence
 - Cross-collection lookup by filling ID (all journals for a filling)
-- Cross-collection lookup by filling version ID (all journals for a specific filling version)
+- Cross-collection lookup by filling variation ID (all journals for a specific filling variation)
 - Cross-collection lookup by confection ID (all journals for a confection)
-- Cross-collection lookup by confection version ID (all journals for a specific confection version)
+- Cross-collection lookup by confection variation ID (all journals for a specific confection variation)
 - Lazy index rebuilding for efficient queries
 
 **Extends:** [`SubLibraryBase<JournalId, BaseJournalId, AnyJournalEntryEntity>`](SubLibraryBase.md)
@@ -176,12 +176,12 @@ Creates a JournalLibrary instance asynchronously with encrypted file support.
 
 </td><td>
 
-Gets all filling journal entries for a filling (across all versions and collections)
+Gets all filling journal entries for a filling (across all variations and collections)
 
 </td></tr>
 <tr><td>
 
-[getJournalsForFillingVersion(versionId)](./JournalLibrary.getJournalsForFillingVersion.md)
+[getJournalsForFillingVariation(variationId)](./JournalLibrary.getJournalsForFillingVariation.md)
 
 </td><td>
 
@@ -189,7 +189,7 @@ Gets all filling journal entries for a filling (across all versions and collecti
 
 </td><td>
 
-Gets all filling journal entries for a specific filling version (across all collections)
+Gets all filling journal entries for a specific filling variation (across all collections)
 
 </td></tr>
 <tr><td>
@@ -202,12 +202,12 @@ Gets all filling journal entries for a specific filling version (across all coll
 
 </td><td>
 
-Gets all confection journal entries for a confection (across all versions and collections)
+Gets all confection journal entries for a confection (across all variations and collections)
 
 </td></tr>
 <tr><td>
 
-[getJournalsForConfectionVersion(versionId)](./JournalLibrary.getJournalsForConfectionVersion.md)
+[getJournalsForConfectionVariation(variationId)](./JournalLibrary.getJournalsForConfectionVariation.md)
 
 </td><td>
 
@@ -215,7 +215,7 @@ Gets all confection journal entries for a confection (across all versions and co
 
 </td><td>
 
-Gets all confection journal entries for a specific confection version (across all collections)
+Gets all confection journal entries for a specific confection variations (across all collections)
 
 </td></tr>
 <tr><td>

@@ -2,7 +2,7 @@
 
 ## FillingRecipeVersion.ratings property
 
-Optional ratings for this version
+Optional ratings for this variation
 
 **Signature:**
 

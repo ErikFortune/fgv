@@ -34,10 +34,10 @@ describe('Confections converters', () => {
     name: 'Classic Dark Dome Bonbon',
     description: 'Traditional molded dark chocolate bonbon',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01',
-    versions: [
+    goldenVariationSpec: '2026-01-01-01',
+    variations: [
       {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Basic dome bonbon' }],
         yield: {
@@ -72,10 +72,10 @@ describe('Confections converters', () => {
     confectionType: 'bar-truffle',
     name: 'Classic Dark Bar Truffle',
     description: 'Ganache slab cut into squares',
-    goldenVersionSpec: '2026-01-01-01',
-    versions: [
+    goldenVariationSpec: '2026-01-01-01',
+    variations: [
       {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Standard bar truffles' }],
         yield: {
@@ -105,10 +105,10 @@ describe('Confections converters', () => {
     confectionType: 'rolled-truffle',
     name: 'Classic Cocoa-Dusted Truffle',
     description: 'Hand-rolled ganache truffle',
-    goldenVersionSpec: '2026-01-01-01',
-    versions: [
+    goldenVariationSpec: '2026-01-01-01',
+    variations: [
       {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Traditional rolled truffle' }],
         yield: {
@@ -315,39 +315,39 @@ describe('Confections converters', () => {
     });
   });
 
-  // ============================================================================
-  // anyConfectionVersion converter
-  // ============================================================================
-
-  describe('anyConfectionVersion', () => {
-    test('converts valid molded bonbon version', () => {
+  describe('anyConfectionRecipeVariation', () => {
+    test('converts valid molded bonbon variation', () => {
       const input = {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        notes: [{ category: 'user', note: 'Initial version' }],
+        notes: [{ category: 'user', note: 'Initial variation' }],
         yield: { count: 24 },
         molds: { options: [{ id: 'common.dome-25mm' }] },
         shellChocolate: { ids: ['common.chocolate-dark-64'] }
       };
-      expect(ConfectionConverters.anyConfectionVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.versionSpec).toBe('2026-01-01-01');
-        expect(result.createdDate).toBe('2026-01-01');
-        expect(result.notes).toEqual([{ category: 'user', note: 'Initial version' }]);
-      });
+      expect(ConfectionConverters.anyConfectionRecipeVariationEntity.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.variationSpec).toBe('2026-01-01-01');
+          expect(result.createdDate).toBe('2026-01-01');
+          expect(result.notes).toEqual([{ category: 'user', note: 'Initial variation' }]);
+        }
+      );
     });
 
-    test('converts valid bar truffle version', () => {
+    test('converts valid bar truffle variation', () => {
       const input = {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         yield: { count: 48 },
         frameDimensions: { width: 300, height: 200, depth: 8 },
         singleBonBonDimensions: { width: 25, height: 25 }
       };
-      expect(ConfectionConverters.anyConfectionVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.versionSpec).toBe('2026-01-01-01');
-        expect(result.notes).toBeUndefined();
-      });
+      expect(ConfectionConverters.anyConfectionRecipeVariationEntity.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.variationSpec).toBe('2026-01-01-01');
+          expect(result.notes).toBeUndefined();
+        }
+      );
     });
   });
 
@@ -361,9 +361,9 @@ describe('Confections converters', () => {
         (result) => {
           expect(result.confectionType).toBe('molded-bonbon');
           expect(result.baseId).toBe('dark-dome-bonbon');
-          const version = result.versions[0];
-          expect(version.molds).toBeDefined();
-          expect(version.shellChocolate).toBeDefined();
+          const variation = result.variations[0];
+          expect(variation.molds).toBeDefined();
+          expect(variation.shellChocolate).toBeDefined();
         }
       );
     });
@@ -373,17 +373,17 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.moldedBonBonEntity.convert(input)).toFail();
     });
 
-    test('fails for version missing molds', () => {
+    test('fails for variation missing molds', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { molds: _molds, ...versionWithoutMolds } = validMoldedBonBon.versions[0];
-      const input = { ...validMoldedBonBon, versions: [versionWithoutMolds] };
+      const { molds: _molds, ...variationWithoutMolds } = validMoldedBonBon.variations[0];
+      const input = { ...validMoldedBonBon, variations: [variationWithoutMolds] };
       expect(ConfectionConverters.moldedBonBonEntity.convert(input)).toFail();
     });
 
-    test('fails for version missing shellChocolate', () => {
+    test('fails for variation missing shellChocolate', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { shellChocolate: _shell, ...versionWithoutShell } = validMoldedBonBon.versions[0];
-      const input = { ...validMoldedBonBon, versions: [versionWithoutShell] };
+      const { shellChocolate: _shell, ...variationWithoutShell } = validMoldedBonBon.variations[0];
+      const input = { ...validMoldedBonBon, variations: [variationWithoutShell] };
       expect(ConfectionConverters.moldedBonBonEntity.convert(input)).toFail();
     });
   });
@@ -397,9 +397,9 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.barTruffleEntity.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
         expect(result.confectionType).toBe('bar-truffle');
         expect(result.baseId).toBe('dark-bar-truffle');
-        const version = result.versions[0];
-        expect(version.frameDimensions).toBeDefined();
-        expect(version.singleBonBonDimensions).toBeDefined();
+        const variation = result.variations[0];
+        expect(variation.frameDimensions).toBeDefined();
+        expect(variation.singleBonBonDimensions).toBeDefined();
       });
     });
 
@@ -408,10 +408,10 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.barTruffleEntity.convert(input)).toFail();
     });
 
-    test('fails for version missing frameDimensions', () => {
+    test('fails for variation missing frameDimensions', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { frameDimensions: _frame, ...versionWithoutFrame } = validBarTruffle.versions[0];
-      const input = { ...validBarTruffle, versions: [versionWithoutFrame] };
+      const { frameDimensions: _frame, ...variationWithoutFrame } = validBarTruffle.variations[0];
+      const input = { ...validBarTruffle, variations: [variationWithoutFrame] };
       expect(ConfectionConverters.barTruffleEntity.convert(input)).toFail();
     });
   });
@@ -426,21 +426,21 @@ describe('Confections converters', () => {
         (result) => {
           expect(result.confectionType).toBe('rolled-truffle');
           expect(result.baseId).toBe('dark-cocoa-truffle');
-          const version = result.versions[0];
-          expect(version.coatings).toBeDefined();
+          const variation = result.variations[0];
+          expect(variation.coatings).toBeDefined();
         }
       );
     });
 
-    test('converts rolled truffle version without optional fields', () => {
+    test('converts rolled truffle variation without optional fields', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { coatings: _coatings, ...versionWithoutCoatings } = validRolledTruffle.versions[0];
-      const input = { ...validRolledTruffle, versions: [versionWithoutCoatings] };
+      const { coatings: _coatings, ...variationWithoutCoatings } = validRolledTruffle.variations[0];
+      const input = { ...validRolledTruffle, variations: [variationWithoutCoatings] };
       expect(ConfectionConverters.rolledTruffleEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.confectionType).toBe('rolled-truffle');
-        const version = result.versions[0];
-        expect(version.coatings).toBeUndefined();
-        expect(version.enrobingChocolate).toBeUndefined();
+        const variation = result.variations[0];
+        expect(variation.coatings).toBeUndefined();
+        expect(variation.enrobingChocolate).toBeUndefined();
       });
     });
 
@@ -458,7 +458,7 @@ describe('Confections converters', () => {
     test('converts molded bonbon', () => {
       expect(ConfectionConverters.anyConfectionRawEntity.convert(validMoldedBonBon)).toSucceedAndSatisfy(
         (result) => {
-          expect(Confections.isMoldedBonBonEntity(result)).toBe(true);
+          expect(Confections.isMoldedBonBonRecipeEntity(result)).toBe(true);
         }
       );
     });
@@ -474,7 +474,7 @@ describe('Confections converters', () => {
     test('converts rolled truffle', () => {
       expect(ConfectionConverters.anyConfectionRawEntity.convert(validRolledTruffle)).toSucceedAndSatisfy(
         (result) => {
-          expect(Confections.isRolledTruffleEntity(result)).toBe(true);
+          expect(Confections.isRolledTruffleRecipeEntity(result)).toBe(true);
         }
       );
     });
@@ -494,34 +494,34 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.anyConfectionEntity.convert(validMoldedBonBon)).toSucceedAndSatisfy(
         (result) => {
           expect(result.baseId).toBe('dark-dome-bonbon');
-          expect(result.goldenVersionSpec).toBe('2026-01-01-01');
+          expect(result.goldenVariationSpec).toBe('2026-01-01-01');
         }
       );
     });
 
-    test('fails when versions array is empty', () => {
-      const input = { ...validMoldedBonBon, versions: [] };
-      expect(ConfectionConverters.anyConfectionEntity.convert(input)).toFailWith(/at least one version/i);
+    test('fails when variations array is empty', () => {
+      const input = { ...validMoldedBonBon, variations: [] };
+      expect(ConfectionConverters.anyConfectionEntity.convert(input)).toFailWith(/at least one variation/i);
     });
 
-    test('fails when golden version not found in versions', () => {
-      const input = { ...validMoldedBonBon, goldenVersionSpec: '9999-99-99-99' };
+    test('fails when golden variation not found in variations', () => {
+      const input = { ...validMoldedBonBon, goldenVariationSpec: '9999-99-99-99' };
       expect(ConfectionConverters.anyConfectionEntity.convert(input)).toFailWith(
-        /Golden version.*not found/i
+        /Golden variation.*not found/i
       );
     });
 
-    test('succeeds when golden version exists in versions', () => {
+    test('succeeds when golden variation exists in variations', () => {
       const input = {
         ...validMoldedBonBon,
-        versions: [
-          { ...validMoldedBonBon.versions[0], versionSpec: '2026-01-01-01', createdDate: '2026-01-01' },
-          { ...validMoldedBonBon.versions[0], versionSpec: '2026-02-01-01', createdDate: '2026-02-01' }
+        variations: [
+          { ...validMoldedBonBon.variations[0], variationSpec: '2026-01-01-01', createdDate: '2026-01-01' },
+          { ...validMoldedBonBon.variations[0], variationSpec: '2026-02-01-01', createdDate: '2026-02-01' }
         ],
-        goldenVersionSpec: '2026-02-01-01'
+        goldenVariationSpec: '2026-02-01-01'
       };
       expect(ConfectionConverters.anyConfectionEntity.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.goldenVersionSpec).toBe('2026-02-01-01');
+        expect(result.goldenVariationSpec).toBe('2026-02-01-01');
       });
     });
   });

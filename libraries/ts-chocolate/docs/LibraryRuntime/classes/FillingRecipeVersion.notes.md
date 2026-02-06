@@ -2,7 +2,7 @@
 
 ## FillingRecipeVersion.notes property
 
-Optional categorized notes about this version
+Optional categorized notes about this variation
 
 **Signature:**
 

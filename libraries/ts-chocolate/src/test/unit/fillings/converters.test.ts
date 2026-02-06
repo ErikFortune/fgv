@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   fillingIngredientEntity,
-  fillingRecipeVersionEntity,
+  fillingRecipeVariationEntity,
   fillingRecipeEntity,
   scalingRefEntity,
   procedureRefEntity,
@@ -75,14 +75,10 @@ describe('Recipe Converters', () => {
     });
   });
 
-  // ============================================================================
-  // fillingRecipeVersion Converter
-  // ============================================================================
-
-  describe('fillingRecipeVersion', () => {
-    test('converts valid recipe version', () => {
+  describe('fillingRecipeVariation', () => {
+    test('converts valid recipe variation', () => {
       const input = {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['source.chocolate'] }, amount: 100 },
@@ -90,26 +86,26 @@ describe('Recipe Converters', () => {
         ],
         baseWeight: 150
       };
-      expect(fillingRecipeVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.versionSpec).toBe('2026-01-01-01');
+      expect(fillingRecipeVariationEntity.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.variationSpec).toBe('2026-01-01-01');
         expect(result.createdDate).toBe('2026-01-01');
         expect(result.ingredients.length).toBe(2);
         expect(result.baseWeight).toBe(150);
       });
     });
 
-    test('converts recipe version with optional fields', () => {
+    test('converts recipe variation with optional fields', () => {
       const input = {
-        versionSpec: '2026-01-01-01',
+        variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
         baseWeight: 100,
         yield: '20 bonbons',
-        notes: [{ category: 'user', note: 'First version' }]
+        notes: [{ category: 'user', note: 'First variation' }]
       };
-      expect(fillingRecipeVersionEntity.convert(input)).toSucceedAndSatisfy((result) => {
+      expect(fillingRecipeVariationEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.yield).toBe('20 bonbons');
-        expect(result.notes).toEqual([{ category: 'user', note: 'First version' }]);
+        expect(result.notes).toEqual([{ category: 'user', note: 'First variation' }]);
       });
     });
   });
@@ -119,8 +115,8 @@ describe('Recipe Converters', () => {
   // ============================================================================
 
   describe('fillingRecipe', () => {
-    const validVersion = {
-      versionSpec: '2026-01-01-01',
+    const validVariation = {
+      variationSpec: '2026-01-01-01',
       createdDate: '2026-01-01',
       ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
       baseWeight: 100
@@ -131,16 +127,16 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [validVersion],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [validVariation],
+        goldenVariationSpec: '2026-01-01-01'
       };
       expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('test-recipe');
         expect(result.name).toBe('Test Recipe');
-        expect(result.goldenVersionSpec).toBe('2026-01-01-01');
-        // Golden version can be found in versions array
-        const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
-        expect(goldenVersion).toBe(result.versions[0]);
+        expect(result.goldenVariationSpec).toBe('2026-01-01-01');
+        // Golden variation can be found in variations array
+        const goldenVariation = result.variations.find((v) => v.variationSpec === result.goldenVariationSpec);
+        expect(goldenVariation).toBe(result.variations[0]);
       });
     });
 
@@ -151,8 +147,8 @@ describe('Recipe Converters', () => {
         category: 'ganache',
         description: 'A test recipe',
         tags: ['dark', 'ganache'],
-        versions: [validVersion],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [validVariation],
+        goldenVariationSpec: '2026-01-01-01'
       };
       expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.description).toBe('A test recipe');
@@ -160,9 +156,9 @@ describe('Recipe Converters', () => {
       });
     });
 
-    test('converts recipe version with procedures', () => {
-      const versionWithProcedures = {
-        ...validVersion,
+    test('converts recipe variation with procedures', () => {
+      const variationWithProcedures = {
+        ...validVariation,
         procedures: {
           options: [
             { id: 'common.ganache-cold-method', notes: [{ category: 'user', note: 'Preferred' }] },
@@ -175,55 +171,57 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [versionWithProcedures],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [variationWithProcedures],
+        goldenVariationSpec: '2026-01-01-01'
       };
       expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
-        const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
-        expect(goldenVersion?.procedures).toBeDefined();
-        expect(goldenVersion?.procedures!.options.length).toBe(2);
-        expect(goldenVersion?.procedures!.options[0].id).toBe('common.ganache-cold-method');
-        expect(goldenVersion?.procedures!.options[0].notes).toEqual([
+        const goldenVariation = result.variations.find((v) => v.variationSpec === result.goldenVariationSpec);
+        expect(goldenVariation?.procedures).toBeDefined();
+        expect(goldenVariation?.procedures!.options.length).toBe(2);
+        expect(goldenVariation?.procedures!.options[0].id).toBe('common.ganache-cold-method');
+        expect(goldenVariation?.procedures!.options[0].notes).toEqual([
           { category: 'user', note: 'Preferred' }
         ]);
-        expect(goldenVersion?.procedures!.preferredId).toBe('common.ganache-cold-method');
+        expect(goldenVariation?.procedures!.preferredId).toBe('common.ganache-cold-method');
       });
     });
 
-    test('converts recipe version without procedures', () => {
+    test('converts recipe variation without procedures', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [validVersion],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [validVariation],
+        goldenVariationSpec: '2026-01-01-01'
       };
       expect(fillingRecipeEntity.convert(input)).toSucceedAndSatisfy((result) => {
-        const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
-        expect(goldenVersion?.procedures).toBeUndefined();
+        const goldenVariation = result.variations.find((v) => v.variationSpec === result.goldenVariationSpec);
+        expect(goldenVariation?.procedures).toBeUndefined();
       });
     });
 
-    test('fails for recipe with empty versions array', () => {
+    test('fails for recipe with empty variations array', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [],
+        goldenVariationSpec: '2026-01-01-01'
       };
-      expect(fillingRecipeEntity.convert(input)).toFailWith(/Filling recipe must have at least one version/);
+      expect(fillingRecipeEntity.convert(input)).toFailWith(
+        /Filling recipe must have at least one variation/
+      );
     });
 
-    test('fails for recipe with invalid goldenVersionSpec', () => {
+    test('fails for recipe with invalid goldenVariationSpec', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [validVersion],
-        goldenVersionSpec: '2026-12-31-99'
+        variations: [validVariation],
+        goldenVariationSpec: '2026-12-31-99'
       };
-      expect(fillingRecipeEntity.convert(input)).toFailWith(/Golden version.*not found/);
+      expect(fillingRecipeEntity.convert(input)).toFailWith(/Golden variation.*not found/);
     });
 
     test('fails for invalid base ID', () => {
@@ -231,8 +229,8 @@ describe('Recipe Converters', () => {
         baseId: 'invalid.id',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [validVersion],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [validVariation],
+        goldenVariationSpec: '2026-01-01-01'
       };
       expect(fillingRecipeEntity.convert(input)).toFail();
     });
@@ -242,8 +240,8 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: '',
         category: 'ganache',
-        versions: [validVersion],
-        goldenVersionSpec: '2026-01-01-01'
+        variations: [validVariation],
+        goldenVariationSpec: '2026-01-01-01'
       };
       expect(fillingRecipeEntity.convert(input)).toFail();
     });
@@ -470,22 +468,22 @@ describe('procedures', () => {
 describe('scalingRef', () => {
   test('converts valid scaling ref', () => {
     const input = {
-      sourceVersionId: 'source.test-recipe@2026-01-01-01',
+      sourceVariationId: 'source.test-recipe@2026-01-01-01',
       scaleFactor: 2,
       targetWeight: 300,
       createdDate: '2026-01-15'
     };
     expect(scalingRefEntity.convert(input)).toSucceedAndSatisfy((result) => {
-      expect(result.sourceVersionId).toBe('source.test-recipe@2026-01-01-01');
+      expect(result.sourceVariationId).toBe('source.test-recipe@2026-01-01-01');
       expect(result.scaleFactor).toBe(2);
       expect(result.targetWeight).toBe(300);
       expect(result.createdDate).toBe('2026-01-15');
     });
   });
 
-  test('fails for invalid recipe version ID', () => {
+  test('fails for invalid recipe variation ID', () => {
     const input = {
-      sourceVersionId: 'invalid',
+      sourceVariationId: 'invalid',
       scaleFactor: 2,
       targetWeight: 300,
       createdDate: '2026-01-15'

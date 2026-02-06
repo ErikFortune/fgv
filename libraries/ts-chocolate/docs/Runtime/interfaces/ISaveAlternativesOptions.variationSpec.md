@@ -1,0 +1,11 @@
+[Home](../../README.md) > [Runtime](../README.md) > [ISaveAlternativesOptions](./ISaveAlternativesOptions.md) > variationSpec
+
+## ISaveAlternativesOptions.variationSpec property
+
+Variation spec for the updated variation
+
+**Signature:**
+
+```typescript
+readonly variationSpec: FillingRecipeVariationSpec;
+```

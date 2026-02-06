@@ -43,7 +43,7 @@ ID for the new confection
 </td></tr>
 <tr><td>
 
-[versionSpec](./ISaveNewConfectionOptions.versionSpec.md)
+[variationSpec](./ISaveNewConfectionOptions.variationSpec.md)
 
 </td><td>
 
@@ -55,7 +55,7 @@ ID for the new confection
 
 </td><td>
 
-Version spec for the new confection's first version
+Variation spec for the new confection's first variation
 
 </td></tr>
 <tr><td>

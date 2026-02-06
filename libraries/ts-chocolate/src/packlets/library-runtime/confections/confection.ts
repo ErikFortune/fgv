@@ -28,16 +28,16 @@ import { Failure, Result } from '@fgv/ts-utils';
 import { ConfectionId } from '../../common';
 import { Confections } from '../../entities';
 import { IConfectionContext } from '../model';
-import { MoldedBonBon } from './moldedBonBon';
-import { BarTruffle } from './barTruffle';
-import { RolledTruffle } from './rolledTruffle';
+import { MoldedBonBonRecipe } from './moldedBonBon';
+import { BarTruffleRecipe } from './barTruffle';
+import { RolledTruffleRecipe } from './rolledTruffle';
 
 /**
  * Union type of all concrete confection classes.
  * Use this type when you need to work with any confection.
  * @public
  */
-export type AnyConfection = MoldedBonBon | BarTruffle | RolledTruffle;
+export type AnyConfectionRecipe = MoldedBonBonRecipe | BarTruffleRecipe | RolledTruffleRecipe;
 
 // ============================================================================
 // Confection Static Factory
@@ -75,19 +75,19 @@ export abstract class Confection {
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.AnyConfectionEntity
-  ): Result<AnyConfection> {
+    confection: Confections.AnyConfectionRecipeEntity
+  ): Result<AnyConfectionRecipe> {
     switch (confection.confectionType) {
       case 'molded-bonbon':
-        return MoldedBonBon.create(context, id, confection);
+        return MoldedBonBonRecipe.create(context, id, confection);
       case 'bar-truffle':
-        return BarTruffle.create(context, id, confection);
+        return BarTruffleRecipe.create(context, id, confection);
       case 'rolled-truffle':
-        return RolledTruffle.create(context, id, confection);
+        return RolledTruffleRecipe.create(context, id, confection);
       /* c8 ignore next 2 - defensive coding: ConfectionData union type ensures all types are handled */
       default:
         return Failure.with(
-          `Unknown confection type: ${(confection as Confections.AnyConfectionEntity).confectionType}`
+          `Unknown confection type: ${(confection as Confections.AnyConfectionRecipeEntity).confectionType}`
         );
     }
   }

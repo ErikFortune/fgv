@@ -200,23 +200,23 @@ export function calculateFromFillingRecipeIngredients(
  *
  * @param recipe - The recipe to analyze
  * @param resolver - Function to resolve ingredient IDs to full data
- * @param versionSpec - Optional version ID (default: golden version)
+ * @param variationSpec - Optional variation ID (default: golden variation)
  * @returns Success with ganache analysis, or Failure if resolution fails
  * @public
  */
 export function calculateForFillingRecipe(
   recipe: IFillingRecipeEntity,
   resolver: IngredientResolver,
-  versionSpec?: FillingRecipeVariationSpec
+  variationSpec?: FillingRecipeVariationSpec
 ): Result<IGanacheAnalysis> {
-  const targetVersionSpec = versionSpec ?? recipe.goldenVersionSpec;
-  const version = recipe.versions.find((v) => v.versionSpec === targetVersionSpec);
+  const targetVariationSpec = variationSpec ?? recipe.goldenVariationSpec;
+  const variation = recipe.variations.find((v) => v.variationSpec === targetVariationSpec);
 
-  if (!version) {
-    return Failure.with(`Version ${targetVersionSpec} not found in recipe ${recipe.baseId}`);
+  if (!variation) {
+    return Failure.with(`Variation ${targetVariationSpec} not found in recipe ${recipe.baseId}`);
   }
 
-  return calculateFromFillingRecipeIngredients(version.ingredients, resolver);
+  return calculateFromFillingRecipeIngredients(variation.ingredients, resolver);
 }
 
 // ============================================================================
@@ -331,16 +331,16 @@ export function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation 
  *
  * @param recipe - The recipe to analyze
  * @param resolver - Function to resolve ingredient IDs to full data
- * @param versionSpec - Optional version ID (default: golden version)
+ * @param variationSpec - Optional variation ID (default: golden variation)
  * @returns Success with complete calculation, or Failure if resolution fails
  * @public
  */
 export function calculateGanache(
   recipe: IFillingRecipeEntity,
   resolver: IngredientResolver,
-  versionSpec?: FillingRecipeVariationSpec
+  variationSpec?: FillingRecipeVariationSpec
 ): Result<IGanacheCalculation> {
-  return calculateForFillingRecipe(recipe, resolver, versionSpec).onSuccess((analysis) =>
+  return calculateForFillingRecipe(recipe, resolver, variationSpec).onSuccess((analysis) =>
     Success.with({
       analysis,
       validation: validateGanache(analysis)

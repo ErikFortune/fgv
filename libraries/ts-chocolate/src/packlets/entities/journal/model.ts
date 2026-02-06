@@ -30,8 +30,12 @@ import {
   Measurement,
   Model as CommonModel
 } from '../../common';
-import { AnyConfectionVersionEntity, AnyProducedConfectionEntity, IConfectionYield } from '../confections';
-import { IFillingRecipeVersionEntity, IProducedFillingEntity } from '../fillings';
+import {
+  AnyConfectionRecipeVariationEntity,
+  AnyProducedConfectionEntity,
+  IConfectionYield
+} from '../confections';
+import { IFillingRecipeVariationEntity, IProducedFillingEntity } from '../fillings';
 
 /**
  * Types of journal entries.
@@ -58,21 +62,21 @@ export const allJournalEntryTypes: JournalEntryType[] = [
  * Base interface for journal entries.
  * @public
  */
-export interface IJournalEntryEntityBase<TVersion, TVersionId> {
+export interface IJournalEntryEntityBase<TVariation, TVariationId> {
   /** Entry type discriminator */
   readonly type: JournalEntryType;
   /** Base identifier within collection (no collection prefix) */
   readonly baseId: BaseJournalId;
   /** Timestamp when this entry was created (ISO 8601 format) */
   readonly timestamp: string;
-  /** Source version ID for indexing and lookup */
-  readonly versionId: TVersionId;
+  /** Source variation ID for indexing and lookup */
+  readonly variationId: TVariationId;
   /** Full source recipe/confection at the time of the entry */
-  readonly recipe: TVersion;
-  /** Full updated version if modifications were made */
-  readonly updated?: TVersion;
-  /** ID of the updated version if it was saved */
-  readonly updatedId?: TVersionId;
+  readonly recipe: TVariation;
+  /** Full updated variation if modifications were made */
+  readonly updated?: TVariation;
+  /** ID of the updated variation if it was saved */
+  readonly updatedId?: TVariationId;
   /** Optional categorized notes about this entry */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
@@ -82,7 +86,7 @@ export interface IJournalEntryEntityBase<TVersion, TVersionId> {
  * @public
  */
 export interface IFillingEditJournalEntryEntity
-  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId> {
+  extends IJournalEntryEntityBase<IFillingRecipeVariationEntity, FillingRecipeVariationId> {
   readonly type: 'filling-edit';
 }
 
@@ -91,7 +95,7 @@ export interface IFillingEditJournalEntryEntity
  * @public
  */
 export interface IConfectionEditJournalEntryEntity
-  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId> {
+  extends IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId> {
   readonly type: 'confection-edit';
 }
 
@@ -100,7 +104,7 @@ export interface IConfectionEditJournalEntryEntity
  * @public
  */
 export interface IFillingProductionJournalEntryEntity
-  extends IJournalEntryEntityBase<IFillingRecipeVersionEntity, FillingRecipeVariationId> {
+  extends IJournalEntryEntityBase<IFillingRecipeVariationEntity, FillingRecipeVariationId> {
   readonly type: 'filling-production';
   /** Total yield weight of this production run */
   readonly yield: Measurement;
@@ -113,7 +117,7 @@ export interface IFillingProductionJournalEntryEntity
  * @public
  */
 export interface IConfectionProductionJournalEntryEntity
-  extends IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId> {
+  extends IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId> {
   readonly type: 'confection-production';
   /** Yield specification for this production run */
   readonly yield: IConfectionYield;

@@ -2,7 +2,7 @@
 
 ## BarTruffle.procedures property
 
-Resolved procedures from the golden version.
+Resolved procedures from the golden variation.
 
 **Signature:**
 

@@ -137,7 +137,7 @@ export class FillingRecipesByIngredientIndexer extends BaseIndexer<
 
     for (const [recipeId, recipe] of recipes.entries()) {
       // Index ingredients from all versions
-      for (const version of recipe.versions) {
+      for (const version of recipe.variations) {
         for (const ri of version.ingredients) {
           // Get primary ingredient ID (preferred or first)
           const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);

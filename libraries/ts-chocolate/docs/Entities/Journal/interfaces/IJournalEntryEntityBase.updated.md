@@ -2,10 +2,10 @@
 
 ## IJournalEntryEntityBase.updated property
 
-Full updated version if modifications were made
+Full updated variation if modifications were made
 
 **Signature:**
 
 ```typescript
-readonly updated: TVersion;
+readonly updated: TVariation;
 ```

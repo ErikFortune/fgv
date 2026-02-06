@@ -60,7 +60,7 @@ The full journal entry if one was created.
 </td></tr>
 <tr><td>
 
-[newVersionSpec](./ISaveResult.newVersionSpec.md)
+[newVariationSpec](./ISaveResult.newVariationSpec.md)
 
 </td><td>
 
@@ -72,7 +72,7 @@ The full journal entry if one was created.
 
 </td><td>
 
-The new version spec if one was created
+The new variation spec if one was created
 
 </td></tr>
 </tbody></table>

@@ -84,9 +84,9 @@ export interface IFillingListOptions extends IFillingBaseOptions {
  */
 export interface IFillingShowOptions extends IFillingBaseOptions {
   /**
-   * Specific version to show (default: golden)
+   * Specific variation to show (default: golden)
    */
-  version?: string;
+  variation?: string;
 
   /**
    * Scale target: weight in grams or multiplier with 'x' suffix

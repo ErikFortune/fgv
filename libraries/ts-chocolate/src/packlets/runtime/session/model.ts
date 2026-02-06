@@ -53,9 +53,9 @@ import { IConfectionBase } from '../../library-runtime';
  */
 export interface ISaveAnalysis {
   /**
-   * Whether the original collection is mutable (allows creating new version)
+   * Whether the original collection is mutable (allows creating new variation)
    */
-  readonly canCreateVersion: boolean;
+  readonly canCreateVariation: boolean;
 
   /**
    * Whether we can add ingredients as alternatives to the original recipe
@@ -70,7 +70,7 @@ export interface ISaveAnalysis {
   /**
    * Recommended save option based on changes
    */
-  readonly recommendedOption: 'version' | 'alternatives' | 'new';
+  readonly recommendedOption: 'variation' | 'alternatives' | 'new';
 
   /**
    * Detailed change information
@@ -89,19 +89,19 @@ export interface ISaveAnalysis {
 // ============================================================================
 
 /**
- * Options for saving as a new version of the original recipe.
+ * Options for saving as a new variation of the original recipe.
  * @public
  */
-export interface ISaveVersionOptions {
+export interface ISaveVariationOptions {
   /**
-   * Base weight for the new version
+   * Base weight for the new variation
    */
   readonly baseWeight: Measurement;
 
   /**
-   * Version spec for the new version
+   * Variation spec for the new variation
    */
-  readonly versionSpec: FillingRecipeVariationSpec;
+  readonly variationSpec: FillingRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the recipe
@@ -115,9 +115,9 @@ export interface ISaveVersionOptions {
  */
 export interface ISaveAlternativesOptions {
   /**
-   * Version spec for the updated version
+   * Variation spec for the updated variation
    */
-  readonly versionSpec: FillingRecipeVariationSpec;
+  readonly variationSpec: FillingRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the recipe
@@ -141,9 +141,9 @@ export interface ISaveNewRecipeOptions {
   readonly baseWeight: Measurement;
 
   /**
-   * Version spec for the new recipe's first version
+   * Variation spec for the new recipe's first variation
    */
-  readonly versionSpec: FillingRecipeVariationSpec;
+  readonly variationSpec: FillingRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the recipe
@@ -152,14 +152,14 @@ export interface ISaveNewRecipeOptions {
 }
 
 /**
- * Options for saving confection as a new version.
+ * Options for saving confection as a new variation.
  * @public
  */
-export interface ISaveConfectionVersionOptions {
+export interface ISaveConfectionVariationOptions {
   /**
-   * Version spec for the new version
+   * Variation spec for the new variation
    */
-  readonly versionSpec: ConfectionRecipeVariationSpec;
+  readonly variationSpec: ConfectionRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the confection
@@ -178,9 +178,9 @@ export interface ISaveNewConfectionOptions {
   readonly newId: ConfectionId;
 
   /**
-   * Version spec for the new confection's first version
+   * Variation spec for the new confection's first variation
    */
-  readonly versionSpec: ConfectionRecipeVariationSpec;
+  readonly variationSpec: ConfectionRecipeVariationSpec;
 
   /**
    * Whether to include session notes in the confection
@@ -199,14 +199,14 @@ export interface ISaveOptions {
   readonly createJournalRecord?: boolean;
 
   /**
-   * Whether to create a new recipe version from modifications
+   * Whether to create a new recipe variation from modifications
    */
-  readonly createNewVersion?: boolean;
+  readonly createNewVariation?: boolean;
 
   /**
-   * Version label for the new version (required if createNewVersion is true)
+   * Variation label for the new variation (required if createNewVariation is true)
    */
-  readonly versionLabel?: FillingRecipeVariationSpec;
+  readonly variationLabel?: FillingRecipeVariationSpec;
 
   /**
    * Optional notes for the journal record
@@ -231,9 +231,9 @@ export interface ISaveResult {
   readonly journalEntry?: IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity;
 
   /**
-   * The new version spec if one was created
+   * The new variation spec if one was created
    */
-  readonly newVersionSpec?: FillingRecipeVariationSpec | ConfectionRecipeVariationSpec;
+  readonly newVariationSpec?: FillingRecipeVariationSpec | ConfectionRecipeVariationSpec;
 }
 
 // ============================================================================
@@ -381,7 +381,7 @@ export interface IConfectionEditingSessionParams {
   readonly sessionId?: SessionSpec;
 
   /**
-   * Initial yield specification (defaults to golden version yield)
+   * Initial yield specification (defaults to golden variation yield)
    */
   readonly initialYield?: Confections.AnyConfectionYield;
 }
@@ -456,14 +456,14 @@ export interface IConfectionSaveOptions {
   readonly createJournalRecord?: boolean;
 
   /**
-   * Whether to create a new confection version from modifications
+   * Whether to create a new confection variation from modifications
    */
-  readonly createNewVersion?: boolean;
+  readonly createNewVariation?: boolean;
 
   /**
-   * Version label for the new version (required if createNewVersion is true)
+   * Variation label for the new variation (required if createNewVariation is true)
    */
-  readonly versionLabel?: ConfectionRecipeVariationSpec;
+  readonly variationLabel?: ConfectionRecipeVariationSpec;
 
   /**
    * Optional notes for the journal record
@@ -492,9 +492,9 @@ export interface IConfectionSaveResult {
   readonly journalEntry?: IConfectionEditJournalEntryEntity;
 
   /**
-   * The new version spec if one was created
+   * The new variation spec if one was created
    */
-  readonly newVersionSpec?: ConfectionRecipeVariationSpec;
+  readonly newVariationSpec?: ConfectionRecipeVariationSpec;
 
   /**
    * Journal IDs of linked recipe sessions that were saved

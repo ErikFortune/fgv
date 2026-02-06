@@ -36,19 +36,19 @@ import {
   CollectionId
 } from '../../common';
 import { IFillingRecipeEntity } from '../../entities';
-import { IIngredientQueryOptions, IFillingRecipe, IVersionContext } from '../model';
-import { FillingRecipeVersion } from './fillingRecipeVersion';
+import { IIngredientQueryOptions, IFillingRecipe, IVariationContext } from '../model';
+import { FillingRecipeVariation } from './fillingRecipeVersion';
 import { AnyIngredient } from '../ingredients';
 
 // Specialize the context interface with concrete ingredient type
-type RecipeContext = IVersionContext<AnyIngredient>;
+type RecipeContext = IVariationContext<AnyIngredient>;
 
 // ============================================================================
 // FillingRecipe Class
 // ============================================================================
 
 /**
- * A resolved view of a recipe with navigation and version access.
+ * A resolved view of a recipe with navigation and variation access.
  * Immutable - does not allow modification of underlying data.
  * @public
  */
@@ -59,10 +59,10 @@ export class FillingRecipe implements IFillingRecipe {
   private readonly _sourceId: CollectionId;
   private readonly _baseId: BaseFillingId;
 
-  // Lazy-loaded versions
-  private _goldenVersion: FillingRecipeVersion | undefined;
-  private _versions: ReadonlyArray<FillingRecipeVersion> | undefined;
-  private _latestVersion: FillingRecipeVersion | undefined;
+  // Lazy-loaded variations
+  private _goldenVariation: FillingRecipeVariation | undefined;
+  private _variations: ReadonlyArray<FillingRecipeVariation> | undefined;
+  private _latestVariation: FillingRecipeVariation | undefined;
   private _preferredIngredientIds: Set<IngredientId> | undefined;
   private _allIngredientIds: Set<IngredientId> | undefined;
 
@@ -147,133 +147,135 @@ export class FillingRecipe implements IFillingRecipe {
   }
 
   /**
-   * The golden version ID
+   * The golden variation ID
    */
-  public get goldenVersionSpec(): FillingRecipeVariationSpec {
-    return this._recipe.goldenVersionSpec;
+  public get goldenVariationSpec(): FillingRecipeVariationSpec {
+    return this._recipe.goldenVariationSpec;
   }
 
   // ============================================================================
-  // Version Navigation (lazy)
+  // Variation Navigation (lazy)
   // ============================================================================
 
   /**
-   * Gets the golden (default approved) version - resolved.
+   * Gets the golden (default approved) variation - resolved.
    * Resolved lazily on first access.
-   * @returns Result with golden version, or Failure if creation fails
+   * @returns Result with golden variation, or Failure if creation fails
    * @public
    */
-  public getGoldenVersion(): Result<FillingRecipeVersion> {
-    if (this._goldenVersion === undefined) {
-      const entity = this._recipe.versions.find((v) => v.versionSpec === this._recipe.goldenVersionSpec);
-      /* c8 ignore next 3 - defensive coding: data validation ensures golden version exists */
+  public getGoldenVariation(): Result<FillingRecipeVariation> {
+    if (this._goldenVariation === undefined) {
+      const entity = this._recipe.variations.find(
+        (v) => v.variationSpec === this._recipe.goldenVariationSpec
+      );
+      /* c8 ignore next 3 - defensive coding: data validation ensures golden variation exists */
       if (!entity) {
         return Failure.with(
-          `Golden version ${this._recipe.goldenVersionSpec} not found in recipe ${this._id}`
+          `Golden variation ${this._recipe.goldenVariationSpec} not found in recipe ${this._id}`
         );
       }
-      return FillingRecipeVersion.create(this._context, this._id, entity).onSuccess((version) => {
-        this._goldenVersion = version;
-        return Success.with(version);
+      return FillingRecipeVariation.create(this._context, this._id, entity).onSuccess((variation) => {
+        this._goldenVariation = variation;
+        return Success.with(variation);
       });
     }
-    return Success.with(this._goldenVersion);
+    return Success.with(this._goldenVariation);
   }
 
   /**
-   * The golden (default approved) version - resolved.
+   * The golden (default approved) variation - resolved.
    * Resolved lazily on first access.
-   * @throws if version creation fails - prefer getGoldenVersion() for proper error handling
+   * @throws if variation creation fails - prefer getGoldenVariation() for proper error handling
    */
-  public get goldenVersion(): FillingRecipeVersion {
-    return this.getGoldenVersion().orThrow();
+  public get goldenVariation(): FillingRecipeVariation {
+    return this.getGoldenVariation().orThrow();
   }
 
   /**
-   * Gets all versions - resolved.
+   * Gets all variations - resolved.
    * Resolved lazily on first access.
-   * @returns Result with all versions, or Failure if any version creation fails
+   * @returns Result with all variations, or Failure if any variation creation fails
    * @public
    */
-  public getVersions(): Result<ReadonlyArray<FillingRecipeVersion>> {
-    if (this._versions === undefined) {
+  public getVariations(): Result<ReadonlyArray<FillingRecipeVariation>> {
+    if (this._variations === undefined) {
       return mapResults(
-        this._recipe.versions.map((v) => FillingRecipeVersion.create(this._context, this._id, v))
-      ).onSuccess((versions) => {
-        this._versions = versions;
-        return Success.with(versions);
+        this._recipe.variations.map((v) => FillingRecipeVariation.create(this._context, this._id, v))
+      ).onSuccess((variations) => {
+        this._variations = variations;
+        return Success.with(variations);
       });
     }
-    return Success.with(this._versions);
+    return Success.with(this._variations);
   }
 
   /**
-   * All versions - resolved.
+   * All variations - resolved.
    * Resolved lazily on first access.
-   * @throws if version creation fails - prefer getVersions() for proper error handling
+   * @throws if variation creation fails - prefer getVariations() for proper error handling
    */
-  public get versions(): ReadonlyArray<FillingRecipeVersion> {
-    return this.getVersions().orThrow();
+  public get variations(): ReadonlyArray<FillingRecipeVariation> {
+    return this.getVariations().orThrow();
   }
 
   /**
-   * Gets a specific version by ID.
-   * @param versionSpec - The version ID to find
-   * @returns Success with FillingRecipeVersion, or Failure if not found
+   * Gets a specific variation by ID.
+   * @param variationSpec - The variation ID to find
+   * @returns Success with FillingRecipeVariation, or Failure if not found
    */
-  public getVersion(versionSpec: FillingRecipeVariationSpec): Result<FillingRecipeVersion> {
-    const version = this.versions.find((v) => v.versionSpec === versionSpec);
-    if (!version) {
-      return Failure.with(`Version ${versionSpec} not found in recipe ${this._id}`);
+  public getVariation(variationSpec: FillingRecipeVariationSpec): Result<FillingRecipeVariation> {
+    const variation = this.variations.find((v) => v.variationSpec === variationSpec);
+    if (!variation) {
+      return Failure.with(`Variation ${variationSpec} not found in recipe ${this._id}`);
     }
-    return Success.with(version);
+    return Success.with(variation);
   }
 
   /**
-   * Gets the latest version (by created date).
+   * Gets the latest variation (by created date).
    * Resolved lazily on first access.
-   * @returns Result with latest version, or Failure if creation fails
+   * @returns Result with latest variation, or Failure if creation fails
    * @public
    */
-  public getLatestVersion(): Result<FillingRecipeVersion> {
-    if (this._latestVersion === undefined) {
-      // Find version with latest created date
-      let latestEntity = this._recipe.versions[0];
-      for (const v of this._recipe.versions) {
+  public getLatestVariation(): Result<FillingRecipeVariation> {
+    if (this._latestVariation === undefined) {
+      // Find variation with latest created date
+      let latestEntity = this._recipe.variations[0];
+      for (const v of this._recipe.variations) {
         if (v.createdDate > latestEntity.createdDate) {
           latestEntity = v;
         }
       }
-      // Check if it's the same as golden version to reuse
-      if (latestEntity.versionSpec === this._recipe.goldenVersionSpec) {
-        return this.getGoldenVersion().onSuccess((version) => {
-          this._latestVersion = version;
-          return Success.with(version);
+      // Check if it's the same as golden variation to reuse
+      if (latestEntity.variationSpec === this._recipe.goldenVariationSpec) {
+        return this.getGoldenVariation().onSuccess((variation) => {
+          this._latestVariation = variation;
+          return Success.with(variation);
         });
       } else {
-        return FillingRecipeVersion.create(this._context, this._id, latestEntity).onSuccess((version) => {
-          this._latestVersion = version;
-          return Success.with(version);
+        return FillingRecipeVariation.create(this._context, this._id, latestEntity).onSuccess((variation) => {
+          this._latestVariation = variation;
+          return Success.with(variation);
         });
       }
     }
-    return Success.with(this._latestVersion);
+    return Success.with(this._latestVariation);
   }
 
   /**
-   * Gets the latest version (by created date).
+   * Gets the latest variation (by created date).
    * Resolved lazily on first access.
-   * @throws if version creation fails - prefer getLatestVersion() for proper error handling
+   * @throws if variation creation fails - prefer getLatestVariation() for proper error handling
    */
-  public get latestVersion(): FillingRecipeVersion {
-    return this.getLatestVersion().orThrow();
+  public get latestVariation(): FillingRecipeVariation {
+    return this.getLatestVariation().orThrow();
   }
 
   /**
-   * Number of versions
+   * Number of variations
    */
-  public get versionCount(): number {
-    return this._recipe.versions.length;
+  public get variationCount(): number {
+    return this._recipe.variations.length;
   }
 
   // ============================================================================
@@ -281,7 +283,7 @@ export class FillingRecipe implements IFillingRecipe {
   // ============================================================================
 
   /**
-   * Gets unique ingredient IDs used across all versions.
+   * Gets unique ingredient IDs used across all variations.
    * By default, returns only preferred ingredients (primary choice for each ingredient slot).
    * Pass `{ includeAlternates: true }` to include all ingredient options.
    * @param options - Query options
@@ -300,8 +302,8 @@ export class FillingRecipe implements IFillingRecipe {
   private _getPreferredIngredientIds(): ReadonlySet<IngredientId> {
     if (this._preferredIngredientIds === undefined) {
       this._preferredIngredientIds = new Set<IngredientId>();
-      for (const version of this._recipe.versions) {
-        for (const ri of version.ingredients) {
+      for (const variation of this._recipe.variations) {
+        for (const ri of variation.ingredients) {
           const preferredId = Helpers.getPreferredIdOrFirst(ri.ingredient);
           /* c8 ignore next 3 - defensive: converter validates ids array is non-empty */
           if (preferredId !== undefined) {
@@ -319,8 +321,8 @@ export class FillingRecipe implements IFillingRecipe {
   private _getAllIngredientIds(): ReadonlySet<IngredientId> {
     if (this._allIngredientIds === undefined) {
       this._allIngredientIds = new Set<IngredientId>();
-      for (const version of this._recipe.versions) {
-        for (const ri of version.ingredients) {
+      for (const variation of this._recipe.variations) {
+        for (const ri of variation.ingredients) {
           for (const id of ri.ingredient.ids) {
             this._allIngredientIds.add(id);
           }
@@ -331,12 +333,12 @@ export class FillingRecipe implements IFillingRecipe {
   }
 
   /**
-   * Checks if any version uses a specific ingredient.
+   * Checks if any variation uses a specific ingredient.
    * By default, only checks preferred ingredients.
    * Pass `{ includeAlternates: true }` to also check alternate ingredients.
    * @param ingredientId - The ingredient ID to check
    * @param options - Query options
-   * @returns True if the ingredient is used in any version
+   * @returns True if the ingredient is used in any variation
    */
   public usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean {
     return this.getIngredientIds(options).has(ingredientId);

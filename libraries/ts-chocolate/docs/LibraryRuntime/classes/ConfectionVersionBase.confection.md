@@ -3,7 +3,7 @@
 ## ConfectionVersionBase.confection property
 
 The parent confection - resolved.
-Enables navigation: `version.confection.name`
+Enables navigation: `variation.confection.name`
 
 **Signature:**
 

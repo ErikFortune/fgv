@@ -168,8 +168,8 @@ export interface ISessionEntityBase {
  */
 export interface IFillingSessionEntity extends ISessionEntityBase {
   readonly sessionType: 'filling';
-  /** Source filling version being edited */
-  readonly sourceVersionId: FillingRecipeVariationId;
+  /** Source filling variation being edited */
+  readonly sourceVariationId: FillingRecipeVariationId;
   /** Full editing history including undo/redo stacks */
   readonly history: ISerializedEditingHistoryEntity<IProducedFillingEntity>;
 }
@@ -191,8 +191,8 @@ export interface IConfectionSessionEntity extends ISessionEntityBase {
   readonly sessionType: 'confection';
   /** Confection type discriminator (for type-specific restoration) */
   readonly confectionType: ConfectionType;
-  /** Source confection version being edited */
-  readonly sourceVersionId: ConfectionRecipeVariationId;
+  /** Source confection variation being edited */
+  readonly sourceVariationId: ConfectionRecipeVariationId;
   /** Full editing history including undo/redo stacks */
   readonly history: ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>;
   /** Map of slot ID to child filling session ID */

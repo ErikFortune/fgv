@@ -79,7 +79,7 @@ import {
   IFatIngredientEntity,
   IFillingRating,
   IFillingRecipeEntity,
-  IFillingRecipeVersionEntity,
+  IFillingRecipeVariationEntity,
   IngredientEntity,
   ISugarIngredientEntity,
   IMoldEntity,
@@ -350,37 +350,37 @@ export interface ICategoryFilter {
 export type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
 // ============================================================================
-// Runtime Version Interfaces
+// Runtime Variation Interfaces
 // ============================================================================
 
 /**
- * A resolved runtime view of a recipe version with resolved ingredients.
+ * A resolved runtime view of a recipe variation with resolved ingredients.
  *
- * This interface provides runtime-layer access to version data with:
+ * This interface provides runtime-layer access to variation data with:
  * - Parent recipe reference (both ID and resolved object)
  * - Resolved ingredient access via flexible filtering
  * - Ganache calculation
  *
- * Note: Does not directly extend `IFillingRecipeVersionEntity` because `ingredients` has a different
+ * Note: Does not directly extend `IFillingRecipeVariationEntity` because `ingredients` has a different
  * type (resolved vs entity references).
  *
  * @public
  */
-export interface IFillingRecipeVersion {
+export interface IFillingRecipeVariation {
   // ---- Identity ----
 
   /**
-   * Qualified identifier for this version (recipeId\@versionSpec).
+   * Qualified identifier for this variation (recipeId\@variationSpec).
    */
-  readonly versionId: FillingRecipeVariationId;
+  readonly variationId: FillingRecipeVariationId;
 
   /**
-   * Version spec portion of the identifier.
+   * Variation spec portion of the identifier.
    */
-  readonly versionSpec: FillingRecipeVariationSpec;
+  readonly variationSpec: FillingRecipeVariationSpec;
 
   /**
-   * Date this version was created (ISO 8601 format).
+   * Date this variation was created (ISO 8601 format).
    */
   readonly createdDate: string;
 
@@ -391,17 +391,11 @@ export interface IFillingRecipeVersion {
 
   /**
    * The parent filling recipe - resolved.
-   * Enables navigation: `version.fillingRecipe.name`
+   * Enables navigation: `variation.fillingRecipe.name`
    */
   readonly fillingRecipe: IFillingRecipe;
 
-  /**
-   * The underlying filling recipe version.
-   * Use this to get the entity version data for persistence or journaling.
-   */
-  readonly version: IFillingRecipeVersionEntity;
-
-  // ---- Version Properties (from IFillingRecipeVersion) ----
+  // ---- Variation Properties (from IFillingRecipeVariationEntity) ----
 
   /**
    * Base weight of the recipe (sum of all ingredient amounts).
@@ -414,12 +408,12 @@ export interface IFillingRecipeVersion {
   readonly yield?: string;
 
   /**
-   * Optional notes about this version.
+   * Optional notes about this variation.
    */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   /**
-   * Optional ratings for this version.
+   * Optional ratings for this variation.
    */
   readonly ratings: ReadonlyArray<IFillingRating>;
 
@@ -443,19 +437,19 @@ export interface IFillingRecipeVersion {
    * @example
    * ```typescript
    * // All ingredients
-   * for (const ri of version.getIngredients().orThrow()) { ... }
+   * for (const ri of variation.getIngredients().orThrow()) { ... }
    *
    * // Chocolate ingredients only
-   * version.getIngredients([{ category: 'chocolate' }])
+   * variation.getIngredients([{ category: 'chocolate' }])
    *
    * // Multiple specific ingredients
-   * version.getIngredients(['felchlin.maracaibo-65', 'valrhona.guanaja-70'])
+   * variation.getIngredients(['felchlin.maracaibo-65', 'valrhona.guanaja-70'])
    *
    * // Pattern matching
-   * version.getIngredients([/^felchlin\./])
+   * variation.getIngredients([/^felchlin\./])
    *
    * // Mix of filters (OR semantics)
-   * version.getIngredients(['specific-id', { category: 'dairy' }, /^valrhona\./])
+   * variation.getIngredients(['specific-id', { category: 'dairy' }, /^valrhona\./])
    * ```
    */
   getIngredients(
@@ -465,16 +459,16 @@ export interface IFillingRecipeVersion {
   // ---- Ingredient queries ----
 
   /**
-   * Checks if this version uses a specific ingredient (as primary).
+   * Checks if this variation uses a specific ingredient (as primary).
    * @param ingredientId - The ingredient ID to check
-   * @returns True if the ingredient is used in this version
+   * @returns True if the ingredient is used in this variation
    */
   usesIngredient(ingredientId: IngredientId): boolean;
 
   // ---- Operations ----
 
   /**
-   * Calculates ganache characteristics for this version.
+   * Calculates ganache characteristics for this variation.
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
   calculateGanache(): Result<IGanacheCalculation>;
@@ -482,8 +476,8 @@ export interface IFillingRecipeVersion {
   // ---- Procedures (resolved) ----
 
   /**
-   * Resolved procedures associated with this version.
-   * Undefined if the version has no associated procedures.
+   * Resolved procedures associated with this variation.
+   * Undefined if the variation has no associated procedures.
    */
   readonly procedures?: IResolvedProcedures;
 
@@ -495,9 +489,9 @@ export interface IFillingRecipeVersion {
   // ---- Entity access ----
 
   /**
-   * Gets the underlying entity version data.
+   * Gets the underlying entity variation data.
    */
-  readonly entity: IFillingRecipeVersionEntity;
+  readonly entity: IFillingRecipeVariationEntity;
 }
 
 // ============================================================================
@@ -553,17 +547,17 @@ export interface IResolvedProcedures {
 // ============================================================================
 
 /**
- * A resolved runtime view of a recipe with navigation and version access.
+ * A resolved runtime view of a recipe with navigation and variation access.
  *
  * This interface provides runtime-layer access to recipe data with:
  * - Composite identity (`id`, `collectionId`) for cross-source references
- * - Resolved version access (full objects, not just entity data)
+ * - Resolved variation access (full objects, not just entity data)
  * - Scaling and calculation operations
  * - Usage and ingredient queries
  * - Resolved procedure access
  *
  * Note: Does not extend {@link Entities.Fillings.IFillingRecipeEntity | IFillingRecipeEntity}
- * directly because `versions` has a different type (resolved vs data layer entity versions).
+ * directly because `variations` has a different type (resolved vs data layer entity variations).
  *
  * @public
  */
@@ -604,43 +598,43 @@ export interface IFillingRecipe {
   readonly tags?: ReadonlyArray<string>;
 
   /**
-   * The ID of the golden (approved default) version.
+   * The ID of the golden (approved default) variation.
    */
-  readonly goldenVersionSpec: FillingRecipeVariationSpec;
+  readonly goldenVariationSpec: FillingRecipeVariationSpec;
 
-  // ---- Version navigation (resolved) ----
-
-  /**
-   * The golden (default approved) version - resolved.
-   */
-  readonly goldenVersion: IFillingRecipeVersion;
+  // ---- Variation navigation (resolved) ----
 
   /**
-   * All versions - resolved.
+   * The golden (default approved) variation - resolved.
    */
-  readonly versions: ReadonlyArray<IFillingRecipeVersion>;
+  readonly goldenVariation: IFillingRecipeVariation;
 
   /**
-   * Gets a specific version by {@link FillingRecipeVariationSpec | version specifier}.
-   * @param versionSpec - The version specifier to find
-   * @returns Success with RuntimeFillingRecipeVersion, or Failure if not found
+   * All variations - resolved.
    */
-  getVersion(versionSpec: FillingRecipeVariationSpec): Result<IFillingRecipeVersion>;
+  readonly variations: ReadonlyArray<IFillingRecipeVariation>;
 
   /**
-   * Gets the latest version (by created date).
+   * Gets a specific variation by {@link FillingRecipeVariationSpec | variation specifier}.
+   * @param variationSpec - The variation specifier to find
+   * @returns Success with RuntimeFillingRecipeVariation, or Failure if not found
    */
-  readonly latestVersion: IFillingRecipeVersion;
+  getVariation(variationSpec: FillingRecipeVariationSpec): Result<IFillingRecipeVariation>;
 
   /**
-   * Number of versions.
+   * Gets the latest variation (by created date).
    */
-  readonly versionCount: number;
+  readonly latestVariation: IFillingRecipeVariation;
+
+  /**
+   * Number of variations.
+   */
+  readonly variationCount: number;
 
   // ---- Ingredient queries ----
 
   /**
-   * Gets unique ingredient IDs used across all versions.
+   * Gets unique ingredient IDs used across all variations.
    * By default, returns only preferred ingredients (primary choice for each ingredient slot).
    * Pass `{ includeAlternates: true }` to include all ingredient options.
    * @param options - Query options
@@ -649,12 +643,12 @@ export interface IFillingRecipe {
   getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
 
   /**
-   * Checks if any version uses a specific ingredient.
+   * Checks if any variation uses a specific ingredient.
    * By default, only checks preferred ingredients.
    * Pass `{ includeAlternates: true }` to also check alternate ingredients.
    * @param ingredientId - The ingredient ID to check
    * @param options - Query options
-   * @returns True if the ingredient is used in any version
+   * @returns True if the ingredient is used in any variation
    */
   usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
 
@@ -848,7 +842,7 @@ export interface IIngredientUsageInfo {
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeFillingRecipeVersion and RuntimeFillingRecipe.
+ * Minimal context interface for RuntimeFillingRecipeVariation and RuntimeFillingRecipe.
  * Provides ingredient/recipe resolution.
  *
  * Generic type parameter allows internal implementations to use concrete types
@@ -857,7 +851,7 @@ export interface IIngredientUsageInfo {
  * @typeParam TIngredient - The ingredient type returned by ingredients map
  * @internal
  */
-export interface IVersionContext<TIngredient extends IIngredient = IIngredient> {
+export interface IVariationContext<TIngredient extends IIngredient = IIngredient> {
   /** Map of all ingredients, keyed by composite ID. */
   readonly ingredients: MaterializedLibrary<
     IngredientId,
@@ -911,7 +905,7 @@ export interface IIngredientContext {
  *
  * @public
  */
-export interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
+export interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
   // ---- Library Access ----
 
   /**
@@ -951,7 +945,7 @@ export interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
    */
   readonly confections: MaterializedLibrary<
     ConfectionId,
-    Confections.AnyConfectionEntity,
+    Confections.AnyConfectionRecipeEntity,
     IConfectionBase,
     never
   >;
@@ -1009,23 +1003,23 @@ export interface ILibraryRuntimeContext extends IVersionContext<AnyIngredient> {
 
 /**
  * Base interface for all runtime confections.
- * Provides common properties and version navigation shared by all confection types.
+ * Provides common properties and variation navigation shared by all confection types.
  *
  * This interface includes all properties from the data layer `IConfectionEntity`
  * plus runtime-specific additions:
  * - Composite identity (`id`, `collectionId`) for cross-source references
- * - Version navigation with typed versions
- * - Effective tags/urls (merged from base + version)
+ * - Variation navigation with typed variations
+ * - Effective tags/urls (merged from base + variation)
  * - Type narrowing methods for discriminated access
  * - Access to underlying entity data
  *
- * @typeParam TVersion - The specific version type for this confection
+ * @typeParam TVariation - The specific variation type for this confection
  * @typeParam TEntity - The specific entity type for this confection
  * @public
  */
 export interface IConfectionBase<
-  TVersion extends AnyConfectionVersion = AnyConfectionVersion,
-  TEntity extends Confections.AnyConfectionEntity = Confections.AnyConfectionEntity
+  TVariation extends AnyConfectionRecipeVariation = AnyConfectionRecipeVariation,
+  TEntity extends Confections.AnyConfectionRecipeEntity = Confections.AnyConfectionRecipeEntity
 > {
   // ---- Composite Identity (runtime-specific) ----
 
@@ -1056,72 +1050,72 @@ export interface IConfectionBase<
   /** Optional description */
   readonly description?: string;
 
-  /** Base tags for searching/filtering (version may add more) */
+  /** Base tags for searching/filtering (variation may add more) */
   readonly tags?: ReadonlyArray<string>;
 
-  /** Base URLs (version may add more) */
+  /** Base URLs (variation may add more) */
   readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
-  /** The ID of the golden (approved default) version */
-  readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
+  /** The ID of the golden (approved default) variation */
+  readonly goldenVariationSpec: ConfectionRecipeVariationSpec;
 
-  // ---- Version navigation ----
+  // ---- Variation navigation ----
 
   /**
-   * The golden (default) version - resolved.
+   * The golden (default) variation - resolved.
    */
-  readonly goldenVersion: TVersion;
+  readonly goldenVariation: TVariation;
 
   /**
-   * All versions - resolved.
+   * All variations - resolved.
    */
-  readonly versions: ReadonlyArray<TVersion>;
+  readonly variations: ReadonlyArray<TVariation>;
 
   /**
-   * Gets a specific version by version specifier.
-   * @param versionSpec - The version specifier to find
-   * @returns Success with runtime version, or Failure if not found
+   * Gets a specific variation by variation specifier.
+   * @param variationSpec - The variation specifier to find
+   * @returns Success with runtime variation, or Failure if not found
    */
-  getVersion(versionSpec: ConfectionRecipeVariationSpec): Result<TVersion>;
+  getVariation(variationSpec: ConfectionRecipeVariationSpec): Result<TVariation>;
 
-  // ---- Effective tags/urls (merged from base + version) ----
+  // ---- Effective tags/urls (merged from base + variation) ----
 
   /**
-   * Gets effective tags for the golden version (base + version's additional tags).
+   * Gets effective tags for the golden variation (base + variation's additional tags).
    */
   readonly effectiveTags: ReadonlyArray<string>;
 
   /**
-   * Gets effective URLs for the golden version (base + version's additional URLs).
+   * Gets effective URLs for the golden variation (base + variation's additional URLs).
    */
   readonly effectiveUrls: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   /**
-   * Gets effective tags for a specific version.
-   * @param version - The version to get tags for (defaults to golden version)
+   * Gets effective tags for a specific variation.
+   * @param variation - The variation to get tags for (defaults to golden variation)
    */
-  getEffectiveTags(version?: Confections.AnyConfectionVersionEntity): ReadonlyArray<string>;
+  getEffectiveTags(variation?: Confections.AnyConfectionRecipeVariationEntity): ReadonlyArray<string>;
 
   /**
-   * Gets effective URLs for a specific version.
-   * @param version - The version to get URLs for (defaults to golden version)
+   * Gets effective URLs for a specific variation.
+   * @param variation - The variation to get URLs for (defaults to golden variation)
    */
   getEffectiveUrls(
-    version?: Confections.AnyConfectionVersionEntity
+    variation?: Confections.AnyConfectionRecipeVariationEntity
   ): ReadonlyArray<CommonModel.ICategorizedUrl>;
 
-  // ---- Convenience accessors for golden version properties ----
+  // ---- Convenience accessors for golden variation properties ----
 
-  /** Decorations from the golden version */
+  /** Decorations from the golden variation */
   readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
 
-  /** Yield specification from the golden version */
+  /** Yield specification from the golden variation */
   readonly yield: Confections.IConfectionYield;
 
-  /** Resolved filling slots from the golden version */
+  /** Resolved filling slots from the golden variation */
   readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
 
-  /** Resolved procedures from the golden version */
+  /** Resolved procedures from the golden variation */
   readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 
   // ---- Type narrowing methods ----
@@ -1130,19 +1124,19 @@ export interface IConfectionBase<
    * Returns true if this is a molded bonbon confection.
    * When true, molded bonbon-specific properties are available.
    */
-  isMoldedBonBon(): this is IMoldedBonBon;
+  isMoldedBonBon(): this is IMoldedBonBonRecipe;
 
   /**
    * Returns true if this is a bar truffle confection.
    * When true, bar truffle-specific properties are available.
    */
-  isBarTruffle(): this is IBarTruffle;
+  isBarTruffle(): this is IBarTruffleRecipe;
 
   /**
    * Returns true if this is a rolled truffle confection.
    * When true, rolled truffle-specific properties are available.
    */
-  isRolledTruffle(): this is IRolledTruffle;
+  isRolledTruffle(): this is IRolledTruffleRecipe;
 
   /**
    * Gets the underlying confection entity data.
@@ -1154,18 +1148,18 @@ export interface IConfectionBase<
  * Runtime confection narrowed to molded bonbon type.
  * @public
  */
-export interface IMoldedBonBon
-  extends IConfectionBase<IMoldedBonBonVersion, Confections.IMoldedBonBonEntity> {
+export interface IMoldedBonBonRecipe
+  extends IConfectionBase<IMoldedBonBonRecipeVariation, Confections.MoldedBonBonRecipeEntity> {
   /** Type is always 'molded-bonbon' for this confection */
   readonly confectionType: 'molded-bonbon';
 
-  /** Resolved molds with preferred selection (from golden version) */
+  /** Resolved molds with preferred selection (from golden variation) */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
-  /** Resolved shell chocolate specification (from golden version) */
+  /** Resolved shell chocolate specification (from golden variation) */
   readonly shellChocolate: IResolvedChocolateSpec;
 
-  /** Resolved additional chocolates (from golden version) */
+  /** Resolved additional chocolates (from golden variation) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 }
 
@@ -1173,17 +1167,18 @@ export interface IMoldedBonBon
  * Runtime confection narrowed to bar truffle type.
  * @public
  */
-export interface IBarTruffle extends IConfectionBase<IBarTruffleVersion, Confections.IBarTruffleEntity> {
+export interface IBarTruffleRecipe
+  extends IConfectionBase<IBarTruffleRecipeVariation, Confections.BarTruffleRecipeEntity> {
   /** Type is always 'bar-truffle' for this confection */
   readonly confectionType: 'bar-truffle';
 
-  /** Frame dimensions from the golden version */
+  /** Frame dimensions from the golden variation */
   readonly frameDimensions: Confections.IFrameDimensions;
 
-  /** Single bonbon dimensions from the golden version */
+  /** Single bonbon dimensions from the golden variation */
   readonly singleBonBonDimensions: Confections.IBonBonDimensions;
 
-  /** Resolved enrobing chocolate (from golden version, optional) */
+  /** Resolved enrobing chocolate (from golden variation, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 }
 
@@ -1191,15 +1186,15 @@ export interface IBarTruffle extends IConfectionBase<IBarTruffleVersion, Confect
  * Runtime confection narrowed to rolled truffle type.
  * @public
  */
-export interface IRolledTruffle
-  extends IConfectionBase<IRolledTruffleVersion, Confections.IRolledTruffleEntity> {
+export interface IRolledTruffleRecipe
+  extends IConfectionBase<IRolledTruffleRecipeVariation, Confections.RolledTruffleRecipeEntity> {
   /** Type is always 'rolled-truffle' for this confection */
   readonly confectionType: 'rolled-truffle';
 
-  /** Resolved enrobing chocolate (from golden version, optional) */
+  /** Resolved enrobing chocolate (from golden variation, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
-  /** Resolved coatings (from golden version, optional) */
+  /** Resolved coatings (from golden variation, optional) */
   readonly coatings?: IResolvedCoatings;
 }
 
@@ -1359,35 +1354,35 @@ export interface IResolvedCoatingOption {
 }
 
 // ============================================================================
-// Runtime Confection Version Interfaces
+// Runtime Confection Variation Interfaces
 // ============================================================================
 
 /**
- * A resolved runtime view of a confection version with resolved references.
+ * A resolved runtime view of a confection variation with resolved references.
  *
- * This interface provides runtime-layer access to version data with:
+ * This interface provides runtime-layer access to variation data with:
  * - Parent confection reference (ID and resolved object)
  * - Resolved filling slots and procedures
- * - Effective tags/urls (merged from base confection + version)
- * - Access to underlying recipe version entity data
+ * - Effective tags/urls (merged from base confection + variation)
+ * - Access to underlying recipe variation entity data
  *
- * @typeParam TConfection - The specific confection type for this version
- * @typeParam TEntity - The specific entity type for this version
+ * @typeParam TConfection - The specific confection type for this variation
+ * @typeParam TEntity - The specific entity type for this variation
  * @public
  */
-export interface IConfectionVersionBase<
+export interface IConfectionRecipeVariationBase<
   TConfection extends IConfectionBase = IConfectionBase,
-  TEntity extends Confections.AnyConfectionVersionEntity = Confections.AnyConfectionVersionEntity
+  TEntity extends Confections.AnyConfectionRecipeVariationEntity = Confections.AnyConfectionRecipeVariationEntity
 > {
   // ---- Identity ----
 
   /**
-   * Version specifier for this version.
+   * Variation specifier for this variation.
    */
-  readonly versionSpec: ConfectionRecipeVariationSpec;
+  readonly variationSpec: ConfectionRecipeVariationSpec;
 
   /**
-   * Date this version was created (ISO 8601 format).
+   * Date this variation was created (ISO 8601 format).
    */
   readonly createdDate: string;
 
@@ -1398,82 +1393,85 @@ export interface IConfectionVersionBase<
 
   /**
    * The parent confection - resolved.
-   * Enables navigation: `version.confection.name`
+   * Enables navigation: `variation.confection.name`
    */
   readonly confection: TConfection;
 
-  // ---- Version Properties ----
+  // ---- Variation Properties ----
 
   /**
-   * Yield specification for this version.
+   * Yield specification for this variation.
    */
   readonly yield: Confections.IConfectionYield;
 
   /**
-   * Optional decorations for this version.
+   * Optional decorations for this variation.
    */
   readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
 
   /**
-   * Optional notes about this version.
+   * Optional notes about this variation.
    */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 
   // ---- Resolved References ----
 
   /**
-   * Resolved filling slots for this version.
-   * Undefined if the version has no fillings.
+   * Resolved filling slots for this variation.
+   * Undefined if the variation has no fillings.
    */
   readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
 
   /**
-   * Resolved procedures for this version.
-   * Undefined if the version has no procedures.
+   * Resolved procedures for this variation.
+   * Undefined if the variation has no procedures.
    */
   readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 
   // ---- Effective Tags/URLs ----
 
   /**
-   * Effective tags for this version (base confection tags + version's additional tags).
+   * Effective tags for this variation (base confection tags + variation's additional tags).
    */
   readonly effectiveTags: ReadonlyArray<string>;
 
   /**
-   * Effective URLs for this version (base confection URLs + version's additional URLs).
+   * Effective URLs for this variation (base confection URLs + variation's additional URLs).
    */
   readonly effectiveUrls: ReadonlyArray<CommonModel.ICategorizedUrl>;
 
   // ---- Type Guards ----
 
   /**
-   * Returns true if this is a molded bonbon version.
+   * Returns true if this is a molded bonbon variation.
    */
-  isMoldedBonBonVersion(): this is IMoldedBonBonVersion;
+  isMoldedBonBonVariation(): this is IMoldedBonBonRecipeVariation;
 
   /**
-   * Returns true if this is a bar truffle version.
+   * Returns true if this is a bar truffle variation.
    */
-  isBarTruffleVersion(): this is IBarTruffleVersion;
+  isBarTruffleVariation(): this is IBarTruffleRecipeVariation;
 
   /**
-   * Returns true if this is a rolled truffle version.
+   * Returns true if this is a rolled truffle variation.
    */
-  isRolledTruffleVersion(): this is IRolledTruffleVersion;
+  isRolledTruffleVariation(): this is IRolledTruffleRecipeVariation;
 
   /**
-   * Gets the underlying recipe version entity data.
+   * Gets the underlying recipe variation entity data.
    */
   readonly entity: TEntity;
 }
 
 /**
- * Runtime confection version narrowed to molded bonbon type.
+ * Runtime confection variation narrowed to molded bonbon type.
  * @public
  */
-export interface IMoldedBonBonVersion
-  extends IConfectionVersionBase<IMoldedBonBon, Confections.IMoldedBonBonVersionEntity> {
+export interface IMoldedBonBonRecipeVariation
+  extends IConfectionRecipeVariationBase<
+    IMoldedBonBonRecipe,
+    Confections.IMoldedBonBonRecipeVariationEntity
+  > {
   /** Resolved molds with preferred selection */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
@@ -1491,11 +1489,11 @@ export interface IMoldedBonBonVersion
 }
 
 /**
- * Runtime confection version narrowed to bar truffle type.
+ * Runtime confection variation narrowed to bar truffle type.
  * @public
  */
-export interface IBarTruffleVersion
-  extends IConfectionVersionBase<IBarTruffle, Confections.IBarTruffleVersionEntity> {
+export interface IBarTruffleRecipeVariation
+  extends IConfectionRecipeVariationBase<IBarTruffleRecipe, Confections.IBarTruffleRecipeVariationEntity> {
   /** Frame dimensions for ganache slab */
   readonly frameDimensions: Confections.IFrameDimensions;
 
@@ -1510,11 +1508,14 @@ export interface IBarTruffleVersion
 }
 
 /**
- * Runtime confection version narrowed to rolled truffle type.
+ * Runtime confection variation narrowed to rolled truffle type.
  * @public
  */
-export interface IRolledTruffleVersion
-  extends IConfectionVersionBase<IRolledTruffle, Confections.IRolledTruffleVersionEntity> {
+export interface IRolledTruffleRecipeVariation
+  extends IConfectionRecipeVariationBase<
+    IRolledTruffleRecipe,
+    Confections.IRolledTruffleRecipeVariationEntity
+  > {
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
@@ -1526,21 +1527,24 @@ export interface IRolledTruffleVersion
 }
 
 /**
- * Union type for all runtime confection version types.
+ * Union type for all runtime confection variation types.
  * @public
  */
-export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
+export type AnyConfectionRecipeVariation =
+  | IMoldedBonBonRecipeVariation
+  | IBarTruffleRecipeVariation
+  | IRolledTruffleRecipeVariation;
 
 // ============================================================================
 // Confection Context Interface
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeConfection and RuntimeConfectionVersion.
+ * Minimal context interface for RuntimeConfection and RuntimeConfectionVariation.
  * Provides materialized libraries for resolution.
  * @internal
  */
-export interface IConfectionContext extends IVersionContext<IIngredient> {
+export interface IConfectionContext extends IVariationContext<IIngredient> {
   /**
    * Materialized library of runtime molds.
    * Used for resolving mold references.
@@ -1549,11 +1553,11 @@ export interface IConfectionContext extends IVersionContext<IIngredient> {
 
   /**
    * Materialized library of runtime confections.
-   * Used for parent navigation from versions.
+   * Used for parent navigation from variations.
    */
   readonly confections: MaterializedLibrary<
     ConfectionId,
-    Confections.AnyConfectionEntity,
+    Confections.AnyConfectionRecipeEntity,
     IConfectionBase,
     never
   >;

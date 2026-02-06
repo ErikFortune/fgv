@@ -2,7 +2,7 @@
 
 ## IConfectionBase.tags property
 
-Base tags for searching/filtering (version may add more)
+Base tags for searching/filtering (variation may add more)
 
 **Signature:**
 

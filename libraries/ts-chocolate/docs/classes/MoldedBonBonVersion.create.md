@@ -2,12 +2,12 @@
 
 ## MoldedBonBonVersion.create() method
 
-Factory method for creating a MoldedBonBonVersion.
+Factory method for creating a MoldedBonBonRecipeVariation.
 
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, confectionId: ConfectionId, version: IMoldedBonBonVersionEntity): Result<MoldedBonBonVersion>;
+static create(context: IConfectionContext, confectionId: ConfectionId, variation: IMoldedBonBonRecipeVariationEntity): Result<MoldedBonBonVersion>;
 ```
 
 **Parameters:**
@@ -16,11 +16,11 @@ static create(context: IConfectionContext, confectionId: ConfectionId, version: 
 <tbody>
 <tr><td>context</td><td>IConfectionContext</td><td>The runtime context</td></tr>
 <tr><td>confectionId</td><td>ConfectionId</td><td>The parent confection ID</td></tr>
-<tr><td>version</td><td>IMoldedBonBonVersionEntity</td><td>The molded bonbon version data</td></tr>
+<tr><td>variation</td><td>IMoldedBonBonRecipeVariationEntity</td><td>The molded bonbon variation data</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;[MoldedBonBonVersion](MoldedBonBonVersion.md)&gt;
 
-Success with MoldedBonBonVersion
+Success with MoldedBonBonRecipeVariation

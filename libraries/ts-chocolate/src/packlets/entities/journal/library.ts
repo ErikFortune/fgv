@@ -148,9 +148,9 @@ export type IJournalLibraryAsyncParams = ISubLibraryAsyncParams<JournalLibrary, 
  * Provides:
  * - Multi-collection storage with FileTree persistence
  * - Cross-collection lookup by filling ID (all journals for a filling)
- * - Cross-collection lookup by filling version ID (all journals for a specific filling version)
+ * - Cross-collection lookup by filling variation ID (all journals for a specific filling variation)
  * - Cross-collection lookup by confection ID (all journals for a confection)
- * - Cross-collection lookup by confection version ID (all journals for a specific confection version)
+ * - Cross-collection lookup by confection variation ID (all journals for a specific confection variation)
  * - Lazy index rebuilding for efficient queries
  *
  * @public
@@ -163,10 +163,10 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   private readonly _byFillingId: Map<FillingId, Set<JournalId>>;
 
   /**
-   * Index from {@link FillingRecipeVariationId | filling version ID} to {@link JournalId | journal IDs}
+   * Index from {@link FillingRecipeVariationId | filling recipe variation ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byFillingVersionId: Map<FillingRecipeVariationId, Set<JournalId>>;
+  private readonly _byFillingVariationId: Map<FillingRecipeVariationId, Set<JournalId>>;
 
   /**
    * Index from {@link ConfectionId | confection ID} to {@link JournalId | journal IDs}
@@ -175,10 +175,10 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   private readonly _byConfectionId: Map<ConfectionId, Set<JournalId>>;
 
   /**
-   * Index from {@link ConfectionRecipeVariationId | confection version ID} to {@link JournalId | journal IDs}
+   * Index from {@link ConfectionRecipeVariationId | confection recipe variation ID} to {@link JournalId | journal IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byConfectionVersionId: Map<ConfectionRecipeVariationId, Set<JournalId>>;
+  private readonly _byConfectionVariationId: Map<ConfectionRecipeVariationId, Set<JournalId>>;
 
   /**
    * Flag indicating whether indices are valid
@@ -195,9 +195,9 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
       libraryParams: params
     });
     this._byFillingId = new Map();
-    this._byFillingVersionId = new Map();
+    this._byFillingVariationId = new Map();
     this._byConfectionId = new Map();
-    this._byConfectionVersionId = new Map();
+    this._byConfectionVariationId = new Map();
   }
 
   /**
@@ -268,9 +268,9 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
     if (this._indicesValid) return;
 
     this._byFillingId.clear();
-    this._byFillingVersionId.clear();
+    this._byFillingVariationId.clear();
     this._byConfectionId.clear();
-    this._byConfectionVersionId.clear();
+    this._byConfectionVariationId.clear();
 
     // Rebuild from all items across all collections
     // Iterate over entries to get both composite ID (key) and journal (value)
@@ -296,7 +296,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
    * Adds a filling journal to the filling-specific indices
    */
   private _addFillingJournalToIndices(journalId: JournalId, journal: AnyFillingJournalEntry): void {
-    const fillingId = this._extractFillingId(journal.versionId);
+    const fillingId = this._extractFillingId(journal.variationId);
 
     let fillingJournals = this._byFillingId.get(fillingId);
     if (!fillingJournals) {
@@ -305,19 +305,19 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
     }
     fillingJournals.add(journalId);
 
-    let versionJournals = this._byFillingVersionId.get(journal.versionId);
-    if (!versionJournals) {
-      versionJournals = new Set();
-      this._byFillingVersionId.set(journal.versionId, versionJournals);
+    let variationJournals = this._byFillingVariationId.get(journal.variationId);
+    if (!variationJournals) {
+      variationJournals = new Set();
+      this._byFillingVariationId.set(journal.variationId, variationJournals);
     }
-    versionJournals.add(journalId);
+    variationJournals.add(journalId);
   }
 
   /**
    * Adds a confection journal to the confection-specific indices
    */
   private _addConfectionJournalToIndices(journalId: JournalId, journal: AnyConfectionJournalEntry): void {
-    const confectionId = this._extractConfectionId(journal.versionId);
+    const confectionId = this._extractConfectionId(journal.variationId);
 
     let confectionJournals = this._byConfectionId.get(confectionId);
     if (!confectionJournals) {
@@ -326,26 +326,26 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
     }
     confectionJournals.add(journalId);
 
-    let versionJournals = this._byConfectionVersionId.get(journal.versionId);
-    if (!versionJournals) {
-      versionJournals = new Set();
-      this._byConfectionVersionId.set(journal.versionId, versionJournals);
+    let variationJournals = this._byConfectionVariationId.get(journal.variationId);
+    if (!variationJournals) {
+      variationJournals = new Set();
+      this._byConfectionVariationId.set(journal.variationId, variationJournals);
     }
-    versionJournals.add(journalId);
+    variationJournals.add(journalId);
   }
 
   /**
-   * Extracts the FillingId from a FillingVersionId
+   * Extracts the {@link FillingId | FillingId} from a {@link FillingRecipeVariationId | FillingRecipeVariationId}
    */
-  private _extractFillingId(versionId: FillingRecipeVariationId): FillingId {
-    return CommonConverters.parsedFillingRecipeVariationId.convert(versionId).orThrow().collectionId;
+  private _extractFillingId(variationId: FillingRecipeVariationId): FillingId {
+    return CommonConverters.parsedFillingRecipeVariationId.convert(variationId).orThrow().collectionId;
   }
 
   /**
-   * Extracts the ConfectionId from a ConfectionVersionId
+   * Extracts the {@link ConfectionId | ConfectionId} from a {@link ConfectionRecipeVariationId | ConfectionRecipeVariationId}
    */
-  private _extractConfectionId(versionId: ConfectionRecipeVariationId): ConfectionId {
-    return CommonConverters.parsedConfectionRecipeVariationId.convert(versionId).orThrow().collectionId;
+  private _extractConfectionId(variationId: ConfectionRecipeVariationId): ConfectionId {
+    return CommonConverters.parsedConfectionRecipeVariationId.convert(variationId).orThrow().collectionId;
   }
 
   // ============================================================================
@@ -353,7 +353,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   // ============================================================================
 
   /**
-   * Gets all filling journal entries for a filling (across all versions and collections)
+   * Gets all filling journal entries for a filling (across all variations and collections)
    * @param fillingId - The {@link FillingId | filling ID} to search for
    * @returns Array of filling journal entries (empty if none found)
    * @public
@@ -370,16 +370,16 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   }
 
   /**
-   * Gets all filling journal entries for a specific filling version (across all collections)
-   * @param versionId - The {@link FillingRecipeVariationId | filling version ID} to search for
+   * Gets all filling journal entries for a specific filling variation (across all collections)
+   * @param variationId - The {@link FillingRecipeVariationId | filling recipe variation ID} to search for
    * @returns Array of filling journal entries (empty if none found)
    * @public
    */
-  public getJournalsForFillingVersion(
-    versionId: FillingRecipeVariationId
+  public getJournalsForFillingVariation(
+    variationId: FillingRecipeVariationId
   ): ReadonlyArray<AnyFillingJournalEntry> {
     this._ensureIndicesValid();
-    const journalIds = this._byFillingVersionId.get(versionId);
+    const journalIds = this._byFillingVariationId.get(variationId);
     if (!journalIds) {
       return [];
     }
@@ -389,7 +389,7 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   }
 
   /**
-   * Gets all confection journal entries for a confection (across all versions and collections)
+   * Gets all confection journal entries for a confection (across all variations and collections)
    * @param confectionId - The {@link ConfectionId | confection ID} to search for
    * @returns Array of confection journal entries (empty if none found)
    * @public
@@ -406,16 +406,16 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
   }
 
   /**
-   * Gets all confection journal entries for a specific confection version (across all collections)
-   * @param versionId - The {@link ConfectionRecipeVariationId | confection version ID} to search for
+   * Gets all confection journal entries for a specific confection variations (across all collections)
+   * @param variationId - The {@link ConfectionRecipeVariationId | confection variation ID} to search for
    * @returns Array of confection journal entries (empty if none found)
    * @public
    */
-  public getJournalsForConfectionVersion(
-    versionId: ConfectionRecipeVariationId
+  public getJournalsForConfectionVariation(
+    variationId: ConfectionRecipeVariationId
   ): ReadonlyArray<AnyConfectionJournalEntry> {
     this._ensureIndicesValid();
-    const journalIds = this._byConfectionVersionId.get(versionId);
+    const journalIds = this._byConfectionVariationId.get(variationId);
     if (!journalIds) {
       return [];
     }

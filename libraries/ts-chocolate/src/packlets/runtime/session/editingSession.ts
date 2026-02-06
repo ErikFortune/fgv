@@ -45,10 +45,10 @@ import {
   IProducedFillingEntity,
   PersistedSessionStatus
 } from '../../entities';
-import { IFillingRecipeVersion, ProducedFilling } from '../../library-runtime';
+import { IFillingRecipeVariation, ProducedFilling } from '../../library-runtime';
 import {
   ISaveAnalysis,
-  ISaveVersionOptions,
+  ISaveVariationOptions,
   ISaveAlternativesOptions,
   ISaveNewRecipeOptions,
   ISaveResult
@@ -72,7 +72,7 @@ import {
  * @public
  */
 export class EditingSession {
-  private readonly _baseRecipe: IFillingRecipeVersion;
+  private readonly _baseRecipe: IFillingRecipeVariation;
   private readonly _produced: ProducedFilling;
   private readonly _originalSnapshot: IProducedFillingEntity;
   private readonly _sessionId: SessionSpec;
@@ -87,7 +87,7 @@ export class EditingSession {
    * @internal
    */
   private constructor(
-    baseRecipe: IFillingRecipeVersion,
+    baseRecipe: IFillingRecipeVariation,
     produced: ProducedFilling,
     sessionId?: SessionSpec,
     originalSnapshot?: IProducedFillingEntity
@@ -105,7 +105,7 @@ export class EditingSession {
    * @returns Result with new EditingSession or error
    * @public
    */
-  public static create(baseRecipe: IFillingRecipeVersion, initialScale?: number): Result<EditingSession> {
+  public static create(baseRecipe: IFillingRecipeVariation, initialScale?: number): Result<EditingSession> {
     const scaleFactor = initialScale ?? 1.0;
     if (scaleFactor <= 0) {
       return fail('Scale factor must be positive');
@@ -236,10 +236,10 @@ export class EditingSession {
     const isMutable = true;
 
     return {
-      canCreateVersion: isMutable,
+      canCreateVariation: isMutable,
       canAddAlternatives: isMutable && changes.ingredientsChanged,
       mustCreateNew: !isMutable,
-      recommendedOption: !isMutable ? 'new' : changes.ingredientsChanged ? 'alternatives' : 'version',
+      recommendedOption: !isMutable ? 'new' : changes.ingredientsChanged ? 'alternatives' : 'variation',
       changes: {
         ingredientsAdded: changes.ingredientsChanged,
         ingredientsRemoved: changes.ingredientsChanged,
@@ -261,9 +261,9 @@ export class EditingSession {
    * @returns Result with save result containing journal entry and version spec
    * @public
    */
-  public saveAsNewVersion(options: ISaveVersionOptions): Result<ISaveResult> {
+  public saveAsNewVariation(options: ISaveVariationOptions): Result<ISaveResult> {
     const analysis = this.analyzeSaveOptions();
-    if (!analysis.canCreateVersion) {
+    if (!analysis.canCreateVariation) {
       return fail('Cannot create new version: collection is immutable');
     }
 
@@ -271,11 +271,11 @@ export class EditingSession {
 
     // TODO: Implement producedToSource conversion when needed
     // For now, just create the journal entry
-    return this._createJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
+    return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
         journalId: journalEntry.baseId,
         journalEntry,
-        newVersionSpec: options.versionSpec
+        newVariationSpec: options.variationSpec
       })
     );
   }
@@ -297,11 +297,11 @@ export class EditingSession {
 
     // TODO: Implement alternatives logic - merge new ingredients as options
     // For now, return placeholder result
-    return this._createJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
+    return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
         journalId: journalEntry.baseId,
         journalEntry,
-        newVersionSpec: options.versionSpec
+        newVersionSpec: options.variationSpec
       })
     );
   }
@@ -318,11 +318,11 @@ export class EditingSession {
 
     // TODO: Implement producedToSource conversion when needed
     // For now, just create the journal entry
-    return this._createJournalEntry(options.versionSpec, sessionNotes).onSuccess((journalEntry) =>
+    return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
         journalId: journalEntry.baseId,
         journalEntry,
-        newVersionSpec: options.versionSpec
+        newVersionSpec: options.variationSpec
       })
     );
   }
@@ -357,8 +357,8 @@ export class EditingSession {
         type: 'filling-production' as const,
         baseId,
         timestamp: getCurrentTimestamp(),
-        versionId: this._baseRecipe.versionId,
-        recipe: this._baseRecipe.version,
+        variationId: this._baseRecipe.variationId,
+        recipe: this._baseRecipe.entity,
         yield: this._produced.targetWeight,
         produced: this._produced.snapshot,
         notes
@@ -399,7 +399,7 @@ export class EditingSession {
         destination: {
           defaultCollectionId: options.collectionId
         },
-        sourceVersionId: this._baseRecipe.versionId,
+        sourceVariationId: this._baseRecipe.variationId,
         history: this._produced.getSerializedHistory(this._originalSnapshot)
       };
       return succeed(session);
@@ -416,12 +416,12 @@ export class EditingSession {
    */
   public static fromPersistedState(
     data: IFillingSessionEntity,
-    baseRecipe: IFillingRecipeVersion
+    baseRecipe: IFillingRecipeVariation
   ): Result<EditingSession> {
     // Validate that the persisted state matches the base recipe
-    if (data.sourceVersionId !== baseRecipe.versionId) {
+    if (data.sourceVariationId !== baseRecipe.variationId) {
       return fail(
-        `Version mismatch: persisted session is for ${data.sourceVersionId} but base recipe is ${baseRecipe.versionId}`
+        `Version mismatch: persisted session is for ${data.sourceVariationId} but base recipe is ${baseRecipe.variationId}`
       );
     }
 
@@ -449,7 +449,7 @@ export class EditingSession {
    * The base recipe version being edited.
    * @public
    */
-  public get baseRecipe(): IFillingRecipeVersion {
+  public get baseRecipe(): IFillingRecipeVariation {
     return this._baseRecipe;
   }
 
@@ -485,18 +485,20 @@ export class EditingSession {
    * Creates an edit journal entry.
    */
   private _createJournalEntry(
-    updatedVersionSpec: string | undefined,
+    updatedVariationSpec: string | undefined,
     notes: CommonModel.ICategorizedNote[] | undefined
   ): Result<IFillingEditJournalEntryEntity> {
     return generateJournalId().onSuccess((baseId) => {
       // Create updated version ID if needed
-      const updatedIdResult = updatedVersionSpec
-        ? CommonConverters.fillingRecipeVariationSpec.convert(updatedVersionSpec).onSuccess((versionSpec) =>
-            CommonHelpers.createFillingRecipeVariationIdValidated({
-              collectionId: CommonHelpers.getFillingRecipeVariationFillingId(this._baseRecipe.versionId),
-              itemId: versionSpec
-            })
-          )
+      const updatedIdResult = updatedVariationSpec
+        ? CommonConverters.fillingRecipeVariationSpec
+            .convert(updatedVariationSpec)
+            .onSuccess((variationSpec) =>
+              CommonHelpers.createFillingRecipeVariationIdValidated({
+                collectionId: CommonHelpers.getFillingRecipeVariationFillingId(this._baseRecipe.variationId),
+                itemId: variationSpec
+              })
+            )
         : succeed(undefined);
 
       return updatedIdResult.onSuccess((updatedId) =>
@@ -504,9 +506,9 @@ export class EditingSession {
           type: 'filling-edit' as const,
           baseId,
           timestamp: getCurrentTimestamp(),
-          versionId: this._baseRecipe.versionId,
-          recipe: this._baseRecipe.version,
-          updated: updatedVersionSpec ? this._baseRecipe.version : undefined,
+          variationId: this._baseRecipe.variationId,
+          recipe: this._baseRecipe.entity,
+          updated: updatedVariationSpec ? this._baseRecipe.entity : undefined,
           updatedId,
           notes
         })

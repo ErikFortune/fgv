@@ -7,5 +7,5 @@ Resolves and calculates characteristics for a complete recipe
 ## Signature
 
 ```typescript
-function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver, versionSpec: FillingRecipeVariationSpec): Result<IGanacheAnalysis>
+function calculateForFillingRecipe(recipe: IFillingRecipeEntity, resolver: IngredientResolver, variationSpec: FillingRecipeVariationSpec): Result<IGanacheAnalysis>
 ```

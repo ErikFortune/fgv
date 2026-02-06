@@ -3,7 +3,7 @@
 ## FillingRecipeVersion.fillingRecipe property
 
 The parent filling recipe - resolved.
-Enables navigation: `version.fillingRecipe.name`
+Enables navigation: `variation.fillingRecipe.name`
 
 **Signature:**
 

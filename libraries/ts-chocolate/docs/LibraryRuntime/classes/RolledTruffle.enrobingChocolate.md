@@ -2,7 +2,7 @@
 
 ## RolledTruffle.enrobingChocolate property
 
-Resolved enrobing chocolate specification (from golden version, optional).
+Resolved enrobing chocolate specification (from golden variation, optional).
 
 **Signature:**
 

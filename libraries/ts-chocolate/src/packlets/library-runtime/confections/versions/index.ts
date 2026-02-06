@@ -19,15 +19,15 @@
 // SOFTWARE.
 
 /**
- * Runtime confection version classes
+ * Runtime confection variations classes
  *
- * Provides runtime wrappers for confection versions with lazy resolution,
+ * Provides runtime wrappers for confection variations with lazy resolution,
  * parent navigation, and type-specific properties.
  *
  * @packageDocumentation
  */
 
-export { ConfectionVersionBase } from './confectionVersionBase';
-export { MoldedBonBonVersion } from './moldedBonBonVersion';
-export { BarTruffleVersion } from './barTruffleVersion';
-export { RolledTruffleVersion } from './rolledTruffleVersion';
+export { ConfectionRecipeVariationBase } from './confectionVersionBase';
+export { MoldedBonBonRecipeVariation } from './moldedBonBonVersion';
+export { BarTruffleRecipeVariation } from './barTruffleVersion';
+export { RolledTruffleRecipeVariation } from './rolledTruffleVersion';

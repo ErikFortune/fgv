@@ -2,11 +2,11 @@
 
 # Class: RolledTruffleVersion
 
-A resolved view of a rolled truffle version with all references resolved.
+A view of a rolled truffle recipe variation with all references resolved.
 
-**Extends:** [`ConfectionVersionBase<IRolledTruffle, IRolledTruffleVersionEntity>`](../../classes/ConfectionVersionBase.md)
+**Extends:** [`ConfectionVersionBase<IRolledTruffleRecipe, IRolledTruffleRecipeVariationEntity>`](../../classes/ConfectionVersionBase.md)
 
-**Implements:** [`IRolledTruffleVersion`](../../interfaces/IRolledTruffleVersion.md)
+**Implements:** [`IRolledTruffleRecipeVariation`](../../interfaces/IRolledTruffleRecipeVariation.md)
 
 ## Properties
 
@@ -89,16 +89,16 @@ Gets the preferred procedure, falling back to first available.
 
 </td><td>
 
-[IRolledTruffleVersionEntity](../../interfaces/IRolledTruffleVersionEntity.md)
+[IRolledTruffleRecipeVariationEntity](../../interfaces/IRolledTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Gets the underlying rolled truffle version entity data.
+Gets the underlying rolled truffle variation entity data.
 
 </td></tr>
 <tr><td>
 
-[versionSpec](./ConfectionVersionBase.versionSpec.md)
+[variationSpec](./ConfectionVersionBase.variationSpec.md)
 
 </td><td>
 
@@ -110,7 +110,7 @@ Gets the underlying rolled truffle version entity data.
 
 </td><td>
 
-Version specifier for this version.
+Variation specifier for this variation.
 
 </td></tr>
 <tr><td>
@@ -127,7 +127,7 @@ string
 
 </td><td>
 
-Date this version was created (ISO 8601 format).
+Date this variation was created (ISO 8601 format).
 
 </td></tr>
 <tr><td>
@@ -195,7 +195,7 @@ The runtime context for navigation and resource resolution.
 
 </td><td>
 
-Yield specification for this version.
+Yield specification for this variation.
 
 </td></tr>
 <tr><td>
@@ -212,7 +212,7 @@ readonly [IConfectionDecoration](../../interfaces/IConfectionDecoration.md)[] | 
 
 </td><td>
 
-Optional decorations for this version.
+Optional decorations for this variation.
 
 </td></tr>
 <tr><td>
@@ -229,7 +229,7 @@ readonly [ICategorizedNote](../../interfaces/ICategorizedNote.md)[] | undefined
 
 </td><td>
 
-Optional categorized notes about this version.
+Optional categorized notes about this variation.
 
 </td></tr>
 <tr><td>
@@ -246,7 +246,7 @@ readonly [IResolvedFillingSlot](../../interfaces/IResolvedFillingSlot.md)[] | un
 
 </td><td>
 
-Resolved filling slots for this version.
+Resolved filling slots for this variation.
 
 </td></tr>
 <tr><td>
@@ -263,7 +263,7 @@ Resolved filling slots for this version.
 
 </td><td>
 
-Resolved procedures for this version.
+Resolved procedures for this variation.
 
 </td></tr>
 <tr><td>
@@ -280,7 +280,7 @@ readonly string[]
 
 </td><td>
 
-Effective tags for this version (base confection tags + version's additional tags).
+Effective tags for this variation (base confection tags + variation's additional tags).
 
 </td></tr>
 <tr><td>
@@ -297,7 +297,7 @@ readonly [ICategorizedUrl](../../interfaces/ICategorizedUrl.md)[]
 
 </td><td>
 
-Effective URLs for this version (base confection URLs + version's additional URLs).
+Effective URLs for this variation (base confection URLs + variation's additional URLs).
 
 </td></tr>
 </tbody></table>
@@ -320,7 +320,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(context, confectionId, version)](./RolledTruffleVersion.create.md)
+[create(context, confectionId, variation)](./RolledTruffleVersion.create.md)
 
 </td><td>
 
@@ -328,7 +328,7 @@ Description
 
 </td><td>
 
-Factory method for creating a RolledTruffleVersion.
+Factory method for creating a LibraryRuntime.Confections.RolledTruffleRecipeVariation.
 
 </td></tr>
 <tr><td>
@@ -367,7 +367,7 @@ Gets resolved coatings specification (lazy-loaded).
 
 </td><td>
 
-Gets resolved filling slots for this version.
+Gets resolved filling slots for this variation.
 
 </td></tr>
 <tr><td>
@@ -380,12 +380,12 @@ Gets resolved filling slots for this version.
 
 </td><td>
 
-Gets resolved procedures for this version.
+Gets resolved procedures for this variation.
 
 </td></tr>
 <tr><td>
 
-[isMoldedBonBonVersion()](./ConfectionVersionBase.isMoldedBonBonVersion.md)
+[isMoldedBonBonVariation()](./ConfectionVersionBase.isMoldedBonBonVariation.md)
 
 </td><td>
 
@@ -393,12 +393,12 @@ Gets resolved procedures for this version.
 
 </td><td>
 
-Returns true if this is a molded bonbon version.
+Returns true if this is a molded bonbon variation.
 
 </td></tr>
 <tr><td>
 
-[isBarTruffleVersion()](./ConfectionVersionBase.isBarTruffleVersion.md)
+[isBarTruffleVariation()](./ConfectionVersionBase.isBarTruffleVariation.md)
 
 </td><td>
 
@@ -406,12 +406,12 @@ Returns true if this is a molded bonbon version.
 
 </td><td>
 
-Returns true if this is a bar truffle version.
+Returns true if this is a bar truffle variation.
 
 </td></tr>
 <tr><td>
 
-[isRolledTruffleVersion()](./ConfectionVersionBase.isRolledTruffleVersion.md)
+[isRolledTruffleVariation()](./ConfectionVersionBase.isRolledTruffleVariation.md)
 
 </td><td>
 
@@ -419,7 +419,7 @@ Returns true if this is a bar truffle version.
 
 </td><td>
 
-Returns true if this is a rolled truffle version.
+Returns true if this is a rolled truffle variation.
 
 </td></tr>
 </tbody></table>

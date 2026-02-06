@@ -2,7 +2,7 @@
 
 ## IConfectionBase.urls property
 
-Base URLs (version may add more)
+Base URLs (variation may add more)
 
 **Signature:**
 

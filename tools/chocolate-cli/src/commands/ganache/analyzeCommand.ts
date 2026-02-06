@@ -41,7 +41,7 @@ import {
  * Options for ganache analyze command
  */
 interface IGanacheAnalyzeOptions extends IEntityBaseOptions {
-  version?: string;
+  variation?: string;
 }
 
 /**
@@ -50,12 +50,12 @@ interface IGanacheAnalyzeOptions extends IEntityBaseOptions {
 function formatGanacheHuman(
   calculation: LibraryRuntime.IGanacheCalculation,
   fillingId: FillingId,
-  versionSpec: FillingRecipeVariationSpec
+  variationSpec: FillingRecipeVariationSpec
 ): string {
   const lines: string[] = [];
 
   lines.push(`Ganache Analysis for: ${fillingId}`);
-  lines.push(`Version: ${versionSpec}`);
+  lines.push(`Variation: ${variationSpec}`);
   lines.push(`Total Weight: ${calculation.analysis.totalWeight}g`);
 
   lines.push('');
@@ -120,8 +120,8 @@ export function createAnalyzeSubcommand(): Command {
   cmd
     .description('Analyze ganache composition for a filling recipe')
     .argument('<fillingId>', 'Filling ID to analyze (e.g., "common.dark-ganache-classic")')
-    .option('--version <spec>', 'Analyze a specific version (default: golden version)')
-    .action(async (fillingIdArg: string, localOptions: { version?: string }) => {
+    .option('--variation <spec>', 'Analyze a specific variation (default: golden variation)')
+    .action(async (fillingIdArg: string, localOptions: { variation?: string }) => {
       // Merge with parent options
       const parentOptions = cmd.optsWithGlobals() as IGanacheAnalyzeOptions;
       const options: IGanacheAnalyzeOptions = {
@@ -161,21 +161,21 @@ export function createAnalyzeSubcommand(): Command {
       }
       const filling = fillingResult.value;
 
-      // Validate version spec if provided
-      let versionSpec: FillingRecipeVariationSpec | undefined;
-      if (options.version) {
-        const versionResult = Converters.fillingRecipeVariationSpec.convert(options.version);
-        if (versionResult.isFailure()) {
-          console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
+      // Validate variation spec if provided
+      let variationSpec: FillingRecipeVariationSpec | undefined;
+      if (options.variation) {
+        const variationResult = Converters.fillingRecipeVariationSpec.convert(options.variation);
+        if (variationResult.isFailure()) {
+          console.error(`Invalid variation spec "${options.variation}": ${variationResult.message}`);
           process.exit(1);
         }
-        versionSpec = versionResult.value;
+        variationSpec = variationResult.value;
 
-        // Check that the version exists
-        const version = filling.versions.find((v) => v.versionSpec === versionSpec);
-        if (!version) {
-          console.error(`Version ${versionSpec} not found in filling ${fillingId}`);
-          console.error(`Available versions: ${filling.versions.map((v) => v.versionSpec).join(', ')}`);
+        // Check that the variation exists
+        const variation = filling.variations.find((v) => v.variationSpec === variationSpec);
+        if (!variation) {
+          console.error(`Variation ${variationSpec} not found in filling ${fillingId}`);
+          console.error(`Available variations: ${filling.variations.map((v) => v.variationSpec).join(', ')}`);
           process.exit(1);
         }
       }
@@ -184,7 +184,7 @@ export function createAnalyzeSubcommand(): Command {
       const calculationResult = LibraryRuntime.Internal.calculateGanache(
         filling,
         (ingredientId: IngredientId) => ingredientsLibrary.get(ingredientId),
-        versionSpec
+        variationSpec
       );
 
       if (calculationResult.isFailure()) {
@@ -194,7 +194,7 @@ export function createAnalyzeSubcommand(): Command {
       const calculation = calculationResult.value;
 
       const format = (options.format ?? 'human') as OutputFormat;
-      const targetVersionSpec = versionSpec ?? filling.goldenVersionSpec;
+      const targetVariationSpec = variationSpec ?? filling.goldenVariationSpec;
 
       // Format and output
       switch (format) {
@@ -207,7 +207,7 @@ export function createAnalyzeSubcommand(): Command {
         case 'table':
         case 'human':
         default:
-          console.log(formatGanacheHuman(calculation, fillingId, targetVersionSpec));
+          console.log(formatGanacheHuman(calculation, fillingId, targetVariationSpec));
           break;
       }
     });

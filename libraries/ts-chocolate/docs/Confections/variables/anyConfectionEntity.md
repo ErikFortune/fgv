@@ -3,9 +3,9 @@
 # Variable: anyConfectionEntity
 
 Converter for Entities.Confections.AnyConfectionEntity | AnyConfectionEntity with validation.
-Validates that goldenVersionSpec exists in versions.
+Validates that goldenVariationSpec exists in variations.
 Returns the plain data object (discriminated union), not a class instance.
 
 ## Type
 
-`Converter<AnyConfectionEntity>`
+`Converter<AnyConfectionRecipeEntity>`

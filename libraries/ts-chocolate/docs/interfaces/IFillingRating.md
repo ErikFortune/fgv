@@ -2,7 +2,7 @@
 
 # Interface: IFillingRating
 
-Rating for a specific category of a filling recipe version
+Rating for a specific category of a filling recipe variation
 
 ## Properties
 

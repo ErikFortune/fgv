@@ -7,5 +7,5 @@ Initialization type for a ConfectionsLibrary collection entry.
 ## Type
 
 ```typescript
-type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfectionEntity>
+type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfectionRecipeEntity>
 ```

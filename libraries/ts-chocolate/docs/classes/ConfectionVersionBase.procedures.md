@@ -2,8 +2,8 @@
 
 ## ConfectionVersionBase.procedures property
 
-Resolved procedures for this version.
-Undefined if the version has no procedures.
+Resolved procedures for this variation.
+Undefined if the variation has no procedures.
 
 **Signature:**
 

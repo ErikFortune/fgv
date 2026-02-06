@@ -34,7 +34,7 @@ import {
 import {
   Fillings,
   IFillingRecipeEntity,
-  IFillingRecipeVersionEntity,
+  IFillingRecipeVariationEntity,
   FillingsLibrary
 } from '../../../packlets/entities';
 
@@ -45,8 +45,8 @@ describe('FillingsLibrary', () => {
   // Test Data
   // ============================================================================
 
-  const testRecipeVersion: IFillingRecipeVersionEntity = {
-    versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+  const testRecipeVariation: IFillingRecipeVariationEntity = {
+    variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
     createdDate: '2026-01-01',
     ingredients: [
       { ingredient: { ids: ['felchlin.maracaibo-65' as IngredientId] }, amount: 100 as Measurement },
@@ -62,8 +62,8 @@ describe('FillingsLibrary', () => {
     category: 'ganache',
     description: 'A test ganache recipe',
     tags: ['test', 'dark'],
-    versions: [testRecipeVersion],
-    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
+    variations: [testRecipeVariation],
+    goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
   };
 
   const testRecipe = testRecipeData;
@@ -330,10 +330,10 @@ describe('FillingsLibrary', () => {
           category: 'ganache',
           description: 'A test recipe',
           tags: ['test'],
-          goldenVersionSpec: '2026-01-01-01',
-          versions: [
+          goldenVariationSpec: '2026-01-01-01',
+          variations: [
             {
-              versionSpec: '2026-01-01-01',
+              variationSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
               ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 100 }],
               baseWeight: 100
@@ -349,10 +349,10 @@ describe('FillingsLibrary', () => {
           baseId: 'other-recipe',
           name: 'Other Recipe',
           category: 'ganache',
-          goldenVersionSpec: '2026-01-01-01',
-          versions: [
+          goldenVariationSpec: '2026-01-01-01',
+          variations: [
             {
-              versionSpec: '2026-01-01-01',
+              variationSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
               ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 200 }],
               baseWeight: 200
@@ -517,10 +517,10 @@ describe('FillingsLibrary', () => {
           category: 'ganache',
           description: 'A test recipe',
           tags: ['test'],
-          goldenVersionSpec: '2026-01-01-01',
-          versions: [
+          goldenVariationSpec: '2026-01-01-01',
+          variations: [
             {
-              versionSpec: '2026-01-01-01',
+              variationSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
               ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 100 }],
               baseWeight: 100
@@ -536,10 +536,10 @@ describe('FillingsLibrary', () => {
           baseId: 'other-recipe',
           name: 'Other Recipe',
           category: 'ganache',
-          goldenVersionSpec: '2026-01-01-01',
-          versions: [
+          goldenVariationSpec: '2026-01-01-01',
+          variations: [
             {
-              versionSpec: '2026-01-01-01',
+              variationSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
               ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 200 }],
               baseWeight: 200
@@ -1005,15 +1005,15 @@ describe('FillingsLibrary', () => {
                   baseId: 'external-recipe',
                   name: 'External Recipe',
                   category: 'ganache',
-                  versions: [
+                  variations: [
                     {
-                      versionSpec: '2026-01-01-01',
+                      variationSpec: '2026-01-01-01',
                       createdDate: '2026-01-01',
                       ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 100 }],
                       baseWeight: 100
                     }
                   ],
-                  goldenVersionSpec: '2026-01-01-01'
+                  goldenVariationSpec: '2026-01-01-01'
                 }
               }
             } as unknown as JsonObject
@@ -1046,15 +1046,15 @@ describe('FillingsLibrary', () => {
             baseId: 'secret-recipe',
             name: 'Secret Recipe',
             category: 'ganache',
-            versions: [
+            variations: [
               {
-                versionSpec: '2026-01-01-01',
+                variationSpec: '2026-01-01-01',
                 createdDate: '2026-01-01',
                 ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
                 baseWeight: 50
               }
             ],
-            goldenVersionSpec: '2026-01-01-01'
+            goldenVariationSpec: '2026-01-01-01'
           }
         };
 
@@ -1105,15 +1105,15 @@ describe('FillingsLibrary', () => {
             baseId: 'secret-recipe',
             name: 'Secret Recipe',
             category: 'ganache',
-            versions: [
+            variations: [
               {
-                versionSpec: '2026-01-01-01',
+                variationSpec: '2026-01-01-01',
                 createdDate: '2026-01-01',
                 ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
                 baseWeight: 50
               }
             ],
-            goldenVersionSpec: '2026-01-01-01'
+            goldenVariationSpec: '2026-01-01-01'
           }
         };
 
@@ -1161,15 +1161,15 @@ describe('FillingsLibrary', () => {
               baseId: 'plain-recipe',
               name: 'Plain Recipe',
               category: 'ganache',
-              versions: [
+              variations: [
                 {
-                  versionSpec: '2026-01-01-01',
+                  variationSpec: '2026-01-01-01',
                   createdDate: '2026-01-01',
                   ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 25 }],
                   baseWeight: 25
                 }
               ],
-              goldenVersionSpec: '2026-01-01-01'
+              goldenVariationSpec: '2026-01-01-01'
             }
           }
         };
@@ -1180,15 +1180,15 @@ describe('FillingsLibrary', () => {
             baseId: 'secret-recipe',
             name: 'Secret Recipe',
             category: 'ganache',
-            versions: [
+            variations: [
               {
-                versionSpec: '2026-01-01-01',
+                variationSpec: '2026-01-01-01',
                 createdDate: '2026-01-01',
                 ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 75 }],
                 baseWeight: 75
               }
             ],
-            goldenVersionSpec: '2026-01-01-01'
+            goldenVariationSpec: '2026-01-01-01'
           }
         };
 

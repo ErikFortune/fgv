@@ -111,8 +111,8 @@ export function createListSubcommand(): Command {
           category: filling.category,
           description: filling.description,
           tags: filling.tags,
-          versionCount: filling.versions.length,
-          goldenVersionSpec: filling.goldenVersionSpec
+          variationCount: filling.variations.length,
+          goldenVariationSpec: filling.goldenVariationSpec
         });
       }
 

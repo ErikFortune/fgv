@@ -88,16 +88,16 @@ Single bonbon dimensions for bar truffle cutting
 </td></tr>
 <tr><td>
 
-[IConfectionVersionEntityBase](./interfaces/IConfectionVersionEntityBase.md)
+[IConfectionRecipeVariationEntityBase](./interfaces/IConfectionRecipeVariationEntityBase.md)
 
 </td><td>
 
-Base version interface - shared by all confection version types.
+Base variation interface - shared by all confection variation types.
 
 </td></tr>
 <tr><td>
 
-[IConfectionEntityBase](./interfaces/IConfectionEntityBase.md)
+[IConfectionRecipeEntityBase](./interfaces/IConfectionRecipeEntityBase.md)
 
 </td><td>
 
@@ -323,11 +323,11 @@ Type guard to check if a yield is frame-based (for molded bonbons).
 </td></tr>
 <tr><td>
 
-[isMoldedBonBonEntity](./functions/isMoldedBonBonEntity.md)
+[isMoldedBonBonRecipeEntity](./functions/isMoldedBonBonRecipeEntity.md)
 
 </td><td>
 
-Type guard for IMoldedBonBon
+Type guard for Entities.Confections.MoldedBonBonRecipeEntity | molded bon-bon recipe entity.
 
 </td></tr>
 <tr><td>
@@ -336,43 +336,43 @@ Type guard for IMoldedBonBon
 
 </td><td>
 
-Type guard for IBarTruffle
+Type guard for Entities.Confections.BarTruffleRecipeEntity | bar truffle recipe entity.
 
 </td></tr>
 <tr><td>
 
-[isRolledTruffleEntity](./functions/isRolledTruffleEntity.md)
+[isRolledTruffleRecipeEntity](./functions/isRolledTruffleRecipeEntity.md)
 
 </td><td>
 
-Type guard for IRolledTruffle
+Type guard for Entities.Confections.RolledTruffleRecipeEntity | rolled truffle recipe entity.
 
 </td></tr>
 <tr><td>
 
-[isMoldedBonBonVersionEntity](./functions/isMoldedBonBonVersionEntity.md)
+[isMoldedBonBonRecipeVariationEntity](./functions/isMoldedBonBonRecipeVariationEntity.md)
 
 </td><td>
 
-Type guard for IMoldedBonBonVersion
+Type guard for Entities.Confections.IMoldedBonBonRecipeVariationEntity | molded bon-bon recipe variation entity.
 
 </td></tr>
 <tr><td>
 
-[isBarTruffleVersionEntity](./functions/isBarTruffleVersionEntity.md)
+[isBarTruffleRecipeVariationEntity](./functions/isBarTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Type guard for IBarTruffleVersion
+Type guard for Entities.Confections.IBarTruffleRecipeVariationEntity | bar truffle recipe variation entity.
 
 </td></tr>
 <tr><td>
 
-[isRolledTruffleVersionEntity](./functions/isRolledTruffleVersionEntity.md)
+[isRolledTruffleRecipeVariationEntity](./functions/isRolledTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Type guard for IRolledTruffleVersion
+Type guard for Entities.Confections.IRolledTruffleRecipeVariationEntity | rolled truffle recipe variation entity.
 
 </td></tr>
 <tr><td>

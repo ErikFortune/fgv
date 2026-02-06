@@ -2,7 +2,7 @@
 
 ## IConfectionEditingSessionParams.initialYield property
 
-Initial yield specification (defaults to golden version yield)
+Initial yield specification (defaults to golden variation yield)
 
 **Signature:**
 

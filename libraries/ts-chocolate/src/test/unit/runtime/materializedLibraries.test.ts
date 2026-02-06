@@ -89,9 +89,9 @@ describe('MaterializedLibrary Functionality Tests', () => {
       expect(result).toSucceedAndSatisfy((filling) => {
         expect(filling.id).toBe('common.dark-ganache-classic');
         expect(filling.name).toBeDefined();
-        expect(filling.goldenVersion).toBeDefined();
+        expect(filling.goldenVariation).toBeDefined();
         // Verify it's a materialized class instance
-        expect(typeof filling.getVersion).toBe('function');
+        expect(typeof filling.getVariation).toBe('function');
       });
     });
 
@@ -99,7 +99,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
 
       expect(result).toSucceedAndSatisfy((filling) => {
-        const version = filling.goldenVersion;
+        const version = filling.goldenVariation;
         expect(version).toBeDefined();
 
         // Ingredients should be materialized objects with methods
@@ -198,7 +198,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
         expect(confection.confectionType).toBe('molded-bonbon');
 
         // Verify it's a materialized class instance
-        expect(typeof confection.getVersion).toBe('function');
+        expect(typeof confection.getVariation).toBe('function');
       });
     });
 
@@ -206,7 +206,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
 
       expect(result).toSucceedAndSatisfy((confection) => {
-        const version = confection.goldenVersion;
+        const version = confection.goldenVariation;
 
         // For molded bonbons, molds should be materialized objects
         if ('molds' in version) {
@@ -225,7 +225,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
 
       expect(result).toSucceedAndSatisfy((confection) => {
-        const version = confection.goldenVersion;
+        const version = confection.goldenVariation;
 
         // For molded bonbons, shell chocolate should have materialized ingredients
         if ('shellChocolate' in version) {
@@ -259,7 +259,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
 
       expect(result).toSucceedAndSatisfy((filling) => {
-        const version = filling.goldenVersion;
+        const version = filling.goldenVariation;
         const procedures = version.procedures;
 
         if (procedures) {
@@ -277,7 +277,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
 
       expect(result).toSucceedAndSatisfy((confection) => {
-        const version = confection.goldenVersion;
+        const version = confection.goldenVariation;
         const fillings = version.fillings;
 
         if (fillings && fillings.length > 0) {
@@ -290,7 +290,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
           if (firstOption.type === 'recipe') {
             // Filling should be a materialized class instance
             expect(firstOption.filling).toHaveProperty('id');
-            expect(typeof firstOption.filling.getVersion).toBe('function');
+            expect(typeof firstOption.filling.getVariation).toBe('function');
           }
         }
       });
@@ -307,7 +307,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
 
       // Access the same ingredient through a filling's ingredients
       const filling = ctx.fillings.get('common.dark-ganache-classic' as FillingId).orThrow();
-      const ingredientsResult = filling.goldenVersion.getIngredients();
+      const ingredientsResult = filling.goldenVariation.getIngredients();
 
       expect(ingredientsResult).toSucceedAndSatisfy((ingredients) => {
         const chocolateIngredient = Array.from(ingredients).find(

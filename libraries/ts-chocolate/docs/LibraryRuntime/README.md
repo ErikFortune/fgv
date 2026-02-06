@@ -214,7 +214,7 @@ Static factory for creating runtime ingredients.
 
 </td><td>
 
-A resolved view of a recipe with navigation and version access.
+A resolved view of a recipe with navigation and variation access.
 
 </td></tr>
 <tr><td>
@@ -223,7 +223,7 @@ A resolved view of a recipe with navigation and version access.
 
 </td><td>
 
-A resolved view of a recipe version with all ingredients resolved.
+A resolved view of a recipe variation with all ingredients resolved.
 
 </td></tr>
 <tr><td>
@@ -250,7 +250,7 @@ A resolved view of a molded bonbon confection with navigation capabilities.
 
 </td><td>
 
-A resolved view of a bar truffle confection with navigation capabilities.
+A resolved view of a bar truffle confection recipe with navigation capabilities.
 
 </td></tr>
 <tr><td>
@@ -277,7 +277,7 @@ Static factory for creating runtime confections.
 
 </td><td>
 
-Abstract base class for runtime confection versions.
+Abstract base class for runtime confection variations.
 
 </td></tr>
 <tr><td>
@@ -286,7 +286,7 @@ Abstract base class for runtime confection versions.
 
 </td><td>
 
-A resolved view of a molded bonbon version with all references resolved.
+A resolved view of a molded bonbon variation with all references resolved.
 
 </td></tr>
 <tr><td>
@@ -295,7 +295,7 @@ A resolved view of a molded bonbon version with all references resolved.
 
 </td><td>
 
-A resolved view of a bar truffle version with all references resolved.
+A resolved view of a bar truffle recipe variation with all references resolved.
 
 </td></tr>
 <tr><td>
@@ -304,7 +304,7 @@ A resolved view of a bar truffle version with all references resolved.
 
 </td><td>
 
-A resolved view of a rolled truffle version with all references resolved.
+A view of a rolled truffle recipe variation with all references resolved.
 
 </td></tr>
 <tr><td>
@@ -431,11 +431,11 @@ Filter by ingredient category.
 </td></tr>
 <tr><td>
 
-[IFillingRecipeVersion](./interfaces/IFillingRecipeVersion.md)
+[IFillingRecipeVariation](./interfaces/IFillingRecipeVariation.md)
 
 </td><td>
 
-A resolved runtime view of a recipe version with resolved ingredients.
+A resolved runtime view of a recipe variation with resolved ingredients.
 
 </td></tr>
 <tr><td>
@@ -462,7 +462,7 @@ Collection of resolved procedures associated with a recipe.
 
 </td><td>
 
-A resolved runtime view of a recipe with navigation and version access.
+A resolved runtime view of a recipe with navigation and variation access.
 
 </td></tr>
 <tr><td>
@@ -548,7 +548,7 @@ Base interface for all runtime confections.
 </td></tr>
 <tr><td>
 
-[IMoldedBonBon](./interfaces/IMoldedBonBon.md)
+[IMoldedBonBonRecipe](./interfaces/IMoldedBonBonRecipe.md)
 
 </td><td>
 
@@ -557,7 +557,7 @@ Runtime confection narrowed to molded bonbon type.
 </td></tr>
 <tr><td>
 
-[IBarTruffle](./interfaces/IBarTruffle.md)
+[IBarTruffleRecipe](./interfaces/IBarTruffleRecipe.md)
 
 </td><td>
 
@@ -566,7 +566,7 @@ Runtime confection narrowed to bar truffle type.
 </td></tr>
 <tr><td>
 
-[IRolledTruffle](./interfaces/IRolledTruffle.md)
+[IRolledTruffleRecipe](./interfaces/IRolledTruffleRecipe.md)
 
 </td><td>
 
@@ -656,38 +656,38 @@ A resolved coating option with the full ingredient object.
 </td></tr>
 <tr><td>
 
-[IConfectionVersionBase](./interfaces/IConfectionVersionBase.md)
+[IConfectionRecipeVariationBase](./interfaces/IConfectionRecipeVariationBase.md)
 
 </td><td>
 
-A resolved runtime view of a confection version with resolved references.
+A resolved runtime view of a confection variation with resolved references.
 
 </td></tr>
 <tr><td>
 
-[IMoldedBonBonVersion](./interfaces/IMoldedBonBonVersion.md)
+[IMoldedBonBonRecipeVariation](./interfaces/IMoldedBonBonRecipeVariation.md)
 
 </td><td>
 
-Runtime confection version narrowed to molded bonbon type.
+Runtime confection variation narrowed to molded bonbon type.
 
 </td></tr>
 <tr><td>
 
-[IBarTruffleVersion](./interfaces/IBarTruffleVersion.md)
+[IBarTruffleRecipeVariation](./interfaces/IBarTruffleRecipeVariation.md)
 
 </td><td>
 
-Runtime confection version narrowed to bar truffle type.
+Runtime confection variation narrowed to bar truffle type.
 
 </td></tr>
 <tr><td>
 
-[IRolledTruffleVersion](./interfaces/IRolledTruffleVersion.md)
+[IRolledTruffleRecipeVariation](./interfaces/IRolledTruffleRecipeVariation.md)
 
 </td><td>
 
-Runtime confection version narrowed to rolled truffle type.
+Runtime confection variation narrowed to rolled truffle type.
 
 </td></tr>
 <tr><td>
@@ -895,11 +895,11 @@ A resolved filling option with the full recipe or ingredient object.
 </td></tr>
 <tr><td>
 
-[AnyConfectionVersion](./type-aliases/AnyConfectionVersion.md)
+[AnyConfectionRecipeVariation](./type-aliases/AnyConfectionRecipeVariation.md)
 
 </td><td>
 
-Union type for all runtime confection version types.
+Union type for all runtime confection variation types.
 
 </td></tr>
 <tr><td>

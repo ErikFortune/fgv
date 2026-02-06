@@ -88,7 +88,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession> {
-    return ProducedMoldedBonBon.fromSource(baseConfection.goldenVersion).onSuccess((produced) =>
+    return ProducedMoldedBonBon.fromSource(baseConfection.goldenVariation).onSuccess((produced) =>
       captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
     );
   }

@@ -7,7 +7,7 @@ Factory method for creating a MoldedBonBon.
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBonEntity): Result<MoldedBonBon>;
+static create(context: IConfectionContext, id: ConfectionId, confection: MoldedBonBonRecipeEntity): Result<MoldedBonBon>;
 ```
 
 **Parameters:**
@@ -16,7 +16,7 @@ static create(context: IConfectionContext, id: ConfectionId, confection: IMolded
 <tbody>
 <tr><td>context</td><td>IConfectionContext</td><td>The runtime context</td></tr>
 <tr><td>id</td><td>ConfectionId</td><td>The confection ID</td></tr>
-<tr><td>confection</td><td>IMoldedBonBonEntity</td><td>The molded bonbon data</td></tr>
+<tr><td>confection</td><td>MoldedBonBonRecipeEntity</td><td>The molded bonbon data</td></tr>
 </tbody></table>
 
 **Returns:**

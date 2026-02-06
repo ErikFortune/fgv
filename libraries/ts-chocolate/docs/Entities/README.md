@@ -226,56 +226,29 @@ Description
 <tbody>
 <tr><td>
 
-[IBarTruffleEntity](./interfaces/IBarTruffleEntity.md)
+[IBarTruffleRecipeVariationEntity](./interfaces/IBarTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Bar truffle confection
+Variation interface for bar truffle confections.
 
 </td></tr>
 <tr><td>
 
-[IMoldedBonBonEntity](./interfaces/IMoldedBonBonEntity.md)
+[IMoldedBonBonRecipeVariationEntity](./interfaces/IMoldedBonBonRecipeVariationEntity.md)
 
 </td><td>
 
-Molded bonbon confection
+Variation interface for molded bonbon confections.
 
 </td></tr>
 <tr><td>
 
-[IRolledTruffleEntity](./interfaces/IRolledTruffleEntity.md)
+[IRolledTruffleRecipeVariationEntity](./interfaces/IRolledTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Rolled truffle confection
-
-</td></tr>
-<tr><td>
-
-[IBarTruffleVersionEntity](./interfaces/IBarTruffleVersionEntity.md)
-
-</td><td>
-
-Version interface for bar truffle confections.
-
-</td></tr>
-<tr><td>
-
-[IMoldedBonBonVersionEntity](./interfaces/IMoldedBonBonVersionEntity.md)
-
-</td><td>
-
-Version interface for molded bonbon confections.
-
-</td></tr>
-<tr><td>
-
-[IRolledTruffleVersionEntity](./interfaces/IRolledTruffleVersionEntity.md)
-
-</td><td>
-
-Version interface for rolled truffle confections.
+Variation interface for rolled truffle confections.
 
 </td></tr>
 <tr><td>
@@ -320,16 +293,16 @@ Yield specification for a Entities.Confections.AnyConfectionEntity | confection.
 
 </td><td>
 
-Complete filling recipe with version history
+Complete filling recipe with all variations
 
 </td></tr>
 <tr><td>
 
-[IFillingRecipeVersionEntity](./interfaces/IFillingRecipeVersionEntity.md)
+[IFillingRecipeVariationEntity](./interfaces/IFillingRecipeVariationEntity.md)
 
 </td><td>
 
-Complete details for a single version of a filling recipe
+Complete details for a single variation of a filling recipe
 
 </td></tr>
 <tr><td>
@@ -338,7 +311,7 @@ Complete details for a single version of a filling recipe
 
 </td><td>
 
-Rating for a specific category of a filling recipe version
+Rating for a specific category of a filling recipe variation
 
 </td></tr>
 <tr><td>
@@ -582,16 +555,16 @@ Description
 <tbody>
 <tr><td>
 
-[AnyConfectionVersionEntity](./type-aliases/AnyConfectionVersionEntity.md)
+[AnyConfectionRecipeVariationEntity](./type-aliases/AnyConfectionRecipeVariationEntity.md)
 
 </td><td>
 
-Union type for all confection version types.
+Union type for all confection variation types.
 
 </td></tr>
 <tr><td>
 
-[AnyConfectionEntity](./type-aliases/AnyConfectionEntity.md)
+[AnyConfectionRecipeEntity](./type-aliases/AnyConfectionRecipeEntity.md)
 
 </td><td>
 
@@ -605,6 +578,33 @@ Discriminated union of all confection data types.
 </td><td>
 
 Discriminated union of produced confection types.
+
+</td></tr>
+<tr><td>
+
+[BarTruffleRecipeEntity](./type-aliases/BarTruffleRecipeEntity.md)
+
+</td><td>
+
+Bar truffle confection
+
+</td></tr>
+<tr><td>
+
+[MoldedBonBonRecipeEntity](./type-aliases/MoldedBonBonRecipeEntity.md)
+
+</td><td>
+
+Molded bonbon confection
+
+</td></tr>
+<tr><td>
+
+[RolledTruffleRecipeEntity](./type-aliases/RolledTruffleRecipeEntity.md)
+
+</td><td>
+
+Rolled truffle confection
 
 </td></tr>
 <tr><td>

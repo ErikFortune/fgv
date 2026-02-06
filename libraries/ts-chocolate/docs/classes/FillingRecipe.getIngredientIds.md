@@ -2,7 +2,7 @@
 
 ## FillingRecipe.getIngredientIds() method
 
-Gets unique ingredient IDs used across all versions.
+Gets unique ingredient IDs used across all variations.
 By default, returns only preferred ingredients (primary choice for each ingredient slot).
 Pass `{ includeAlternates: true }` to include all ingredient options.
 

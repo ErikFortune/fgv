@@ -162,38 +162,38 @@ Converter for Entities.Confections.ICoatingsEntity | ICoatingsEntity (IIdsWithPr
 </td></tr>
 <tr><td>
 
-[moldedBonBonVersionEntity](./variables/moldedBonBonVersionEntity.md)
+[moldedBonBonRecipeVariationEntity](./variables/moldedBonBonRecipeVariationEntity.md)
 
 </td><td>
 
-Converter for Entities.Confections.IMoldedBonBonVersionEntity | IMoldedBonBonVersionEntity.
+Converter for Entities.Confections.IMoldedBonBonVariationEntity | IMoldedBonBonRecipeVariationEntity.
 
 </td></tr>
 <tr><td>
 
-[barTruffleVersionEntity](./variables/barTruffleVersionEntity.md)
+[barTruffleRecipeVariationEntity](./variables/barTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Converter for Entities.Confections.IBarTruffleVersionEntity | IBarTruffleVersionEntity.
+Converter for Entities.Confections.IBarTruffleRecipeVariationEntity | IBarTruffleRecipeVariationEntity.
 
 </td></tr>
 <tr><td>
 
-[rolledTruffleVersionEntity](./variables/rolledTruffleVersionEntity.md)
+[rolledTruffleRecipeVariationEntity](./variables/rolledTruffleRecipeVariationEntity.md)
 
 </td><td>
 
-Converter for Entities.Confections.IRolledTruffleVersionEntity | IRolledTruffleVersionEntity.
+Converter for Entities.Confections.IRolledTruffleRecipeVariationEntity | IRolledTruffleRecipeVariationEntity.
 
 </td></tr>
 <tr><td>
 
-[anyConfectionVersionEntity](./variables/anyConfectionVersionEntity.md)
+[anyConfectionRecipeVariationEntity](./variables/anyConfectionRecipeVariationEntity.md)
 
 </td><td>
 
-Converter for Entities.Confections.AnyConfectionVersionEntity | AnyConfectionVersionEntity (discriminated by presence of type-specific fields)
+Converter for Entities.Confections.AnyConfectionRecipeVariationEntity | AnyConfectionRecipeVariationEntity (discriminated by presence of type-specific fields)
 
 </td></tr>
 <tr><td>

@@ -2,7 +2,7 @@
 
 # Interface: IFillingRecipeEntity
 
-Complete filling recipe with version history
+Complete filling recipe with all variations
 
 ## Properties
 
@@ -111,7 +111,7 @@ Optional tags for categorization and search
 </td></tr>
 <tr><td>
 
-[versions](./IFillingRecipeEntity.versions.md)
+[variations](./IFillingRecipeEntity.variations.md)
 
 </td><td>
 
@@ -119,16 +119,16 @@ Optional tags for categorization and search
 
 </td><td>
 
-readonly [IFillingRecipeVersionEntity](IFillingRecipeVersionEntity.md)[]
+readonly [IFillingRecipeVariationEntity](IFillingRecipeVariationEntity.md)[]
 
 </td><td>
 
-Version history
+Variations
 
 </td></tr>
 <tr><td>
 
-[goldenVersionSpec](./IFillingRecipeEntity.goldenVersionSpec.md)
+[goldenVariationSpec](./IFillingRecipeEntity.goldenVariationSpec.md)
 
 </td><td>
 
@@ -140,7 +140,7 @@ Version history
 
 </td><td>
 
-The ID of the golden (approved default) version
+The ID of the golden (approved default) variation
 
 </td></tr>
 <tr><td>

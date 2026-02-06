@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.getProcedures() method
 
-Gets resolved procedures for this version.
+Gets resolved procedures for this variation.
 
 **Signature:**
 

@@ -43,7 +43,7 @@ Whether to create a journal record
 </td></tr>
 <tr><td>
 
-[createNewVersion](./ISaveOptions.createNewVersion.md)
+[createNewVariation](./ISaveOptions.createNewVariation.md)
 
 </td><td>
 
@@ -55,12 +55,12 @@ boolean
 
 </td><td>
 
-Whether to create a new recipe version from modifications
+Whether to create a new recipe variation from modifications
 
 </td></tr>
 <tr><td>
 
-[versionLabel](./ISaveOptions.versionLabel.md)
+[variationLabel](./ISaveOptions.variationLabel.md)
 
 </td><td>
 
@@ -72,7 +72,7 @@ Whether to create a new recipe version from modifications
 
 </td><td>
 
-Version label for the new version (required if createNewVersion is true)
+Variation label for the new variation (required if createNewVariation is true)
 
 </td></tr>
 <tr><td>

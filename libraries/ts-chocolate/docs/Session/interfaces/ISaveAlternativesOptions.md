@@ -26,7 +26,7 @@ Description
 <tbody>
 <tr><td>
 
-[versionSpec](./ISaveAlternativesOptions.versionSpec.md)
+[variationSpec](./ISaveAlternativesOptions.variationSpec.md)
 
 </td><td>
 
@@ -38,7 +38,7 @@ Description
 
 </td><td>
 
-Version spec for the updated version
+Variation spec for the updated variation
 
 </td></tr>
 <tr><td>

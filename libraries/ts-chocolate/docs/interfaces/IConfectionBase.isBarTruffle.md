@@ -8,9 +8,9 @@ When true, bar truffle-specific properties are available.
 **Signature:**
 
 ```typescript
-isBarTruffle(): this is IBarTruffle;
+isBarTruffle(): this is IBarTruffleRecipe;
 ```
 
 **Returns:**
 
-this is [IBarTruffle](IBarTruffle.md)
+this is [IBarTruffleRecipe](IBarTruffleRecipe.md)

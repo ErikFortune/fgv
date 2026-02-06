@@ -62,7 +62,7 @@ Resolved enrobing chocolate ingredient ID (if used)
 </td></tr>
 <tr><td>
 
-[versionId](./IProducedConfectionEntityBase.versionId.md)
+[variationId](./IProducedConfectionEntityBase.variationId.md)
 
 </td><td>
 
@@ -74,7 +74,7 @@ Resolved enrobing chocolate ingredient ID (if used)
 
 </td><td>
 
-Confection version ID that was produced
+Confection variation ID that was produced
 
 </td></tr>
 <tr><td>

@@ -2,7 +2,7 @@
 
 ## MoldedBonBon.shellChocolate property
 
-Resolved shell chocolate specification (from golden version).
+Resolved shell chocolate specification (from golden variation).
 
 **Signature:**
 

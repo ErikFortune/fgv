@@ -2,7 +2,7 @@
 
 ## FillingRecipe.usesIngredient() method
 
-Checks if any version uses a specific ingredient.
+Checks if any variation uses a specific ingredient.
 By default, only checks preferred ingredients.
 Pass `{ includeAlternates: true }` to also check alternate ingredients.
 
@@ -24,4 +24,4 @@ usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): b
 
 boolean
 
-True if the ingredient is used in any version
+True if the ingredient is used in any variation

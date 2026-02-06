@@ -6,4 +6,4 @@ Converter for Entities.Confections.IRolledTruffleEntity | IRolledTruffleEntity
 
 ## Type
 
-`Converter<IRolledTruffleEntity>`
+`Converter<RolledTruffleRecipeEntity>`

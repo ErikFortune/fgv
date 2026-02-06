@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * BarTruffleVersion - runtime version for bar truffle confections
+ * BarTruffleRecipeVariation - recipe variation for bar truffle confections
  * @packageDocumentation
  */
 
@@ -31,78 +31,63 @@ import {
   IConfectionContext,
   IResolvedChocolateSpec,
   IResolvedConfectionProcedure,
-  IBarTruffle,
-  IBarTruffleVersion
+  IBarTruffleRecipe,
+  IBarTruffleRecipeVariation
 } from '../../model';
-import { ConfectionVersionBase } from './confectionVersionBase';
-
-// ============================================================================
-// BarTruffleVersion Class
-// ============================================================================
+import { ConfectionRecipeVariationBase } from './confectionVersionBase';
 
 /**
- * A resolved view of a bar truffle version with all references resolved.
+ * A resolved view of a bar truffle recipe variation with all references resolved.
  * @public
  */
-export class BarTruffleVersion
-  extends ConfectionVersionBase<IBarTruffle, Confections.IBarTruffleVersionEntity>
-  implements IBarTruffleVersion
+export class BarTruffleRecipeVariation
+  extends ConfectionRecipeVariationBase<IBarTruffleRecipe, Confections.IBarTruffleRecipeVariationEntity>
+  implements IBarTruffleRecipeVariation
 {
-  private readonly _barTruffleVersion: Confections.IBarTruffleVersionEntity;
-
   // Lazy-resolved caches (undefined = not yet resolved, null = no data)
   private _resolvedEnrobingChocolate: IResolvedChocolateSpec | undefined | null;
 
   /**
-   * Creates a {@link LibraryRuntime.BarTruffleVersion | BarTruffleVersion}.
-   * For internal use. Use {@link LibraryRuntime.BarTruffleVersion.create | BarTruffleVersion.create()}
+   * Creates a {@link LibraryRuntime.BarTruffleRecipeVariation | BarTruffleRecipeVariation}.
+   * For internal use. Use {@link LibraryRuntime.BarTruffleRecipeVariation.create | BarTruffleRecipeVariation.create()}
    * instead.
    * @internal
    */
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IBarTruffleVersionEntity
+    variation: Confections.IBarTruffleRecipeVariationEntity
   ) {
-    super(context, confectionId, version);
-    this._barTruffleVersion = version;
+    super(context, confectionId, variation);
   }
 
   /**
-   * Factory method for creating a {@link LibraryRuntime.BarTruffleVersion | BarTruffleVersion}.
+   * Factory method for creating a {@link LibraryRuntime.BarTruffleRecipeVariation | BarTruffleRecipeVariation}.
    * @param context - The runtime context
    * @param confectionId - The parent confection ID
-   * @param version - The bar truffle version data
-   * @returns Success with {@link LibraryRuntime.BarTruffleVersion | BarTruffleVersion}
+   * @param variation - The bar truffle variation data
+   * @returns Success with {@link LibraryRuntime.BarTruffleRecipeVariation | BarTruffleRecipeVariation}
    */
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IBarTruffleVersionEntity
-  ): Result<BarTruffleVersion> {
-    return Success.with(new BarTruffleVersion(context, confectionId, version));
+    variation: Confections.IBarTruffleRecipeVariationEntity
+  ): Result<BarTruffleRecipeVariation> {
+    return Success.with(new BarTruffleRecipeVariation(context, confectionId, variation));
   }
-
-  // ============================================================================
-  // Parent Navigation (narrowed type)
-  // ============================================================================
-
-  // ============================================================================
-  // Bar Truffle-Specific Properties
-  // ============================================================================
 
   /**
    * Frame dimensions for ganache slab.
    */
   public get frameDimensions(): Confections.IFrameDimensions {
-    return this._barTruffleVersion.frameDimensions;
+    return this._entity.frameDimensions;
   }
 
   /**
    * Single bonbon dimensions for cutting.
    */
   public get singleBonBonDimensions(): Confections.IBonBonDimensions {
-    return this._barTruffleVersion.singleBonBonDimensions;
+    return this._entity.singleBonBonDimensions;
   }
 
   /**
@@ -112,7 +97,7 @@ export class BarTruffleVersion
    */
   public getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined> {
     if (this._resolvedEnrobingChocolate === undefined) {
-      const spec = this._barTruffleVersion.enrobingChocolate;
+      const spec = this._entity.enrobingChocolate;
       if (!spec) {
         this._resolvedEnrobingChocolate = null;
         return succeed(undefined);
@@ -161,9 +146,9 @@ export class BarTruffleVersion
   }
 
   /**
-   * Gets the underlying bar truffle version data entity.
+   * Gets the underlying bar truffle recipe variation data entity.
    */
-  public override get entity(): Confections.IBarTruffleVersionEntity {
-    return this._barTruffleVersion;
+  public override get entity(): Confections.IBarTruffleRecipeVariationEntity {
+    return this._entity;
   }
 }

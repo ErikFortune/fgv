@@ -49,9 +49,9 @@ import {
 } from '../entities';
 import {
   IConfectionBase,
-  IConfectionVersionBase,
+  IConfectionRecipeVariationBase,
   IFillingRecipe,
-  IFillingRecipeVersion,
+  IFillingRecipeVariation,
   IIngredient,
   IMold,
   MaterializedLibrary
@@ -128,7 +128,7 @@ export interface IJournalEntryBase<
 export interface IFillingEditJournalEntry
   extends IJournalEntryBase<
     IFillingRecipe,
-    IFillingRecipeVersion,
+    IFillingRecipeVariation,
     FillingRecipeVariationId,
     IFillingEditJournalEntryEntity
   > {}
@@ -140,7 +140,7 @@ export interface IFillingEditJournalEntry
 export interface IConfectionEditJournalEntry
   extends IJournalEntryBase<
     IConfectionBase,
-    IConfectionVersionBase,
+    IConfectionRecipeVariationBase,
     ConfectionRecipeVariationId,
     IConfectionEditJournalEntryEntity
   > {}
@@ -152,7 +152,7 @@ export interface IConfectionEditJournalEntry
 export interface IFillingProductionJournalEntry
   extends IJournalEntryBase<
     IFillingRecipe,
-    IFillingRecipeVersion,
+    IFillingRecipeVariation,
     FillingRecipeVariationId,
     IFillingProductionJournalEntryEntity
   > {}
@@ -164,7 +164,7 @@ export interface IFillingProductionJournalEntry
 export interface IConfectionProductionJournalEntry
   extends IJournalEntryBase<
     IConfectionBase,
-    IConfectionVersionBase,
+    IConfectionRecipeVariationBase,
     ConfectionRecipeVariationId,
     IConfectionProductionJournalEntryEntity
   > {}

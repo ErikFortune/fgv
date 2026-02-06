@@ -2,7 +2,7 @@
 
 ## ConfectionBase.procedures property
 
-Resolved procedures from the golden version (lazy-loaded)
+Resolved procedures from the golden variation (lazy-loaded)
 
 **Signature:**
 

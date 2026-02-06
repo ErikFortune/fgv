@@ -103,11 +103,11 @@ Analysis of save options and recommendations based on session changes.
 </td></tr>
 <tr><td>
 
-[ISaveVersionOptions](./interfaces/ISaveVersionOptions.md)
+[ISaveVariationOptions](./interfaces/ISaveVariationOptions.md)
 
 </td><td>
 
-Options for saving as a new version of the original recipe.
+Options for saving as a new variation of the original recipe.
 
 </td></tr>
 <tr><td>
@@ -130,11 +130,11 @@ Options for saving as an entirely new recipe.
 </td></tr>
 <tr><td>
 
-[ISaveConfectionVersionOptions](./interfaces/ISaveConfectionVersionOptions.md)
+[ISaveConfectionVariationOptions](./interfaces/ISaveConfectionVariationOptions.md)
 
 </td><td>
 
-Options for saving confection as a new version.
+Options for saving confection as a new variation.
 
 </td></tr>
 <tr><td>

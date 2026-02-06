@@ -2,7 +2,7 @@
 
 ## ConfectionBase.effectiveTags property
 
-Gets effective tags for the golden version (base tags + version's additional tags).
+Gets effective tags for the golden variation (base tags + variation's additional tags).
 
 **Signature:**
 

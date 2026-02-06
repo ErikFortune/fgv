@@ -7,5 +7,5 @@ The base recipe version being edited.
 **Signature:**
 
 ```typescript
-readonly baseRecipe: IFillingRecipeVersion;
+readonly baseRecipe: IFillingRecipeVariation;
 ```

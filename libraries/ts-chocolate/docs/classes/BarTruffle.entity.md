@@ -7,5 +7,5 @@ Gets the underlying raw bar truffle data
 **Signature:**
 
 ```typescript
-readonly entity: IBarTruffleEntity;
+readonly entity: BarTruffleRecipeEntity;
 ```

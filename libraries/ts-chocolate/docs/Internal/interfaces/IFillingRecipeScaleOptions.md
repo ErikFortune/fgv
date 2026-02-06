@@ -2,9 +2,9 @@
 
 # Interface: IFillingRecipeScaleOptions
 
-Options for filling recipe scaling (extends version options with version selection)
+Options for filling recipe scaling (extends variation options with variation selection)
 
-**Extends:** [`IVersionScaleOptions`](../../interfaces/IVersionScaleOptions.md)
+**Extends:** [`IVariationScaleOptions`](../../interfaces/IVariationScaleOptions.md)
 
 ## Properties
 
@@ -28,7 +28,7 @@ Description
 <tbody>
 <tr><td>
 
-[versionSpec](./IFillingRecipeScaleOptions.versionSpec.md)
+[variationSpec](./IFillingRecipeScaleOptions.variationSpec.md)
 
 </td><td>
 
@@ -40,12 +40,12 @@ Description
 
 </td><td>
 
-Filling recipe version to scale (default: golden version)
+Filling recipe variation to scale (default: golden variation)
 
 </td></tr>
 <tr><td>
 
-[precision](./IVersionScaleOptions.precision.md)
+[precision](./IVariationScaleOptions.precision.md)
 
 </td><td>
 
@@ -62,7 +62,7 @@ Number of decimal places for scaled amounts (default: 1)
 </td></tr>
 <tr><td>
 
-[minimumAmount](./IVersionScaleOptions.minimumAmount.md)
+[minimumAmount](./IVariationScaleOptions.minimumAmount.md)
 
 </td><td>
 

@@ -105,7 +105,7 @@ export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity ex
    * {@inheritDoc IJournalEntryBase.versionId}
    */
   public get versionId(): TVersionId {
-    return this._entity.versionId as TVersionId;
+    return this._entity.variationId as TVersionId;
   }
 
   /**

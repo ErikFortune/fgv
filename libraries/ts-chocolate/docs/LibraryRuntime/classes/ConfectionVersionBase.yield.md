@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.yield property
 
-Yield specification for this version.
+Yield specification for this variation.
 
 **Signature:**
 

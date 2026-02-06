@@ -90,11 +90,11 @@ Converter for filling recipe procedures with preferred selection.
 </td></tr>
 <tr><td>
 
-[fillingRecipeVersionEntity](./variables/fillingRecipeVersionEntity.md)
+[fillingRecipeVariationEntity](./variables/fillingRecipeVariationEntity.md)
 
 </td><td>
 
-Converter for Entities.Fillings.IFillingRecipeVersionEntity | IFillingRecipeVersionEntity.
+Converter for Entities.Fillings.IFillingRecipeVariationEntity | IFillingRecipeVariationEntity.
 
 </td></tr>
 <tr><td>

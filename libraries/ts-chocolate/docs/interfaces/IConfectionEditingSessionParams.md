@@ -55,7 +55,7 @@ Optional session ID (generated if not provided)
 
 </td><td>
 
-Initial yield specification (defaults to golden version yield)
+Initial yield specification (defaults to golden variation yield)
 
 </td></tr>
 </tbody></table>

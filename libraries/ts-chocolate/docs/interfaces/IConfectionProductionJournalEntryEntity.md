@@ -4,7 +4,7 @@
 
 Journal entry for confection production sessions.
 
-**Extends:** [`IJournalEntryEntityBase<AnyConfectionVersionEntity, ConfectionRecipeVariationId>`](IJournalEntryEntityBase.md)
+**Extends:** [`IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId>`](IJournalEntryEntityBase.md)
 
 ## Properties
 
@@ -113,7 +113,7 @@ Timestamp when this entry was created (ISO 8601 format)
 </td></tr>
 <tr><td>
 
-[versionId](./IJournalEntryEntityBase.versionId.md)
+[variationId](./IJournalEntryEntityBase.variationId.md)
 
 </td><td>
 
@@ -125,7 +125,7 @@ Timestamp when this entry was created (ISO 8601 format)
 
 </td><td>
 
-Source version ID for indexing and lookup
+Source variation ID for indexing and lookup
 
 </td></tr>
 <tr><td>
@@ -138,7 +138,7 @@ Source version ID for indexing and lookup
 
 </td><td>
 
-[AnyConfectionVersionEntity](../type-aliases/AnyConfectionVersionEntity.md)
+[AnyConfectionRecipeVariationEntity](../type-aliases/AnyConfectionRecipeVariationEntity.md)
 
 </td><td>
 
@@ -155,11 +155,11 @@ Full source recipe/confection at the time of the entry
 
 </td><td>
 
-[AnyConfectionVersionEntity](../type-aliases/AnyConfectionVersionEntity.md)
+[AnyConfectionRecipeVariationEntity](../type-aliases/AnyConfectionRecipeVariationEntity.md)
 
 </td><td>
 
-Full updated version if modifications were made
+Full updated variation if modifications were made
 
 </td></tr>
 <tr><td>
@@ -176,7 +176,7 @@ Full updated version if modifications were made
 
 </td><td>
 
-ID of the updated version if it was saved
+ID of the updated variation if it was saved
 
 </td></tr>
 <tr><td>

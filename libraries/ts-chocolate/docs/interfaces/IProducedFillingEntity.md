@@ -27,7 +27,7 @@ Description
 <tbody>
 <tr><td>
 
-[versionId](./IProducedFillingEntity.versionId.md)
+[variationId](./IProducedFillingEntity.variationId.md)
 
 </td><td>
 
@@ -39,7 +39,7 @@ Description
 
 </td><td>
 
-Filling version ID that was produced
+Filling variation ID that was produced
 
 </td></tr>
 <tr><td>

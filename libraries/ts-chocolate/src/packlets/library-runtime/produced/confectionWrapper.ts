@@ -44,9 +44,9 @@ import {
   IProducedRolledTruffleEntity
 } from '../../entities';
 import type {
-  IBarTruffleVersion,
-  IMoldedBonBonVersion,
-  IRolledTruffleVersion,
+  IBarTruffleRecipeVariation,
+  IMoldedBonBonRecipeVariation,
+  IRolledTruffleRecipeVariation,
   IResolvedFillingSlot
 } from '../model';
 
@@ -373,7 +373,7 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
    * @public
    */
   public get versionId(): ConfectionRecipeVariationId {
-    return this._current.versionId;
+    return this._current.variationId;
   }
 
   /**
@@ -592,7 +592,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    * @returns Result containing ProducedMoldedBonBon or error
    * @public
    */
-  public static fromSource(source: IMoldedBonBonVersion): Result<ProducedMoldedBonBon> {
+  public static fromSource(source: IMoldedBonBonRecipeVariation): Result<ProducedMoldedBonBon> {
     return ProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
       ProducedMoldedBonBon.create(produced)
     );
@@ -618,11 +618,13 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IMoldedBonBonVersion): Result<IProducedMoldedBonBonEntity> {
+  private static _convertFromSource(
+    source: IMoldedBonBonRecipeVariation
+  ): Result<IProducedMoldedBonBonEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
-      itemId: source.versionSpec
+      itemId: source.variationSpec
     }).onSuccess((versionId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
@@ -632,7 +634,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       return fillingsResult.onSuccess((fillings) => {
         const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
-          versionId,
+          variationId: versionId,
           yield: source.yield,
           moldId: source.preferredMold?.id!,
           shellChocolateId: source.shellChocolate.chocolate.id,
@@ -844,7 +846,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
   protected _deepCopy(confection: IProducedMoldedBonBonEntity): IProducedMoldedBonBonEntity {
     return {
       confectionType: confection.confectionType,
-      versionId: confection.versionId,
+      variationId: confection.variationId,
       yield: { ...confection.yield },
       moldId: confection.moldId,
       shellChocolateId: confection.shellChocolateId,
@@ -883,7 +885,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    * @returns Result containing ProducedBarTruffle or error
    * @public
    */
-  public static fromSource(source: IBarTruffleVersion): Result<ProducedBarTruffle> {
+  public static fromSource(source: IBarTruffleRecipeVariation): Result<ProducedBarTruffle> {
     return ProducedBarTruffle._convertFromSource(source).onSuccess((produced) =>
       ProducedBarTruffle.create(produced)
     );
@@ -909,11 +911,11 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IBarTruffleVersion): Result<IProducedBarTruffleEntity> {
+  private static _convertFromSource(source: IBarTruffleRecipeVariation): Result<IProducedBarTruffleEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
-      itemId: source.versionSpec
+      itemId: source.variationSpec
     }).onSuccess((versionId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
@@ -923,7 +925,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
       return fillingsResult.onSuccess((fillings) => {
         const produced: IProducedBarTruffleEntity = {
           confectionType: 'bar-truffle',
-          versionId,
+          variationId: versionId,
           yield: source.yield,
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           fillings,
@@ -1043,7 +1045,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
   protected _deepCopy(confection: IProducedBarTruffleEntity): IProducedBarTruffleEntity {
     return {
       confectionType: confection.confectionType,
-      versionId: confection.versionId,
+      variationId: confection.variationId,
       yield: { ...confection.yield },
       enrobingChocolateId: confection.enrobingChocolateId,
       fillings: confection.fillings ? confection.fillings.map((slot) => ({ ...slot })) : undefined,
@@ -1079,7 +1081,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
    * @returns Result containing ProducedRolledTruffle or error
    * @public
    */
-  public static fromSource(source: IRolledTruffleVersion): Result<ProducedRolledTruffle> {
+  public static fromSource(source: IRolledTruffleRecipeVariation): Result<ProducedRolledTruffle> {
     return ProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
       ProducedRolledTruffle.create(produced)
     );
@@ -1105,11 +1107,13 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
    * Uses proper helpers and getters, no unsafe casts.
    * @internal
    */
-  private static _convertFromSource(source: IRolledTruffleVersion): Result<IProducedRolledTruffleEntity> {
+  private static _convertFromSource(
+    source: IRolledTruffleRecipeVariation
+  ): Result<IProducedRolledTruffleEntity> {
     // Create and validate version ID using helper
     return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
-      itemId: source.versionSpec
+      itemId: source.variationSpec
     }).onSuccess((versionId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
@@ -1119,7 +1123,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
       return fillingsResult.onSuccess((fillings) => {
         const produced: IProducedRolledTruffleEntity = {
           confectionType: 'rolled-truffle',
-          versionId,
+          variationId: versionId,
           yield: source.yield,
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           coatingId: source.coatings?.preferred?.id,
@@ -1269,7 +1273,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
   protected _deepCopy(confection: IProducedRolledTruffleEntity): IProducedRolledTruffleEntity {
     return {
       confectionType: confection.confectionType,
-      versionId: confection.versionId,
+      variationId: confection.variationId,
       yield: { ...confection.yield },
       enrobingChocolateId: confection.enrobingChocolateId,
       coatingId: confection.coatingId,

@@ -42,7 +42,7 @@ import {
   IIngredientContext,
   IIngredientUsageInfo,
   ILibraryRuntimeContext,
-  IVersionContext
+  IVariationContext
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
 import { Ingredient, AnyIngredient } from './ingredients';
@@ -95,7 +95,7 @@ export interface ILibraryRuntimeContextCreateParams {
  * @public
  */
 export class LibraryRuntimeContext
-  implements IVersionContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext
+  implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext
 {
   private readonly _library: ChocolateLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
@@ -116,7 +116,7 @@ export class LibraryRuntimeContext
   private _procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never> | undefined;
   private _molds: MaterializedLibrary<MoldId, IMoldEntity, Mold, never> | undefined;
   private _confections:
-    | MaterializedLibrary<ConfectionId, Confections.AnyConfectionEntity, AnyConfection, never>
+    | MaterializedLibrary<ConfectionId, Confections.AnyConfectionRecipeEntity, AnyConfection, never>
     | undefined;
 
   // Extensible indexer orchestrators
@@ -191,7 +191,7 @@ export class LibraryRuntimeContext
    */
   public get confections(): MaterializedLibrary<
     ConfectionId,
-    Confections.AnyConfectionEntity,
+    Confections.AnyConfectionRecipeEntity,
     AnyConfection,
     never
   > {
@@ -228,7 +228,7 @@ export class LibraryRuntimeContext
    */
   private _getConfections(): MaterializedLibrary<
     ConfectionId,
-    Confections.AnyConfectionEntity,
+    Confections.AnyConfectionRecipeEntity,
     AnyConfection,
     never
   > {

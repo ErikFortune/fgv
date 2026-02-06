@@ -33,11 +33,11 @@ import {
   IResolvedCoatings,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
-  IRolledTruffle,
-  IRolledTruffleVersion
+  IRolledTruffleRecipe,
+  IRolledTruffleRecipeVariation
 } from '../model';
 import { ConfectionBase } from './confectionBase';
-import { RolledTruffleVersion } from './versions';
+import { RolledTruffleRecipeVariation } from './versions';
 
 // ============================================================================
 // RolledTruffle Class
@@ -48,11 +48,11 @@ import { RolledTruffleVersion } from './versions';
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RolledTruffle
-  extends ConfectionBase<IRolledTruffleVersion, Confections.IRolledTruffleEntity>
-  implements IRolledTruffle
+export class RolledTruffleRecipe
+  extends ConfectionBase<IRolledTruffleRecipeVariation, Confections.RolledTruffleRecipeEntity>
+  implements IRolledTruffleRecipe
 {
-  private readonly _rolledTruffle: Confections.IRolledTruffleEntity;
+  private readonly _rolledTruffle: Confections.RolledTruffleRecipeEntity;
 
   /**
    * Creates a RolledTruffle.
@@ -62,7 +62,7 @@ export class RolledTruffle
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IRolledTruffleEntity
+    confection: Confections.RolledTruffleRecipeEntity
   ) {
     super(context, id, confection);
     this._rolledTruffle = confection;
@@ -78,9 +78,9 @@ export class RolledTruffle
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IRolledTruffleEntity
-  ): Result<RolledTruffle> {
-    return Success.with(new RolledTruffle(context, id, confection));
+    confection: Confections.RolledTruffleRecipeEntity
+  ): Result<RolledTruffleRecipe> {
+    return Success.with(new RolledTruffleRecipe(context, id, confection));
   }
 
   // ============================================================================
@@ -95,63 +95,63 @@ export class RolledTruffle
   }
 
   // ============================================================================
-  // Version Access (typed)
+  // Variation Access (typed)
   // ============================================================================
 
   /**
-   * Creates a runtime version from a data layer entity.
+   * Creates a runtime variation from a data layer entity.
    * @param entity - The data layer entity
-   * @returns Result with runtime version, or Failure if creation fails
+   * @returns Result with runtime variation, or Failure if creation fails
    * @internal
    */
-  protected override _createVersion(
-    entity: Confections.AnyConfectionVersionEntity
-  ): Result<IRolledTruffleVersion> {
-    return RolledTruffleVersion.create(
+  protected override _createVariation(
+    entity: Confections.AnyConfectionRecipeVariationEntity
+  ): Result<IRolledTruffleRecipeVariation> {
+    return RolledTruffleRecipeVariation.create(
       this._context,
       this._id,
-      entity as Confections.IRolledTruffleVersionEntity
+      entity as Confections.IRolledTruffleRecipeVariationEntity
     );
   }
 
   // ============================================================================
-  // Rolled Truffle-Specific Properties (delegate to golden version)
+  // Rolled Truffle-Specific Properties (delegate to golden variation)
   // ============================================================================
 
   /**
-   * Resolved filling slots from the golden version.
+   * Resolved filling slots from the golden variation.
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
-    return this.goldenVersion.fillings;
+    return this.goldenVariation.fillings;
   }
 
   /**
-   * Resolved procedures from the golden version.
+   * Resolved procedures from the golden variation.
    */
   public get procedures():
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined {
-    return this.goldenVersion.procedures;
+    return this.goldenVariation.procedures;
   }
 
   /**
-   * Resolved enrobing chocolate specification (from golden version, optional).
+   * Resolved enrobing chocolate specification (from golden variation, optional).
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
-    return this.goldenVersion.enrobingChocolate;
+    return this.goldenVariation.enrobingChocolate;
   }
 
   /**
-   * Resolved coating specification (from golden version, optional).
+   * Resolved coating specification (from golden variation, optional).
    */
   public get coatings(): IResolvedCoatings | undefined {
-    return this.goldenVersion.coatings;
+    return this.goldenVariation.coatings;
   }
 
   /**
    * Gets the underlying rolled truffle data entity
    */
-  public get entity(): Confections.IRolledTruffleEntity {
+  public get entity(): Confections.RolledTruffleRecipeEntity {
     return this._rolledTruffle;
   }
 }

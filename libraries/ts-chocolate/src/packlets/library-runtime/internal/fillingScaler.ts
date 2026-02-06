@@ -24,17 +24,17 @@
  */
 
 import { FillingRecipeVariationSpec, Measurement } from '../../common';
-import { IFillingRecipeVersionEntity } from '../../entities';
+import { IFillingRecipeVariationEntity } from '../../entities';
 
 // ============================================================================
 // Scaling Options
 // ============================================================================
 
 /**
- * Options for version scaling (precision and minimum amount only)
+ * Options for variation scaling (precision and minimum amount only)
  * @public
  */
-export interface IVersionScaleOptions {
+export interface IVariationScaleOptions {
   /**
    * Number of decimal places for scaled amounts (default: 1)
    */
@@ -48,14 +48,14 @@ export interface IVersionScaleOptions {
 }
 
 /**
- * Options for filling recipe scaling (extends version options with version selection)
+ * Options for filling recipe scaling (extends variation options with variation selection)
  * @public
  */
-export interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
+export interface IFillingRecipeScaleOptions extends IVariationScaleOptions {
   /**
-   * Filling recipe version to scale (default: golden version)
+   * Filling recipe variation to scale (default: golden variation)
    */
-  readonly versionSpec?: FillingRecipeVariationSpec;
+  readonly variationSpec?: FillingRecipeVariationSpec;
 }
 
 // ============================================================================
@@ -63,34 +63,34 @@ export interface IFillingRecipeScaleOptions extends IVersionScaleOptions {
 // ============================================================================
 
 // NOTE: Scaling functions removed - use RuntimeProducedFilling.fromSource() instead
-// The scaleVersion, scaleFillingRecipe, and scaleFillingRecipeByFactor functions
+// The scaleVariation, scaleFillingRecipe, and scaleFillingRecipeByFactor functions
 // have been removed as they returned IComputedScaledFillingRecipe which no longer exists.
 // Scaling is now handled by the produced entity wrappers.
 
 /**
- * Calculates the base weight from filling recipe version (sum of ingredient amounts)
+ * Calculates the base weight from filling recipe variation (sum of ingredient amounts)
  *
- * @param version - Filling recipe version to calculate weight for
+ * @param variation - Filling recipe variation to calculate weight for
  * @returns Total weight in grams
  * @public
  */
-export function calculateBaseWeight(version: IFillingRecipeVersionEntity): Measurement {
-  const total = version.ingredients.reduce((sum: number, ingredient) => sum + ingredient.amount, 0);
+export function calculateBaseWeight(variation: IFillingRecipeVariationEntity): Measurement {
+  const total = variation.ingredients.reduce((sum: number, ingredient) => sum + ingredient.amount, 0);
   return total as Measurement;
 }
 
 /**
- * Recalculates base weight for filling recipe version and returns updated version
+ * Recalculates base weight for filling recipe variation and returns updated variation
  *
- * @param version - Filling recipe version to update
- * @returns New filling recipe version with recalculated base weight
+ * @param variation - Filling recipe variation to update
+ * @returns New filling recipe variation with recalculated base weight
  * @public
  */
-export function recalculateFillingRecipeVersion(
-  version: IFillingRecipeVersionEntity
-): IFillingRecipeVersionEntity {
+export function recalculateFillingRecipeVariation(
+  variation: IFillingRecipeVariationEntity
+): IFillingRecipeVariationEntity {
   return {
-    ...version,
-    baseWeight: calculateBaseWeight(version)
+    ...variation,
+    baseWeight: calculateBaseWeight(variation)
   };
 }

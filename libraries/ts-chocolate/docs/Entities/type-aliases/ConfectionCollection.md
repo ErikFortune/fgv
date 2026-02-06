@@ -7,5 +7,5 @@ Type for the collections in a ConfectionsLibrary.
 ## Type
 
 ```typescript
-type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfectionEntity>
+type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfectionRecipeEntity>
 ```

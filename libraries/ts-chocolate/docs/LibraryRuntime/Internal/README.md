@@ -86,11 +86,11 @@ Result of calculating weight contribution for a single ingredient.
 </td></tr>
 <tr><td>
 
-[IVersionScaleOptions](./interfaces/IVersionScaleOptions.md)
+[IVariationScaleOptions](./interfaces/IVariationScaleOptions.md)
 
 </td><td>
 
-Options for version scaling (precision and minimum amount only)
+Options for variation scaling (precision and minimum amount only)
 
 </td></tr>
 <tr><td>
@@ -99,7 +99,7 @@ Options for version scaling (precision and minimum amount only)
 
 </td><td>
 
-Options for filling recipe scaling (extends version options with version selection)
+Options for filling recipe scaling (extends variation options with variation selection)
 
 </td></tr>
 <tr><td>
@@ -212,16 +212,16 @@ Calculate weight contributions for all ingredients.
 
 </td><td>
 
-Calculates the base weight from filling recipe version (sum of ingredient amounts)
+Calculates the base weight from filling recipe variation (sum of ingredient amounts)
 
 </td></tr>
 <tr><td>
 
-[recalculateFillingRecipeVersion](./functions/recalculateFillingRecipeVersion.md)
+[recalculateFillingRecipeVariation](./functions/recalculateFillingRecipeVariation.md)
 
 </td><td>
 
-Recalculates base weight for filling recipe version and returns updated version
+Recalculates base weight for filling recipe variation and returns updated variation
 
 </td></tr>
 <tr><td>

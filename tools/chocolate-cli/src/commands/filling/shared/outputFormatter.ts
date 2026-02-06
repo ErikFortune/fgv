@@ -58,8 +58,8 @@ export interface IFillingListItem {
   category: Entities.Fillings.FillingCategory;
   description?: string;
   tags?: ReadonlyArray<string>;
-  versionCount: number;
-  goldenVersionSpec: FillingRecipeVariationSpec;
+  variationCount: number;
+  goldenVariationSpec: FillingRecipeVariationSpec;
 }
 
 /**
@@ -137,7 +137,7 @@ function formatFillingListHuman(fillings: IFillingListItem[]): string {
     `${padRight('ID', maxIdLen)}  ${padRight('Name', maxNameLen)}  ${padRight(
       'Category',
       maxCategoryLen
-    )}  Versions  Tags`
+    )}  Variations  Tags`
   );
   lines.push(
     `${'-'.repeat(maxIdLen)}  ${'-'.repeat(maxNameLen)}  ${'-'.repeat(maxCategoryLen)}  --------  ----`
@@ -150,7 +150,7 @@ function formatFillingListHuman(fillings: IFillingListItem[]): string {
       `${padRight(filling.id, maxIdLen)}  ${padRight(filling.name, maxNameLen)}  ${padRight(
         category,
         maxCategoryLen
-      )}  ${padRight(String(filling.versionCount), 8)}  ${tags}`
+      )}  ${padRight(String(filling.variationCount), 8)}  ${tags}`
     );
   }
 
@@ -171,18 +171,18 @@ function formatFillingListTable(fillings: IFillingListItem[]): string {
   const maxIdLen = Math.max(...fillings.map((r) => r.id.length), 2);
   const maxNameLen = Math.max(...fillings.map((r) => r.name.length), 4);
   const maxCategoryLen = Math.max(...fillings.map((r) => (r.category ?? '').length), 8);
-  const maxVersionsLen = Math.max(...fillings.map((r) => String(r.versionCount).length), 8);
+  const maxVariationsLen = Math.max(...fillings.map((r) => String(r.variationCount).length), 8);
 
   // Header
   lines.push(
     `${padRight('ID', maxIdLen)} | ${padRight('Name', maxNameLen)} | ${padRight(
       'Category',
       maxCategoryLen
-    )} | ${padRight('Versions', maxVersionsLen)} | Tags`
+    )} | ${padRight('Variations', maxVariationsLen)} | Tags`
   );
   lines.push(
     `${'-'.repeat(maxIdLen)}-+-${'-'.repeat(maxNameLen)}-+-${'-'.repeat(maxCategoryLen)}-+-${'-'.repeat(
-      maxVersionsLen
+      maxVariationsLen
     )}-+------`
   );
 
@@ -193,7 +193,7 @@ function formatFillingListTable(fillings: IFillingListItem[]): string {
       `${padRight(filling.id, maxIdLen)} | ${padRight(filling.name, maxNameLen)} | ${padRight(
         category,
         maxCategoryLen
-      )} | ${padRight(String(filling.versionCount), maxVersionsLen)} | ${tags}`
+      )} | ${padRight(String(filling.variationCount), maxVariationsLen)} | ${tags}`
     );
   }
 
@@ -227,7 +227,7 @@ export function formatFillingList(fillings: IFillingListItem[], format: OutputFo
 function formatFillingHuman(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
-  versionSpec?: FillingRecipeVariationSpec,
+  variationSpec?: FillingRecipeVariationSpec,
   context?: IFillingRenderContext
 ): string {
   const lines: string[] = [];
@@ -246,38 +246,38 @@ function formatFillingHuman(
 
   lines.push('');
 
-  // Find the requested version
-  const targetVersionSpec = versionSpec ?? filling.goldenVersionSpec;
-  const version = filling.versions.find((v) => v.versionSpec === targetVersionSpec);
+  // Find the requested variation
+  const targetVariationSpec = variationSpec ?? filling.goldenVariationSpec;
+  const variation = filling.variations.find((v) => v.variationSpec === targetVariationSpec);
 
-  if (!version) {
-    lines.push(`Version ${targetVersionSpec} not found.`);
-    lines.push(`Available versions: ${filling.versions.map((v) => v.versionSpec).join(', ')}`);
+  if (!variation) {
+    lines.push(`Variation ${targetVariationSpec} not found.`);
+    lines.push(`Available variations: ${filling.variations.map((v) => v.variationSpec).join(', ')}`);
     return lines.join('\n');
   }
 
-  const isGolden = targetVersionSpec === filling.goldenVersionSpec;
-  lines.push(`Version: ${version.versionSpec}${isGolden ? ' (golden)' : ''}`);
-  lines.push(`Created: ${version.createdDate}`);
-  lines.push(`Base Weight: ${version.baseWeight}g`);
+  const isGolden = targetVariationSpec === filling.goldenVariationSpec;
+  lines.push(`Variation: ${variation.variationSpec}${isGolden ? ' (golden)' : ''}`);
+  lines.push(`Created: ${variation.createdDate}`);
+  lines.push(`Base Weight: ${variation.baseWeight}g`);
 
-  if (version.yield) {
-    lines.push(`Yield: ${version.yield}`);
+  if (variation.yield) {
+    lines.push(`Yield: ${variation.yield}`);
   }
 
-  if (version.notes) {
-    lines.push(`Notes: ${version.notes}`);
+  if (variation.notes) {
+    lines.push(`Notes: ${variation.notes}`);
   }
 
   lines.push('');
   lines.push('Ingredients:');
 
   // Find max ingredient ID length for alignment
-  const maxIdLen = Math.max(...version.ingredients.map((i) => getIngredientDisplayId(i).length));
+  const maxIdLen = Math.max(...variation.ingredients.map((i) => getIngredientDisplayId(i).length));
 
-  for (const ingredient of version.ingredients) {
+  for (const ingredient of variation.ingredients) {
     const displayId = getIngredientDisplayId(ingredient);
-    const pct = calculatePercentage(ingredient.amount, version.baseWeight);
+    const pct = calculatePercentage(ingredient.amount, variation.baseWeight);
     const notes = ingredient.notes ? `  (${ingredient.notes})` : '';
     lines.push(
       `  ${padRight(displayId, maxIdLen)}  ${padRight(
@@ -288,18 +288,18 @@ function formatFillingHuman(
   }
 
   // Show ratings if present
-  if (version.ratings && version.ratings.length > 0) {
+  if (variation.ratings && variation.ratings.length > 0) {
     lines.push('');
     lines.push('Ratings:');
-    for (const rating of version.ratings) {
+    for (const rating of variation.ratings) {
       const notes = rating.notes ? ` - ${rating.notes}` : '';
       lines.push(`  ${padRight(rating.category, 12)}: ${rating.score}/5${notes}`);
     }
   }
 
   // Show procedures if present
-  if (version.procedures && version.procedures.options.length > 0) {
-    formatProcedureRefs(version.procedures, lines, context);
+  if (variation.procedures && variation.procedures.options.length > 0) {
+    formatProcedureRefs(variation.procedures, lines, context);
   }
 
   // Show URLs if present
@@ -307,14 +307,14 @@ function formatFillingHuman(
     formatUrls(filling.urls, lines);
   }
 
-  // Show other versions
-  if (filling.versions.length > 1) {
+  // Show other variations
+  if (filling.variations.length > 1) {
     lines.push('');
-    lines.push(`Other versions (${filling.versions.length - 1}):`);
-    for (const v of filling.versions) {
-      if (v.versionSpec !== targetVersionSpec) {
-        const golden = v.versionSpec === filling.goldenVersionSpec ? ' (golden)' : '';
-        lines.push(`  ${v.versionSpec}${golden} - ${v.createdDate}`);
+    lines.push(`Other variations (${filling.variations.length - 1}):`);
+    for (const v of filling.variations) {
+      if (v.variationSpec !== targetVariationSpec) {
+        const golden = v.variationSpec === filling.goldenVariationSpec ? ' (golden)' : '';
+        lines.push(`  ${v.variationSpec}${golden} - ${v.createdDate}`);
       }
     }
   }
@@ -328,10 +328,10 @@ function formatFillingHuman(
 function formatFillingTable(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
-  versionSpec?: FillingRecipeVariationSpec,
+  variationSpec?: FillingRecipeVariationSpec,
   context?: IFillingRenderContext
 ): string {
-  return formatFillingHuman(filling, fillingId, versionSpec, context);
+  return formatFillingHuman(filling, fillingId, variationSpec, context);
 }
 
 /**
@@ -341,7 +341,7 @@ export function formatFilling(
   filling: Entities.Fillings.IFillingRecipeEntity,
   fillingId: FillingId,
   format: OutputFormat,
-  versionSpec?: FillingRecipeVariationSpec,
+  variationSpec?: FillingRecipeVariationSpec,
   context?: IFillingRenderContext
 ): string {
   switch (format) {
@@ -350,10 +350,10 @@ export function formatFilling(
     case 'yaml':
       return yaml.stringify(filling);
     case 'table':
-      return formatFillingTable(filling, fillingId, versionSpec, context);
+      return formatFillingTable(filling, fillingId, variationSpec, context);
     case 'human':
     default:
-      return formatFillingHuman(filling, fillingId, versionSpec, context);
+      return formatFillingHuman(filling, fillingId, variationSpec, context);
   }
 }
 
@@ -366,17 +366,17 @@ export function formatFilling(
  */
 function formatProducedFillingHuman(
   produced: Entities.Fillings.IProducedFillingEntity,
-  sourceVersion: Entities.Fillings.IFillingRecipeVersionEntity,
+  sourceVariation: Entities.Fillings.IFillingRecipeVariationEntity,
   precision?: number
 ): string {
   const lines: string[] = [];
 
   const factor = produced.scaleFactor;
   const targetWeight = produced.targetWeight;
-  const sourceWeight = sourceVersion.baseWeight;
+  const sourceWeight = sourceVariation.baseWeight;
 
   lines.push(`Produced Filling`);
-  lines.push(`Source: ${produced.versionId}`);
+  lines.push(`Source: ${produced.variationId}`);
   lines.push(`Scale Factor: ${formatNumber(factor, 2)}x`);
   lines.push(`Source Weight: ${sourceWeight}g`);
   lines.push(`Target Weight: ${targetWeight}g`);
@@ -392,8 +392,8 @@ function formatProducedFillingHuman(
     const amount = ingredient.amount;
     const pct = calculatePercentage(amount, targetWeight);
 
-    // Find original amount from source version
-    const sourceIngredient = sourceVersion.ingredients.find((si) =>
+    // Find original amount from source variation
+    const sourceIngredient = sourceVariation.ingredients.find((si) =>
       si.ingredient.ids.includes(ingredient.ingredientId)
     );
     const originalAmount = sourceIngredient ? sourceIngredient.amount : 0;
@@ -418,10 +418,10 @@ function formatProducedFillingHuman(
  */
 function formatProducedFillingTable(
   produced: Entities.Fillings.IProducedFillingEntity,
-  sourceVersion: Entities.Fillings.IFillingRecipeVersionEntity,
+  sourceVariation: Entities.Fillings.IFillingRecipeVariationEntity,
   precision?: number
 ): string {
-  return formatProducedFillingHuman(produced, sourceVersion, precision);
+  return formatProducedFillingHuman(produced, sourceVariation, precision);
 }
 
 /**
@@ -429,7 +429,7 @@ function formatProducedFillingTable(
  */
 export function formatProducedFilling(
   produced: Entities.Fillings.IProducedFillingEntity,
-  sourceVersion: Entities.Fillings.IFillingRecipeVersionEntity,
+  sourceVariation: Entities.Fillings.IFillingRecipeVariationEntity,
   format: OutputFormat,
   precision?: number
 ): string {
@@ -439,9 +439,9 @@ export function formatProducedFilling(
     case 'yaml':
       return yaml.stringify(produced);
     case 'table':
-      return formatProducedFillingTable(produced, sourceVersion, precision);
+      return formatProducedFillingTable(produced, sourceVariation, precision);
     case 'human':
     default:
-      return formatProducedFillingHuman(produced, sourceVersion, precision);
+      return formatProducedFillingHuman(produced, sourceVariation, precision);
   }
 }

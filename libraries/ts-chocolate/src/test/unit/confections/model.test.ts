@@ -37,8 +37,8 @@ describe('Confections model', () => {
   // Test Data
   // ============================================================================
 
-  const moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity = {
-    versionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+  const moldedBonBonVersion: Confections.IMoldedBonBonRecipeVariationEntity = {
+    variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Basic dome bonbon with dark ganache filling' }
@@ -67,18 +67,18 @@ describe('Confections model', () => {
     }
   };
 
-  const baseMoldedBonBon: Confections.IMoldedBonBonEntity = {
+  const baseMoldedBonBon: Confections.MoldedBonBonRecipeEntity = {
     baseId: 'dark-dome-bonbon' as BaseConfectionId,
     confectionType: 'molded-bonbon',
     name: 'Classic Dark Dome Bonbon' as ConfectionName,
     description: 'Traditional molded dark chocolate bonbon with dome shape',
     tags: ['classic', 'dark', 'molded', 'dome'],
-    goldenVersionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
-    versions: [moldedBonBonVersion]
+    goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+    variations: [moldedBonBonVersion]
   };
 
-  const barTruffleVersion: Confections.IBarTruffleVersionEntity = {
-    versionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+  const barTruffleVersion: Confections.IBarTruffleRecipeVariationEntity = {
+    variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Standard 25mm square bar truffles' }
@@ -112,18 +112,18 @@ describe('Confections model', () => {
     }
   };
 
-  const baseBarTruffle: Confections.IBarTruffleEntity = {
+  const baseBarTruffle: Confections.BarTruffleRecipeEntity = {
     baseId: 'dark-bar-truffle' as BaseConfectionId,
     confectionType: 'bar-truffle',
     name: 'Classic Dark Bar Truffle' as ConfectionName,
     description: 'Ganache slab cut into squares and enrobed',
     tags: ['classic', 'dark', 'bar', 'enrobed'],
-    goldenVersionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
-    versions: [barTruffleVersion]
+    goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+    variations: [barTruffleVersion]
   };
 
-  const rolledTruffleVersion: Confections.IRolledTruffleVersionEntity = {
-    versionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+  const rolledTruffleVersion: Confections.IRolledTruffleRecipeVariationEntity = {
+    variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-01',
     notes: [
       { category: 'user', note: 'Traditional rolled truffle with cocoa coating' }
@@ -148,14 +148,14 @@ describe('Confections model', () => {
     }
   };
 
-  const baseRolledTruffle: Confections.IRolledTruffleEntity = {
+  const baseRolledTruffle: Confections.RolledTruffleRecipeEntity = {
     baseId: 'dark-cocoa-truffle' as BaseConfectionId,
     confectionType: 'rolled-truffle',
     name: 'Classic Cocoa-Dusted Truffle' as ConfectionName,
     description: 'Hand-rolled ganache truffle dusted with cocoa powder',
     tags: ['classic', 'dark', 'rolled', 'cocoa'],
-    goldenVersionSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
-    versions: [rolledTruffleVersion]
+    goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+    variations: [rolledTruffleVersion]
   };
 
   // ============================================================================
@@ -165,15 +165,15 @@ describe('Confections model', () => {
   describe('type guards', () => {
     describe('isMoldedBonBon', () => {
       test('returns true for molded bonbon', () => {
-        expect(Confections.isMoldedBonBonEntity(baseMoldedBonBon)).toBe(true);
+        expect(Confections.isMoldedBonBonRecipeEntity(baseMoldedBonBon)).toBe(true);
       });
 
       test('returns false for bar truffle', () => {
-        expect(Confections.isMoldedBonBonEntity(baseBarTruffle)).toBe(false);
+        expect(Confections.isMoldedBonBonRecipeEntity(baseBarTruffle)).toBe(false);
       });
 
       test('returns false for rolled truffle', () => {
-        expect(Confections.isMoldedBonBonEntity(baseRolledTruffle)).toBe(false);
+        expect(Confections.isMoldedBonBonRecipeEntity(baseRolledTruffle)).toBe(false);
       });
     });
 
@@ -193,24 +193,24 @@ describe('Confections model', () => {
 
     describe('isRolledTruffle', () => {
       test('returns true for rolled truffle', () => {
-        expect(Confections.isRolledTruffleEntity(baseRolledTruffle)).toBe(true);
+        expect(Confections.isRolledTruffleRecipeEntity(baseRolledTruffle)).toBe(true);
       });
 
       test('returns false for molded bonbon', () => {
-        expect(Confections.isRolledTruffleEntity(baseMoldedBonBon)).toBe(false);
+        expect(Confections.isRolledTruffleRecipeEntity(baseMoldedBonBon)).toBe(false);
       });
 
       test('returns false for bar truffle', () => {
-        expect(Confections.isRolledTruffleEntity(baseBarTruffle)).toBe(false);
+        expect(Confections.isRolledTruffleRecipeEntity(baseBarTruffle)).toBe(false);
       });
     });
 
     describe('type narrowing', () => {
       test('narrows correctly for molded bonbon', () => {
-        const confection: Confections.AnyConfectionEntity = baseMoldedBonBon;
-        if (Confections.isMoldedBonBonEntity(confection)) {
+        const confection: Confections.AnyConfectionRecipeEntity = baseMoldedBonBon;
+        if (Confections.isMoldedBonBonRecipeEntity(confection)) {
           // TypeScript should know this is IMoldedBonBon
-          const version = confection.versions[0];
+          const version = confection.variations[0];
           expect(version.molds).toBeDefined();
           expect(version.shellChocolate).toBeDefined();
         } else {
@@ -219,10 +219,10 @@ describe('Confections model', () => {
       });
 
       test('narrows correctly for bar truffle', () => {
-        const confection: Confections.AnyConfectionEntity = baseBarTruffle;
+        const confection: Confections.AnyConfectionRecipeEntity = baseBarTruffle;
         if (Confections.isBarTruffleEntity(confection)) {
           // TypeScript should know this is IBarTruffle
-          const version = confection.versions[0];
+          const version = confection.variations[0];
           expect(version.frameDimensions).toBeDefined();
           expect(version.singleBonBonDimensions).toBeDefined();
         } else {
@@ -231,10 +231,10 @@ describe('Confections model', () => {
       });
 
       test('narrows correctly for rolled truffle', () => {
-        const confection: Confections.AnyConfectionEntity = baseRolledTruffle;
-        if (Confections.isRolledTruffleEntity(confection)) {
+        const confection: Confections.AnyConfectionRecipeEntity = baseRolledTruffle;
+        if (Confections.isRolledTruffleRecipeEntity(confection)) {
           // TypeScript should know this is IRolledTruffle
-          const version = confection.versions[0];
+          const version = confection.variations[0];
           expect(version.coatings).toBeDefined();
         } else {
           fail('Expected isRolledTruffleEntity to return true');
@@ -244,21 +244,21 @@ describe('Confections model', () => {
 
     describe('version type guards', () => {
       test('isMoldedBonBonVersion returns true for molded bonbon version', () => {
-        expect(Confections.isMoldedBonBonVersionEntity(moldedBonBonVersion)).toBe(true);
-        expect(Confections.isMoldedBonBonVersionEntity(barTruffleVersion)).toBe(false);
-        expect(Confections.isMoldedBonBonVersionEntity(rolledTruffleVersion)).toBe(false);
+        expect(Confections.isMoldedBonBonRecipeVariationEntity(moldedBonBonVersion)).toBe(true);
+        expect(Confections.isMoldedBonBonRecipeVariationEntity(barTruffleVersion)).toBe(false);
+        expect(Confections.isMoldedBonBonRecipeVariationEntity(rolledTruffleVersion)).toBe(false);
       });
 
       test('isBarTruffleVersion returns true for bar truffle version', () => {
-        expect(Confections.isBarTruffleVersionEntity(barTruffleVersion)).toBe(true);
-        expect(Confections.isBarTruffleVersionEntity(moldedBonBonVersion)).toBe(false);
-        expect(Confections.isBarTruffleVersionEntity(rolledTruffleVersion)).toBe(false);
+        expect(Confections.isBarTruffleRecipeVariationEntity(barTruffleVersion)).toBe(true);
+        expect(Confections.isBarTruffleRecipeVariationEntity(moldedBonBonVersion)).toBe(false);
+        expect(Confections.isBarTruffleRecipeVariationEntity(rolledTruffleVersion)).toBe(false);
       });
 
       test('isRolledTruffleVersion returns true for rolled truffle version', () => {
-        expect(Confections.isRolledTruffleVersionEntity(rolledTruffleVersion)).toBe(true);
-        expect(Confections.isRolledTruffleVersionEntity(moldedBonBonVersion)).toBe(false);
-        expect(Confections.isRolledTruffleVersionEntity(barTruffleVersion)).toBe(false);
+        expect(Confections.isRolledTruffleRecipeVariationEntity(rolledTruffleVersion)).toBe(true);
+        expect(Confections.isRolledTruffleRecipeVariationEntity(moldedBonBonVersion)).toBe(false);
+        expect(Confections.isRolledTruffleRecipeVariationEntity(barTruffleVersion)).toBe(false);
       });
     });
   });
@@ -273,8 +273,8 @@ describe('Confections model', () => {
         expect(baseMoldedBonBon.baseId).toBe('dark-dome-bonbon');
         expect(baseMoldedBonBon.confectionType).toBe('molded-bonbon');
         expect(baseMoldedBonBon.name).toBe('Classic Dark Dome Bonbon');
-        expect(baseMoldedBonBon.versions).toHaveLength(1);
-        expect(baseMoldedBonBon.goldenVersionSpec).toBe('2026-01-01-01');
+        expect(baseMoldedBonBon.variations).toHaveLength(1);
+        expect(baseMoldedBonBon.goldenVariationSpec).toBe('2026-01-01-01');
       });
 
       test('has optional base properties', () => {
@@ -283,27 +283,27 @@ describe('Confections model', () => {
       });
 
       test('version has required properties', () => {
-        const version = baseMoldedBonBon.versions[0];
+        const version = baseMoldedBonBon.variations[0];
         expect(version.molds).toBeDefined();
         expect(version.shellChocolate).toBeDefined();
         expect(version.yield).toBeDefined();
       });
 
       test('version has optional properties', () => {
-        const version = baseMoldedBonBon.versions[0];
+        const version = baseMoldedBonBon.variations[0];
         expect(version.fillings).toBeDefined();
         expect(version.additionalChocolates).toBeUndefined();
       });
 
       test('molds structure is correct', () => {
-        const version = baseMoldedBonBon.versions[0];
+        const version = baseMoldedBonBon.variations[0];
         expect(version.molds.options).toHaveLength(1);
         expect(version.molds.options[0].id).toBe('common.dome-25mm');
         expect(version.molds.preferredId).toBe('common.dome-25mm');
       });
 
       test('shellChocolate structure is correct', () => {
-        const version = baseMoldedBonBon.versions[0];
+        const version = baseMoldedBonBon.variations[0];
         expect(version.shellChocolate.ids).toHaveLength(2);
         expect(version.shellChocolate.ids[0]).toBe('cacao-barry.guayaquil-64');
         expect(version.shellChocolate.preferredId).toBe('cacao-barry.guayaquil-64');
@@ -315,30 +315,30 @@ describe('Confections model', () => {
         expect(baseBarTruffle.baseId).toBe('dark-bar-truffle');
         expect(baseBarTruffle.confectionType).toBe('bar-truffle');
         expect(baseBarTruffle.name).toBe('Classic Dark Bar Truffle');
-        expect(baseBarTruffle.versions).toHaveLength(1);
+        expect(baseBarTruffle.variations).toHaveLength(1);
       });
 
       test('version has required properties', () => {
-        const version = baseBarTruffle.versions[0];
+        const version = baseBarTruffle.variations[0];
         expect(version.frameDimensions).toBeDefined();
         expect(version.singleBonBonDimensions).toBeDefined();
         expect(version.yield).toBeDefined();
       });
 
       test('version has optional properties', () => {
-        const version = baseBarTruffle.versions[0];
+        const version = baseBarTruffle.variations[0];
         expect(version.enrobingChocolate).toBeDefined();
       });
 
       test('frame dimensions structure is correct', () => {
-        const version = baseBarTruffle.versions[0];
+        const version = baseBarTruffle.variations[0];
         expect(version.frameDimensions.width).toBe(300);
         expect(version.frameDimensions.height).toBe(200);
         expect(version.frameDimensions.depth).toBe(8);
       });
 
       test('single bonbon dimensions structure is correct', () => {
-        const version = baseBarTruffle.versions[0];
+        const version = baseBarTruffle.variations[0];
         expect(version.singleBonBonDimensions.width).toBe(25);
         expect(version.singleBonBonDimensions.height).toBe(25);
       });
@@ -349,17 +349,17 @@ describe('Confections model', () => {
         expect(baseRolledTruffle.baseId).toBe('dark-cocoa-truffle');
         expect(baseRolledTruffle.confectionType).toBe('rolled-truffle');
         expect(baseRolledTruffle.name).toBe('Classic Cocoa-Dusted Truffle');
-        expect(baseRolledTruffle.versions).toHaveLength(1);
+        expect(baseRolledTruffle.variations).toHaveLength(1);
       });
 
       test('version has optional properties', () => {
-        const version = baseRolledTruffle.versions[0];
+        const version = baseRolledTruffle.variations[0];
         expect(version.coatings).toBeDefined();
         expect(version.enrobingChocolate).toBeUndefined();
       });
 
       test('coatings structure is correct', () => {
-        const version = baseRolledTruffle.versions[0];
+        const version = baseRolledTruffle.variations[0];
         expect(version.coatings?.ids).toHaveLength(1);
         expect(version.coatings?.ids[0]).toBe('common.cocoa-powder');
         expect(version.coatings?.preferredId).toBe('common.cocoa-powder');
@@ -368,7 +368,7 @@ describe('Confections model', () => {
 
     describe('IConfectionYield', () => {
       test('structure is correct', () => {
-        const version = baseMoldedBonBon.versions[0];
+        const version = baseMoldedBonBon.variations[0];
         expect(version.yield.count).toBe(24);
         expect(version.yield.unit).toBe('pieces');
         expect(version.yield.weightPerPiece).toBe(12);
@@ -377,7 +377,7 @@ describe('Confections model', () => {
 
     describe('IFillingSlot', () => {
       test('structure is correct', () => {
-        const version = baseMoldedBonBon.versions[0];
+        const version = baseMoldedBonBon.variations[0];
         expect(version.fillings).toHaveLength(1);
         const slot = version.fillings?.[0];
         expect(slot?.slotId).toBe('center');
@@ -388,8 +388,8 @@ describe('Confections model', () => {
 
     describe('IConfectionVersion', () => {
       test('structure is correct', () => {
-        const version = baseMoldedBonBon.versions[0];
-        expect(version.versionSpec).toBe('2026-01-01-01');
+        const version = baseMoldedBonBon.variations[0];
+        expect(version.variationSpec).toBe('2026-01-01-01');
         expect(version.createdDate).toBe('2026-01-01');
         expect(version.notes).toBeDefined();
       });

@@ -2,7 +2,7 @@
 
 ## JournalLibrary.getJournalsForConfection() method
 
-Gets all confection journal entries for a confection (across all versions and collections)
+Gets all confection journal entries for a confection (across all variations and collections)
 
 **Signature:**
 

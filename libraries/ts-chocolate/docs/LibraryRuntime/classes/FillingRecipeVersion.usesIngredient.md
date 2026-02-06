@@ -2,7 +2,7 @@
 
 ## FillingRecipeVersion.usesIngredient() method
 
-Checks if this version uses a specific ingredient (as primary).
+Checks if this variation uses a specific ingredient (as primary).
 
 **Signature:**
 
@@ -21,4 +21,4 @@ usesIngredient(ingredientId: IngredientId): boolean;
 
 boolean
 
-True if the ingredient is used in this version
+True if the ingredient is used in this variation

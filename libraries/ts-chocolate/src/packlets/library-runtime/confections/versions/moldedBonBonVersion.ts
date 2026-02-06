@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * MoldedBonBonVersion - runtime version for molded bonbon confections
+ * MoldedBonBonRecipeVariation - variation of some molded bon-bon recipe.
  * @packageDocumentation
  */
 
@@ -33,66 +33,51 @@ import {
   IResolvedChocolateSpec,
   IResolvedConfectionMoldRef,
   IResolvedConfectionProcedure,
-  IMoldedBonBon,
-  IMoldedBonBonVersion
+  IMoldedBonBonRecipe,
+  IMoldedBonBonRecipeVariation
 } from '../../model';
-import { ConfectionVersionBase } from './confectionVersionBase';
-
-// ============================================================================
-// MoldedBonBonVersion Class
-// ============================================================================
+import { ConfectionRecipeVariationBase } from './confectionVersionBase';
 
 /**
- * A resolved view of a molded bonbon version with all references resolved.
+ * A resolved view of a molded bonbon variation with all references resolved.
  * @public
  */
-export class MoldedBonBonVersion
-  extends ConfectionVersionBase<IMoldedBonBon, Confections.IMoldedBonBonVersionEntity>
-  implements IMoldedBonBonVersion
+export class MoldedBonBonRecipeVariation
+  extends ConfectionRecipeVariationBase<IMoldedBonBonRecipe, Confections.IMoldedBonBonRecipeVariationEntity>
+  implements IMoldedBonBonRecipeVariation
 {
-  private readonly _moldedBonBonVersion: Confections.IMoldedBonBonVersionEntity;
-
   // Lazy-resolved caches (undefined = not yet resolved)
   private _resolvedShellChocolate: IResolvedChocolateSpec | undefined;
   private _resolvedAdditionalChocolates: ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
   private _resolvedMolds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> | undefined;
 
   /**
-   * Creates a MoldedBonBonVersion.
-   * Use MoldedBonBonVersion.create() instead.
+   * Creates a MoldedBonBonRecipeVariation.
+   * Use MoldedBonBonRecipeVariation.create() instead.
    * @internal
    */
   protected constructor(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IMoldedBonBonVersionEntity
+    variation: Confections.IMoldedBonBonRecipeVariationEntity
   ) {
-    super(context, confectionId, version);
-    this._moldedBonBonVersion = version;
+    super(context, confectionId, variation);
   }
 
   /**
-   * Factory method for creating a MoldedBonBonVersion.
+   * Factory method for creating a MoldedBonBonRecipeVariation.
    * @param context - The runtime context
    * @param confectionId - The parent confection ID
-   * @param version - The molded bonbon version data
-   * @returns Success with MoldedBonBonVersion
+   * @param variation - The molded bonbon variation data
+   * @returns Success with MoldedBonBonRecipeVariation
    */
   public static create(
     context: IConfectionContext,
     confectionId: ConfectionId,
-    version: Confections.IMoldedBonBonVersionEntity
-  ): Result<MoldedBonBonVersion> {
-    return Success.with(new MoldedBonBonVersion(context, confectionId, version));
+    variation: Confections.IMoldedBonBonRecipeVariationEntity
+  ): Result<MoldedBonBonRecipeVariation> {
+    return Success.with(new MoldedBonBonRecipeVariation(context, confectionId, variation));
   }
-
-  // ============================================================================
-  // Parent Navigation (narrowed type)
-  // ============================================================================
-
-  // ============================================================================
-  // Molded BonBon-Specific Properties (lazy)
-  // ============================================================================
 
   /**
    * Gets resolved molds with preferred selection (lazy-loaded).
@@ -101,7 +86,7 @@ export class MoldedBonBonVersion
    */
   public getMolds(): Result<CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>> {
     if (this._resolvedMolds === undefined) {
-      const moldRefs = this._moldedBonBonVersion.molds;
+      const moldRefs = this._entity.molds;
       return this._context.molds
         .getRefsWithAlternates(moldRefs)
         .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve molds: ${msg}`)
@@ -142,7 +127,7 @@ export class MoldedBonBonVersion
    */
   public getShellChocolate(): Result<IResolvedChocolateSpec> {
     if (this._resolvedShellChocolate === undefined) {
-      const spec = this._moldedBonBonVersion.shellChocolate;
+      const spec = this._entity.shellChocolate;
       return this._context.ingredients
         .getWithAlternates(spec)
         .withErrorFormat(
@@ -180,7 +165,7 @@ export class MoldedBonBonVersion
    */
   public getAdditionalChocolates(): Result<ReadonlyArray<IResolvedAdditionalChocolate>> {
     if (this._resolvedAdditionalChocolates === undefined) {
-      const additional = this._moldedBonBonVersion.additionalChocolates ?? [];
+      const additional = this._entity.additionalChocolates ?? [];
       return mapResults(additional.map((item) => this._resolveAdditionalChocolate(item))).onSuccess(
         (chocolates) => {
           this._resolvedAdditionalChocolates = chocolates;
@@ -251,9 +236,9 @@ export class MoldedBonBonVersion
   }
 
   /**
-   * Gets the underlying molded bonbon version entity data.
+   * Gets the underlying molded bonbon variation entity data.
    */
-  public override get entity(): Confections.IMoldedBonBonVersionEntity {
-    return this._moldedBonBonVersion;
+  public override get entity(): Confections.IMoldedBonBonRecipeVariationEntity {
+    return this._entity;
   }
 }

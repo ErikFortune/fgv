@@ -104,10 +104,10 @@ describe('EditingSession', () => {
     name: 'Test Ganache' as FillingName,
     category: 'ganache',
     description: 'A test ganache recipe',
-    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
-    versions: [
+    goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    variations: [
       {
-        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+        variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Original recipe' }] as CommonModel.ICategorizedNote[],
         ingredients: [
@@ -168,7 +168,7 @@ describe('EditingSession', () => {
 
   describe('create', () => {
     test('creates session from base recipe', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       expect(Session.EditingSession.create(version)).toSucceedAndSatisfy((session) => {
         expect(session.sessionId).toBeDefined();
         expect(session.baseRecipe).toBe(version);
@@ -177,14 +177,14 @@ describe('EditingSession', () => {
     });
 
     test('creates session with initial scale factor', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       expect(Session.EditingSession.create(version, 2.0)).toSucceedAndSatisfy((session) => {
         expect(session.produced.targetWeight).toBe(600);
       });
     });
 
     test('fails for non-positive scale factor', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       expect(Session.EditingSession.create(version, 0)).toFailWith(/positive/i);
       expect(Session.EditingSession.create(version, -1)).toFailWith(/positive/i);
     });
@@ -196,7 +196,7 @@ describe('EditingSession', () => {
 
   describe('setIngredient', () => {
     test('delegates to produced wrapper', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement)).toSucceed();
@@ -209,7 +209,7 @@ describe('EditingSession', () => {
     });
 
     test('allows adding new ingredient', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.setIngredient('test.butter' as IngredientId, 30 as Measurement)).toSucceed();
@@ -223,7 +223,7 @@ describe('EditingSession', () => {
 
   describe('removeIngredient', () => {
     test('delegates to produced wrapper', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.removeIngredient('test.cream' as IngredientId)).toSucceed();
@@ -236,7 +236,7 @@ describe('EditingSession', () => {
 
   describe('scaleToTargetWeight', () => {
     test('delegates to produced wrapper', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.scaleToTargetWeight(600 as Measurement)).toSucceed();
@@ -247,7 +247,7 @@ describe('EditingSession', () => {
 
   describe('setNotes', () => {
     test('delegates to produced wrapper', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       const notes = [{ category: 'session' as NoteCategory, note: 'Test note' }];
@@ -259,7 +259,7 @@ describe('EditingSession', () => {
 
   describe('setProcedure', () => {
     test('delegates to produced wrapper', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       // Setting procedure to a value when it was undefined should register as a change
@@ -274,7 +274,7 @@ describe('EditingSession', () => {
 
   describe('undo/redo', () => {
     test('can undo changes', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
@@ -285,7 +285,7 @@ describe('EditingSession', () => {
     });
 
     test('can redo changes', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.setIngredient('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
@@ -296,21 +296,21 @@ describe('EditingSession', () => {
     });
 
     test('returns false when no undo available', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.undo()).toSucceedWith(false);
     });
 
     test('returns false when no redo available', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.redo()).toSucceedWith(false);
     });
 
     test('canUndo reflects undo availability', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.canUndo()).toBe(false);
@@ -319,7 +319,7 @@ describe('EditingSession', () => {
     });
 
     test('canRedo reflects redo availability', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.canRedo()).toBe(false);
@@ -335,20 +335,20 @@ describe('EditingSession', () => {
 
   describe('analyzeSaveOptions', () => {
     test('recommends version for weight changes', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.scaleToTargetWeight(600 as Measurement).orThrow();
       const analysis = session.analyzeSaveOptions();
 
-      expect(analysis.canCreateVersion).toBe(true);
+      expect(analysis.canCreateVariation).toBe(true);
       // Scaling changes ingredients proportionally, so it's an "alternatives" scenario
       expect(analysis.recommendedOption).toBe('alternatives');
       expect(analysis.changes.weightChanged).toBe(true);
     });
 
     test('recommends alternatives for ingredient changes', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.setIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
@@ -366,34 +366,34 @@ describe('EditingSession', () => {
 
   describe('saveAsNewVersion', () => {
     test('creates journal entry with new version spec', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.scaleToTargetWeight(600 as Measurement).orThrow();
 
       expect(
-        session.saveAsNewVersion({
-          versionSpec: '2026-01-02-01' as FillingRecipeVariationSpec,
+        session.saveAsNewVariation({
+          variationSpec: '2026-01-02-01' as FillingRecipeVariationSpec,
           baseWeight: 600 as Measurement
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
         expect(result.journalEntry).toBeDefined();
-        expect(result.newVersionSpec).toBe('2026-01-02-01');
+        expect(result.newVariationSpec).toBe('2026-01-02-01');
       });
     });
   });
 
   describe('saveAsAlternatives', () => {
     test('creates journal entry', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.setIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
 
       expect(
         session.saveAsAlternatives({
-          versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
+          variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
@@ -404,7 +404,7 @@ describe('EditingSession', () => {
 
   describe('saveAsNewRecipe', () => {
     test('creates journal entry with new recipe info', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.scaleToTargetWeight(600 as Measurement).orThrow();
@@ -412,7 +412,7 @@ describe('EditingSession', () => {
       expect(
         session.saveAsNewRecipe({
           newId: 'test.new-ganache' as FillingId,
-          versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+          variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
           baseWeight: 600 as Measurement
         })
       ).toSucceedAndSatisfy((result) => {
@@ -428,7 +428,7 @@ describe('EditingSession', () => {
 
   describe('toEditJournalEntry', () => {
     test('creates edit journal entry', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.scaleToTargetWeight(600 as Measurement).orThrow();
@@ -436,13 +436,13 @@ describe('EditingSession', () => {
       expect(session.toEditJournalEntry()).toSucceedAndSatisfy((entry) => {
         expect(entry.type).toBe('filling-edit');
         expect(entry.baseId).toBeDefined();
-        expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(entry.variationId).toBe('test.test-ganache@2026-01-01-01');
         expect(entry.recipe).toBeDefined();
       });
     });
 
     test('includes notes when provided', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       const notes = [{ category: 'session' as NoteCategory, note: 'Test session' }];
@@ -454,20 +454,20 @@ describe('EditingSession', () => {
 
   describe('toProductionJournalEntry', () => {
     test('creates production journal entry', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.toProductionJournalEntry()).toSucceedAndSatisfy((entry) => {
         expect(entry.type).toBe('filling-production');
         expect(entry.baseId).toBeDefined();
-        expect(entry.versionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(entry.variationId).toBe('test.test-ganache@2026-01-01-01');
         expect(entry.yield).toBe(300);
         expect(entry.produced).toBeDefined();
       });
     });
 
     test('includes notes when provided', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       const notes = [{ category: 'production' as NoteCategory, note: 'Production run' }];
@@ -483,14 +483,14 @@ describe('EditingSession', () => {
 
   describe('hasChanges', () => {
     test('returns false for new session', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.hasChanges).toBe(false);
     });
 
     test('returns true after modifications', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.scaleToTargetWeight(600 as Measurement).orThrow();
@@ -498,7 +498,7 @@ describe('EditingSession', () => {
     });
 
     test('returns false after undo to original state', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       session.scaleToTargetWeight(600 as Measurement).orThrow();
@@ -513,7 +513,7 @@ describe('EditingSession', () => {
 
   describe('accessors', () => {
     test('provides sessionId', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.sessionId).toBeDefined();
@@ -521,14 +521,14 @@ describe('EditingSession', () => {
     });
 
     test('provides baseRecipe', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.baseRecipe).toBe(version);
     });
 
     test('provides produced wrapper', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(session.produced).toBeDefined();
@@ -542,7 +542,7 @@ describe('EditingSession', () => {
 
   describe('toPersistedState', () => {
     test('creates persisted state from session', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(
@@ -553,7 +553,7 @@ describe('EditingSession', () => {
         expect(persisted.sessionType).toBe('filling');
         expect(persisted.status).toBe('active');
         expect(persisted.baseId).toBeDefined();
-        expect(persisted.sourceVersionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(persisted.sourceVariationId).toBe('test.test-ganache@2026-01-01-01');
         expect(persisted.history.current).toBeDefined();
         expect(persisted.history.original).toBeDefined();
         expect(persisted.history.undoStack).toHaveLength(0);
@@ -563,7 +563,7 @@ describe('EditingSession', () => {
     });
 
     test('preserves undo/redo stacks in persisted state', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       // Make changes to create undo history
@@ -586,7 +586,7 @@ describe('EditingSession', () => {
     });
 
     test('uses provided baseId', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(
@@ -600,7 +600,7 @@ describe('EditingSession', () => {
     });
 
     test('respects status option', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       expect(
@@ -614,7 +614,7 @@ describe('EditingSession', () => {
     });
 
     test('includes label and notes when provided', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       const notes = [{ category: 'session' as NoteCategory, note: 'Test session notes' }];
@@ -633,7 +633,7 @@ describe('EditingSession', () => {
 
   describe('fromPersistedState', () => {
     test('restores session from persisted state', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       // Make a change
@@ -658,7 +658,7 @@ describe('EditingSession', () => {
     });
 
     test('restores undo/redo stacks', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
 
       // Make changes
@@ -688,14 +688,14 @@ describe('EditingSession', () => {
     });
 
     test('fails for version mismatch', () => {
-      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(version).orThrow();
       const persisted = session.toPersistedState({ collectionId: 'user' as CollectionId }).orThrow();
 
       // Create a fake persisted state with wrong version ID
       const wrongPersisted: IFillingSessionEntity = {
         ...persisted,
-        sourceVersionId: 'wrong.wrong@2026-01-01-01' as unknown as typeof persisted.sourceVersionId
+        sourceVariationId: 'wrong.wrong@2026-01-01-01' as unknown as typeof persisted.sourceVariationId
       };
 
       expect(Session.EditingSession.fromPersistedState(wrongPersisted, version)).toFailWith(

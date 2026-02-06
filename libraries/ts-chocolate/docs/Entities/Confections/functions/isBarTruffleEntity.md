@@ -2,10 +2,10 @@
 
 # Function: isBarTruffleEntity
 
-Type guard for IBarTruffle
+Type guard for Entities.Confections.BarTruffleRecipeEntity | bar truffle recipe entity.
 
 ## Signature
 
 ```typescript
-function isBarTruffleEntity(confection: AnyConfectionEntity): confection is IBarTruffleEntity
+function isBarTruffleEntity(confection: AnyConfectionRecipeEntity): confection is BarTruffleRecipeEntity
 ```

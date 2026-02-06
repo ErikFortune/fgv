@@ -1,0 +1,234 @@
+[Home](../README.md) > IMoldedBonBonRecipeVariationEntity
+
+# Interface: IMoldedBonBonRecipeVariationEntity
+
+Variation interface for molded bonbon confections.
+Includes mold and chocolate shell specifications.
+
+**Extends:** [`IConfectionRecipeVariationEntityBase`](IConfectionRecipeVariationEntityBase.md)
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[molds](./IMoldedBonBonRecipeVariationEntity.molds.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IOptionsWithPreferred](IOptionsWithPreferred.md)&lt;[IConfectionMoldRef](../type-aliases/IConfectionMoldRef.md), [MoldId](../type-aliases/MoldId.md)&gt;
+
+</td><td>
+
+Required molds with preferred selection
+
+</td></tr>
+<tr><td>
+
+[shellChocolate](./IMoldedBonBonRecipeVariationEntity.shellChocolate.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IChocolateSpec](../type-aliases/IChocolateSpec.md)
+
+</td><td>
+
+Required shell chocolate specification
+
+</td></tr>
+<tr><td>
+
+[additionalChocolates](./IMoldedBonBonRecipeVariationEntity.additionalChocolates.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAdditionalChocolateEntity](IAdditionalChocolateEntity.md)[]
+
+</td><td>
+
+Optional additional chocolates (seal, decoration)
+
+</td></tr>
+<tr><td>
+
+[variationSpec](./IConfectionRecipeVariationEntityBase.variationSpec.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ConfectionRecipeVariationSpec](../type-aliases/ConfectionRecipeVariationSpec.md)
+
+</td><td>
+
+Unique identifier for this variation
+
+</td></tr>
+<tr><td>
+
+[createdDate](./IConfectionRecipeVariationEntityBase.createdDate.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Date this variation was created (ISO 8601 format)
+
+</td></tr>
+<tr><td>
+
+[yield](./IConfectionRecipeVariationEntityBase.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IConfectionYield](IConfectionYield.md)
+
+</td><td>
+
+Yield specification for this variation
+
+</td></tr>
+<tr><td>
+
+[fillings](./IConfectionRecipeVariationEntityBase.fillings.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IFillingSlotEntity](IFillingSlotEntity.md)[]
+
+</td><td>
+
+Optional filling slots - each slot has independent options with a preferred selection
+
+</td></tr>
+<tr><td>
+
+[decorations](./IConfectionRecipeVariationEntityBase.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IConfectionDecoration](IConfectionDecoration.md)[]
+
+</td><td>
+
+Optional decorations for this variation
+
+</td></tr>
+<tr><td>
+
+[procedures](./IConfectionRecipeVariationEntityBase.procedures.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IOptionsWithPreferred](IOptionsWithPreferred.md)&lt;[IProcedureRefEntity](../type-aliases/IProcedureRefEntity.md), [ProcedureId](../type-aliases/ProcedureId.md)&gt;
+
+</td><td>
+
+Optional procedures with preferred selection
+
+</td></tr>
+<tr><td>
+
+[notes](./IConfectionRecipeVariationEntityBase.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICategorizedNote](ICategorizedNote.md)[]
+
+</td><td>
+
+Optional categorized notes about this variation
+
+</td></tr>
+<tr><td>
+
+[additionalTags](./IConfectionRecipeVariationEntityBase.additionalTags.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Additional tags (merged with base confection tags)
+
+</td></tr>
+<tr><td>
+
+[additionalUrls](./IConfectionRecipeVariationEntityBase.additionalUrls.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICategorizedUrl](ICategorizedUrl.md)[]
+
+</td><td>
+
+Additional URLs (merged with base confection URLs)
+
+</td></tr>
+</tbody></table>

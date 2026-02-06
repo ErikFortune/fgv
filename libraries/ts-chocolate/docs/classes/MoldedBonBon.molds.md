@@ -2,7 +2,7 @@
 
 ## MoldedBonBon.molds property
 
-Resolved molds with preferred selection (from golden version).
+Resolved molds with preferred selection (from golden variation).
 
 **Signature:**
 

@@ -31,28 +31,22 @@ import {
   IConfectionContext,
   IResolvedChocolateSpec,
   IResolvedFillingSlot,
-  IBarTruffle,
-  IBarTruffleVersion,
+  IBarTruffleRecipe,
+  IBarTruffleRecipeVariation,
   IResolvedConfectionProcedure
 } from '../model';
 import { ConfectionBase } from './confectionBase';
-import { BarTruffleVersion } from './versions';
-
-// ============================================================================
-// BarTruffle Class
-// ============================================================================
+import { BarTruffleRecipeVariation } from './versions';
 
 /**
- * A resolved view of a bar truffle confection with navigation capabilities.
+ * A resolved view of a bar truffle confection recipe with navigation capabilities.
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class BarTruffle
-  extends ConfectionBase<IBarTruffleVersion, Confections.IBarTruffleEntity>
-  implements IBarTruffle
+export class BarTruffleRecipe
+  extends ConfectionBase<IBarTruffleRecipeVariation, Confections.BarTruffleRecipeEntity>
+  implements IBarTruffleRecipe
 {
-  private readonly _barTruffle: Confections.IBarTruffleEntity;
-
   /**
    * Creates a BarTruffle.
    * Use Confection.create() or BarTruffle.create() instead.
@@ -61,10 +55,9 @@ export class BarTruffle
   protected constructor(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IBarTruffleEntity
+    confection: Confections.BarTruffleRecipeEntity
   ) {
     super(context, id, confection);
-    this._barTruffle = confection;
   }
 
   /**
@@ -77,9 +70,9 @@ export class BarTruffle
   public static create(
     context: IConfectionContext,
     id: ConfectionId,
-    confection: Confections.IBarTruffleEntity
-  ): Result<BarTruffle> {
-    return Success.with(new BarTruffle(context, id, confection));
+    confection: Confections.BarTruffleRecipeEntity
+  ): Result<BarTruffleRecipe> {
+    return Success.with(new BarTruffleRecipe(context, id, confection));
   }
 
   // ============================================================================
@@ -94,66 +87,70 @@ export class BarTruffle
   }
 
   // ============================================================================
-  // Version Access (typed)
+  // Variation Access (typed)
   // ============================================================================
 
   /**
-   * Creates a runtime version from a data layer entity
+   * Creates a runtime variation from a data layer entity
    * @param entity - The data layer entity
-   * @returns Result with runtime version, or Failure if creation fails
+   * @returns Result with runtime variation, or Failure if creation fails
    * @internal
    */
-  protected override _createVersion(
-    entity: Confections.AnyConfectionVersionEntity
-  ): Result<IBarTruffleVersion> {
-    return BarTruffleVersion.create(this._context, this._id, entity as Confections.IBarTruffleVersionEntity);
+  protected override _createVariation(
+    entity: Confections.AnyConfectionRecipeVariationEntity
+  ): Result<IBarTruffleRecipeVariation> {
+    return BarTruffleRecipeVariation.create(
+      this._context,
+      this._id,
+      entity as Confections.IBarTruffleRecipeVariationEntity
+    );
   }
 
   // ============================================================================
-  // Bar Truffle-Specific Properties (delegate to golden version)
+  // Bar Truffle-Specific Properties (delegate to golden variation)
   // ============================================================================
 
   /**
-   * Frame dimensions for ganache slab (from golden version).
+   * Frame dimensions for ganache slab (from golden variation).
    */
   public get frameDimensions(): Confections.IFrameDimensions {
-    return this.goldenVersion.frameDimensions;
+    return this.goldenVariation.frameDimensions;
   }
 
   /**
-   * Single bonbon dimensions for cutting (from golden version).
+   * Single bonbon dimensions for cutting (from golden variation).
    */
   public get singleBonBonDimensions(): Confections.IBonBonDimensions {
-    return this.goldenVersion.singleBonBonDimensions;
+    return this.goldenVariation.singleBonBonDimensions;
   }
 
   /**
-   * Resolved filling slots from the golden version.
+   * Resolved filling slots from the golden variation.
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {
-    return this.goldenVersion.fillings;
+    return this.goldenVariation.fillings;
   }
 
   /**
-   * Resolved procedures from the golden version.
+   * Resolved procedures from the golden variation.
    */
   public get procedures():
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined {
-    return this.goldenVersion.procedures;
+    return this.goldenVariation.procedures;
   }
 
   /**
-   * Resolved enrobing chocolate specification (from golden version, optional).
+   * Resolved enrobing chocolate specification (from golden variation, optional).
    */
   public get enrobingChocolate(): IResolvedChocolateSpec | undefined {
-    return this.goldenVersion.enrobingChocolate;
+    return this.goldenVariation.enrobingChocolate;
   }
 
   /**
    * Gets the underlying raw bar truffle data
    */
-  public get entity(): Confections.IBarTruffleEntity {
-    return this._barTruffle;
+  public get entity(): Confections.BarTruffleRecipeEntity {
+    return this._confection;
   }
 }

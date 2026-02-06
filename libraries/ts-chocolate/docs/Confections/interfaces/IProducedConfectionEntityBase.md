@@ -44,7 +44,7 @@ Confection type discriminator (matches ConfectionType)
 </td></tr>
 <tr><td>
 
-[versionId](./IProducedConfectionEntityBase.versionId.md)
+[variationId](./IProducedConfectionEntityBase.variationId.md)
 
 </td><td>
 
@@ -56,7 +56,7 @@ Confection type discriminator (matches ConfectionType)
 
 </td><td>
 
-Confection version ID that was produced
+Confection variation ID that was produced
 
 </td></tr>
 <tr><td>

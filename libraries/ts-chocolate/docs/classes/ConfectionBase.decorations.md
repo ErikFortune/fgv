@@ -2,7 +2,7 @@
 
 ## ConfectionBase.decorations property
 
-Decorations from the golden version
+Decorations from the golden variation
 
 **Signature:**
 

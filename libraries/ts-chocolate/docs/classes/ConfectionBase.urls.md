@@ -2,7 +2,7 @@
 
 ## ConfectionBase.urls property
 
-Base URLs (version may add more via additionalUrls)
+Base URLs (variation may add more via additionalUrls)
 
 **Signature:**
 

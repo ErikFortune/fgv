@@ -423,10 +423,11 @@ describe('BuiltInData', () => {
         expect(sourceFile.items).toBeDefined();
 
         // Each recipe should have required fields
+        // Each recipe should have required fields
         for (const [id, recipe] of Object.entries(sourceFile.items)) {
           expect(recipe.baseId).toBe(id);
           expect(recipe.name).toBeDefined();
-          expect(recipe.versions).toBeDefined();
+          expect(recipe.variations).toBeDefined();
         }
       }
     });

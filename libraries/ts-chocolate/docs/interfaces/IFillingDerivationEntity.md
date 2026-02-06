@@ -2,7 +2,7 @@
 
 # Interface: IFillingDerivationEntity
 
-Reference to a source filling recipe+version from which a filling recipe was derived.
+Reference to a source filling recipe+variation from which a filling recipe was derived.
 Used to track lineage when a user edits a read-only filling recipe and creates
 a new filling recipe in a writable collection.
 
@@ -28,7 +28,7 @@ Description
 <tbody>
 <tr><td>
 
-[sourceVersionId](./IFillingDerivationEntity.sourceVersionId.md)
+[sourceVariationId](./IFillingDerivationEntity.sourceVariationId.md)
 
 </td><td>
 
@@ -40,7 +40,7 @@ Description
 
 </td><td>
 
-Source filling recipe version ID (format: "sourceId.fillingId@versionSpec")
+Source filling recipe variation ID (format: "sourceId.fillingId@variationSpec")
 
 </td></tr>
 <tr><td>

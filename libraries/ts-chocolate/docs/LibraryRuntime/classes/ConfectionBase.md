@@ -3,9 +3,9 @@
 # Class: ConfectionBase
 
 Abstract base class for runtime confections.
-Provides common properties and version navigation shared by all confection types.
+Provides common properties and variation navigation shared by all confection types.
 
-**Implements:** [`IConfectionBase<TVersion>`](../../interfaces/IConfectionBase.md)
+**Implements:** [`IConfectionBase<TVariation>`](../../interfaces/IConfectionBase.md)
 
 ## Properties
 
@@ -143,7 +143,7 @@ readonly string[] | undefined
 
 </td><td>
 
-Base tags for searching/filtering (version may add more via additionalTags)
+Base tags for searching/filtering (variation may add more via additionalTags)
 
 </td></tr>
 <tr><td>
@@ -160,12 +160,12 @@ readonly [ICategorizedUrl](../../interfaces/ICategorizedUrl.md)[] | undefined
 
 </td><td>
 
-Base URLs (version may add more via additionalUrls)
+Base URLs (variation may add more via additionalUrls)
 
 </td></tr>
 <tr><td>
 
-[goldenVersionSpec](./ConfectionBase.goldenVersionSpec.md)
+[goldenVariationSpec](./ConfectionBase.goldenVariationSpec.md)
 
 </td><td>
 
@@ -177,7 +177,7 @@ Base URLs (version may add more via additionalUrls)
 
 </td><td>
 
-The ID of the golden (approved default) version
+The ID of the golden (approved default) variation
 
 </td></tr>
 <tr><td>
@@ -194,7 +194,7 @@ readonly [IConfectionDecoration](../../interfaces/IConfectionDecoration.md)[] | 
 
 </td><td>
 
-Decorations from the golden version
+Decorations from the golden variation
 
 </td></tr>
 <tr><td>
@@ -211,7 +211,7 @@ Decorations from the golden version
 
 </td><td>
 
-Yield specification from the golden version
+Yield specification from the golden variation
 
 </td></tr>
 <tr><td>
@@ -228,7 +228,7 @@ readonly [IResolvedFillingSlot](../../interfaces/IResolvedFillingSlot.md)[] | un
 
 </td><td>
 
-Resolved filling slots from the golden version (lazy-loaded)
+Resolved filling slots from the golden variation (lazy-loaded)
 
 </td></tr>
 <tr><td>
@@ -245,12 +245,12 @@ Resolved filling slots from the golden version (lazy-loaded)
 
 </td><td>
 
-Resolved procedures from the golden version (lazy-loaded)
+Resolved procedures from the golden variation (lazy-loaded)
 
 </td></tr>
 <tr><td>
 
-[goldenVersion](./ConfectionBase.goldenVersion.md)
+[goldenVariation](./ConfectionBase.goldenVariation.md)
 
 </td><td>
 
@@ -258,16 +258,16 @@ Resolved procedures from the golden version (lazy-loaded)
 
 </td><td>
 
-TVersion
+TVariation
 
 </td><td>
 
-The golden (default) version - resolved.
+The golden (default) variation - resolved.
 
 </td></tr>
 <tr><td>
 
-[versions](./ConfectionBase.versions.md)
+[variations](./ConfectionBase.variations.md)
 
 </td><td>
 
@@ -275,11 +275,11 @@ The golden (default) version - resolved.
 
 </td><td>
 
-readonly TVersion[]
+readonly TVariation[]
 
 </td><td>
 
-All versions - resolved.
+All variations - resolved.
 
 </td></tr>
 <tr><td>
@@ -296,7 +296,7 @@ readonly string[]
 
 </td><td>
 
-Gets effective tags for the golden version (base tags + version's additional tags).
+Gets effective tags for the golden variation (base tags + variation's additional tags).
 
 </td></tr>
 <tr><td>
@@ -313,7 +313,7 @@ readonly [ICategorizedUrl](../../interfaces/ICategorizedUrl.md)[]
 
 </td><td>
 
-Gets effective URLs for the golden version (base URLs + version's additional URLs).
+Gets effective URLs for the golden variation (base URLs + variation's additional URLs).
 
 </td></tr>
 <tr><td>
@@ -326,7 +326,7 @@ Gets effective URLs for the golden version (base URLs + version's additional URL
 
 </td><td>
 
-[AnyConfectionEntity](../../type-aliases/AnyConfectionEntity.md)
+[AnyConfectionRecipeEntity](../../type-aliases/AnyConfectionRecipeEntity.md)
 
 </td><td>
 
@@ -353,7 +353,7 @@ Description
 <tbody>
 <tr><td>
 
-[getGoldenVersion()](./ConfectionBase.getGoldenVersion.md)
+[getGoldenVariation()](./ConfectionBase.getGoldenVariation.md)
 
 </td><td>
 
@@ -361,12 +361,12 @@ Description
 
 </td><td>
 
-Gets the golden (default) version - resolved.
+Gets the golden (default) variation - resolved.
 
 </td></tr>
 <tr><td>
 
-[getVersions()](./ConfectionBase.getVersions.md)
+[getVariations()](./ConfectionBase.getVariations.md)
 
 </td><td>
 
@@ -374,12 +374,12 @@ Gets the golden (default) version - resolved.
 
 </td><td>
 
-Gets all versions - resolved.
+Gets all variations - resolved.
 
 </td></tr>
 <tr><td>
 
-[getVersion(versionSpec)](./ConfectionBase.getVersion.md)
+[getVariation(variationSpec)](./ConfectionBase.getVariation.md)
 
 </td><td>
 
@@ -387,12 +387,12 @@ Gets all versions - resolved.
 
 </td><td>
 
-Gets a specific version by version specifier.
+Gets a specific variation by variation specifier.
 
 </td></tr>
 <tr><td>
 
-[getEffectiveTags(version)](./ConfectionBase.getEffectiveTags.md)
+[getEffectiveTags(variation)](./ConfectionBase.getEffectiveTags.md)
 
 </td><td>
 
@@ -400,12 +400,12 @@ Gets a specific version by version specifier.
 
 </td><td>
 
-Gets effective tags for a specific version (base tags + version's additional tags).
+Gets effective tags for a specific variation (base tags + variation's additional tags).
 
 </td></tr>
 <tr><td>
 
-[getEffectiveUrls(version)](./ConfectionBase.getEffectiveUrls.md)
+[getEffectiveUrls(variation)](./ConfectionBase.getEffectiveUrls.md)
 
 </td><td>
 
@@ -413,7 +413,7 @@ Gets effective tags for a specific version (base tags + version's additional tag
 
 </td><td>
 
-Gets effective URLs for a specific version (base URLs + version's additional URLs).
+Gets effective URLs for a specific variation (base URLs + variation's additional URLs).
 
 </td></tr>
 <tr><td>

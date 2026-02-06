@@ -2,19 +2,19 @@
 
 ## ConfectionBase.getEffectiveUrls() method
 
-Gets effective URLs for a specific version (base URLs + version's additional URLs).
+Gets effective URLs for a specific variation (base URLs + variation's additional URLs).
 
 **Signature:**
 
 ```typescript
-getEffectiveUrls(version?: AnyConfectionVersionEntity): readonly ICategorizedUrl[];
+getEffectiveUrls(variation?: AnyConfectionRecipeVariationEntity): readonly ICategorizedUrl[];
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>version</td><td>AnyConfectionVersionEntity</td><td>The version to get URLs for (defaults to golden version)</td></tr>
+<tr><td>variation</td><td>AnyConfectionRecipeVariationEntity</td><td>The variation to get URLs for (defaults to golden variation)</td></tr>
 </tbody></table>
 
 **Returns:**

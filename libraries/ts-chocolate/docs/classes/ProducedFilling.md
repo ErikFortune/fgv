@@ -44,7 +44,7 @@ Gets the current state as an immutable snapshot.
 </td></tr>
 <tr><td>
 
-[versionId](./ProducedFilling.versionId.md)
+[variationId](./ProducedFilling.variationId.md)
 
 </td><td>
 
@@ -56,7 +56,7 @@ Gets the current state as an immutable snapshot.
 
 </td><td>
 
-Gets the version ID.
+Gets the variation ID.
 
 </td></tr>
 <tr><td>
@@ -134,7 +134,7 @@ Factory method for creating a ProducedFilling from an existing produced filling.
 
 </td><td>
 
-Factory method for creating a ProducedFilling from a source recipe version.
+Factory method for creating a ProducedFilling from a source recipe variation.
 
 </td></tr>
 <tr><td>

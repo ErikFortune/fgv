@@ -4,7 +4,7 @@
 
 Materialized journal entry for filling production sessions.
 
-**Extends:** [`IJournalEntryBase<IFillingRecipe, IFillingRecipeVersion, FillingRecipeVariationId, IFillingProductionJournalEntryEntity>`](../../interfaces/IJournalEntryBase.md)
+**Extends:** [`IJournalEntryBase<IFillingRecipe, IFillingRecipeVariation, FillingRecipeVariationId, IFillingProductionJournalEntryEntity>`](../../interfaces/IJournalEntryBase.md)
 
 ## Properties
 
@@ -121,7 +121,7 @@ Resolved source recipe/confection
 
 </td><td>
 
-[IFillingRecipeVersion](../../interfaces/IFillingRecipeVersion.md)
+[IFillingRecipeVariation](../../interfaces/IFillingRecipeVariation.md)
 
 </td><td>
 
@@ -138,7 +138,7 @@ Resolved source version
 
 </td><td>
 
-[IFillingRecipeVersion](../../interfaces/IFillingRecipeVersion.md)
+[IFillingRecipeVariation](../../interfaces/IFillingRecipeVariation.md)
 
 </td><td>
 

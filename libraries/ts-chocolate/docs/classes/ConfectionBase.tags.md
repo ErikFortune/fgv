@@ -2,7 +2,7 @@
 
 ## ConfectionBase.tags property
 
-Base tags for searching/filtering (version may add more via additionalTags)
+Base tags for searching/filtering (variation may add more via additionalTags)
 
 **Signature:**
 

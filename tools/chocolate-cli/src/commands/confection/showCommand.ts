@@ -36,7 +36,7 @@ import {
  */
 interface IConfectionShowOptions extends IEntityBaseOptions {
   interactive?: boolean;
-  version?: string;
+  variation?: string;
 }
 
 /**
@@ -44,16 +44,16 @@ interface IConfectionShowOptions extends IEntityBaseOptions {
  */
 interface IConfectionSelectableItem extends ISelectableItem {
   id: ConfectionId;
-  confection: Entities.Confections.AnyConfectionEntity;
+  confection: Entities.Confections.AnyConfectionRecipeEntity;
 }
 
 /**
  * Formats a confection for human-readable output
  */
 export function formatConfectionHuman(
-  confection: Entities.Confections.AnyConfectionEntity,
+  confection: Entities.Confections.AnyConfectionRecipeEntity,
   confectionId: ConfectionId,
-  versionSpec?: ConfectionRecipeVariationSpec
+  variationSpec?: ConfectionRecipeVariationSpec
 ): string {
   const lines: string[] = [];
 
@@ -71,32 +71,32 @@ export function formatConfectionHuman(
 
   lines.push('');
 
-  // Find the requested version
-  const targetVersionSpec = versionSpec ?? confection.goldenVersionSpec;
-  const version = confection.versions.find((v) => v.versionSpec === targetVersionSpec);
+  // Find the requested variation
+  const targetVariationSpec = variationSpec ?? confection.goldenVariationSpec;
+  const variation = confection.variations.find((v) => v.variationSpec === targetVariationSpec);
 
-  if (!version) {
-    lines.push(`Version ${targetVersionSpec} not found.`);
-    lines.push(`Available versions: ${confection.versions.map((v) => v.versionSpec).join(', ')}`);
+  if (!variation) {
+    lines.push(`Variation ${targetVariationSpec} not found.`);
+    lines.push(`Available variations: ${confection.variations.map((v) => v.variationSpec).join(', ')}`);
     return lines.join('\n');
   }
 
-  const isGolden = targetVersionSpec === confection.goldenVersionSpec;
-  lines.push(`Version: ${version.versionSpec}${isGolden ? ' (golden)' : ''}`);
-  lines.push(`Created: ${version.createdDate}`);
+  const isGolden = targetVariationSpec === confection.goldenVariationSpec;
+  lines.push(`Variation: ${variation.variationSpec}${isGolden ? ' (golden)' : ''}`);
+  lines.push(`Created: ${variation.createdDate}`);
 
   // Yield
-  lines.push(`Yield: ${version.yield.count} ${version.yield.unit ?? 'pieces'}`);
-  if (version.yield.weightPerPiece !== undefined) {
-    lines.push(`Weight per piece: ${version.yield.weightPerPiece}g`);
+  lines.push(`Yield: ${variation.yield.count} ${variation.yield.unit ?? 'pieces'}`);
+  if (variation.yield.weightPerPiece !== undefined) {
+    lines.push(`Weight per piece: ${variation.yield.weightPerPiece}g`);
   }
 
   // Type-specific information
-  if (Entities.Confections.isMoldedBonBonVersionEntity(version)) {
+  if (Entities.Confections.isMoldedBonBonRecipeVariationEntity(variation)) {
     lines.push('');
     lines.push('Molds:');
-    const preferredMoldId = version.molds.preferredId;
-    for (const moldRef of version.molds.options) {
+    const preferredMoldId = variation.molds.preferredId;
+    for (const moldRef of variation.molds.options) {
       const isPreferred = moldRef.id === preferredMoldId;
       const preferredMarker = isPreferred ? ' (preferred)' : '';
       const notes = moldRef.notes ? ` - ${moldRef.notes}` : '';
@@ -105,15 +105,15 @@ export function formatConfectionHuman(
 
     lines.push('');
     lines.push('Shell Chocolate:');
-    const preferredShellId = version.shellChocolate.preferredId;
-    for (const chocId of version.shellChocolate.ids) {
+    const preferredShellId = variation.shellChocolate.preferredId;
+    for (const chocId of variation.shellChocolate.ids) {
       const isPreferred = chocId === preferredShellId;
       const preferredMarker = isPreferred ? ' (preferred)' : '';
       lines.push(`  ${chocId}${preferredMarker}`);
     }
 
-    if (version.additionalChocolates && version.additionalChocolates.length > 0) {
-      for (const addlChoc of version.additionalChocolates) {
+    if (variation.additionalChocolates && variation.additionalChocolates.length > 0) {
+      for (const addlChoc of variation.additionalChocolates) {
         lines.push('');
         lines.push(`${addlChoc.purpose} Chocolate:`);
         const preferredAddlId = addlChoc.chocolate.preferredId;
@@ -124,44 +124,44 @@ export function formatConfectionHuman(
         }
       }
     }
-  } else if (Entities.Confections.isBarTruffleVersionEntity(version)) {
+  } else if (Entities.Confections.isBarTruffleRecipeVariationEntity(variation)) {
     lines.push('');
     lines.push('Frame Dimensions:');
-    const fd = version.frameDimensions;
+    const fd = variation.frameDimensions;
     lines.push(`  ${fd.width} x ${fd.height} x ${fd.depth} mm`);
 
     lines.push('');
     lines.push('BonBon Dimensions:');
-    const bd = version.singleBonBonDimensions;
+    const bd = variation.singleBonBonDimensions;
     lines.push(`  ${bd.width} x ${bd.height} mm`);
 
-    if (version.enrobingChocolate) {
+    if (variation.enrobingChocolate) {
       lines.push('');
       lines.push('Enrobing Chocolate:');
-      const preferredId = version.enrobingChocolate.preferredId;
-      for (const chocId of version.enrobingChocolate.ids) {
+      const preferredId = variation.enrobingChocolate.preferredId;
+      for (const chocId of variation.enrobingChocolate.ids) {
         const isPreferred = chocId === preferredId;
         const preferredMarker = isPreferred ? ' (preferred)' : '';
         lines.push(`  ${chocId}${preferredMarker}`);
       }
     }
-  } else if (Entities.Confections.isRolledTruffleVersionEntity(version)) {
-    if (version.enrobingChocolate) {
+  } else if (Entities.Confections.isRolledTruffleRecipeVariationEntity(variation)) {
+    if (variation.enrobingChocolate) {
       lines.push('');
       lines.push('Enrobing Chocolate:');
-      const preferredId = version.enrobingChocolate.preferredId;
-      for (const chocId of version.enrobingChocolate.ids) {
+      const preferredId = variation.enrobingChocolate.preferredId;
+      for (const chocId of variation.enrobingChocolate.ids) {
         const isPreferred = chocId === preferredId;
         const preferredMarker = isPreferred ? ' (preferred)' : '';
         lines.push(`  ${chocId}${preferredMarker}`);
       }
     }
 
-    if (version.coatings) {
+    if (variation.coatings) {
       lines.push('');
       lines.push('Coatings:');
-      const preferredId = version.coatings.preferredId;
-      for (const coatingId of version.coatings.ids) {
+      const preferredId = variation.coatings.preferredId;
+      for (const coatingId of variation.coatings.ids) {
         const isPreferred = coatingId === preferredId;
         const preferredMarker = isPreferred ? ' (preferred)' : '';
         lines.push(`  ${coatingId}${preferredMarker}`);
@@ -170,10 +170,10 @@ export function formatConfectionHuman(
   }
 
   // Fillings
-  if (version.fillings && version.fillings.length > 0) {
+  if (variation.fillings && variation.fillings.length > 0) {
     lines.push('');
     lines.push('Fillings:');
-    for (const slot of version.fillings) {
+    for (const slot of variation.fillings) {
       const slotName = slot.name ?? slot.slotId;
       lines.push(`  ${slotName}:`);
       const preferredId = slot.filling.preferredId;
@@ -188,21 +188,21 @@ export function formatConfectionHuman(
   }
 
   // Decorations
-  if (version.decorations && version.decorations.length > 0) {
+  if (variation.decorations && variation.decorations.length > 0) {
     lines.push('');
     lines.push('Decorations:');
-    for (const decoration of version.decorations) {
+    for (const decoration of variation.decorations) {
       const preferredMarker = decoration.preferred ? ' (preferred)' : '';
       lines.push(`  ${decoration.description}${preferredMarker}`);
     }
   }
 
   // Procedures
-  if (version.procedures && version.procedures.options.length > 0) {
+  if (variation.procedures && variation.procedures.options.length > 0) {
     lines.push('');
     lines.push('Procedures:');
-    const preferredProcId = version.procedures.preferredId;
-    for (const procRef of version.procedures.options) {
+    const preferredProcId = variation.procedures.preferredId;
+    for (const procRef of variation.procedures.options) {
       const isPreferred = procRef.id === preferredProcId;
       const preferredMarker = isPreferred ? ' (preferred)' : '';
       const notes = procRef.notes ? ` - ${procRef.notes}` : '';
@@ -211,9 +211,9 @@ export function formatConfectionHuman(
   }
 
   // Notes
-  if (version.notes) {
+  if (variation.notes) {
     lines.push('');
-    lines.push(`Notes: ${version.notes}`);
+    lines.push(`Notes: ${variation.notes}`);
   }
 
   // URLs
@@ -221,14 +221,14 @@ export function formatConfectionHuman(
     formatUrls(confection.urls, lines);
   }
 
-  // Other versions
-  if (confection.versions.length > 1) {
+  // Other variations
+  if (confection.variations.length > 1) {
     lines.push('');
-    lines.push(`Other versions (${confection.versions.length - 1}):`);
-    for (const v of confection.versions) {
-      if (v.versionSpec !== targetVersionSpec) {
-        const golden = v.versionSpec === confection.goldenVersionSpec ? ' (golden)' : '';
-        lines.push(`  ${v.versionSpec}${golden} - ${v.createdDate}`);
+    lines.push(`Other variations (${confection.variations.length - 1}):`);
+    for (const v of confection.variations) {
+      if (v.variationSpec !== targetVariationSpec) {
+        const golden = v.variationSpec === confection.goldenVariationSpec ? ' (golden)' : '';
+        lines.push(`  ${v.variationSpec}${golden} - ${v.createdDate}`);
       }
     }
   }
@@ -246,11 +246,11 @@ export function createShowSubcommand(): Command {
     .description('Display details of a specific confection')
     .argument('[confectionId]', 'Confection ID (e.g., "myshop.dark-ganache-bonbon")')
     .option('-i, --interactive', 'Interactively select a confection')
-    .option('--version <spec>', 'Show a specific version (default: golden version)')
+    .option('--variation <spec>', 'Show a specific variation (default: golden variation)')
     .action(
       async (
         confectionIdArg: string | undefined,
-        localOptions: { interactive?: boolean; version?: string }
+        localOptions: { interactive?: boolean; variation?: string }
       ) => {
         // Merge with parent options
         const parentOptions = cmd.optsWithGlobals() as IConfectionShowOptions;
@@ -269,7 +269,7 @@ export function createShowSubcommand(): Command {
 
         // Determine confection ID - either from argument or interactive selection
         let confectionId: ConfectionId;
-        let confection: Entities.Confections.AnyConfectionEntity;
+        let confection: Entities.Confections.AnyConfectionRecipeEntity;
 
         if (localOptions.interactive || !confectionIdArg) {
           if (!localOptions.interactive && !confectionIdArg) {
@@ -326,21 +326,23 @@ export function createShowSubcommand(): Command {
           confection = confectionResult.value;
         }
 
-        // Validate version spec if provided
-        let versionSpec: ConfectionRecipeVariationSpec | undefined;
-        if (options.version) {
-          const versionResult = Converters.confectionRecipeVariationSpec.convert(options.version);
-          if (versionResult.isFailure()) {
-            console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
+        // Validate variation spec if provided
+        let variationSpec: ConfectionRecipeVariationSpec | undefined;
+        if (options.variation) {
+          const variationResult = Converters.confectionRecipeVariationSpec.convert(options.variation);
+          if (variationResult.isFailure()) {
+            console.error(`Invalid variation spec "${options.variation}": ${variationResult.message}`);
             process.exit(1);
           }
-          versionSpec = versionResult.value;
+          variationSpec = variationResult.value;
 
-          // Check that the version exists
-          const version = confection.versions.find((v) => v.versionSpec === versionSpec);
-          if (!version) {
-            console.error(`Version ${versionSpec} not found in confection ${confectionId}`);
-            console.error(`Available versions: ${confection.versions.map((v) => v.versionSpec).join(', ')}`);
+          // Check that the variation exists
+          const variation = confection.variations.find((v) => v.variationSpec === variationSpec);
+          if (!variation) {
+            console.error(`Variation ${variationSpec} not found in confection ${confectionId}`);
+            console.error(
+              `Available variations: ${confection.variations.map((v) => v.variationSpec).join(', ')}`
+            );
             process.exit(1);
           }
         }
@@ -358,7 +360,7 @@ export function createShowSubcommand(): Command {
           case 'table':
           case 'human':
           default:
-            console.log(formatConfectionHuman(confection, confectionId, versionSpec));
+            console.log(formatConfectionHuman(confection, confectionId, variationSpec));
             break;
         }
       }

@@ -54,7 +54,7 @@ Materialized library of runtime molds.
 
 </td><td>
 
-[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[ConfectionId](../../type-aliases/ConfectionId.md), [AnyConfectionEntity](../../type-aliases/AnyConfectionEntity.md), [IConfectionBase](../../interfaces/IConfectionBase.md)&lt;[AnyConfectionVersion](../../type-aliases/AnyConfectionVersion.md), [AnyConfectionEntity](../../type-aliases/AnyConfectionEntity.md)&gt;, never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[ConfectionId](../../type-aliases/ConfectionId.md), [AnyConfectionRecipeEntity](../../type-aliases/AnyConfectionRecipeEntity.md), [IConfectionBase](../../interfaces/IConfectionBase.md)&lt;[AnyConfectionRecipeVariation](../../type-aliases/AnyConfectionRecipeVariation.md), [AnyConfectionRecipeEntity](../../type-aliases/AnyConfectionRecipeEntity.md)&gt;, never&gt;
 
 </td><td>
 

@@ -206,10 +206,10 @@ describe('RuntimeIngredient', () => {
     baseId: 'ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
     category: 'ganache',
-    goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
-    versions: [
+    goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    variations: [
       {
-        versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+        variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },

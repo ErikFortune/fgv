@@ -42,9 +42,9 @@ import {
 } from '../entities';
 import {
   IConfectionBase,
-  IConfectionVersionBase,
+  IConfectionRecipeVariationBase,
   IFillingRecipe,
-  IFillingRecipeVersion
+  IFillingRecipeVariation
 } from '../library-runtime';
 import { ISessionContext } from '../runtime';
 import { JournalEntryBase } from './journalEntryBase';
@@ -67,7 +67,7 @@ import {
 export class FillingEditJournalEntry
   extends JournalEntryBase<
     IFillingRecipe,
-    IFillingRecipeVersion,
+    IFillingRecipeVariation,
     FillingRecipeVariationId,
     IFillingEditJournalEntryEntity
   >
@@ -83,8 +83,8 @@ export class FillingEditJournalEntry
     baseId: BaseJournalId,
     entity: IFillingEditJournalEntryEntity,
     recipe: IFillingRecipe,
-    version: IFillingRecipeVersion,
-    updated?: IFillingRecipeVersion
+    version: IFillingRecipeVariation,
+    updated?: IFillingRecipeVariation
   ) {
     super(context, id, baseId, entity, recipe, version, updated);
   }
@@ -103,21 +103,21 @@ export class FillingEditJournalEntry
     entity: IFillingEditJournalEntryEntity
   ): Result<FillingEditJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
-    const fillingId = Helpers.getFillingRecipeVariationFillingId(entity.versionId);
+    const fillingId = Helpers.getFillingRecipeVariationFillingId(entity.variationId);
 
     return context.fillings
       .get(fillingId)
       .asResult.withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((recipe) => {
-        const versionSpec = Helpers.getFillingRecipeVariationSpec(entity.versionId);
+        const variationSpec = Helpers.getFillingRecipeVariationSpec(entity.variationId);
         return recipe
-          .getVersion(versionSpec)
+          .getVariation(variationSpec)
           .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-          .onSuccess((version) => {
-            // TODO: Materialize updated version if present
+          .onSuccess((variation) => {
+            // TODO: Materialize updated variation if present
             const updated = undefined;
             return succeed(
-              new FillingEditJournalEntry(context, id, baseId, entity, recipe, version, updated)
+              new FillingEditJournalEntry(context, id, baseId, entity, recipe, variation, updated)
             );
           });
       });
@@ -135,7 +135,7 @@ export class FillingEditJournalEntry
 export class ConfectionEditJournalEntry
   extends JournalEntryBase<
     IConfectionBase,
-    IConfectionVersionBase,
+    IConfectionRecipeVariationBase,
     ConfectionRecipeVariationId,
     IConfectionEditJournalEntryEntity
   >
@@ -151,8 +151,8 @@ export class ConfectionEditJournalEntry
     baseId: BaseJournalId,
     entity: IConfectionEditJournalEntryEntity,
     confection: IConfectionBase,
-    version: IConfectionVersionBase,
-    updated?: IConfectionVersionBase
+    version: IConfectionRecipeVariationBase,
+    updated?: IConfectionRecipeVariationBase
   ) {
     super(context, id, baseId, entity, confection, version, updated);
   }
@@ -172,7 +172,7 @@ export class ConfectionEditJournalEntry
   ): Result<ConfectionEditJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
 
-    return Helpers.parseConfectionRecipeVariationId(entity.versionId)
+    return Helpers.parseConfectionRecipeVariationId(entity.variationId)
       .withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((parsed) => {
         return context.confections
@@ -180,7 +180,7 @@ export class ConfectionEditJournalEntry
           .asResult.withErrorFormat((msg) => `journal ${id}: ${msg}`)
           .onSuccess((confection) => {
             return confection
-              .getVersion(parsed.itemId)
+              .getVariation(parsed.itemId)
               .withErrorFormat((msg) => `journal ${id}: ${msg}`)
               .onSuccess((version) => {
                 // TODO: Materialize updated version if present
@@ -205,7 +205,7 @@ export class ConfectionEditJournalEntry
 export class FillingProductionJournalEntry
   extends JournalEntryBase<
     IFillingRecipe,
-    IFillingRecipeVersion,
+    IFillingRecipeVariation,
     FillingRecipeVariationId,
     IFillingProductionJournalEntryEntity
   >
@@ -221,8 +221,8 @@ export class FillingProductionJournalEntry
     baseId: BaseJournalId,
     entity: IFillingProductionJournalEntryEntity,
     recipe: IFillingRecipe,
-    version: IFillingRecipeVersion,
-    updated?: IFillingRecipeVersion
+    version: IFillingRecipeVariation,
+    updated?: IFillingRecipeVariation
   ) {
     super(context, id, baseId, entity, recipe, version, updated);
   }
@@ -241,21 +241,21 @@ export class FillingProductionJournalEntry
     entity: IFillingProductionJournalEntryEntity
   ): Result<FillingProductionJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
-    const fillingId = Helpers.getFillingRecipeVariationFillingId(entity.versionId);
+    const fillingId = Helpers.getFillingRecipeVariationFillingId(entity.variationId);
 
     return context.fillings
       .get(fillingId)
       .asResult.withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((recipe) => {
-        const versionSpec = Helpers.getFillingRecipeVariationSpec(entity.versionId);
+        const variationSpec = Helpers.getFillingRecipeVariationSpec(entity.variationId);
         return recipe
-          .getVersion(versionSpec)
+          .getVariation(variationSpec)
           .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-          .onSuccess((version) => {
-            // TODO: Materialize updated version if present
+          .onSuccess((variation) => {
+            // TODO: Materialize updated variation if present
             const updated = undefined;
             return succeed(
-              new FillingProductionJournalEntry(context, id, baseId, entity, recipe, version, updated)
+              new FillingProductionJournalEntry(context, id, baseId, entity, recipe, variation, updated)
             );
           });
       });
@@ -273,7 +273,7 @@ export class FillingProductionJournalEntry
 export class ConfectionProductionJournalEntry
   extends JournalEntryBase<
     IConfectionBase,
-    IConfectionVersionBase,
+    IConfectionRecipeVariationBase,
     ConfectionRecipeVariationId,
     IConfectionProductionJournalEntryEntity
   >
@@ -289,8 +289,8 @@ export class ConfectionProductionJournalEntry
     baseId: BaseJournalId,
     entity: IConfectionProductionJournalEntryEntity,
     confection: IConfectionBase,
-    version: IConfectionVersionBase,
-    updated?: IConfectionVersionBase
+    version: IConfectionRecipeVariationBase,
+    updated?: IConfectionRecipeVariationBase
   ) {
     super(context, id, baseId, entity, confection, version, updated);
   }
@@ -310,7 +310,7 @@ export class ConfectionProductionJournalEntry
   ): Result<ConfectionProductionJournalEntry> {
     const baseId = Helpers.getJournalBaseId(id);
 
-    return Helpers.parseConfectionRecipeVariationId(entity.versionId)
+    return Helpers.parseConfectionRecipeVariationId(entity.variationId)
       .withErrorFormat((msg) => `journal ${id}: ${msg}`)
       .onSuccess((parsed) => {
         return context.confections
@@ -318,7 +318,7 @@ export class ConfectionProductionJournalEntry
           .asResult.withErrorFormat((msg) => `journal ${id}: ${msg}`)
           .onSuccess((confection) => {
             return confection
-              .getVersion(parsed.itemId)
+              .getVariation(parsed.itemId)
               .withErrorFormat((msg) => `journal ${id}: ${msg}`)
               .onSuccess((version) => {
                 // TODO: Materialize updated version if present

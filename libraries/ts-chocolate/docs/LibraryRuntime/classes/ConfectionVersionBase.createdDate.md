@@ -2,7 +2,7 @@
 
 ## ConfectionVersionBase.createdDate property
 
-Date this version was created (ISO 8601 format).
+Date this variation was created (ISO 8601 format).
 
 **Signature:**
 

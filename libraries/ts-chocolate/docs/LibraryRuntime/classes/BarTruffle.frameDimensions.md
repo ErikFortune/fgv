@@ -2,7 +2,7 @@
 
 ## BarTruffle.frameDimensions property
 
-Frame dimensions for ganache slab (from golden version).
+Frame dimensions for ganache slab (from golden variation).
 
 **Signature:**
 

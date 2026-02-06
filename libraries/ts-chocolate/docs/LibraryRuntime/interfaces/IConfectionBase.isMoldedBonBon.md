@@ -8,9 +8,9 @@ When true, molded bonbon-specific properties are available.
 **Signature:**
 
 ```typescript
-isMoldedBonBon(): this is IMoldedBonBon;
+isMoldedBonBon(): this is IMoldedBonBonRecipe;
 ```
 
 **Returns:**
 
-this is [IMoldedBonBon](../../interfaces/IMoldedBonBon.md)
+this is [IMoldedBonBonRecipe](../../interfaces/IMoldedBonBonRecipe.md)

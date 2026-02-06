@@ -31,17 +31,17 @@
 export { ConfectionBase } from './confectionBase';
 
 // Concrete confection classes
-export { MoldedBonBon } from './moldedBonBon';
-export { BarTruffle } from './barTruffle';
-export { RolledTruffle } from './rolledTruffle';
+export { MoldedBonBonRecipe as MoldedBonBon } from './moldedBonBon';
+export { BarTruffleRecipe as BarTruffle } from './barTruffle';
+export { RolledTruffleRecipe as RolledTruffle } from './rolledTruffle';
 
 // Static factory and union type
-export { Confection, AnyConfection } from './confection';
+export { Confection, AnyConfectionRecipe as AnyConfection } from './confection';
 
 // Version classes
 export {
-  ConfectionVersionBase,
-  MoldedBonBonVersion,
-  BarTruffleVersion,
-  RolledTruffleVersion
+  ConfectionRecipeVariationBase as ConfectionVersionBase,
+  MoldedBonBonRecipeVariation as MoldedBonBonVersion,
+  BarTruffleRecipeVariation as BarTruffleVersion,
+  RolledTruffleRecipeVariation as RolledTruffleVersion
 } from './versions';

@@ -36,7 +36,7 @@ import {
   Model as CommonModel
 } from '../../common';
 import { Fillings, IProducedFillingEntity, Session } from '../../entities';
-import type { IFillingRecipeVersion } from '../model';
+import type { IFillingRecipeVariation } from '../model';
 
 /**
  * Maximum number of undo snapshots to retain
@@ -92,14 +92,14 @@ export class ProducedFilling {
   }
 
   /**
-   * Factory method for creating a ProducedFilling from a source recipe version.
-   * @param source - Source filling recipe version with runtime wrapper
+   * Factory method for creating a ProducedFilling from a source recipe variation.
+   * @param source - Source filling recipe variation with runtime wrapper
    * @param scaleFactor - Optional scale factor (default: 1.0)
    * @returns Result containing ProducedFilling or error
    * @public
    */
   public static fromSource(
-    source: IFillingRecipeVersion,
+    source: IFillingRecipeVariation,
     scaleFactor: number = 1.0
   ): Result<ProducedFilling> {
     return ProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) =>
@@ -130,7 +130,7 @@ export class ProducedFilling {
    * @internal
    */
   private static _convertFromSource(
-    source: IFillingRecipeVersion,
+    source: IFillingRecipeVariation,
     scaleFactor: number
   ): Result<IProducedFillingEntity> {
     // Convert ingredients using mapResults pattern
@@ -144,7 +144,7 @@ export class ProducedFilling {
         .convert(source.entity.baseWeight * scaleFactor)
         .onSuccess((targetWeight) => {
           const produced: IProducedFillingEntity = {
-            versionId: source.versionId,
+            variationId: source.variationId,
             scaleFactor,
             targetWeight,
             ingredients,
@@ -461,11 +461,11 @@ export class ProducedFilling {
   }
 
   /**
-   * Gets the version ID.
+   * Gets the variation ID.
    * @public
    */
-  public get versionId(): FillingRecipeVariationId {
-    return this._current.versionId;
+  public get variationId(): FillingRecipeVariationId {
+    return this._current.variationId;
   }
 
   /**
@@ -565,7 +565,7 @@ export class ProducedFilling {
    */
   private _deepCopy(filling: IProducedFillingEntity): IProducedFillingEntity {
     return {
-      versionId: filling.versionId,
+      variationId: filling.variationId,
       scaleFactor: filling.scaleFactor,
       targetWeight: filling.targetWeight,
       ingredients: filling.ingredients.map((ing) => ({

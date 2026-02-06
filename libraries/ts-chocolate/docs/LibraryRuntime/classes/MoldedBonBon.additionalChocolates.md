@@ -2,7 +2,7 @@
 
 ## MoldedBonBon.additionalChocolates property
 
-Resolved additional chocolates (from golden version).
+Resolved additional chocolates (from golden variation).
 
 **Signature:**
 

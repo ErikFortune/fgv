@@ -417,7 +417,7 @@ export class ChocolateLibrary {
    */
   public getEditableConfections(
     collectionId: CollectionId
-  ): Result<EditableCollection<Entities.Confections.AnyConfectionEntity, BaseConfectionId>> {
+  ): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>> {
     return EditableCollection.fromLibrary(
       this.confections,
       collectionId,

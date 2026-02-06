@@ -33,7 +33,7 @@ import {
 
 import { Ingredients, IngredientEntity } from '../../../packlets/entities';
 
-import { Fillings, IFillingRecipeEntity, IFillingRecipeVersionEntity } from '../../../packlets/entities';
+import { Fillings, IFillingRecipeEntity, IFillingRecipeVariationEntity } from '../../../packlets/entities';
 
 import {
   IngredientResolver,
@@ -206,8 +206,8 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateForFillingRecipe', () => {
-    const testVersion: IFillingRecipeVersionEntity = {
-      versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    const testVersion: IFillingRecipeVariationEntity = {
+      variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
@@ -220,8 +220,8 @@ describe('Ganache Calculator', () => {
       baseId: 'test-ganache' as BaseFillingId,
       name: 'Test Ganache' as FillingName,
       category: 'ganache',
-      versions: [testVersion],
-      goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
+      variations: [testVersion],
+      goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
     };
 
     test('calculates for golden version by default', () => {
@@ -407,8 +407,8 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateGanache', () => {
-    const testVersion: IFillingRecipeVersionEntity = {
-      versionSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    const testVersion: IFillingRecipeVariationEntity = {
+      variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [
         { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
@@ -421,8 +421,8 @@ describe('Ganache Calculator', () => {
       baseId: 'test' as BaseFillingId,
       name: 'Test' as FillingName,
       category: 'ganache',
-      versions: [testVersion],
-      goldenVersionSpec: '2026-01-01-01' as FillingRecipeVariationSpec
+      variations: [testVersion],
+      goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
     };
 
     test('returns complete calculation with analysis and validation', () => {

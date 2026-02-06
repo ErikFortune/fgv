@@ -10,5 +10,5 @@ Use `.get(id)` for ID-based lookup, `.has(id)` for existence checks,
 **Signature:**
 
 ```typescript
-readonly confections: MaterializedLibrary<ConfectionId, AnyConfectionEntity, IConfectionBase<AnyConfectionVersion, AnyConfectionEntity>, never>;
+readonly confections: MaterializedLibrary<ConfectionId, AnyConfectionRecipeEntity, IConfectionBase<AnyConfectionRecipeVariation, AnyConfectionRecipeEntity>, never>;
 ```

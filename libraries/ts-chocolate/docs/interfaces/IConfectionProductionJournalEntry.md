@@ -4,7 +4,7 @@
 
 Materialized journal entry for confection production sessions.
 
-**Extends:** [`IJournalEntryBase<IConfectionBase, IConfectionVersionBase, ConfectionRecipeVariationId, IConfectionProductionJournalEntryEntity>`](IJournalEntryBase.md)
+**Extends:** [`IJournalEntryBase<IConfectionBase, IConfectionRecipeVariationBase, ConfectionRecipeVariationId, IConfectionProductionJournalEntryEntity>`](IJournalEntryBase.md)
 
 ## Properties
 
@@ -121,7 +121,7 @@ Resolved source recipe/confection
 
 </td><td>
 
-[IConfectionVersionBase](IConfectionVersionBase.md)
+[IConfectionRecipeVariationBase](IConfectionRecipeVariationBase.md)
 
 </td><td>
 
@@ -138,7 +138,7 @@ Resolved source version
 
 </td><td>
 
-[IConfectionVersionBase](IConfectionVersionBase.md)&lt;[IConfectionBase](IConfectionBase.md)&lt;[AnyConfectionVersion](../type-aliases/AnyConfectionVersion.md), [AnyConfectionEntity](../type-aliases/AnyConfectionEntity.md)&gt;, [AnyConfectionVersionEntity](../type-aliases/AnyConfectionVersionEntity.md)&gt;
+[IConfectionRecipeVariationBase](IConfectionRecipeVariationBase.md)&lt;[IConfectionBase](IConfectionBase.md)&lt;[AnyConfectionRecipeVariation](../type-aliases/AnyConfectionRecipeVariation.md), [AnyConfectionRecipeEntity](../type-aliases/AnyConfectionRecipeEntity.md)&gt;, [AnyConfectionRecipeVariationEntity](../type-aliases/AnyConfectionRecipeVariationEntity.md)&gt;
 
 </td><td>
 

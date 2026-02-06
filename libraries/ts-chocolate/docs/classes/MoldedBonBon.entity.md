@@ -7,5 +7,5 @@ Gets the underlying molded bonbon data entity
 **Signature:**
 
 ```typescript
-readonly entity: IMoldedBonBonEntity;
+readonly entity: MoldedBonBonRecipeEntity;
 ```

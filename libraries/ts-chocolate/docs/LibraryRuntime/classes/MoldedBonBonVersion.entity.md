@@ -2,10 +2,10 @@
 
 ## MoldedBonBonVersion.entity property
 
-Gets the underlying molded bonbon version entity data.
+Gets the underlying molded bonbon variation entity data.
 
 **Signature:**
 
 ```typescript
-readonly entity: IMoldedBonBonVersionEntity;
+readonly entity: IMoldedBonBonRecipeVariationEntity;
 ```

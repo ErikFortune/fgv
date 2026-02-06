@@ -8,5 +8,5 @@ Confections are resolved lazily on access and cached.
 **Signature:**
 
 ```typescript
-readonly confections: MaterializedLibrary<ConfectionId, AnyConfectionEntity, AnyConfection, never>;
+readonly confections: MaterializedLibrary<ConfectionId, AnyConfectionRecipeEntity, AnyConfection, never>;
 ```

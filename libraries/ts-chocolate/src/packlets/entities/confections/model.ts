@@ -246,28 +246,28 @@ export interface IBonBonDimensions {
 export type ICoatingsEntity = Model.IIdsWithPreferred<IngredientId>;
 
 // ============================================================================
-// Version Types
+// Variation Types
 // ============================================================================
 
 /**
- * Base version interface - shared by all confection version types.
- * Contains the configuration details that can change between versions.
+ * Base variation interface - shared by all confection variation types.
+ * Contains the configuration details that can change between variations.
  * @public
  */
-export interface IConfectionVersionEntityBase {
-  /** Unique identifier for this version */
-  readonly versionSpec: ConfectionRecipeVariationSpec;
-  /** Date this version was created (ISO 8601 format) */
+export interface IConfectionRecipeVariationEntityBase {
+  /** Unique identifier for this variation */
+  readonly variationSpec: ConfectionRecipeVariationSpec;
+  /** Date this variation was created (ISO 8601 format) */
   readonly createdDate: string;
-  /** Yield specification for this version */
+  /** Yield specification for this variation */
   readonly yield: IConfectionYield;
   /** Optional filling slots - each slot has independent options with a preferred selection */
   readonly fillings?: ReadonlyArray<IFillingSlotEntity>;
-  /** Optional decorations for this version */
+  /** Optional decorations for this variation */
   readonly decorations?: ReadonlyArray<IConfectionDecoration>;
   /** Optional procedures with preferred selection */
   readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
-  /** Optional categorized notes about this version */
+  /** Optional categorized notes about this variation */
   readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
   /** Additional tags (merged with base confection tags) */
   readonly additionalTags?: ReadonlyArray<string>;
@@ -276,11 +276,11 @@ export interface IConfectionVersionEntityBase {
 }
 
 /**
- * Version interface for molded bonbon confections.
+ * Variation interface for molded bonbon confections.
  * Includes mold and chocolate shell specifications.
  * @public
  */
-export interface IMoldedBonBonVersionEntity extends IConfectionVersionEntityBase {
+export interface IMoldedBonBonRecipeVariationEntity extends IConfectionRecipeVariationEntityBase {
   /** Required molds with preferred selection */
   readonly molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
   /** Required shell chocolate specification */
@@ -290,11 +290,11 @@ export interface IMoldedBonBonVersionEntity extends IConfectionVersionEntityBase
 }
 
 /**
- * Version interface for bar truffle confections.
+ * Variation interface for bar truffle confections.
  * Includes frame and cutting dimensions.
  * @public
  */
-export interface IBarTruffleVersionEntity extends IConfectionVersionEntityBase {
+export interface IBarTruffleRecipeVariationEntity extends IConfectionRecipeVariationEntityBase {
   /** Frame dimensions for ganache slab */
   readonly frameDimensions: IFrameDimensions;
   /** Single bonbon dimensions for cutting */
@@ -304,11 +304,11 @@ export interface IBarTruffleVersionEntity extends IConfectionVersionEntityBase {
 }
 
 /**
- * Version interface for rolled truffle confections.
+ * Variation interface for rolled truffle confections.
  * Includes enrobing and coating specifications.
  * @public
  */
-export interface IRolledTruffleVersionEntity extends IConfectionVersionEntityBase {
+export interface IRolledTruffleRecipeVariationEntity extends IConfectionRecipeVariationEntityBase {
   /** Optional enrobing chocolate specification */
   readonly enrobingChocolate?: IChocolateSpec;
   /** Optional coatings (cocoa powder, nuts, etc.) */
@@ -316,13 +316,13 @@ export interface IRolledTruffleVersionEntity extends IConfectionVersionEntityBas
 }
 
 /**
- * Union type for all confection version types.
+ * Union type for all confection variation types.
  * @public
  */
-export type AnyConfectionVersionEntity =
-  | IMoldedBonBonVersionEntity
-  | IBarTruffleVersionEntity
-  | IRolledTruffleVersionEntity;
+export type AnyConfectionRecipeVariationEntity =
+  | IMoldedBonBonRecipeVariationEntity
+  | IBarTruffleRecipeVariationEntity
+  | IRolledTruffleRecipeVariationEntity;
 
 // ============================================================================
 // Base Confection Interface
@@ -330,14 +330,17 @@ export type AnyConfectionVersionEntity =
 
 /**
  * Base confection interface - all confection types share these properties.
- * Contains stable identity and metadata; configuration details are in versions.
+ * Contains stable identity and metadata; configuration details are in variations.
  * @public
  */
-export interface IConfectionEntityBase {
+export interface IConfectionRecipeEntityBase<
+  TType extends ConfectionType = ConfectionType,
+  TVariation extends AnyConfectionRecipeVariationEntity = AnyConfectionRecipeVariationEntity
+> {
   /** Base identifier within source (no dots) */
   readonly baseId: BaseConfectionId;
   /** Confection type (discriminator) */
-  readonly confectionType: ConfectionType;
+  readonly confectionType: TType;
   /** Human-readable name */
   readonly name: ConfectionName;
   /** Optional description */
@@ -346,10 +349,10 @@ export interface IConfectionEntityBase {
   readonly tags?: ReadonlyArray<string>;
   /** Optional categorized URLs for external resources (tutorials, videos, etc.) */
   readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
-  /** The ID of the golden (approved default) version */
-  readonly goldenVersionSpec: ConfectionRecipeVariationSpec;
-  /** Version history - contains type-specific configuration details */
-  readonly versions: ReadonlyArray<AnyConfectionVersionEntity>;
+  /** The ID of the golden (approved default) variation */
+  readonly goldenVariationSpec: ConfectionRecipeVariationSpec;
+  /** Variations history - contains type-specific configuration details */
+  readonly variations: ReadonlyArray<TVariation>;
 }
 
 // ============================================================================
@@ -361,36 +364,30 @@ export interface IConfectionEntityBase {
  * Uses chocolate molds for shell formation
  * @public
  */
-export interface IMoldedBonBonEntity extends IConfectionEntityBase {
-  /** Type discriminator */
-  readonly confectionType: 'molded-bonbon';
-  /** Version history with molded bonbon specific details */
-  readonly versions: ReadonlyArray<IMoldedBonBonVersionEntity>;
-}
+export type MoldedBonBonRecipeEntity = IConfectionRecipeEntityBase<
+  'molded-bonbon',
+  IMoldedBonBonRecipeVariationEntity
+>;
 
 /**
  * Bar truffle confection
  * Ganache slab cut into squares and enrobed
  * @public
  */
-export interface IBarTruffleEntity extends IConfectionEntityBase {
-  /** Type discriminator */
-  readonly confectionType: 'bar-truffle';
-  /** Version history with bar truffle specific details */
-  readonly versions: ReadonlyArray<IBarTruffleVersionEntity>;
-}
+export type BarTruffleRecipeEntity = IConfectionRecipeEntityBase<
+  'bar-truffle',
+  IBarTruffleRecipeVariationEntity
+>;
 
 /**
  * Rolled truffle confection
  * Hand-rolled ganache balls with various coatings
  * @public
  */
-export interface IRolledTruffleEntity extends IConfectionEntityBase {
-  /** Type discriminator */
-  readonly confectionType: 'rolled-truffle';
-  /** Version history with rolled truffle specific details */
-  readonly versions: ReadonlyArray<IRolledTruffleVersionEntity>;
-}
+export type RolledTruffleRecipeEntity = IConfectionRecipeEntityBase<
+  'rolled-truffle',
+  IRolledTruffleRecipeVariationEntity
+>;
 
 // ============================================================================
 // Confection Union Type
@@ -401,80 +398,89 @@ export interface IRolledTruffleEntity extends IConfectionEntityBase {
  * Use this when working with raw confection data.
  * @public
  */
-export type AnyConfectionEntity = IMoldedBonBonEntity | IBarTruffleEntity | IRolledTruffleEntity;
+export type AnyConfectionRecipeEntity =
+  | MoldedBonBonRecipeEntity
+  | BarTruffleRecipeEntity
+  | RolledTruffleRecipeEntity;
 
 // ============================================================================
 // Type Guards
 // ============================================================================
 
 /**
- * Type guard for IMoldedBonBon
+ * Type guard for {@link Entities.Confections.MoldedBonBonRecipeEntity | molded bon-bon recipe entity}.
  * @param confection - Confection data to check
  * @returns True if the confection is a molded bonbon
  * @public
  */
-export function isMoldedBonBonEntity(confection: AnyConfectionEntity): confection is IMoldedBonBonEntity {
+export function isMoldedBonBonRecipeEntity(
+  confection: AnyConfectionRecipeEntity
+): confection is MoldedBonBonRecipeEntity {
   return confection.confectionType === 'molded-bonbon';
 }
 
 /**
- * Type guard for IBarTruffle
+ * Type guard for {@link Entities.Confections.BarTruffleRecipeEntity | bar truffle recipe entity}.
  * @param confection - Confection data to check
  * @returns True if the confection is a bar truffle
  * @public
  */
-export function isBarTruffleEntity(confection: AnyConfectionEntity): confection is IBarTruffleEntity {
+export function isBarTruffleEntity(
+  confection: AnyConfectionRecipeEntity
+): confection is BarTruffleRecipeEntity {
   return confection.confectionType === 'bar-truffle';
 }
 
 /**
- * Type guard for IRolledTruffle
+ * Type guard for {@link Entities.Confections.RolledTruffleRecipeEntity | rolled truffle recipe entity}.
  * @param confection - Confection data to check
  * @returns True if the confection is a rolled truffle
  * @public
  */
-export function isRolledTruffleEntity(confection: AnyConfectionEntity): confection is IRolledTruffleEntity {
+export function isRolledTruffleRecipeEntity(
+  confection: AnyConfectionRecipeEntity
+): confection is RolledTruffleRecipeEntity {
   return confection.confectionType === 'rolled-truffle';
 }
 
 // ============================================================================
-// Version Type Guards
+// Variation Type Guards
 // ============================================================================
 
 /**
- * Type guard for IMoldedBonBonVersion
- * @param version - Version to check
- * @returns True if the version is a molded bonbon version
+ * Type guard for {@link Entities.Confections.IMoldedBonBonRecipeVariationEntity | molded bon-bon recipe variation entity}.
+ * @param variation - Variation to check
+ * @returns True if the variation is a molded bonbon variation
  * @public
  */
-export function isMoldedBonBonVersionEntity(
-  version: AnyConfectionVersionEntity
-): version is IMoldedBonBonVersionEntity {
-  return 'molds' in version && 'shellChocolate' in version;
+export function isMoldedBonBonRecipeVariationEntity(
+  variation: AnyConfectionRecipeVariationEntity
+): variation is IMoldedBonBonRecipeVariationEntity {
+  return 'molds' in variation && 'shellChocolate' in variation;
 }
 
 /**
- * Type guard for IBarTruffleVersion
- * @param version - Version to check
- * @returns True if the version is a bar truffle version
+ * Type guard for {@link Entities.Confections.IBarTruffleRecipeVariationEntity | bar truffle recipe variation entity}.
+ * @param variation - Variation to check
+ * @returns True if the variation is a bar truffle variation
  * @public
  */
-export function isBarTruffleVersionEntity(
-  version: AnyConfectionVersionEntity
-): version is IBarTruffleVersionEntity {
-  return 'frameDimensions' in version && 'singleBonBonDimensions' in version;
+export function isBarTruffleRecipeVariationEntity(
+  variation: AnyConfectionRecipeVariationEntity
+): variation is IBarTruffleRecipeVariationEntity {
+  return 'frameDimensions' in variation && 'singleBonBonDimensions' in variation;
 }
 
 /**
- * Type guard for IRolledTruffleVersion
- * @param version - Version to check
- * @returns True if the version is a rolled truffle version
+ * Type guard for {@link Entities.Confections.IRolledTruffleRecipeVariationEntity | rolled truffle recipe variation entity}.
+ * @param variation - Variation to check
+ * @returns True if the variation is a rolled truffle variation
  * @public
  */
-export function isRolledTruffleVersionEntity(
-  version: AnyConfectionVersionEntity
-): version is IRolledTruffleVersionEntity {
-  return !isMoldedBonBonVersionEntity(version) && !isBarTruffleVersionEntity(version);
+export function isRolledTruffleRecipeVariationEntity(
+  variation: AnyConfectionRecipeVariationEntity
+): variation is IRolledTruffleRecipeVariationEntity {
+  return !isMoldedBonBonRecipeVariationEntity(variation) && !isBarTruffleRecipeVariationEntity(variation);
 }
 
 // ============================================================================
@@ -562,8 +568,8 @@ export function isResolvedIngredientSlotEntity(
 export interface IProducedConfectionEntityBase {
   /** Confection type discriminator (matches ConfectionType) */
   readonly confectionType: ConfectionType;
-  /** Confection version ID that was produced */
-  readonly versionId: ConfectionRecipeVariationId;
+  /** Confection variation ID that was produced */
+  readonly variationId: ConfectionRecipeVariationId;
   /** Yield specification for this production */
   readonly yield: IConfectionYield;
   /** Resolved filling slots with concrete selections */

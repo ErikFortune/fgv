@@ -47,7 +47,7 @@ Record of a filling recipe being used (for production tracking)
 
 </td><td>
 
-Reference to a source filling recipe+version from which a filling recipe was derived.
+Reference to a source filling recipe+variation from which a filling recipe was derived.
 
 </td></tr>
 <tr><td>
@@ -97,7 +97,7 @@ Description
 
 </td><td>
 
-Categories for rating a filling recipe version
+Categories for rating a filling recipe variation
 
 </td></tr>
 <tr><td>

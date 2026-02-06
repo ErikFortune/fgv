@@ -27,7 +27,7 @@ Description
 <tbody>
 <tr><td>
 
-[sourceVersionId](./IScalingRefEntity.sourceVersionId.md)
+[sourceVariationId](./IScalingRefEntity.sourceVariationId.md)
 
 </td><td>
 
@@ -39,7 +39,7 @@ Description
 
 </td><td>
 
-Source filling recipe version ID (format: "sourceId.fillingId@versionSpec")
+Source filling recipe variation ID (format: "sourceId.fillingId@variationSpec")
 
 </td></tr>
 <tr><td>

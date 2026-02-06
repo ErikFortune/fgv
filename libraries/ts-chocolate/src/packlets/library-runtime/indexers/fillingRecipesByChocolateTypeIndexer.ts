@@ -92,10 +92,10 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
 
     for (const [recipeId, recipe] of recipes.entries()) {
       // Check golden version for chocolate types
-      const goldenVersion = recipe.versions.find((v) => v.versionSpec === recipe.goldenVersionSpec);
+      const goldenVersion = recipe.variations.find((v) => v.variationSpec === recipe.goldenVariationSpec);
       /* c8 ignore next 4 - defensive: data validation ensures golden version exists */
       if (!goldenVersion) {
-        this._logger.error(`Recipe ${recipeId} is missing golden version ${recipe.goldenVersionSpec}`);
+        this._logger.error(`Recipe ${recipeId} is missing golden version ${recipe.goldenVariationSpec}`);
         continue;
       }
 

@@ -7,5 +7,5 @@ Full source recipe/confection at the time of the entry
 **Signature:**
 
 ```typescript
-readonly recipe: TVersion;
+readonly recipe: TVariation;
 ```

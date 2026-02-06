@@ -2,12 +2,12 @@
 
 ## RolledTruffleVersion.create() method
 
-Factory method for creating a RolledTruffleVersion.
+Factory method for creating a LibraryRuntime.Confections.RolledTruffleRecipeVariation.
 
 **Signature:**
 
 ```typescript
-static create(context: IConfectionContext, confectionId: ConfectionId, version: IRolledTruffleVersionEntity): Result<RolledTruffleVersion>;
+static create(context: IConfectionContext, confectionId: ConfectionId, variation: IRolledTruffleRecipeVariationEntity): Result<RolledTruffleVersion>;
 ```
 
 **Parameters:**
@@ -16,11 +16,11 @@ static create(context: IConfectionContext, confectionId: ConfectionId, version: 
 <tbody>
 <tr><td>context</td><td>IConfectionContext</td><td>The runtime context</td></tr>
 <tr><td>confectionId</td><td>ConfectionId</td><td>The parent confection ID</td></tr>
-<tr><td>version</td><td>IRolledTruffleVersionEntity</td><td>The rolled truffle version data</td></tr>
+<tr><td>variation</td><td>IRolledTruffleRecipeVariationEntity</td><td>The rolled truffle variation data</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;[RolledTruffleVersion](RolledTruffleVersion.md)&gt;
 
-Success with RolledTruffleVersion
+Success with LibraryRuntime.Confections.RolledTruffleRecipeVariation
