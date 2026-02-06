@@ -2,7 +2,7 @@
 
 ## UserEntityLibrary.create() method
 
-Creates a new UserLibrary.UserEntityLibrary | UserEntityLibrary instance.
+Creates a new UserEntities.UserEntityLibrary | UserEntityLibrary instance.
 
 **Signature:**
 
@@ -14,7 +14,7 @@ static create(params?: IUserEntityLibraryCreateParams): Result<UserEntityLibrary
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>params</td><td>IUserEntityLibraryCreateParams</td><td>Optional UserLibrary.IUserEntityLibraryCreateParams | creation parameters</td></tr>
+<tr><td>params</td><td>IUserEntityLibraryCreateParams</td><td>Optional UserEntities.IUserEntityLibraryCreateParams | creation parameters</td></tr>
 </tbody></table>
 
 **Returns:**

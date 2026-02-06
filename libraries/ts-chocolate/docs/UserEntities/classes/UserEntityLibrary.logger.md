@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [UserEntityLibrary](./UserEntityLibrary.md) > logger
+[Home](../../README.md) > [UserEntities](../README.md) > [UserEntityLibrary](./UserEntityLibrary.md) > logger
 
 ## UserEntityLibrary.logger property
 

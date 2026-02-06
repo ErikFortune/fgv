@@ -69,8 +69,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   }
 
   /**
-   * Creates a new {@link UserLibrary.UserEntityLibrary | UserEntityLibrary} instance.
-   * @param params - Optional {@link UserLibrary.IUserEntityLibraryCreateParams | creation parameters}
+   * Creates a new {@link UserEntities.UserEntityLibrary | UserEntityLibrary} instance.
+   * @param params - Optional {@link UserEntities.IUserEntityLibraryCreateParams | creation parameters}
    * @returns `Success` with new instance, or `Failure` with error message
    * @public
    */
@@ -153,28 +153,28 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   }
 
   /**
-   * {@inheritDoc UserLibrary.IUserEntityLibrary.journals}
+   * {@inheritDoc UserEntities.IUserEntityLibrary.journals}
    */
   public get journals(): JournalLibrary {
     return this._journals;
   }
 
   /**
-   * {@inheritDoc UserLibrary.IUserEntityLibrary.sessions}
+   * {@inheritDoc UserEntities.IUserEntityLibrary.sessions}
    */
   public get sessions(): SessionLibrary {
     return this._sessions;
   }
 
   /**
-   * {@inheritDoc UserLibrary.IUserEntityLibrary.moldInventory}
+   * {@inheritDoc UserEntities.IUserEntityLibrary.moldInventory}
    */
   public get moldInventory(): MoldInventoryLibrary {
     return this._moldInventory;
   }
 
   /**
-   * {@inheritDoc UserLibrary.IUserEntityLibrary.ingredientInventory}
+   * {@inheritDoc UserEntities.IUserEntityLibrary.ingredientInventory}
    */
   public get ingredientInventory(): IngredientInventoryLibrary {
     return this._ingredientInventory;

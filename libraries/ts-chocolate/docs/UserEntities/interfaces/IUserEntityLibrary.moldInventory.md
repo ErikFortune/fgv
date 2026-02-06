@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IUserEntityLibrary](./IUserEntityLibrary.md) > moldInventory
+[Home](../../README.md) > [UserEntities](../README.md) > [IUserEntityLibrary](./IUserEntityLibrary.md) > moldInventory
 
 ## IUserEntityLibrary.moldInventory property
 

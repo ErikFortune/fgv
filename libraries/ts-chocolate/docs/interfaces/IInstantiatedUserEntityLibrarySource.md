@@ -2,7 +2,7 @@
 
 # Interface: IInstantiatedUserEntityLibrarySource
 
-Pre-built user library instances to include in a UserLibrary.UserEntityLibrary | UserEntityLibrary.
+Pre-built user library instances to include in a UserEntities.UserEntityLibrary | UserEntityLibrary.
 
 ## Properties
 

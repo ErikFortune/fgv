@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IUserEntityLibrary](./IUserEntityLibrary.md) > sessions
+[Home](../../README.md) > [UserEntities](../README.md) > [IUserEntityLibrary](./IUserEntityLibrary.md) > sessions
 
 ## IUserEntityLibrary.sessions property
 

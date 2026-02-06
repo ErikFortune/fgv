@@ -1,9 +1,8 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > IUserEntityLibrary
+[Home](../../README.md) > [UserEntities](../README.md) > IInstantiatedUserEntityLibrarySource
 
-# Interface: IUserEntityLibrary
+# Interface: IInstantiatedUserEntityLibrarySource
 
-User-specific library data (journals, sessions, inventory).
-Separate from shared library data (ingredients, recipes, etc.).
+Pre-built user library instances to include in a UserEntities.UserEntityLibrary | UserEntityLibrary.
 
 ## Properties
 
@@ -27,7 +26,7 @@ Description
 <tbody>
 <tr><td>
 
-[journals](./IUserEntityLibrary.journals.md)
+[journals](./IInstantiatedUserEntityLibrarySource.journals.md)
 
 </td><td>
 
@@ -39,12 +38,12 @@ Description
 
 </td><td>
 
-Journal library for production records.
+Pre-built journals library
 
 </td></tr>
 <tr><td>
 
-[sessions](./IUserEntityLibrary.sessions.md)
+[sessions](./IInstantiatedUserEntityLibrarySource.sessions.md)
 
 </td><td>
 
@@ -56,12 +55,12 @@ Journal library for production records.
 
 </td><td>
 
-Session library for persisted editing sessions.
+Pre-built sessions library
 
 </td></tr>
 <tr><td>
 
-[moldInventory](./IUserEntityLibrary.moldInventory.md)
+[moldInventory](./IInstantiatedUserEntityLibrarySource.moldInventory.md)
 
 </td><td>
 
@@ -73,12 +72,12 @@ Session library for persisted editing sessions.
 
 </td><td>
 
-Mold inventory library for tracking owned molds.
+Pre-built mold inventory library
 
 </td></tr>
 <tr><td>
 
-[ingredientInventory](./IUserEntityLibrary.ingredientInventory.md)
+[ingredientInventory](./IInstantiatedUserEntityLibrarySource.ingredientInventory.md)
 
 </td><td>
 
@@ -90,7 +89,7 @@ Mold inventory library for tracking owned molds.
 
 </td><td>
 
-Ingredient inventory library for tracking ingredient stock.
+Pre-built ingredient inventory library
 
 </td></tr>
 </tbody></table>

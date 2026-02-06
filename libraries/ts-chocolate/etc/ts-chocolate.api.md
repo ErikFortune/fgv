@@ -6652,6 +6652,16 @@ export type UrlCategory = Brand<string, 'UrlCategory'>;
 // @public
 const urlCategory: Converter<UrlCategory>;
 
+declare namespace UserEntities {
+    export {
+        UserEntityLibrary,
+        IUserEntityLibrary,
+        IInstantiatedUserEntityLibrarySource,
+        IUserEntityLibraryCreateParams
+    }
+}
+export { UserEntities }
+
 // @public
 class UserEntityLibrary implements IUserEntityLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -6675,16 +6685,6 @@ class UserEntityLibrary implements IUserEntityLibrary {
     // (undocumented)
     get sessions(): SessionLibrary;
 }
-
-declare namespace UserLibrary {
-    export {
-        UserEntityLibrary,
-        IUserEntityLibrary,
-        IInstantiatedUserEntityLibrarySource,
-        IUserEntityLibraryCreateParams
-    }
-}
-export { UserLibrary }
 
 // @public
 class UserLibraryRuntime implements IUserLibraryRuntime {

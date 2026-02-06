@@ -72,7 +72,7 @@ export { Runtime };
 import * as LibraryData from './packlets/library-data';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
-import * as UserLibrary from './packlets/user-library';
+import * as UserEntities from './packlets/user-entities';
 import * as UserRuntime from './packlets/user-runtime';
 
-export { LibraryData, BuiltIn, Editing, UserLibrary, UserRuntime };
+export { LibraryData, BuiltIn, Editing, UserEntities, UserRuntime };

@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IInstantiatedUserEntityLibrarySource](./IInstantiatedUserEntityLibrarySource.md) > moldInventory
+[Home](../../README.md) > [UserEntities](../README.md) > [IInstantiatedUserEntityLibrarySource](./IInstantiatedUserEntityLibrarySource.md) > moldInventory
 
 ## IInstantiatedUserEntityLibrarySource.moldInventory property
 

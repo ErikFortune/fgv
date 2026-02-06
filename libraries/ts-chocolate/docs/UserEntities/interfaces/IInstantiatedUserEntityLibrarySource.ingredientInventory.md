@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IInstantiatedUserEntityLibrarySource](./IInstantiatedUserEntityLibrarySource.md) > ingredientInventory
+[Home](../../README.md) > [UserEntities](../README.md) > [IInstantiatedUserEntityLibrarySource](./IInstantiatedUserEntityLibrarySource.md) > ingredientInventory
 
 ## IInstantiatedUserEntityLibrarySource.ingredientInventory property
 

@@ -1,6 +1,6 @@
-[Home](../README.md) > UserLibrary
+[Home](../README.md) > UserEntities
 
-# Namespace: UserLibrary
+# Namespace: UserEntities
 
 User library packlet - user-specific data (journals, future inventory).
 
@@ -54,7 +54,7 @@ User-specific library data (journals, sessions, inventory).
 
 </td><td>
 
-Pre-built user library instances to include in a UserLibrary.UserEntityLibrary | UserEntityLibrary.
+Pre-built user library instances to include in a UserEntities.UserEntityLibrary | UserEntityLibrary.
 
 </td></tr>
 <tr><td>
@@ -63,7 +63,7 @@ Pre-built user library instances to include in a UserLibrary.UserEntityLibrary |
 
 </td><td>
 
-Parameters for creating a UserLibrary.UserEntityLibrary | UserEntityLibrary.
+Parameters for creating a UserEntities.UserEntityLibrary | UserEntityLibrary.
 
 </td></tr>
 </tbody></table>

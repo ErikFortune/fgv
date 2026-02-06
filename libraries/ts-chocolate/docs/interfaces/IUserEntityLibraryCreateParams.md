@@ -2,7 +2,7 @@
 
 # Interface: IUserEntityLibraryCreateParams
 
-Parameters for creating a UserLibrary.UserEntityLibrary | UserEntityLibrary.
+Parameters for creating a UserEntities.UserEntityLibrary | UserEntityLibrary.
 
 User libraries have no built-in data - all data is user-provided.
 

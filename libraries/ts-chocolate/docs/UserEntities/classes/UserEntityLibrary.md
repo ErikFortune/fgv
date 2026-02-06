@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > UserEntityLibrary
+[Home](../../README.md) > [UserEntities](../README.md) > UserEntityLibrary
 
 # Class: UserEntityLibrary
 
@@ -142,7 +142,7 @@ Description
 
 </td><td>
 
-Creates a new UserLibrary.UserEntityLibrary | UserEntityLibrary instance.
+Creates a new UserEntities.UserEntityLibrary | UserEntityLibrary instance.
 
 </td></tr>
 </tbody></table>

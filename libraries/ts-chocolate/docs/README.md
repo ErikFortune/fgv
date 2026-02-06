@@ -77,7 +77,7 @@ Generic editing framework for entity collections.
 </td></tr>
 <tr><td>
 
-[UserLibrary](./UserLibrary/README.md)
+[UserEntities](./UserEntities/README.md)
 
 </td><td>
 

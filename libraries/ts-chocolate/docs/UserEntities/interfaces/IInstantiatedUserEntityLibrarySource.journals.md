@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IInstantiatedUserEntityLibrarySource](./IInstantiatedUserEntityLibrarySource.md) > journals
+[Home](../../README.md) > [UserEntities](../README.md) > [IInstantiatedUserEntityLibrarySource](./IInstantiatedUserEntityLibrarySource.md) > journals
 
 ## IInstantiatedUserEntityLibrarySource.journals property
 

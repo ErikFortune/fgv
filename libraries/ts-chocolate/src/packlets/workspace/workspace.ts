@@ -29,7 +29,7 @@ import { CryptoUtils } from '@fgv/ts-extras';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
-import { UserEntityLibrary } from '../user-library';
+import { UserEntityLibrary } from '../user-entities';
 import { IUserLibraryRuntime, UserLibraryRuntime } from '../user-runtime';
 import {
   IWorkspace,

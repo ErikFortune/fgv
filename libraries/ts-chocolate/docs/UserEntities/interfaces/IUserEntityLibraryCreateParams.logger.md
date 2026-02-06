@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IUserEntityLibraryCreateParams](./IUserEntityLibraryCreateParams.md) > logger
+[Home](../../README.md) > [UserEntities](../README.md) > [IUserEntityLibraryCreateParams](./IUserEntityLibraryCreateParams.md) > logger
 
 ## IUserEntityLibraryCreateParams.logger property
 

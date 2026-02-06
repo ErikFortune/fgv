@@ -69,7 +69,7 @@ export interface IUserEntityLibrary {
 // ============================================================================
 
 /**
- * Pre-built user library instances to include in a {@link UserLibrary.UserEntityLibrary | UserEntityLibrary}.
+ * Pre-built user library instances to include in a {@link UserEntities.UserEntityLibrary | UserEntityLibrary}.
  * @public
  */
 export interface IInstantiatedUserEntityLibrarySource {
@@ -99,7 +99,7 @@ export interface IInstantiatedUserEntityLibrarySource {
 // ============================================================================
 
 /**
- * Parameters for creating a {@link UserLibrary.UserEntityLibrary | UserEntityLibrary}.
+ * Parameters for creating a {@link UserEntities.UserEntityLibrary | UserEntityLibrary}.
  *
  * User libraries have no built-in data - all data is user-provided.
  *

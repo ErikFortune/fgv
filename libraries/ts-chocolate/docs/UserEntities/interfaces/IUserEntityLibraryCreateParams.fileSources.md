@@ -1,4 +1,4 @@
-[Home](../../README.md) > [UserLibrary](../README.md) > [IUserEntityLibraryCreateParams](./IUserEntityLibraryCreateParams.md) > fileSources
+[Home](../../README.md) > [UserEntities](../README.md) > [IUserEntityLibraryCreateParams](./IUserEntityLibraryCreateParams.md) > fileSources
 
 ## IUserEntityLibraryCreateParams.fileSources property
 

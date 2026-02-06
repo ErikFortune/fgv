@@ -37,7 +37,7 @@ import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '
 import { IChocolateEntityLibraryCreateParams, IInstantiatedEntityLibrarySources } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
-import { IUserEntityLibraryCreateParams } from '../user-library';
+import { IUserEntityLibraryCreateParams } from '../user-entities';
 import { IUserLibraryRuntime } from '../user-runtime';
 
 // ============================================================================

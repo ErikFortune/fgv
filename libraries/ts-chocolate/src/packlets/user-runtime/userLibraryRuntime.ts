@@ -45,7 +45,7 @@ import {
   RolledTruffleRecipe
 } from '../library-runtime';
 import { ISessionContext, Session } from '../runtime';
-import { IUserEntityLibrary } from '../user-library';
+import { IUserEntityLibrary } from '../user-entities';
 import { createJournalEntry } from './journalEntry';
 import { IngredientInventoryEntry, MoldInventoryEntry } from './inventoryEntry';
 import {
