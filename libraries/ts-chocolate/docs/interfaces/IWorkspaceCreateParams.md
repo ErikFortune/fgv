@@ -70,7 +70,7 @@ File tree sources to load data from.
 
 </td><td>
 
-[IInstantiatedLibrarySource](IInstantiatedLibrarySource.md)
+[IInstantiatedEntityLibrarySources](IInstantiatedEntityLibrarySources.md)
 
 </td><td>
 

@@ -2,7 +2,7 @@
 
 # Class: ChocolateLibrary
 
-Main entry point for the chocolate library
+Main entry point for the chocolate data entity library
 
 Provides unified access to:
 - Ingredient management (multi-source with built-ins)

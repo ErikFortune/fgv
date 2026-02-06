@@ -40,12 +40,7 @@ import {
   IngredientsLibrary
 } from '../../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/entities';
-import {
-  ChocolateLibrary,
-  Indexers,
-  FillingRecipe,
-  AnyIngredient
-} from '../../../../packlets/library-runtime';
+import { EntityLibrary, Indexers, FillingRecipe, AnyIngredient } from '../../../../packlets/library-runtime';
 
 // Destructure the Indexers namespace for convenient access
 const {
@@ -189,7 +184,7 @@ describe('Indexers', () => {
     ]
   };
 
-  let library: ChocolateLibrary;
+  let library: EntityLibrary;
 
   beforeEach(() => {
     const ingredients = IngredientsLibrary.create({
@@ -227,7 +222,7 @@ describe('Indexers', () => {
       ]
     }).orThrow();
 
-    library = ChocolateLibrary.create({
+    library = EntityLibrary.create({
       builtin: false,
       libraries: { ingredients, fillings: recipes }
     }).orThrow();

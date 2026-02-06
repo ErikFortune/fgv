@@ -350,7 +350,7 @@ Description
 <tbody>
 <tr><td>
 
-[IInstantiatedLibrarySource](./interfaces/IInstantiatedLibrarySource.md)
+[IInstantiatedEntityLibrarySources](./interfaces/IInstantiatedEntityLibrarySources.md)
 
 </td><td>
 
@@ -359,7 +359,7 @@ Pre-built library instances to include in a LibraryRuntime.ChocolateLibrary | Ch
 </td></tr>
 <tr><td>
 
-[IChocolateLibraryCreateParams](./interfaces/IChocolateLibraryCreateParams.md)
+[IEntityLibraryCreateParams](./interfaces/IEntityLibraryCreateParams.md)
 
 </td><td>
 

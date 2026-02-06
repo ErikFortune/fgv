@@ -27,8 +27,8 @@ import { fail, Result, Success } from '@fgv/ts-utils';
 
 import { Measurement } from '../common';
 import {
-  ChocolateLibrary,
-  IChocolateLibraryCreateParams,
+  EntityLibrary,
+  IEntityLibraryCreateParams,
   IFillingRecipe,
   LibraryRuntimeContext
 } from '../library-runtime';
@@ -47,7 +47,7 @@ export interface IRuntimeContextCreateParams {
   /**
    * Parameters for creating the underlying ChocolateLibrary
    */
-  readonly libraryParams?: IChocolateLibraryCreateParams;
+  readonly libraryParams?: IEntityLibraryCreateParams;
 
   /**
    * Whether to pre-warm the reverse index on context creation.
@@ -75,7 +75,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
    * Use static factory methods instead of calling this directly.
    * @internal
    */
-  protected constructor(library: ChocolateLibrary, preWarm: boolean) {
+  protected constructor(library: EntityLibrary, preWarm: boolean) {
     super(library, preWarm);
   }
 
@@ -86,7 +86,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
    * @returns Success with RuntimeContext, or Failure if library creation fails
    */
   public static override create(params?: IRuntimeContextCreateParams): Result<RuntimeContext> {
-    return ChocolateLibrary.create(params?.libraryParams).onSuccess((library) => {
+    return EntityLibrary.create(params?.libraryParams).onSuccess((library) => {
       return Success.with(new RuntimeContext(library, params?.preWarm ?? false));
     });
   }
@@ -98,7 +98,10 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
    * @param preWarm - Whether to pre-warm the reverse index
    * @returns Success with RuntimeContext
    */
-  public static override fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext> {
+  public static override fromChocolateLibrary(
+    library: EntityLibrary,
+    preWarm?: boolean
+  ): Result<RuntimeContext> {
     return Success.with(new RuntimeContext(library, preWarm ?? false));
   }
 

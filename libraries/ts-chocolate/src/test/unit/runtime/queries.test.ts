@@ -42,7 +42,7 @@ import {
 } from '../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
 import {
-  ChocolateLibrary,
+  EntityLibrary,
   IngredientQuery,
   FillingRecipeQuery,
   andFilters,
@@ -284,12 +284,12 @@ describe('Query Filters and Builders', () => {
       ]
     }).orThrow();
 
-    const library = ChocolateLibrary.create({
+    const library = EntityLibrary.create({
       builtin: false,
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromLibrary(library).orThrow();
+    ctx = RuntimeContext.fromChocolateLibrary(library).orThrow();
   });
 
   // ============================================================================

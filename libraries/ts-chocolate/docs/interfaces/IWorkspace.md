@@ -32,7 +32,7 @@ Description
 <tbody>
 <tr><td>
 
-[runtime](./IWorkspace.runtime.md)
+[data](./IWorkspace.data.md)
 
 </td><td>
 
@@ -49,7 +49,7 @@ The runtime context providing materialized library objects.
 </td></tr>
 <tr><td>
 
-[userRuntime](./IWorkspace.userRuntime.md)
+[userData](./IWorkspace.userData.md)
 
 </td><td>
 

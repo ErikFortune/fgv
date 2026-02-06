@@ -7,5 +7,5 @@ Pre-instantiated library sources.
 **Signature:**
 
 ```typescript
-readonly libraries: IInstantiatedLibrarySource;
+readonly libraries: IInstantiatedEntityLibrarySources;
 ```

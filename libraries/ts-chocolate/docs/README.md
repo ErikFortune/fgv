@@ -164,7 +164,7 @@ Description
 
 </td><td>
 
-Main entry point for the chocolate library
+Main entry point for the chocolate data entity library
 
 </td></tr>
 <tr><td>

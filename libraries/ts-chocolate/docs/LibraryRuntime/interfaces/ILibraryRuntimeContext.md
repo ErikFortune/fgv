@@ -38,7 +38,7 @@ Description
 <tbody>
 <tr><td>
 
-[library](./ILibraryRuntimeContext.library.md)
+[entities](./ILibraryRuntimeContext.entities.md)
 
 </td><td>
 

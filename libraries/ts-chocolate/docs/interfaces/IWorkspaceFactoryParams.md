@@ -139,7 +139,7 @@ Logger for workspace operations.
 
 </td><td>
 
-[IInstantiatedLibrarySource](IInstantiatedLibrarySource.md)
+[IInstantiatedEntityLibrarySources](IInstantiatedEntityLibrarySources.md)
 
 </td><td>
 

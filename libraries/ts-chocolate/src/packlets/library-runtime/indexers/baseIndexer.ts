@@ -25,7 +25,7 @@
 
 import { Logging, Result, Success } from '@fgv/ts-utils';
 import { IIndexer } from './model';
-import { ChocolateLibrary } from '../chocolateLibrary';
+import { EntityLibrary } from '../chocolateLibrary';
 
 /**
  * Abstract base class for indexers providing common functionality.
@@ -40,7 +40,7 @@ export abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig
   /**
    * The chocolate library being indexed.
    */
-  public readonly library: ChocolateLibrary;
+  public readonly library: EntityLibrary;
 
   /**
    * Flag indicating if the index has been built.
@@ -58,7 +58,7 @@ export abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig
    * Creates a new indexer with optional logging.
    * @param library - The library to index.
    */
-  protected constructor(library: ChocolateLibrary) {
+  protected constructor(library: EntityLibrary) {
     this.library = library;
   }
 

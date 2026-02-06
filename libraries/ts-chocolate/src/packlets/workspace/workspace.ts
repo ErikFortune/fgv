@@ -54,13 +54,13 @@ import {
  * @public
  */
 export class Workspace implements IWorkspace {
-  private readonly _runtime: RuntimeContext;
+  private readonly _data: RuntimeContext;
   private readonly _userLibrary: UserLibrary;
   private readonly _keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
   private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
-  private _userRuntime: UserLibraryRuntime | undefined;
+  private _userData: UserLibraryRuntime | undefined;
 
   /**
    * Private constructor - use static factory methods.
@@ -73,7 +73,7 @@ export class Workspace implements IWorkspace {
     settings: ISettingsManager | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
-    this._runtime = runtime;
+    this._data = runtime;
     this._userLibrary = userLibrary;
     this._keyStore = keyStore;
     this._cryptoProvider = cryptoProvider;
@@ -249,21 +249,21 @@ export class Workspace implements IWorkspace {
   // ============================================================================
 
   /**
-   * {@inheritDoc IWorkspace.runtime}
+   * {@inheritDoc IWorkspace.data}
    */
-  public get runtime(): RuntimeContext {
-    return this._runtime;
+  public get data(): RuntimeContext {
+    return this._data;
   }
 
   /**
-   * {@inheritDoc IWorkspace.userRuntime}
+   * {@inheritDoc IWorkspace.userData}
    */
-  public get userRuntime(): IUserLibraryRuntime {
-    if (this._userRuntime === undefined) {
+  public get userData(): IUserLibraryRuntime {
+    if (this._userData === undefined) {
       // Lazily create the user runtime on first access
-      this._userRuntime = UserLibraryRuntime.create(this._userLibrary, this._runtime).orThrow();
+      this._userData = UserLibraryRuntime.create(this._userLibrary, this._data).orThrow();
     }
-    return this._userRuntime;
+    return this._userData;
   }
 
   /**
@@ -373,7 +373,7 @@ export class Workspace implements IWorkspace {
     };
 
     // Load protected collections from each sub-library
-    const library = this._runtime.library;
+    const library = this._data.entities;
 
     // Load ingredients
     const ingredientsResult = await library.ingredients.loadProtectedCollectionAsync(encryption);
@@ -418,6 +418,6 @@ export class Workspace implements IWorkspace {
     }
 
     // Clear runtime cache so new items are visible
-    this._runtime.clearCache();
+    this._data.clearCache();
   }
 }

@@ -588,7 +588,7 @@ export class ChocolateLibrary {
     get confections(): Entities.Confections.ConfectionsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
+    static create(params?: IEntityLibraryCreateParams): Result<ChocolateLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
     getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
@@ -2219,19 +2219,6 @@ interface IChocolateIngredientEntity extends IIngredientEntity {
     readonly viscosityMcM?: DegreesMacMichael;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface IChocolateLibraryCreateParams {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly builtin?: FullLibraryLoadSpec;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly libraries?: IInstantiatedLibrarySource;
-    readonly logger?: Logging.LogReporter<unknown>;
-}
-
 // @public
 type IChocolateSpec = Model.IIdsWithPreferred<IngredientId>;
 
@@ -2641,6 +2628,19 @@ interface IEncryptionConfig {
     readonly onMissingKey?: CryptoUtils.EncryptedFileErrorMode;
     readonly secretProvider?: SecretProvider;
     readonly secrets?: ReadonlyArray<CryptoUtils.INamedSecret>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IEntityLibraryCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly builtin?: FullLibraryLoadSpec;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly libraries?: IInstantiatedEntityLibrarySources;
+    readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // @public
@@ -3124,7 +3124,7 @@ interface IInlineTaskEntity {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IInstantiatedLibrarySource {
+interface IInstantiatedEntityLibrarySources {
     readonly confections?: Entities.Confections.ConfectionsLibrary;
     readonly fillings?: FillingsLibrary;
     readonly ingredients?: IngredientsLibrary;
@@ -3224,10 +3224,10 @@ interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
     readonly cachedRecipeCount: number;
     clearCache(): void;
     readonly confections: MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, IConfectionBase, never>;
+    readonly entities: ChocolateLibrary;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    readonly library: ChocolateLibrary;
     readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
     readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
     readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
@@ -3236,7 +3236,7 @@ interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
 
 // @public
 interface ILibraryRuntimeContextCreateParams {
-    readonly libraryParams?: IChocolateLibraryCreateParams;
+    readonly libraryParams?: IEntityLibraryCreateParams;
     readonly preWarm?: boolean;
 }
 
@@ -4253,7 +4253,7 @@ interface IRuntimeContext extends ILibraryRuntimeContext {
 
 // @public
 interface IRuntimeContextCreateParams {
-    readonly libraryParams?: IChocolateLibraryCreateParams;
+    readonly libraryParams?: IEntityLibraryCreateParams;
     readonly preWarm?: boolean;
 }
 
@@ -4853,15 +4853,15 @@ interface IWeightContribution {
 
 // @public
 export interface IWorkspace {
+    readonly data: RuntimeContext;
     readonly isReady: boolean;
     readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
-    readonly runtime: RuntimeContext;
     // Warning: (ae-forgotten-export) The symbol "ISettingsManager" needs to be exported by the entry point index.d.ts
     readonly settings: ISettingsManager | undefined;
     readonly state: WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
-    readonly userRuntime: IUserLibraryRuntime;
+    readonly userData: IUserLibraryRuntime;
 }
 
 // @public
@@ -4875,7 +4875,7 @@ export interface IWorkspaceCreateParams {
     // Warning: (ae-forgotten-export) The symbol "IWorkspaceKeyStoreConfig" needs to be exported by the entry point index.d.ts
     readonly keyStore?: IWorkspaceKeyStoreConfig;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly libraries?: IInstantiatedLibrarySource;
+    readonly libraries?: IInstantiatedEntityLibrarySources;
     readonly logger?: Logging.LogReporter<unknown>;
     readonly preWarm?: boolean;
     readonly userFileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
@@ -5144,9 +5144,9 @@ declare namespace LibraryRuntime {
         IMold,
         Mold,
         Internal,
-        IInstantiatedLibrarySource,
-        IChocolateLibraryCreateParams,
-        ChocolateLibrary,
+        IInstantiatedEntityLibrarySources,
+        IEntityLibraryCreateParams,
+        ChocolateLibrary as EntityLibrary,
         IIngredient,
         IChocolateIngredient,
         IDairyIngredient,
@@ -5243,8 +5243,12 @@ class LibraryRuntimeContext implements IVariationContext<AnyIngredient>, IIngred
     get confections(): MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, AnyConfectionRecipe, never>;
     static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
     createWeightContext(): IWeightCalculationContext;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get entities(): ChocolateLibrary;
     get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
-    static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
+    static fromChocolateLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
@@ -5261,10 +5265,6 @@ class LibraryRuntimeContext implements IVariationContext<AnyIngredient>, IIngred
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    get library(): ChocolateLibrary;
     readonly logger: Logging.LogReporter<unknown>;
     get molds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never>;
     get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never>;
@@ -6167,7 +6167,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     protected constructor(library: ChocolateLibrary, preWarm: boolean);
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-    static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
+    static fromChocolateLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
 }
 
 // @internal
@@ -6945,14 +6945,14 @@ export class Workspace implements IWorkspace {
     static create(params?: IWorkspaceCreateParams): Result<Workspace>;
     // Warning: (ae-forgotten-export) The symbol "IWorkspaceCreateWithSettingsParams" needs to be exported by the entry point index.d.ts
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
+    get data(): RuntimeContext;
     get isReady(): boolean;
     get keyStore(): CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
-    get runtime(): RuntimeContext;
     get settings(): ISettingsManager | undefined;
     get state(): WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
-    get userRuntime(): IUserLibraryRuntime;
+    get userData(): IUserLibraryRuntime;
 }
 
 // @public

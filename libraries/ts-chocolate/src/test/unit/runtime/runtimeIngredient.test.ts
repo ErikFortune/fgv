@@ -44,7 +44,7 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
-import { ChocolateLibrary } from '../../../packlets/library-runtime';
+import { EntityLibrary } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
 import {
   Ingredient,
@@ -256,12 +256,12 @@ describe('RuntimeIngredient', () => {
       ]
     }).orThrow();
 
-    const library = ChocolateLibrary.create({
+    const library = EntityLibrary.create({
       builtin: false,
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromLibrary(library).orThrow();
+    ctx = RuntimeContext.fromChocolateLibrary(library).orThrow();
   });
 
   // ============================================================================

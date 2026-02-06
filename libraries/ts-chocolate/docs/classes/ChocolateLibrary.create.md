@@ -7,14 +7,14 @@ Creates a new LibraryRuntime.ChocolateLibrary | ChocolateLibrary instance.
 **Signature:**
 
 ```typescript
-static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
+static create(params?: IEntityLibraryCreateParams): Result<ChocolateLibrary>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>params</td><td>IChocolateLibraryCreateParams</td><td>Optional LibraryRuntime.IChocolateLibraryCreateParams | creation parameters</td></tr>
+<tr><td>params</td><td>IEntityLibraryCreateParams</td><td>Optional LibraryRuntime.IChocolateLibraryCreateParams | creation parameters</td></tr>
 </tbody></table>
 
 **Returns:**

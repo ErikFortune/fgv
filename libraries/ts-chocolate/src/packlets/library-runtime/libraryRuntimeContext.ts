@@ -36,7 +36,7 @@ import {
 } from '../entities';
 import { AnyConfection, Confection } from './confections';
 import { IWeightCalculationContext } from './internal';
-import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
+import { EntityLibrary, IEntityLibraryCreateParams } from './chocolateLibrary';
 import {
   IConfectionContext,
   IIngredientContext,
@@ -70,7 +70,7 @@ export interface ILibraryRuntimeContextCreateParams {
   /**
    * Parameters for creating the underlying ChocolateLibrary
    */
-  readonly libraryParams?: IChocolateLibraryCreateParams;
+  readonly libraryParams?: IEntityLibraryCreateParams;
 
   /**
    * Whether to pre-warm the reverse index on context creation.
@@ -97,7 +97,7 @@ export interface ILibraryRuntimeContextCreateParams {
 export class LibraryRuntimeContext
   implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext
 {
-  private readonly _library: ChocolateLibrary;
+  private readonly _entities: EntityLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
 
   /**
@@ -123,8 +123,8 @@ export class LibraryRuntimeContext
   private readonly _recipeOrchestrator: FillingRecipeIndexerOrchestrator;
   private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
 
-  protected constructor(library: ChocolateLibrary, preWarm: boolean) {
-    this._library = library;
+  protected constructor(library: EntityLibrary, preWarm: boolean) {
+    this._entities = library;
     this.logger = library.logger;
 
     this._reverseIndex = new RuntimeReverseIndex(library);
@@ -154,7 +154,7 @@ export class LibraryRuntimeContext
    * @returns Success with LibraryRuntimeContext, or Failure if library creation fails
    */
   public static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext> {
-    return ChocolateLibrary.create(params?.libraryParams).onSuccess((library) => {
+    return EntityLibrary.create(params?.libraryParams).onSuccess((library) => {
       return Success.with(new LibraryRuntimeContext(library, params?.preWarm ?? false));
     });
   }
@@ -166,7 +166,10 @@ export class LibraryRuntimeContext
    * @param preWarm - Whether to pre-warm the reverse index
    * @returns Success with LibraryRuntimeContext
    */
-  public static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext> {
+  public static fromChocolateLibrary(
+    library: EntityLibrary,
+    preWarm?: boolean
+  ): Result<LibraryRuntimeContext> {
     return Success.with(new LibraryRuntimeContext(library, preWarm ?? false));
   }
 
@@ -175,10 +178,10 @@ export class LibraryRuntimeContext
   // ============================================================================
 
   /**
-   * {@inheritDoc LibraryRuntime.ILibraryRuntimeContext.library}
+   * {@inheritDoc LibraryRuntime.ILibraryRuntimeContext.entities}
    */
-  public get library(): ChocolateLibrary {
-    return this._library;
+  public get entities(): EntityLibrary {
+    return this._entities;
   }
 
   // ============================================================================
@@ -234,7 +237,7 @@ export class LibraryRuntimeContext
   > {
     if (!this._confections) {
       this._confections = new MaterializedLibrary({
-        inner: this._library.confections,
+        inner: this._entities.confections,
         converter: (entity, id) => Confection.create(this, id, entity),
         logger: this.logger
       });
@@ -284,7 +287,7 @@ export class LibraryRuntimeContext
   > {
     if (!this._ingredients) {
       this._ingredients = new MaterializedLibrary({
-        inner: this._library.ingredients,
+        inner: this._entities.ingredients,
         converter: (entity, id) => Ingredient.create(this, id, entity),
         orchestrator: this._ingredientOrchestrator,
         logger: this.logger
@@ -305,7 +308,7 @@ export class LibraryRuntimeContext
   > {
     if (!this._recipes) {
       this._recipes = new MaterializedLibrary({
-        inner: this._library.fillings,
+        inner: this._entities.fillings,
         converter: (entity, id) => FillingRecipe.create(this, id, entity),
         orchestrator: this._recipeOrchestrator,
         logger: this.logger
@@ -337,7 +340,7 @@ export class LibraryRuntimeContext
   private _getTasks(): MaterializedLibrary<TaskId, IRawTaskEntity, Task, never> {
     if (!this._tasks) {
       this._tasks = new MaterializedLibrary({
-        inner: this._library.tasks,
+        inner: this._entities.tasks,
         converter: (entity, id) => Task.create(this, id, entity),
         logger: this.logger
       });
@@ -352,7 +355,7 @@ export class LibraryRuntimeContext
   private _getProcedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never> {
     if (!this._procedures) {
       this._procedures = new MaterializedLibrary({
-        inner: this._library.procedures,
+        inner: this._entities.procedures,
         converter: (entity, id) => Procedure.create(this, id, entity),
         logger: this.logger
       });
@@ -367,7 +370,7 @@ export class LibraryRuntimeContext
   private _getMolds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never> {
     if (!this._molds) {
       this._molds = new MaterializedLibrary({
-        inner: this._library.molds,
+        inner: this._entities.molds,
         converter: (entity, id) => Mold.create(this, id, entity),
         logger: this.logger
       });
@@ -540,7 +543,7 @@ export class LibraryRuntimeContext
   public createWeightContext(): IWeightCalculationContext {
     return {
       getIngredientDensity: (id: IngredientId): number => {
-        const result = this._library.ingredients.get(id);
+        const result = this._entities.ingredients.get(id);
         if (result.isSuccess()) {
           return result.value.density ?? 1.0;
         }

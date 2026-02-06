@@ -51,7 +51,7 @@ Logger used by this runtime context and its libraries.
 </td></tr>
 <tr><td>
 
-[library](./LibraryRuntimeContext.library.md)
+[entities](./LibraryRuntimeContext.entities.md)
 
 </td><td>
 
@@ -252,7 +252,7 @@ Creates a LibraryRuntimeContext with a new or default ChocolateLibrary.
 </td></tr>
 <tr><td>
 
-[fromLibrary(library, preWarm)](./LibraryRuntimeContext.fromLibrary.md)
+[fromChocolateLibrary(library, preWarm)](./LibraryRuntimeContext.fromChocolateLibrary.md)
 
 </td><td>
 

@@ -34,7 +34,7 @@ import { Logging, Result } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { JournalLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
-import { IChocolateLibraryCreateParams, IInstantiatedLibrarySource } from '../library-runtime';
+import { IEntityLibraryCreateParams, IInstantiatedEntityLibrarySources } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
 import { IUserLibraryCreateParams } from '../user-library';
@@ -72,13 +72,13 @@ export interface IWorkspace {
    * The runtime context providing materialized library objects.
    * Access via `runtime.ingredients`, `runtime.fillings`, `runtime.confections`, etc.
    */
-  readonly runtime: RuntimeContext;
+  readonly data: RuntimeContext;
 
   /**
    * User library runtime for materialized user data.
    * Access via `userRuntime.sessions`, `userRuntime.journals`, `userRuntime.moldInventory`, etc.
    */
-  readonly userRuntime: IUserLibraryRuntime;
+  readonly userData: IUserLibraryRuntime;
 
   /**
    * The key store for encryption key management, if configured.
@@ -172,7 +172,7 @@ export interface IWorkspaceCreateParams {
    * Pre-instantiated library sources.
    * @see {@link LibraryRuntime.IInstantiatedLibrarySource}
    */
-  readonly libraries?: IInstantiatedLibrarySource;
+  readonly libraries?: IInstantiatedEntityLibrarySources;
 
   // ---- User Library Sources (Journals, Future Inventory) ----
 
@@ -255,7 +255,7 @@ export interface IWorkspaceCreateWithSettingsParams extends IWorkspaceCreatePara
 export function toLibraryParams(
   params: IWorkspaceCreateParams,
   encryption?: IEncryptionConfig
-): IChocolateLibraryCreateParams {
+): IEntityLibraryCreateParams {
   return {
     builtin: params.builtin,
     fileSources: params.fileSources,

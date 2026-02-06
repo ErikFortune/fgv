@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-[IChocolateLibraryCreateParams](IChocolateLibraryCreateParams.md)
+[IEntityLibraryCreateParams](IEntityLibraryCreateParams.md)
 
 </td><td>
 

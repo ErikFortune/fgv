@@ -61,7 +61,7 @@ import {
  * Useful for testing or when libraries are constructed through other means.
  * @public
  */
-export interface IInstantiatedLibrarySource {
+export interface IInstantiatedEntityLibrarySources {
   /**
    * Pre-built ingredients library
    */
@@ -106,7 +106,7 @@ export interface IInstantiatedLibrarySource {
  *
  * @public
  */
-export interface IChocolateLibraryCreateParams {
+export interface IEntityLibraryCreateParams {
   /**
    * {@link LibraryData.FullLibraryLoadSpec | Specifies built-in data loading} for each sub-library.
    *
@@ -128,7 +128,7 @@ export interface IChocolateLibraryCreateParams {
    * Used for advanced scenarios like testing or custom library construction.
    * If provided along with other sources, collections are combined.
    */
-  readonly libraries?: IInstantiatedLibrarySource;
+  readonly libraries?: IInstantiatedEntityLibrarySources;
 
   /**
    * Optional logger for reporting load/merge issues.
@@ -136,12 +136,8 @@ export interface IChocolateLibraryCreateParams {
   readonly logger?: Logging.LogReporter<unknown>;
 }
 
-// ============================================================================
-// ChocolateLibrary Class
-// ============================================================================
-
 /**
- * Main entry point for the chocolate library
+ * Main entry point for the chocolate data entity library
  *
  * Provides unified access to:
  * - Ingredient management (multi-source with built-ins)
@@ -150,7 +146,7 @@ export interface IChocolateLibraryCreateParams {
  *
  * @public
  */
-export class ChocolateLibrary {
+export class EntityLibrary {
   private readonly _ingredients: IngredientsLibrary;
   private readonly _recipes: FillingsLibrary;
   private readonly _molds: MoldsLibrary;
@@ -189,7 +185,7 @@ export class ChocolateLibrary {
    * @returns `Success` with new instance, or `Failure` with error message
    * @public
    */
-  public static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary> {
+  public static create(params?: IEntityLibraryCreateParams): Result<EntityLibrary> {
     params = params ?? {};
     /* c8 ignore next 1 - optional param branches tested implicitly via create() */
     const builtinSpec = params?.builtin ?? true;
@@ -199,42 +195,42 @@ export class ChocolateLibrary {
 
     const ingredientsResult = IngredientsLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'ingredients'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients'),
+      fileSources: EntityLibrary._toFileSources(fileSources, 'ingredients'),
       mergeLibraries: params.libraries?.ingredients,
       logger
     }).report(logger);
 
     const recipesResult = FillingsLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'fillings'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'fillings'),
+      fileSources: EntityLibrary._toFileSources(fileSources, 'fillings'),
       mergeLibraries: params.libraries?.fillings,
       logger
     }).report(logger);
 
     const moldsResult = MoldsLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'molds'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'molds'),
+      fileSources: EntityLibrary._toFileSources(fileSources, 'molds'),
       mergeLibraries: params.libraries?.molds,
       logger
     }).report(logger);
 
     const proceduresResult = ProceduresLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'procedures'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'procedures'),
+      fileSources: EntityLibrary._toFileSources(fileSources, 'procedures'),
       mergeLibraries: params.libraries?.procedures,
       logger
     }).report(logger);
 
     const tasksResult = TasksLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'tasks'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'tasks'),
+      fileSources: EntityLibrary._toFileSources(fileSources, 'tasks'),
       mergeLibraries: params.libraries?.tasks,
       logger
     }).report(logger);
 
     const confectionsResult = Entities.Confections.ConfectionsLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'confections'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'confections'),
+      fileSources: EntityLibrary._toFileSources(fileSources, 'confections'),
       mergeLibraries: params.libraries?.confections,
       logger
     }).report(logger);
@@ -245,7 +241,7 @@ export class ChocolateLibrary {
           proceduresResult.onSuccess((procedures) =>
             tasksResult.onSuccess((tasks) =>
               confectionsResult.onSuccess((confections) => {
-                const library = new ChocolateLibrary(
+                const library = new EntityLibrary(
                   ingredients,
                   recipes,
                   molds,

@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { IngredientId } from '../../common';
-import { ChocolateLibrary } from '../chocolateLibrary';
+import { EntityLibrary } from '../chocolateLibrary';
 import { AnyIngredient } from '../ingredients/ingredient';
 import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 import { AggregationMode, IFindOptions } from './model';
@@ -89,7 +89,7 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<AnyIn
    * @param library - The chocolate library to index
    * @param resolver - Function to resolve ingredient IDs to entities
    */
-  public constructor(library: ChocolateLibrary, resolver: IngredientResolver) {
+  public constructor(library: EntityLibrary, resolver: IngredientResolver) {
     super(library, {
       resolve: resolver,
       isId: (value): value is IngredientId => typeof value === 'string'
