@@ -216,7 +216,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVariation', () => {
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromChocolateLibrary(library).orThrow();
+    ctx = RuntimeContext.fromChocolateEntityLibrary(library).orThrow();
   });
 
   // ============================================================================

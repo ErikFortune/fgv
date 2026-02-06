@@ -8,5 +8,5 @@ Use this type when you need to work with any confection.
 ## Type
 
 ```typescript
-type AnyConfection = MoldedBonBon | BarTruffle | RolledTruffle
+type AnyConfection = MoldedBonBonRecipe | BarTruffleRecipe | RolledTruffleRecipe
 ```

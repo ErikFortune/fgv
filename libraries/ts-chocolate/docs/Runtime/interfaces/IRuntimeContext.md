@@ -64,7 +64,7 @@ Gets the number of cached confections.
 
 </td><td>
 
-The underlying ChocolateLibrary for direct access when needed.
+The underlying ChocolateEntityLibrary for direct access when needed.
 
 </td></tr>
 <tr><td>

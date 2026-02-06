@@ -38,11 +38,11 @@ import {
   Session as SessionEntities
 } from '../entities';
 import {
-  BarTruffle,
+  BarTruffleRecipe,
   IConfectionBase,
   MaterializedLibrary,
-  MoldedBonBon,
-  RolledTruffle
+  MoldedBonBonRecipe,
+  RolledTruffleRecipe
 } from '../library-runtime';
 import { ISessionContext, Session } from '../runtime';
 import { IUserLibrary } from '../user-library';
@@ -360,7 +360,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   ): Result<Session.AnyConfectionEditingSession> {
     if (confection.isMoldedBonBon() && persisted.confectionType === ('moldedBonBon' as ConfectionType)) {
       return Session.MoldedBonBonEditingSession.fromPersistedState(
-        confection as unknown as MoldedBonBon,
+        confection as unknown as MoldedBonBonRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
         this._sessionContext
       );
@@ -368,7 +368,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
 
     if (confection.isBarTruffle() && persisted.confectionType === ('barTruffle' as ConfectionType)) {
       return Session.BarTruffleEditingSession.fromPersistedState(
-        confection as unknown as BarTruffle,
+        confection as unknown as BarTruffleRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
         this._sessionContext
       );
@@ -376,7 +376,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
 
     if (confection.isRolledTruffle() && persisted.confectionType === ('rolledTruffle' as ConfectionType)) {
       return Session.RolledTruffleEditingSession.fromPersistedState(
-        confection as unknown as RolledTruffle,
+        confection as unknown as RolledTruffleRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
         this._sessionContext
       );

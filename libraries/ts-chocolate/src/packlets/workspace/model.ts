@@ -34,7 +34,7 @@ import { Logging, Result } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { JournalLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
-import { IEntityLibraryCreateParams, IInstantiatedEntityLibrarySources } from '../library-runtime';
+import { IChocolateEntityLibraryCreateParams, IInstantiatedEntityLibrarySources } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
 import { IUserLibraryCreateParams } from '../user-library';
@@ -154,7 +154,7 @@ export interface IWorkspaceKeyStoreConfig {
  * @public
  */
 export interface IWorkspaceCreateParams {
-  // ---- Library Sources (same as IChocolateLibraryCreateParams) ----
+  // ---- Library Sources (same as IChocolateEntityLibraryCreateParams) ----
 
   /**
    * Specifies built-in data loading for each sub-library.
@@ -255,7 +255,7 @@ export interface IWorkspaceCreateWithSettingsParams extends IWorkspaceCreatePara
 export function toLibraryParams(
   params: IWorkspaceCreateParams,
   encryption?: IEncryptionConfig
-): IEntityLibraryCreateParams {
+): IChocolateEntityLibraryCreateParams {
   return {
     builtin: params.builtin,
     fileSources: params.fileSources,

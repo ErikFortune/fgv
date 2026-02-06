@@ -5,7 +5,7 @@
 Editing session for molded bonbon confections.
 Supports frame-based yield specification and mold change workflow.
 
-**Extends:** [`ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, MoldedBonBon>`](../../../classes/ConfectionEditingSessionBase.md)
+**Extends:** [`ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, MoldedBonBonRecipe>`](../../../classes/ConfectionEditingSessionBase.md)
 
 ## Properties
 

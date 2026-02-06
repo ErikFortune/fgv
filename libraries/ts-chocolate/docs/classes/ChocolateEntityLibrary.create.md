@@ -2,19 +2,19 @@
 
 ## ChocolateEntityLibrary.create() method
 
-Creates a new LibraryRuntime.ChocolateLibrary | ChocolateLibrary instance.
+Creates a new LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary instance.
 
 **Signature:**
 
 ```typescript
-static create(params?: IEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
+static create(params?: IChocolateEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>params</td><td>IEntityLibraryCreateParams</td><td>Optional LibraryRuntime.IChocolateLibraryCreateParams | creation parameters</td></tr>
+<tr><td>params</td><td>IChocolateEntityLibraryCreateParams</td><td>Optional LibraryRuntime.IChocolateEntityLibraryCreateParams | creation parameters</td></tr>
 </tbody></table>
 
 **Returns:**

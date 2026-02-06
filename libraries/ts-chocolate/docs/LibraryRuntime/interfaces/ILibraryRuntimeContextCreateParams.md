@@ -34,11 +34,11 @@ Description
 
 </td><td>
 
-[IEntityLibraryCreateParams](../../interfaces/IEntityLibraryCreateParams.md)
+[IChocolateEntityLibraryCreateParams](../../interfaces/IChocolateEntityLibraryCreateParams.md)
 
 </td><td>
 
-Parameters for creating the underlying ChocolateLibrary
+Parameters for creating the underlying ChocolateEntityLibrary
 
 </td></tr>
 <tr><td>

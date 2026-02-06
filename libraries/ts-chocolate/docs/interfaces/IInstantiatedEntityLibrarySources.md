@@ -2,7 +2,7 @@
 
 # Interface: IInstantiatedEntityLibrarySources
 
-Pre-built library instances to include in a LibraryRuntime.ChocolateLibrary | ChocolateLibrary.
+Pre-built library instances to include in a LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary.
 Useful for testing or when libraries are constructed through other means.
 
 ## Properties

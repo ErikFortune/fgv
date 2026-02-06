@@ -909,7 +909,7 @@ export interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient>
   // ---- Library Access ----
 
   /**
-   * The underlying ChocolateLibrary for direct access when needed.
+   * The underlying ChocolateEntityLibrary for direct access when needed.
    */
   readonly entities: ChocolateEntityLibrary;
 

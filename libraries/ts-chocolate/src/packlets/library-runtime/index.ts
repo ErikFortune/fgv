@@ -72,9 +72,9 @@ export { FillingRecipe, FillingRecipeVariation } from './fillings';
 // Confection classes
 export {
   ConfectionBase,
-  MoldedBonBon,
-  BarTruffle,
-  RolledTruffle,
+  MoldedBonBonRecipe,
+  BarTruffleRecipe,
+  RolledTruffleRecipe,
   Confection,
   AnyConfection,
   ConfectionRecipeVariationBase,

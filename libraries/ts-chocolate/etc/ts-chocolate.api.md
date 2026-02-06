@@ -561,7 +561,7 @@ export class ChocolateEntityLibrary {
     get confections(): Entities.Confections.ConfectionsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params?: IEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
+    static create(params?: IChocolateEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
     getEditableConfectionsEntityCollection(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
@@ -2189,6 +2189,19 @@ interface ICavityInfo {
     readonly weight?: Measurement;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IChocolateEntityLibraryCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly builtin?: FullLibraryLoadSpec;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly libraries?: IInstantiatedEntityLibrarySources;
+    readonly logger?: Logging.LogReporter<unknown>;
+}
+
 // @public
 interface IChocolateIngredient extends IIngredient<Ingredients_2.IChocolateIngredientEntity> {
     readonly applications?: ReadonlyArray<ChocolateApplication>;
@@ -2628,19 +2641,6 @@ interface IEncryptionConfig {
     readonly onMissingKey?: CryptoUtils.EncryptedFileErrorMode;
     readonly secretProvider?: SecretProvider;
     readonly secrets?: ReadonlyArray<CryptoUtils.INamedSecret>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface IEntityLibraryCreateParams {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly builtin?: FullLibraryLoadSpec;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly libraries?: IInstantiatedEntityLibrarySources;
-    readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // @public
@@ -3236,7 +3236,7 @@ interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
 
 // @public
 interface ILibraryRuntimeContextCreateParams {
-    readonly libraryParams?: IEntityLibraryCreateParams;
+    readonly libraryParams?: IChocolateEntityLibraryCreateParams;
     readonly preWarm?: boolean;
 }
 
@@ -4253,7 +4253,7 @@ interface IRuntimeContext extends ILibraryRuntimeContext {
 
 // @public
 interface IRuntimeContextCreateParams {
-    readonly libraryParams?: IEntityLibraryCreateParams;
+    readonly libraryParams?: IChocolateEntityLibraryCreateParams;
     readonly preWarm?: boolean;
 }
 
@@ -5121,9 +5121,9 @@ declare namespace LibraryRuntime {
         FillingRecipe,
         FillingRecipeVariation,
         ConfectionBase,
-        MoldedBonBonRecipe as MoldedBonBon,
-        BarTruffleRecipe as BarTruffle,
-        RolledTruffleRecipe as RolledTruffle,
+        MoldedBonBonRecipe,
+        BarTruffleRecipe,
+        RolledTruffleRecipe,
         Confection,
         AnyConfectionRecipe as AnyConfection,
         ConfectionRecipeVariationBase,
@@ -5145,7 +5145,7 @@ declare namespace LibraryRuntime {
         Mold,
         Internal,
         IInstantiatedEntityLibrarySources,
-        IEntityLibraryCreateParams,
+        IChocolateEntityLibraryCreateParams,
         ChocolateEntityLibrary,
         IIngredient,
         IChocolateIngredient,
@@ -5248,7 +5248,7 @@ class LibraryRuntimeContext implements IVariationContext<AnyIngredient>, IIngred
     // (undocumented)
     get entities(): ChocolateEntityLibrary;
     get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
-    static fromChocolateLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
+    static fromChocolateEntityLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
@@ -6167,7 +6167,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-    static fromChocolateLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<RuntimeContext>;
+    static fromChocolateEntityLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<RuntimeContext>;
 }
 
 // @internal

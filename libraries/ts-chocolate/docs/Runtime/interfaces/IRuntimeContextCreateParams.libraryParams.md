@@ -2,10 +2,10 @@
 
 ## IRuntimeContextCreateParams.libraryParams property
 
-Parameters for creating the underlying ChocolateLibrary
+Parameters for creating the underlying ChocolateEntityLibrary
 
 **Signature:**
 
 ```typescript
-readonly libraryParams: IEntityLibraryCreateParams;
+readonly libraryParams: IChocolateEntityLibraryCreateParams;
 ```

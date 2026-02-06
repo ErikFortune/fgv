@@ -38,11 +38,7 @@ import {
   IMoldedBonBonRecipeVariation
 } from '../model';
 import { ConfectionBase } from './confectionBase';
-import { MoldedBonBonRecipeVariation } from './versions';
-
-// ============================================================================
-// RuntimeMoldedBonBon Class
-// ============================================================================
+import { MoldedBonBonRecipeVariation } from './variations';
 
 /**
  * A resolved view of a molded bonbon confection with navigation capabilities.

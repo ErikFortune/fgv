@@ -5,7 +5,7 @@
 Editing session for rolled truffle confections.
 Supports linear count-based scaling with proportional filling adjustment.
 
-**Extends:** [`ConfectionEditingSessionBase<IProducedRolledTruffleEntity, RolledTruffle>`](../../../classes/ConfectionEditingSessionBase.md)
+**Extends:** [`ConfectionEditingSessionBase<IProducedRolledTruffleEntity, RolledTruffleRecipe>`](../../../classes/ConfectionEditingSessionBase.md)
 
 ## Properties
 

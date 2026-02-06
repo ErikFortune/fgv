@@ -7,9 +7,9 @@ Returns true if this is a rolled truffle confection.
 **Signature:**
 
 ```typescript
-isRolledTruffle(): this is RolledTruffle;
+isRolledTruffle(): this is RolledTruffleRecipe;
 ```
 
 **Returns:**
 
-this is [RolledTruffle](../../classes/RolledTruffle.md)
+this is [RolledTruffleRecipe](../../classes/RolledTruffleRecipe.md)

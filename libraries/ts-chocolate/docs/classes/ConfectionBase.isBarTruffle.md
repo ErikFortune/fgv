@@ -7,9 +7,9 @@ Returns true if this is a bar truffle confection.
 **Signature:**
 
 ```typescript
-isBarTruffle(): this is BarTruffle;
+isBarTruffle(): this is BarTruffleRecipe;
 ```
 
 **Returns:**
 
-this is [BarTruffle](BarTruffle.md)
+this is [BarTruffleRecipe](BarTruffleRecipe.md)

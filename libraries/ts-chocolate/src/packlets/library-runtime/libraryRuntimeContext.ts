@@ -36,7 +36,7 @@ import {
 } from '../entities';
 import { AnyConfection, Confection } from './confections';
 import { IWeightCalculationContext } from './internal';
-import { ChocolateEntityLibrary, IEntityLibraryCreateParams } from './chocolateEntityLibrary';
+import { ChocolateEntityLibrary, IChocolateEntityLibraryCreateParams } from './chocolateEntityLibrary';
 import {
   IConfectionContext,
   IIngredientContext,
@@ -68,9 +68,9 @@ import { Mold } from './molds';
  */
 export interface ILibraryRuntimeContextCreateParams {
   /**
-   * Parameters for creating the underlying ChocolateLibrary
+   * Parameters for creating the underlying ChocolateEntityLibrary
    */
-  readonly libraryParams?: IEntityLibraryCreateParams;
+  readonly libraryParams?: IChocolateEntityLibraryCreateParams;
 
   /**
    * Whether to pre-warm the reverse index on context creation.
@@ -148,7 +148,7 @@ export class LibraryRuntimeContext
   }
 
   /**
-   * Creates a LibraryRuntimeContext with a new or default ChocolateLibrary.
+   * Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
    * This is the primary factory method for most use cases.
    * @param params - Optional parameters for library and caching
    * @returns Success with LibraryRuntimeContext, or Failure if library creation fails
@@ -160,13 +160,13 @@ export class LibraryRuntimeContext
   }
 
   /**
-   * Creates a LibraryRuntimeContext wrapping an existing ChocolateLibrary.
+   * Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
    * Use this when you already have a configured library instance.
-   * @param library - The ChocolateLibrary to wrap
+   * @param library - The ChocolateEntityLibrary to wrap
    * @param preWarm - Whether to pre-warm the reverse index
    * @returns Success with LibraryRuntimeContext
    */
-  public static fromChocolateLibrary(
+  public static fromChocolateEntityLibrary(
     library: ChocolateEntityLibrary,
     preWarm?: boolean
   ): Result<LibraryRuntimeContext> {

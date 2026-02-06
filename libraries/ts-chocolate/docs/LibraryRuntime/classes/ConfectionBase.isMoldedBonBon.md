@@ -7,9 +7,9 @@ Returns true if this is a molded bonbon confection.
 **Signature:**
 
 ```typescript
-isMoldedBonBon(): this is MoldedBonBon;
+isMoldedBonBon(): this is MoldedBonBonRecipe;
 ```
 
 **Returns:**
 
-this is [MoldedBonBon](../../classes/MoldedBonBon.md)
+this is [MoldedBonBonRecipe](../../classes/MoldedBonBonRecipe.md)

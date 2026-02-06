@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 /**
- * Main ChocolateLibrary class - unified access to ingredients and recipes
+ * Main ChocolateEntityLibrary class - unified access to ingredients and recipe
+ * data-layer entities.
  * @packageDocumentation
  */
 
@@ -57,7 +58,7 @@ import {
 // ============================================================================
 
 /**
- * Pre-built library instances to include in a {@link LibraryRuntime.ChocolateLibrary | ChocolateLibrary}.
+ * Pre-built library instances to include in a {@link LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary}.
  * Useful for testing or when libraries are constructed through other means.
  * @public
  */
@@ -94,7 +95,7 @@ export interface IInstantiatedEntityLibrarySources {
 }
 
 /**
- * Parameters for creating a {@link LibraryRuntime.ChocolateLibrary | ChocolateLibrary}.
+ * Parameters for creating a {@link LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary}.
  *
  * Sources are processed in order:
  * 1. Built-in collections (if enabled)
@@ -106,7 +107,7 @@ export interface IInstantiatedEntityLibrarySources {
  *
  * @public
  */
-export interface IEntityLibraryCreateParams {
+export interface IChocolateEntityLibraryCreateParams {
   /**
    * {@link LibraryData.FullLibraryLoadSpec | Specifies built-in data loading} for each sub-library.
    *
@@ -180,12 +181,12 @@ export class ChocolateEntityLibrary {
   }
 
   /**
-   * Creates a new {@link LibraryRuntime.ChocolateLibrary | ChocolateLibrary} instance.
-   * @param params - Optional {@link LibraryRuntime.IChocolateLibraryCreateParams | creation parameters}
+   * Creates a new {@link LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary} instance.
+   * @param params - Optional {@link LibraryRuntime.IChocolateEntityLibraryCreateParams | creation parameters}
    * @returns `Success` with new instance, or `Failure` with error message
    * @public
    */
-  public static create(params?: IEntityLibraryCreateParams): Result<ChocolateEntityLibrary> {
+  public static create(params?: IChocolateEntityLibraryCreateParams): Result<ChocolateEntityLibrary> {
     params = params ?? {};
     /* c8 ignore next 1 - optional param branches tested implicitly via create() */
     const builtinSpec = params?.builtin ?? true;
@@ -251,7 +252,7 @@ export class ChocolateEntityLibrary {
                   logger.logger
                 );
                 logger.info(
-                  `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections`
+                  `ChocolateEntityLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections`
                 );
                 return Success.with(library);
               })

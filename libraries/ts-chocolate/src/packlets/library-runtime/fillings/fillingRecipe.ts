@@ -37,7 +37,7 @@ import {
 } from '../../common';
 import { IFillingRecipeEntity } from '../../entities';
 import { IIngredientQueryOptions, IFillingRecipe, IVariationContext } from '../model';
-import { FillingRecipeVariation } from './fillingRecipeVersion';
+import { FillingRecipeVariation } from './fillingRecipeVariation';
 import { AnyIngredient } from '../ingredients';
 
 // Specialize the context interface with concrete ingredient type

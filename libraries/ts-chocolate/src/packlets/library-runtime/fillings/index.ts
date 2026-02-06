@@ -28,4 +28,4 @@
  */
 
 export { FillingRecipe } from './fillingRecipe';
-export { FillingRecipeVariation } from './fillingRecipeVersion';
+export { FillingRecipeVariation } from './fillingRecipeVariation';

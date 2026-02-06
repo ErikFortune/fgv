@@ -27,7 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedBarTruffleEntity, Session } from '../../entities';
-import { BarTruffle, ProducedBarTruffle } from '../../library-runtime';
+import { BarTruffleRecipe, ProducedBarTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -45,7 +45,7 @@ import { IConfectionEditingSessionParams } from './model';
  */
 export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
   IProducedBarTruffleEntity,
-  BarTruffle
+  BarTruffleRecipe
 > {
   /**
    * Creates a BarTruffleEditingSession.
@@ -53,7 +53,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @internal
    */
   private constructor(
-    baseConfection: BarTruffle,
+    baseConfection: BarTruffleRecipe,
     produced: ProducedBarTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -78,7 +78,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static create(
-    baseConfection: BarTruffle,
+    baseConfection: BarTruffleRecipe,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<BarTruffleEditingSession> {
@@ -99,7 +99,7 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static fromPersistedState(
-    baseConfection: BarTruffle,
+    baseConfection: BarTruffleRecipe,
     history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams

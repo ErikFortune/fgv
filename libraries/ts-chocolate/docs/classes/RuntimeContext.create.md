@@ -2,7 +2,7 @@
 
 ## RuntimeContext.create() method
 
-Creates a RuntimeContext with a new or default ChocolateLibrary.
+Creates a RuntimeContext with a new or default ChocolateEntityLibrary.
 This is the primary factory method for most use cases.
 
 **Signature:**

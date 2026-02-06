@@ -37,7 +37,7 @@ import {
   IRolledTruffleRecipeVariation
 } from '../model';
 import { ConfectionBase } from './confectionBase';
-import { RolledTruffleRecipeVariation } from './versions';
+import { RolledTruffleRecipeVariation } from './variations';
 
 // ============================================================================
 // RolledTruffle Class

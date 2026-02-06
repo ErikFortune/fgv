@@ -5,7 +5,7 @@
 Editing session for bar truffle confections.
 Supports linear count-based scaling with proportional filling adjustment.
 
-**Extends:** [`ConfectionEditingSessionBase<IProducedBarTruffleEntity, BarTruffle>`](../../../classes/ConfectionEditingSessionBase.md)
+**Extends:** [`ConfectionEditingSessionBase<IProducedBarTruffleEntity, BarTruffleRecipe>`](../../../classes/ConfectionEditingSessionBase.md)
 
 ## Properties
 

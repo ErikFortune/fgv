@@ -63,7 +63,7 @@ Logger used by this runtime context and its libraries.
 
 </td><td>
 
-The underlying ChocolateLibrary for direct access when needed.
+The underlying ChocolateEntityLibrary for direct access when needed.
 
 </td></tr>
 <tr><td>
@@ -247,12 +247,12 @@ Description
 
 </td><td>
 
-Creates a LibraryRuntimeContext with a new or default ChocolateLibrary.
+Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>
 
-[fromChocolateLibrary(library, preWarm)](./LibraryRuntimeContext.fromChocolateLibrary.md)
+[fromChocolateEntityLibrary(library, preWarm)](./LibraryRuntimeContext.fromChocolateEntityLibrary.md)
 
 </td><td>
 
@@ -260,7 +260,7 @@ Creates a LibraryRuntimeContext with a new or default ChocolateLibrary.
 
 </td><td>
 
-Creates a LibraryRuntimeContext wrapping an existing ChocolateLibrary.
+Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>

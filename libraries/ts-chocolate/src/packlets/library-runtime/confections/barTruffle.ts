@@ -36,7 +36,7 @@ import {
   IResolvedConfectionProcedure
 } from '../model';
 import { ConfectionBase } from './confectionBase';
-import { BarTruffleRecipeVariation } from './versions';
+import { BarTruffleRecipeVariation } from './variations';
 
 /**
  * A resolved view of a bar truffle confection recipe with navigation capabilities.

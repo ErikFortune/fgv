@@ -4,7 +4,7 @@
 
 Aggregates user-specific data libraries.
 
-Unlike ChocolateLibrary (shared data), UserLibrary contains only
+Unlike ChocolateEntityLibrary (shared data), UserLibrary contains only
 user/installation-specific data with no built-in collections.
 
 **Implements:** [`IUserLibrary`](../interfaces/IUserLibrary.md)

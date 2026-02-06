@@ -2,7 +2,7 @@
 
 ## ILibraryRuntimeContext.entities property
 
-The underlying ChocolateLibrary for direct access when needed.
+The underlying ChocolateEntityLibrary for direct access when needed.
 
 **Signature:**
 

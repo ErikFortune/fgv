@@ -176,7 +176,7 @@ Description
 
 </td><td>
 
-Creates a new LibraryRuntime.ChocolateLibrary | ChocolateLibrary instance.
+Creates a new LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary instance.
 
 </td></tr>
 <tr><td>

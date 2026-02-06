@@ -237,7 +237,7 @@ Abstract base class for runtime confections.
 </td></tr>
 <tr><td>
 
-[MoldedBonBon](./classes/MoldedBonBon.md)
+[MoldedBonBonRecipe](./classes/MoldedBonBonRecipe.md)
 
 </td><td>
 
@@ -246,7 +246,7 @@ A resolved view of a molded bonbon confection with navigation capabilities.
 </td></tr>
 <tr><td>
 
-[BarTruffle](./classes/BarTruffle.md)
+[BarTruffleRecipe](./classes/BarTruffleRecipe.md)
 
 </td><td>
 
@@ -255,7 +255,7 @@ A resolved view of a bar truffle confection recipe with navigation capabilities.
 </td></tr>
 <tr><td>
 
-[RolledTruffle](./classes/RolledTruffle.md)
+[RolledTruffleRecipe](./classes/RolledTruffleRecipe.md)
 
 </td><td>
 
@@ -354,16 +354,16 @@ Description
 
 </td><td>
 
-Pre-built library instances to include in a LibraryRuntime.ChocolateLibrary | ChocolateLibrary.
+Pre-built library instances to include in a LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>
 
-[IEntityLibraryCreateParams](./interfaces/IEntityLibraryCreateParams.md)
+[IChocolateEntityLibraryCreateParams](./interfaces/IChocolateEntityLibraryCreateParams.md)
 
 </td><td>
 
-Parameters for creating a LibraryRuntime.ChocolateLibrary | ChocolateLibrary.
+Parameters for creating a LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>

@@ -28,7 +28,7 @@ import { fail, Result, Success } from '@fgv/ts-utils';
 import { Measurement } from '../common';
 import {
   ChocolateEntityLibrary,
-  IEntityLibraryCreateParams,
+  IChocolateEntityLibraryCreateParams,
   IFillingRecipe,
   LibraryRuntimeContext
 } from '../library-runtime';
@@ -45,9 +45,9 @@ import { ISessionContext, IRuntimeContext } from './model';
  */
 export interface IRuntimeContextCreateParams {
   /**
-   * Parameters for creating the underlying ChocolateLibrary
+   * Parameters for creating the underlying ChocolateEntityLibrary
    */
-  readonly libraryParams?: IEntityLibraryCreateParams;
+  readonly libraryParams?: IChocolateEntityLibraryCreateParams;
 
   /**
    * Whether to pre-warm the reverse index on context creation.
@@ -80,7 +80,7 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
   }
 
   /**
-   * Creates a RuntimeContext with a new or default ChocolateLibrary.
+   * Creates a RuntimeContext with a new or default ChocolateEntityLibrary.
    * This is the primary factory method for most use cases.
    * @param params - Optional parameters for library and caching
    * @returns Success with RuntimeContext, or Failure if library creation fails
@@ -92,13 +92,13 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
   }
 
   /**
-   * Creates a RuntimeContext wrapping an existing ChocolateLibrary.
+   * Creates a RuntimeContext wrapping an existing ChocolateEntityLibrary.
    * Use this when you already have a configured library instance.
-   * @param library - The ChocolateLibrary to wrap
+   * @param library - The ChocolateEntityLibrary to wrap
    * @param preWarm - Whether to pre-warm the reverse index
    * @returns Success with RuntimeContext
    */
-  public static override fromChocolateLibrary(
+  public static override fromChocolateEntityLibrary(
     library: ChocolateEntityLibrary,
     preWarm?: boolean
   ): Result<RuntimeContext> {

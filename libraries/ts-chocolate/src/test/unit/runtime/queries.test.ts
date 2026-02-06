@@ -289,7 +289,7 @@ describe('Query Filters and Builders', () => {
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromChocolateLibrary(library).orThrow();
+    ctx = RuntimeContext.fromChocolateEntityLibrary(library).orThrow();
   });
 
   // ============================================================================

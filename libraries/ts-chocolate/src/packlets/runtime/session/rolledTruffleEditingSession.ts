@@ -27,7 +27,11 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
-import { RolledTruffle, RolledTruffleRecipeVariation, ProducedRolledTruffle } from '../../library-runtime';
+import {
+  RolledTruffleRecipe,
+  RolledTruffleRecipeVariation,
+  ProducedRolledTruffle
+} from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -45,7 +49,7 @@ import { IConfectionEditingSessionParams } from './model';
  */
 export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
   IProducedRolledTruffleEntity,
-  RolledTruffle
+  RolledTruffleRecipe
 > {
   /**
    * Creates a RolledTruffleEditingSession.
@@ -53,7 +57,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @internal
    */
   private constructor(
-    baseConfection: RolledTruffle,
+    baseConfection: RolledTruffleRecipe,
     produced: ProducedRolledTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -78,7 +82,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static create(
-    baseConfection: RolledTruffle,
+    baseConfection: RolledTruffleRecipe,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
@@ -101,7 +105,7 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @public
    */
   public static fromPersistedState(
-    baseConfection: RolledTruffle,
+    baseConfection: RolledTruffleRecipe,
     history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
