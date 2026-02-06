@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > ingredients
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > ingredients
 
-## ChocolateLibrary.ingredients property
+## ChocolateEntityLibrary.ingredients property
 
 The Entities.Ingredients.IngredientsLibrary | ingredients library.
 

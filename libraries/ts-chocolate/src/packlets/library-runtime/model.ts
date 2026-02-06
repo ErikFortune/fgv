@@ -86,7 +86,7 @@ import {
   IProcedureEntity,
   IRawTaskEntity
 } from '../entities';
-import { EntityLibrary } from './chocolateLibrary';
+import { ChocolateEntityLibrary } from './chocolateLibrary';
 
 // ============================================================================
 // Runtime Ingredient Interfaces
@@ -911,7 +911,7 @@ export interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient>
   /**
    * The underlying ChocolateLibrary for direct access when needed.
    */
-  readonly entities: EntityLibrary;
+  readonly entities: ChocolateEntityLibrary;
 
   /**
    * A materialized library of all molds, keyed by composite ID.

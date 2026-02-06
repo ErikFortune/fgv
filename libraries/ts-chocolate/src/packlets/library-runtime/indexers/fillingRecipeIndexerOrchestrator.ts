@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { FillingId } from '../../common';
-import { EntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateLibrary';
 import { FillingRecipe } from '../fillings/fillingRecipe';
 import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 import { AggregationMode, IFindOptions } from './model';
@@ -109,7 +109,7 @@ export class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<Fi
    * @param library - The chocolate library to index
    * @param resolver - Function to resolve filling recipe IDs to entities
    */
-  public constructor(library: EntityLibrary, resolver: FillingRecipeResolver) {
+  public constructor(library: ChocolateEntityLibrary, resolver: FillingRecipeResolver) {
     super(library, {
       resolve: resolver,
       isId: (value): value is FillingId => typeof value === 'string'

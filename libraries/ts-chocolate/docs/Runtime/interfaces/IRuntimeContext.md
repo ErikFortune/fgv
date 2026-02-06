@@ -60,7 +60,7 @@ Gets the number of cached confections.
 
 </td><td>
 
-[ChocolateLibrary](../../classes/ChocolateLibrary.md)
+[ChocolateEntityLibrary](../../classes/ChocolateEntityLibrary.md)
 
 </td><td>
 

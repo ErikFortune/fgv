@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > getEditableProcedures
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableProcedures
 
-## ChocolateLibrary.getEditableProcedures() method
+## ChocolateEntityLibrary.getEditableProcedures() method
 
 Get an editable procedures collection with persistence enabled.
 

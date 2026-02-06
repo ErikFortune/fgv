@@ -39,7 +39,7 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
-import { EntityLibrary, RuntimeReverseIndex } from '../../../packlets/library-runtime';
+import { ChocolateEntityLibrary, RuntimeReverseIndex } from '../../../packlets/library-runtime';
 
 describe('RuntimeReverseIndex', () => {
   // ============================================================================
@@ -143,7 +143,7 @@ describe('RuntimeReverseIndex', () => {
     ]
   };
 
-  let library: EntityLibrary;
+  let library: ChocolateEntityLibrary;
   let reverseIndex: RuntimeReverseIndex;
 
   beforeEach(() => {
@@ -181,7 +181,7 @@ describe('RuntimeReverseIndex', () => {
       ]
     }).orThrow();
 
-    library = EntityLibrary.create({
+    library = ChocolateEntityLibrary.create({
       builtin: false,
       libraries: { ingredients, fillings: recipes }
     }).orThrow();

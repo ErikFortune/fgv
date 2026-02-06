@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > confections
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > confections
 
-## ChocolateLibrary.confections property
+## ChocolateEntityLibrary.confections property
 
 The Entities.Confections.ConfectionsLibrary | confections library.
 

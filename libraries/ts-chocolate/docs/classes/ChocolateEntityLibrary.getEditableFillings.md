@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > getEditableFillings
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableFillings
 
-## ChocolateLibrary.getEditableFillings() method
+## ChocolateEntityLibrary.getEditableFillings() method
 
 Get an editable fillings collection with persistence enabled.
 

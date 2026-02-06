@@ -28,7 +28,7 @@
 // ============================================================================
 
 // Main library entry point
-export { EntityLibrary as ChocolateLibrary } from './packlets/library-runtime';
+export { ChocolateEntityLibrary } from './packlets/library-runtime';
 
 // Runtime context for queries and resolved operations
 export { RuntimeContext } from './packlets/runtime';

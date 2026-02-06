@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > create
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > create
 
-## ChocolateLibrary.create() method
+## ChocolateEntityLibrary.create() method
 
 Creates a new LibraryRuntime.ChocolateLibrary | ChocolateLibrary instance.
 
 **Signature:**
 
 ```typescript
-static create(params?: IEntityLibraryCreateParams): Result<ChocolateLibrary>;
+static create(params?: IEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
 ```
 
 **Parameters:**
@@ -19,6 +19,6 @@ static create(params?: IEntityLibraryCreateParams): Result<ChocolateLibrary>;
 
 **Returns:**
 
-Result&lt;[ChocolateLibrary](ChocolateLibrary.md)&gt;
+Result&lt;[ChocolateEntityLibrary](ChocolateEntityLibrary.md)&gt;
 
 `Success` with new instance, or `Failure` with error message

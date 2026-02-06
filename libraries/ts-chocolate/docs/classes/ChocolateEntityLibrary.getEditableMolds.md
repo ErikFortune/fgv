@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > getEditableMolds
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableMolds
 
-## ChocolateLibrary.getEditableMolds() method
+## ChocolateEntityLibrary.getEditableMolds() method
 
 Get an editable molds collection with persistence enabled.
 

@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > getEditableConfections
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableConfections
 
-## ChocolateLibrary.getEditableConfections() method
+## ChocolateEntityLibrary.getEditableConfections() method
 
 Get an editable confections collection with persistence enabled.
 

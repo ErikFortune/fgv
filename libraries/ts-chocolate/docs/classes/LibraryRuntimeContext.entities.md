@@ -7,5 +7,5 @@ The underlying ChocolateLibrary for direct access when needed.
 **Signature:**
 
 ```typescript
-readonly entities: ChocolateLibrary;
+readonly entities: ChocolateEntityLibrary;
 ```

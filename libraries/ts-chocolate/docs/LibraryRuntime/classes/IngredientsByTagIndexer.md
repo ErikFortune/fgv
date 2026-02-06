@@ -68,7 +68,7 @@ Description
 
 </td><td>
 
-[ChocolateLibrary](../../classes/ChocolateLibrary.md)
+[ChocolateEntityLibrary](../../classes/ChocolateEntityLibrary.md)
 
 </td><td>
 

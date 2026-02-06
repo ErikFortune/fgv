@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > procedures
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > procedures
 
-## ChocolateLibrary.procedures property
+## ChocolateEntityLibrary.procedures property
 
 The Entities.Procedures.ProceduresLibrary | procedures library.
 

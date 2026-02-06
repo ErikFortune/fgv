@@ -59,7 +59,7 @@ Logger used by this runtime context and its libraries.
 
 </td><td>
 
-[ChocolateLibrary](../../classes/ChocolateLibrary.md)
+[ChocolateEntityLibrary](../../classes/ChocolateEntityLibrary.md)
 
 </td><td>
 

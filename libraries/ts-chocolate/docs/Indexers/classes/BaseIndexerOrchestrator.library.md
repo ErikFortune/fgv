@@ -7,5 +7,5 @@ The chocolate library being indexed.
 **Signature:**
 
 ```typescript
-readonly library: ChocolateLibrary;
+readonly library: ChocolateEntityLibrary;
 ```

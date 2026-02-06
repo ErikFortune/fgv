@@ -8,14 +8,14 @@ Use this when you already have a configured library instance.
 **Signature:**
 
 ```typescript
-static fromChocolateLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
+static fromChocolateLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<RuntimeContext>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>library</td><td>ChocolateLibrary</td><td>The ChocolateLibrary to wrap</td></tr>
+<tr><td>library</td><td>ChocolateEntityLibrary</td><td>The ChocolateLibrary to wrap</td></tr>
 <tr><td>preWarm</td><td>boolean</td><td>Whether to pre-warm the reverse index</td></tr>
 </tbody></table>
 

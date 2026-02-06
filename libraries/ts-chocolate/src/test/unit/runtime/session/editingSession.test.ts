@@ -43,7 +43,7 @@ import {
   IFillingSessionEntity
 } from '../../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/entities';
-import { EntityLibrary } from '../../../../packlets/library-runtime';
+import { ChocolateEntityLibrary } from '../../../../packlets/library-runtime';
 import { RuntimeContext, Session } from '../../../../packlets/runtime';
 
 describe('EditingSession', () => {
@@ -154,7 +154,7 @@ describe('EditingSession', () => {
       ]
     }).orThrow();
 
-    const library = EntityLibrary.create({
+    const library = ChocolateEntityLibrary.create({
       builtin: false,
       libraries: { ingredients, fillings: recipes }
     }).orThrow();

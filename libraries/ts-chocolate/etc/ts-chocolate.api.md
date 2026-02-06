@@ -350,7 +350,7 @@ function baseIdExists(baseId: string, existingIds: ReadonlySet<string> | Readonl
 
 // @public
 abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig> {
-    protected constructor(library: ChocolateLibrary);
+    protected constructor(library: ChocolateEntityLibrary);
     protected _addToSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey, value: TValue): void;
     protected abstract _buildIndex(): void;
     protected abstract _clearIndex(): void;
@@ -365,7 +365,7 @@ abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig> {
     // (undocumented)
     invalidate(): void;
     protected _isBuilt: boolean;
-    readonly library: ChocolateLibrary;
+    readonly library: ChocolateEntityLibrary;
     protected get _logger(): Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -375,9 +375,9 @@ abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig> {
 
 // @public
 abstract class BaseIndexerOrchestrator<TEntity, TId> {
-    protected constructor(library: ChocolateLibrary, resolver: IEntityResolver<TEntity, TId>);
+    protected constructor(library: ChocolateEntityLibrary, resolver: IEntityResolver<TEntity, TId>);
     protected _intersect(sets: Array<Set<TId>>): Set<TId>;
-    readonly library: ChocolateLibrary;
+    readonly library: ChocolateEntityLibrary;
     protected get _logger(): Logging.LogReporter<unknown>;
     protected readonly _resolver: IEntityResolver<TEntity, TId>;
     protected _resolveToEntities(ids: Set<TId>): Result<ReadonlyArray<TEntity>>;
@@ -556,6 +556,32 @@ export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cre
 const chocolateApplication: Converter<ChocolateApplication>;
 
 // @public
+export class ChocolateEntityLibrary {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get confections(): Entities.Confections.ConfectionsLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get fillings(): FillingsLibrary;
+    getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
+    getEditableFillings(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
+    getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
+    getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+    getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
+    getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get ingredients(): IngredientsLibrary;
+    readonly logger: Logging.LogReporter<unknown>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get molds(): MoldsLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get procedures(): ProceduresLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get tasks(): TasksLibrary;
+}
+
+// @public
 class ChocolateIngredient extends IngredientBase<IChocolateIngredientEntity> implements IChocolateIngredient {
     // @internal
     protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredientEntity);
@@ -581,32 +607,6 @@ class ChocolateIngredient extends IngredientBase<IChocolateIngredientEntity> imp
 //
 // @public
 const chocolateIngredientEntity: Converter<IChocolateIngredientEntity>;
-
-// @public
-export class ChocolateLibrary {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get confections(): Entities.Confections.ConfectionsLibrary;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params?: IEntityLibraryCreateParams): Result<ChocolateLibrary>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get fillings(): FillingsLibrary;
-    getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
-    getEditableFillings(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
-    getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
-    getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
-    getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
-    getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get ingredients(): IngredientsLibrary;
-    readonly logger: Logging.LogReporter<unknown>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get molds(): MoldsLibrary;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get procedures(): ProceduresLibrary;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    get tasks(): TasksLibrary;
-}
 
 // @public
 export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
@@ -1658,7 +1658,7 @@ type FillingRecipeIndexerName = keyof IFillingRecipeQuerySpec;
 
 // @public
 class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<FillingRecipe, FillingId> {
-    constructor(library: ChocolateLibrary, resolver: FillingRecipeResolver);
+    constructor(library: ChocolateEntityLibrary, resolver: FillingRecipeResolver);
     convertConfig(json: unknown): Result<IFillingRecipeQuerySpec>;
     find(spec: IFillingRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<FillingRecipe>>;
     invalidate(): void;
@@ -1717,7 +1717,7 @@ const fillingRecipesByCategoryConfigConverter: Converter<IFillingRecipesByCatego
 
 // @public
 class FillingRecipesByCategoryIndexer extends BaseIndexer<FillingId, IFillingRecipesByCategoryConfig> {
-    constructor(library: ChocolateLibrary);
+    constructor(library: ChocolateEntityLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1741,7 +1741,7 @@ const fillingRecipesByChocolateTypeConfigConverter: Converter<IFillingRecipesByC
 
 // @public
 class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<FillingId, IFillingRecipesByChocolateTypeConfig> {
-    constructor(library: ChocolateLibrary);
+    constructor(library: ChocolateEntityLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1764,7 +1764,7 @@ const fillingRecipesByIngredientConfigConverter: Converter<IFillingRecipesByIngr
 
 // @public
 class FillingRecipesByIngredientIndexer extends BaseIndexer<FillingId, IFillingRecipesByIngredientConfig> {
-    constructor(library: ChocolateLibrary);
+    constructor(library: ChocolateEntityLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1787,7 +1787,7 @@ const fillingRecipesByTagConfigConverter: Converter<IFillingRecipesByTagConfig>;
 
 // @public
 class FillingRecipesByTagIndexer extends BaseIndexer<FillingId, IFillingRecipesByTagConfig> {
-    constructor(library: ChocolateLibrary);
+    constructor(library: ChocolateEntityLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3224,7 +3224,7 @@ interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
     readonly cachedRecipeCount: number;
     clearCache(): void;
     readonly confections: MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, IConfectionBase, never>;
-    readonly entities: ChocolateLibrary;
+    readonly entities: ChocolateEntityLibrary;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
@@ -3546,7 +3546,7 @@ type IngredientIndexerName = keyof IIngredientQuerySpec;
 
 // @public
 class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<AnyIngredient, IngredientId> {
-    constructor(library: ChocolateLibrary, resolver: IngredientResolver);
+    constructor(library: ChocolateEntityLibrary, resolver: IngredientResolver);
     convertConfig(json: unknown): Result<IIngredientQuerySpec>;
     find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyIngredient>>;
     invalidate(): void;
@@ -3726,7 +3726,7 @@ const ingredientsByTagConfigConverter: Converter<IIngredientsByTagConfig>;
 
 // @public
 class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredientsByTagConfig> {
-    constructor(library: ChocolateLibrary);
+    constructor(library: ChocolateEntityLibrary);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -5146,7 +5146,7 @@ declare namespace LibraryRuntime {
         Internal,
         IInstantiatedEntityLibrarySources,
         IEntityLibraryCreateParams,
-        ChocolateLibrary as EntityLibrary,
+        ChocolateEntityLibrary,
         IIngredient,
         IChocolateIngredient,
         IDairyIngredient,
@@ -5235,7 +5235,7 @@ export { LibraryRuntime }
 //
 // @public
 class LibraryRuntimeContext implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext {
-    protected constructor(library: ChocolateLibrary, preWarm: boolean);
+    protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
     get cachedConfectionCount(): number;
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
@@ -5246,9 +5246,9 @@ class LibraryRuntimeContext implements IVariationContext<AnyIngredient>, IIngred
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    get entities(): ChocolateLibrary;
+    get entities(): ChocolateEntityLibrary;
     get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
-    static fromChocolateLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
+    static fromChocolateLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
     getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
@@ -6164,15 +6164,15 @@ export { Runtime }
 // @public
 export class RuntimeContext extends LibraryRuntimeContext implements ISessionContext, IRuntimeContext {
     // @internal
-    protected constructor(library: ChocolateLibrary, preWarm: boolean);
+    protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-    static fromChocolateLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
+    static fromChocolateLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<RuntimeContext>;
 }
 
 // @internal
 class RuntimeReverseIndex {
-    constructor(library: ChocolateLibrary);
+    constructor(library: ChocolateEntityLibrary);
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getFillingsByChocolateType(type: ChocolateType): ReadonlySet<FillingId>;

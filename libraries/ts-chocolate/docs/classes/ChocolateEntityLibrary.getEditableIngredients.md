@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > getEditableIngredients
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableIngredients
 
-## ChocolateLibrary.getEditableIngredients() method
+## ChocolateEntityLibrary.getEditableIngredients() method
 
 Get an editable ingredients collection with persistence enabled.
 

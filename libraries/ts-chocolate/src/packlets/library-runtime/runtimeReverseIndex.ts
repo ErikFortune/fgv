@@ -25,7 +25,7 @@
 
 import { ChocolateType, Helpers, IngredientId, FillingId } from '../common';
 import { Ingredients } from '../entities';
-import { EntityLibrary } from './chocolateLibrary';
+import { ChocolateEntityLibrary } from './chocolateLibrary';
 import { IIngredientUsageInfo } from './model';
 
 // ============================================================================
@@ -50,7 +50,7 @@ import { IIngredientUsageInfo } from './model';
  * @internal
  */
 export class RuntimeReverseIndex {
-  private readonly _library: EntityLibrary;
+  private readonly _library: ChocolateEntityLibrary;
 
   // Lazily built indexes
   private _ingredientToFillings: Map<IngredientId, Set<FillingId>> | undefined;
@@ -62,7 +62,7 @@ export class RuntimeReverseIndex {
   /**
    * Creates a new reverse index for the given library
    */
-  public constructor(library: EntityLibrary) {
+  public constructor(library: ChocolateEntityLibrary) {
     this._library = library;
   }
 

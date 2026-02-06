@@ -36,7 +36,7 @@ import {
 } from '../entities';
 import { AnyConfection, Confection } from './confections';
 import { IWeightCalculationContext } from './internal';
-import { EntityLibrary, IEntityLibraryCreateParams } from './chocolateLibrary';
+import { ChocolateEntityLibrary, IEntityLibraryCreateParams } from './chocolateLibrary';
 import {
   IConfectionContext,
   IIngredientContext,
@@ -97,7 +97,7 @@ export interface ILibraryRuntimeContextCreateParams {
 export class LibraryRuntimeContext
   implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext
 {
-  private readonly _entities: EntityLibrary;
+  private readonly _entities: ChocolateEntityLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
 
   /**
@@ -123,7 +123,7 @@ export class LibraryRuntimeContext
   private readonly _recipeOrchestrator: FillingRecipeIndexerOrchestrator;
   private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
 
-  protected constructor(library: EntityLibrary, preWarm: boolean) {
+  protected constructor(library: ChocolateEntityLibrary, preWarm: boolean) {
     this._entities = library;
     this.logger = library.logger;
 
@@ -154,7 +154,7 @@ export class LibraryRuntimeContext
    * @returns Success with LibraryRuntimeContext, or Failure if library creation fails
    */
   public static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext> {
-    return EntityLibrary.create(params?.libraryParams).onSuccess((library) => {
+    return ChocolateEntityLibrary.create(params?.libraryParams).onSuccess((library) => {
       return Success.with(new LibraryRuntimeContext(library, params?.preWarm ?? false));
     });
   }
@@ -167,7 +167,7 @@ export class LibraryRuntimeContext
    * @returns Success with LibraryRuntimeContext
    */
   public static fromChocolateLibrary(
-    library: EntityLibrary,
+    library: ChocolateEntityLibrary,
     preWarm?: boolean
   ): Result<LibraryRuntimeContext> {
     return Success.with(new LibraryRuntimeContext(library, preWarm ?? false));
@@ -180,7 +180,7 @@ export class LibraryRuntimeContext
   /**
    * {@inheritDoc LibraryRuntime.ILibraryRuntimeContext.entities}
    */
-  public get entities(): EntityLibrary {
+  public get entities(): ChocolateEntityLibrary {
     return this._entities;
   }
 

@@ -1,6 +1,6 @@
-[Home](../README.md) > ChocolateLibrary
+[Home](../README.md) > ChocolateEntityLibrary
 
-# Class: ChocolateLibrary
+# Class: ChocolateEntityLibrary
 
 Main entry point for the chocolate data entity library
 
@@ -31,7 +31,7 @@ Description
 <tbody>
 <tr><td>
 
-[logger](./ChocolateLibrary.logger.md)
+[logger](./ChocolateEntityLibrary.logger.md)
 
 </td><td>
 
@@ -48,7 +48,7 @@ Logger used by this library and its sub-libraries.
 </td></tr>
 <tr><td>
 
-[ingredients](./ChocolateLibrary.ingredients.md)
+[ingredients](./ChocolateEntityLibrary.ingredients.md)
 
 </td><td>
 
@@ -65,7 +65,7 @@ The Entities.Ingredients.IngredientsLibrary | ingredients library.
 </td></tr>
 <tr><td>
 
-[fillings](./ChocolateLibrary.fillings.md)
+[fillings](./ChocolateEntityLibrary.fillings.md)
 
 </td><td>
 
@@ -82,7 +82,7 @@ The Entities.Fillings.FillingsLibrary | fillings library.
 </td></tr>
 <tr><td>
 
-[molds](./ChocolateLibrary.molds.md)
+[molds](./ChocolateEntityLibrary.molds.md)
 
 </td><td>
 
@@ -99,7 +99,7 @@ The Entities.Molds.MoldsLibrary | molds library.
 </td></tr>
 <tr><td>
 
-[procedures](./ChocolateLibrary.procedures.md)
+[procedures](./ChocolateEntityLibrary.procedures.md)
 
 </td><td>
 
@@ -116,7 +116,7 @@ The Entities.Procedures.ProceduresLibrary | procedures library.
 </td></tr>
 <tr><td>
 
-[tasks](./ChocolateLibrary.tasks.md)
+[tasks](./ChocolateEntityLibrary.tasks.md)
 
 </td><td>
 
@@ -133,7 +133,7 @@ The Entities.Tasks.TasksLibrary | tasks library.
 </td></tr>
 <tr><td>
 
-[confections](./ChocolateLibrary.confections.md)
+[confections](./ChocolateEntityLibrary.confections.md)
 
 </td><td>
 
@@ -168,7 +168,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(params)](./ChocolateLibrary.create.md)
+[create(params)](./ChocolateEntityLibrary.create.md)
 
 </td><td>
 
@@ -181,7 +181,7 @@ Creates a new LibraryRuntime.ChocolateLibrary | ChocolateLibrary instance.
 </td></tr>
 <tr><td>
 
-[getEditableIngredients(collectionId)](./ChocolateLibrary.getEditableIngredients.md)
+[getEditableIngredients(collectionId)](./ChocolateEntityLibrary.getEditableIngredients.md)
 
 </td><td>
 
@@ -194,7 +194,7 @@ Get an editable ingredients collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableFillings(collectionId)](./ChocolateLibrary.getEditableFillings.md)
+[getEditableFillings(collectionId)](./ChocolateEntityLibrary.getEditableFillings.md)
 
 </td><td>
 
@@ -207,7 +207,7 @@ Get an editable fillings collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableMolds(collectionId)](./ChocolateLibrary.getEditableMolds.md)
+[getEditableMolds(collectionId)](./ChocolateEntityLibrary.getEditableMolds.md)
 
 </td><td>
 
@@ -220,7 +220,7 @@ Get an editable molds collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableProcedures(collectionId)](./ChocolateLibrary.getEditableProcedures.md)
+[getEditableProcedures(collectionId)](./ChocolateEntityLibrary.getEditableProcedures.md)
 
 </td><td>
 
@@ -233,7 +233,7 @@ Get an editable procedures collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableTasks(collectionId)](./ChocolateLibrary.getEditableTasks.md)
+[getEditableTasks(collectionId)](./ChocolateEntityLibrary.getEditableTasks.md)
 
 </td><td>
 
@@ -246,7 +246,7 @@ Get an editable tasks collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableConfections(collectionId)](./ChocolateLibrary.getEditableConfections.md)
+[getEditableConfections(collectionId)](./ChocolateEntityLibrary.getEditableConfections.md)
 
 </td><td>
 

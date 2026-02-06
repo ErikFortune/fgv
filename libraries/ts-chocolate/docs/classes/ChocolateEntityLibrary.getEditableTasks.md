@@ -1,6 +1,6 @@
-[Home](../README.md) > [ChocolateLibrary](./ChocolateLibrary.md) > getEditableTasks
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableTasks
 
-## ChocolateLibrary.getEditableTasks() method
+## ChocolateEntityLibrary.getEditableTasks() method
 
 Get an editable tasks collection with persistence enabled.
 

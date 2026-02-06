@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { IngredientId } from '../../common';
-import { EntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateLibrary';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -78,7 +78,7 @@ export class IngredientsByTagIndexer extends BaseIndexer<IngredientId, IIngredie
    * Creates a new IngredientsByTagIndexer.
    * @param library - The chocolate library to index
    */
-  public constructor(library: EntityLibrary) {
+  public constructor(library: ChocolateEntityLibrary) {
     super(library);
   }
 
