@@ -27,7 +27,7 @@ import {
   generateSessionId,
   getCurrentDateString,
   getCurrentTimestamp
-} from '../../../../packlets/runtime/session/sessionUtils';
+} from '../../../../packlets/user-library/session/sessionUtils';
 
 describe('Session Utils', () => {
   describe('generateSessionId', () => {

@@ -4302,19 +4302,6 @@ interface IRuntimeCollection<T = JsonObject, TCOLLECTIONID extends string = stri
     readonly sourceItem: FileTree.FileTreeItem;
 }
 
-// @public
-interface IRuntimeContext extends IChocolateLibrary {
-    readonly cachedConfectionCount: number;
-    createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-    getAllConfectionTags(): ReadonlyArray<string>;
-}
-
-// @public
-interface IRuntimeContextCreateParams {
-    readonly libraryParams?: IChocolateEntityLibraryCreateParams;
-    readonly preWarm?: boolean;
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -4474,7 +4461,7 @@ interface ISessionCoating {
 //
 // @public
 interface ISessionContext extends IConfectionContext {
-    createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
+    createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<Session_2.EditingSession>;
 }
 
 // @public
@@ -4846,7 +4833,7 @@ interface IUserEntityLibraryCreateParams {
 
 // @public
 interface IUserLibrary {
-    createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
@@ -4911,7 +4898,7 @@ interface IWeightContribution {
 
 // @public
 export interface IWorkspace {
-    readonly data: RuntimeContext;
+    readonly data: ChocolateLibrary;
     readonly isReady: boolean;
     readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
@@ -6164,23 +6151,10 @@ const rolledTruffleRecipeVariationEntity: Converter<IRolledTruffleRecipeVariatio
 
 declare namespace Runtime {
     export {
-        RuntimeContext,
-        IRuntimeContextCreateParams,
-        Session_2 as Session,
-        ISessionContext,
-        IRuntimeContext
+        Session_2 as Session
     }
 }
 export { Runtime }
-
-// @public
-class RuntimeContext extends ChocolateLibrary implements ISessionContext, IRuntimeContext {
-    // @internal
-    protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
-    static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
-    createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-    static fromChocolateEntityLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<RuntimeContext>;
-}
 
 // @internal
 class RuntimeReverseIndex {
@@ -6688,6 +6662,8 @@ class UserEntityLibrary implements IUserEntityLibrary {
 
 declare namespace UserLibrary {
     export {
+        Session_2 as Session,
+        ISessionContext,
         AnyMaterializedSession,
         ICreateFillingSessionOptions,
         IJournalEntryBase,
@@ -6707,16 +6683,25 @@ declare namespace UserLibrary {
 export { UserLibrary }
 
 // @public
-class UserLibrary_2 implements IUserLibrary {
-    static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibrary_2>;
+class UserLibrary_2 implements IUserLibrary, ISessionContext {
+    get confections(): MaterializedLibrary<ConfectionId, AnyConfectionRecipeEntity, IConfectionBase, never>;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(userEntityLibrary: IUserEntityLibrary, confectionContext: IConfectionContext): Result<UserLibrary_2>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISessionContext"
+    //
+    // (undocumented)
+    createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<Session_2.EditingSession>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
-    createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    get fillings(): MaterializedLibrary<FillingId, IFillingRecipeEntity, IFillingRecipe, Indexers.IFillingRecipeQuerySpec>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     get ingredientInventory(): MaterializedLibrary<Inventory.IngredientInventoryEntryId, Inventory.IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
+    get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, IIngredient, Indexers.IIngredientQuerySpec>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
@@ -6725,6 +6710,8 @@ class UserLibrary_2 implements IUserLibrary {
     //
     // (undocumented)
     get moldInventory(): MaterializedLibrary<Inventory.MoldInventoryEntryId, Inventory.IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
+    get molds(): MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
+    get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
@@ -6945,7 +6932,7 @@ export class Workspace implements IWorkspace {
     static create(params?: IWorkspaceCreateParams): Result<Workspace>;
     // Warning: (ae-forgotten-export) The symbol "IWorkspaceCreateWithSettingsParams" needs to be exported by the entry point index.d.ts
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
-    get data(): RuntimeContext;
+    get data(): ChocolateLibrary;
     get isReady(): boolean;
     get keyStore(): CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;

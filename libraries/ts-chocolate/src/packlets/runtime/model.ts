@@ -21,74 +21,10 @@
 /**
  * Session-specific model interfaces for the runtime packlet.
  *
- * These interfaces extend the library-runtime interfaces to add
- * session creation and management capabilities.
+ * Note: ISessionContext has been moved to the user-library packlet.
+ * Sessions have been moved to the user-library packlet.
  *
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
-
-import { Measurement } from '../common';
-import type { EditingSession } from './session/editingSession';
-import { IConfectionContext, IChocolateLibrary, IFillingRecipe } from '../library-runtime';
-
-// ============================================================================
-// Session Context Interface
-// ============================================================================
-
-/**
- * Context interface for session creation.
- * Extends IConfectionContext with the ability to create filling editing sessions.
- *
- * This interface is used by confection editing sessions to manage filling scaling.
- *
- * @public
- */
-export interface ISessionContext extends IConfectionContext {
-  /**
-   * Creates an editing session for a filling recipe at a target weight.
-   * Used by confection sessions to manage filling scaling.
-   * @param filling - The runtime filling recipe to create a session for
-   * @param targetWeight - Target weight for the filling in grams
-   * @returns Success with EditingSession, or Failure if creation fails
-   */
-  createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-}
-
-// ============================================================================
-// Runtime Context Interface
-// ============================================================================
-
-/**
- * Full runtime context interface with session capabilities.
- *
- * Extends IChocolateLibrary with:
- * - Session creation methods
- * - Confection access and caching
- *
- * This is the complete entry point for consumers who need both
- * library resolution and session management.
- *
- * @public
- */
-export interface IRuntimeContext extends IChocolateLibrary {
-  /**
-   * Gets the number of cached confections.
-   */
-  readonly cachedConfectionCount: number;
-
-  /**
-   * Gets all unique tags used across confections.
-   */
-  getAllConfectionTags(): ReadonlyArray<string>;
-
-  /**
-   * Creates an editing session for a filling recipe at a target weight.
-   * Used by confection sessions to manage filling scaling.
-   * @param filling - The runtime filling recipe to create a session for
-   * @param targetWeight - Target weight for the filling in grams
-   * @returns Success with EditingSession, or Failure if creation fails
-   */
-  createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
-}
+// This file is intentionally minimal - session types are now in user-library

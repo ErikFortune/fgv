@@ -24,14 +24,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { RuntimeContext } from '../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
 import { ConfectionId, FillingId, IngredientId, MoldId, ProcedureId, TaskId } from '../../../packlets/common';
 
 describe('MaterializedLibrary Functionality Tests', () => {
-  let ctx: RuntimeContext;
+  let ctx: ChocolateLibrary;
 
   beforeEach(() => {
-    ctx = RuntimeContext.create({ libraryParams: { builtin: true } }).orThrow();
+    ctx = ChocolateLibrary.create({ entityLibraryParams: { builtin: true } }).orThrow();
   });
 
   // ============================================================================

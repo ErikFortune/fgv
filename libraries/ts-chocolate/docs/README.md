@@ -69,10 +69,9 @@ and rich query capabilities.
 
 </td><td>
 
-Runtime packlet - session infrastructure and editing capabilities
+Runtime packlet - DEPRECATED
 
-Provides editing sessions for confections and fillings, built on top of
-the library-runtime packlet's materialized projections.
+This packlet is deprecated.
 
 </td></tr>
 <tr><td>

@@ -27,3 +27,7 @@
 
 export * from './model';
 export * from './userLibrary';
+
+// Session infrastructure (as namespace)
+import * as Session from './session';
+export { Session };

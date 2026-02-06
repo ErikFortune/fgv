@@ -25,26 +25,49 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { ConfectionType, FillingRecipeVariationId, Helpers, JournalId, SessionId } from '../common';
 import {
+  ConfectionId,
+  ConfectionType,
+  FillingId,
+  FillingRecipeVariationId,
+  Helpers,
+  IngredientId,
+  JournalId,
+  Measurement,
+  MoldId,
+  ProcedureId,
+  SessionId
+} from '../common';
+import {
+  AnyConfectionRecipeEntity,
   AnyJournalEntryEntity,
   AnySessionEntity,
   IConfectionSessionEntity,
+  IFillingRecipeEntity,
   IFillingSessionEntity,
+  IMoldEntity,
+  IProcedureEntity,
   IProducedBarTruffleEntity,
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
+  IngredientEntity,
   Inventory,
   Session as SessionEntities
 } from '../entities';
 import {
   BarTruffleRecipe,
   IConfectionBase,
+  IConfectionContext,
+  IFillingRecipe,
+  IIngredient,
+  IMold,
+  Indexers,
+  IProcedure,
   MaterializedLibrary,
   MoldedBonBonRecipe,
   RolledTruffleRecipe
 } from '../library-runtime';
-import { ISessionContext, Session } from '../runtime';
+import * as Session from './session';
 import { IUserEntityLibrary } from '../user-entities';
 import { createJournalEntry } from './journalEntry';
 import { IngredientInventoryEntry, MoldInventoryEntry } from './inventoryEntry';
@@ -54,6 +77,7 @@ import {
   ICreateFillingSessionOptions,
   IIngredientInventoryEntry,
   IMoldInventoryEntry,
+  ISessionContext,
   IUserLibrary
 } from './model';
 
@@ -64,12 +88,13 @@ import {
  * - Exposes MaterializedLibrary instances for sessions, journals, and inventory
  * - Lazy resolution and caching of materialized objects
  * - Specialized methods for session creation and persistence
+ * - Implements ISessionContext for confection editing sessions
  *
  * @public
  */
-export class UserLibrary implements IUserLibrary {
+export class UserLibrary implements IUserLibrary, ISessionContext {
   private readonly _entities: IUserEntityLibrary;
-  private readonly _sessionContext: ISessionContext;
+  private readonly _confectionContext: IConfectionContext;
 
   // Lazy-initialized MaterializedLibrary instances
   private _sessions:
@@ -95,23 +120,23 @@ export class UserLibrary implements IUserLibrary {
       >
     | undefined;
 
-  private constructor(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext) {
+  private constructor(userEntityLibrary: IUserEntityLibrary, confectionContext: IConfectionContext) {
     this._entities = userEntityLibrary;
-    this._sessionContext = sessionContext;
+    this._confectionContext = confectionContext;
   }
 
   /**
    * Creates a new UserLibrary.
    * @param userEntityLibrary - The user library containing persisted data
-   * @param sessionContext - The session context for materializing recipes and confections
+   * @param confectionContext - The confection context for materializing recipes and confections
    * @returns Result with the UserLibrary
    * @public
    */
   public static create(
     userEntityLibrary: IUserEntityLibrary,
-    sessionContext: ISessionContext
+    confectionContext: IConfectionContext
   ): Result<UserLibrary> {
-    return succeed(new UserLibrary(userEntityLibrary, sessionContext));
+    return succeed(new UserLibrary(userEntityLibrary, confectionContext));
   }
 
   /**
@@ -152,15 +177,100 @@ export class UserLibrary implements IUserLibrary {
     return this._getIngredientInventory();
   }
 
+  // ============================================================================
+  // ISessionContext Implementation
+  // ============================================================================
+
   /**
-   * {@inheritDoc IUserLibrary.createFillingSession}
+   * {@inheritDoc ISessionContext.createFillingSession}
    */
   public createFillingSession(
+    filling: IFillingRecipe,
+    targetWeight: Measurement
+  ): Result<Session.EditingSession> {
+    // Get the golden variation (now safe - no cast needed)
+    const variation = filling.goldenVariation;
+
+    // Calculate scale factor to achieve target weight
+    const baseWeight = variation.entity.baseWeight;
+    if (baseWeight <= 0) {
+      return fail(`Cannot create session: base weight must be positive (got ${baseWeight})`);
+    }
+
+    const scaleFactor = targetWeight / baseWeight;
+
+    // Create editing session with scale factor
+    return Session.EditingSession.create(variation, scaleFactor);
+  }
+
+  /**
+   * Gets the materialized fillings library from the confection context.
+   * Required by IConfectionContext.
+   */
+  public get fillings(): MaterializedLibrary<
+    FillingId,
+    IFillingRecipeEntity,
+    IFillingRecipe,
+    Indexers.IFillingRecipeQuerySpec
+  > {
+    return this._confectionContext.fillings;
+  }
+
+  /**
+   * Gets the materialized confections library from the confection context.
+   * Required by IConfectionContext.
+   */
+  public get confections(): MaterializedLibrary<
+    ConfectionId,
+    AnyConfectionRecipeEntity,
+    IConfectionBase,
+    never
+  > {
+    return this._confectionContext.confections;
+  }
+
+  /**
+   * Gets the materialized molds library from the confection context.
+   * Required by IConfectionContext.
+   */
+  public get molds(): MaterializedLibrary<MoldId, IMoldEntity, IMold, never> {
+    return this._confectionContext.molds;
+  }
+
+  /**
+   * Gets the materialized ingredients library from the confection context.
+   * Required by IVariationContext.
+   */
+  public get ingredients(): MaterializedLibrary<
+    IngredientId,
+    IngredientEntity,
+    IIngredient,
+    Indexers.IIngredientQuerySpec
+  > {
+    return this._confectionContext.ingredients;
+  }
+
+  /**
+   * Gets the materialized procedures library from the confection context.
+   * Required by IVariationContext.
+   */
+  public get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never> {
+    return this._confectionContext.procedures;
+  }
+
+  // ============================================================================
+  // User Library Methods
+  // ============================================================================
+
+  /**
+   * {@inheritDoc IUserLibrary.createPersistedFillingSession}
+   */
+  public createPersistedFillingSession(
     variationId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
   ): Result<IFillingSessionEntity> {
     const fillingId = Helpers.getFillingRecipeVariationFillingId(variationId);
-    return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
+    return this._confectionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
       const variationSpec = Helpers.getFillingRecipeVariationSpec(variationId);
       return filling.getVariation(variationSpec).onSuccess((variation) => {
         return Session.EditingSession.create(variation).onSuccess((session) => {
@@ -246,7 +356,7 @@ export class UserLibrary implements IUserLibrary {
     if (!this._journals) {
       this._journals = new MaterializedLibrary({
         inner: this._entities.journals,
-        converter: (entity, id) => createJournalEntry(this._sessionContext, id, entity)
+        converter: (entity, id) => createJournalEntry(this, id, entity)
       });
     }
     return this._journals;
@@ -265,7 +375,7 @@ export class UserLibrary implements IUserLibrary {
     if (!this._moldInventory) {
       this._moldInventory = new MaterializedLibrary({
         inner: this._entities.moldInventory,
-        converter: (entity, id) => MoldInventoryEntry.create(this._sessionContext, id, entity)
+        converter: (entity, id) => MoldInventoryEntry.create(this, id, entity)
       });
     }
     return this._moldInventory;
@@ -284,7 +394,7 @@ export class UserLibrary implements IUserLibrary {
     if (!this._ingredientInventory) {
       this._ingredientInventory = new MaterializedLibrary({
         inner: this._entities.ingredientInventory,
-        converter: (entity, id) => IngredientInventoryEntry.create(this._sessionContext, id, entity)
+        converter: (entity, id) => IngredientInventoryEntry.create(this, id, entity)
       });
     }
     return this._ingredientInventory;
@@ -320,7 +430,7 @@ export class UserLibrary implements IUserLibrary {
    */
   private _materializeFillingSession(persisted: IFillingSessionEntity): Result<Session.EditingSession> {
     const fillingId = Helpers.getFillingRecipeVariationFillingId(persisted.sourceVariationId);
-    return this._sessionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
+    return this._confectionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
       const variationSpec = Helpers.getFillingRecipeVariationSpec(persisted.sourceVariationId);
       return filling.getVariation(variationSpec).onSuccess((variation) => {
         return Session.EditingSession.fromPersistedState(persisted, variation);
@@ -336,7 +446,7 @@ export class UserLibrary implements IUserLibrary {
     persisted: IConfectionSessionEntity
   ): Result<Session.AnyConfectionEditingSession> {
     return Helpers.parseConfectionRecipeVariationId(persisted.sourceVariationId).onSuccess((parsed) => {
-      return this._sessionContext.confections.get(parsed.collectionId).asResult.onSuccess((confection) => {
+      return this._confectionContext.confections.get(parsed.collectionId).asResult.onSuccess((confection) => {
         return this._materializeTypedConfectionSession(persisted, confection);
       });
     });
@@ -354,7 +464,7 @@ export class UserLibrary implements IUserLibrary {
       return Session.MoldedBonBonEditingSession.fromPersistedState(
         confection as unknown as MoldedBonBonRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
-        this._sessionContext
+        this
       );
     }
 
@@ -362,7 +472,7 @@ export class UserLibrary implements IUserLibrary {
       return Session.BarTruffleEditingSession.fromPersistedState(
         confection as unknown as BarTruffleRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
-        this._sessionContext
+        this
       );
     }
 
@@ -370,7 +480,7 @@ export class UserLibrary implements IUserLibrary {
       return Session.RolledTruffleEditingSession.fromPersistedState(
         confection as unknown as RolledTruffleRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
-        this._sessionContext
+        this
       );
     }
 

@@ -8,7 +8,7 @@ Provides factory methods for runtime objects, caching, and reverse lookups.
 This is the entry point for consumers who want resolved views
 of recipes and ingredients with automatic reference resolution.
 
-For session creation capabilities, use RuntimeContext from the runtime packlet.
+For session creation capabilities, use UserLibrary from the user-library packlet.
 
 **Implements:** [`IChocolateLibrary`](../../interfaces/IChocolateLibrary.md)
 

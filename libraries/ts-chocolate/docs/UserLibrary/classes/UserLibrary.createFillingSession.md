@@ -2,25 +2,25 @@
 
 ## UserLibrary.createFillingSession() method
 
-Creates a new persisted filling session from a filling variation.
-The session is created and persisted immediately.
+Creates an editing session for a filling recipe at a target weight.
+Used by confection sessions to manage filling scaling.
 
 **Signature:**
 
 ```typescript
-createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>variationId</td><td>FillingRecipeVariationId</td><td>Source filling variation to create session for</td></tr>
-<tr><td>options</td><td>ICreateFillingSessionOptions</td><td>Creation options including target collection</td></tr>
+<tr><td>filling</td><td>IFillingRecipe</td><td>The runtime filling recipe to create a session for</td></tr>
+<tr><td>targetWeight</td><td>Measurement</td><td>Target weight for the filling in grams</td></tr>
 </tbody></table>
 
 **Returns:**
 
-Result&lt;[IFillingSessionEntity](../../interfaces/IFillingSessionEntity.md)&gt;
+Result&lt;[EditingSession](../../classes/EditingSession.md)&gt;
 
-Result with the created persisted session
+Success with EditingSession, or Failure if creation fails

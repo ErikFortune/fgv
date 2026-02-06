@@ -2,11 +2,11 @@
 
 ## IWorkspace.data property
 
-The runtime context providing materialized library objects.
-Access via `runtime.ingredients`, `runtime.fillings`, `runtime.confections`, etc.
+The chocolate library providing materialized library objects.
+Access via `data.ingredients`, `data.fillings`, `data.confections`, etc.
 
 **Signature:**
 
 ```typescript
-readonly data: RuntimeContext;
+readonly data: ChocolateLibrary;
 ```

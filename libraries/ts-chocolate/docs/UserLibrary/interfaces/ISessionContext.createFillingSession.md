@@ -1,6 +1,6 @@
-[Home](../../README.md) > [Runtime](../README.md) > [RuntimeContext](./RuntimeContext.md) > createFillingSession
+[Home](../../README.md) > [UserLibrary](../README.md) > [ISessionContext](./ISessionContext.md) > createFillingSession
 
-## RuntimeContext.createFillingSession() method
+## ISessionContext.createFillingSession() method
 
 Creates an editing session for a filling recipe at a target weight.
 Used by confection sessions to manage filling scaling.
@@ -15,7 +15,7 @@ createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>filling</td><td>IFillingRecipe</td><td>The runtime filling recipe</td></tr>
+<tr><td>filling</td><td>IFillingRecipe</td><td>The runtime filling recipe to create a session for</td></tr>
 <tr><td>targetWeight</td><td>Measurement</td><td>Target weight for the filling in grams</td></tr>
 </tbody></table>
 

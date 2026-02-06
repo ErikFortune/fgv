@@ -32,10 +32,10 @@ import {
   RolledTruffleRecipeVariation,
   ProducedRolledTruffle
 } from '../../library-runtime';
-import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams } from './model';
+import { ISessionContext } from '../model';
 
 // ============================================================================
 // Rolled Truffle Editing Session

@@ -31,6 +31,7 @@ import {
   ConfectionRecipeVariationId,
   FillingRecipeVariationId,
   JournalId,
+  Measurement,
   SessionId,
   Model as CommonModel
 } from '../common';
@@ -49,6 +50,7 @@ import {
 } from '../entities';
 import {
   IConfectionBase,
+  IConfectionContext,
   IConfectionRecipeVariationBase,
   IFillingRecipe,
   IFillingRecipeVariation,
@@ -56,7 +58,30 @@ import {
   IMold,
   MaterializedLibrary
 } from '../library-runtime';
-import { Session } from '../runtime';
+import * as Session from './session';
+
+// ============================================================================
+// Session Context Interface
+// ============================================================================
+
+/**
+ * Context interface for session creation and management.
+ * Extends IConfectionContext with the ability to create filling editing sessions.
+ *
+ * This interface is used by confection editing sessions to manage filling scaling.
+ *
+ * @public
+ */
+export interface ISessionContext extends IConfectionContext {
+  /**
+   * Creates an editing session for a filling recipe at a target weight.
+   * Used by confection sessions to manage filling scaling.
+   * @param filling - The runtime filling recipe to create a session for
+   * @param targetWeight - Target weight for the filling in grams
+   * @returns Success with EditingSession, or Failure if creation fails
+   */
+  createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<Session.EditingSession>;
+}
 
 // ============================================================================
 // Materialized Session Types
@@ -285,7 +310,7 @@ export interface IUserLibrary {
    * @param options - Creation options including target collection
    * @returns Result with the created persisted session
    */
-  createFillingSession(
+  createPersistedFillingSession(
     variationId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
   ): Result<IFillingSessionEntity>;

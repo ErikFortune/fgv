@@ -46,7 +46,7 @@ import {
   IFillingRecipe,
   IFillingRecipeVariation
 } from '../library-runtime';
-import { ISessionContext } from '../runtime';
+import { ISessionContext } from './model';
 import { JournalEntryBase } from './journalEntryBase';
 import {
   AnyJournalEntry,

@@ -60,7 +60,7 @@ import {
   equals,
   oneOf
 } from '../../../packlets/library-runtime';
-import { RuntimeContext } from '../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
 
 describe('Query Filters and Builders', () => {
   // ============================================================================
@@ -243,7 +243,7 @@ describe('Query Filters and Builders', () => {
     ]
   };
 
-  let ctx: RuntimeContext;
+  let ctx: ChocolateLibrary;
 
   beforeEach(() => {
     const ingredients = IngredientsLibrary.create({
@@ -257,11 +257,11 @@ describe('Query Filters and Builders', () => {
             'dark-chocolate': darkChocolate,
             'milk-chocolate': milkChocolate,
             'white-chocolate': whiteChocolate,
-            /* eslint-enable @typescript-eslint/naming-convention */
             cream,
             sugar,
             butter,
             rum
+            /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
       ]
@@ -275,9 +275,9 @@ describe('Query Filters and Builders', () => {
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
-            'dark-ganache': darkGanacheRecipe,
-            'milk-ganache': milkGanacheRecipe,
-            'white-ganache': whiteGanacheRecipe
+            'test-ganache': darkGanacheRecipe,
+            'vanilla-ganache': milkGanacheRecipe,
+            'caramel-ganache': whiteGanacheRecipe
             /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
@@ -289,7 +289,7 @@ describe('Query Filters and Builders', () => {
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromChocolateEntityLibrary(library).orThrow();
+    ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
   });
 
   // ============================================================================

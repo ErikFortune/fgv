@@ -27,7 +27,7 @@ import { Result, fail } from '@fgv/ts-utils';
 
 import { BaseJournalId, JournalId } from '../common';
 import { AnyJournalEntryEntity } from '../entities';
-import { ISessionContext } from '../runtime';
+import { ISessionContext } from './model';
 import { IJournalEntryBase } from './model';
 
 /**

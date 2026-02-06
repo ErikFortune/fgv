@@ -1,8 +1,8 @@
-[Home](../../README.md) > [Runtime](../README.md) > ISessionContext
+[Home](../../README.md) > [UserLibrary](../README.md) > ISessionContext
 
 # Interface: ISessionContext
 
-Context interface for session creation.
+Context interface for session creation and management.
 Extends IConfectionContext with the ability to create filling editing sessions.
 
 This interface is used by confection editing sessions to manage filling scaling.

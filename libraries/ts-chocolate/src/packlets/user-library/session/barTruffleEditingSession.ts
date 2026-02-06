@@ -28,9 +28,9 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedBarTruffleEntity, Session } from '../../entities';
 import { BarTruffleRecipe, ProducedBarTruffle } from '../../library-runtime';
-import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
+import { ISessionContext } from '../model';
 import { IConfectionEditingSessionParams } from './model';
 
 // ============================================================================

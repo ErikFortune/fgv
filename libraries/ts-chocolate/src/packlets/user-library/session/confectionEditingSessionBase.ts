@@ -28,10 +28,10 @@ import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 import { FillingId, IngredientId, Measurement, SessionSpec, SlotId } from '../../common';
 import { Confections, AnyProducedConfectionEntity } from '../../entities';
 import { AnyConfection, ProducedConfectionBase } from '../../library-runtime';
-import { ISessionContext } from '../model';
 
 import { EditingSession } from './editingSession';
 import { IConfectionEditingSessionParams, IFillingSessionMap } from './model';
+import { ISessionContext } from '../model';
 import { generateSessionId } from './sessionUtils';
 
 // ============================================================================

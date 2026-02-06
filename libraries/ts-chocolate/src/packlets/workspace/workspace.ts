@@ -27,7 +27,7 @@ import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 import { IEncryptionConfig } from '../library-data';
-import { RuntimeContext } from '../runtime';
+import { ChocolateLibrary } from '../library-runtime';
 import { ISettingsManager } from '../settings';
 import { UserEntityLibrary } from '../user-entities';
 import { IUserLibrary, UserLibrary } from '../user-library';
@@ -54,7 +54,7 @@ import {
  * @public
  */
 export class Workspace implements IWorkspace {
-  private readonly _library: RuntimeContext;
+  private readonly _library: ChocolateLibrary;
   private readonly _userEntities: UserEntityLibrary;
   private readonly _keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
   private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
@@ -66,14 +66,14 @@ export class Workspace implements IWorkspace {
    * Private constructor - use static factory methods.
    */
   private constructor(
-    runtime: RuntimeContext,
+    library: ChocolateLibrary,
     userEntityLibrary: UserEntityLibrary,
     keyStore: CryptoUtils.KeyStore.KeyStore | undefined,
     cryptoProvider: CryptoUtils.ICryptoProvider | undefined,
     settings: ISettingsManager | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
-    this._library = runtime;
+    this._library = library;
     this._userEntities = userEntityLibrary;
     this._keyStore = keyStore;
     this._cryptoProvider = cryptoProvider;
@@ -128,14 +128,14 @@ export class Workspace implements IWorkspace {
     // Create library parameters
     const libraryParams = toLibraryParams(params);
 
-    // Create runtime context (this creates the shared library)
-    const runtimeResult = RuntimeContext.create({
-      libraryParams,
+    // Create chocolate library (this creates the shared library)
+    const libraryResult = ChocolateLibrary.create({
+      entityLibraryParams: libraryParams,
       preWarm: params.preWarm
     });
 
-    if (runtimeResult.isFailure()) {
-      return fail(`Failed to create runtime context: ${runtimeResult.message}`);
+    if (libraryResult.isFailure()) {
+      return fail(`Failed to create chocolate library: ${libraryResult.message}`);
     }
 
     // Create user library parameters
@@ -149,7 +149,7 @@ export class Workspace implements IWorkspace {
     }
 
     const workspace = new Workspace(
-      runtimeResult.value,
+      libraryResult.value,
       userLibraryResult.value,
       keyStore,
       cryptoProvider,
@@ -206,14 +206,14 @@ export class Workspace implements IWorkspace {
     // Create library parameters
     const libraryParams = toLibraryParams(params);
 
-    // Create runtime context (this creates the shared library)
-    const runtimeResult = RuntimeContext.create({
-      libraryParams,
+    // Create chocolate library (this creates the shared library)
+    const libraryResult = ChocolateLibrary.create({
+      entityLibraryParams: libraryParams,
       preWarm: params.preWarm
     });
 
-    if (runtimeResult.isFailure()) {
-      return fail(`Failed to create runtime context: ${runtimeResult.message}`);
+    if (libraryResult.isFailure()) {
+      return fail(`Failed to create chocolate library: ${libraryResult.message}`);
     }
 
     // Create user library parameters
@@ -227,7 +227,7 @@ export class Workspace implements IWorkspace {
     }
 
     const workspace = new Workspace(
-      runtimeResult.value,
+      libraryResult.value,
       userLibraryResult.value,
       keyStore,
       cryptoProvider,
@@ -251,7 +251,7 @@ export class Workspace implements IWorkspace {
   /**
    * {@inheritDoc IWorkspace.data}
    */
-  public get data(): RuntimeContext {
+  public get data(): ChocolateLibrary {
     return this._library;
   }
 

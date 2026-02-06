@@ -31,9 +31,6 @@
 // Main library entry point
 export { ChocolateEntityLibrary as ChocolateEntityLibrary } from './packlets/library-runtime';
 
-// Runtime context for queries and resolved operations
-export { RuntimeContext } from './packlets/runtime';
-
 // Workspace - primary application entry point
 export {
   Workspace,

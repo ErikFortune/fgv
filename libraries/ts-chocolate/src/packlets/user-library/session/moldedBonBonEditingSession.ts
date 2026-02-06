@@ -28,10 +28,10 @@ import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedMoldedBonBonEntity, Session } from '../../entities';
 import { MoldedBonBonRecipe, IMold, ProducedMoldedBonBon } from '../../library-runtime';
-import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
+import { ISessionContext } from '../model';
 
 // ============================================================================
 // Molded Bonbon Editing Session

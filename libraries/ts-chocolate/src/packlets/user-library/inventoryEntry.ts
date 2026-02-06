@@ -32,7 +32,7 @@ import {
   Inventory as InventoryEntities
 } from '../entities';
 import { IIngredient, IMold } from '../library-runtime';
-import { ISessionContext } from '../runtime';
+import { ISessionContext } from './model';
 import { IIngredientInventoryEntry, IMoldInventoryEntry, IInventoryEntryBase } from './model';
 
 // ============================================================================

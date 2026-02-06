@@ -117,7 +117,7 @@ Description
 <tbody>
 <tr><td>
 
-[createFillingSession(variationId, options)](./IUserLibrary.createFillingSession.md)
+[createPersistedFillingSession(variationId, options)](./IUserLibrary.createPersistedFillingSession.md)
 
 </td><td>
 

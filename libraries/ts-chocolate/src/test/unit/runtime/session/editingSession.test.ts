@@ -43,8 +43,8 @@ import {
   IFillingSessionEntity
 } from '../../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../../packlets/entities';
-import { ChocolateEntityLibrary } from '../../../../packlets/library-runtime';
-import { RuntimeContext, Session } from '../../../../packlets/runtime';
+import { ChocolateEntityLibrary, ChocolateLibrary } from '../../../../packlets/library-runtime';
+import { Session } from '../../../../packlets/user-library';
 
 describe('EditingSession', () => {
   // ============================================================================
@@ -119,7 +119,7 @@ describe('EditingSession', () => {
     ]
   };
 
-  let ctx: RuntimeContext;
+  let ctx: ChocolateLibrary;
 
   beforeEach(() => {
     const ingredients = IngredientsLibrary.create({
@@ -131,9 +131,9 @@ describe('EditingSession', () => {
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
             'dark-chocolate': darkChocolate,
-            /* eslint-enable @typescript-eslint/naming-convention */
             cream,
             butter
+            /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
       ]
@@ -155,11 +155,10 @@ describe('EditingSession', () => {
     }).orThrow();
 
     const library = ChocolateEntityLibrary.create({
-      builtin: false,
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromChocolateEntityLibrary(library).orThrow();
+    ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
   });
 
   // ============================================================================

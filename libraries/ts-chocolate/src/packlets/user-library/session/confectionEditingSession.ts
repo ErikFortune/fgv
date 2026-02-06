@@ -26,11 +26,11 @@
 import { Failure, Result } from '@fgv/ts-utils';
 
 import { AnyConfection } from '../../library-runtime';
-import { ISessionContext } from '../model';
 
 import { BarTruffleEditingSession } from './barTruffleEditingSession';
 import { MoldedBonBonEditingSession } from './moldedBonBonEditingSession';
 import { RolledTruffleEditingSession } from './rolledTruffleEditingSession';
+import { ISessionContext } from '../model';
 import { IConfectionEditingSessionParams } from './model';
 
 // ============================================================================

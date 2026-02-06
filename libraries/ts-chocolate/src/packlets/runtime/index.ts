@@ -19,23 +19,14 @@
 // SOFTWARE.
 
 /**
- * Runtime packlet - session infrastructure and editing capabilities
+ * Runtime packlet - DEPRECATED
  *
- * Provides editing sessions for confections and fillings, built on top of
- * the library-runtime packlet's materialized projections.
+ * This packlet is deprecated. Sessions have been moved to the user-library packlet.
+ * Import Session from user-library instead.
  *
- * For library entity types (ingredients, fillings, confections, etc.),
- * import from the library-runtime packlet.
- *
+ * @deprecated Use user-library packlet for session infrastructure
  * @packageDocumentation
  */
 
-// Session-specific model types
-export * from './model';
-
-// Runtime context (extends ChocolateLibrary with session creation)
-export { RuntimeContext, IRuntimeContextCreateParams } from './runtimeContext';
-
-// Session infrastructure (as namespace)
-import * as Session from './session';
-export { Session };
+// Re-export Session from user-library for backwards compatibility
+export { Session } from '../user-library';

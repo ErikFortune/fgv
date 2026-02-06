@@ -34,8 +34,11 @@ import { Logging, Result } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { JournalLibrary } from '../entities';
 import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '../library-data';
-import { IChocolateEntityLibraryCreateParams, IInstantiatedEntityLibrarySources } from '../library-runtime';
-import { RuntimeContext } from '../runtime';
+import {
+  ChocolateLibrary,
+  IChocolateEntityLibraryCreateParams,
+  IInstantiatedEntityLibrarySources
+} from '../library-runtime';
 import { ISettingsManager } from '../settings';
 import { IUserEntityLibraryCreateParams } from '../user-entities';
 import { IUserLibrary } from '../user-library';
@@ -69,10 +72,10 @@ export interface IWorkspace {
   // ---- Core Access ----
 
   /**
-   * The runtime context providing materialized library objects.
-   * Access via `runtime.ingredients`, `runtime.fillings`, `runtime.confections`, etc.
+   * The chocolate library providing materialized library objects.
+   * Access via `data.ingredients`, `data.fillings`, `data.confections`, etc.
    */
-  readonly data: RuntimeContext;
+  readonly data: ChocolateLibrary;
 
   /**
    * User library runtime for materialized user data.

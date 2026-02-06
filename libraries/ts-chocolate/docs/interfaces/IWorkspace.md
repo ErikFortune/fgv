@@ -40,11 +40,11 @@ Description
 
 </td><td>
 
-[RuntimeContext](../classes/RuntimeContext.md)
+[ChocolateLibrary](../classes/ChocolateLibrary.md)
 
 </td><td>
 
-The runtime context providing materialized library objects.
+The chocolate library providing materialized library objects.
 
 </td></tr>
 <tr><td>

@@ -46,7 +46,7 @@ import {
   FillingRecipe,
   FillingRecipeVariation
 } from '../../../packlets/library-runtime';
-import { RuntimeContext } from '../../../packlets/runtime';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
 
 describe('RuntimeFillingRecipe and RuntimeFillingRecipeVariation', () => {
   // ============================================================================
@@ -174,7 +174,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVariation', () => {
     ]
   };
 
-  let ctx: RuntimeContext;
+  let ctx: ChocolateLibrary;
 
   beforeEach(() => {
     const ingredients = IngredientsLibrary.create({
@@ -216,7 +216,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVariation', () => {
       libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
-    ctx = RuntimeContext.fromChocolateEntityLibrary(library).orThrow();
+    ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
   });
 
   // ============================================================================

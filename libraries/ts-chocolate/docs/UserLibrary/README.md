@@ -43,6 +43,15 @@ Description
 <tbody>
 <tr><td>
 
+[ISessionContext](./interfaces/ISessionContext.md)
+
+</td><td>
+
+Context interface for session creation and management.
+
+</td></tr>
+<tr><td>
+
 [ICreateFillingSessionOptions](./interfaces/ICreateFillingSessionOptions.md)
 
 </td><td>

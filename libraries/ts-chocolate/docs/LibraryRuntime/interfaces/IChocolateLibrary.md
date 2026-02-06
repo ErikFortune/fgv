@@ -14,7 +14,7 @@ Provides:
 This is the main entry point for consumers who want resolved views
 of recipes and ingredients with automatic reference resolution.
 
-Note: For session creation capabilities, use IRuntimeContext from the runtime packlet.
+Note: For session creation capabilities, use UserLibrary (which implements ISessionContext) from the user-library packlet.
 
 ## Properties
 
