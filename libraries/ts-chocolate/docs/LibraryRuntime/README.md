@@ -120,7 +120,7 @@ Mutable wrapper for IProducedRolledTruffle with undo/redo support.
 </td></tr>
 <tr><td>
 
-[LibraryRuntimeContext](./classes/LibraryRuntimeContext.md)
+[ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
 
@@ -746,7 +746,7 @@ Structure describing what changed between two produced confections
 </td></tr>
 <tr><td>
 
-[ILibraryRuntimeContextCreateParams](./interfaces/ILibraryRuntimeContextCreateParams.md)
+[IChocolateLibraryCreateParams](./interfaces/IChocolateLibraryCreateParams.md)
 
 </td><td>
 

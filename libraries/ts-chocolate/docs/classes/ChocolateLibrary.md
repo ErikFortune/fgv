@@ -1,16 +1,16 @@
-[Home](../README.md) > RuntimeContext
+[Home](../README.md) > ChocolateLibrary
 
-# Class: RuntimeContext
+# Class: ChocolateLibrary
 
-Full runtime context with session creation capabilities.
+Central context for the library-runtime object access layer.
+Provides factory methods for runtime objects, caching, and reverse lookups.
 
-Extends LibraryRuntimeContext with the ability to create editing sessions
-for filling recipes. This is the primary entry point for consumers who
-need both library resolution and session management.
+This is the entry point for consumers who want resolved views
+of recipes and ingredients with automatic reference resolution.
 
-**Extends:** [`ChocolateLibrary`](ChocolateLibrary.md)
+For session creation capabilities, use RuntimeContext from the runtime packlet.
 
-**Implements:** [`ISessionContext`](../interfaces/ISessionContext.md), [`IRuntimeContext`](../interfaces/IRuntimeContext.md)
+**Implements:** [`ILibraryRuntimeContext`](../interfaces/ILibraryRuntimeContext.md)
 
 ## Properties
 
@@ -239,7 +239,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(params)](./RuntimeContext.create.md)
+[create(params)](./ChocolateLibrary.create.md)
 
 </td><td>
 
@@ -247,12 +247,12 @@ Description
 
 </td><td>
 
-Creates a RuntimeContext with a new or default ChocolateEntityLibrary.
+Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>
 
-[fromChocolateEntityLibrary(library, preWarm)](./RuntimeContext.fromChocolateEntityLibrary.md)
+[fromChocolateEntityLibrary(library, preWarm)](./ChocolateLibrary.fromChocolateEntityLibrary.md)
 
 </td><td>
 
@@ -260,20 +260,7 @@ Creates a RuntimeContext with a new or default ChocolateEntityLibrary.
 
 </td><td>
 
-Creates a RuntimeContext wrapping an existing ChocolateEntityLibrary.
-
-</td></tr>
-<tr><td>
-
-[createFillingSession(filling, targetWeight)](./RuntimeContext.createFillingSession.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Creates an editing session for a filling recipe at a target weight.
+Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>

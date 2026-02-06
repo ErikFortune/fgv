@@ -38,7 +38,7 @@ export * from './chocolateEntityLibrary';
 export * from './model';
 
 // Library runtime context
-export { LibraryRuntimeContext, ILibraryRuntimeContextCreateParams } from './libraryRuntimeContext';
+export { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 
 // Reverse index
 export { RuntimeReverseIndex } from './runtimeReverseIndex';

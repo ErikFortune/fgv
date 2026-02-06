@@ -608,6 +608,52 @@ class ChocolateIngredient extends IngredientBase<IChocolateIngredientEntity> imp
 // @public
 const chocolateIngredientEntity: Converter<IChocolateIngredientEntity>;
 
+// Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+//
+// @public
+class ChocolateLibrary implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext {
+    protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
+    get cachedConfectionCount(): number;
+    get cachedIngredientCount(): number;
+    get cachedRecipeCount(): number;
+    clearCache(): void;
+    get confections(): MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, AnyConfectionRecipe, never>;
+    static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
+    createWeightContext(): IWeightCalculationContext;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get entities(): ChocolateEntityLibrary;
+    get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
+    static fromChocolateEntityLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<ChocolateLibrary>;
+    getAllConfectionTags(): ReadonlyArray<string>;
+    getAllFillingTags(): ReadonlyArray<string>;
+    getAllIngredientTags(): ReadonlyArray<string>;
+    // @internal
+    _getFillingRecipe(id: FillingId): Result<FillingRecipe>;
+    // @internal
+    getFillingsUsingIngredient(ingredientId: IngredientId): FillingRecipe[];
+    // @internal
+    getFillingsWithAlternateIngredient(ingredientId: IngredientId): FillingRecipe[];
+    // @internal
+    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): FillingRecipe[];
+    // @internal
+    _getIngredient(id: IngredientId): Result<AnyIngredient>;
+    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
+    invalidateIndexers(): void;
+    readonly logger: Logging.LogReporter<unknown>;
+    get molds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never>;
+    get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never>;
+    get tasks(): MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
+    warmUp(): void;
+}
+
 // @public
 export type ChocolateRole = 'shell' | 'seal' | 'decoration' | 'enrobing' | 'coating';
 
@@ -1670,7 +1716,7 @@ type FillingRecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
 // @public
 class FillingRecipeQuery {
-    constructor(context: LibraryRuntimeContext);
+    constructor(context: ChocolateLibrary);
     count(): number;
     descriptionContains(text: string): FillingRecipeQuery;
     execute(): ReadonlyArray<FillingRecipe>;
@@ -2230,6 +2276,12 @@ interface IChocolateIngredientEntity extends IIngredientEntity {
     readonly origins?: string[];
     readonly temperatureCurve?: ITemperatureCurve;
     readonly viscosityMcM?: DegreesMacMichael;
+}
+
+// @public
+interface IChocolateLibraryCreateParams {
+    readonly entityLibraryParams?: IChocolateEntityLibraryCreateParams;
+    readonly preWarm?: boolean;
 }
 
 // @public
@@ -3235,12 +3287,6 @@ interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
 }
 
 // @public
-interface ILibraryRuntimeContextCreateParams {
-    readonly libraryParams?: IChocolateEntityLibraryCreateParams;
-    readonly preWarm?: boolean;
-}
-
-// @public
 interface ILinearScalerOptions {
     readonly decimalPlaces?: number;
     readonly displaySuffix?: string;
@@ -3621,7 +3667,7 @@ const ingredientPhase: Converter<IngredientPhase>;
 
 // @public
 class IngredientQuery {
-    constructor(context: LibraryRuntimeContext);
+    constructor(context: ChocolateLibrary);
     alcohol(): IngredientQuery;
     byManufacturer(manufacturer: string): IngredientQuery;
     cacaoRange(min: Percentage, max: Percentage): IngredientQuery;
@@ -5101,8 +5147,8 @@ const LibraryPaths: {
 
 declare namespace LibraryRuntime {
     export {
-        LibraryRuntimeContext,
-        ILibraryRuntimeContextCreateParams,
+        ChocolateLibrary,
+        IChocolateLibraryCreateParams as ILibraryRuntimeContextCreateParams,
         RuntimeReverseIndex,
         IFindOrchestrator,
         IReadOnlyValidatingLibrary,
@@ -5225,52 +5271,6 @@ declare namespace LibraryRuntime {
     }
 }
 export { LibraryRuntime }
-
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "LibraryRuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
-//
-// @public
-class LibraryRuntimeContext implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext {
-    protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
-    get cachedConfectionCount(): number;
-    get cachedIngredientCount(): number;
-    get cachedRecipeCount(): number;
-    clearCache(): void;
-    get confections(): MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, AnyConfectionRecipe, never>;
-    static create(params?: ILibraryRuntimeContextCreateParams): Result<LibraryRuntimeContext>;
-    createWeightContext(): IWeightCalculationContext;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    get entities(): ChocolateEntityLibrary;
-    get fillings(): MaterializedLibrary<FillingId, Fillings_2.IFillingRecipeEntity, FillingRecipe, IFillingRecipeQuerySpec>;
-    static fromChocolateEntityLibrary(library: ChocolateEntityLibrary, preWarm?: boolean): Result<LibraryRuntimeContext>;
-    getAllConfectionTags(): ReadonlyArray<string>;
-    getAllFillingTags(): ReadonlyArray<string>;
-    getAllIngredientTags(): ReadonlyArray<string>;
-    // @internal
-    _getFillingRecipe(id: FillingId): Result<FillingRecipe>;
-    // @internal
-    getFillingsUsingIngredient(ingredientId: IngredientId): FillingRecipe[];
-    // @internal
-    getFillingsWithAlternateIngredient(ingredientId: IngredientId): FillingRecipe[];
-    // @internal
-    getFillingsWithPrimaryIngredient(ingredientId: IngredientId): FillingRecipe[];
-    // @internal
-    _getIngredient(id: IngredientId): Result<AnyIngredient>;
-    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
-    invalidateIndexers(): void;
-    readonly logger: Logging.LogReporter<unknown>;
-    get molds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never>;
-    get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never>;
-    get tasks(): MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
-    warmUp(): void;
-}
 
 // @public
 class LinearScaler implements IUnitScaler {
@@ -6162,7 +6162,7 @@ declare namespace Runtime {
 export { Runtime }
 
 // @public
-export class RuntimeContext extends LibraryRuntimeContext implements ISessionContext, IRuntimeContext {
+export class RuntimeContext extends ChocolateLibrary implements ISessionContext, IRuntimeContext {
     // @internal
     protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;

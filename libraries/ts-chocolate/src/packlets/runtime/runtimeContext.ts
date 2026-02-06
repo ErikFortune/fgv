@@ -30,7 +30,7 @@ import {
   ChocolateEntityLibrary,
   IChocolateEntityLibraryCreateParams,
   IFillingRecipe,
-  LibraryRuntimeContext
+  ChocolateLibrary
 } from '../library-runtime';
 import { EditingSession } from './session/editingSession';
 import { ISessionContext, IRuntimeContext } from './model';
@@ -69,7 +69,7 @@ export interface IRuntimeContextCreateParams {
  *
  * @public
  */
-export class RuntimeContext extends LibraryRuntimeContext implements ISessionContext, IRuntimeContext {
+export class RuntimeContext extends ChocolateLibrary implements ISessionContext, IRuntimeContext {
   /**
    * Creates a RuntimeContext.
    * Use static factory methods instead of calling this directly.

@@ -1,16 +1,16 @@
-[Home](../README.md) > RuntimeContext
+[Home](../../README.md) > [LibraryRuntime](../README.md) > ChocolateLibrary
 
-# Class: RuntimeContext
+# Class: ChocolateLibrary
 
-Full runtime context with session creation capabilities.
+Central context for the library-runtime object access layer.
+Provides factory methods for runtime objects, caching, and reverse lookups.
 
-Extends LibraryRuntimeContext with the ability to create editing sessions
-for filling recipes. This is the primary entry point for consumers who
-need both library resolution and session management.
+This is the entry point for consumers who want resolved views
+of recipes and ingredients with automatic reference resolution.
 
-**Extends:** [`ChocolateLibrary`](ChocolateLibrary.md)
+For session creation capabilities, use RuntimeContext from the runtime packlet.
 
-**Implements:** [`ISessionContext`](../interfaces/ISessionContext.md), [`IRuntimeContext`](../interfaces/IRuntimeContext.md)
+**Implements:** [`ILibraryRuntimeContext`](../../interfaces/ILibraryRuntimeContext.md)
 
 ## Properties
 
@@ -59,7 +59,7 @@ Logger used by this runtime context and its libraries.
 
 </td><td>
 
-[ChocolateEntityLibrary](ChocolateEntityLibrary.md)
+[ChocolateEntityLibrary](../../classes/ChocolateEntityLibrary.md)
 
 </td><td>
 
@@ -76,7 +76,7 @@ The underlying ChocolateEntityLibrary for direct access when needed.
 
 </td><td>
 
-[MaterializedLibrary](MaterializedLibrary.md)&lt;[ConfectionId](../type-aliases/ConfectionId.md), [AnyConfectionRecipeEntity](../type-aliases/AnyConfectionRecipeEntity.md), [AnyConfection](../type-aliases/AnyConfection.md), never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[ConfectionId](../../type-aliases/ConfectionId.md), [AnyConfectionRecipeEntity](../../type-aliases/AnyConfectionRecipeEntity.md), [AnyConfection](../../type-aliases/AnyConfection.md), never&gt;
 
 </td><td>
 
@@ -93,7 +93,7 @@ A materialized library of all confections, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](MaterializedLibrary.md)&lt;[MoldId](../type-aliases/MoldId.md), [IMoldEntity](../interfaces/IMoldEntity.md), [Mold](Mold.md), never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[MoldId](../../type-aliases/MoldId.md), [IMoldEntity](../../interfaces/IMoldEntity.md), [Mold](../../classes/Mold.md), never&gt;
 
 </td><td>
 
@@ -110,7 +110,7 @@ A materialized library of all molds, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](MaterializedLibrary.md)&lt;[ProcedureId](../type-aliases/ProcedureId.md), [IProcedureEntity](../interfaces/IProcedureEntity.md), [Procedure](Procedure.md), never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[ProcedureId](../../type-aliases/ProcedureId.md), [IProcedureEntity](../../interfaces/IProcedureEntity.md), [Procedure](../../classes/Procedure.md), never&gt;
 
 </td><td>
 
@@ -127,7 +127,7 @@ A materialized library of all procedures, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](MaterializedLibrary.md)&lt;[TaskId](../type-aliases/TaskId.md), [IRawTaskEntity](../interfaces/IRawTaskEntity.md), [Task](Task.md), never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[TaskId](../../type-aliases/TaskId.md), [IRawTaskEntity](../../interfaces/IRawTaskEntity.md), [Task](../../classes/Task.md), never&gt;
 
 </td><td>
 
@@ -144,7 +144,7 @@ A materialized library of all tasks, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](MaterializedLibrary.md)&lt;[IngredientId](../type-aliases/IngredientId.md), [IngredientEntity](../type-aliases/IngredientEntity.md), [AnyIngredient](../type-aliases/AnyIngredient.md), [IIngredientQuerySpec](../interfaces/IIngredientQuerySpec.md)&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[IngredientId](../../type-aliases/IngredientId.md), [IngredientEntity](../../type-aliases/IngredientEntity.md), [AnyIngredient](../../type-aliases/AnyIngredient.md), [IIngredientQuerySpec](../../interfaces/IIngredientQuerySpec.md)&gt;
 
 </td><td>
 
@@ -161,7 +161,7 @@ A searchable library of all ingredients, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](MaterializedLibrary.md)&lt;[FillingId](../type-aliases/FillingId.md), [IFillingRecipeEntity](../interfaces/IFillingRecipeEntity.md), [FillingRecipe](FillingRecipe.md), [IFillingRecipeQuerySpec](../interfaces/IFillingRecipeQuerySpec.md)&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[FillingId](../../type-aliases/FillingId.md), [IFillingRecipeEntity](../../interfaces/IFillingRecipeEntity.md), [FillingRecipe](../../classes/FillingRecipe.md), [IFillingRecipeQuerySpec](../../interfaces/IFillingRecipeQuerySpec.md)&gt;
 
 </td><td>
 
@@ -239,7 +239,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(params)](./RuntimeContext.create.md)
+[create(params)](./ChocolateLibrary.create.md)
 
 </td><td>
 
@@ -247,12 +247,12 @@ Description
 
 </td><td>
 
-Creates a RuntimeContext with a new or default ChocolateEntityLibrary.
+Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>
 
-[fromChocolateEntityLibrary(library, preWarm)](./RuntimeContext.fromChocolateEntityLibrary.md)
+[fromChocolateEntityLibrary(library, preWarm)](./ChocolateLibrary.fromChocolateEntityLibrary.md)
 
 </td><td>
 
@@ -260,20 +260,7 @@ Creates a RuntimeContext with a new or default ChocolateEntityLibrary.
 
 </td><td>
 
-Creates a RuntimeContext wrapping an existing ChocolateEntityLibrary.
-
-</td></tr>
-<tr><td>
-
-[createFillingSession(filling, targetWeight)](./RuntimeContext.createFillingSession.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Creates an editing session for a filling recipe at a target weight.
+Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>

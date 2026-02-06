@@ -33,7 +33,7 @@ import {
   CollectionId
 } from '../../common';
 import { AnyIngredient, ChocolateIngredient } from '../ingredients';
-import { LibraryRuntimeContext } from '../libraryRuntimeContext';
+import { ChocolateLibrary } from '../chocolateLibrary';
 import {
   IngredientFilter,
   containsIgnoreCase,
@@ -58,14 +58,14 @@ import {
  * @public
  */
 export class IngredientQuery {
-  private readonly _context: LibraryRuntimeContext;
+  private readonly _context: ChocolateLibrary;
   private readonly _filters: IngredientFilter[];
 
   /**
    * Creates a new IngredientQuery.
    * @param context - The runtime context to query
    */
-  public constructor(context: LibraryRuntimeContext) {
+  public constructor(context: ChocolateLibrary) {
     this._context = context;
     this._filters = [];
   }

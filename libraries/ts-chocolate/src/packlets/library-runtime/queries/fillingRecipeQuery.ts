@@ -25,7 +25,7 @@
 
 import { ChocolateType, IngredientId, Percentage, CollectionId } from '../../common';
 import { FillingRecipe } from '../fillings';
-import { LibraryRuntimeContext } from '../libraryRuntimeContext';
+import { ChocolateLibrary } from '../chocolateLibrary';
 import {
   FillingRecipeFilter,
   containsIgnoreCase,
@@ -46,14 +46,14 @@ import {
  * @public
  */
 export class FillingRecipeQuery {
-  private readonly _context: LibraryRuntimeContext;
+  private readonly _context: ChocolateLibrary;
   private readonly _filters: FillingRecipeFilter[];
 
   /**
    * Creates a new FillingRecipeQuery.
    * @param context - The runtime context to query
    */
-  public constructor(context: LibraryRuntimeContext) {
+  public constructor(context: ChocolateLibrary) {
     this._context = context;
     this._filters = [];
   }
