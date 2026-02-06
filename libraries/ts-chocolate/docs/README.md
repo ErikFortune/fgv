@@ -16,11 +16,38 @@ Description
 <tbody>
 <tr><td>
 
+[BuiltIn](./BuiltIn/README.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[Editing](./Editing/README.md)
+
+</td><td>
+
+Generic editing framework for entity collections.
+
+</td></tr>
+<tr><td>
+
 [Entities](./Entities/README.md)
 
 </td><td>
 
 Entities packlet - consolidated data layer types and converters
+
+</td></tr>
+<tr><td>
+
+[LibraryData](./LibraryData/README.md)
+
+</td><td>
+
+
 
 </td></tr>
 <tr><td>
@@ -50,33 +77,6 @@ the library-runtime packlet's materialized projections.
 </td></tr>
 <tr><td>
 
-[LibraryData](./LibraryData/README.md)
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[BuiltIn](./BuiltIn/README.md)
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[Editing](./Editing/README.md)
-
-</td><td>
-
-Generic editing framework for entity collections.
-
-</td></tr>
-<tr><td>
-
 [UserEntities](./UserEntities/README.md)
 
 </td><td>
@@ -86,7 +86,7 @@ User library packlet - user-specific data (journals, future inventory).
 </td></tr>
 <tr><td>
 
-[UserRuntime](./UserRuntime/README.md)
+[UserLibrary](./UserLibrary/README.md)
 
 </td><td>
 
@@ -158,24 +158,6 @@ Description
 
 </th></tr></thead>
 <tbody>
-<tr><td>
-
-[ChocolateEntityLibrary](./classes/ChocolateEntityLibrary.md)
-
-</td><td>
-
-Main entry point for the chocolate data entity library
-
-</td></tr>
-<tr><td>
-
-[RuntimeContext](./classes/RuntimeContext.md)
-
-</td><td>
-
-Full runtime context with session creation capabilities.
-
-</td></tr>
 <tr><td>
 
 [Workspace](./classes/Workspace.md)

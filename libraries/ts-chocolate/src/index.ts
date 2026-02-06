@@ -23,16 +23,6 @@
  * @packageDocumentation
  */
 
-// ============================================================================
-// PRIMARY EXPORTS - Classes developers use directly
-// ============================================================================
-
-// Main library entry point
-export { ChocolateEntityLibrary } from './packlets/library-runtime';
-
-// Runtime context for queries and resolved operations
-export { RuntimeContext } from './packlets/runtime';
-
 // Workspace - primary application entry point
 export {
   Workspace,
@@ -46,33 +36,13 @@ export {
 // All branded types and common utilities
 export * from './packlets/common';
 
-// ============================================================================
-// NAMESPACE EXPORTS
-// ============================================================================
-
-// Data layer - models, converters, collections, libraries
-import * as Entities from './packlets/entities';
-export { Entities };
-
-// Library runtime - materialized projections of library entities
-import * as LibraryRuntime from './packlets/library-runtime';
-export { LibraryRuntime };
-
-// Runtime - session infrastructure and editing capabilities
-import * as Runtime from './packlets/runtime';
-export { Runtime };
-
-// Note: Converters is exported via 'export * from ./packlets/common'
-// Entity-specific converters are accessible via Entities.Fillings.Converters, etc.
-
-// ============================================================================
-// SUPPORTING NAMESPACES
-// ============================================================================
-
-import * as LibraryData from './packlets/library-data';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
+import * as Entities from './packlets/entities';
+import * as LibraryData from './packlets/library-data';
+import * as LibraryRuntime from './packlets/library-runtime';
+import * as Runtime from './packlets/runtime';
 import * as UserEntities from './packlets/user-entities';
-import * as UserRuntime from './packlets/user-runtime';
+import * as UserLibrary from './packlets/user-library';
 
-export { LibraryData, BuiltIn, Editing, UserEntities, UserRuntime };
+export { BuiltIn, Editing, Entities, LibraryData, LibraryRuntime, Runtime, UserEntities, UserLibrary };

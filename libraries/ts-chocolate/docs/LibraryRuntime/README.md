@@ -57,6 +57,15 @@ Description
 <tbody>
 <tr><td>
 
+[ChocolateEntityLibrary](./classes/ChocolateEntityLibrary.md)
+
+</td><td>
+
+Main entry point for the chocolate data entity library
+
+</td></tr>
+<tr><td>
+
 [IngredientQuery](./classes/IngredientQuery.md)
 
 </td><td>

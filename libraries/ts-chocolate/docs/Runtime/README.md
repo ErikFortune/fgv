@@ -33,6 +33,29 @@ Description
 </td></tr>
 </tbody></table>
 
+## Classes
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[RuntimeContext](./classes/RuntimeContext.md)
+
+</td><td>
+
+Full runtime context with session creation capabilities.
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>

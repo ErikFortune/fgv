@@ -38,7 +38,7 @@ import { IChocolateEntityLibraryCreateParams, IInstantiatedEntityLibrarySources 
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
 import { IUserEntityLibraryCreateParams } from '../user-entities';
-import { IUserLibrary } from '../user-runtime';
+import { IUserLibrary } from '../user-library';
 
 // ============================================================================
 // Workspace State

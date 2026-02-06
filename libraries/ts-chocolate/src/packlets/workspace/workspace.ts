@@ -30,7 +30,7 @@ import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
 import { UserEntityLibrary } from '../user-entities';
-import { IUserLibrary, UserLibrary } from '../user-runtime';
+import { IUserLibrary, UserLibrary } from '../user-library';
 import {
   IWorkspace,
   IWorkspaceCreateParams,
