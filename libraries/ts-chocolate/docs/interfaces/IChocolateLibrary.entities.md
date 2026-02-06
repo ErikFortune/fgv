@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > entities
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > entities
 
-## ILibraryRuntimeContext.entities property
+## IChocolateLibrary.entities property
 
 The underlying ChocolateEntityLibrary for direct access when needed.
 

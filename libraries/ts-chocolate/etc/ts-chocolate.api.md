@@ -616,7 +616,7 @@ const chocolateIngredientEntity: Converter<IChocolateIngredientEntity>;
 // Warning: (ae-incompatible-release-tags) The symbol "ChocolateLibrary" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 //
 // @public
-class ChocolateLibrary implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext {
+class ChocolateLibrary implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, IChocolateLibrary {
     protected constructor(library: ChocolateEntityLibrary, preWarm: boolean);
     get cachedConfectionCount(): number;
     get cachedIngredientCount(): number;
@@ -2278,6 +2278,25 @@ interface IChocolateIngredientEntity extends IIngredientEntity {
     readonly viscosityMcM?: DegreesMacMichael;
 }
 
+// Warning: (ae-incompatible-release-tags) The symbol "IChocolateLibrary" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "IChocolateLibrary" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
+//
+// @public
+interface IChocolateLibrary extends IVariationContext<AnyIngredient> {
+    readonly cachedIngredientCount: number;
+    readonly cachedRecipeCount: number;
+    clearCache(): void;
+    readonly confections: MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, IConfectionBase, never>;
+    readonly entities: ChocolateEntityLibrary;
+    getAllFillingTags(): ReadonlyArray<string>;
+    getAllIngredientTags(): ReadonlyArray<string>;
+    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
+    readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
+    readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
+    warmUp(): void;
+}
+
 // @public
 interface IChocolateLibraryCreateParams {
     readonly entityLibraryParams?: IChocolateEntityLibraryCreateParams;
@@ -3265,25 +3284,6 @@ interface ILibraryLoadParams {
     readonly excluded?: ReadonlyArray<FilterPattern>;
     readonly included?: ReadonlyArray<FilterPattern>;
     readonly recurseWithDelimiter?: string;
-}
-
-// Warning: (ae-incompatible-release-tags) The symbol "ILibraryRuntimeContext" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "ILibraryRuntimeContext" is marked as @public, but its signature references "IVariationContext" which is marked as @internal
-//
-// @public
-interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
-    readonly cachedIngredientCount: number;
-    readonly cachedRecipeCount: number;
-    clearCache(): void;
-    readonly confections: MaterializedLibrary<ConfectionId, Confections_2.AnyConfectionRecipeEntity, IConfectionBase, never>;
-    readonly entities: ChocolateEntityLibrary;
-    getAllFillingTags(): ReadonlyArray<string>;
-    getAllIngredientTags(): ReadonlyArray<string>;
-    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
-    readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
-    readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
-    warmUp(): void;
 }
 
 // @public
@@ -4291,7 +4291,7 @@ interface IRuntimeCollection<T = JsonObject, TCOLLECTIONID extends string = stri
 }
 
 // @public
-interface IRuntimeContext extends ILibraryRuntimeContext {
+interface IRuntimeContext extends IChocolateLibrary {
     readonly cachedConfectionCount: number;
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
     getAllConfectionTags(): ReadonlyArray<string>;
@@ -5148,7 +5148,7 @@ const LibraryPaths: {
 declare namespace LibraryRuntime {
     export {
         ChocolateLibrary,
-        IChocolateLibraryCreateParams as ILibraryRuntimeContextCreateParams,
+        IChocolateLibraryCreateParams,
         RuntimeReverseIndex,
         IFindOrchestrator,
         IReadOnlyValidatingLibrary,
@@ -5216,7 +5216,7 @@ declare namespace LibraryRuntime {
         IIngredientUsageInfo,
         IVariationContext,
         IIngredientContext,
-        ILibraryRuntimeContext,
+        IChocolateLibrary,
         IConfectionBase,
         IMoldedBonBonRecipe,
         IBarTruffleRecipe,

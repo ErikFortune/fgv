@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > molds
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > molds
 
-## ILibraryRuntimeContext.molds property
+## IChocolateLibrary.molds property
 
 A materialized library of all molds, keyed by composite ID.
 Molds are resolved lazily on access and cached.

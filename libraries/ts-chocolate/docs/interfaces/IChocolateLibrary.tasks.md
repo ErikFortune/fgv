@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > tasks
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > tasks
 
-## ILibraryRuntimeContext.tasks property
+## IChocolateLibrary.tasks property
 
 A materialized library of all tasks, keyed by composite ID.
 Tasks are resolved lazily on access and cached.

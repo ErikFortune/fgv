@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > getIngredientUsage
+[Home](../../README.md) > [LibraryRuntime](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > getIngredientUsage
 
-## ILibraryRuntimeContext.getIngredientUsage() method
+## IChocolateLibrary.getIngredientUsage() method
 
 Gets detailed usage information for an ingredient.
 
@@ -19,6 +19,6 @@ getIngredientUsage(ingredientId: IngredientId): Result<readonly IIngredientUsage
 
 **Returns:**
 
-Result&lt;readonly [IIngredientUsageInfo](IIngredientUsageInfo.md)[]&gt;
+Result&lt;readonly [IIngredientUsageInfo](../../interfaces/IIngredientUsageInfo.md)[]&gt;
 
 Success with array of usage info, or Failure if ingredient doesn't exist

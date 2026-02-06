@@ -4,7 +4,7 @@
 
 Full runtime context with session creation capabilities.
 
-Extends LibraryRuntimeContext with the ability to create editing sessions
+Extends ChocolateLibrary with the ability to create editing sessions
 for filling recipes. This is the primary entry point for consumers who
 need both library resolution and session management.
 

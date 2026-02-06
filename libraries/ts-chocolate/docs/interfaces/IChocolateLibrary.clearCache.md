@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > clearCache
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > clearCache
 
-## ILibraryRuntimeContext.clearCache() method
+## IChocolateLibrary.clearCache() method
 
 Clears all cached runtime objects.
 Use if underlying library data has changed.

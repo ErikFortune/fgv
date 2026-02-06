@@ -33,7 +33,7 @@
 // Session-specific model types
 export * from './model';
 
-// Runtime context (extends LibraryRuntimeContext with session creation)
+// Runtime context (extends ChocolateLibrary with session creation)
 export { RuntimeContext, IRuntimeContextCreateParams } from './runtimeContext';
 
 // Session infrastructure (as namespace)

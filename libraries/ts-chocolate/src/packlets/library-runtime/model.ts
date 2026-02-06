@@ -885,11 +885,11 @@ export interface IIngredientContext {
 }
 
 // ============================================================================
-// Library Runtime Context Interface
+// Chocolate library Interface
 // ============================================================================
 
 /**
- * Central context for the library-runtime object access layer.
+ * Central context for the library materialized object access layer.
  *
  * Provides:
  * - Primary resolution methods for ingredients and recipes
@@ -905,7 +905,7 @@ export interface IIngredientContext {
  *
  * @public
  */
-export interface ILibraryRuntimeContext extends IVariationContext<AnyIngredient> {
+export interface IChocolateLibrary extends IVariationContext<AnyIngredient> {
   // ---- Library Access ----
 
   /**

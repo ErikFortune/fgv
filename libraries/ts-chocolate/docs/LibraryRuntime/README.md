@@ -530,11 +530,11 @@ Information about how an ingredient is used in a recipe.
 </td></tr>
 <tr><td>
 
-[ILibraryRuntimeContext](./interfaces/ILibraryRuntimeContext.md)
+[IChocolateLibrary](./interfaces/IChocolateLibrary.md)
 
 </td><td>
 
-Central context for the library-runtime object access layer.
+Central context for the library materialized object access layer.
 
 </td></tr>
 <tr><td>
@@ -750,7 +750,7 @@ Structure describing what changed between two produced confections
 
 </td><td>
 
-Parameters for creating a LibraryRuntimeContext with a new library
+Parameters for creating a ChocolateLibrary with a new library
 
 </td></tr>
 <tr><td>

@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > getAllFillingTags
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > getAllFillingTags
 
-## ILibraryRuntimeContext.getAllFillingTags() method
+## IChocolateLibrary.getAllFillingTags() method
 
 Gets all unique tags used across fillings.
 

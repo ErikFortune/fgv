@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * LibraryRuntimeContext - central hub for the library-runtime object access layer
+ * ChocolateLibrary - central hub access to materialized chocolate library objects.
  * @packageDocumentation
  */
 
@@ -41,7 +41,7 @@ import {
   IConfectionContext,
   IIngredientContext,
   IIngredientUsageInfo,
-  ILibraryRuntimeContext,
+  IChocolateLibrary,
   IVariationContext
 } from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
@@ -58,12 +58,8 @@ import { Task } from './tasks';
 import { Procedure } from './procedures';
 import { Mold } from './molds';
 
-// ============================================================================
-// LibraryRuntimeContext Parameters
-// ============================================================================
-
 /**
- * Parameters for creating a LibraryRuntimeContext with a new library
+ * Parameters for creating a ChocolateLibrary with a new library
  * @public
  */
 export interface IChocolateLibraryCreateParams {
@@ -79,10 +75,6 @@ export interface IChocolateLibraryCreateParams {
   readonly preWarm?: boolean;
 }
 
-// ============================================================================
-// LibraryRuntimeContext Class
-// ============================================================================
-
 /**
  * Central context for the library-runtime object access layer.
  * Provides factory methods for runtime objects, caching, and reverse lookups.
@@ -95,7 +87,7 @@ export interface IChocolateLibraryCreateParams {
  * @public
  */
 export class ChocolateLibrary
-  implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, ILibraryRuntimeContext
+  implements IVariationContext<AnyIngredient>, IIngredientContext, IConfectionContext, IChocolateLibrary
 {
   private readonly _entities: ChocolateEntityLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
@@ -148,10 +140,10 @@ export class ChocolateLibrary
   }
 
   /**
-   * Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
+   * Creates a ChocolateLibrary with a new or default ChocolateEntityLibrary.
    * This is the primary factory method for most use cases.
    * @param params - Optional parameters for library and caching
-   * @returns Success with LibraryRuntimeContext, or Failure if library creation fails
+   * @returns Success with ChocolateLibrary, or Failure if library creation fails
    */
   public static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary> {
     return ChocolateEntityLibrary.create(params?.entityLibraryParams).onSuccess((library) => {
@@ -160,11 +152,11 @@ export class ChocolateLibrary
   }
 
   /**
-   * Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
+   * Creates a ChocolateLibrary wrapping an existing ChocolateEntityLibrary.
    * Use this when you already have a configured library instance.
    * @param library - The ChocolateEntityLibrary to wrap
    * @param preWarm - Whether to pre-warm the reverse index
-   * @returns Success with LibraryRuntimeContext
+   * @returns Success with ChocolateLibrary
    */
   public static fromChocolateEntityLibrary(
     library: ChocolateEntityLibrary,
@@ -178,7 +170,7 @@ export class ChocolateLibrary
   // ============================================================================
 
   /**
-   * {@inheritDoc LibraryRuntime.ILibraryRuntimeContext.entities}
+   * {@inheritDoc LibraryRuntime.IChocolateLibrary.entities}
    */
   public get entities(): ChocolateEntityLibrary {
     return this._entities;
@@ -512,7 +504,7 @@ export class ChocolateLibrary
     this._reverseIndex.invalidate();
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();
-    this.logger.info('LibraryRuntimeContext cache cleared');
+    this.logger.info('ChocolateLibrary cache cleared');
   }
 
   /**
@@ -522,7 +514,7 @@ export class ChocolateLibrary
     this._reverseIndex.warmUp();
     this._recipeOrchestrator.warmUp();
     this._ingredientOrchestrator.warmUp();
-    this.logger.info('LibraryRuntimeContext indexes warmed up');
+    this.logger.info('ChocolateLibrary indexes warmed up');
   }
 
   /**

@@ -2,7 +2,7 @@
 
 # Interface: IChocolateLibraryCreateParams
 
-Parameters for creating a LibraryRuntimeContext with a new library
+Parameters for creating a ChocolateLibrary with a new library
 
 ## Properties
 

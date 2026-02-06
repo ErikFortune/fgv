@@ -31,7 +31,7 @@ import { Result } from '@fgv/ts-utils';
 
 import { Measurement } from '../common';
 import type { EditingSession } from './session/editingSession';
-import { IConfectionContext, ILibraryRuntimeContext, IFillingRecipe } from '../library-runtime';
+import { IConfectionContext, IChocolateLibrary, IFillingRecipe } from '../library-runtime';
 
 // ============================================================================
 // Session Context Interface
@@ -63,7 +63,7 @@ export interface ISessionContext extends IConfectionContext {
 /**
  * Full runtime context interface with session capabilities.
  *
- * Extends ILibraryRuntimeContext with:
+ * Extends IChocolateLibrary with:
  * - Session creation methods
  * - Confection access and caching
  *
@@ -72,7 +72,7 @@ export interface ISessionContext extends IConfectionContext {
  *
  * @public
  */
-export interface IRuntimeContext extends ILibraryRuntimeContext {
+export interface IRuntimeContext extends IChocolateLibrary {
   /**
    * Gets the number of cached confections.
    */

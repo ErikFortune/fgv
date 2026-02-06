@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > confections
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > confections
 
-## ILibraryRuntimeContext.confections property
+## IChocolateLibrary.confections property
 
 A materialized library of all confections, keyed by composite ID.
 Confections are resolved lazily on access and cached.

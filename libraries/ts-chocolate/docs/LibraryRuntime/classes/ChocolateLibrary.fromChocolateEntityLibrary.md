@@ -2,7 +2,7 @@
 
 ## ChocolateLibrary.fromChocolateEntityLibrary() method
 
-Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
+Creates a ChocolateLibrary wrapping an existing ChocolateEntityLibrary.
 Use this when you already have a configured library instance.
 
 **Signature:**
@@ -23,4 +23,4 @@ static fromChocolateEntityLibrary(library: ChocolateEntityLibrary, preWarm?: boo
 
 Result&lt;[ChocolateLibrary](../../classes/ChocolateLibrary.md)&gt;
 
-Success with LibraryRuntimeContext
+Success with ChocolateLibrary

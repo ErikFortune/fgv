@@ -10,7 +10,7 @@ of recipes and ingredients with automatic reference resolution.
 
 For session creation capabilities, use RuntimeContext from the runtime packlet.
 
-**Implements:** [`ILibraryRuntimeContext`](../../interfaces/ILibraryRuntimeContext.md)
+**Implements:** [`IChocolateLibrary`](../../interfaces/IChocolateLibrary.md)
 
 ## Properties
 
@@ -247,7 +247,7 @@ Description
 
 </td><td>
 
-Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
+Creates a ChocolateLibrary with a new or default ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>
@@ -260,7 +260,7 @@ Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
 
 </td><td>
 
-Creates a LibraryRuntimeContext wrapping an existing ChocolateEntityLibrary.
+Creates a ChocolateLibrary wrapping an existing ChocolateEntityLibrary.
 
 </td></tr>
 <tr><td>

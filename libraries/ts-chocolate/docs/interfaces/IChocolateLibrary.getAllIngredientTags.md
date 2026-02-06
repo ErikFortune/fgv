@@ -1,6 +1,6 @@
-[Home](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > getAllIngredientTags
+[Home](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > getAllIngredientTags
 
-## ILibraryRuntimeContext.getAllIngredientTags() method
+## IChocolateLibrary.getAllIngredientTags() method
 
 Gets all unique tags used across ingredients.
 

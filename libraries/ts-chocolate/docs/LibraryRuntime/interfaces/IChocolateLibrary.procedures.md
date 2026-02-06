@@ -1,6 +1,6 @@
-[Home](../../README.md) > [LibraryRuntime](../README.md) > [ILibraryRuntimeContext](./ILibraryRuntimeContext.md) > procedures
+[Home](../../README.md) > [LibraryRuntime](../README.md) > [IChocolateLibrary](./IChocolateLibrary.md) > procedures
 
-## ILibraryRuntimeContext.procedures property
+## IChocolateLibrary.procedures property
 
 A materialized library of all procedures, keyed by composite ID.
 Procedures are resolved lazily on access and cached.

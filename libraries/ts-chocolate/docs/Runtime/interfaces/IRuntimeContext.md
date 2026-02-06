@@ -4,14 +4,14 @@
 
 Full runtime context interface with session capabilities.
 
-Extends ILibraryRuntimeContext with:
+Extends IChocolateLibrary with:
 - Session creation methods
 - Confection access and caching
 
 This is the complete entry point for consumers who need both
 library resolution and session management.
 
-**Extends:** [`ILibraryRuntimeContext`](../../interfaces/ILibraryRuntimeContext.md)
+**Extends:** [`IChocolateLibrary`](../../interfaces/IChocolateLibrary.md)
 
 ## Properties
 
@@ -52,7 +52,7 @@ Gets the number of cached confections.
 </td></tr>
 <tr><td>
 
-[entities](./ILibraryRuntimeContext.entities.md)
+[entities](./IChocolateLibrary.entities.md)
 
 </td><td>
 
@@ -69,7 +69,7 @@ The underlying ChocolateEntityLibrary for direct access when needed.
 </td></tr>
 <tr><td>
 
-[molds](./ILibraryRuntimeContext.molds.md)
+[molds](./IChocolateLibrary.molds.md)
 
 </td><td>
 
@@ -86,7 +86,7 @@ A materialized library of all molds, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[procedures](./ILibraryRuntimeContext.procedures.md)
+[procedures](./IChocolateLibrary.procedures.md)
 
 </td><td>
 
@@ -103,7 +103,7 @@ A materialized library of all procedures, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[tasks](./ILibraryRuntimeContext.tasks.md)
+[tasks](./IChocolateLibrary.tasks.md)
 
 </td><td>
 
@@ -120,7 +120,7 @@ A materialized library of all tasks, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[confections](./ILibraryRuntimeContext.confections.md)
+[confections](./IChocolateLibrary.confections.md)
 
 </td><td>
 
@@ -137,7 +137,7 @@ A materialized library of all confections, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[cachedIngredientCount](./ILibraryRuntimeContext.cachedIngredientCount.md)
+[cachedIngredientCount](./IChocolateLibrary.cachedIngredientCount.md)
 
 </td><td>
 
@@ -154,7 +154,7 @@ Gets the number of cached ingredients.
 </td></tr>
 <tr><td>
 
-[cachedRecipeCount](./ILibraryRuntimeContext.cachedRecipeCount.md)
+[cachedRecipeCount](./IChocolateLibrary.cachedRecipeCount.md)
 
 </td><td>
 
@@ -171,7 +171,7 @@ Gets the number of cached recipes.
 </td></tr>
 <tr><td>
 
-[ingredients](./ILibraryRuntimeContext.ingredients.md)
+[ingredients](./IChocolateLibrary.ingredients.md)
 
 </td><td>
 
@@ -188,7 +188,7 @@ Map of all ingredients, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[fillings](./ILibraryRuntimeContext.fillings.md)
+[fillings](./IChocolateLibrary.fillings.md)
 
 </td><td>
 
@@ -249,7 +249,7 @@ Creates an editing session for a filling recipe at a target weight.
 </td></tr>
 <tr><td>
 
-[getIngredientUsage(ingredientId)](./ILibraryRuntimeContext.getIngredientUsage.md)
+[getIngredientUsage(ingredientId)](./IChocolateLibrary.getIngredientUsage.md)
 
 </td><td>
 
@@ -262,7 +262,7 @@ Gets detailed usage information for an ingredient.
 </td></tr>
 <tr><td>
 
-[getAllFillingTags()](./ILibraryRuntimeContext.getAllFillingTags.md)
+[getAllFillingTags()](./IChocolateLibrary.getAllFillingTags.md)
 
 </td><td>
 
@@ -275,7 +275,7 @@ Gets all unique tags used across fillings.
 </td></tr>
 <tr><td>
 
-[getAllIngredientTags()](./ILibraryRuntimeContext.getAllIngredientTags.md)
+[getAllIngredientTags()](./IChocolateLibrary.getAllIngredientTags.md)
 
 </td><td>
 
@@ -288,7 +288,7 @@ Gets all unique tags used across ingredients.
 </td></tr>
 <tr><td>
 
-[clearCache()](./ILibraryRuntimeContext.clearCache.md)
+[clearCache()](./IChocolateLibrary.clearCache.md)
 
 </td><td>
 
@@ -301,7 +301,7 @@ Clears all cached runtime objects.
 </td></tr>
 <tr><td>
 
-[warmUp()](./ILibraryRuntimeContext.warmUp.md)
+[warmUp()](./IChocolateLibrary.warmUp.md)
 
 </td><td>
 

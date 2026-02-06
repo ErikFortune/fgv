@@ -2,7 +2,7 @@
 
 ## ChocolateLibrary.create() method
 
-Creates a LibraryRuntimeContext with a new or default ChocolateEntityLibrary.
+Creates a ChocolateLibrary with a new or default ChocolateEntityLibrary.
 This is the primary factory method for most use cases.
 
 **Signature:**
@@ -22,4 +22,4 @@ static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
 
 Result&lt;[ChocolateLibrary](../../classes/ChocolateLibrary.md)&gt;
 
-Success with LibraryRuntimeContext, or Failure if library creation fails
+Success with ChocolateLibrary, or Failure if library creation fails
