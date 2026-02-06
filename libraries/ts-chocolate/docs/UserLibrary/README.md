@@ -6,6 +6,29 @@ User library runtime packlet.
 
 Provides runtime materialization of user library data (sessions, journals).
 
+## Namespaces
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[Session](./Session/README.md)
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
+
 ## Classes
 
 <table><thead><tr><th>

@@ -19,17 +19,9 @@
 // SOFTWARE.
 
 /**
- * Browser entry point for \@fgv/ts-chocolate library.
- * Excludes Node.js-specific exports (nodeCryptoProvider).
+ * Main exports for \@fgv/ts-chocolate library
  * @packageDocumentation
  */
-
-// ============================================================================
-// PRIMARY EXPORTS - Classes developers use directly
-// ============================================================================
-
-// Main library entry point
-export { ChocolateEntityLibrary as ChocolateEntityLibrary } from './packlets/library-runtime';
 
 // Workspace - primary application entry point
 export {
@@ -38,47 +30,18 @@ export {
   IWorkspaceCreateParams,
   IWorkspaceFactoryParams,
   WorkspaceState,
-  // Platform init types (for browser implementations in chocolate-ui)
-  type IResolvedExternalLibrary,
-  type IPlatformInitResult,
-  type IPlatformInitOptions,
-  type IPlatformInitializer,
-  type ICommonWorkspaceInitParams,
-  toLibraryFileSources,
-  toUserLibrarySource,
-  createWorkspaceFromPlatform
+  createNodeWorkspace
 } from './packlets/workspace';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific factory
-export { createBrowserWorkspace } from './packlets/workspace/browserFactory';
 
 // All branded types and common utilities
 export * from './packlets/common';
 
-// ============================================================================
-// NAMESPACE EXPORTS
-// ============================================================================
-
-// Data layer - models, converters, collections, libraries
-import * as Entities from './packlets/entities';
-export { Entities };
-
-// Library runtime - materialized projections of library entities
-import * as LibraryRuntime from './packlets/library-runtime';
-export { LibraryRuntime };
-
-// Runtime - session infrastructure and editing capabilities
-import * as Runtime from './packlets/runtime';
-export { Runtime };
-
-// Note: Converters is exported via 'export * from ./packlets/common'
-// Entity-specific converters are accessible via Entities.Fillings.Converters, etc.
-
-// ============================================================================
-// SUPPORTING NAMESPACES
-// ============================================================================
-
-import * as LibraryData from './packlets/library-data';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
+import * as Entities from './packlets/entities';
+import * as LibraryData from './packlets/library-data';
+import * as LibraryRuntime from './packlets/library-runtime';
+import * as UserEntities from './packlets/user-entities';
+import * as UserLibrary from './packlets/user-library';
 
-export { LibraryData, BuiltIn, Editing };
+export { BuiltIn, Editing, Entities, LibraryData, LibraryRuntime, UserEntities, UserLibrary };

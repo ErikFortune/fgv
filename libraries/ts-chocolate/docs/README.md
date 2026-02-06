@@ -65,17 +65,6 @@ and rich query capabilities.
 </td></tr>
 <tr><td>
 
-[Runtime](./Runtime/README.md)
-
-</td><td>
-
-Runtime packlet - DEPRECATED
-
-This packlet is deprecated.
-
-</td></tr>
-<tr><td>
-
 [UserEntities](./UserEntities/README.md)
 
 </td><td>

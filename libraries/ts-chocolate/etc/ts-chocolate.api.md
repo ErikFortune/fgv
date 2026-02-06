@@ -6149,13 +6149,6 @@ class RolledTruffleRecipeVariation extends ConfectionRecipeVariationBase<IRolled
 // @public
 const rolledTruffleRecipeVariationEntity: Converter<IRolledTruffleRecipeVariationEntity>;
 
-declare namespace Runtime {
-    export {
-        Session_2 as Session
-    }
-}
-export { Runtime }
-
 // @internal
 class RuntimeReverseIndex {
     constructor(library: ChocolateEntityLibrary);
