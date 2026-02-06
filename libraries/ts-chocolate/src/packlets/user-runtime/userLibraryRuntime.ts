@@ -68,7 +68,7 @@ import {
  * @public
  */
 export class UserLibraryRuntime implements IUserLibraryRuntime {
-  private readonly _userLibrary: IUserEntityLibrary;
+  private readonly _entities: IUserEntityLibrary;
   private readonly _sessionContext: ISessionContext;
 
   // Lazy-initialized MaterializedLibrary instances
@@ -95,23 +95,23 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
       >
     | undefined;
 
-  private constructor(userLibrary: IUserEntityLibrary, sessionContext: ISessionContext) {
-    this._userLibrary = userLibrary;
+  private constructor(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext) {
+    this._entities = userEntityLibrary;
     this._sessionContext = sessionContext;
   }
 
   /**
    * Creates a new UserLibraryRuntime.
-   * @param userLibrary - The user library containing persisted data
+   * @param userEntityLibrary - The user library containing persisted data
    * @param sessionContext - The session context for materializing recipes and confections
    * @returns Result with the UserLibraryRuntime
    * @public
    */
   public static create(
-    userLibrary: IUserEntityLibrary,
+    userEntityLibrary: IUserEntityLibrary,
     sessionContext: ISessionContext
   ): Result<UserLibraryRuntime> {
-    return succeed(new UserLibraryRuntime(userLibrary, sessionContext));
+    return succeed(new UserLibraryRuntime(userEntityLibrary, sessionContext));
   }
 
   // ============================================================================
@@ -202,7 +202,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     }
 
     // Get the existing persisted session
-    const existingResult = this._userLibrary.sessions.get(sessionId);
+    const existingResult = this._entities.sessions.get(sessionId);
     if (existingResult.isFailure()) {
       return fail(`Session ${sessionId} not found: ${existingResult.message}`);
     }
@@ -222,7 +222,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
         notes: existing.notes ? [...existing.notes] : undefined
       })
       .onSuccess((persisted) => {
-        return this._userLibrary.sessions.upsertSession(collectionId, persisted).onSuccess(() => {
+        return this._entities.sessions.upsertSession(collectionId, persisted).onSuccess(() => {
           return succeed(persisted as AnySessionEntity);
         });
       });
@@ -239,7 +239,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _getSessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never> {
     if (!this._sessions) {
       this._sessions = new MaterializedLibrary({
-        inner: this._userLibrary.sessions,
+        inner: this._entities.sessions,
         converter: (entity, id) => this._materializeSession(id, entity)
       });
     }
@@ -253,7 +253,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   private _getJournals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never> {
     if (!this._journals) {
       this._journals = new MaterializedLibrary({
-        inner: this._userLibrary.journals,
+        inner: this._entities.journals,
         converter: (entity, id) => createJournalEntry(this._sessionContext, id, entity)
       });
     }
@@ -272,7 +272,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   > {
     if (!this._moldInventory) {
       this._moldInventory = new MaterializedLibrary({
-        inner: this._userLibrary.moldInventory,
+        inner: this._entities.moldInventory,
         converter: (entity, id) => MoldInventoryEntry.create(this._sessionContext, id, entity)
       });
     }
@@ -291,7 +291,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   > {
     if (!this._ingredientInventory) {
       this._ingredientInventory = new MaterializedLibrary({
-        inner: this._userLibrary.ingredientInventory,
+        inner: this._entities.ingredientInventory,
         converter: (entity, id) => IngredientInventoryEntry.create(this._sessionContext, id, entity)
       });
     }

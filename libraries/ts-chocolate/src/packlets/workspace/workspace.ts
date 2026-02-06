@@ -54,8 +54,8 @@ import {
  * @public
  */
 export class Workspace implements IWorkspace {
-  private readonly _data: RuntimeContext;
-  private readonly _userLibrary: UserEntityLibrary;
+  private readonly _library: RuntimeContext;
+  private readonly _userEntities: UserEntityLibrary;
   private readonly _keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
   private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
@@ -67,14 +67,14 @@ export class Workspace implements IWorkspace {
    */
   private constructor(
     runtime: RuntimeContext,
-    userLibrary: UserEntityLibrary,
+    userEntityLibrary: UserEntityLibrary,
     keyStore: CryptoUtils.KeyStore.KeyStore | undefined,
     cryptoProvider: CryptoUtils.ICryptoProvider | undefined,
     settings: ISettingsManager | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
-    this._data = runtime;
-    this._userLibrary = userLibrary;
+    this._library = runtime;
+    this._userEntities = userEntityLibrary;
     this._keyStore = keyStore;
     this._cryptoProvider = cryptoProvider;
     this._settings = settings;
@@ -252,7 +252,7 @@ export class Workspace implements IWorkspace {
    * {@inheritDoc IWorkspace.data}
    */
   public get data(): RuntimeContext {
-    return this._data;
+    return this._library;
   }
 
   /**
@@ -261,7 +261,7 @@ export class Workspace implements IWorkspace {
   public get userData(): IUserLibraryRuntime {
     if (this._userData === undefined) {
       // Lazily create the user runtime on first access
-      this._userData = UserLibraryRuntime.create(this._userLibrary, this._data).orThrow();
+      this._userData = UserLibraryRuntime.create(this._userEntities, this._library).orThrow();
     }
     return this._userData;
   }
@@ -373,7 +373,7 @@ export class Workspace implements IWorkspace {
     };
 
     // Load protected collections from each sub-library
-    const library = this._data.entities;
+    const library = this._library.entities;
 
     // Load ingredients
     const ingredientsResult = await library.ingredients.loadProtectedCollectionAsync(encryption);
@@ -412,12 +412,12 @@ export class Workspace implements IWorkspace {
     }
 
     // Load journals (user library)
-    const journalsResult = await this._userLibrary.journals.loadProtectedCollectionAsync(encryption);
+    const journalsResult = await this._userEntities.journals.loadProtectedCollectionAsync(encryption);
     if (journalsResult.isSuccess()) {
       this._logger.info(`Loaded ${journalsResult.value.length} protected journal collection(s)`);
     }
 
     // Clear runtime cache so new items are visible
-    this._data.clearCache();
+    this._library.clearCache();
   }
 }

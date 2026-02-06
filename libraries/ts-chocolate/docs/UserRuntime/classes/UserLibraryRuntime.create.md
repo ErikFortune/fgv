@@ -7,14 +7,14 @@ Creates a new UserLibraryRuntime.
 **Signature:**
 
 ```typescript
-static create(userLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
+static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>userLibrary</td><td>IUserEntityLibrary</td><td>The user library containing persisted data</td></tr>
+<tr><td>userEntityLibrary</td><td>IUserEntityLibrary</td><td>The user library containing persisted data</td></tr>
 <tr><td>sessionContext</td><td>ISessionContext</td><td>The session context for materializing recipes and confections</td></tr>
 </tbody></table>
 

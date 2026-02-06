@@ -119,7 +119,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(userLibrary, sessionContext)](./UserLibraryRuntime.create.md)
+[create(userEntityLibrary, sessionContext)](./UserLibraryRuntime.create.md)
 
 </td><td>
 

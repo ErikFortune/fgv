@@ -6688,7 +6688,7 @@ class UserEntityLibrary implements IUserEntityLibrary {
 
 // @public
 class UserLibraryRuntime implements IUserLibraryRuntime {
-    static create(userLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
+    static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)
