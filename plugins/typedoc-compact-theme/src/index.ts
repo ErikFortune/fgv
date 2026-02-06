@@ -74,10 +74,11 @@ class CompactMarkdownRenderer {
    * Render the entire project.
    */
   public renderProject(project: ProjectReflection): void {
-    // Ensure output directory exists
-    if (!fs.existsSync(this._outputDir)) {
-      fs.mkdirSync(this._outputDir, { recursive: true });
+    // Clear and recreate output directory to remove stale files
+    if (fs.existsSync(this._outputDir)) {
+      fs.rmSync(this._outputDir, { recursive: true });
     }
+    fs.mkdirSync(this._outputDir, { recursive: true });
 
     // First pass: build URL map for all types
     this._buildUrlMap(project, '');
