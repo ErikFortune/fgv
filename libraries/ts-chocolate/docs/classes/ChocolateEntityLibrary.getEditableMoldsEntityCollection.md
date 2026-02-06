@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableMolds
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableMoldsEntityCollection
 
-## ChocolateEntityLibrary.getEditableMolds() method
+## ChocolateEntityLibrary.getEditableMoldsEntityCollection() method
 
 Get an editable molds collection with persistence enabled.
 
 **Signature:**
 
 ```typescript
-getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+getEditableMoldsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
 ```
 
 **Parameters:**

@@ -32,7 +32,7 @@
  */
 
 // Core library
-export * from './chocolateLibrary';
+export * from './chocolateEntityLibrary';
 
 // Runtime model types
 export * from './model';

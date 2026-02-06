@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableFillings
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableFillingsRecipeEntityCollection
 
-## ChocolateEntityLibrary.getEditableFillings() method
+## ChocolateEntityLibrary.getEditableFillingsRecipeEntityCollection() method
 
 Get an editable fillings collection with persistence enabled.
 
 **Signature:**
 
 ```typescript
-getEditableFillings(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
+getEditableFillingsRecipeEntityCollection(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
 ```
 
 **Parameters:**

@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableProcedures
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableProceduresEntityCollection
 
-## ChocolateEntityLibrary.getEditableProcedures() method
+## ChocolateEntityLibrary.getEditableProceduresEntityCollection() method
 
 Get an editable procedures collection with persistence enabled.
 
 **Signature:**
 
 ```typescript
-getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
+getEditableProceduresEntityCollection(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
 ```
 
 **Parameters:**

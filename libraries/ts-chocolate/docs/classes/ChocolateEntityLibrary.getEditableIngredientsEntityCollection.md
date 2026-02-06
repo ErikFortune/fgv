@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableIngredients
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableIngredientsEntityCollection
 
-## ChocolateEntityLibrary.getEditableIngredients() method
+## ChocolateEntityLibrary.getEditableIngredientsEntityCollection() method
 
 Get an editable ingredients collection with persistence enabled.
 
 **Signature:**
 
 ```typescript
-getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
+getEditableIngredientsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
 ```
 
 **Parameters:**

@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableTasks
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableTasksEntityCollection
 
-## ChocolateEntityLibrary.getEditableTasks() method
+## ChocolateEntityLibrary.getEditableTasksEntityCollection() method
 
 Get an editable tasks collection with persistence enabled.
 
 **Signature:**
 
 ```typescript
-getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
+getEditableTasksEntityCollection(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
 ```
 
 **Parameters:**

@@ -25,7 +25,7 @@
 
 import { Logging, Result, Success } from '@fgv/ts-utils';
 import { IIndexer } from './model';
-import { ChocolateEntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateEntityLibrary';
 
 /**
  * Abstract base class for indexers providing common functionality.

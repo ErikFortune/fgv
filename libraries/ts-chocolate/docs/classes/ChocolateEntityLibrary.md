@@ -181,7 +181,7 @@ Creates a new LibraryRuntime.ChocolateLibrary | ChocolateLibrary instance.
 </td></tr>
 <tr><td>
 
-[getEditableIngredients(collectionId)](./ChocolateEntityLibrary.getEditableIngredients.md)
+[getEditableIngredientsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableIngredientsEntityCollection.md)
 
 </td><td>
 
@@ -194,7 +194,7 @@ Get an editable ingredients collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableFillings(collectionId)](./ChocolateEntityLibrary.getEditableFillings.md)
+[getEditableFillingsRecipeEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableFillingsRecipeEntityCollection.md)
 
 </td><td>
 
@@ -207,7 +207,7 @@ Get an editable fillings collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableMolds(collectionId)](./ChocolateEntityLibrary.getEditableMolds.md)
+[getEditableMoldsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableMoldsEntityCollection.md)
 
 </td><td>
 
@@ -220,7 +220,7 @@ Get an editable molds collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableProcedures(collectionId)](./ChocolateEntityLibrary.getEditableProcedures.md)
+[getEditableProceduresEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableProceduresEntityCollection.md)
 
 </td><td>
 
@@ -233,7 +233,7 @@ Get an editable procedures collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableTasks(collectionId)](./ChocolateEntityLibrary.getEditableTasks.md)
+[getEditableTasksEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableTasksEntityCollection.md)
 
 </td><td>
 
@@ -246,7 +246,7 @@ Get an editable tasks collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableConfections(collectionId)](./ChocolateEntityLibrary.getEditableConfections.md)
+[getEditableConfectionsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableConfectionsEntityCollection.md)
 
 </td><td>
 

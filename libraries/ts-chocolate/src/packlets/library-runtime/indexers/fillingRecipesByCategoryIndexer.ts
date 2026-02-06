@@ -26,7 +26,7 @@
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { FillingId } from '../../common';
 import { Fillings, FillingCategory } from '../../entities';
-import { ChocolateEntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateEntityLibrary';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================

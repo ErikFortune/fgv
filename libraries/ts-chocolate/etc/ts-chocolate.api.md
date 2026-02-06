@@ -564,12 +564,12 @@ export class ChocolateEntityLibrary {
     static create(params?: IEntityLibraryCreateParams): Result<ChocolateEntityLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
-    getEditableConfections(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
-    getEditableFillings(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
-    getEditableIngredients(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
-    getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
-    getEditableProcedures(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
-    getEditableTasks(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
+    getEditableConfectionsEntityCollection(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
+    getEditableFillingsRecipeEntityCollection(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
+    getEditableIngredientsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
+    getEditableMoldsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+    getEditableProceduresEntityCollection(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
+    getEditableTasksEntityCollection(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
     readonly logger: Logging.LogReporter<unknown>;

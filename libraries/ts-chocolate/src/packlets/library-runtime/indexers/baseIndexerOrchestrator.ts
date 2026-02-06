@@ -25,7 +25,7 @@
 
 import { Failure, Logging, Result, Success } from '@fgv/ts-utils';
 import { IEntityResolver } from './model';
-import { ChocolateEntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateEntityLibrary';
 
 /**
  * Base class for index orchestrators that provides common

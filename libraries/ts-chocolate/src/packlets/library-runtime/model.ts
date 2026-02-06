@@ -86,7 +86,7 @@ import {
   IProcedureEntity,
   IRawTaskEntity
 } from '../entities';
-import { ChocolateEntityLibrary } from './chocolateLibrary';
+import { ChocolateEntityLibrary } from './chocolateEntityLibrary';
 
 // ============================================================================
 // Runtime Ingredient Interfaces

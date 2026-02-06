@@ -36,7 +36,7 @@ import {
 } from '../entities';
 import { AnyConfection, Confection } from './confections';
 import { IWeightCalculationContext } from './internal';
-import { ChocolateEntityLibrary, IEntityLibraryCreateParams } from './chocolateLibrary';
+import { ChocolateEntityLibrary, IEntityLibraryCreateParams } from './chocolateEntityLibrary';
 import {
   IConfectionContext,
   IIngredientContext,

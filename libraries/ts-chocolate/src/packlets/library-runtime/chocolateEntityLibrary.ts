@@ -318,17 +318,13 @@ export class ChocolateEntityLibrary {
     return this._confections;
   }
 
-  // ============================================================================
-  // Editable Collection Convenience Methods
-  // ============================================================================
-
   /**
    * Get an editable ingredients collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableIngredients(
+  public getEditableIngredientsEntityCollection(
     collectionId: CollectionId
   ): Result<EditableCollection<IngredientEntity, BaseIngredientId>> {
     return EditableCollection.fromLibrary(
@@ -345,7 +341,7 @@ export class ChocolateEntityLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableFillings(
+  public getEditableFillingsRecipeEntityCollection(
     collectionId: CollectionId
   ): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>> {
     return EditableCollection.fromLibrary(
@@ -362,7 +358,9 @@ export class ChocolateEntityLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableMolds(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>> {
+  public getEditableMoldsEntityCollection(
+    collectionId: CollectionId
+  ): Result<EditableCollection<IMoldEntity, BaseMoldId>> {
     return EditableCollection.fromLibrary(
       this.molds,
       collectionId,
@@ -377,7 +375,7 @@ export class ChocolateEntityLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableProcedures(
+  public getEditableProceduresEntityCollection(
     collectionId: CollectionId
   ): Result<EditableCollection<IProcedureEntity, BaseProcedureId>> {
     return EditableCollection.fromLibrary(
@@ -394,7 +392,7 @@ export class ChocolateEntityLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableTasks(
+  public getEditableTasksEntityCollection(
     collectionId: CollectionId
   ): Result<EditableCollection<IRawTaskEntity, BaseTaskId>> {
     return EditableCollection.fromLibrary(
@@ -411,7 +409,7 @@ export class ChocolateEntityLibrary {
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
-  public getEditableConfections(
+  public getEditableConfectionsEntityCollection(
     collectionId: CollectionId
   ): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>> {
     return EditableCollection.fromLibrary(

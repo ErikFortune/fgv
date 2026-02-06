@@ -25,7 +25,7 @@
 
 import { ChocolateType, Helpers, IngredientId, FillingId } from '../common';
 import { Ingredients } from '../entities';
-import { ChocolateEntityLibrary } from './chocolateLibrary';
+import { ChocolateEntityLibrary } from './chocolateEntityLibrary';
 import { IIngredientUsageInfo } from './model';
 
 // ============================================================================

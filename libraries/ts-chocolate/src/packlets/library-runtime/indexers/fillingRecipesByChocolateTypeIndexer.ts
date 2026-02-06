@@ -26,7 +26,7 @@
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { ChocolateType, Converters as ChocolateConverters, FillingId, Helpers } from '../../common';
 import { Ingredients } from '../../entities';
-import { ChocolateEntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateEntityLibrary';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================

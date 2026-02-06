@@ -1,13 +1,13 @@
-[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableConfections
+[Home](../README.md) > [ChocolateEntityLibrary](./ChocolateEntityLibrary.md) > getEditableConfectionsEntityCollection
 
-## ChocolateEntityLibrary.getEditableConfections() method
+## ChocolateEntityLibrary.getEditableConfectionsEntityCollection() method
 
 Get an editable confections collection with persistence enabled.
 
 **Signature:**
 
 ```typescript
-getEditableConfections(collectionId: CollectionId): Result<EditableCollection<AnyConfectionRecipeEntity, BaseConfectionId>>;
+getEditableConfectionsEntityCollection(collectionId: CollectionId): Result<EditableCollection<AnyConfectionRecipeEntity, BaseConfectionId>>;
 ```
 
 **Parameters:**

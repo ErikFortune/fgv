@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { FillingId } from '../../common';
-import { ChocolateEntityLibrary } from '../chocolateLibrary';
+import { ChocolateEntityLibrary } from '../chocolateEntityLibrary';
 import { FillingRecipe } from '../fillings/fillingRecipe';
 import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 import { AggregationMode, IFindOptions } from './model';
