@@ -2,7 +2,7 @@
 
 ## FillingRecipeQuery.withIngredient() method
 
-Filter to recipes using a specific ingredient (any version, as primary).
+Filter to recipes using a specific ingredient (any variation, as primary).
 
 **Signature:**
 

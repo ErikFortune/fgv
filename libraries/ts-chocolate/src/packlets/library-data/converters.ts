@@ -68,16 +68,13 @@ export const removeJsonExtension: Converter<string> = removeExtension(['.json'])
  * @public
  */
 export const collectionSourceMetadata: Converter<ICollectionSourceMetadata> =
-  Converters.object<ICollectionSourceMetadata>(
-    {
-      secretName: Converters.string,
-      name: Converters.string,
-      description: Converters.string,
-      version: Converters.string,
-      tags: Converters.arrayOf(Converters.string)
-    },
-    { optionalFields: ['secretName', 'name', 'description', 'version', 'tags'] }
-  );
+  Converters.object<ICollectionSourceMetadata>({
+    secretName: Converters.string.optional(),
+    name: Converters.string.optional(),
+    description: Converters.string.optional(),
+    variation: Converters.string.optional(),
+    tags: Converters.arrayOf(Converters.string).optional()
+  });
 
 /**
  * Creates a converter for collection source files with the new format.
@@ -88,13 +85,10 @@ export const collectionSourceMetadata: Converter<ICollectionSourceMetadata> =
 export function collectionSourceFile<T>(
   itemConverter: Converter<T> | Validator<T>
 ): Converter<ICollectionSourceFile<T>> {
-  return Converters.object<ICollectionSourceFile<T>>(
-    {
-      metadata: collectionSourceMetadata,
-      items: Converters.recordOf(itemConverter)
-    },
-    { optionalFields: ['metadata'] }
-  );
+  return Converters.object<ICollectionSourceFile<T>>({
+    metadata: collectionSourceMetadata.optional(),
+    items: Converters.recordOf(itemConverter)
+  });
 }
 
 /**
@@ -117,15 +111,12 @@ export interface ICollectionConverterParams<TCOLLECTIONID extends string, TITEMI
 export function collection<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
   params: ICollectionConverterParams<TCOLLECTIONID, TITEMID, TITEM>
 ): Converter<ICollection<TITEM, TCOLLECTIONID, TITEMID>> {
-  return Converters.object<ICollection<TITEM, TCOLLECTIONID, TITEMID>>(
-    {
-      id: params.collectionIdConverter,
-      isMutable: Converters.boolean,
-      items: Converters.recordOf(params.itemConverter, { keyConverter: params.itemIdConverter }),
-      metadata: collectionSourceMetadata
-    },
-    { optionalFields: ['metadata'] }
-  );
+  return Converters.object<ICollection<TITEM, TCOLLECTIONID, TITEMID>>({
+    id: params.collectionIdConverter,
+    isMutable: Converters.boolean,
+    items: Converters.recordOf(params.itemConverter, { keyConverter: params.itemIdConverter }),
+    metadata: collectionSourceMetadata.optional()
+  });
 }
 
 // ============================================================================
@@ -137,16 +128,11 @@ export function collection<TCOLLECTIONID extends string, TITEMID extends string,
  * @public
  */
 export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata> =
-  Converters.object<IEncryptedCollectionMetadata>(
-    {
-      collectionId: Converters.string,
-      description: Converters.string,
-      itemCount: Converters.number
-    },
-    {
-      optionalFields: ['collectionId', 'description', 'itemCount']
-    }
-  );
+  Converters.object<IEncryptedCollectionMetadata>({
+    collectionId: Converters.string.optional(),
+    description: Converters.string.optional(),
+    itemCount: Converters.number.optional()
+  });
 
 /**
  * Converter for {@link LibraryData.EncryptedCollectionFile | encrypted collection files}.

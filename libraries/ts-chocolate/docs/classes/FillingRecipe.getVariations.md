@@ -8,11 +8,11 @@ Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-getVariations(): Result<readonly FillingRecipeVersion[]>;
+getVariations(): Result<readonly FillingRecipeVariation[]>;
 ```
 
 **Returns:**
 
-Result&lt;readonly [FillingRecipeVersion](FillingRecipeVersion.md)[]&gt;
+Result&lt;readonly [FillingRecipeVariation](FillingRecipeVariation.md)[]&gt;
 
 Result with all variations, or Failure if any variation creation fails

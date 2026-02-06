@@ -2,7 +2,7 @@
 
 ## EditingSession.saveAsAlternatives() method
 
-Saves by adding ingredients as alternatives to existing version.
+Saves by adding ingredients as alternatives to existing variation.
 Requires that the collection is mutable and ingredients changed.
 
 **Signature:**
@@ -15,7 +15,7 @@ saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>options</td><td>ISaveAlternativesOptions</td><td>Save options including version spec</td></tr>
+<tr><td>options</td><td>ISaveAlternativesOptions</td><td>Save options including variation spec</td></tr>
 </tbody></table>
 
 **Returns:**

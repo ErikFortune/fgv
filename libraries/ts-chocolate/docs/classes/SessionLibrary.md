@@ -10,9 +10,9 @@ cross-collection indexing for efficient queries by filling/confection and status
 Provides:
 - Multi-collection storage with FileTree persistence
 - Cross-collection lookup by filling ID (all sessions for a filling)
-- Cross-collection lookup by filling version ID (all sessions for a specific version)
+- Cross-collection lookup by filling variation ID (all sessions for a specific variation)
 - Cross-collection lookup by confection ID (all sessions for a confection)
-- Cross-collection lookup by confection version ID (all sessions for a specific version)
+- Cross-collection lookup by confection variation ID (all sessions for a specific variation)
 - Cross-collection lookup by status (active, planning, etc.)
 - Lazy index rebuilding for efficient queries
 
@@ -177,12 +177,12 @@ Creates a SessionLibrary instance asynchronously with encrypted file support.
 
 </td><td>
 
-Gets all filling sessions for a filling (across all versions and collections)
+Gets all filling sessions for a filling (across all variations and collections)
 
 </td></tr>
 <tr><td>
 
-[getSessionsForFillingVersion(versionId)](./SessionLibrary.getSessionsForFillingVersion.md)
+[getSessionsForFillingRecipeVariation(variationId)](./SessionLibrary.getSessionsForFillingRecipeVariation.md)
 
 </td><td>
 
@@ -190,7 +190,7 @@ Gets all filling sessions for a filling (across all versions and collections)
 
 </td><td>
 
-Gets all filling sessions for a specific filling version (across all collections)
+Gets all filling sessions for a specific filling variation (across all collections)
 
 </td></tr>
 <tr><td>
@@ -203,12 +203,12 @@ Gets all filling sessions for a specific filling version (across all collections
 
 </td><td>
 
-Gets all confection sessions for a confection (across all versions and collections)
+Gets all confection sessions for a confection (across all variations and collections)
 
 </td></tr>
 <tr><td>
 
-[getSessionsForConfectionVersion(versionId)](./SessionLibrary.getSessionsForConfectionVersion.md)
+[getSessionsForConfectionRecipeVariation(variationId)](./SessionLibrary.getSessionsForConfectionRecipeVariation.md)
 
 </td><td>
 
@@ -216,7 +216,7 @@ Gets all confection sessions for a confection (across all versions and collectio
 
 </td><td>
 
-Gets all confection sessions for a specific confection version (across all collections)
+Gets all confection sessions for a specific confection variation (across all collections)
 
 </td></tr>
 <tr><td>

@@ -77,7 +77,7 @@ Timestamp when this entry was created (ISO 8601 format)
 </td></tr>
 <tr><td>
 
-[versionId](./IJournalEntryBase.versionId.md)
+[variationId](./IJournalEntryBase.variationId.md)
 
 </td><td>
 
@@ -85,11 +85,11 @@ Timestamp when this entry was created (ISO 8601 format)
 
 </td><td>
 
-TVersionId
+TVariationId
 
 </td><td>
 
-Source version ID for indexing and lookup
+Source variation ID for indexing and lookup
 
 </td></tr>
 <tr><td>
@@ -111,7 +111,7 @@ Resolved source recipe/confection
 </td></tr>
 <tr><td>
 
-[version](./IJournalEntryBase.version.md)
+[variation](./IJournalEntryBase.variation.md)
 
 </td><td>
 
@@ -119,11 +119,11 @@ Resolved source recipe/confection
 
 </td><td>
 
-TVersion
+TVariation
 
 </td><td>
 
-Resolved source version
+Resolved source variation
 
 </td></tr>
 <tr><td>
@@ -136,11 +136,11 @@ Resolved source version
 
 </td><td>
 
-TVersion
+TVariation
 
 </td><td>
 
-Resolved updated version if modifications were made
+Resolved updated variation if modifications were made
 
 </td></tr>
 <tr><td>
@@ -153,11 +153,11 @@ Resolved updated version if modifications were made
 
 </td><td>
 
-TVersionId
+TVariationId
 
 </td><td>
 
-ID of the updated version if it was saved
+ID of the updated variation if it was saved
 
 </td></tr>
 <tr><td>

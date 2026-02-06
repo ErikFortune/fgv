@@ -2,7 +2,7 @@
 
 ## UserLibraryRuntime.createFillingSession() method
 
-Creates a new persisted filling session from a filling version.
+Creates a new persisted filling session from a filling variation.
 The session is created and persisted immediately.
 
 **Signature:**
@@ -15,7 +15,7 @@ createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFill
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>variationId</td><td>FillingRecipeVariationId</td><td>Source filling version to create session for</td></tr>
+<tr><td>variationId</td><td>FillingRecipeVariationId</td><td>Source filling variation to create session for</td></tr>
 <tr><td>options</td><td>ICreateFillingSessionOptions</td><td>Creation options including target collection</td></tr>
 </tbody></table>
 

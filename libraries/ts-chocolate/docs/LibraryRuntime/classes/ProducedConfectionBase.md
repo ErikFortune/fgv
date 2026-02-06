@@ -44,7 +44,7 @@ Gets the current state as an immutable snapshot.
 </td></tr>
 <tr><td>
 
-[versionId](./ProducedConfectionBase.versionId.md)
+[variationId](./ProducedConfectionBase.variationId.md)
 
 </td><td>
 
@@ -56,7 +56,7 @@ Gets the current state as an immutable snapshot.
 
 </td><td>
 
-Gets the version ID.
+Gets the variation ID.
 
 </td></tr>
 <tr><td>

@@ -219,7 +219,7 @@ A resolved view of a recipe with navigation and variation access.
 </td></tr>
 <tr><td>
 
-[FillingRecipeVersion](./classes/FillingRecipeVersion.md)
+[FillingRecipeVariation](./classes/FillingRecipeVariation.md)
 
 </td><td>
 
@@ -273,7 +273,7 @@ Static factory for creating runtime confections.
 </td></tr>
 <tr><td>
 
-[ConfectionVersionBase](./classes/ConfectionVersionBase.md)
+[ConfectionRecipeVariationBase](./classes/ConfectionRecipeVariationBase.md)
 
 </td><td>
 
@@ -282,7 +282,7 @@ Abstract base class for runtime confection variations.
 </td></tr>
 <tr><td>
 
-[MoldedBonBonVersion](./classes/MoldedBonBonVersion.md)
+[MoldedBonBonRecipeVariation](./classes/MoldedBonBonRecipeVariation.md)
 
 </td><td>
 
@@ -291,7 +291,7 @@ A resolved view of a molded bonbon variation with all references resolved.
 </td></tr>
 <tr><td>
 
-[BarTruffleVersion](./classes/BarTruffleVersion.md)
+[BarTruffleRecipeVariation](./classes/BarTruffleRecipeVariation.md)
 
 </td><td>
 
@@ -300,7 +300,7 @@ A resolved view of a bar truffle recipe variation with all references resolved.
 </td></tr>
 <tr><td>
 
-[RolledTruffleVersion](./classes/RolledTruffleVersion.md)
+[RolledTruffleRecipeVariation](./classes/RolledTruffleRecipeVariation.md)
 
 </td><td>
 

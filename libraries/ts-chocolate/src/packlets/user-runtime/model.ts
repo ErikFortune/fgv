@@ -88,15 +88,15 @@ export interface ICreateFillingSessionOptions {
 /**
  * Base interface for materialized journal entries with resolved references.
  * @typeParam TRecipe - The recipe/confection interface type
- * @typeParam TVersion - The version interface type
- * @typeParam TVersionId - The version ID type
+ * @typeParam TVariation - The variation interface type
+ * @typeParam TVariationId - The variation ID type
  * @typeParam TEntity - The specific journal entry entity type
  * @public
  */
 export interface IJournalEntryBase<
   TRecipe,
-  TVersion,
-  TVersionId,
+  TVariation,
+  TVariationId,
   TEntity extends AnyJournalEntryEntity = AnyJournalEntryEntity
 > {
   /** Composite journal entry ID (collectionId.baseId) */
@@ -105,16 +105,16 @@ export interface IJournalEntryBase<
   readonly baseId: BaseJournalId;
   /** Timestamp when this entry was created (ISO 8601 format) */
   readonly timestamp: string;
-  /** Source version ID for indexing and lookup */
-  readonly versionId: TVersionId;
+  /** Source variation ID for indexing and lookup */
+  readonly variationId: TVariationId;
   /** Resolved source recipe/confection */
   readonly recipe: TRecipe;
-  /** Resolved source version */
-  readonly version: TVersion;
-  /** Resolved updated version if modifications were made */
-  readonly updated?: TVersion;
-  /** ID of the updated version if it was saved */
-  readonly updatedId?: TVersionId;
+  /** Resolved source variation */
+  readonly variation: TVariation;
+  /** Resolved updated variation if modifications were made */
+  readonly updated?: TVariation;
+  /** ID of the updated variation if it was saved */
+  readonly updatedId?: TVariationId;
   /** Optional categorized notes about this entry */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The underlying entity */
@@ -279,14 +279,14 @@ export interface IUserLibraryRuntime {
   >;
 
   /**
-   * Creates a new persisted filling session from a filling version.
+   * Creates a new persisted filling session from a filling variation.
    * The session is created and persisted immediately.
-   * @param versionId - Source filling version to create session for
+   * @param variationId - Source filling variation to create session for
    * @param options - Creation options including target collection
    * @returns Result with the created persisted session
    */
   createFillingSession(
-    versionId: FillingRecipeVariationId,
+    variationId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
   ): Result<IFillingSessionEntity>;
 

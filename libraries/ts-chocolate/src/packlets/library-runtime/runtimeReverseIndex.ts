@@ -220,9 +220,9 @@ export class RuntimeReverseIndex {
     const recipes = this._library.fillings;
 
     for (const [fillingId, recipe] of recipes.entries()) {
-      // Index ingredients from all versions
-      for (const version of recipe.variations) {
-        for (const ri of version.ingredients) {
+      // Index ingredients from all variations
+      for (const variation of recipe.variations) {
+        for (const ri of variation.ingredients) {
           // Index all ingredient IDs (primary and alternates)
           for (const id of ri.ingredient.ids) {
             this._addToIndex(this._ingredientToFillings, id, fillingId as FillingId);
@@ -242,9 +242,9 @@ export class RuntimeReverseIndex {
     const recipes = this._library.fillings;
 
     for (const [fillingId, recipe] of recipes.entries()) {
-      // Index ingredients from all versions
-      for (const version of recipe.variations) {
-        for (const ri of version.ingredients) {
+      // Index ingredients from all variations
+      for (const variation of recipe.variations) {
+        for (const ri of variation.ingredients) {
           // Get the primary ingredient ID (preferred or first)
           const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
 
@@ -304,12 +304,12 @@ export class RuntimeReverseIndex {
     const ingredients = this._library.ingredients;
 
     for (const [fillingId, recipe] of recipes.entries()) {
-      // Check golden version for chocolate types
-      const goldenVersion = recipe.variations.find((v) => v.variationSpec === recipe.goldenVariationSpec);
-      /* c8 ignore next - defensive: data validation ensures golden version exists */
-      if (!goldenVersion) continue;
+      // Check golden variation for chocolate types
+      const goldenVariation = recipe.variations.find((v) => v.variationSpec === recipe.goldenVariationSpec);
+      /* c8 ignore next - defensive: data validation ensures golden variation exists */
+      if (!goldenVariation) continue;
 
-      for (const ri of goldenVersion.ingredients) {
+      for (const ri of goldenVariation.ingredients) {
         const ingredientId = Helpers.getPreferredIdOrFirst(ri.ingredient);
         /* c8 ignore next - defensive: recipe ingredients always have at least one ID */
         if (ingredientId === undefined) continue;

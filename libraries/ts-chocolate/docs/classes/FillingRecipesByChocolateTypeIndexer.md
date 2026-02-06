@@ -3,7 +3,7 @@
 # Class: FillingRecipesByChocolateTypeIndexer
 
 Indexer that finds recipes containing a specific chocolate type.
-Only checks the golden version of each recipe.
+Only checks the golden variation of each recipe.
 
 **Extends:** [`BaseIndexer<FillingId, IFillingRecipesByChocolateTypeConfig>`](BaseIndexer.md)
 

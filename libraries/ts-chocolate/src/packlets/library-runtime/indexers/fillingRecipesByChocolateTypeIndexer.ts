@@ -65,7 +65,7 @@ export const fillingRecipesByChocolateTypeConfigConverter: Converter<IFillingRec
 
 /**
  * Indexer that finds recipes containing a specific chocolate type.
- * Only checks the golden version of each recipe.
+ * Only checks the golden variation of each recipe.
  *
  * @public
  */
@@ -91,15 +91,15 @@ export class FillingRecipesByChocolateTypeIndexer extends BaseIndexer<
     const ingredients = this.library.ingredients;
 
     for (const [recipeId, recipe] of recipes.entries()) {
-      // Check golden version for chocolate types
-      const goldenVersion = recipe.variations.find((v) => v.variationSpec === recipe.goldenVariationSpec);
-      /* c8 ignore next 4 - defensive: data validation ensures golden version exists */
-      if (!goldenVersion) {
-        this._logger.error(`Recipe ${recipeId} is missing golden version ${recipe.goldenVariationSpec}`);
+      // Check golden variation for chocolate types
+      const goldenVariation = recipe.variations.find((v) => v.variationSpec === recipe.goldenVariationSpec);
+      /* c8 ignore next 4 - defensive: data validation ensures golden variation exists */
+      if (!goldenVariation) {
+        this._logger.error(`Recipe ${recipeId} is missing golden variation ${recipe.goldenVariationSpec}`);
         continue;
       }
 
-      for (const ri of goldenVersion.ingredients) {
+      for (const ri of goldenVariation.ingredients) {
         const ingredientId = Helpers.getPreferredIdOrFirst(ri.ingredient);
         /* c8 ignore next - defensive: recipe ingredients always have at least one ID */
         if (ingredientId === undefined) continue;

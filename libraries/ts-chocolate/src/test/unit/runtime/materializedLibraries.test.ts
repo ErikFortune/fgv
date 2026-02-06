@@ -83,7 +83,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
   // ============================================================================
 
   describe('fillings library', () => {
-    test('get() returns materialized filling with versions', () => {
+    test('get() returns materialized filling with variations', () => {
       const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
 
       expect(result).toSucceedAndSatisfy((filling) => {
@@ -99,11 +99,11 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
 
       expect(result).toSucceedAndSatisfy((filling) => {
-        const version = filling.goldenVariation;
-        expect(version).toBeDefined();
+        const variation = filling.goldenVariation;
+        expect(variation).toBeDefined();
 
         // Ingredients should be materialized objects with methods
-        const ingredientsResult = version.getIngredients();
+        const ingredientsResult = variation.getIngredients();
         expect(ingredientsResult).toSucceedAndSatisfy((ingredients) => {
           const ingredientArray = Array.from(ingredients);
           expect(ingredientArray.length).toBeGreaterThan(0);
@@ -202,15 +202,15 @@ describe('MaterializedLibrary Functionality Tests', () => {
       });
     });
 
-    test('confection version has materialized molds (not just IDs)', () => {
+    test('confection variation has materialized molds (not just IDs)', () => {
       const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
 
       expect(result).toSucceedAndSatisfy((confection) => {
-        const version = confection.goldenVariation;
+        const variation = confection.goldenVariation;
 
         // For molded bonbons, molds should be materialized objects
-        if ('molds' in version) {
-          const molds = version.molds;
+        if ('molds' in variation) {
+          const molds = variation.molds;
           expect(molds.options.length).toBeGreaterThan(0);
 
           const firstMold = molds.options[0].mold;
@@ -221,15 +221,15 @@ describe('MaterializedLibrary Functionality Tests', () => {
       });
     });
 
-    test('confection version has materialized ingredients in chocolate specs (not just IDs)', () => {
+    test('confection variation has materialized ingredients in chocolate specs (not just IDs)', () => {
       const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
 
       expect(result).toSucceedAndSatisfy((confection) => {
-        const version = confection.goldenVariation;
+        const variation = confection.goldenVariation;
 
         // For molded bonbons, shell chocolate should have materialized ingredients
-        if ('shellChocolate' in version) {
-          const shellChocolate = version.shellChocolate;
+        if ('shellChocolate' in variation) {
+          const shellChocolate = variation.shellChocolate;
           expect(shellChocolate.chocolate).toBeDefined();
           expect(typeof shellChocolate.chocolate.isChocolate).toBe('function');
           expect(shellChocolate.chocolate.isChocolate()).toBe(true);
@@ -259,8 +259,8 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
 
       expect(result).toSucceedAndSatisfy((filling) => {
-        const version = filling.goldenVariation;
-        const procedures = version.procedures;
+        const variation = filling.goldenVariation;
+        const procedures = variation.procedures;
 
         if (procedures) {
           expect(procedures.procedures.length).toBeGreaterThan(0);
@@ -277,8 +277,8 @@ describe('MaterializedLibrary Functionality Tests', () => {
       const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
 
       expect(result).toSucceedAndSatisfy((confection) => {
-        const version = confection.goldenVariation;
-        const fillings = version.fillings;
+        const variation = confection.goldenVariation;
+        const fillings = variation.fillings;
 
         if (fillings && fillings.length > 0) {
           const firstSlot = fillings[0];

@@ -7,7 +7,7 @@ Gets a specific variation by ID.
 **Signature:**
 
 ```typescript
-getVariation(variationSpec: FillingRecipeVariationSpec): Result<FillingRecipeVersion>;
+getVariation(variationSpec: FillingRecipeVariationSpec): Result<FillingRecipeVariation>;
 ```
 
 **Parameters:**
@@ -19,6 +19,6 @@ getVariation(variationSpec: FillingRecipeVariationSpec): Result<FillingRecipeVer
 
 **Returns:**
 
-Result&lt;[FillingRecipeVersion](FillingRecipeVersion.md)&gt;
+Result&lt;[FillingRecipeVariation](FillingRecipeVariation.md)&gt;
 
 Success with FillingRecipeVariation, or Failure if not found

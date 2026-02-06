@@ -82,7 +82,7 @@ const validatedMetadataConverter: Converter<ICollectionSourceMetadata> =
     name: trimmedNonEmptyString(200, 'Collection name').optional(),
     description: maxLengthString(2000, 'Collection description').optional(),
     secretName: trimmedNonEmptyString(100, 'Secret name').optional(),
-    version: Converters.string.optional(),
+    variation: Converters.string.optional(),
     tags: Converters.arrayOf(Converters.string).optional()
   });
 

@@ -61,7 +61,7 @@ import {
 // ============================================================================
 
 /**
- * Materialized filling edit journal entry with resolved recipe/version references.
+ * Materialized filling edit journal entry with resolved recipe/variation references.
  * @internal
  */
 export class FillingEditJournalEntry
@@ -83,10 +83,10 @@ export class FillingEditJournalEntry
     baseId: BaseJournalId,
     entity: IFillingEditJournalEntryEntity,
     recipe: IFillingRecipe,
-    version: IFillingRecipeVariation,
+    variation: IFillingRecipeVariation,
     updated?: IFillingRecipeVariation
   ) {
-    super(context, id, baseId, entity, recipe, version, updated);
+    super(context, id, baseId, entity, recipe, variation, updated);
   }
 
   /**
@@ -129,7 +129,7 @@ export class FillingEditJournalEntry
 // ============================================================================
 
 /**
- * Materialized confection edit journal entry with resolved confection/version references.
+ * Materialized confection edit journal entry with resolved confection/variation references.
  * @internal
  */
 export class ConfectionEditJournalEntry
@@ -151,10 +151,10 @@ export class ConfectionEditJournalEntry
     baseId: BaseJournalId,
     entity: IConfectionEditJournalEntryEntity,
     confection: IConfectionBase,
-    version: IConfectionRecipeVariationBase,
+    variation: IConfectionRecipeVariationBase,
     updated?: IConfectionRecipeVariationBase
   ) {
-    super(context, id, baseId, entity, confection, version, updated);
+    super(context, id, baseId, entity, confection, variation, updated);
   }
 
   /**
@@ -182,11 +182,11 @@ export class ConfectionEditJournalEntry
             return confection
               .getVariation(parsed.itemId)
               .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-              .onSuccess((version) => {
-                // TODO: Materialize updated version if present
+              .onSuccess((variation) => {
+                // TODO: Materialize updated variation if present
                 const updated = undefined;
                 return succeed(
-                  new ConfectionEditJournalEntry(context, id, baseId, entity, confection, version, updated)
+                  new ConfectionEditJournalEntry(context, id, baseId, entity, confection, variation, updated)
                 );
               });
           });
@@ -199,7 +199,7 @@ export class ConfectionEditJournalEntry
 // ============================================================================
 
 /**
- * Materialized filling production journal entry with resolved recipe/version references.
+ * Materialized filling production journal entry with resolved recipe/variation references.
  * @internal
  */
 export class FillingProductionJournalEntry
@@ -221,10 +221,10 @@ export class FillingProductionJournalEntry
     baseId: BaseJournalId,
     entity: IFillingProductionJournalEntryEntity,
     recipe: IFillingRecipe,
-    version: IFillingRecipeVariation,
+    variation: IFillingRecipeVariation,
     updated?: IFillingRecipeVariation
   ) {
-    super(context, id, baseId, entity, recipe, version, updated);
+    super(context, id, baseId, entity, recipe, variation, updated);
   }
 
   /**
@@ -267,7 +267,7 @@ export class FillingProductionJournalEntry
 // ============================================================================
 
 /**
- * Materialized confection production journal entry with resolved confection/version references.
+ * Materialized confection production journal entry with resolved confection/variation references.
  * @internal
  */
 export class ConfectionProductionJournalEntry
@@ -289,10 +289,10 @@ export class ConfectionProductionJournalEntry
     baseId: BaseJournalId,
     entity: IConfectionProductionJournalEntryEntity,
     confection: IConfectionBase,
-    version: IConfectionRecipeVariationBase,
+    variation: IConfectionRecipeVariationBase,
     updated?: IConfectionRecipeVariationBase
   ) {
-    super(context, id, baseId, entity, confection, version, updated);
+    super(context, id, baseId, entity, confection, variation, updated);
   }
 
   /**
@@ -320,8 +320,8 @@ export class ConfectionProductionJournalEntry
             return confection
               .getVariation(parsed.itemId)
               .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-              .onSuccess((version) => {
-                // TODO: Materialize updated version if present
+              .onSuccess((variation) => {
+                // TODO: Materialize updated variation if present
                 const updated = undefined;
                 return succeed(
                   new ConfectionProductionJournalEntry(
@@ -330,7 +330,7 @@ export class ConfectionProductionJournalEntry
                     baseId,
                     entity,
                     confection,
-                    version,
+                    variation,
                     updated
                   )
                 );

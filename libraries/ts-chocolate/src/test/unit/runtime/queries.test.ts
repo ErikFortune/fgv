@@ -864,17 +864,17 @@ describe('Query Filters and Builders', () => {
       });
     });
 
-    describe('version filters', () => {
-      test('hasMultipleVersions() filters to multi-version recipes', () => {
+    describe('variation filters', () => {
+      test('hasMultipleVariations() filters to multi-variation recipes', () => {
         const query = new FillingRecipeQuery(ctx);
-        const results = query.hasMultipleVersions().execute();
+        const results = query.hasMultipleVariations().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');
       });
 
-      test('minVersions() filters by version count', () => {
+      test('minVariations() filters by variation count', () => {
         const query = new FillingRecipeQuery(ctx);
-        const results = query.minVersions(2).execute();
+        const results = query.minVariations(2).execute();
         expect(results.length).toBe(1);
       });
     });
@@ -929,7 +929,7 @@ describe('Query Filters and Builders', () => {
     describe('chained queries', () => {
       test('multiple filters combine with AND logic', () => {
         const query = new FillingRecipeQuery(ctx);
-        const results = query.withTag('classic').hasMultipleVersions().execute();
+        const results = query.withTag('classic').hasMultipleVariations().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');
       });

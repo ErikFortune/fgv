@@ -31,12 +31,7 @@ import { Result } from '@fgv/ts-utils';
 
 import { Measurement } from '../common';
 import type { EditingSession } from './session/editingSession';
-import {
-  AnyConfectionRecipeVariation,
-  IConfectionContext,
-  ILibraryRuntimeContext,
-  IFillingRecipe
-} from '../library-runtime';
+import { IConfectionContext, ILibraryRuntimeContext, IFillingRecipe } from '../library-runtime';
 
 // ============================================================================
 // Session Context Interface
@@ -97,6 +92,3 @@ export interface IRuntimeContext extends ILibraryRuntimeContext {
    */
   createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession>;
 }
-
-// Re-export confection version type for convenience
-export type { AnyConfectionRecipeVariation as AnyRuntimeConfectionVersion };

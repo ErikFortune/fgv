@@ -136,9 +136,9 @@ export class FillingRecipesByIngredientIndexer extends BaseIndexer<
     const recipes = this.library.fillings;
 
     for (const [recipeId, recipe] of recipes.entries()) {
-      // Index ingredients from all versions
-      for (const version of recipe.variations) {
-        for (const ri of version.ingredients) {
+      // Index ingredients from all variations
+      for (const variation of recipe.variations) {
+        for (const ri of variation.ingredients) {
           // Get primary ingredient ID (preferred or first)
           const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
 
@@ -194,7 +194,7 @@ export class FillingRecipesByIngredientIndexer extends BaseIndexer<
       this._ingredientUsage!.set(ingredientId, usage);
     }
     // Avoid duplicates for same recipe + same isPrimary
-    /* c8 ignore next 3 - defensive: duplicate prevention for multi-version recipes */
+    /* c8 ignore next 3 - defensive: duplicate prevention for multi-variation recipes */
     if (!usage.some((u) => u.fillingId === entry.fillingId && u.isPrimary === entry.isPrimary)) {
       usage.push(entry);
     }

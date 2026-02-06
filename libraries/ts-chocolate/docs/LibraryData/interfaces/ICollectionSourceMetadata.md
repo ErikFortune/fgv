@@ -78,7 +78,7 @@ Description of the collection's purpose/contents.
 </td></tr>
 <tr><td>
 
-[version](./ICollectionSourceMetadata.version.md)
+[variation](./ICollectionSourceMetadata.variation.md)
 
 </td><td>
 
@@ -90,7 +90,7 @@ string
 
 </td><td>
 
-Version identifier for the collection.
+Variation identifier for the collection.
 
 </td></tr>
 <tr><td>

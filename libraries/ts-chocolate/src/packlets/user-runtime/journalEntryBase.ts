@@ -35,21 +35,25 @@ import { IJournalEntryBase } from './model';
  * Provides common properties shared by all journal entry types.
  *
  * @typeParam TRecipe - The recipe/confection interface type
- * @typeParam TVersion - The version interface type
- * @typeParam TVersionId - The version ID type
+ * @typeParam TVariation - The variation interface type
+ * @typeParam TVariationId - The variation ID type
  * @typeParam TEntity - The specific journal entry entity type
  * @internal
  */
-export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity extends AnyJournalEntryEntity>
-  implements IJournalEntryBase<TRecipe, TVersion, TVersionId, TEntity>
+export abstract class JournalEntryBase<
+  TRecipe,
+  TVariation,
+  TVariationId,
+  TEntity extends AnyJournalEntryEntity
+> implements IJournalEntryBase<TRecipe, TVariation, TVariationId, TEntity>
 {
   protected readonly _context: ISessionContext;
   protected readonly _id: JournalId;
   protected readonly _baseId: BaseJournalId;
   protected readonly _entity: TEntity;
   protected readonly _recipe: TRecipe;
-  protected readonly _version: TVersion;
-  protected readonly _updated: TVersion | undefined;
+  protected readonly _variation: TVariation;
+  protected readonly _updated: TVariation | undefined;
 
   /**
    * Creates a JournalEntryBase.
@@ -58,8 +62,8 @@ export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity ex
    * @param baseId - Base ID within collection
    * @param entity - Journal entry entity
    * @param recipe - Resolved recipe/confection
-   * @param version - Resolved version
-   * @param updated - Resolved updated version (if any)
+   * @param variation - Resolved variation
+   * @param updated - Resolved updated variation (if any)
    * @internal
    */
   protected constructor(
@@ -68,15 +72,15 @@ export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity ex
     baseId: BaseJournalId,
     entity: TEntity,
     recipe: TRecipe,
-    version: TVersion,
-    updated?: TVersion
+    variation: TVariation,
+    updated?: TVariation
   ) {
     this._context = context;
     this._id = id;
     this._baseId = baseId;
     this._entity = entity;
     this._recipe = recipe;
-    this._version = version;
+    this._variation = variation;
     this._updated = updated;
   }
 
@@ -102,10 +106,10 @@ export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity ex
   }
 
   /**
-   * {@inheritDoc IJournalEntryBase.versionId}
+   * {@inheritDoc IJournalEntryBase.variationId}
    */
-  public get versionId(): TVersionId {
-    return this._entity.variationId as TVersionId;
+  public get variationId(): TVariationId {
+    return this._entity.variationId as TVariationId;
   }
 
   /**
@@ -116,24 +120,24 @@ export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity ex
   }
 
   /**
-   * {@inheritDoc IJournalEntryBase.version}
+   * {@inheritDoc IJournalEntryBase.variation}
    */
-  public get version(): TVersion {
-    return this._version;
+  public get variation(): TVariation {
+    return this._variation;
   }
 
   /**
    * {@inheritDoc IJournalEntryBase.updated}
    */
-  public get updated(): TVersion | undefined {
+  public get updated(): TVariation | undefined {
     return this._updated;
   }
 
   /**
    * {@inheritDoc IJournalEntryBase.updatedId}
    */
-  public get updatedId(): TVersionId | undefined {
-    return this._entity.updatedId as TVersionId | undefined;
+  public get updatedId(): TVariationId | undefined {
+    return this._entity.updatedId as TVariationId | undefined;
   }
 
   /**
@@ -152,7 +156,7 @@ export abstract class JournalEntryBase<TRecipe, TVersion, TVersionId, TEntity ex
 
   /**
    * Factory method to create a materialized journal entry from an entity.
-   * Resolves all recipe/confection/version references.
+   * Resolves all recipe/confection/variation references.
    * @param context - Session context for resolving references
    * @param id - Composite journal entry ID
    * @param entity - Journal entry entity to materialize

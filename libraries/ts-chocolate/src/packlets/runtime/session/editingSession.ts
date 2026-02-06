@@ -61,10 +61,10 @@ import {
 } from './sessionUtils';
 
 /**
- * A mutable editing session for modifying filling recipe versions.
+ * A mutable editing session for modifying filling recipe variations.
  *
  * Core architecture:
- * - Wraps an IRuntimeFillingRecipeVersion (immutable source)
+ * - Wraps an IRuntimeFillingRecipeVariation (immutable source)
  * - Uses RuntimeProducedFilling for mutable editing with undo/redo
  * - Tracks original snapshot for change detection
  * - Provides save operations that integrate with library
@@ -80,7 +80,7 @@ export class EditingSession {
   /**
    * Creates an EditingSession.
    * Use static factory method instead of calling this directly.
-   * @param baseRecipe - The base recipe version being edited
+   * @param baseRecipe - The base recipe variation being edited
    * @param produced - The RuntimeProducedFilling wrapper
    * @param sessionId - Optional session ID (generates new if not provided)
    * @param originalSnapshot - Optional original snapshot for restoration (uses current if not provided)
@@ -99,8 +99,8 @@ export class EditingSession {
   }
 
   /**
-   * Creates a new EditingSession from a base recipe version.
-   * @param baseRecipe - Source recipe version to edit
+   * Creates a new EditingSession from a base recipe variation.
+   * @param baseRecipe - Source recipe variation to edit
    * @param initialScale - Optional initial scale factor (default: 1.0)
    * @returns Result with new EditingSession or error
    * @public
@@ -255,16 +255,16 @@ export class EditingSession {
   // ============================================================================
 
   /**
-   * Saves as a new version of the original recipe.
+   * Saves as a new variation of the original recipe.
    * Requires that the collection is mutable.
-   * @param options - Save options including version spec and base weight
-   * @returns Result with save result containing journal entry and version spec
+   * @param options - Save options including variation spec and base weight
+   * @returns Result with save result containing journal entry and variation spec
    * @public
    */
   public saveAsNewVariation(options: ISaveVariationOptions): Result<ISaveResult> {
     const analysis = this.analyzeSaveOptions();
     if (!analysis.canCreateVariation) {
-      return fail('Cannot create new version: collection is immutable');
+      return fail('Cannot create new variation: collection is immutable');
     }
 
     const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
@@ -281,9 +281,9 @@ export class EditingSession {
   }
 
   /**
-   * Saves by adding ingredients as alternatives to existing version.
+   * Saves by adding ingredients as alternatives to existing variation.
    * Requires that the collection is mutable and ingredients changed.
-   * @param options - Save options including version spec
+   * @param options - Save options including variation spec
    * @returns Result with save result containing journal entry
    * @public
    */
@@ -301,7 +301,7 @@ export class EditingSession {
       succeed({
         journalId: journalEntry.baseId,
         journalEntry,
-        newVersionSpec: options.variationSpec
+        newVariationSpec: options.variationSpec
       })
     );
   }
@@ -309,7 +309,7 @@ export class EditingSession {
   /**
    * Saves as an entirely new recipe with new ID.
    * Use when collection is immutable or creating a derivative recipe.
-   * @param options - Save options including new ID, version spec, and base weight
+   * @param options - Save options including new ID, variation spec, and base weight
    * @returns Result with save result containing journal entry
    * @public
    */
@@ -322,7 +322,7 @@ export class EditingSession {
       succeed({
         journalId: journalEntry.baseId,
         journalEntry,
-        newVersionSpec: options.variationSpec
+        newVariationSpec: options.variationSpec
       })
     );
   }
@@ -333,7 +333,7 @@ export class EditingSession {
 
   /**
    * Creates an edit journal entry from this session.
-   * Records the original version and any modifications made.
+   * Records the original variation and any modifications made.
    * @param notes - Optional notes to include in the journal entry
    * @returns Result with journal entry
    * @public
@@ -410,7 +410,7 @@ export class EditingSession {
    * Restores an editing session from a persisted state.
    * Restores the complete editing state including undo/redo history.
    * @param data - Persisted session data
-   * @param baseRecipe - Runtime recipe version to associate with the session
+   * @param baseRecipe - Runtime recipe variation to associate with the session
    * @returns Result with restored EditingSession
    * @public
    */
@@ -421,7 +421,7 @@ export class EditingSession {
     // Validate that the persisted state matches the base recipe
     if (data.sourceVariationId !== baseRecipe.variationId) {
       return fail(
-        `Version mismatch: persisted session is for ${data.sourceVariationId} but base recipe is ${baseRecipe.variationId}`
+        `Variation mismatch: persisted session is for ${data.sourceVariationId} but base recipe is ${baseRecipe.variationId}`
       );
     }
 
@@ -446,7 +446,7 @@ export class EditingSession {
   }
 
   /**
-   * The base recipe version being edited.
+   * The base recipe variation being edited.
    * @public
    */
   public get baseRecipe(): IFillingRecipeVariation {
@@ -489,7 +489,7 @@ export class EditingSession {
     notes: CommonModel.ICategorizedNote[] | undefined
   ): Result<IFillingEditJournalEntryEntity> {
     return generateJournalId().onSuccess((baseId) => {
-      // Create updated version ID if needed
+      // Create updated variation ID if needed
       const updatedIdResult = updatedVariationSpec
         ? CommonConverters.fillingRecipeVariationSpec
             .convert(updatedVariationSpec)

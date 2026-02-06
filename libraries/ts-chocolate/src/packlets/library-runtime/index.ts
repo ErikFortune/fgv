@@ -67,7 +67,7 @@ export {
 } from './ingredients';
 
 // Filling recipe classes
-export { FillingRecipe, FillingRecipeVersion } from './fillings';
+export { FillingRecipe, FillingRecipeVariation } from './fillings';
 
 // Confection classes
 export {
@@ -77,10 +77,10 @@ export {
   RolledTruffle,
   Confection,
   AnyConfection,
-  ConfectionVersionBase,
-  MoldedBonBonVersion,
-  BarTruffleVersion,
-  RolledTruffleVersion
+  ConfectionRecipeVariationBase,
+  MoldedBonBonRecipeVariation,
+  BarTruffleRecipeVariation,
+  RolledTruffleRecipeVariation
 } from './confections';
 
 // Query builders

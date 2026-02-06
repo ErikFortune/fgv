@@ -2,10 +2,10 @@
 
 ## IJournalEntryBase.updated property
 
-Resolved updated version if modifications were made
+Resolved updated variation if modifications were made
 
 **Signature:**
 
 ```typescript
-readonly updated: TVersion;
+readonly updated: TVariation;
 ```

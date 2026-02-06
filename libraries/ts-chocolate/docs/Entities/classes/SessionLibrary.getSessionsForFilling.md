@@ -2,7 +2,7 @@
 
 ## SessionLibrary.getSessionsForFilling() method
 
-Gets all filling sessions for a filling (across all versions and collections)
+Gets all filling sessions for a filling (across all variations and collections)
 
 **Signature:**
 

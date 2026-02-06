@@ -8,11 +8,11 @@ Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-getGoldenVariation(): Result<FillingRecipeVersion>;
+getGoldenVariation(): Result<FillingRecipeVariation>;
 ```
 
 **Returns:**
 
-Result&lt;[FillingRecipeVersion](FillingRecipeVersion.md)&gt;
+Result&lt;[FillingRecipeVariation](FillingRecipeVariation.md)&gt;
 
 Result with golden variation, or Failure if creation fails

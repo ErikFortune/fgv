@@ -1679,8 +1679,8 @@ class FillingRecipeQuery {
     fromSource(sourceId: CollectionId): FillingRecipeQuery;
     ganacheFatContent(min: Percentage, max?: Percentage): FillingRecipeQuery;
     ganacheWithWarnings(): FillingRecipeQuery;
-    hasMultipleVersions(): FillingRecipeQuery;
-    minVersions(count: number): FillingRecipeQuery;
+    hasMultipleVariations(): FillingRecipeQuery;
+    minVariations(count: number): FillingRecipeQuery;
     nameContains(text: string): FillingRecipeQuery;
     validGanache(): FillingRecipeQuery;
     where(predicate: FillingRecipeFilter): FillingRecipeQuery;
@@ -2325,7 +2325,7 @@ interface ICollectionSourceMetadata {
     readonly name?: string;
     readonly secretName?: string;
     readonly tags?: ReadonlyArray<string>;
-    readonly version?: string;
+    readonly variation?: string;
 }
 
 // @public
@@ -3167,17 +3167,17 @@ interface IIterationOptions {
 }
 
 // @public
-interface IJournalEntryBase<TRecipe, TVersion, TVersionId, TEntity extends AnyJournalEntryEntity = AnyJournalEntryEntity> {
+interface IJournalEntryBase<TRecipe, TVariation, TVariationId, TEntity extends AnyJournalEntryEntity = AnyJournalEntryEntity> {
     readonly baseId: BaseJournalId;
     readonly entity: TEntity;
     readonly id: JournalId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly recipe: TRecipe;
     readonly timestamp: string;
-    readonly updated?: TVersion;
-    readonly updatedId?: TVersionId;
-    readonly version: TVersion;
-    readonly versionId: TVersionId;
+    readonly updated?: TVariation;
+    readonly updatedId?: TVariationId;
+    readonly variation: TVariation;
+    readonly variationId: TVariationId;
 }
 
 // @public
@@ -4788,7 +4788,7 @@ interface IUserLibraryCreateParams {
 
 // @public
 interface IUserLibraryRuntime {
-    createFillingSession(versionId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
@@ -5119,17 +5119,17 @@ declare namespace LibraryRuntime {
         Ingredient,
         AnyIngredient,
         FillingRecipe,
-        FillingRecipeVariation as FillingRecipeVersion,
+        FillingRecipeVariation,
         ConfectionBase,
         MoldedBonBonRecipe as MoldedBonBon,
         BarTruffleRecipe as BarTruffle,
         RolledTruffleRecipe as RolledTruffle,
         Confection,
         AnyConfectionRecipe as AnyConfection,
-        ConfectionRecipeVariationBase as ConfectionVersionBase,
-        MoldedBonBonRecipeVariation as MoldedBonBonVersion,
-        BarTruffleRecipeVariation as BarTruffleVersion,
-        RolledTruffleRecipeVariation as RolledTruffleVersion,
+        ConfectionRecipeVariationBase,
+        MoldedBonBonRecipeVariation,
+        BarTruffleRecipeVariation,
+        RolledTruffleRecipeVariation,
         Indexers,
         ITaskContext,
         ITask,
@@ -5928,7 +5928,7 @@ abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
     undo(): Result<boolean>;
     // (undocumented)
     protected _undoStack: T[];
-    get versionId(): ConfectionRecipeVariationId;
+    get variationId(): ConfectionRecipeVariationId;
     get yield(): Confections_2.IConfectionYield;
 }
 
@@ -6156,8 +6156,7 @@ declare namespace Runtime {
         IRuntimeContextCreateParams,
         Session_2 as Session,
         ISessionContext,
-        IRuntimeContext,
-        AnyConfectionRecipeVariation as AnyRuntimeConfectionVersion
+        IRuntimeContext
     }
 }
 export { Runtime }
@@ -6322,9 +6321,9 @@ class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySession
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getSessionsByStatus(status: PersistedSessionStatus): ReadonlyArray<AnySessionEntity>;
     getSessionsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionSessionEntity>;
-    getSessionsForConfectionVersion(versionId: ConfectionRecipeVariationId): ReadonlyArray<IConfectionSessionEntity>;
+    getSessionsForConfectionRecipeVariation(variationId: ConfectionRecipeVariationId): ReadonlyArray<IConfectionSessionEntity>;
     getSessionsForFilling(fillingId: FillingId): ReadonlyArray<IFillingSessionEntity>;
-    getSessionsForFillingVersion(versionId: FillingRecipeVariationId): ReadonlyArray<IFillingSessionEntity>;
+    getSessionsForFillingRecipeVariation(variationId: FillingRecipeVariationId): ReadonlyArray<IFillingSessionEntity>;
     hasSession(sessionId: SessionId): boolean;
     removeSession(sessionId: SessionId): Result<AnySessionEntity>;
     upsertSession(collectionId: CollectionId, session: AnySessionEntity): Result<SessionId>;

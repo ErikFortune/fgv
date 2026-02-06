@@ -8,11 +8,11 @@ Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-getLatestVariation(): Result<FillingRecipeVersion>;
+getLatestVariation(): Result<FillingRecipeVariation>;
 ```
 
 **Returns:**
 
-Result&lt;[FillingRecipeVersion](FillingRecipeVersion.md)&gt;
+Result&lt;[FillingRecipeVariation](FillingRecipeVariation.md)&gt;
 
 Result with latest variation, or Failure if creation fails

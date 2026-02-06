@@ -2,7 +2,7 @@
 
 ## EditingSession.baseRecipe property
 
-The base recipe version being edited.
+The base recipe variation being edited.
 
 **Signature:**
 

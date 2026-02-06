@@ -2,10 +2,10 @@
 
 # Class: EditingSession
 
-A mutable editing session for modifying filling recipe versions.
+A mutable editing session for modifying filling recipe variations.
 
 Core architecture:
-- Wraps an IRuntimeFillingRecipeVersion (immutable source)
+- Wraps an IRuntimeFillingRecipeVariation (immutable source)
 - Uses RuntimeProducedFilling for mutable editing with undo/redo
 - Tracks original snapshot for change detection
 - Provides save operations that integrate with library
@@ -61,7 +61,7 @@ Unique session identifier.
 
 </td><td>
 
-The base recipe version being edited.
+The base recipe variation being edited.
 
 </td></tr>
 <tr><td>
@@ -143,7 +143,7 @@ Description
 
 </td><td>
 
-Creates a new EditingSession from a base recipe version.
+Creates a new EditingSession from a base recipe variation.
 
 </td></tr>
 <tr><td>
@@ -299,7 +299,7 @@ Analyzes current changes and recommends save options.
 
 </td><td>
 
-Saves as a new version of the original recipe.
+Saves as a new variation of the original recipe.
 
 </td></tr>
 <tr><td>
@@ -312,7 +312,7 @@ Saves as a new version of the original recipe.
 
 </td><td>
 
-Saves by adding ingredients as alternatives to existing version.
+Saves by adding ingredients as alternatives to existing variation.
 
 </td></tr>
 <tr><td>

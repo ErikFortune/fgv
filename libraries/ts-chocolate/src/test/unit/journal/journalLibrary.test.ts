@@ -173,7 +173,7 @@ describe('JournalLibrary (Collection-Based)', () => {
   // ============================================================================
 
   describe('getJournalsForFilling', () => {
-    test('returns journals for a filling across all versions', () => {
+    test('returns journals for a filling across all variations', () => {
       const journal1 = makeFillingJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
       const journal2 = makeFillingJournal('2026-01-16-100000-00000002', 'source.recipe-a@2026-01-02-01');
       const journal3 = makeFillingJournal('2026-01-17-100000-00000003', 'source.recipe-b@2026-01-01-01');
@@ -216,8 +216,8 @@ describe('JournalLibrary (Collection-Based)', () => {
     });
   });
 
-  describe('getJournalsForFillingVersion', () => {
-    test('returns journals for specific filling version', () => {
+  describe('getJournalsForFillingVariation', () => {
+    test('returns journals for specific filling variation', () => {
       const journal1 = makeFillingJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
       const journal2 = makeFillingJournal('2026-01-16-100000-00000002', 'source.recipe-a@2026-01-01-01');
       const journal3 = makeFillingJournal('2026-01-17-100000-00000003', 'source.recipe-a@2026-01-02-01');
@@ -232,7 +232,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       expect(results.map((j) => j.baseId)).toContain(journal2.baseId);
     });
 
-    test('returns empty array for unknown version', () => {
+    test('returns empty array for unknown variation', () => {
       const journal = makeFillingJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
       const lib = createLibraryWithJournals([journal]);
 

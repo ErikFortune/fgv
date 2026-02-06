@@ -62,7 +62,7 @@ Description
 
 </td><td>
 
-Filter to recipes using a specific ingredient (any version, as primary).
+Filter to recipes using a specific ingredient (any variation, as primary).
 
 </td></tr>
 <tr><td>
@@ -114,7 +114,7 @@ Filter to recipes NOT using a specific ingredient.
 
 </td><td>
 
-Filter to recipes containing dark chocolate (in golden version).
+Filter to recipes containing dark chocolate (in golden variation).
 
 </td></tr>
 <tr><td>
@@ -262,7 +262,7 @@ Filter to recipes with ganache warnings (but still valid).
 </td></tr>
 <tr><td>
 
-[hasMultipleVersions()](./FillingRecipeQuery.hasMultipleVersions.md)
+[hasMultipleVariations()](./FillingRecipeQuery.hasMultipleVariations.md)
 
 </td><td>
 
@@ -270,12 +270,12 @@ Filter to recipes with ganache warnings (but still valid).
 
 </td><td>
 
-Filter to recipes with multiple versions.
+Filter to recipes with multiple variations.
 
 </td></tr>
 <tr><td>
 
-[minVersions(count)](./FillingRecipeQuery.minVersions.md)
+[minVariations(count)](./FillingRecipeQuery.minVariations.md)
 
 </td><td>
 
@@ -283,7 +283,7 @@ Filter to recipes with multiple versions.
 
 </td><td>
 
-Filter by minimum version count.
+Filter by minimum variation count.
 
 </td></tr>
 <tr><td>

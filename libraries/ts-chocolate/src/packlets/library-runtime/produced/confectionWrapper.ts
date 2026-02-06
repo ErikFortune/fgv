@@ -369,10 +369,10 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
   }
 
   /**
-   * Gets the version ID.
+   * Gets the variation ID.
    * @public
    */
-  public get versionId(): ConfectionRecipeVariationId {
+  public get variationId(): ConfectionRecipeVariationId {
     return this._current.variationId;
   }
 
@@ -587,8 +587,8 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
   }
 
   /**
-   * Factory method for creating a ProducedMoldedBonBon from a source version.
-   * @param source - Source molded bonbon version with runtime wrapper
+   * Factory method for creating a ProducedMoldedBonBon from a source variation.
+   * @param source - Source molded bonbon variation with runtime wrapper
    * @returns Result containing ProducedMoldedBonBon or error
    * @public
    */
@@ -621,11 +621,11 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
   private static _convertFromSource(
     source: IMoldedBonBonRecipeVariation
   ): Result<IProducedMoldedBonBonEntity> {
-    // Create and validate version ID using helper
+    // Create and validate variation ID using helper
     return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
       itemId: source.variationSpec
-    }).onSuccess((versionId) => {
+    }).onSuccess((variationId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
         ? ProducedMoldedBonBon._convertFillingSlots(source.fillings)
@@ -634,7 +634,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       return fillingsResult.onSuccess((fillings) => {
         const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
-          variationId: versionId,
+          variationId,
           yield: source.yield,
           moldId: source.preferredMold?.id!,
           shellChocolateId: source.shellChocolate.chocolate.id,
@@ -880,8 +880,8 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
   }
 
   /**
-   * Factory method for creating a ProducedBarTruffle from a source version.
-   * @param source - Source bar truffle version with runtime wrapper
+   * Factory method for creating a ProducedBarTruffle from a source variation.
+   * @param source - Source bar truffle variation with runtime wrapper
    * @returns Result containing ProducedBarTruffle or error
    * @public
    */
@@ -912,11 +912,11 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    * @internal
    */
   private static _convertFromSource(source: IBarTruffleRecipeVariation): Result<IProducedBarTruffleEntity> {
-    // Create and validate version ID using helper
+    // Create and validate variation ID using helper
     return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
       itemId: source.variationSpec
-    }).onSuccess((versionId) => {
+    }).onSuccess((variationId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
         ? ProducedBarTruffle._convertFillingSlots(source.fillings)
@@ -925,7 +925,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
       return fillingsResult.onSuccess((fillings) => {
         const produced: IProducedBarTruffleEntity = {
           confectionType: 'bar-truffle',
-          variationId: versionId,
+          variationId,
           yield: source.yield,
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           fillings,
@@ -1076,8 +1076,8 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
   }
 
   /**
-   * Factory method for creating a ProducedRolledTruffle from a source version.
-   * @param source - Source rolled truffle version with runtime wrapper
+   * Factory method for creating a ProducedRolledTruffle from a source variation.
+   * @param source - Source rolled truffle variation with runtime wrapper
    * @returns Result containing ProducedRolledTruffle or error
    * @public
    */
@@ -1110,11 +1110,11 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
   private static _convertFromSource(
     source: IRolledTruffleRecipeVariation
   ): Result<IProducedRolledTruffleEntity> {
-    // Create and validate version ID using helper
+    // Create and validate variation ID using helper
     return Helpers.createConfectionRecipeVariationId({
       collectionId: source.confectionId,
       itemId: source.variationSpec
-    }).onSuccess((versionId) => {
+    }).onSuccess((variationId) => {
       // Convert filling slots if present
       const fillingsResult = source.fillings
         ? ProducedRolledTruffle._convertFillingSlots(source.fillings)
@@ -1123,7 +1123,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
       return fillingsResult.onSuccess((fillings) => {
         const produced: IProducedRolledTruffleEntity = {
           confectionType: 'rolled-truffle',
-          variationId: versionId,
+          variationId,
           yield: source.yield,
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           coatingId: source.coatings?.preferred?.id,

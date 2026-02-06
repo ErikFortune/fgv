@@ -117,7 +117,7 @@ Description
 <tbody>
 <tr><td>
 
-[createFillingSession(versionId, options)](./IUserLibraryRuntime.createFillingSession.md)
+[createFillingSession(variationId, options)](./IUserLibraryRuntime.createFillingSession.md)
 
 </td><td>
 
@@ -125,7 +125,7 @@ Description
 
 </td><td>
 
-Creates a new persisted filling session from a filling version.
+Creates a new persisted filling session from a filling variation.
 
 </td></tr>
 <tr><td>

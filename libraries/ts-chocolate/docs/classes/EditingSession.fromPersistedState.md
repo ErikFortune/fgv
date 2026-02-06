@@ -16,7 +16,7 @@ static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IFillingRecip
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>data</td><td>IFillingSessionEntity</td><td>Persisted session data</td></tr>
-<tr><td>baseRecipe</td><td>IFillingRecipeVariation</td><td>Runtime recipe version to associate with the session</td></tr>
+<tr><td>baseRecipe</td><td>IFillingRecipeVariation</td><td>Runtime recipe variation to associate with the session</td></tr>
 </tbody></table>
 
 **Returns:**

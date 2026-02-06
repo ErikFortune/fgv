@@ -2,7 +2,7 @@
 
 ## SessionLibrary.getSessionsForConfection() method
 
-Gets all confection sessions for a confection (across all versions and collections)
+Gets all confection sessions for a confection (across all variations and collections)
 
 **Signature:**
 

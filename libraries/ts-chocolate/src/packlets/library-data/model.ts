@@ -92,9 +92,9 @@ export interface ICollectionSourceMetadata {
   readonly description?: string;
 
   /**
-   * Version identifier for the collection.
+   * Variation identifier for the collection.
    */
-  readonly version?: string;
+  readonly variation?: string;
 
   /**
    * Tags for categorization/search.

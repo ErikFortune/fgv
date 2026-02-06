@@ -8,5 +8,5 @@ Resolved lazily on first access.
 **Signature:**
 
 ```typescript
-readonly variations: readonly FillingRecipeVersion[];
+readonly variations: readonly FillingRecipeVariation[];
 ```

@@ -15,7 +15,7 @@ saveAsNewRecipe(options: ISaveNewRecipeOptions): Result<ISaveResult>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>options</td><td>ISaveNewRecipeOptions</td><td>Save options including new ID, version spec, and base weight</td></tr>
+<tr><td>options</td><td>ISaveNewRecipeOptions</td><td>Save options including new ID, variation spec, and base weight</td></tr>
 </tbody></table>
 
 **Returns:**

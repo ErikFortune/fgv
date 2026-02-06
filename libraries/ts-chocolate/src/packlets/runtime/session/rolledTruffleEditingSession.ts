@@ -27,7 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
-import { RolledTruffle, RolledTruffleVersion, ProducedRolledTruffle } from '../../library-runtime';
+import { RolledTruffle, RolledTruffleRecipeVariation, ProducedRolledTruffle } from '../../library-runtime';
 import { ISessionContext } from '../model';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -82,9 +82,10 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession> {
-    return ProducedRolledTruffle.fromSource(baseConfection.goldenVariation as RolledTruffleVersion).onSuccess(
-      (produced) =>
-        captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
+    return ProducedRolledTruffle.fromSource(
+      baseConfection.goldenVariation as RolledTruffleRecipeVariation
+    ).onSuccess((produced) =>
+      captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );
   }
 

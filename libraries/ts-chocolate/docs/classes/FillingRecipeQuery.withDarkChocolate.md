@@ -2,7 +2,7 @@
 
 ## FillingRecipeQuery.withDarkChocolate() method
 
-Filter to recipes containing dark chocolate (in golden version).
+Filter to recipes containing dark chocolate (in golden variation).
 
 **Signature:**
 

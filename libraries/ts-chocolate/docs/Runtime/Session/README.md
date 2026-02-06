@@ -20,7 +20,7 @@ Description
 
 </td><td>
 
-A mutable editing session for modifying filling recipe versions.
+A mutable editing session for modifying filling recipe variations.
 
 </td></tr>
 <tr><td>

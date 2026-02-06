@@ -2,7 +2,7 @@
 
 ## ProducedRolledTruffle.fromSource() method
 
-Factory method for creating a ProducedRolledTruffle from a source version.
+Factory method for creating a ProducedRolledTruffle from a source variation.
 
 **Signature:**
 
@@ -14,7 +14,7 @@ static fromSource(source: IRolledTruffleRecipeVariation): Result<ProducedRolledT
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>source</td><td>IRolledTruffleRecipeVariation</td><td>Source rolled truffle version with runtime wrapper</td></tr>
+<tr><td>source</td><td>IRolledTruffleRecipeVariation</td><td>Source rolled truffle variation with runtime wrapper</td></tr>
 </tbody></table>
 
 **Returns:**

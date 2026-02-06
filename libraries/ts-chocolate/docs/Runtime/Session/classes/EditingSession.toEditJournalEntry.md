@@ -3,7 +3,7 @@
 ## EditingSession.toEditJournalEntry() method
 
 Creates an edit journal entry from this session.
-Records the original version and any modifications made.
+Records the original variation and any modifications made.
 
 **Signature:**
 

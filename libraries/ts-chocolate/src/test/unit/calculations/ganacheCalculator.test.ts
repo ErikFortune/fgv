@@ -206,7 +206,7 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateForFillingRecipe', () => {
-    const testVersion: IFillingRecipeVariationEntity = {
+    const testVariation: IFillingRecipeVariationEntity = {
       variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [
@@ -220,11 +220,11 @@ describe('Ganache Calculator', () => {
       baseId: 'test-ganache' as BaseFillingId,
       name: 'Test Ganache' as FillingName,
       category: 'ganache',
-      variations: [testVersion],
+      variations: [testVariation],
       goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
     };
 
-    test('calculates for golden version by default', () => {
+    test('calculates for golden variation by default', () => {
       expect(RuntimeInternal.calculateForFillingRecipe(testRecipe, testResolver)).toSucceedAndSatisfy(
         (analysis) => {
           expect(analysis.totalWeight).toBe(150);
@@ -232,7 +232,7 @@ describe('Ganache Calculator', () => {
       );
     });
 
-    test('calculates for specific version by ID', () => {
+    test('calculates for specific variation by ID', () => {
       expect(
         RuntimeInternal.calculateForFillingRecipe(
           testRecipe,
@@ -244,7 +244,7 @@ describe('Ganache Calculator', () => {
       });
     });
 
-    test('fails for invalid version ID', () => {
+    test('fails for invalid variation ID', () => {
       expect(
         RuntimeInternal.calculateForFillingRecipe(
           testRecipe,
@@ -407,7 +407,7 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateGanache', () => {
-    const testVersion: IFillingRecipeVariationEntity = {
+    const testVariation: IFillingRecipeVariationEntity = {
       variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
       createdDate: '2026-01-01',
       ingredients: [
@@ -421,7 +421,7 @@ describe('Ganache Calculator', () => {
       baseId: 'test' as BaseFillingId,
       name: 'Test' as FillingName,
       category: 'ganache',
-      variations: [testVersion],
+      variations: [testVariation],
       goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
     };
 

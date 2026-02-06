@@ -41,10 +41,10 @@ import {
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
-import { ChocolateLibrary, FillingRecipe, FillingRecipeVersion } from '../../../packlets/library-runtime';
+import { ChocolateLibrary, FillingRecipe, FillingRecipeVariation } from '../../../packlets/library-runtime';
 import { RuntimeContext } from '../../../packlets/runtime';
 
-describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
+describe('RuntimeFillingRecipe and RuntimeFillingRecipeVariation', () => {
   // ============================================================================
   // Test Data
   // ============================================================================
@@ -259,25 +259,25 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
         expect(recipe.tags).toEqual([]);
       });
 
-      test('provides goldenVersionSpec', () => {
+      test('provides goldenVariationSpec', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.goldenVariationSpec).toBe('2026-01-01-01');
       });
     });
 
-    describe('version navigation', () => {
-      test('provides goldenVersion', () => {
+    describe('variation navigation', () => {
+      test('provides goldenVariation', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         const golden = recipe.goldenVariation;
         expect(golden.variationSpec).toBe('2026-01-01-01');
       });
 
-      test('provides all versions', () => {
+      test('provides all variations', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.variations.length).toBe(2);
       });
 
-      test('getVersion returns specific version', () => {
+      test('getVariation returns specific variation', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.getVariation('2026-02-01-01' as FillingRecipeVariationSpec)).toSucceedAndSatisfy(
           (v) => {
@@ -286,19 +286,19 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
         );
       });
 
-      test('getVersion fails for non-existent version', () => {
+      test('getVariation fails for non-existent variation', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.getVariation('nonexistent' as FillingRecipeVariationSpec)).toFailWith(/not found/);
       });
 
-      test('latestVersion returns most recent by date', () => {
+      test('latestVariation returns most recent by date', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         const latest = recipe.latestVariation;
         expect(latest.variationSpec).toBe('2026-02-01-01');
       });
 
-      test('latestVersion reuses goldenVersion when same', () => {
-        // empty-recipe has only one version which is both golden and latest
+      test('latestVariation reuses goldenVariation when same', () => {
+        // empty-recipe has only one variation which is both golden and latest
         const recipe = ctx.fillings.get('test.empty-recipe' as FillingId).orThrow();
         const latest = recipe.latestVariation;
         const golden = recipe.goldenVariation;
@@ -306,7 +306,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
         expect(latest).toBe(golden); // Same instance
       });
 
-      test('versionCount returns correct count', () => {
+      test('variationCount returns correct count', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.variationCount).toBe(2);
       });
@@ -580,7 +580,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
     });
 
     describe('raw access', () => {
-      test('raw returns underlying version data', () => {
+      test('raw returns underlying variation data', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.goldenVariation.entity.variationSpec).toBe('2026-01-01-01');
       });
@@ -590,7 +590,7 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVersion', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(
-          FillingRecipeVersion.create(ctx as never, recipe.id, recipe.goldenVariation.entity)
+          FillingRecipeVariation.create(ctx as never, recipe.id, recipe.goldenVariation.entity)
         ).toSucceed();
       });
     });

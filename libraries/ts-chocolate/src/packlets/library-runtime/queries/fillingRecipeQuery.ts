@@ -63,7 +63,7 @@ export class FillingRecipeQuery {
   // ============================================================================
 
   /**
-   * Filter to recipes using a specific ingredient (any version, as primary).
+   * Filter to recipes using a specific ingredient (any variation, as primary).
    * @param ingredientId - Ingredient ID to search for
    */
   public withIngredient(ingredientId: IngredientId): FillingRecipeQuery {
@@ -99,7 +99,7 @@ export class FillingRecipeQuery {
   // ============================================================================
 
   /**
-   * Filter to recipes containing dark chocolate (in golden version).
+   * Filter to recipes containing dark chocolate (in golden variation).
    */
   public withDarkChocolate(): FillingRecipeQuery {
     return this.withChocolateType('dark');
@@ -236,21 +236,21 @@ export class FillingRecipeQuery {
   }
 
   // ============================================================================
-  // Version Filters
+  // Variation Filters
   // ============================================================================
 
   /**
-   * Filter to recipes with multiple versions.
+   * Filter to recipes with multiple variations.
    */
-  public hasMultipleVersions(): FillingRecipeQuery {
+  public hasMultipleVariations(): FillingRecipeQuery {
     return this._addFilter((r) => r.variationCount > 1);
   }
 
   /**
-   * Filter by minimum version count.
-   * @param count - Minimum number of versions
+   * Filter by minimum variation count.
+   * @param count - Minimum number of variations
    */
-  public minVersions(count: number): FillingRecipeQuery {
+  public minVariations(count: number): FillingRecipeQuery {
     return this._addFilter(atLeast(count, (r) => r.variationCount));
   }
 

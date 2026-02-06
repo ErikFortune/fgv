@@ -38,10 +38,10 @@ export { RolledTruffleRecipe as RolledTruffle } from './rolledTruffle';
 // Static factory and union type
 export { Confection, AnyConfectionRecipe as AnyConfection } from './confection';
 
-// Version classes
+// Variation classes
 export {
-  ConfectionRecipeVariationBase as ConfectionVersionBase,
-  MoldedBonBonRecipeVariation as MoldedBonBonVersion,
-  BarTruffleRecipeVariation as BarTruffleVersion,
-  RolledTruffleRecipeVariation as RolledTruffleVersion
+  ConfectionRecipeVariationBase,
+  MoldedBonBonRecipeVariation,
+  BarTruffleRecipeVariation,
+  RolledTruffleRecipeVariation
 } from './versions';

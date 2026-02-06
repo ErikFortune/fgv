@@ -109,9 +109,9 @@ export type ISessionLibraryAsyncParams = ISubLibraryAsyncParams<SessionLibrary, 
  * Provides:
  * - Multi-collection storage with FileTree persistence
  * - Cross-collection lookup by filling ID (all sessions for a filling)
- * - Cross-collection lookup by filling version ID (all sessions for a specific version)
+ * - Cross-collection lookup by filling variation ID (all sessions for a specific variation)
  * - Cross-collection lookup by confection ID (all sessions for a confection)
- * - Cross-collection lookup by confection version ID (all sessions for a specific version)
+ * - Cross-collection lookup by confection variation ID (all sessions for a specific variation)
  * - Cross-collection lookup by status (active, planning, etc.)
  * - Lazy index rebuilding for efficient queries
  *
@@ -125,10 +125,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   private readonly _byFillingId: Map<FillingId, Set<SessionId>>;
 
   /**
-   * Index from {@link FillingRecipeVariationId | filling version ID} to {@link SessionId | session IDs}
+   * Index from {@link FillingRecipeVariationId | filling variation ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byFillingVersionId: Map<FillingRecipeVariationId, Set<SessionId>>;
+  private readonly _byFillingVariationId: Map<FillingRecipeVariationId, Set<SessionId>>;
 
   /**
    * Index from {@link ConfectionId | confection ID} to {@link SessionId | session IDs}
@@ -137,10 +137,10 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   private readonly _byConfectionId: Map<ConfectionId, Set<SessionId>>;
 
   /**
-   * Index from {@link ConfectionRecipeVariationId | confection version ID} to {@link SessionId | session IDs}
+   * Index from {@link ConfectionRecipeVariationId | confection variation ID} to {@link SessionId | session IDs}
    * Spans all collections - rebuilt lazily when invalidated
    */
-  private readonly _byConfectionVersionId: Map<ConfectionRecipeVariationId, Set<SessionId>>;
+  private readonly _byConfectionVariationId: Map<ConfectionRecipeVariationId, Set<SessionId>>;
 
   /**
    * Index from {@link PersistedSessionStatus | status} to {@link SessionId | session IDs}
@@ -163,9 +163,9 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
       libraryParams: params
     });
     this._byFillingId = new Map();
-    this._byFillingVersionId = new Map();
+    this._byFillingVariationId = new Map();
     this._byConfectionId = new Map();
-    this._byConfectionVersionId = new Map();
+    this._byConfectionVariationId = new Map();
     this._byStatus = new Map();
   }
 
@@ -237,9 +237,9 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     if (this._indicesValid) return;
 
     this._byFillingId.clear();
-    this._byFillingVersionId.clear();
+    this._byFillingVariationId.clear();
     this._byConfectionId.clear();
-    this._byConfectionVersionId.clear();
+    this._byConfectionVariationId.clear();
     this._byStatus.clear();
 
     // Rebuild from all items across all collections
@@ -289,12 +289,12 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     }
     fillingSessions.add(sessionId);
 
-    let versionSessions = this._byFillingVersionId.get(session.sourceVariationId);
-    if (!versionSessions) {
-      versionSessions = new Set();
-      this._byFillingVersionId.set(session.sourceVariationId, versionSessions);
+    let variationSessions = this._byFillingVariationId.get(session.sourceVariationId);
+    if (!variationSessions) {
+      variationSessions = new Set();
+      this._byFillingVariationId.set(session.sourceVariationId, variationSessions);
     }
-    versionSessions.add(sessionId);
+    variationSessions.add(sessionId);
   }
 
   /**
@@ -310,26 +310,26 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     }
     confectionSessions.add(sessionId);
 
-    let versionSessions = this._byConfectionVersionId.get(session.sourceVariationId);
-    if (!versionSessions) {
-      versionSessions = new Set();
-      this._byConfectionVersionId.set(session.sourceVariationId, versionSessions);
+    let variationSessions = this._byConfectionVariationId.get(session.sourceVariationId);
+    if (!variationSessions) {
+      variationSessions = new Set();
+      this._byConfectionVariationId.set(session.sourceVariationId, variationSessions);
     }
-    versionSessions.add(sessionId);
+    variationSessions.add(sessionId);
   }
 
   /**
-   * Extracts the FillingId from a FillingVersionId
+   * Extracts the FillingId from a FillingRecipeVariationId
    */
-  private _extractFillingId(versionId: FillingRecipeVariationId): FillingId {
-    return CommonConverters.parsedFillingRecipeVariationId.convert(versionId).orThrow().collectionId;
+  private _extractFillingId(variationId: FillingRecipeVariationId): FillingId {
+    return CommonConverters.parsedFillingRecipeVariationId.convert(variationId).orThrow().collectionId;
   }
 
   /**
-   * Extracts the ConfectionId from a ConfectionVersionId
+   * Extracts the ConfectionId from a ConfectionRecipeVariationId
    */
-  private _extractConfectionId(versionId: ConfectionRecipeVariationId): ConfectionId {
-    return CommonConverters.parsedConfectionRecipeVariationId.convert(versionId).orThrow().collectionId;
+  private _extractConfectionId(variationId: ConfectionRecipeVariationId): ConfectionId {
+    return CommonConverters.parsedConfectionRecipeVariationId.convert(variationId).orThrow().collectionId;
   }
 
   // ============================================================================
@@ -337,7 +337,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   // ============================================================================
 
   /**
-   * Gets all filling sessions for a filling (across all versions and collections)
+   * Gets all filling sessions for a filling (across all variations and collections)
    * @param fillingId - The {@link FillingId | filling ID} to search for
    * @returns Array of filling sessions (empty if none found)
    * @public
@@ -354,16 +354,16 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   }
 
   /**
-   * Gets all filling sessions for a specific filling version (across all collections)
-   * @param versionId - The {@link FillingRecipeVariationId | filling version ID} to search for
+   * Gets all filling sessions for a specific filling variation (across all collections)
+   * @param variationId - The {@link FillingRecipeVariationId | filling variation ID} to search for
    * @returns Array of filling sessions (empty if none found)
    * @public
    */
-  public getSessionsForFillingVersion(
-    versionId: FillingRecipeVariationId
+  public getSessionsForFillingRecipeVariation(
+    variationId: FillingRecipeVariationId
   ): ReadonlyArray<IFillingSessionEntity> {
     this._ensureIndicesValid();
-    const sessionIds = this._byFillingVersionId.get(versionId);
+    const sessionIds = this._byFillingVariationId.get(variationId);
     if (!sessionIds) {
       return [];
     }
@@ -373,7 +373,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   }
 
   /**
-   * Gets all confection sessions for a confection (across all versions and collections)
+   * Gets all confection sessions for a confection (across all variations and collections)
    * @param confectionId - The {@link ConfectionId | confection ID} to search for
    * @returns Array of confection sessions (empty if none found)
    * @public
@@ -390,16 +390,16 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
   }
 
   /**
-   * Gets all confection sessions for a specific confection version (across all collections)
-   * @param versionId - The {@link ConfectionRecipeVariationId | confection version ID} to search for
+   * Gets all confection sessions for a specific confection variation (across all collections)
+   * @param variationId - The {@link ConfectionRecipeVariationId | confection variation ID} to search for
    * @returns Array of confection sessions (empty if none found)
    * @public
    */
-  public getSessionsForConfectionVersion(
-    versionId: ConfectionRecipeVariationId
+  public getSessionsForConfectionRecipeVariation(
+    variationId: ConfectionRecipeVariationId
   ): ReadonlyArray<IConfectionSessionEntity> {
     this._ensureIndicesValid();
-    const sessionIds = this._byConfectionVersionId.get(versionId);
+    const sessionIds = this._byConfectionVariationId.get(variationId);
     if (!sessionIds) {
       return [];
     }

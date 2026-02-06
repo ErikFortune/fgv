@@ -114,11 +114,11 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
    * @returns Success with EditingSession, or Failure if creation fails
    */
   public createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<EditingSession> {
-    // Get the golden version (now safe - no cast needed)
-    const version = filling.goldenVariation;
+    // Get the golden variation (now safe - no cast needed)
+    const variation = filling.goldenVariation;
 
     // Calculate scale factor to achieve target weight
-    const baseWeight = version.entity.baseWeight;
+    const baseWeight = variation.entity.baseWeight;
     if (baseWeight <= 0) {
       return fail(`Cannot create session: base weight must be positive (got ${baseWeight})`);
     }
@@ -126,6 +126,6 @@ export class RuntimeContext extends LibraryRuntimeContext implements ISessionCon
     const scaleFactor = targetWeight / baseWeight;
 
     // Create editing session with scale factor
-    return EditingSession.create(version, scaleFactor);
+    return EditingSession.create(variation, scaleFactor);
   }
 }

@@ -156,7 +156,7 @@ The golden variation ID
 
 </td><td>
 
-[FillingRecipeVersion](../../classes/FillingRecipeVersion.md)
+[FillingRecipeVariation](../../classes/FillingRecipeVariation.md)
 
 </td><td>
 
@@ -173,7 +173,7 @@ The golden (default approved) variation - resolved.
 
 </td><td>
 
-readonly [FillingRecipeVersion](../../classes/FillingRecipeVersion.md)[]
+readonly [FillingRecipeVariation](../../classes/FillingRecipeVariation.md)[]
 
 </td><td>
 
@@ -190,7 +190,7 @@ All variations - resolved.
 
 </td><td>
 
-[FillingRecipeVersion](../../classes/FillingRecipeVersion.md)
+[FillingRecipeVariation](../../classes/FillingRecipeVariation.md)
 
 </td><td>
 
