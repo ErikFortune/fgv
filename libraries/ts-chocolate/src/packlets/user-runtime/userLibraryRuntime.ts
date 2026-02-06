@@ -45,7 +45,7 @@ import {
   RolledTruffleRecipe
 } from '../library-runtime';
 import { ISessionContext, Session } from '../runtime';
-import { IUserLibrary } from '../user-library';
+import { IUserEntityLibrary } from '../user-library';
 import { createJournalEntry } from './journalEntry';
 import { IngredientInventoryEntry, MoldInventoryEntry } from './inventoryEntry';
 import {
@@ -68,7 +68,7 @@ import {
  * @public
  */
 export class UserLibraryRuntime implements IUserLibraryRuntime {
-  private readonly _userLibrary: IUserLibrary;
+  private readonly _userLibrary: IUserEntityLibrary;
   private readonly _sessionContext: ISessionContext;
 
   // Lazy-initialized MaterializedLibrary instances
@@ -95,7 +95,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
       >
     | undefined;
 
-  private constructor(userLibrary: IUserLibrary, sessionContext: ISessionContext) {
+  private constructor(userLibrary: IUserEntityLibrary, sessionContext: ISessionContext) {
     this._userLibrary = userLibrary;
     this._sessionContext = sessionContext;
   }
@@ -108,7 +108,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
    * @public
    */
   public static create(
-    userLibrary: IUserLibrary,
+    userLibrary: IUserEntityLibrary,
     sessionContext: ISessionContext
   ): Result<UserLibraryRuntime> {
     return succeed(new UserLibraryRuntime(userLibrary, sessionContext));

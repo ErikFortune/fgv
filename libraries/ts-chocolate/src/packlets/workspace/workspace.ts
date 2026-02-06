@@ -29,7 +29,7 @@ import { CryptoUtils } from '@fgv/ts-extras';
 import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
-import { UserLibrary } from '../user-library';
+import { UserEntityLibrary } from '../user-library';
 import { IUserLibraryRuntime, UserLibraryRuntime } from '../user-runtime';
 import {
   IWorkspace,
@@ -55,7 +55,7 @@ import {
  */
 export class Workspace implements IWorkspace {
   private readonly _data: RuntimeContext;
-  private readonly _userLibrary: UserLibrary;
+  private readonly _userLibrary: UserEntityLibrary;
   private readonly _keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
   private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
@@ -67,7 +67,7 @@ export class Workspace implements IWorkspace {
    */
   private constructor(
     runtime: RuntimeContext,
-    userLibrary: UserLibrary,
+    userLibrary: UserEntityLibrary,
     keyStore: CryptoUtils.KeyStore.KeyStore | undefined,
     cryptoProvider: CryptoUtils.ICryptoProvider | undefined,
     settings: ISettingsManager | undefined,
@@ -142,7 +142,7 @@ export class Workspace implements IWorkspace {
     const userLibraryParams = toUserLibraryParams(params);
 
     // Create user library (journals, future inventory)
-    const userLibraryResult = UserLibrary.create(userLibraryParams);
+    const userLibraryResult = UserEntityLibrary.create(userLibraryParams);
 
     if (userLibraryResult.isFailure()) {
       return fail(`Failed to create user library: ${userLibraryResult.message}`);
@@ -220,7 +220,7 @@ export class Workspace implements IWorkspace {
     const userLibraryParams = toUserLibraryParams(params);
 
     // Create user library (journals, sessions)
-    const userLibraryResult = UserLibrary.create(userLibraryParams);
+    const userLibraryResult = UserEntityLibrary.create(userLibraryParams);
 
     if (userLibraryResult.isFailure()) {
       return fail(`Failed to create user library: ${userLibraryResult.message}`);

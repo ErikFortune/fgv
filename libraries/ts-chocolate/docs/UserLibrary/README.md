@@ -18,11 +18,11 @@ Description
 <tbody>
 <tr><td>
 
-[UserLibrary](./classes/UserLibrary.md)
+[UserEntityLibrary](./classes/UserEntityLibrary.md)
 
 </td><td>
 
-Aggregates user-specific data libraries.
+Aggregates user-specific data entity libraries.
 
 </td></tr>
 </tbody></table>
@@ -41,7 +41,7 @@ Description
 <tbody>
 <tr><td>
 
-[IUserLibrary](./interfaces/IUserLibrary.md)
+[IUserEntityLibrary](./interfaces/IUserEntityLibrary.md)
 
 </td><td>
 
@@ -50,20 +50,20 @@ User-specific library data (journals, sessions, inventory).
 </td></tr>
 <tr><td>
 
-[IInstantiatedUserLibrarySource](./interfaces/IInstantiatedUserLibrarySource.md)
+[IInstantiatedUserEntityLibrarySource](./interfaces/IInstantiatedUserEntityLibrarySource.md)
 
 </td><td>
 
-Pre-built user library instances to include in a UserLibrary.UserLibrary | UserLibrary.
+Pre-built user library instances to include in a UserLibrary.UserEntityLibrary | UserEntityLibrary.
 
 </td></tr>
 <tr><td>
 
-[IUserLibraryCreateParams](./interfaces/IUserLibraryCreateParams.md)
+[IUserEntityLibraryCreateParams](./interfaces/IUserEntityLibraryCreateParams.md)
 
 </td><td>
 
-Parameters for creating a UserLibrary.UserLibrary | UserLibrary.
+Parameters for creating a UserLibrary.UserEntityLibrary | UserEntityLibrary.
 
 </td></tr>
 </tbody></table>

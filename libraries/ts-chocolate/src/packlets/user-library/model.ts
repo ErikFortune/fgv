@@ -42,7 +42,7 @@ import { ILibraryFileTreeSource } from '../library-data';
  * Separate from shared library data (ingredients, recipes, etc.).
  * @public
  */
-export interface IUserLibrary {
+export interface IUserEntityLibrary {
   /**
    * Journal library for production records.
    */
@@ -69,10 +69,10 @@ export interface IUserLibrary {
 // ============================================================================
 
 /**
- * Pre-built user library instances to include in a {@link UserLibrary.UserLibrary | UserLibrary}.
+ * Pre-built user library instances to include in a {@link UserLibrary.UserEntityLibrary | UserEntityLibrary}.
  * @public
  */
-export interface IInstantiatedUserLibrarySource {
+export interface IInstantiatedUserEntityLibrarySource {
   /**
    * Pre-built journals library
    */
@@ -99,7 +99,7 @@ export interface IInstantiatedUserLibrarySource {
 // ============================================================================
 
 /**
- * Parameters for creating a {@link UserLibrary.UserLibrary | UserLibrary}.
+ * Parameters for creating a {@link UserLibrary.UserEntityLibrary | UserEntityLibrary}.
  *
  * User libraries have no built-in data - all data is user-provided.
  *
@@ -109,7 +109,7 @@ export interface IInstantiatedUserLibrarySource {
  *
  * @public
  */
-export interface IUserLibraryCreateParams {
+export interface IUserEntityLibraryCreateParams {
   /**
    * File tree sources to load data from.
    */
@@ -118,7 +118,7 @@ export interface IUserLibraryCreateParams {
   /**
    * Pre-instantiated library sources.
    */
-  readonly libraries?: IInstantiatedUserLibrarySource;
+  readonly libraries?: IInstantiatedUserEntityLibrarySource;
 
   /**
    * Logger for library operations.

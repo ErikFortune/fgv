@@ -3207,7 +3207,7 @@ interface IInstantiatedEntityLibrarySources {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IInstantiatedUserLibrarySource {
+interface IInstantiatedUserEntityLibrarySource {
     readonly ingredientInventory?: IngredientInventoryLibrary;
     readonly journals?: JournalLibrary;
     readonly moldInventory?: MoldInventoryLibrary;
@@ -4816,7 +4816,7 @@ interface IUnitScaler {
 }
 
 // @public
-interface IUserLibrary {
+interface IUserEntityLibrary {
     readonly ingredientInventory: IngredientInventoryLibrary;
     readonly journals: JournalLibrary;
     readonly moldInventory: MoldInventoryLibrary;
@@ -4826,9 +4826,9 @@ interface IUserLibrary {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IUserLibraryCreateParams {
+interface IUserEntityLibraryCreateParams {
     readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
-    readonly libraries?: IInstantiatedUserLibrarySource;
+    readonly libraries?: IInstantiatedUserEntityLibrarySource;
     readonly logger?: Logging.ILogger;
 }
 
@@ -6652,21 +6652,11 @@ export type UrlCategory = Brand<string, 'UrlCategory'>;
 // @public
 const urlCategory: Converter<UrlCategory>;
 
-declare namespace UserLibrary {
-    export {
-        UserLibrary_2 as UserLibrary,
-        IUserLibrary,
-        IInstantiatedUserLibrarySource,
-        IUserLibraryCreateParams
-    }
-}
-export { UserLibrary }
-
 // @public
-class UserLibrary_2 implements IUserLibrary {
+class UserEntityLibrary implements IUserEntityLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(params?: IUserLibraryCreateParams): Result<UserLibrary_2>;
+    static create(params?: IUserEntityLibraryCreateParams): Result<UserEntityLibrary>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -6686,9 +6676,19 @@ class UserLibrary_2 implements IUserLibrary {
     get sessions(): SessionLibrary;
 }
 
+declare namespace UserLibrary {
+    export {
+        UserEntityLibrary,
+        IUserEntityLibrary,
+        IInstantiatedUserEntityLibrarySource,
+        IUserEntityLibraryCreateParams
+    }
+}
+export { UserLibrary }
+
 // @public
 class UserLibraryRuntime implements IUserLibraryRuntime {
-    static create(userLibrary: IUserLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
+    static create(userLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
     //
     // (undocumented)

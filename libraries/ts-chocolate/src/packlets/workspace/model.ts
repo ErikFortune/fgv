@@ -37,7 +37,7 @@ import { FullLibraryLoadSpec, IEncryptionConfig, ILibraryFileTreeSource } from '
 import { IChocolateEntityLibraryCreateParams, IInstantiatedEntityLibrarySources } from '../library-runtime';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
-import { IUserLibraryCreateParams } from '../user-library';
+import { IUserEntityLibraryCreateParams } from '../user-library';
 import { IUserLibraryRuntime } from '../user-runtime';
 
 // ============================================================================
@@ -271,7 +271,7 @@ export function toLibraryParams(
  * @returns User library creation parameters
  * @internal
  */
-export function toUserLibraryParams(params: IWorkspaceCreateParams): IUserLibraryCreateParams {
+export function toUserLibraryParams(params: IWorkspaceCreateParams): IUserEntityLibraryCreateParams {
   return {
     fileSources: params.userFileSources,
     libraries: params.journals ? { journals: params.journals } : undefined,

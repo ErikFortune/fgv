@@ -24,4 +24,4 @@
  */
 
 export * from './model';
-export { UserLibrary } from './userLibrary';
+export { UserEntityLibrary } from './userEntityLibrary';
