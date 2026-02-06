@@ -57,7 +57,7 @@ The runtime context providing materialized library objects.
 
 </td><td>
 
-[IUserLibraryRuntime](IUserLibraryRuntime.md)
+[IUserLibrary](IUserLibrary.md)
 
 </td><td>
 

@@ -8,5 +8,5 @@ Access via `userRuntime.sessions`, `userRuntime.journals`, `userRuntime.moldInve
 **Signature:**
 
 ```typescript
-readonly userData: IUserLibraryRuntime;
+readonly userData: IUserLibrary;
 ```

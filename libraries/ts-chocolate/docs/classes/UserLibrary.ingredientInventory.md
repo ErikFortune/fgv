@@ -1,6 +1,6 @@
-[Home](../../README.md) > [UserRuntime](../README.md) > [UserLibraryRuntime](./UserLibraryRuntime.md) > ingredientInventory
+[Home](../README.md) > [UserLibrary](./UserLibrary.md) > ingredientInventory
 
-## UserLibraryRuntime.ingredientInventory property
+## UserLibrary.ingredientInventory property
 
 A materialized library of ingredient inventory entries, keyed by composite ID.
 Inventory entries are materialized lazily on access and cached.

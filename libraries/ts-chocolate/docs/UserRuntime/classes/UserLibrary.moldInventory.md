@@ -1,6 +1,6 @@
-[Home](../README.md) > [UserLibraryRuntime](./UserLibraryRuntime.md) > moldInventory
+[Home](../../README.md) > [UserRuntime](../README.md) > [UserLibrary](./UserLibrary.md) > moldInventory
 
-## UserLibraryRuntime.moldInventory property
+## UserLibrary.moldInventory property
 
 A materialized library of mold inventory entries, keyed by composite ID.
 Inventory entries are materialized lazily on access and cached.

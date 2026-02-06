@@ -1,13 +1,15 @@
-[Home](../../README.md) > [UserRuntime](../README.md) > IUserLibraryRuntime
+[Home](../../README.md) > [UserRuntime](../README.md) > UserLibrary
 
-# Interface: IUserLibraryRuntime
+# Class: UserLibrary
 
-Runtime materialization layer for user library data.
+Implementation of user library runtime materialization.
 
 Follows the library-runtime pattern:
-- Exposes underlying entity library for direct access
-- Provides MaterializedLibrary instances for sessions, journals, and inventory
+- Exposes MaterializedLibrary instances for sessions, journals, and inventory
 - Lazy resolution and caching of materialized objects
+- Specialized methods for session creation and persistence
+
+**Implements:** [`IUserLibrary`](../../interfaces/IUserLibrary.md)
 
 ## Properties
 
@@ -31,7 +33,7 @@ Description
 <tbody>
 <tr><td>
 
-[sessions](./IUserLibraryRuntime.sessions.md)
+[sessions](./UserLibrary.sessions.md)
 
 </td><td>
 
@@ -48,7 +50,7 @@ A materialized library of all sessions, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[journals](./IUserLibraryRuntime.journals.md)
+[journals](./UserLibrary.journals.md)
 
 </td><td>
 
@@ -65,7 +67,7 @@ A materialized library of all journal entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[moldInventory](./IUserLibraryRuntime.moldInventory.md)
+[moldInventory](./UserLibrary.moldInventory.md)
 
 </td><td>
 
@@ -82,7 +84,7 @@ A materialized library of mold inventory entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[ingredientInventory](./IUserLibraryRuntime.ingredientInventory.md)
+[ingredientInventory](./UserLibrary.ingredientInventory.md)
 
 </td><td>
 
@@ -117,7 +119,20 @@ Description
 <tbody>
 <tr><td>
 
-[createFillingSession(variationId, options)](./IUserLibraryRuntime.createFillingSession.md)
+[create(userEntityLibrary, sessionContext)](./UserLibrary.create.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new UserLibrary.
+
+</td></tr>
+<tr><td>
+
+[createFillingSession(variationId, options)](./UserLibrary.createFillingSession.md)
 
 </td><td>
 
@@ -130,7 +145,7 @@ Creates a new persisted filling session from a filling variation.
 </td></tr>
 <tr><td>
 
-[saveSession(sessionId)](./IUserLibraryRuntime.saveSession.md)
+[saveSession(sessionId)](./UserLibrary.saveSession.md)
 
 </td><td>
 

@@ -20,7 +20,7 @@ Description
 <tbody>
 <tr><td>
 
-[UserLibraryRuntime](./classes/UserLibraryRuntime.md)
+[UserLibrary](./classes/UserLibrary.md)
 
 </td><td>
 
@@ -124,7 +124,7 @@ Materialized ingredient inventory entry with resolved ingredient reference.
 </td></tr>
 <tr><td>
 
-[IUserLibraryRuntime](./interfaces/IUserLibraryRuntime.md)
+[IUserLibrary](./interfaces/IUserLibrary.md)
 
 </td><td>
 

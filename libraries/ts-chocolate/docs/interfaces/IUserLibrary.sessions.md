@@ -1,6 +1,6 @@
-[Home](../../README.md) > [UserRuntime](../README.md) > [IUserLibraryRuntime](./IUserLibraryRuntime.md) > sessions
+[Home](../README.md) > [IUserLibrary](./IUserLibrary.md) > sessions
 
-## IUserLibraryRuntime.sessions property
+## IUserLibrary.sessions property
 
 A materialized library of all sessions, keyed by composite ID.
 Sessions are materialized lazily on access and cached.

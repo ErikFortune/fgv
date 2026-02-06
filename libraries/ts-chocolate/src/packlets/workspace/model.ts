@@ -38,7 +38,7 @@ import { IChocolateEntityLibraryCreateParams, IInstantiatedEntityLibrarySources 
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
 import { IUserEntityLibraryCreateParams } from '../user-entities';
-import { IUserLibraryRuntime } from '../user-runtime';
+import { IUserLibrary } from '../user-runtime';
 
 // ============================================================================
 // Workspace State
@@ -78,7 +78,7 @@ export interface IWorkspace {
    * User library runtime for materialized user data.
    * Access via `userRuntime.sessions`, `userRuntime.journals`, `userRuntime.moldInventory`, etc.
    */
-  readonly userData: IUserLibraryRuntime;
+  readonly userData: IUserLibrary;
 
   /**
    * The key store for encryption key management, if configured.

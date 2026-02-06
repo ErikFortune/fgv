@@ -1,6 +1,6 @@
-[Home](../README.md) > [IUserLibraryRuntime](./IUserLibraryRuntime.md) > createFillingSession
+[Home](../README.md) > [UserLibrary](./UserLibrary.md) > createFillingSession
 
-## IUserLibraryRuntime.createFillingSession() method
+## UserLibrary.createFillingSession() method
 
 Creates a new persisted filling session from a filling variation.
 The session is created and persisted immediately.
@@ -21,6 +21,6 @@ createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFill
 
 **Returns:**
 
-Result&lt;[IFillingSessionEntity](IFillingSessionEntity.md)&gt;
+Result&lt;[IFillingSessionEntity](../interfaces/IFillingSessionEntity.md)&gt;
 
 Result with the created persisted session

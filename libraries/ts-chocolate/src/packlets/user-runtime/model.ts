@@ -230,7 +230,7 @@ export interface IIngredientInventoryEntry
 export type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
 
 // ============================================================================
-// User Library Runtime Interface
+// User Library Interface
 // ============================================================================
 
 /**
@@ -243,7 +243,7 @@ export type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
  *
  * @public
  */
-export interface IUserLibraryRuntime {
+export interface IUserLibrary {
   /**
    * A materialized library of all sessions, keyed by composite ID.
    * Sessions are materialized lazily on access and cached.

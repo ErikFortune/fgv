@@ -1,6 +1,6 @@
-[Home](../README.md) > IUserLibraryRuntime
+[Home](../README.md) > IUserLibrary
 
-# Interface: IUserLibraryRuntime
+# Interface: IUserLibrary
 
 Runtime materialization layer for user library data.
 
@@ -31,7 +31,7 @@ Description
 <tbody>
 <tr><td>
 
-[sessions](./IUserLibraryRuntime.sessions.md)
+[sessions](./IUserLibrary.sessions.md)
 
 </td><td>
 
@@ -48,7 +48,7 @@ A materialized library of all sessions, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[journals](./IUserLibraryRuntime.journals.md)
+[journals](./IUserLibrary.journals.md)
 
 </td><td>
 
@@ -65,7 +65,7 @@ A materialized library of all journal entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[moldInventory](./IUserLibraryRuntime.moldInventory.md)
+[moldInventory](./IUserLibrary.moldInventory.md)
 
 </td><td>
 
@@ -82,7 +82,7 @@ A materialized library of mold inventory entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[ingredientInventory](./IUserLibraryRuntime.ingredientInventory.md)
+[ingredientInventory](./IUserLibrary.ingredientInventory.md)
 
 </td><td>
 
@@ -117,7 +117,7 @@ Description
 <tbody>
 <tr><td>
 
-[createFillingSession(variationId, options)](./IUserLibraryRuntime.createFillingSession.md)
+[createFillingSession(variationId, options)](./IUserLibrary.createFillingSession.md)
 
 </td><td>
 
@@ -130,7 +130,7 @@ Creates a new persisted filling session from a filling variation.
 </td></tr>
 <tr><td>
 
-[saveSession(sessionId)](./IUserLibraryRuntime.saveSession.md)
+[saveSession(sessionId)](./IUserLibrary.saveSession.md)
 
 </td><td>
 

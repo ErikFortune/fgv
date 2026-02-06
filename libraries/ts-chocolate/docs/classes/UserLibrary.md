@@ -1,6 +1,6 @@
-[Home](../README.md) > UserLibraryRuntime
+[Home](../README.md) > UserLibrary
 
-# Class: UserLibraryRuntime
+# Class: UserLibrary
 
 Implementation of user library runtime materialization.
 
@@ -9,7 +9,7 @@ Follows the library-runtime pattern:
 - Lazy resolution and caching of materialized objects
 - Specialized methods for session creation and persistence
 
-**Implements:** [`IUserLibraryRuntime`](../interfaces/IUserLibraryRuntime.md)
+**Implements:** [`IUserLibrary`](../interfaces/IUserLibrary.md)
 
 ## Properties
 
@@ -33,7 +33,7 @@ Description
 <tbody>
 <tr><td>
 
-[sessions](./UserLibraryRuntime.sessions.md)
+[sessions](./UserLibrary.sessions.md)
 
 </td><td>
 
@@ -50,7 +50,7 @@ A materialized library of all sessions, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[journals](./UserLibraryRuntime.journals.md)
+[journals](./UserLibrary.journals.md)
 
 </td><td>
 
@@ -67,7 +67,7 @@ A materialized library of all journal entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[moldInventory](./UserLibraryRuntime.moldInventory.md)
+[moldInventory](./UserLibrary.moldInventory.md)
 
 </td><td>
 
@@ -84,7 +84,7 @@ A materialized library of mold inventory entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
-[ingredientInventory](./UserLibraryRuntime.ingredientInventory.md)
+[ingredientInventory](./UserLibrary.ingredientInventory.md)
 
 </td><td>
 
@@ -119,7 +119,7 @@ Description
 <tbody>
 <tr><td>
 
-[create(userEntityLibrary, sessionContext)](./UserLibraryRuntime.create.md)
+[create(userEntityLibrary, sessionContext)](./UserLibrary.create.md)
 
 </td><td>
 
@@ -127,12 +127,12 @@ Description
 
 </td><td>
 
-Creates a new UserLibraryRuntime.
+Creates a new UserLibrary.
 
 </td></tr>
 <tr><td>
 
-[createFillingSession(variationId, options)](./UserLibraryRuntime.createFillingSession.md)
+[createFillingSession(variationId, options)](./UserLibrary.createFillingSession.md)
 
 </td><td>
 
@@ -145,7 +145,7 @@ Creates a new persisted filling session from a filling variation.
 </td></tr>
 <tr><td>
 
-[saveSession(sessionId)](./UserLibraryRuntime.saveSession.md)
+[saveSession(sessionId)](./UserLibrary.saveSession.md)
 
 </td><td>
 

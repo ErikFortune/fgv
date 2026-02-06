@@ -26,4 +26,4 @@
  */
 
 export * from './model';
-export * from './userLibraryRuntime';
+export * from './userLibrary';

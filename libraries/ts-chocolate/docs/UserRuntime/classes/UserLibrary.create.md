@@ -1,13 +1,13 @@
-[Home](../README.md) > [UserLibraryRuntime](./UserLibraryRuntime.md) > create
+[Home](../../README.md) > [UserRuntime](../README.md) > [UserLibrary](./UserLibrary.md) > create
 
-## UserLibraryRuntime.create() method
+## UserLibrary.create() method
 
-Creates a new UserLibraryRuntime.
+Creates a new UserLibrary.
 
 **Signature:**
 
 ```typescript
-static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
+static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibrary>;
 ```
 
 **Parameters:**
@@ -20,6 +20,6 @@ static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionCon
 
 **Returns:**
 
-Result&lt;[UserLibraryRuntime](UserLibraryRuntime.md)&gt;
+Result&lt;[UserLibrary](../../classes/UserLibrary.md)&gt;
 
-Result with the UserLibraryRuntime
+Result with the UserLibrary

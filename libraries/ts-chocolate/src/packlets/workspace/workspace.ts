@@ -30,7 +30,7 @@ import { IEncryptionConfig } from '../library-data';
 import { RuntimeContext } from '../runtime';
 import { ISettingsManager } from '../settings';
 import { UserEntityLibrary } from '../user-entities';
-import { IUserLibraryRuntime, UserLibraryRuntime } from '../user-runtime';
+import { IUserLibrary, UserLibrary } from '../user-runtime';
 import {
   IWorkspace,
   IWorkspaceCreateParams,
@@ -60,7 +60,7 @@ export class Workspace implements IWorkspace {
   private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
-  private _userData: UserLibraryRuntime | undefined;
+  private _userData: UserLibrary | undefined;
 
   /**
    * Private constructor - use static factory methods.
@@ -258,10 +258,10 @@ export class Workspace implements IWorkspace {
   /**
    * {@inheritDoc IWorkspace.userData}
    */
-  public get userData(): IUserLibraryRuntime {
+  public get userData(): IUserLibrary {
     if (this._userData === undefined) {
       // Lazily create the user runtime on first access
-      this._userData = UserLibraryRuntime.create(this._userEntities, this._library).orThrow();
+      this._userData = UserLibrary.create(this._userEntities, this._library).orThrow();
     }
     return this._userData;
   }

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * UserLibraryRuntime - materializes user library data with resolved references.
+ * UserLibrary - materializes user library data with resolved references.
  * @packageDocumentation
  */
 
@@ -54,7 +54,7 @@ import {
   ICreateFillingSessionOptions,
   IIngredientInventoryEntry,
   IMoldInventoryEntry,
-  IUserLibraryRuntime
+  IUserLibrary
 } from './model';
 
 /**
@@ -67,7 +67,7 @@ import {
  *
  * @public
  */
-export class UserLibraryRuntime implements IUserLibraryRuntime {
+export class UserLibrary implements IUserLibrary {
   private readonly _entities: IUserEntityLibrary;
   private readonly _sessionContext: ISessionContext;
 
@@ -101,39 +101,35 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * Creates a new UserLibraryRuntime.
+   * Creates a new UserLibrary.
    * @param userEntityLibrary - The user library containing persisted data
    * @param sessionContext - The session context for materializing recipes and confections
-   * @returns Result with the UserLibraryRuntime
+   * @returns Result with the UserLibrary
    * @public
    */
   public static create(
     userEntityLibrary: IUserEntityLibrary,
     sessionContext: ISessionContext
-  ): Result<UserLibraryRuntime> {
-    return succeed(new UserLibraryRuntime(userEntityLibrary, sessionContext));
+  ): Result<UserLibrary> {
+    return succeed(new UserLibrary(userEntityLibrary, sessionContext));
   }
 
-  // ============================================================================
-  // MaterializedLibrary Properties (IUserLibraryRuntime)
-  // ============================================================================
-
   /**
-   * {@inheritDoc IUserLibraryRuntime.sessions}
+   * {@inheritDoc IUserLibrary.sessions}
    */
   public get sessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never> {
     return this._getSessions();
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.journals}
+   * {@inheritDoc IUserLibrary.journals}
    */
   public get journals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never> {
     return this._getJournals();
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.moldInventory}
+   * {@inheritDoc IUserLibrary.moldInventory}
    */
   public get moldInventory(): MaterializedLibrary<
     Inventory.MoldInventoryEntryId,
@@ -145,7 +141,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.ingredientInventory}
+   * {@inheritDoc IUserLibrary.ingredientInventory}
    */
   public get ingredientInventory(): MaterializedLibrary<
     Inventory.IngredientInventoryEntryId,
@@ -156,12 +152,8 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
     return this._getIngredientInventory();
   }
 
-  // ============================================================================
-  // Specialized Session Methods (IUserLibraryRuntime)
-  // ============================================================================
-
   /**
-   * {@inheritDoc IUserLibraryRuntime.createFillingSession}
+   * {@inheritDoc IUserLibrary.createFillingSession}
    */
   public createFillingSession(
     variationId: FillingRecipeVariationId,
@@ -183,7 +175,7 @@ export class UserLibraryRuntime implements IUserLibraryRuntime {
   }
 
   /**
-   * {@inheritDoc IUserLibraryRuntime.saveSession}
+   * {@inheritDoc IUserLibrary.saveSession}
    */
   public saveSession(sessionId: SessionId): Result<AnySessionEntity> {
     // Get the materialized session from the cache

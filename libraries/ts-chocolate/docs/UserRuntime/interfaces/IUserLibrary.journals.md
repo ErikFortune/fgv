@@ -1,6 +1,6 @@
-[Home](../../README.md) > [UserRuntime](../README.md) > [UserLibraryRuntime](./UserLibraryRuntime.md) > journals
+[Home](../../README.md) > [UserRuntime](../README.md) > [IUserLibrary](./IUserLibrary.md) > journals
 
-## UserLibraryRuntime.journals property
+## IUserLibrary.journals property
 
 A materialized library of all journal entries, keyed by composite ID.
 Journal entries are materialized lazily on access and cached.

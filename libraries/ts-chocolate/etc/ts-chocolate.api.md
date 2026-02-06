@@ -4833,7 +4833,7 @@ interface IUserEntityLibraryCreateParams {
 }
 
 // @public
-interface IUserLibraryRuntime {
+interface IUserLibrary {
     createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
@@ -4907,7 +4907,7 @@ export interface IWorkspace {
     readonly settings: ISettingsManager | undefined;
     readonly state: WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
-    readonly userData: IUserLibraryRuntime;
+    readonly userData: IUserLibrary;
 }
 
 // @public
@@ -6687,29 +6687,29 @@ class UserEntityLibrary implements IUserEntityLibrary {
 }
 
 // @public
-class UserLibraryRuntime implements IUserLibraryRuntime {
-    static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibraryRuntime>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+class UserLibrary implements IUserLibrary {
+    static create(userEntityLibrary: IUserEntityLibrary, sessionContext: ISessionContext): Result<UserLibrary>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     createFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     get ingredientInventory(): MaterializedLibrary<Inventory.IngredientInventoryEntryId, Inventory.IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     get journals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     get moldInventory(): MaterializedLibrary<Inventory.MoldInventoryEntryId, Inventory.IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     saveSession(sessionId: SessionId): Result<AnySessionEntity>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibraryRuntime"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
     get sessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
@@ -6729,8 +6729,8 @@ declare namespace UserRuntime {
         IMoldInventoryEntry,
         IIngredientInventoryEntry,
         AnyInventoryEntry,
-        IUserLibraryRuntime,
-        UserLibraryRuntime
+        IUserLibrary,
+        UserLibrary
     }
 }
 export { UserRuntime }
@@ -6952,7 +6952,7 @@ export class Workspace implements IWorkspace {
     get settings(): ISettingsManager | undefined;
     get state(): WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
-    get userData(): IUserLibraryRuntime;
+    get userData(): IUserLibrary;
 }
 
 // @public

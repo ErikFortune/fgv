@@ -1,6 +1,6 @@
-[Home](../README.md) > [IUserLibraryRuntime](./IUserLibraryRuntime.md) > saveSession
+[Home](../../README.md) > [UserRuntime](../README.md) > [UserLibrary](./UserLibrary.md) > saveSession
 
-## IUserLibraryRuntime.saveSession() method
+## UserLibrary.saveSession() method
 
 Saves an active session back to the library.
 
@@ -19,6 +19,6 @@ saveSession(sessionId: SessionId): Result<AnySessionEntity>;
 
 **Returns:**
 
-Result&lt;[AnySessionEntity](../type-aliases/AnySessionEntity.md)&gt;
+Result&lt;[AnySessionEntity](../../type-aliases/AnySessionEntity.md)&gt;
 
 Result with the updated persisted session
