@@ -277,18 +277,17 @@ describe('BarTruffleEditingSession', () => {
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       const initialFilling = Array.from(session.fillingSessions.values())[0];
-      const initialWeight = initialFilling?.produced.targetWeight;
+      expect(initialFilling).toBeDefined();
+      const initialWeight = initialFilling!.produced.targetWeight;
 
       expect(session.scaleToYield({ count: 96, unit: 'pieces' })).toSucceed();
 
       expect(session.produced.yield.count).toBe(96);
 
       const scaledFilling = Array.from(session.fillingSessions.values())[0];
-      const scaledWeight = scaledFilling?.produced.targetWeight;
-
-      if (initialWeight !== undefined && scaledWeight !== undefined) {
-        expect(scaledWeight).toBe(initialWeight * 2);
-      }
+      expect(scaledFilling).toBeDefined();
+      // Doubling count should double the filling weight
+      expect(scaledFilling!.produced.targetWeight).toBe(initialWeight * 2);
     });
 
     test('scale factor of 1 is no-op', () => {

@@ -310,7 +310,24 @@ describe('MoldedBonBonEditingSession', () => {
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
       expect(session.setFrames(2)).toSucceed();
+      // 2 frames x 24 cavities = 48 pieces
       expect(session.produced.yield.count).toBe(48);
+    });
+
+    test('setFrames rescales filling sessions', () => {
+      const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
+      if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
+      const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
+
+      const initialFilling = Array.from(session.fillingSessions.values())[0];
+      expect(initialFilling).toBeDefined();
+      const initialWeight = initialFilling!.produced.targetWeight;
+
+      expect(session.setFrames(4)).toSucceed();
+
+      const scaledFilling = Array.from(session.fillingSessions.values())[0];
+      expect(scaledFilling).toBeDefined();
+      expect(scaledFilling!.produced.targetWeight).not.toBe(initialWeight);
     });
 
     test('fails for zero frames', () => {
@@ -402,8 +419,12 @@ describe('MoldedBonBonEditingSession', () => {
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
       expect(session.analyzeMoldChange('test.mold-b' as MoldId)).toSucceedAndSatisfy((analysis) => {
-        expect(analysis).toBeDefined();
-        expect(analysis.weightDelta).toBeDefined();
+        expect(analysis.oldMoldId).toBe('test.mold-a');
+        expect(analysis.newMoldId).toBe('test.mold-b');
+        // mold-b (28 cavities x 12g) vs mold-a (24 cavities x 10g) => weight increases
+        expect(analysis.weightDelta).toBeGreaterThan(0);
+        expect(analysis.requiresRescaling).toBe(true);
+        expect(analysis.fillingSessionsAffected).toContain('center' as SlotId);
       });
     });
 
@@ -416,14 +437,35 @@ describe('MoldedBonBonEditingSession', () => {
       expect(session.pendingMoldChange).toBeDefined();
     });
 
-    test('confirmMoldChange applies pending change', () => {
+    test('confirmMoldChange applies pending change and updates currentMold', () => {
       const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
       if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
+      expect(session.currentMold.id).toBe('test.mold-a');
+
       session.analyzeMoldChange('test.mold-b' as MoldId).orThrow();
       expect(session.confirmMoldChange()).toSucceed();
       expect(session.currentMold.id).toBe('test.mold-b');
+      expect(session.pendingMoldChange).toBeUndefined();
+    });
+
+    test('confirmMoldChange rescales filling sessions when weights differ', () => {
+      const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
+      if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
+      const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
+
+      const fillingBefore = Array.from(session.fillingSessions.values())[0];
+      expect(fillingBefore).toBeDefined();
+      const weightBefore = fillingBefore!.produced.targetWeight;
+
+      session.analyzeMoldChange('test.mold-b' as MoldId).orThrow();
+      expect(session.confirmMoldChange()).toSucceed();
+
+      const fillingAfter = Array.from(session.fillingSessions.values())[0];
+      expect(fillingAfter).toBeDefined();
+      // mold-b has different cavity weight, so filling should be rescaled
+      expect(fillingAfter!.produced.targetWeight).not.toBe(weightBefore);
     });
 
     test('confirmMoldChange fails without analyze', () => {

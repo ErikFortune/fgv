@@ -250,6 +250,30 @@ describe('ConfectionEditingSessionBase', () => {
       });
     });
 
+    test('setFillingSlot replaces existing slot with new recipe session', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      const knownSlot = Array.from(session.fillingSessions.keys())[0];
+      if (knownSlot === undefined) {
+        throw new Error('Expected at least one filling slot');
+      }
+      const originalFilling = session.getFillingSession(knownSlot);
+      expect(originalFilling).toBeDefined();
+
+      expect(
+        session.setFillingSlot(knownSlot, {
+          type: 'recipe',
+          fillingId: 'test.test-ganache' as FillingId
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result).toBeInstanceOf(Session.EditingSession);
+        // Should be a different session instance
+        expect(result).not.toBe(originalFilling);
+      });
+    });
+
     test('setFillingSlot with ingredient choice returns undefined', () => {
       const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
       if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
@@ -263,7 +287,7 @@ describe('ConfectionEditingSessionBase', () => {
       ).toSucceedWith(undefined);
     });
 
-    test('removeFillingSlot removes session', () => {
+    test('removeFillingSlot removes and returns the session', () => {
       const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
       if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
@@ -273,7 +297,9 @@ describe('ConfectionEditingSessionBase', () => {
         throw new Error('Expected at least one filling slot');
       }
 
-      expect(session.removeFillingSlot(knownSlot)).toSucceed();
+      expect(session.removeFillingSlot(knownSlot)).toSucceedAndSatisfy((removed) => {
+        expect(removed).toBeInstanceOf(Session.EditingSession);
+      });
       expect(session.getFillingSession(knownSlot)).toBeUndefined();
     });
 
