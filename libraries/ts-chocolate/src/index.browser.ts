@@ -41,7 +41,8 @@ import * as Editing from './packlets/editing';
 import * as Entities from './packlets/entities';
 import * as LibraryData from './packlets/library-data';
 import * as LibraryRuntime from './packlets/library-runtime';
+import * as Settings from './packlets/settings';
 import * as UserEntities from './packlets/user-entities';
 import * as UserLibrary from './packlets/user-library';
 
-export { BuiltIn, Editing, Entities, LibraryData, LibraryRuntime, UserEntities, UserLibrary };
+export { BuiltIn, Editing, Entities, LibraryData, LibraryRuntime, Settings, UserEntities, UserLibrary };

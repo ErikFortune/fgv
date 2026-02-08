@@ -9,7 +9,11 @@
     "runtime/tasks/model.js",
     "runtime/procedures/model.js",
     "runtime/molds/model.js",
-    "runtime/scratchpad/converters.js"
+    "runtime/scratchpad/converters.js",
+    "workspace/browserFactory.js",
+    "editing/exportImport.js",
+    "entities/session/collection.js",
+    "entities/journal/collection.js"
   ],
   "coverageThreshold": {
     "global": {

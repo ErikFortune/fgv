@@ -24,6 +24,7 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionRecipeVariationSpec,
+  ConfectionRecipeVariationId,
   IngredientId,
   MoldId,
   FillingId,
@@ -392,6 +393,86 @@ describe('Confections model', () => {
         expect(variation.variationSpec).toBe('2026-01-01-01');
         expect(variation.createdDate).toBe('2026-01-01');
         expect(variation.notes).toBeDefined();
+      });
+    });
+  });
+
+  // ============================================================================
+  // Produced Confection Type Guards
+  // ============================================================================
+
+  describe('Produced confection type guards', () => {
+    const producedMoldedBonBon: Confections.IProducedMoldedBonBonEntity = {
+      confectionType: 'molded-bonbon',
+      variationId: 'test.molded-bonbon.2026-01-01-01' as ConfectionRecipeVariationId,
+      yield: {
+        count: 24,
+        unit: 'pieces',
+        weightPerPiece: 12 as Measurement
+      },
+      moldId: 'test.dome-25mm' as MoldId,
+      shellChocolateId: 'test.dark-chocolate' as IngredientId
+    };
+
+    const producedBarTruffle: Confections.IProducedBarTruffleEntity = {
+      confectionType: 'bar-truffle',
+      variationId: 'test.bar-truffle.2026-01-01-01' as ConfectionRecipeVariationId,
+      yield: {
+        count: 30,
+        unit: 'pieces',
+        weightPerPiece: 15 as Measurement
+      }
+    };
+
+    const producedRolledTruffle: Confections.IProducedRolledTruffleEntity = {
+      confectionType: 'rolled-truffle',
+      variationId: 'test.rolled-truffle.2026-01-01-01' as ConfectionRecipeVariationId,
+      yield: {
+        count: 20,
+        unit: 'pieces',
+        weightPerPiece: 18 as Measurement
+      }
+    };
+
+    describe('isProducedMoldedBonBonEntity', () => {
+      test('returns true for molded bonbon', () => {
+        expect(Confections.isProducedMoldedBonBonEntity(producedMoldedBonBon)).toBe(true);
+      });
+
+      test('returns false for bar truffle', () => {
+        expect(Confections.isProducedMoldedBonBonEntity(producedBarTruffle)).toBe(false);
+      });
+
+      test('returns false for rolled truffle', () => {
+        expect(Confections.isProducedMoldedBonBonEntity(producedRolledTruffle)).toBe(false);
+      });
+    });
+
+    describe('isProducedBarTruffleEntity', () => {
+      test('returns true for bar truffle', () => {
+        expect(Confections.isProducedBarTruffleEntity(producedBarTruffle)).toBe(true);
+      });
+
+      test('returns false for molded bonbon', () => {
+        expect(Confections.isProducedBarTruffleEntity(producedMoldedBonBon)).toBe(false);
+      });
+
+      test('returns false for rolled truffle', () => {
+        expect(Confections.isProducedBarTruffleEntity(producedRolledTruffle)).toBe(false);
+      });
+    });
+
+    describe('isProducedRolledTruffleEntity', () => {
+      test('returns true for rolled truffle', () => {
+        expect(Confections.isProducedRolledTruffleEntity(producedRolledTruffle)).toBe(true);
+      });
+
+      test('returns false for molded bonbon', () => {
+        expect(Confections.isProducedRolledTruffleEntity(producedMoldedBonBon)).toBe(false);
+      });
+
+      test('returns false for bar truffle', () => {
+        expect(Confections.isProducedRolledTruffleEntity(producedBarTruffle)).toBe(false);
       });
     });
   });

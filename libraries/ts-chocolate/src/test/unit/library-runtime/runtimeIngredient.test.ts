@@ -93,6 +93,23 @@ describe('RuntimeIngredient', () => {
     origins: ['Venezuela']
   };
 
+  const milkChocolate: IChocolateIngredientEntity = {
+    baseId: 'milk-chocolate' as BaseIngredientId,
+    name: 'Milk Chocolate 40%',
+    category: 'chocolate',
+    chocolateType: 'milk',
+    cacaoPercentage: 40 as Percentage,
+    ganacheCharacteristics: {
+      cacaoFat: 24 as Percentage,
+      sugar: 42 as Percentage,
+      milkFat: 8 as Percentage,
+      water: 1 as Percentage,
+      solids: 25 as Percentage,
+      otherFats: 0 as Percentage
+    }
+    // No beanVarieties, viscosityMcM to test undefined cases
+  };
+
   const cream: IDairyIngredientEntity = {
     baseId: 'cream' as BaseIngredientId,
     name: 'Heavy Cream',
@@ -232,6 +249,8 @@ describe('RuntimeIngredient', () => {
           items: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             'dark-chocolate': darkChocolate,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'milk-chocolate': milkChocolate,
             cream,
             sugar,
             butter,
@@ -439,6 +458,13 @@ describe('RuntimeIngredient', () => {
       }
     });
 
+    test('provides fluidityMacMichael via deprecated getter', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.fluidityMacMichael).toBe(2500);
+      }
+    });
+
     test('provides temperatureCurve via type narrowing', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
       if (ingredient.isChocolate()) {
@@ -450,6 +476,27 @@ describe('RuntimeIngredient', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
       if (ingredient.isChocolate()) {
         expect(ingredient.beanVarieties).toContain('Criollo');
+      }
+    });
+
+    test('provides cacaoVariety via deprecated getter (first variety)', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.cacaoVariety).toBe('Criollo');
+      }
+    });
+
+    test('cacaoVariety returns undefined when beanVarieties is undefined', () => {
+      const ingredient = ctx.ingredients.get('test.milk-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.cacaoVariety).toBeUndefined();
+      }
+    });
+
+    test('fluidityMacMichael returns undefined when viscosityMcM is undefined', () => {
+      const ingredient = ctx.ingredients.get('test.milk-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.fluidityMacMichael).toBeUndefined();
       }
     });
 

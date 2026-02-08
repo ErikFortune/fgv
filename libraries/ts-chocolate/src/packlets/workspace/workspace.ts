@@ -118,6 +118,7 @@ export class Workspace implements IWorkspace {
       } else {
         // Create new key store (caller will need to initialize it)
         const createResult = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider });
+        /* c8 ignore next 3 - defensive: KeyStore.create failure */
         if (createResult.isFailure()) {
           return fail(`Failed to create key store: ${createResult.message}`);
         }
@@ -127,41 +128,34 @@ export class Workspace implements IWorkspace {
 
     // Create library parameters
     const libraryParams = toLibraryParams(params);
-
-    // Create chocolate library (this creates the shared library)
-    const libraryResult = ChocolateLibrary.create({
-      entityLibraryParams: libraryParams,
-      preWarm: params.preWarm
-    });
-
-    if (libraryResult.isFailure()) {
-      return fail(`Failed to create chocolate library: ${libraryResult.message}`);
-    }
-
-    // Create user library parameters
     const userLibraryParams = toUserLibraryParams(params);
 
-    // Create user library (journals, future inventory)
-    const userLibraryResult = UserEntityLibrary.create(userLibraryParams);
-
-    if (userLibraryResult.isFailure()) {
-      return fail(`Failed to create user library: ${userLibraryResult.message}`);
-    }
-
-    const workspace = new Workspace(
-      libraryResult.value,
-      userLibraryResult.value,
-      keyStore,
-      cryptoProvider,
-      undefined, // Settings manager - not available via basic create
-      logger
-    );
-
-    logger.info(
-      `Workspace created: ${workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'}`
-    );
-
-    return succeed(workspace);
+    // Create chocolate library and user library, then assemble workspace
+    return ChocolateLibrary.create({
+      entityLibraryParams: libraryParams,
+      preWarm: params.preWarm
+    })
+      .withErrorFormat((msg) => `Failed to create chocolate library: ${msg}`)
+      .onSuccess((library) =>
+        UserEntityLibrary.create(userLibraryParams)
+          .withErrorFormat((msg) => `Failed to create user library: ${msg}`)
+          .onSuccess((userLibrary) => {
+            const workspace = new Workspace(
+              library,
+              userLibrary,
+              keyStore,
+              cryptoProvider,
+              undefined, // Settings manager - not available via basic create
+              logger
+            );
+            logger.info(
+              `Workspace created: ${
+                workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'
+              }`
+            );
+            return succeed(workspace);
+          })
+      );
   }
 
   /**
@@ -196,6 +190,7 @@ export class Workspace implements IWorkspace {
       } else {
         // Create new key store (caller will need to initialize it)
         const createResult = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider });
+        /* c8 ignore next 3 - defensive: KeyStore.create failure */
         if (createResult.isFailure()) {
           return fail(`Failed to create key store: ${createResult.message}`);
         }
@@ -205,43 +200,34 @@ export class Workspace implements IWorkspace {
 
     // Create library parameters
     const libraryParams = toLibraryParams(params);
-
-    // Create chocolate library (this creates the shared library)
-    const libraryResult = ChocolateLibrary.create({
-      entityLibraryParams: libraryParams,
-      preWarm: params.preWarm
-    });
-
-    if (libraryResult.isFailure()) {
-      return fail(`Failed to create chocolate library: ${libraryResult.message}`);
-    }
-
-    // Create user library parameters
     const userLibraryParams = toUserLibraryParams(params);
 
-    // Create user library (journals, sessions)
-    const userLibraryResult = UserEntityLibrary.create(userLibraryParams);
-
-    if (userLibraryResult.isFailure()) {
-      return fail(`Failed to create user library: ${userLibraryResult.message}`);
-    }
-
-    const workspace = new Workspace(
-      libraryResult.value,
-      userLibraryResult.value,
-      keyStore,
-      cryptoProvider,
-      params.settings,
-      logger
-    );
-
-    logger.info(
-      `Workspace created with settings: ${
-        workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'
-      }`
-    );
-
-    return succeed(workspace);
+    // Create chocolate library and user library, then assemble workspace
+    return ChocolateLibrary.create({
+      entityLibraryParams: libraryParams,
+      preWarm: params.preWarm
+    })
+      .withErrorFormat((msg) => `Failed to create chocolate library: ${msg}`)
+      .onSuccess((library) =>
+        UserEntityLibrary.create(userLibraryParams)
+          .withErrorFormat((msg) => `Failed to create user library: ${msg}`)
+          .onSuccess((userLibrary) => {
+            const workspace = new Workspace(
+              library,
+              userLibrary,
+              keyStore,
+              cryptoProvider,
+              params.settings,
+              logger
+            );
+            logger.info(
+              `Workspace created with settings: ${
+                workspace.state === 'no-keystore' ? 'no key store' : 'with key store (locked)'
+              }`
+            );
+            return succeed(workspace);
+          })
+      );
   }
 
   // ============================================================================
@@ -356,12 +342,14 @@ export class Workspace implements IWorkspace {
    * @internal
    */
   private async _loadProtectedCollections(): Promise<void> {
+    /* c8 ignore next 3 - defensive: already validated by caller */
     if (!this._keyStore || !this._cryptoProvider) {
       return;
     }
 
     // Get the secret provider from the key store
     const providerResult = this._keyStore.getSecretProvider();
+    /* c8 ignore next 4 - defensive: keyStore.getSecretProvider unlikely to fail after unlock */
     if (providerResult.isFailure()) {
       this._logger.warn(`Could not get secret provider: ${providerResult.message}`);
       return;

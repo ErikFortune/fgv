@@ -25,7 +25,16 @@
 
 import '@fgv/ts-utils-jest';
 import { ChocolateLibrary } from '../../../packlets/library-runtime';
-import { ConfectionId, FillingId, IngredientId, MoldId, ProcedureId, TaskId } from '../../../packlets/common';
+import {
+  CollectionId,
+  ConfectionId,
+  FillingId,
+  IngredientId,
+  MoldId,
+  ProcedureId,
+  TaskId
+} from '../../../packlets/common';
+import type { Model } from '../../../packlets/common';
 
 describe('MaterializedLibrary Functionality Tests', () => {
   let ctx: ChocolateLibrary;
@@ -294,6 +303,447 @@ describe('MaterializedLibrary Functionality Tests', () => {
           }
         }
       });
+    });
+  });
+
+  // ============================================================================
+  // MaterializedLibrary: getPreferred and getWithAlternates
+  // ============================================================================
+
+  describe('getPreferred and getWithAlternates', () => {
+    test('getPreferred returns preferred item from IIdsWithPreferred', () => {
+      // Get some actual ingredient IDs from the library
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 3)
+        .map((i) => i.id);
+      const spec = {
+        ids: [allIds[0], allIds[1]],
+        preferredId: allIds[1]
+      };
+
+      expect(ctx.ingredients.getPreferred(spec)).toSucceedAndSatisfy((ingredient) => {
+        expect(ingredient.id).toBe(allIds[1]);
+      });
+    });
+
+    test('getPreferred uses first ID when no preferredId specified', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 2)
+        .map((i) => i.id);
+      const spec = {
+        ids: [allIds[0], allIds[1]]
+      };
+
+      expect(ctx.ingredients.getPreferred(spec)).toSucceedAndSatisfy((ingredient) => {
+        expect(ingredient.id).toBe(allIds[0]);
+      });
+    });
+
+    test('getPreferred fails when no IDs provided', () => {
+      const spec = {
+        ids: []
+      };
+
+      expect(ctx.ingredients.getPreferred(spec)).toFailWith(/no ids provided/i);
+    });
+
+    test('getWithAlternates returns primary and alternates from IIdsWithPreferred', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 3)
+        .map((i) => i.id);
+      const spec = {
+        ids: [allIds[0], allIds[1], allIds[2]],
+        preferredId: allIds[1]
+      };
+
+      expect(ctx.ingredients.getWithAlternates(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.primary.id).toBe(allIds[1]);
+        expect(result.alternates.length).toBe(2);
+        expect(result.alternates.some((i) => i.id === allIds[0])).toBe(true);
+        expect(result.alternates.some((i) => i.id === allIds[2])).toBe(true);
+        expect(result.entity).toBe(spec);
+      });
+    });
+
+    test('getWithAlternates handles primary ID not in list', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 3)
+        .map((i) => i.id);
+      const spec = {
+        ids: [allIds[0]],
+        preferredId: allIds[1]
+      };
+
+      expect(ctx.ingredients.getWithAlternates(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.primary.id).toBe(allIds[1]);
+        expect(result.alternates.length).toBe(1);
+        expect(result.alternates[0].id).toBe(allIds[0]);
+      });
+    });
+
+    test('getWithAlternates fails when primary ID does not exist', () => {
+      const spec = {
+        ids: ['common.nonexistent' as IngredientId, 'common.chocolate-dark-64' as IngredientId],
+        preferredId: 'common.nonexistent' as IngredientId
+      };
+
+      expect(ctx.ingredients.getWithAlternates(spec)).toFailWith(/failed to resolve primary item/i);
+    });
+
+    test('getWithAlternates skips invalid alternate IDs', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 2)
+        .map((i) => i.id);
+      const spec = {
+        ids: [allIds[0], 'common.nonexistent' as IngredientId, allIds[1]],
+        preferredId: allIds[0]
+      };
+
+      expect(ctx.ingredients.getWithAlternates(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.primary.id).toBe(allIds[0]);
+        expect(result.alternates.length).toBe(1);
+        expect(result.alternates[0].id).toBe(allIds[1]);
+      });
+    });
+  });
+
+  // ============================================================================
+  // MaterializedLibrary: getPreferredRef and getRefsWithAlternates
+  // ============================================================================
+
+  describe('getPreferredRef and getRefsWithAlternates', () => {
+    test('getPreferredRef returns preferred item with notes', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 2)
+        .map((i) => i.id);
+      const spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<IngredientId>, IngredientId> = {
+        options: [
+          {
+            id: allIds[0],
+            notes: [
+              { category: 'general' as unknown as Model.ICategorizedNote['category'], note: 'First choice' }
+            ]
+          },
+          {
+            id: allIds[1],
+            notes: [{ category: 'general' as unknown as Model.ICategorizedNote['category'], note: 'Backup' }]
+          }
+        ],
+        preferredId: allIds[0]
+      };
+
+      expect(ctx.ingredients.getPreferredRef(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.item.id).toBe(allIds[0]);
+        expect(result.id).toBe(allIds[0]);
+        expect(result.notes).toBeDefined();
+        expect(result.notes?.length).toBe(1);
+        expect(result.notes?.[0].note).toBe('First choice');
+      });
+    });
+
+    test('getPreferredRef uses first option when no preferredId specified', () => {
+      const spec = {
+        options: [
+          { id: 'common.chocolate-dark-64' as IngredientId },
+          { id: 'common.chocolate-dark-70' as IngredientId }
+        ]
+      };
+
+      expect(ctx.ingredients.getPreferredRef(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.item.id).toBe('common.chocolate-dark-64');
+        expect(result.notes).toBeUndefined();
+      });
+    });
+
+    test('getPreferredRef fails when no options provided', () => {
+      const spec = {
+        options: []
+      };
+
+      expect(ctx.ingredients.getPreferredRef(spec)).toFailWith(/no options provided/i);
+    });
+
+    test('getPreferredRef fails when preferred ID not in options', () => {
+      const spec = {
+        options: [{ id: 'common.chocolate-dark-64' as IngredientId }],
+        preferredId: 'common.chocolate-dark-70' as IngredientId
+      };
+
+      expect(ctx.ingredients.getPreferredRef(spec)).toFailWith(/preferred id.*not found in options/i);
+    });
+
+    test('getRefsWithAlternates returns primary and alternates with notes', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 3)
+        .map((i) => i.id);
+      const spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<IngredientId>, IngredientId> = {
+        options: [
+          {
+            id: allIds[0],
+            notes: [
+              { category: 'general' as unknown as Model.ICategorizedNote['category'], note: 'First choice' }
+            ]
+          },
+          {
+            id: allIds[1],
+            notes: [
+              { category: 'general' as unknown as Model.ICategorizedNote['category'], note: 'Good backup' }
+            ]
+          },
+          { id: allIds[2] }
+        ],
+        preferredId: allIds[1]
+      };
+
+      expect(ctx.ingredients.getRefsWithAlternates(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.primary.id).toBe(allIds[1]);
+        expect(result.primaryId).toBe(allIds[1]);
+        expect(result.primaryNotes).toBeDefined();
+        expect(result.primaryNotes?.length).toBe(1);
+        expect(result.primaryNotes?.[0].note).toBe('Good backup');
+
+        expect(result.alternates.length).toBe(2);
+        const alt1 = result.alternates.find((a) => a.id === allIds[0]);
+        expect(alt1).toBeDefined();
+        expect(alt1?.notes).toBeDefined();
+        expect(alt1?.notes?.length).toBe(1);
+        expect(alt1?.notes?.[0].note).toBe('First choice');
+
+        const alt2 = result.alternates.find((a) => a.id === allIds[2]);
+        expect(alt2).toBeDefined();
+        expect(alt2?.notes).toBeUndefined();
+      });
+    });
+
+    test('getRefsWithAlternates skips invalid alternate IDs', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 2)
+        .map((i) => i.id);
+      const spec = {
+        options: [{ id: allIds[0] }, { id: 'common.nonexistent' as IngredientId }, { id: allIds[1] }],
+        preferredId: allIds[0]
+      };
+
+      expect(ctx.ingredients.getRefsWithAlternates(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.primary.id).toBe(allIds[0]);
+        expect(result.alternates.length).toBe(1);
+        expect(result.alternates[0].id).toBe(allIds[1]);
+      });
+    });
+  });
+
+  // ============================================================================
+  // MaterializedLibrary: hasFindSupport and find
+  // ============================================================================
+
+  describe('hasFindSupport and find', () => {
+    test('ingredients library has find support', () => {
+      expect(ctx.ingredients.hasFindSupport).toBe(true);
+    });
+
+    test('fillings library has find support', () => {
+      expect(ctx.fillings.hasFindSupport).toBe(true);
+    });
+
+    test('molds library does not have find support', () => {
+      expect(ctx.molds.hasFindSupport).toBe(false);
+    });
+
+    test('procedures library does not have find support', () => {
+      expect(ctx.procedures.hasFindSupport).toBe(false);
+    });
+
+    test('tasks library does not have find support', () => {
+      expect(ctx.tasks.hasFindSupport).toBe(false);
+    });
+
+    test('confections library does not have find support', () => {
+      expect(ctx.confections.hasFindSupport).toBe(false);
+    });
+
+    test('find fails on library without find support', () => {
+      expect(ctx.molds.find({} as never)).toFailWith(/find not supported/i);
+    });
+
+    test('find succeeds on ingredients library with tag query', () => {
+      // Just verify find works and returns an array (may be empty if no items have tags)
+      expect(ctx.ingredients.find({ byTag: { tag: 'test-tag' } })).toSucceedAndSatisfy((results) => {
+        expect(Array.isArray(results)).toBe(true);
+      });
+    });
+
+    test('find succeeds on fillings library with tag query', () => {
+      // Just verify find works and returns an array (may be empty if no items have tags)
+      expect(ctx.fillings.find({ byTag: { tag: 'test-tag' } })).toSucceedAndSatisfy((results) => {
+        expect(Array.isArray(results)).toBe(true);
+      });
+    });
+  });
+
+  // ============================================================================
+  // ChocolateEntityLibrary: Editable Collections
+  // ============================================================================
+
+  describe('editable entity collections', () => {
+    test('getEditableIngredientsEntityCollection returns editable collection', () => {
+      expect(
+        ctx.entities.getEditableIngredientsEntityCollection('common' as unknown as CollectionId)
+      ).toSucceed();
+    });
+
+    test('getEditableIngredientsEntityCollection fails for non-existent collection', () => {
+      expect(
+        ctx.entities.getEditableIngredientsEntityCollection('nonexistent' as unknown as CollectionId)
+      ).toFail();
+    });
+
+    test('getEditableFillingsRecipeEntityCollection returns editable collection', () => {
+      expect(
+        ctx.entities.getEditableFillingsRecipeEntityCollection('common' as unknown as CollectionId)
+      ).toSucceed();
+    });
+
+    test('getEditableMoldsEntityCollection returns editable collection', () => {
+      expect(ctx.entities.getEditableMoldsEntityCollection('common' as unknown as CollectionId)).toSucceed();
+    });
+
+    test('getEditableProceduresEntityCollection returns editable collection', () => {
+      expect(
+        ctx.entities.getEditableProceduresEntityCollection('common' as unknown as CollectionId)
+      ).toSucceed();
+    });
+
+    test('getEditableTasksEntityCollection returns editable collection', () => {
+      expect(ctx.entities.getEditableTasksEntityCollection('common' as unknown as CollectionId)).toSucceed();
+    });
+
+    test('getEditableConfectionsEntityCollection returns editable collection', () => {
+      expect(
+        ctx.entities.getEditableConfectionsEntityCollection('common' as unknown as CollectionId)
+      ).toSucceed();
+    });
+  });
+
+  // ============================================================================
+  // ChocolateLibrary: Utility Methods
+  // ============================================================================
+
+  describe('ChocolateLibrary utility methods', () => {
+    test('getIngredientUsage returns usage info for valid ingredient', () => {
+      expect(ctx.getIngredientUsage('common.chocolate-dark-64' as IngredientId)).toSucceedAndSatisfy(
+        (usage) => {
+          expect(Array.isArray(usage)).toBe(true);
+        }
+      );
+    });
+
+    test('getIngredientUsage fails for non-existent ingredient', () => {
+      expect(ctx.getIngredientUsage('common.nonexistent' as IngredientId)).toFailWith(
+        /ingredient not found/i
+      );
+    });
+
+    test('getAllFillingTags returns array of tags', () => {
+      const tags = ctx.getAllFillingTags();
+      expect(Array.isArray(tags)).toBe(true);
+      expect(tags.length).toBeGreaterThan(0);
+    });
+
+    test('getAllIngredientTags returns array of tags', () => {
+      const tags = ctx.getAllIngredientTags();
+      expect(Array.isArray(tags)).toBe(true);
+      expect(tags.length).toBeGreaterThan(0);
+    });
+
+    test('getAllConfectionTags returns array of tags', () => {
+      const tags = ctx.getAllConfectionTags();
+      expect(Array.isArray(tags)).toBe(true);
+    });
+
+    test('cachedIngredientCount reflects accessed ingredients', () => {
+      const countBefore = ctx.cachedIngredientCount;
+      ctx.ingredients.get('common.chocolate-dark-64' as IngredientId).orThrow();
+      const countAfter = ctx.cachedIngredientCount;
+      expect(countAfter).toBeGreaterThanOrEqual(countBefore);
+    });
+
+    test('cachedRecipeCount reflects accessed recipes', () => {
+      const countBefore = ctx.cachedRecipeCount;
+      ctx.fillings.get('common.dark-ganache-classic' as FillingId).orThrow();
+      const countAfter = ctx.cachedRecipeCount;
+      expect(countAfter).toBeGreaterThanOrEqual(countBefore);
+    });
+
+    test('cachedConfectionCount reflects accessed confections', () => {
+      const countBefore = ctx.cachedConfectionCount;
+      ctx.confections.get('common.dark-dome-bonbon' as ConfectionId).orThrow();
+      const countAfter = ctx.cachedConfectionCount;
+      expect(countAfter).toBeGreaterThanOrEqual(countBefore);
+    });
+
+    test('warmUp pre-loads indexes', () => {
+      ctx.warmUp();
+      // Just verify it doesn't throw
+      expect(true).toBe(true);
+    });
+
+    test('invalidateIndexers clears indexer caches', () => {
+      ctx.invalidateIndexers();
+      // Just verify it doesn't throw
+      expect(true).toBe(true);
+    });
+
+    test('createWeightContext returns weight calculation context', () => {
+      const weightCtx = ctx.createWeightContext();
+      expect(weightCtx).toHaveProperty('getIngredientDensity');
+      expect(typeof weightCtx.getIngredientDensity).toBe('function');
+
+      // Test density lookup
+      const density = weightCtx.getIngredientDensity('common.chocolate-dark-64' as IngredientId);
+      expect(typeof density).toBe('number');
+      expect(density).toBeGreaterThan(0);
+    });
+
+    test('createWeightContext returns default density for non-existent ingredient', () => {
+      const weightCtx = ctx.createWeightContext();
+      const density = weightCtx.getIngredientDensity('common.nonexistent' as IngredientId);
+      expect(density).toBe(1.0);
+    });
+  });
+
+  // ============================================================================
+  // ChocolateLibrary: preWarm during creation
+  // ============================================================================
+
+  describe('ChocolateLibrary creation with preWarm', () => {
+    test('create with preWarm=true succeeds', () => {
+      expect(ChocolateLibrary.create({ entityLibraryParams: { builtin: true }, preWarm: true })).toSucceed();
+    });
+
+    test('create with preWarm=false succeeds', () => {
+      expect(ChocolateLibrary.create({ entityLibraryParams: { builtin: true }, preWarm: false })).toSucceed();
+    });
+  });
+
+  // ============================================================================
+  // ChocolateLibrary: Internal accessor methods
+  // ============================================================================
+
+  describe('ChocolateLibrary internal accessors', () => {
+    test('_getIngredient returns ingredient', () => {
+      expect(ctx._getIngredient('common.chocolate-dark-64' as IngredientId)).toSucceed();
+    });
+
+    test('_getIngredient fails for non-existent ingredient', () => {
+      expect(ctx._getIngredient('common.nonexistent' as IngredientId)).toFail();
+    });
+
+    test('_getFillingRecipe returns filling recipe', () => {
+      expect(ctx._getFillingRecipe('common.dark-ganache-classic' as FillingId)).toSucceed();
+    });
+
+    test('_getFillingRecipe fails for non-existent filling', () => {
+      expect(ctx._getFillingRecipe('common.nonexistent' as FillingId)).toFail();
     });
   });
 

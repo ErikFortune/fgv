@@ -750,6 +750,14 @@ const collectionSourceMetadata: Converter<ICollectionSourceMetadata>;
 function collectionYamlConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
 // @public
+const COMMON_SETTINGS_FILENAME: string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICommonSettings"
+//
+// @public
+const commonSettings: Converter<ICommonSettings>;
+
+// @public
 type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 
 // @public
@@ -1172,6 +1180,23 @@ declare namespace Converters_10 {
     }
 }
 
+declare namespace Converters_11 {
+    export {
+        DEVICE_ID_PATTERN,
+        deviceId,
+        externalLibraryRef,
+        scalingDefaults,
+        workflowPreferences,
+        toolSettings,
+        defaultCollectionTargets,
+        externalLibraryRefConfig,
+        commonSettings,
+        deviceFileTreeOverrides,
+        partialToolSettings,
+        deviceSettings
+    }
+}
+
 declare namespace Converters_2 {
     export {
         ganacheCharacteristics,
@@ -1297,6 +1322,12 @@ function createConfectionRecipeVariationId(parts: {
 }): Result<ConfectionRecipeVariationId>;
 
 // @public
+function createDefaultCommonSettings(): ICommonSettings;
+
+// @public
+function createDefaultDeviceSettings(deviceId: DeviceId, deviceName?: string): IDeviceSettings;
+
+// @public
 function createFillingId(collectionId: CollectionId, baseId: BaseFillingId): FillingId;
 
 // @public
@@ -1318,10 +1349,18 @@ function createIngredientId(collectionId: CollectionId, baseId: BaseIngredientId
 function createJournalId(collectionId: CollectionId, baseId: BaseJournalId): JournalId;
 
 // @public
-export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace>;
+export function createNodeWorkspace(params: ICreateNodeWorkspaceParams): Promise<Result<IWorkspace>>;
+
+// @public @deprecated
+export function createNodeWorkspaceLegacy(params?: IWorkspaceFactoryParams): Result<Workspace>;
 
 // @public
 function createSessionId(collectionId: CollectionId, baseId: BaseSessionId): SessionId;
+
+// Warning: (ae-forgotten-export) The symbol "ICommonWorkspaceInitParams" needs to be exported by the entry point index.d.ts
+//
+// @public
+export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams): Result<IWorkspace>;
 
 // @public
 class DairyIngredient extends IngredientBase implements IDairyIngredient {
@@ -1340,6 +1379,20 @@ class DairyIngredient extends IngredientBase implements IDairyIngredient {
 //
 // @public
 const dairyIngredientEntity: Converter<IDairyIngredientEntity>;
+
+// @public
+const DEFAULT_SCALING: IScalingDefaults;
+
+// @public
+const DEFAULT_TOOL_SETTINGS: IToolSettings;
+
+// @public
+const DEFAULT_WORKFLOW: IWorkflowPreferences;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDefaultCollectionTargets"
+//
+// @public
+const defaultCollectionTargets: Converter<IDefaultCollectionTargets>;
 
 // @public
 export const DefaultNoteCategory: NoteCategory;
@@ -1361,6 +1414,39 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 
 // @public
 const degreesMacMichael: Converter<DegreesMacMichael>;
+
+// @public
+const DEVICE_ID_PATTERN: RegExp;
+
+// @public
+const DEVICE_SETTINGS_PREFIX: string;
+
+// @public
+const DEVICE_SETTINGS_SUFFIX: string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDeviceFileTreeOverrides"
+//
+// @public
+const deviceFileTreeOverrides: Converter<IDeviceFileTreeOverrides>;
+
+// @public
+type DeviceId = Brand<string, 'DeviceId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "DeviceId"
+//
+// @public
+const deviceId: Converter<DeviceId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDeviceSettings"
+//
+// @public
+const deviceSettings: Converter<IDeviceSettings>;
+
+// @public
+export type DirectoryLayoutMode = 'single-root' | 'dual-root' | 'multi-root';
+
+// @public
+export type DirectoryLayoutParams = ISingleRootParams | IDualRootParams | IMultiRootParams;
 
 // @public
 class EditableCollection<T, TBaseId extends string = string> extends ValidatingResultMap<TBaseId, T> {
@@ -1605,6 +1691,19 @@ declare namespace Enums {
 
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
+
+// @public
+type ExternalLibraryRef = Brand<string, 'ExternalLibraryRef'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ExternalLibraryRef"
+//
+// @public
+const externalLibraryRef: Converter<ExternalLibraryRef>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IExternalLibraryRefConfig"
+//
+// @public
+const externalLibraryRefConfig: Converter<IExternalLibraryRefConfig>;
 
 // @public
 class FatIngredient extends IngredientBase implements IFatIngredient {
@@ -2041,6 +2140,9 @@ function getCurrentDateString(): string;
 function getCurrentTimestamp(): string;
 
 // @public
+function getDeviceSettingsFilename(deviceId: DeviceId): string;
+
+// @public
 function getFillingBaseId(id: FillingId): BaseFillingId;
 
 // @public
@@ -2426,6 +2528,14 @@ interface ICollectionSourceMetadata {
 }
 
 // @public
+interface ICommonSettings {
+    readonly defaultTargets?: IDefaultCollectionTargets;
+    readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
+    readonly schemaVersion: SettingsSchemaVersion;
+    readonly tools?: IToolSettings;
+}
+
+// @public
 interface IConfectionBase<TVariation extends AnyConfectionRecipeVariation = AnyConfectionRecipeVariation, TEntity extends Confections.AnyConfectionRecipeEntity = Confections.AnyConfectionRecipeEntity> {
     readonly baseId: BaseConfectionId;
     readonly collectionId: CollectionId;
@@ -2623,6 +2733,17 @@ interface ICreateFillingSessionOptions {
 }
 
 // @public
+export interface ICreateNodeWorkspaceParams {
+    readonly builtin?: boolean;
+    readonly deviceId?: DeviceId;
+    readonly deviceName?: string;
+    readonly layout: DirectoryLayoutParams;
+    readonly missingFileBehavior?: MissingFileBehavior;
+    readonly preWarm?: boolean;
+    readonly startupMode?: StartupMode;
+}
+
+// @public
 const ID_SEPARATOR: string;
 
 // @public
@@ -2643,6 +2764,35 @@ interface IDairyIngredientEntity extends IIngredientEntity {
     readonly waterContent?: Percentage;
 }
 
+// @public
+interface IDefaultCollectionTargets {
+    readonly confections?: CollectionId;
+    readonly fillings?: CollectionId;
+    readonly ingredients?: CollectionId;
+    readonly journals?: CollectionId;
+    readonly molds?: CollectionId;
+    readonly procedures?: CollectionId;
+    readonly sessions?: CollectionId;
+    readonly tasks?: CollectionId;
+}
+
+// @public
+interface IDeviceFileTreeOverrides {
+    readonly keyStorePath?: string;
+    readonly userLibraryPath?: string;
+}
+
+// @public
+interface IDeviceSettings {
+    readonly defaultTargetsOverride?: Partial<IDefaultCollectionTargets>;
+    readonly deviceId: DeviceId;
+    readonly deviceName?: string;
+    readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
+    readonly lastActiveSessionId?: string;
+    readonly schemaVersion: SettingsSchemaVersion;
+    readonly toolsOverride?: Partial<IToolSettings>;
+}
+
 // @internal
 interface IDirectorySearchQueueItem {
     readonly depth: number;
@@ -2653,6 +2803,14 @@ interface IDirectorySearchQueueItem {
 //
 // @public
 function idsWithPreferred<TId extends string>(idConverter: Converter<TId>, context?: string): Converter<IIdsWithPreferred<TId>>;
+
+// @public
+export interface IDualRootParams {
+    readonly installationPath: string;
+    readonly libraryPath: string;
+    readonly libraryReadOnly?: boolean;
+    readonly mode: 'dual-root';
+}
 
 // @public
 interface IEditableCollection<T, TBaseId extends string = string, TId extends string = string> extends ValidatingResultMap<TBaseId, T> {
@@ -2750,6 +2908,14 @@ interface IEntityResolver<TEntity, TId> {
 interface IExportOptions {
     readonly format: 'yaml' | 'json';
     readonly prettyPrint?: boolean;
+}
+
+// @public
+interface IExternalLibraryRefConfig {
+    readonly load?: boolean | Partial<Record<SubLibraryId | 'default', boolean>>;
+    readonly mutable?: boolean;
+    readonly name: string;
+    readonly ref: ExternalLibraryRef;
 }
 
 // @public
@@ -3468,6 +3634,16 @@ type IMoldsLibraryParams = ISubLibraryParams<MoldsLibrary, MoldCollectionEntryIn
 type ImportRootKind = 'canonical' | 'data-dir' | 'direct-subdir' | 'loose-files';
 
 // @public
+export interface IMultiRootParams {
+    readonly installationPath: string;
+    readonly libraryPaths: ReadonlyArray<{
+        readonly path: string;
+        readonly readOnly?: boolean;
+    }>;
+    readonly mode: 'multi-root';
+}
+
+// @public
 export type IndexerId = Brand<string, 'IndexerId'>;
 
 declare namespace Indexers {
@@ -3816,6 +3992,15 @@ const ingredientSnapshotEntity: Converter<IIngredientSnapshotEntity>;
 
 // @public
 type IngredientUsageType = 'primary' | 'alternate' | 'any';
+
+// Warning: (ae-forgotten-export) The symbol "IPlatformInitOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IPlatformInitResult" needs to be exported by the entry point index.d.ts
+//
+// @public
+export function initializeNodePlatform(options: IPlatformInitOptions): Promise<Result<IPlatformInitResult>>;
+
+// @public
+export function initializeWorkspace(params: IWorkspaceInitParams): Result<IWorkspaceInitResult>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -4263,6 +4448,14 @@ interface IResolvedRecipeFillingOption {
 }
 
 // @public
+interface IResolvedSettings {
+    readonly defaultTargets: IDefaultCollectionTargets;
+    readonly deviceId: DeviceId;
+    readonly lastActiveSessionId?: string;
+    readonly tools: IToolSettings;
+}
+
+// @public
 interface IResolvedSubLibrarySource {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly loadParams: ILoadCollectionFromFileTreeParams<string>;
@@ -4390,6 +4583,14 @@ interface IScaledAmount {
 }
 
 // @public
+interface IScalingDefaults {
+    readonly batchMultiplier?: number;
+    readonly bufferPercentage?: number;
+    readonly measurementUnit?: MeasurementUnit;
+    readonly weightUnit?: WeightUnit;
+}
+
+// @public
 interface IScalingRefEntity {
     readonly createdDate: string;
     readonly scaleFactor: number;
@@ -4514,6 +4715,27 @@ interface ISessionYield {
     readonly weightPerPiece?: Measurement;
 }
 
+// @public
+interface ISettingsManager {
+    readonly deviceId: DeviceId;
+    getCommonSettings(): ICommonSettings;
+    getDeviceSettings(): IDeviceSettings;
+    getResolvedSettings(): IResolvedSettings;
+    readonly isDirty: boolean;
+    save(): Promise<Result<boolean>>;
+    updateCommonSettings(updates: Partial<Omit<ICommonSettings, 'schemaVersion'>>): Result<ICommonSettings>;
+    updateDefaultTargets(targets: Partial<IDefaultCollectionTargets>): Result<IDefaultCollectionTargets>;
+    updateDeviceSettings(updates: Partial<Omit<IDeviceSettings, 'schemaVersion' | 'deviceId'>>): Result<IDeviceSettings>;
+    updateLastActiveSessionId(sessionId: string | undefined): Result<string | undefined>;
+}
+
+// @public
+interface ISettingsManagerParams {
+    readonly deviceId: DeviceId;
+    readonly deviceName?: string;
+    readonly fileTree: FileTree.IFileTreeDirectoryItem;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -4536,6 +4758,12 @@ function isFillingProductionJournalEntryEntity(entry: AnyJournalEntryEntity): en
 //
 // @public
 function isFillingSessionEntity(session: AnySessionEntity): session is IFillingSessionEntity;
+
+// @public
+export interface ISingleRootParams {
+    readonly mode: 'single-root';
+    readonly rootPath: string;
+}
 
 // @public
 function isIngredientInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IIngredientInventoryEntryEntity;
@@ -4809,6 +5037,12 @@ interface ITemperatureCurve {
 }
 
 // @public
+interface IToolSettings {
+    readonly scaling?: IScalingDefaults;
+    readonly workflow?: IWorkflowPreferences;
+}
+
+// @public
 interface IUnitScaler {
     scale(amount: Measurement, factor: number): Result<IScaledAmount>;
     readonly supportsScaling: boolean;
@@ -4897,12 +5131,19 @@ interface IWeightContribution {
 }
 
 // @public
+interface IWorkflowPreferences {
+    readonly autoExpandIngredients?: boolean;
+    readonly autoSaveIntervalSeconds?: number;
+    readonly confirmAbandon?: boolean;
+    readonly showPercentages?: boolean;
+}
+
+// @public
 export interface IWorkspace {
     readonly data: ChocolateLibrary;
     readonly isReady: boolean;
     readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
     lock(): Result<IWorkspace>;
-    // Warning: (ae-forgotten-export) The symbol "ISettingsManager" needs to be exported by the entry point index.d.ts
     readonly settings: ISettingsManager | undefined;
     readonly state: WorkspaceState;
     unlock(password: string): Promise<Result<IWorkspace>>;
@@ -4929,6 +5170,20 @@ export interface IWorkspaceCreateParams {
 // @public
 export interface IWorkspaceFactoryParams extends Omit<IWorkspaceCreateParams, 'keyStore'> {
     readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
+}
+
+// @public
+export interface IWorkspaceInitParams {
+    readonly deviceId: DeviceId;
+    readonly deviceName?: string;
+    readonly workspacePath: string;
+}
+
+// @public
+export interface IWorkspaceInitResult {
+    readonly commonSettings: ICommonSettings;
+    readonly deviceSettings: IDeviceSettings;
+    readonly workspacePath: string;
 }
 
 declare namespace Journal {
@@ -5326,6 +5581,9 @@ export type Minutes = Brand<number, 'Minutes'>;
 // @public
 const minutes: Converter<Minutes>;
 
+// @public
+export type MissingFileBehavior = 'fail' | 'ignore' | 'create-empty';
+
 declare namespace Model {
     export {
         Enums,
@@ -5720,6 +5978,9 @@ function parseJournalId(id: JournalId): Result<ParsedJournalId>;
 function parseSessionId(id: SessionId): Result<ParsedSessionId>;
 
 // @public
+const partialToolSettings: Converter<Partial<IToolSettings>>;
+
+// @public
 export type Percentage = Brand<number, 'Percentage'>;
 
 // @public
@@ -6088,6 +6349,9 @@ function resolveImportRootForLibrary(root: FileTree.IFileTreeDirectoryItem, opti
 function resolveImportRootForSubLibrary(root: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId, options?: IResolveImportRootOptions): Result<IResolvedImportRoot>;
 
 // @public
+function resolveSettings(common: ICommonSettings, device: IDeviceSettings): IResolvedSettings;
+
+// @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
 
 // @public
@@ -6167,6 +6431,11 @@ class RuntimeReverseIndex {
 
 // @public
 function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IScalingDefaults"
+//
+// @public
+const scalingDefaults: Converter<IScalingDefaults>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6317,6 +6586,97 @@ export type SessionSpec = Brand<string, 'SessionSpec'>;
 // @public
 const sessionSpec: Converter<SessionSpec>;
 
+declare namespace Settings {
+    export {
+        SETTINGS_SCHEMA_VERSION,
+        SettingsSchemaVersion,
+        DeviceId,
+        ExternalLibraryRef,
+        IScalingDefaults,
+        IWorkflowPreferences,
+        IToolSettings,
+        IDefaultCollectionTargets,
+        IExternalLibraryRefConfig,
+        ICommonSettings,
+        IDeviceSettings,
+        IDeviceFileTreeOverrides,
+        IResolvedSettings,
+        DEFAULT_SCALING,
+        DEFAULT_WORKFLOW,
+        DEFAULT_TOOL_SETTINGS,
+        resolveSettings,
+        createDefaultCommonSettings,
+        createDefaultDeviceSettings,
+        Converters_11 as Converters,
+        DEVICE_ID_PATTERN,
+        ISettingsManager,
+        ISettingsManagerParams,
+        SettingsManager,
+        SETTINGS_DIR_PATH,
+        COMMON_SETTINGS_FILENAME,
+        DEVICE_SETTINGS_PREFIX,
+        DEVICE_SETTINGS_SUFFIX,
+        getDeviceSettingsFilename
+    }
+}
+export { Settings }
+
+// @public
+const SETTINGS_DIR_PATH: string;
+
+// @public
+const SETTINGS_SCHEMA_VERSION: 1;
+
+// @public
+class SettingsManager implements ISettingsManager {
+    static create(params: ISettingsManagerParams): Result<SettingsManager>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    get deviceId(): DeviceId;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    getCommonSettings(): ICommonSettings;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    getDeviceSettings(): IDeviceSettings;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    getResolvedSettings(): IResolvedSettings;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    get isDirty(): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    save(): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    updateCommonSettings(updates: Partial<Omit<ICommonSettings, 'schemaVersion'>>): Result<ICommonSettings>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    updateDefaultTargets(targets: Partial<IDefaultCollectionTargets>): Result<IDefaultCollectionTargets>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    updateDeviceSettings(updates: Partial<Omit<IDeviceSettings, 'schemaVersion' | 'deviceId'>>): Result<IDeviceSettings>;
+    updateDeviceToolsOverride(tools: Partial<IToolSettings>): Result<Partial<IToolSettings>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
+    //
+    // (undocumented)
+    updateLastActiveSessionId(sessionId: string | undefined): Result<string | undefined>;
+    updateToolSettings(tools: Partial<IToolSettings>): Result<IToolSettings>;
+}
+
+// @public
+type SettingsSchemaVersion = typeof SETTINGS_SCHEMA_VERSION;
+
 // @public
 export type SlotId = Brand<string, 'SlotId'>;
 
@@ -6346,6 +6706,9 @@ export type SpoonUnit = 'tsp' | 'Tbsp';
 
 // @public
 const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
+
+// @public
+export type StartupMode = 'fail-on-error' | 'ignore-errors';
 
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata> {
@@ -6586,6 +6949,11 @@ function toMinutes(from: unknown): Result<Minutes>;
 
 // @public
 function toNoteCategory(from: unknown): Result<NoteCategory>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IToolSettings"
+//
+// @public
+const toolSettings: Converter<IToolSettings>;
 
 // @public
 function toPercentage(from: unknown): Result<Percentage>;
@@ -6919,6 +7287,11 @@ export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
 
 // @public
 const weightUnit: Converter<WeightUnit>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IWorkflowPreferences"
+//
+// @public
+const workflowPreferences: Converter<IWorkflowPreferences>;
 
 // @public
 export class Workspace implements IWorkspace {

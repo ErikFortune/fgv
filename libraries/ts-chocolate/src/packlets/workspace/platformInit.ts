@@ -35,7 +35,7 @@
  * @packageDocumentation
  */
 
-import { fail, Result } from '@fgv/ts-utils';
+import { Result } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils } from '@fgv/ts-extras';
@@ -328,49 +328,46 @@ export function toUserLibrarySource(
 export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams): Result<IWorkspace> {
   const { platformInit, builtin, additionalFileSources, preWarm } = params;
 
-  // Create settings manager from the platform init result
-  const settingsResult = SettingsManager.create({
+  // Create settings manager and workspace from the platform init result
+  return SettingsManager.create({
     fileTree: platformInit.userLibraryTree,
     deviceId: platformInit.deviceId
-  });
+  })
+    .withErrorFormat((msg) => `Failed to create settings manager: ${msg}`)
+    .onSuccess((settings) => {
+      // Convert external libraries to file tree sources
+      const externalSources = toLibraryFileSources(platformInit.externalLibraries);
 
-  if (settingsResult.isFailure()) {
-    return fail(`Failed to create settings manager: ${settingsResult.message}`);
-  }
+      // Convert user library to file tree source
+      const userSource = toUserLibrarySource(platformInit.userLibraryTree);
 
-  const settings = settingsResult.value;
+      // Combine all file sources
+      const allFileSources: ILibraryFileTreeSource[] = [...externalSources, userSource];
 
-  // Convert external libraries to file tree sources
-  const externalSources = toLibraryFileSources(platformInit.externalLibraries);
+      /* c8 ignore next 3 - not currently exercised: additionalFileSources is not passed by any caller */
+      if (additionalFileSources) {
+        allFileSources.push(...additionalFileSources);
+      }
 
-  // Convert user library to file tree source
-  const userSource = toUserLibrarySource(platformInit.userLibraryTree);
+      // Create key store configuration if we have a key store file
+      let keyStoreConfig:
+        | { file?: CryptoUtils.KeyStore.IKeyStoreFile; cryptoProvider: CryptoUtils.ICryptoProvider }
+        | undefined;
+      if (platformInit.keyStoreFile) {
+        keyStoreConfig = {
+          file: platformInit.keyStoreFile,
+          cryptoProvider: platformInit.cryptoProvider
+        };
+      }
 
-  // Combine all file sources
-  const allFileSources: ILibraryFileTreeSource[] = [...externalSources, userSource];
-
-  if (additionalFileSources) {
-    allFileSources.push(...additionalFileSources);
-  }
-
-  // Create key store configuration if we have a key store file
-  let keyStoreConfig:
-    | { file?: CryptoUtils.KeyStore.IKeyStoreFile; cryptoProvider: CryptoUtils.ICryptoProvider }
-    | undefined;
-  if (platformInit.keyStoreFile || platformInit.cryptoProvider) {
-    keyStoreConfig = {
-      file: platformInit.keyStoreFile,
-      cryptoProvider: platformInit.cryptoProvider
-    };
-  }
-
-  // Create the workspace using the internal factory
-  return Workspace.createWithSettings({
-    builtin,
-    fileSources: allFileSources,
-    userFileSources: userSource,
-    keyStore: keyStoreConfig,
-    preWarm,
-    settings
-  });
+      // Create the workspace using the internal factory
+      return Workspace.createWithSettings({
+        builtin,
+        fileSources: allFileSources,
+        userFileSources: userSource,
+        keyStore: keyStoreConfig,
+        preWarm,
+        settings
+      });
+    });
 }

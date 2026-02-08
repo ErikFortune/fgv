@@ -23,8 +23,6 @@
  * @packageDocumentation
  */
 
-import { Result, fail } from '@fgv/ts-utils';
-
 import { BaseJournalId, JournalId } from '../common';
 import { AnyJournalEntryEntity } from '../entities';
 import { ISessionContext } from './model';
@@ -152,22 +150,5 @@ export abstract class JournalEntryBase<
    */
   public get entity(): TEntity {
     return this._entity;
-  }
-
-  /**
-   * Factory method to create a materialized journal entry from an entity.
-   * Resolves all recipe/confection/variation references.
-   * @param context - Session context for resolving references
-   * @param id - Composite journal entry ID
-   * @param entity - Journal entry entity to materialize
-   * @returns Result with materialized journal entry
-   * @internal
-   */
-  public static create(
-    context: ISessionContext,
-    id: JournalId,
-    entity: AnyJournalEntryEntity
-  ): Result<JournalEntryBase<unknown, unknown, unknown, AnyJournalEntryEntity>> {
-    return fail(`JournalEntryBase.create must be implemented by subclasses for entity type ${entity.type}`);
   }
 }

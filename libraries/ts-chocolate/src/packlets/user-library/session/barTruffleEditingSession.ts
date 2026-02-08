@@ -127,14 +127,11 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
     const currentYield = this._produced.yield;
     const scaleFactor = yieldSpec.count / currentYield.count;
 
-    // Update produced confection yield
-    const updateResult = this._produced.scaleToYield(yieldSpec);
-    if (updateResult.isFailure()) {
-      return updateResult;
-    }
-
-    // Scale all fillings by scale factor
-    return this._scaleAllFillingsByFactor(scaleFactor).onSuccess(() => succeed(yieldSpec));
+    // Update produced confection yield, then scale all fillings
+    return this._produced
+      .scaleToYield(yieldSpec)
+      .onSuccess(() => this._scaleAllFillingsByFactor(scaleFactor))
+      .onSuccess(() => succeed(yieldSpec));
   }
 
   // ============================================================================

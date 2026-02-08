@@ -301,6 +301,12 @@ describe('RuntimeFillingRecipe and RuntimeFillingRecipeVariation', () => {
         expect(latest.variationSpec).toBe('2026-02-01-01');
       });
 
+      test('getLatestVariation returns cached result on second call', () => {
+        const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
+        const first = recipe.getLatestVariation().orThrow();
+        expect(recipe.getLatestVariation()).toSucceedWith(first);
+      });
+
       test('latestVariation reuses goldenVariation when same', () => {
         // empty-recipe has only one variation which is both golden and latest
         const recipe = ctx.fillings.get('test.empty-recipe' as FillingId).orThrow();

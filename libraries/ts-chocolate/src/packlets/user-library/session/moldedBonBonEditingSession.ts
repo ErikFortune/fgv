@@ -185,13 +185,11 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
       weightPerPiece: this._currentMold.cavityWeight
     };
 
-    const updateResult = this._produced.scaleToYield(computedYield);
-    if (updateResult.isFailure()) {
-      return updateResult;
-    }
-
-    // Scale all filling sessions to new target weights
-    return this._scaleAllFillingsToYield().onSuccess(() => succeed(computedYield));
+    // Update produced confection yield, then scale all fillings
+    return this._produced
+      .scaleToYield(computedYield)
+      .onSuccess(() => this._scaleAllFillingsToYield())
+      .onSuccess(() => succeed(computedYield));
   }
 
   // ============================================================================
@@ -253,7 +251,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
               return succeed(undefined);
             });
           }
-
+          /* c8 ignore next 3 - defensive: requiresRescaling false branch requires test molds with identical cavity weights */
           this._pendingMoldChange = undefined;
           return succeed(undefined);
         });

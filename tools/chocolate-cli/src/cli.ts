@@ -31,12 +31,16 @@ import {
   createConfectionCommand,
   createTaskCommand,
   createProcedureCommand,
-  createGanacheCommand
+  createGanacheCommand,
+  createWorkspaceCommand
 } from './commands';
 
 const program: Command = new Command();
 
 program.name('choco').description('Chocolate recipe management CLI').version('0.1.0');
+
+// Register workspace commands
+program.addCommand(createWorkspaceCommand());
 
 // Register encryption commands
 program.addCommand(createEncryptCommand());

@@ -42,7 +42,10 @@ import {
   CollectionId,
   UrlCategory,
   Validation,
-  BaseJournalId
+  BaseJournalId,
+  NoteCategory,
+  SessionId,
+  JournalId
 } from '../../../packlets/common';
 
 const {
@@ -81,7 +84,13 @@ const {
   toConfectionName,
   toConvectionRecipeVariationSpec,
   isValidUrlCategory,
-  toUrlCategory
+  toUrlCategory,
+  isValidNoteCategory,
+  toNoteCategory,
+  isValidSessionId,
+  toSessionId,
+  isValidJournalId,
+  toJournalId
 } = Validation;
 
 const {
@@ -880,6 +889,105 @@ describe('Common validation', () => {
 
       test('fails with non-string', () => {
         expect(toUrlCategory(123)).toFailWith(/Invalid UrlCategory/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // NoteCategory Validation
+  // ============================================================================
+
+  describe('NoteCategory validation', () => {
+    describe('isValidNoteCategory', () => {
+      test('returns true for valid categories', () => {
+        expect(isValidNoteCategory('user')).toBe(true);
+        expect(isValidNoteCategory('recipe-note')).toBe(true);
+        expect(isValidNoteCategory('tasting_note')).toBe(true);
+      });
+
+      test('returns false for invalid categories', () => {
+        expect(isValidNoteCategory('')).toBe(false);
+        expect(isValidNoteCategory('bad.category')).toBe(false);
+        expect(isValidNoteCategory(123)).toBe(false);
+      });
+    });
+
+    describe('toNoteCategory', () => {
+      test('succeeds with valid category', () => {
+        expect(toNoteCategory('user')).toSucceedWith('user' as NoteCategory);
+        expect(toNoteCategory('recipe-note')).toSucceedWith('recipe-note' as NoteCategory);
+      });
+
+      test('fails with invalid category', () => {
+        expect(toNoteCategory('')).toFailWith(/Invalid NoteCategory/);
+        expect(toNoteCategory('bad.category')).toFailWith(/Invalid NoteCategory/);
+        expect(toNoteCategory(123)).toFailWith(/Invalid NoteCategory/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // SessionId Validation
+  // ============================================================================
+
+  describe('SessionId validation', () => {
+    describe('isValidSessionId', () => {
+      test('returns true for valid session IDs', () => {
+        expect(isValidSessionId('user-sessions.2026-01-15-143025-a1b2c3d4')).toBe(true);
+        expect(isValidSessionId('test-sessions.2026-12-31-235959-ffffffff')).toBe(true);
+      });
+
+      test('returns false for invalid session IDs', () => {
+        expect(isValidSessionId('invalid')).toBe(false);
+        expect(isValidSessionId('2026-01-15-143025-a1b2c3d4')).toBe(false);
+        expect(isValidSessionId(123)).toBe(false);
+      });
+    });
+
+    describe('toSessionId', () => {
+      test('succeeds with valid session ID', () => {
+        expect(toSessionId('user-sessions.2026-01-15-143025-a1b2c3d4')).toSucceedWith(
+          'user-sessions.2026-01-15-143025-a1b2c3d4' as SessionId
+        );
+      });
+
+      test('fails with invalid session ID', () => {
+        expect(toSessionId('invalid')).toFailWith(/Invalid SessionId/);
+        expect(toSessionId('')).toFailWith(/Invalid SessionId/);
+        expect(toSessionId(123)).toFailWith(/Invalid SessionId/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // JournalId Validation
+  // ============================================================================
+
+  describe('JournalId validation (composite)', () => {
+    describe('isValidJournalId', () => {
+      test('returns true for valid journal IDs', () => {
+        expect(isValidJournalId('user-journals.2026-01-15-143025-a1b2c3d4')).toBe(true);
+        expect(isValidJournalId('test-journals.2026-12-31-235959-ffffffff')).toBe(true);
+      });
+
+      test('returns false for invalid journal IDs', () => {
+        expect(isValidJournalId('invalid')).toBe(false);
+        expect(isValidJournalId('2026-01-15-143025-a1b2c3d4')).toBe(false);
+        expect(isValidJournalId(123)).toBe(false);
+      });
+    });
+
+    describe('toJournalId', () => {
+      test('succeeds with valid journal ID', () => {
+        expect(toJournalId('user-journals.2026-01-15-143025-a1b2c3d4')).toSucceedWith(
+          'user-journals.2026-01-15-143025-a1b2c3d4' as JournalId
+        );
+      });
+
+      test('fails with invalid journal ID', () => {
+        expect(toJournalId('invalid')).toFailWith(/Invalid JournalId/);
+        expect(toJournalId('')).toFailWith(/Invalid JournalId/);
+        expect(toJournalId(123)).toFailWith(/Invalid JournalId/);
       });
     });
   });

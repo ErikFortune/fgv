@@ -253,6 +253,19 @@ describe('RolledTruffleEditingSession', () => {
         }
       );
     });
+
+    test('creates with initialYield parameter', () => {
+      const confection = ctx.confections.get('test.test-rolled-truffle' as ConfectionId).orThrow();
+      if (!confection.isRolledTruffle()) throw new Error('Expected rolled truffle');
+
+      expect(
+        Session.RolledTruffleEditingSession.create(confection, sessionContext, {
+          initialYield: { count: 80, unit: 'pieces' }
+        })
+      ).toSucceedAndSatisfy((session) => {
+        expect(session.produced.yield.count).toBe(80);
+      });
+    });
   });
 
   // ============================================================================

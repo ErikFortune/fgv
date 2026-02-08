@@ -90,6 +90,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
 
     // 2. Create the user library FileTree
     const userLibraryTreeResult = this._createFileTree(options.userLibraryPath, true);
+    /* c8 ignore next 3 - defensive: filesystem tree creation failure */
     if (userLibraryTreeResult.isFailure()) {
       return fail(`Failed to create user library tree: ${userLibraryTreeResult.message}`);
     }
@@ -180,11 +181,13 @@ export class NodePlatformInitializer implements IPlatformInitializer {
       const createResult = captureResult(() => {
         fs.mkdirSync(resolvedPath, { recursive: true });
       });
+      /* c8 ignore next 3 - defensive: mkdirSync failure */
       if (createResult.isFailure()) {
         return fail(`Failed to create directory ${resolvedPath}: ${createResult.message}`);
       }
     }
 
+    /* c8 ignore next 3 - defensive: stat shows non-directory after mkdir */
     if (!fs.statSync(resolvedPath).isDirectory()) {
       return fail(`Path is not a directory: ${resolvedPath}`);
     }
@@ -211,22 +214,14 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     // Try to navigate to settings directory
     const settingsDir = this._navigateToDirectory(userLibraryTree, LibraryPaths.settings);
 
-    // Load common settings
-    const commonResult = this._loadCommonSettings(settingsDir);
-    if (commonResult.isFailure()) {
-      return fail(`Failed to load common settings: ${commonResult.message}`);
-    }
-
-    // Load device settings
-    const deviceResult = this._loadDeviceSettings(settingsDir, deviceId, deviceName);
-    if (deviceResult.isFailure()) {
-      return fail(`Failed to load device settings: ${deviceResult.message}`);
-    }
-
-    return succeed({
-      common: commonResult.value,
-      device: deviceResult.value
-    });
+    // Load common and device settings
+    return this._loadCommonSettings(settingsDir)
+      .withErrorFormat((msg) => `Failed to load common settings: ${msg}`)
+      .onSuccess((common) =>
+        this._loadDeviceSettings(settingsDir, deviceId, deviceName)
+          .withErrorFormat((msg) => `Failed to load device settings: ${msg}`)
+          .onSuccess((device) => succeed({ common, device }))
+      );
   }
 
   /**
@@ -239,22 +234,22 @@ export class NodePlatformInitializer implements IPlatformInitializer {
       return succeed(createDefaultCommonSettings());
     }
 
-    const childrenResult = settingsDir.value.getChildren();
-    if (childrenResult.isFailure()) {
-      return fail(childrenResult.message);
-    }
+    return settingsDir.value.getChildren().onSuccess((children) => {
+      const commonFile = children.find((c) => c.name === LibraryPaths.settingsCommon && c.type === 'file') as
+        | FileTree.IFileTreeFileItem
+        | undefined;
 
-    const commonFile = childrenResult.value.find(
-      (c) => c.name === LibraryPaths.settingsCommon && c.type === 'file'
-    ) as FileTree.IFileTreeFileItem | undefined;
+      if (!commonFile) {
+        // Common settings file doesn't exist - create it with defaults
+        const defaults = createDefaultCommonSettings();
+        return this._writeSettingsFile(settingsDir.value, LibraryPaths.settingsCommon, defaults)
+          .withErrorFormat((msg) => `Failed to create default common settings: ${msg}`)
+          .onSuccess(() => succeed(defaults));
+      }
 
-    if (!commonFile) {
-      // Common settings file doesn't exist - use defaults
-      return succeed(createDefaultCommonSettings());
-    }
-
-    return commonFile.getContents().onSuccess((json) => {
-      return SettingsConverters.commonSettings.convert(json).withErrorFormat((e) => `common.json: ${e}`);
+      return commonFile.getContents().onSuccess((json) => {
+        return SettingsConverters.commonSettings.convert(json).withErrorFormat((e) => `common.json: ${e}`);
+      });
     });
   }
 
@@ -274,24 +269,24 @@ export class NodePlatformInitializer implements IPlatformInitializer {
 
     const deviceFileName = `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`;
 
-    const childrenResult = settingsDir.value.getChildren();
-    if (childrenResult.isFailure()) {
-      return fail(childrenResult.message);
-    }
+    return settingsDir.value.getChildren().onSuccess((children) => {
+      const deviceFile = children.find((c) => c.name === deviceFileName && c.type === 'file') as
+        | FileTree.IFileTreeFileItem
+        | undefined;
 
-    const deviceFile = childrenResult.value.find((c) => c.name === deviceFileName && c.type === 'file') as
-      | FileTree.IFileTreeFileItem
-      | undefined;
+      if (!deviceFile) {
+        // Device settings file doesn't exist - create it with defaults
+        const defaults = createDefaultDeviceSettings(deviceId, deviceName);
+        return this._writeSettingsFile(settingsDir.value, deviceFileName, defaults)
+          .withErrorFormat((msg) => `Failed to create default device settings: ${msg}`)
+          .onSuccess(() => succeed(defaults));
+      }
 
-    if (!deviceFile) {
-      // Device settings file doesn't exist - use defaults
-      return succeed(createDefaultDeviceSettings(deviceId, deviceName));
-    }
-
-    return deviceFile.getContents().onSuccess((json) => {
-      return SettingsConverters.deviceSettings
-        .convert(json)
-        .withErrorFormat((e) => `${deviceFileName}: ${e}`);
+      return deviceFile.getContents().onSuccess((json) => {
+        return SettingsConverters.deviceSettings
+          .convert(json)
+          .withErrorFormat((e) => `${deviceFileName}: ${e}`);
+      });
     });
   }
 
@@ -342,6 +337,25 @@ export class NodePlatformInitializer implements IPlatformInitializer {
   }
 
   /**
+   * Writes a settings file to disk.
+   * @internal
+   */
+  private _writeSettingsFile(
+    settingsDir: FileTree.IFileTreeDirectoryItem,
+    fileName: string,
+    settings: ICommonSettings | IDeviceSettings
+  ): Result<void> {
+    // Get the absolute path to the settings directory
+    const settingsDirPath = settingsDir.absolutePath;
+
+    const filePath = path.join(settingsDirPath, fileName);
+
+    return captureResult(() => {
+      fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8');
+    }).onFailure((msg) => fail(`Failed to write ${fileName}: ${msg}`));
+  }
+
+  /**
    * Navigates to a subdirectory within a FileTree.
    * @internal
    */
@@ -350,6 +364,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     relativePath: string
   ): Result<FileTree.IFileTreeDirectoryItem> {
     const parts = relativePath.split('/').filter((p) => p.length > 0);
+    /* c8 ignore next 3 - defensive: empty path navigation */
     if (parts.length === 0) {
       return succeed(tree);
     }
@@ -358,6 +373,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
 
     for (const part of parts) {
       const childrenResult = current.getChildren();
+      /* c8 ignore next 3 - defensive: getChildren failure during navigation */
       if (childrenResult.isFailure()) {
         return fail(childrenResult.message);
       }
@@ -367,6 +383,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
         return fail(`Directory not found: ${part}`);
       }
 
+      /* c8 ignore next 3 - defensive: non-directory found during navigation */
       if (child.type !== 'directory') {
         return fail(`Not a directory: ${part}`);
       }

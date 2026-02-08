@@ -1,0 +1,443 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import { Helpers } from '../../../packlets/common';
+import type {
+  BaseFillingId,
+  BaseIngredientId,
+  BaseJournalId,
+  BaseSessionId,
+  CollectionId,
+  ConfectionId,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
+  FillingId,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
+  IngredientId,
+  JournalId,
+  SessionId
+} from '../../../packlets/common';
+
+describe('helpers', () => {
+  // ============================================================================
+  // Ingredient ID helpers
+  // ============================================================================
+
+  describe('Ingredient ID helpers', () => {
+    const collectionId = 'test' as CollectionId;
+    const baseId = 'dark-chocolate' as BaseIngredientId;
+    const compositeId = 'test.dark-chocolate' as IngredientId;
+
+    test('createIngredientId creates composite from parts', () => {
+      expect(Helpers.createIngredientId(collectionId, baseId)).toBe(compositeId);
+    });
+
+    test('parseIngredientId parses valid composite', () => {
+      expect(Helpers.parseIngredientId(compositeId)).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.collectionId).toBe(collectionId);
+        expect(parsed.itemId).toBe(baseId);
+      });
+    });
+
+    test('parseIngredientId fails on invalid format', () => {
+      expect(Helpers.parseIngredientId('no-separator' as IngredientId)).toFail();
+    });
+
+    test('getIngredientCollectionId extracts collection part', () => {
+      expect(Helpers.getIngredientCollectionId(compositeId)).toBe(collectionId);
+    });
+
+    test('getIngredientBaseId extracts base part', () => {
+      expect(Helpers.getIngredientBaseId(compositeId)).toBe(baseId);
+    });
+  });
+
+  // ============================================================================
+  // Filling ID helpers
+  // ============================================================================
+
+  describe('Filling ID helpers', () => {
+    const collectionId = 'recipes' as CollectionId;
+    const baseId = 'test-ganache' as BaseFillingId;
+    const compositeId = 'recipes.test-ganache' as FillingId;
+
+    test('createFillingId creates composite from parts', () => {
+      expect(Helpers.createFillingId(collectionId, baseId)).toBe(compositeId);
+    });
+
+    test('parseFillingId parses valid composite', () => {
+      expect(Helpers.parseFillingId(compositeId)).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.collectionId).toBe(collectionId);
+        expect(parsed.itemId).toBe(baseId);
+      });
+    });
+
+    test('parseFillingId fails on invalid format', () => {
+      expect(Helpers.parseFillingId('invalid' as FillingId)).toFail();
+    });
+
+    test('getFillingCollectionId extracts collection part', () => {
+      expect(Helpers.getFillingCollectionId(compositeId)).toBe(collectionId);
+    });
+
+    test('getFillingBaseId extracts base part', () => {
+      expect(Helpers.getFillingBaseId(compositeId)).toBe(baseId);
+    });
+  });
+
+  // ============================================================================
+  // Journal ID helpers
+  // ============================================================================
+
+  describe('Journal ID helpers', () => {
+    const collectionId = 'user-journals' as CollectionId;
+    const baseId = '2026-01-15-143025-a1b2c3d4' as BaseJournalId;
+    const compositeId = 'user-journals.2026-01-15-143025-a1b2c3d4' as JournalId;
+
+    test('createJournalId creates composite from parts', () => {
+      expect(Helpers.createJournalId(collectionId, baseId)).toBe(compositeId);
+    });
+
+    test('parseJournalId parses valid composite', () => {
+      expect(Helpers.parseJournalId(compositeId)).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.collectionId).toBe(collectionId);
+        expect(parsed.itemId).toBe(baseId);
+      });
+    });
+
+    test('parseJournalId fails on invalid format', () => {
+      expect(Helpers.parseJournalId('missing-separator' as JournalId)).toFail();
+    });
+
+    test('getJournalCollectionId extracts collection part', () => {
+      expect(Helpers.getJournalCollectionId(compositeId)).toBe(collectionId);
+    });
+
+    test('getJournalBaseId extracts base part', () => {
+      expect(Helpers.getJournalBaseId(compositeId)).toBe(baseId);
+    });
+  });
+
+  // ============================================================================
+  // Session ID helpers
+  // ============================================================================
+
+  describe('Session ID helpers', () => {
+    const collectionId = 'user-sessions' as CollectionId;
+    const baseId = '2026-01-15-143025-a1b2c3d4' as BaseSessionId;
+    const compositeId = 'user-sessions.2026-01-15-143025-a1b2c3d4' as SessionId;
+
+    test('createSessionId creates composite from parts', () => {
+      expect(Helpers.createSessionId(collectionId, baseId)).toBe(compositeId);
+    });
+
+    test('parseSessionId parses valid composite', () => {
+      expect(Helpers.parseSessionId(compositeId)).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.collectionId).toBe(collectionId);
+        expect(parsed.itemId).toBe(baseId);
+      });
+    });
+
+    test('parseSessionId fails on invalid format', () => {
+      expect(Helpers.parseSessionId('bad' as SessionId)).toFail();
+    });
+
+    test('getSessionCollectionId extracts collection part', () => {
+      expect(Helpers.getSessionCollectionId(compositeId)).toBe(collectionId);
+    });
+
+    test('getSessionBaseId extracts base part', () => {
+      expect(Helpers.getSessionBaseId(compositeId)).toBe(baseId);
+    });
+  });
+
+  // ============================================================================
+  // Filling variation ID helpers
+  // ============================================================================
+
+  describe('Filling variation ID helpers', () => {
+    const fillingId = 'test.test-ganache' as FillingId;
+    const variationSpec = '2026-01-01-01' as FillingRecipeVariationSpec;
+    const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
+
+    test('createFillingRecipeVariationId creates composite from parts', () => {
+      expect(Helpers.createFillingRecipeVariationId(fillingId, variationSpec)).toBe(variationId);
+    });
+
+    test('parseFillingRecipeVariationId parses valid composite', () => {
+      expect(Helpers.parseFillingRecipeVariationId(variationId)).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.collectionId).toBe(fillingId);
+        expect(parsed.itemId).toBe(variationSpec);
+      });
+    });
+
+    test('parseFillingRecipeVariationId fails on invalid format', () => {
+      expect(Helpers.parseFillingRecipeVariationId('no-at-sign' as FillingRecipeVariationId)).toFail();
+    });
+
+    test('getFillingRecipeVariationFillingId extracts filling ID', () => {
+      expect(Helpers.getFillingRecipeVariationFillingId(variationId)).toBe(fillingId);
+    });
+
+    test('getFillingRecipeVariationSpec extracts variation spec', () => {
+      expect(Helpers.getFillingRecipeVariationSpec(variationId)).toBe(variationSpec);
+    });
+
+    test('createFillingRecipeVariationIdValidated succeeds for valid parts', () => {
+      expect(
+        Helpers.createFillingRecipeVariationIdValidated({
+          collectionId: fillingId,
+          itemId: variationSpec
+        })
+      ).toSucceedWith(variationId);
+    });
+
+    test('createFillingRecipeVariationIdValidated fails for invalid parts', () => {
+      expect(
+        Helpers.createFillingRecipeVariationIdValidated({
+          collectionId: 'bad' as FillingId,
+          itemId: 'invalid' as FillingRecipeVariationSpec
+        })
+      ).toFail();
+    });
+  });
+
+  // ============================================================================
+  // Confection variation ID helpers
+  // ============================================================================
+
+  describe('Confection variation ID helpers', () => {
+    const confectionId = 'test.test-truffle' as ConfectionId;
+    const variationSpec = '2026-01-01-01' as ConfectionRecipeVariationSpec;
+    const variationId = 'test.test-truffle@2026-01-01-01' as ConfectionRecipeVariationId;
+
+    test('createConfectionRecipeVariationId succeeds for valid parts', () => {
+      expect(
+        Helpers.createConfectionRecipeVariationId({
+          collectionId: confectionId,
+          itemId: variationSpec
+        })
+      ).toSucceedWith(variationId);
+    });
+
+    test('createConfectionRecipeVariationId fails for invalid parts', () => {
+      expect(
+        Helpers.createConfectionRecipeVariationId({
+          collectionId: 'bad' as ConfectionId,
+          itemId: 'invalid' as ConfectionRecipeVariationSpec
+        })
+      ).toFail();
+    });
+
+    test('parseConfectionRecipeVariationId parses valid composite', () => {
+      expect(Helpers.parseConfectionRecipeVariationId(variationId)).toSucceedAndSatisfy((parsed) => {
+        expect(parsed.collectionId).toBe(confectionId);
+        expect(parsed.itemId).toBe(variationSpec);
+      });
+    });
+
+    test('parseConfectionRecipeVariationId fails on invalid format', () => {
+      expect(Helpers.parseConfectionRecipeVariationId('no-at' as ConfectionRecipeVariationId)).toFail();
+    });
+  });
+
+  // ============================================================================
+  // String conversion utilities
+  // ============================================================================
+
+  describe('toKebabCase', () => {
+    test('converts spaces to hyphens', () => {
+      expect(Helpers.toKebabCase('Dark Chocolate')).toBe('dark-chocolate');
+    });
+
+    test('converts uppercase to lowercase', () => {
+      expect(Helpers.toKebabCase('HelloWorld')).toBe('helloworld');
+    });
+
+    test('replaces special characters with hyphens', () => {
+      expect(Helpers.toKebabCase('foo!@#bar')).toBe('foo-bar');
+    });
+
+    test('trims leading and trailing whitespace', () => {
+      expect(Helpers.toKebabCase('  hello  ')).toBe('hello');
+    });
+
+    test('strips leading and trailing hyphens from result', () => {
+      expect(Helpers.toKebabCase('---hello---')).toBe('hello');
+    });
+
+    test('handles numbers', () => {
+      expect(Helpers.toKebabCase('Recipe 1')).toBe('recipe-1');
+    });
+
+    test('collapses multiple special chars to single hyphen', () => {
+      expect(Helpers.toKebabCase('foo   bar')).toBe('foo-bar');
+    });
+
+    test('returns empty string for all-special input', () => {
+      expect(Helpers.toKebabCase('!@#$%')).toBe('');
+    });
+
+    test('returns already-kebab unchanged', () => {
+      expect(Helpers.toKebabCase('already-kebab')).toBe('already-kebab');
+    });
+  });
+
+  describe('nameToBaseId', () => {
+    test('converts valid name to kebab-case ID', () => {
+      expect(Helpers.nameToBaseId('Dark Chocolate Ganache')).toSucceedWith('dark-chocolate-ganache');
+    });
+
+    test('fails for empty string', () => {
+      expect(Helpers.nameToBaseId('')).toFailWith(/empty/i);
+    });
+
+    test('fails for whitespace-only string', () => {
+      expect(Helpers.nameToBaseId('   ')).toFailWith(/empty/i);
+    });
+
+    test('fails for all-special-character name', () => {
+      expect(Helpers.nameToBaseId('!@#$%')).toFailWith(/alphanumeric/i);
+    });
+
+    test('succeeds for name with mixed content', () => {
+      expect(Helpers.nameToBaseId('Truffle #1')).toSucceedWith('truffle-1');
+    });
+  });
+
+  describe('generateUniqueBaseId', () => {
+    test('returns original ID when no conflict', () => {
+      expect(Helpers.generateUniqueBaseId('ganache', new Set(['truffle']))).toSucceedWith('ganache');
+    });
+
+    test('appends counter on conflict', () => {
+      expect(Helpers.generateUniqueBaseId('ganache', new Set(['ganache']))).toSucceedWith('ganache-2');
+    });
+
+    test('increments counter until unique', () => {
+      expect(
+        Helpers.generateUniqueBaseId('ganache', new Set(['ganache', 'ganache-2', 'ganache-3']))
+      ).toSucceedWith('ganache-4');
+    });
+
+    test('accepts array instead of Set', () => {
+      expect(Helpers.generateUniqueBaseId('ganache', ['ganache'])).toSucceedWith('ganache-2');
+    });
+
+    test('fails when maxAttempts exceeded', () => {
+      expect(Helpers.generateUniqueBaseId('x', new Set(['x', 'x-2', 'x-3']), 3)).toFailWith(
+        /could not generate/i
+      );
+    });
+  });
+
+  describe('generateUniqueBaseIdFromName', () => {
+    test('converts name and returns unique ID', () => {
+      expect(Helpers.generateUniqueBaseIdFromName('Dark Ganache', new Set([]))).toSucceedWith('dark-ganache');
+    });
+
+    test('appends counter on collision', () => {
+      expect(Helpers.generateUniqueBaseIdFromName('Dark Ganache', new Set(['dark-ganache']))).toSucceedWith(
+        'dark-ganache-2'
+      );
+    });
+
+    test('fails for empty name', () => {
+      expect(Helpers.generateUniqueBaseIdFromName('', new Set([]))).toFailWith(/empty/i);
+    });
+  });
+
+  // ============================================================================
+  // Serialization helpers
+  // ============================================================================
+
+  describe('serializeToYaml', () => {
+    test('serializes simple object', () => {
+      expect(Helpers.serializeToYaml({ name: 'test', value: 42 })).toSucceedAndSatisfy((result) => {
+        expect(result).toContain('name: test');
+        expect(result).toContain('value: 42');
+      });
+    });
+
+    test('serializes nested object', () => {
+      expect(Helpers.serializeToYaml({ outer: { inner: 'value' } })).toSucceedAndSatisfy((result) => {
+        expect(result).toContain('outer:');
+        expect(result).toContain('inner: value');
+      });
+    });
+
+    test('respects prettyPrint: false', () => {
+      const result1 = Helpers.serializeToYaml({ a: 1 }, { prettyPrint: true });
+      const result2 = Helpers.serializeToYaml({ a: 1 }, { prettyPrint: false });
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+    });
+
+    test('defaults to prettyPrint: true', () => {
+      expect(Helpers.serializeToYaml({ a: 1 })).toSucceed();
+    });
+
+    test('serializes arrays', () => {
+      expect(Helpers.serializeToYaml({ items: [1, 2, 3] })).toSucceedAndSatisfy((result) => {
+        expect(result).toContain('items:');
+      });
+    });
+  });
+
+  describe('serializeToJson', () => {
+    test('serializes simple object with pretty-print', () => {
+      expect(Helpers.serializeToJson({ name: 'test' })).toSucceedAndSatisfy((result) => {
+        expect(JSON.parse(result)).toEqual({ name: 'test' });
+        expect(result).toContain('\n'); // Pretty-printed
+      });
+    });
+
+    test('serializes without pretty-print', () => {
+      expect(Helpers.serializeToJson({ name: 'test' }, { prettyPrint: false })).toSucceedAndSatisfy(
+        (result) => {
+          expect(JSON.parse(result)).toEqual({ name: 'test' });
+          expect(result).not.toContain('\n');
+        }
+      );
+    });
+
+    test('serializes nested objects', () => {
+      const data = { a: { b: { c: 1 } } };
+      expect(Helpers.serializeToJson(data)).toSucceedAndSatisfy((result) => {
+        expect(JSON.parse(result)).toEqual(data);
+      });
+    });
+
+    test('handles null and undefined values', () => {
+      expect(Helpers.serializeToJson({ a: null })).toSucceedAndSatisfy((result) => {
+        expect(JSON.parse(result)).toEqual({ a: null });
+      });
+    });
+
+    test('fails for circular references', () => {
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+      expect(Helpers.serializeToJson(circular)).toFailWith(/serialize to JSON/i);
+    });
+  });
+});

@@ -264,6 +264,19 @@ describe('BarTruffleEditingSession', () => {
         }
       );
     });
+
+    test('creates with initialYield parameter', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+
+      expect(
+        Session.BarTruffleEditingSession.create(confection, sessionContext, {
+          initialYield: { count: 96, unit: 'pieces' }
+        })
+      ).toSucceedAndSatisfy((session) => {
+        expect(session.produced.yield.count).toBe(96);
+      });
+    });
   });
 
   // ============================================================================
@@ -297,6 +310,15 @@ describe('BarTruffleEditingSession', () => {
 
       expect(session.scaleToYield({ count: 48, unit: 'pieces' })).toSucceed();
       expect(session.produced.yield.count).toBe(48);
+    });
+
+    test('fails when produced.scaleToYield fails', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      // Test with invalid yield (zero count) which should fail
+      expect(session.scaleToYield({ count: 0, unit: 'pieces' })).toFail();
     });
   });
 

@@ -18,20 +18,163 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result } from '@fgv/ts-utils';
+import { Result, fail } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
-import { IWorkspaceFactoryParams } from './model';
+import { IWorkspaceFactoryParams, IWorkspace } from './model';
 import { Workspace } from './workspace';
+import { initializeNodePlatform } from './nodePlatformInit';
+import { createWorkspaceFromPlatform } from './platformInit';
+import { DeviceId } from '../settings';
 
 /**
- * Creates a workspace with Node.js platform defaults.
+ * Startup mode for workspace initialization.
+ * @public
+ */
+export type StartupMode = 'fail-on-error' | 'ignore-errors';
+
+/**
+ * Behavior when a required file or directory is missing.
+ * @public
+ */
+export type MissingFileBehavior = 'fail' | 'ignore' | 'create-empty';
+
+/**
+ * Directory layout mode for workspace initialization.
+ * @public
+ */
+export type DirectoryLayoutMode = 'single-root' | 'dual-root' | 'multi-root';
+
+/**
+ * Parameters for single-root directory layout.
+ * All data (settings, keystore, user data, library collections) in one directory.
+ * @public
+ */
+export interface ISingleRootParams {
+  /**
+   * Layout mode identifier.
+   */
+  readonly mode: 'single-root';
+
+  /**
+   * Path to the root directory containing all workspace data.
+   */
+  readonly rootPath: string;
+}
+
+/**
+ * Parameters for dual-root directory layout.
+ * Separate directories for installation data and library collections.
+ * @public
+ */
+export interface IDualRootParams {
+  /**
+   * Layout mode identifier.
+   */
+  readonly mode: 'dual-root';
+
+  /**
+   * Path to installation data (settings, keystore, user data, possibly additional libraries).
+   */
+  readonly installationPath: string;
+
+  /**
+   * Path to library collections directory (possibly read-only).
+   */
+  readonly libraryPath: string;
+
+  /**
+   * Whether the library path is read-only.
+   * @defaultValue false
+   */
+  readonly libraryReadOnly?: boolean;
+}
+
+/**
+ * Parameters for multi-root directory layout.
+ * One installation directory and multiple library collection directories.
+ * @public
+ */
+export interface IMultiRootParams {
+  /**
+   * Layout mode identifier.
+   */
+  readonly mode: 'multi-root';
+
+  /**
+   * Path to installation data (settings, keystore, user data).
+   */
+  readonly installationPath: string;
+
+  /**
+   * Paths to library collection directories.
+   */
+  readonly libraryPaths: ReadonlyArray<{
+    readonly path: string;
+    readonly readOnly?: boolean;
+  }>;
+}
+
+/**
+ * Union type for directory layout parameters.
+ * @public
+ */
+export type DirectoryLayoutParams = ISingleRootParams | IDualRootParams | IMultiRootParams;
+
+/**
+ * Enhanced parameters for creating a Node.js workspace.
+ * @public
+ */
+export interface ICreateNodeWorkspaceParams {
+  /**
+   * Directory layout configuration.
+   */
+  readonly layout: DirectoryLayoutParams;
+
+  /**
+   * Startup mode for error handling.
+   * @defaultValue 'fail-on-error'
+   */
+  readonly startupMode?: StartupMode;
+
+  /**
+   * Behavior when required files are missing.
+   * @defaultValue 'fail'
+   */
+  readonly missingFileBehavior?: MissingFileBehavior;
+
+  /**
+   * Device identifier for this instance.
+   */
+  readonly deviceId?: DeviceId;
+
+  /**
+   * Human-readable device name.
+   */
+  readonly deviceName?: string;
+
+  /**
+   * Whether to load built-in data.
+   * @defaultValue true
+   */
+  readonly builtin?: boolean;
+
+  /**
+   * Whether to pre-warm caches on load.
+   * @defaultValue false
+   */
+  readonly preWarm?: boolean;
+}
+
+/**
+ * Creates a workspace with Node.js platform defaults (legacy API).
  * Uses nodeCryptoProvider for key store and encryption operations.
  *
+ * @deprecated Use createNodeWorkspace with DirectoryLayoutParams instead
  * @param params - Workspace creation parameters (without crypto provider)
  * @returns Success with workspace, or Failure if creation fails
  * @public
  */
-export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Workspace> {
+export function createNodeWorkspaceLegacy(params?: IWorkspaceFactoryParams): Result<Workspace> {
   return Workspace.create({
     ...params,
     keyStore: params?.keyStoreFile
@@ -40,5 +183,48 @@ export function createNodeWorkspace(params?: IWorkspaceFactoryParams): Result<Wo
           cryptoProvider: CryptoUtils.nodeCryptoProvider
         }
       : undefined
+  });
+}
+
+/**
+ * Creates a workspace from filesystem directories using platform initialization.
+ * Supports three directory layout modes:
+ * 1. Single root - all data in one directory
+ * 2. Dual root - separate installation and library directories
+ * 3. Multi-root - installation directory plus multiple library directories
+ *
+ * @param params - Workspace creation parameters with directory layout
+ * @returns Success with workspace, or Failure if creation fails
+ * @public
+ */
+export async function createNodeWorkspace(params: ICreateNodeWorkspaceParams): Promise<Result<IWorkspace>> {
+  const { layout, startupMode = 'fail-on-error', builtin = true, preWarm = false } = params;
+
+  // For now, only implement single-root mode
+  // TODO: Implement dual-root and multi-root modes
+  if (layout.mode !== 'single-root') {
+    return fail(`Directory layout mode '${layout.mode}' not yet implemented`);
+  }
+
+  // Stage 1: Platform initialization
+  const platformResult = await initializeNodePlatform({
+    userLibraryPath: layout.rootPath,
+    deviceId: params.deviceId,
+    deviceName: params.deviceName
+  });
+
+  if (platformResult.isFailure()) {
+    if (startupMode === 'ignore-errors') {
+      // TODO: Create minimal workspace with defaults
+      return fail('ignore-errors mode not yet implemented');
+    }
+    return fail(`Platform initialization failed: ${platformResult.message}`);
+  }
+
+  // Stage 2: Create workspace from platform init result
+  return createWorkspaceFromPlatform({
+    platformInit: platformResult.value,
+    builtin,
+    preWarm
   });
 }

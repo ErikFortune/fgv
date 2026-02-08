@@ -30,3 +30,4 @@ export { createConfectionCommand } from './confection';
 export { createTaskCommand } from './task';
 export { createProcedureCommand } from './procedure';
 export { createGanacheCommand } from './ganache';
+export { createWorkspaceCommand } from './workspace';

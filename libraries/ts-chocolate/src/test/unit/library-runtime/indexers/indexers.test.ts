@@ -745,6 +745,29 @@ describe('Indexers', () => {
 
         expect(result).toSucceedWith([]);
       });
+
+      test('byIngredient search finds recipes using specific ingredient', () => {
+        // Create a resolver that works for all IDs
+        const mockRecipeResolver = (id: FillingId): Result<FillingRecipe> => {
+          return Success.with({
+            id,
+            name: `Recipe ${id}` as FillingName
+          } as unknown as FillingRecipe);
+        };
+
+        const orchestrator = new FillingRecipeIndexerOrchestrator(library, mockRecipeResolver);
+
+        // Find recipes that use dark chocolate
+        // dark-ganache uses test.dark-chocolate
+        const result = orchestrator.find({
+          byIngredient: { ingredientId: 'test.dark-chocolate' as IngredientId }
+        });
+
+        expect(result).toSucceedAndSatisfy((recipes) => {
+          expect(recipes.length).toBeGreaterThan(0);
+          expect(recipes.some((r) => r.id === ('test.dark-ganache' as FillingId))).toBe(true);
+        });
+      });
     });
 
     describe('entity resolution failures', () => {

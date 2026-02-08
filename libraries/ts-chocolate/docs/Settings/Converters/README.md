@@ -1,0 +1,127 @@
+[Home](../../README.md) > [Settings](../README.md) > Converters
+
+# Namespace: Converters
+
+Converters for settings types
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[DEVICE_ID_PATTERN](./variables/DEVICE_ID_PATTERN.md)
+
+</td><td>
+
+Pattern for device IDs: alphanumeric, dashes, underscores (no dots).
+
+</td></tr>
+<tr><td>
+
+[deviceId](./variables/deviceId.md)
+
+</td><td>
+
+Converter for DeviceId.
+
+</td></tr>
+<tr><td>
+
+[externalLibraryRef](./variables/externalLibraryRef.md)
+
+</td><td>
+
+Converter for ExternalLibraryRef.
+
+</td></tr>
+<tr><td>
+
+[scalingDefaults](./variables/scalingDefaults.md)
+
+</td><td>
+
+Converter for IScalingDefaults.
+
+</td></tr>
+<tr><td>
+
+[workflowPreferences](./variables/workflowPreferences.md)
+
+</td><td>
+
+Converter for IWorkflowPreferences.
+
+</td></tr>
+<tr><td>
+
+[toolSettings](./variables/toolSettings.md)
+
+</td><td>
+
+Converter for IToolSettings.
+
+</td></tr>
+<tr><td>
+
+[defaultCollectionTargets](./variables/defaultCollectionTargets.md)
+
+</td><td>
+
+Converter for IDefaultCollectionTargets.
+
+</td></tr>
+<tr><td>
+
+[externalLibraryRefConfig](./variables/externalLibraryRefConfig.md)
+
+</td><td>
+
+Converter for IExternalLibraryRefConfig.
+
+</td></tr>
+<tr><td>
+
+[commonSettings](./variables/commonSettings.md)
+
+</td><td>
+
+Converter for ICommonSettings.
+
+</td></tr>
+<tr><td>
+
+[deviceFileTreeOverrides](./variables/deviceFileTreeOverrides.md)
+
+</td><td>
+
+Converter for IDeviceFileTreeOverrides.
+
+</td></tr>
+<tr><td>
+
+[partialToolSettings](./variables/partialToolSettings.md)
+
+</td><td>
+
+Converter for partial tool settings (for device overrides).
+
+</td></tr>
+<tr><td>
+
+[deviceSettings](./variables/deviceSettings.md)
+
+</td><td>
+
+Converter for IDeviceSettings.
+
+</td></tr>
+</tbody></table>

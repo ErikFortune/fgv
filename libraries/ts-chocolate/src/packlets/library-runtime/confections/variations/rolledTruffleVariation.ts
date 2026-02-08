@@ -141,6 +141,7 @@ export class RolledTruffleRecipeVariation
           const primaryId = coatings.preferredId ?? coatings.ids[0];
           const resolvedOptions: IResolvedCoatingOption[] = [
             { id: primaryId, ingredient: resolved.primary },
+            /* c8 ignore next 4 - only reached with alternate coating ingredients in test data */
             ...resolved.alternates.map((ingredient, idx) => ({
               id: coatings.ids.filter((id) => id !== primaryId)[idx],
               ingredient

@@ -65,6 +65,15 @@ and rich query capabilities.
 </td></tr>
 <tr><td>
 
+[Settings](./Settings/README.md)
+
+</td><td>
+
+Workspace settings packlet.
+
+</td></tr>
+<tr><td>
+
 [UserEntities](./UserEntities/README.md)
 
 </td><td>
@@ -194,6 +203,60 @@ Parameters for creating a workspace.
 </td><td>
 
 Parameters for creating a workspace with platform-specific defaults.
+
+</td></tr>
+<tr><td>
+
+[ICreateNodeWorkspaceParams](./interfaces/ICreateNodeWorkspaceParams.md)
+
+</td><td>
+
+Enhanced parameters for creating a Node.js workspace.
+
+</td></tr>
+<tr><td>
+
+[ISingleRootParams](./interfaces/ISingleRootParams.md)
+
+</td><td>
+
+Parameters for single-root directory layout.
+
+</td></tr>
+<tr><td>
+
+[IDualRootParams](./interfaces/IDualRootParams.md)
+
+</td><td>
+
+Parameters for dual-root directory layout.
+
+</td></tr>
+<tr><td>
+
+[IMultiRootParams](./interfaces/IMultiRootParams.md)
+
+</td><td>
+
+Parameters for multi-root directory layout.
+
+</td></tr>
+<tr><td>
+
+[IWorkspaceInitParams](./interfaces/IWorkspaceInitParams.md)
+
+</td><td>
+
+Parameters for workspace initialization.
+
+</td></tr>
+<tr><td>
+
+[IWorkspaceInitResult](./interfaces/IWorkspaceInitResult.md)
+
+</td><td>
+
+Result of workspace initialization.
 
 </td></tr>
 </tbody></table>
@@ -705,6 +768,42 @@ Category for a URL associated with an entity.
 State of the workspace with respect to key store and encryption.
 
 </td></tr>
+<tr><td>
+
+[DirectoryLayoutParams](./type-aliases/DirectoryLayoutParams.md)
+
+</td><td>
+
+Union type for directory layout parameters.
+
+</td></tr>
+<tr><td>
+
+[StartupMode](./type-aliases/StartupMode.md)
+
+</td><td>
+
+Startup mode for workspace initialization.
+
+</td></tr>
+<tr><td>
+
+[MissingFileBehavior](./type-aliases/MissingFileBehavior.md)
+
+</td><td>
+
+Behavior when a required file or directory is missing.
+
+</td></tr>
+<tr><td>
+
+[DirectoryLayoutMode](./type-aliases/DirectoryLayoutMode.md)
+
+</td><td>
+
+Directory layout mode for workspace initialization.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -725,7 +824,43 @@ Description
 
 </td><td>
 
-Creates a workspace with Node.js platform defaults.
+Creates a workspace from filesystem directories using platform initialization.
+
+</td></tr>
+<tr><td>
+
+[createNodeWorkspaceLegacy](./functions/createNodeWorkspaceLegacy.md)
+
+</td><td>
+
+Creates a workspace with Node.js platform defaults (legacy API).
+
+</td></tr>
+<tr><td>
+
+[initializeNodePlatform](./functions/initializeNodePlatform.md)
+
+</td><td>
+
+Convenience function to perform Node.js platform initialization.
+
+</td></tr>
+<tr><td>
+
+[createWorkspaceFromPlatform](./functions/createWorkspaceFromPlatform.md)
+
+</td><td>
+
+Creates a workspace from platform initialization results (Stage 2).
+
+</td></tr>
+<tr><td>
+
+[initializeWorkspace](./functions/initializeWorkspace.md)
+
+</td><td>
+
+Initializes a new workspace with default settings and directory structure.
 
 </td></tr>
 </tbody></table>

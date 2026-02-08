@@ -296,8 +296,9 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
 
     const session = sessionResult.value;
 
+    // TODO: we need to implement persistence for confection sessions
     // Currently only filling sessions support persistence
-    if (!('toPersistedState' in session)) {
+    if (!(session instanceof Session.EditingSession)) {
       return fail(
         `Session ${sessionId} does not support persistence (confection sessions not yet implemented)`
       );
@@ -305,6 +306,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
 
     // Get the existing persisted session
     const existingResult = this._entities.sessions.get(sessionId);
+    /* c8 ignore next 3 - defensive: session already validated before save */
     if (existingResult.isFailure()) {
       return fail(`Session ${sessionId} not found: ${existingResult.message}`);
     }
@@ -314,8 +316,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     const baseId = Helpers.getSessionBaseId(sessionId);
 
     // Create updated persisted state
-    const fillingSession = session as Session.EditingSession;
-    return fillingSession
+    return session
       .toPersistedState({
         collectionId,
         baseId,
@@ -420,7 +421,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     if (SessionEntities.isConfectionSessionEntity(entity)) {
       return this._materializeConfectionSession(entity);
     }
-
+    /* c8 ignore next 2 - defensive: exhaustive session type check */
     return fail(`Unknown session type for ${sessionId}`);
   }
 
@@ -460,7 +461,8 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     persisted: IConfectionSessionEntity,
     confection: IConfectionBase
   ): Result<Session.AnyConfectionEditingSession> {
-    if (confection.isMoldedBonBon() && persisted.confectionType === ('moldedBonBon' as ConfectionType)) {
+    // TODO: we should add and use proper type guards for persisted confections
+    if (confection.isMoldedBonBon() && persisted.confectionType === ('molded-bonbon' as ConfectionType)) {
       return Session.MoldedBonBonEditingSession.fromPersistedState(
         confection as unknown as MoldedBonBonRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
@@ -468,7 +470,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
       );
     }
 
-    if (confection.isBarTruffle() && persisted.confectionType === ('barTruffle' as ConfectionType)) {
+    if (confection.isBarTruffle() && persisted.confectionType === ('bar-truffle' as ConfectionType)) {
       return Session.BarTruffleEditingSession.fromPersistedState(
         confection as unknown as BarTruffleRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
@@ -476,14 +478,14 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
       );
     }
 
-    if (confection.isRolledTruffle() && persisted.confectionType === ('rolledTruffle' as ConfectionType)) {
+    if (confection.isRolledTruffle() && persisted.confectionType === ('rolled-truffle' as ConfectionType)) {
       return Session.RolledTruffleEditingSession.fromPersistedState(
         confection as unknown as RolledTruffleRecipe,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
         this
       );
     }
-
+    /* c8 ignore next 2 - defensive: exhaustive confection type check */
     return fail(`Confection type mismatch: expected ${persisted.confectionType}`);
   }
 }

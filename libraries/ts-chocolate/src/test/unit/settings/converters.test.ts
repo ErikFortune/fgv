@@ -319,6 +319,24 @@ describe('settings converters', () => {
       };
       expect(Converters.externalLibraryRefConfig.convert(input)).toFail();
     });
+
+    test('fails when load is a non-object (string)', () => {
+      const input = {
+        name: 'Lib',
+        ref: '/path',
+        load: 'invalid-string'
+      };
+      expect(Converters.externalLibraryRefConfig.convert(input)).toFailWith(/expected object/i);
+    });
+
+    test('fails when load is a non-object (number)', () => {
+      const input = {
+        name: 'Lib',
+        ref: '/path',
+        load: 42
+      };
+      expect(Converters.externalLibraryRefConfig.convert(input)).toFailWith(/expected object/i);
+    });
   });
 
   // ============================================================================

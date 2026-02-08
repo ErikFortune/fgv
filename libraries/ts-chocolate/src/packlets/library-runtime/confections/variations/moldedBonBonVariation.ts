@@ -189,6 +189,7 @@ export class MoldedBonBonRecipeVariation
         (msg) => `confection ${this._confectionId}: failed to resolve additional chocolate: ${msg}`
       )
       .onSuccess((resolved) => {
+        /* c8 ignore next 5 - defensive: library data guarantees additional chocolate IS chocolate */
         if (!resolved.primary.isChocolate()) {
           return fail(
             `confection ${this._confectionId}: primary ingredient for additional chocolate is not a chocolate`

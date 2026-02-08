@@ -19,18 +19,33 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { Logging } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { JournalLibrary } from '../../../packlets/entities';
+// eslint-disable-next-line @rushstack/packlets/mechanics
 import {
+  isConfectionJournalEntry,
+  isFillingJournalEntry,
+  JournalLibrary
+} from '../../../packlets/entities/journal/library';
+import {
+  ConfectionId,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   FillingId,
   FillingRecipeVariationId,
   FillingRecipeVariationSpec,
+  IngredientId,
   Measurement,
+  MoldId,
   Converters as CommonConverters,
   Helpers as CommonHelpers
 } from '../../../packlets/common';
-import type { AnyJournalEntryEntity, IFillingProductionJournalEntryEntity } from '../../../packlets/entities';
+import type {
+  AnyJournalEntryEntity,
+  IConfectionProductionJournalEntryEntity,
+  IFillingProductionJournalEntryEntity
+} from '../../../packlets/entities';
 
 describe('JournalLibrary (Collection-Based)', () => {
   // ============================================================================
@@ -61,8 +76,41 @@ describe('JournalLibrary (Collection-Based)', () => {
     }
   });
 
-  // Note: Confection journal tests omitted for brevity - filling journals
-  // are sufficient to test the collection-based library functionality
+  const makeConfectionJournal = (
+    baseId: string,
+    variationId: string,
+    timestamp: string = '2026-01-15T10:00:00Z'
+  ): IConfectionProductionJournalEntryEntity => ({
+    type: 'confection-production',
+    baseId: CommonConverters.baseJournalId.convert(baseId).orThrow(),
+    timestamp,
+    variationId: CommonConverters.confectionRecipeVariationId.convert(variationId).orThrow(),
+    recipe: {
+      variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+      createdDate: '2026-01-01',
+      yield: {
+        count: 24
+      },
+      fillings: [],
+      molds: {
+        options: []
+      },
+      shellChocolate: undefined
+    },
+    yield: {
+      count: 24
+    },
+    produced: {
+      confectionType: 'molded-bonbon',
+      variationId: variationId as ConfectionRecipeVariationId,
+      yield: {
+        count: 24
+      },
+      fillings: [],
+      moldId: 'test.mold-a' as MoldId,
+      shellChocolateId: 'test.dark-chocolate' as IngredientId
+    }
+  });
 
   const createLibraryWithJournals = (journals: AnyJournalEntryEntity[]): JournalLibrary => {
     // Create in-memory file tree with journal collection
@@ -135,6 +183,44 @@ describe('JournalLibrary (Collection-Based)', () => {
   };
 
   // ============================================================================
+  // Type Guard Tests
+  // ============================================================================
+
+  describe('type guards', () => {
+    test('isFillingJournalEntry identifies filling journals', () => {
+      const fillingJournal = makeFillingJournal(
+        '2026-01-15-100000-00000001',
+        'source.recipe-a@2026-01-01-01'
+      );
+      expect(isFillingJournalEntry(fillingJournal)).toBe(true);
+    });
+
+    test('isConfectionJournalEntry identifies confection journals', () => {
+      const confectionJournal = makeConfectionJournal(
+        '2026-01-15-100000-00000001',
+        'source.recipe-a@2026-01-01-01'
+      );
+      expect(isConfectionJournalEntry(confectionJournal)).toBe(true);
+    });
+
+    test('isFillingJournalEntry rejects confection journals', () => {
+      const confectionJournal = makeConfectionJournal(
+        '2026-01-15-100000-00000001',
+        'source.recipe-a@2026-01-01-01'
+      );
+      expect(isFillingJournalEntry(confectionJournal)).toBe(false);
+    });
+
+    test('isConfectionJournalEntry rejects filling journals', () => {
+      const fillingJournal = makeFillingJournal(
+        '2026-01-15-100000-00000001',
+        'source.recipe-a@2026-01-01-01'
+      );
+      expect(isConfectionJournalEntry(fillingJournal)).toBe(false);
+    });
+  });
+
+  // ============================================================================
   // Factory Tests
   // ============================================================================
 
@@ -165,6 +251,93 @@ describe('JournalLibrary (Collection-Based)', () => {
 
       expect(lib.size).toBe(2);
       expect(lib.getAllJournals()).toHaveLength(2);
+    });
+  });
+
+  describe('createAsync', () => {
+    test('creates empty library with builtin: false', async () => {
+      const result = await JournalLibrary.createAsync({ builtin: false });
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.size).toBe(0);
+        expect(lib.getAllJournals()).toHaveLength(0);
+      });
+    });
+
+    test('creates library with file sources', async () => {
+      const journal1 = makeFillingJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
+      const journal2 = makeConfectionJournal('2026-01-16-100000-00000002', 'source.recipe-b@2026-01-01-01');
+
+      const items: Record<string, unknown> = {
+        [journal1.baseId]: journal1,
+        [journal2.baseId]: journal2
+      };
+
+      const files: Array<{ path: string; contents: unknown }> = [
+        {
+          path: '/data/journals/async-test.json',
+          contents: { items }
+        }
+      ];
+
+      const accessors = FileTree.InMemoryTreeAccessors.create(files, { mutable: true }).orThrow();
+      const fileTree = FileTree.FileTree.create(accessors).orThrow();
+
+      const result = await JournalLibrary.createAsync({
+        builtin: false,
+        fileSources: [
+          {
+            directory: fileTree.getDirectory('/').orThrow(),
+            mutable: true
+          }
+        ]
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.size).toBe(2);
+        expect(lib.getAllJournals()).toHaveLength(2);
+      });
+    });
+
+    test('fails when collection loading fails', async () => {
+      // Create a file tree with invalid journal data
+      const files: Array<{ path: string; contents: unknown }> = [
+        {
+          path: '/data/journals/invalid.json',
+          contents: {
+            items: {
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              'invalid-id': {
+                type: 'invalid-type',
+                baseId: 'not-a-valid-base-id',
+                timestamp: 'invalid-timestamp'
+              }
+            }
+          }
+        }
+      ];
+
+      const accessors = FileTree.InMemoryTreeAccessors.create(files, { mutable: true }).orThrow();
+      const fileTree = FileTree.FileTree.create(accessors).orThrow();
+
+      const result = await JournalLibrary.createAsync({
+        builtin: false,
+        fileSources: [
+          {
+            directory: fileTree.getDirectory('/').orThrow(),
+            mutable: true
+          }
+        ]
+      });
+
+      expect(result).toFail();
+    });
+
+    test('uses provided logger', async () => {
+      const logger = new Logging.LogReporter<unknown>();
+      const result = await JournalLibrary.createAsync({ builtin: false, logger });
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.size).toBe(0);
+      });
     });
   });
 
@@ -243,7 +416,72 @@ describe('JournalLibrary (Collection-Based)', () => {
     });
   });
 
-  // Note: Confection journal query tests omitted - same patterns as filling tests
+  // ============================================================================
+  // Query Tests - Confection Journals
+  // ============================================================================
+
+  describe('getJournalsForConfection', () => {
+    test('returns journals for a confection across all variations', () => {
+      const journal1 = makeConfectionJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
+      const journal2 = makeConfectionJournal('2026-01-16-100000-00000002', 'source.recipe-a@2026-01-02-01');
+      const journal3 = makeConfectionJournal('2026-01-17-100000-00000003', 'source.recipe-b@2026-01-01-01');
+
+      const lib = createLibraryWithJournals([journal1, journal2, journal3]);
+
+      const results = lib.getJournalsForConfection('source.recipe-a' as ConfectionId);
+      expect(results).toHaveLength(2);
+      expect(results.map((j) => j.baseId)).toContain(journal1.baseId);
+      expect(results.map((j) => j.baseId)).toContain(journal2.baseId);
+    });
+
+    test('returns empty array for unknown confection', () => {
+      const journal = makeConfectionJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
+      const lib = createLibraryWithJournals([journal]);
+
+      const results = lib.getJournalsForConfection('source.unknown' as ConfectionId);
+      expect(results).toHaveLength(0);
+    });
+
+    test('works across multiple collections', () => {
+      const journal1 = makeConfectionJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
+      const journal2 = makeConfectionJournal('2026-01-16-100000-00000002', 'source.recipe-a@2026-01-02-01');
+
+      const lib = createLibraryWithCollections([
+        { id: 'collection-1', journals: [journal1] },
+        { id: 'collection-2', journals: [journal2] }
+      ]);
+
+      const results = lib.getJournalsForConfection('source.recipe-a' as ConfectionId);
+      expect(results).toHaveLength(2);
+    });
+  });
+
+  describe('getJournalsForConfectionVariation', () => {
+    test('returns journals for specific confection variation', () => {
+      const journal1 = makeConfectionJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
+      const journal2 = makeConfectionJournal('2026-01-16-100000-00000002', 'source.recipe-a@2026-01-01-01');
+      const journal3 = makeConfectionJournal('2026-01-17-100000-00000003', 'source.recipe-a@2026-01-02-01');
+
+      const lib = createLibraryWithJournals([journal1, journal2, journal3]);
+
+      const results = lib.getJournalsForConfectionVariation(
+        'source.recipe-a@2026-01-01-01' as ConfectionRecipeVariationId
+      );
+      expect(results).toHaveLength(2);
+      expect(results.map((j) => j.baseId)).toContain(journal1.baseId);
+      expect(results.map((j) => j.baseId)).toContain(journal2.baseId);
+    });
+
+    test('returns empty array for unknown variation', () => {
+      const journal = makeConfectionJournal('2026-01-15-100000-00000001', 'source.recipe-a@2026-01-01-01');
+      const lib = createLibraryWithJournals([journal]);
+
+      const results = lib.getJournalsForConfectionVariation(
+        'source.recipe-a@2026-99-99-99' as ConfectionRecipeVariationId
+      );
+      expect(results).toHaveLength(0);
+    });
+  });
 
   // ============================================================================
   // Individual Journal Access

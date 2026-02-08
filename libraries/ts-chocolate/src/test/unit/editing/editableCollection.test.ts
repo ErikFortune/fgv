@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { Converters } from '@fgv/ts-utils';
+import { Converters, succeed } from '@fgv/ts-utils';
 import { CollectionId } from '../../../index';
 import { EditableCollection } from '../../../packlets/editing';
 
@@ -305,6 +305,474 @@ describe('EditableCollection', () => {
       expect(collection.delete('item1')).toSucceed();
       expect(collection.add('item2', { name: 'Item 2', value: 30 })).toSucceed();
       expect(collection.clear()).toSucceed();
+    });
+  });
+
+  // ==========================================================================
+  // Parsing methods (fromYaml, fromJson, parse)
+  // ==========================================================================
+
+  describe('fromYaml', () => {
+    test('should parse valid YAML with metadata', () => {
+      const yaml = `
+metadata:
+  name: Test Collection
+  description: A test collection
+items:
+  item1:
+    name: Item 1
+    value: 10
+  item2:
+    name: Item 2
+    value: 20
+`;
+
+      expect(
+        EditableCollection.fromYaml(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(2);
+        expect(collection.metadata.name).toBe('Test Collection');
+        expect(collection.metadata.description).toBe('A test collection');
+      });
+    });
+
+    test('should parse YAML without metadata', () => {
+      const yaml = `
+items:
+  item1:
+    name: Item 1
+    value: 10
+`;
+
+      expect(
+        EditableCollection.fromYaml(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(1);
+        expect(collection.metadata.name).toBe('Test Collection');
+      });
+    });
+
+    test('should fail on invalid value', () => {
+      const yaml = `
+items:
+  item1:
+    name: 123
+    value: not-a-number
+`;
+
+      expect(
+        EditableCollection.fromYaml(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFail();
+    });
+
+    test('should fail on invalid YAML', () => {
+      const yaml = 'invalid: [yaml: syntax';
+
+      expect(
+        EditableCollection.fromYaml(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFail();
+    });
+  });
+
+  describe('fromJson', () => {
+    test('should parse valid JSON with metadata', () => {
+      const json = JSON.stringify({
+        metadata: {
+          name: 'JSON Collection',
+          description: 'From JSON'
+        },
+        items: {
+          item1: { name: 'Item 1', value: 10 },
+          item2: { name: 'Item 2', value: 20 }
+        }
+      });
+
+      expect(
+        EditableCollection.fromJson(json, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(2);
+        expect(collection.metadata.name).toBe('JSON Collection');
+      });
+    });
+
+    test('should fail on invalid JSON', () => {
+      const json = '{invalid json}';
+
+      expect(
+        EditableCollection.fromJson(json, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFail();
+    });
+  });
+
+  describe('parse', () => {
+    test('should parse JSON when content starts with brace', () => {
+      const json = JSON.stringify({
+        metadata: { name: 'Auto-detected JSON' },
+        items: {
+          item1: { name: 'Item 1', value: 10 }
+        }
+      });
+
+      expect(
+        EditableCollection.parse(json, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(1);
+        expect(collection.metadata.name).toBe('Auto-detected JSON');
+      });
+    });
+
+    test('should parse YAML when content does not start with brace', () => {
+      const yaml = `
+metadata:
+  name: Auto-detected YAML
+items:
+  item1:
+    name: Item 1
+    value: 10
+`;
+
+      expect(
+        EditableCollection.parse(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(1);
+        expect(collection.metadata.name).toBe('Auto-detected YAML');
+      });
+    });
+
+    test('should fail on empty content', () => {
+      expect(
+        EditableCollection.parse('', {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFailWith(/empty/i);
+    });
+
+    test('should fallback from JSON to YAML on parse failure', () => {
+      const yaml = `
+metadata:
+  name: YAML fallback
+items:
+  item1:
+    name: Item 1
+    value: 10
+`;
+
+      expect(
+        EditableCollection.parse(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(1);
+      });
+    });
+  });
+
+  // ==========================================================================
+  // Serialization methods
+  // ==========================================================================
+
+  describe('serializeToYaml', () => {
+    test('should serialize collection to YAML', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.serializeToYaml()).toSucceedAndSatisfy((yaml) => {
+        expect(yaml).toContain('metadata:');
+        expect(yaml).toContain('Test Collection');
+        expect(yaml).toContain('items:');
+        expect(yaml).toContain('item1:');
+      });
+    });
+  });
+
+  describe('serializeToJson', () => {
+    test('should serialize collection to JSON', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.serializeToJson()).toSucceedAndSatisfy((json) => {
+        const parsed = JSON.parse(json);
+        expect(parsed.metadata.name).toBe('Test Collection');
+        expect(parsed.items.item1.name).toBe('Item 1');
+      });
+    });
+  });
+
+  describe('serialize', () => {
+    test('should serialize to YAML when format is yaml', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.serialize('yaml')).toSucceedAndSatisfy((yaml) => {
+        expect(yaml).toContain('metadata:');
+      });
+    });
+
+    test('should serialize to JSON when format is json', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.serialize('json')).toSucceedAndSatisfy((json) => {
+        const parsed = JSON.parse(json);
+        expect(parsed.metadata).toBeDefined();
+      });
+    });
+  });
+
+  // ==========================================================================
+  // Persistence methods (canSave, save)
+  // ==========================================================================
+
+  describe('canSave', () => {
+    test('should return false when no sourceItem', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.canSave()).toBe(false);
+    });
+
+    test('should return false when sourceItem is not a file', () => {
+      const mockSourceItem = {
+        name: 'test'
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.canSave()).toBe(false);
+    });
+
+    test('should return true when sourceItem is mutable file', () => {
+      const mockSourceItem = {
+        name: 'test',
+        getIsMutable: () => succeed(true)
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.canSave()).toBe(true);
+    });
+
+    test('should return false when sourceItem is immutable file', () => {
+      const mockSourceItem = {
+        name: 'test',
+        getIsMutable: () => succeed(false)
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.canSave()).toBe(false);
+    });
+  });
+
+  describe('save', () => {
+    test('should fail when collection is immutable', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: false,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.save()).toFailWith(/immutable.*cannot be saved/i);
+    });
+
+    test('should fail when no sourceItem', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.save()).toFailWith(/no source file/i);
+    });
+
+    test('should fail when sourceItem is not a file', () => {
+      const mockSourceItem = {
+        name: 'test'
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.save()).toFailWith(/not a file/i);
+    });
+
+    test('should fail when sourceItem file is immutable', () => {
+      const mockSourceItem = {
+        name: 'test',
+        getIsMutable: () => succeed(false)
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.save()).toFailWith(/not mutable/i);
+    });
+
+    test('should save successfully when sourceItem is mutable file', () => {
+      const mockSourceItem = {
+        name: 'test',
+        getIsMutable: () => succeed(true),
+        setRawContents: (_content: string) => {
+          return succeed(undefined);
+        }
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.save()).toSucceed();
+    });
+  });
+
+  describe('isDirty', () => {
+    test('should always return false (not implemented)', () => {
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter
+      }).orThrow();
+
+      expect(collection.isDirty()).toBe(false);
     });
   });
 });

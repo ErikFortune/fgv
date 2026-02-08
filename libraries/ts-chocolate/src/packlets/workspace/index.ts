@@ -48,7 +48,18 @@ export {
 export { Workspace } from './workspace';
 
 // Node.js factory (browser factory is exported separately via index.browser.ts)
-export { createNodeWorkspace } from './nodeFactory';
+export {
+  createNodeWorkspace,
+  createNodeWorkspaceLegacy,
+  type ICreateNodeWorkspaceParams,
+  type DirectoryLayoutParams,
+  type ISingleRootParams,
+  type IDualRootParams,
+  type IMultiRootParams,
+  type StartupMode,
+  type MissingFileBehavior,
+  type DirectoryLayoutMode
+} from './nodeFactory';
 
 // Node.js platform initializer
 export {
@@ -56,3 +67,13 @@ export {
   createNodePlatformInitializer,
   initializeNodePlatform
 } from './nodePlatformInit';
+
+// Workspace initialization helpers
+export {
+  type IWorkspaceInitParams,
+  type IWorkspaceInitResult,
+  initializeWorkspace,
+  createWorkspaceDirectories,
+  writeCommonSettings,
+  writeDeviceSettings
+} from './workspaceInit';

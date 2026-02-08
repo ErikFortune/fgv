@@ -166,6 +166,7 @@ export class ProducedFilling {
   ): Result<Fillings.IProducedFillingIngredientEntity> {
     // Use helper to get preferred ID
     const ingredientId = Helpers.getPreferredIdOrFirst(ing.ingredient);
+    /* c8 ignore next 3 - defensive: ingredient with no IDs indicates library data corruption */
     if (ingredientId === undefined) {
       return fail('Ingredient has no IDs');
     }

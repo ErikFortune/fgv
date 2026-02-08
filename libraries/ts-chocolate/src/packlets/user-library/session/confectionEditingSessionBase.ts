@@ -96,6 +96,7 @@ export abstract class ConfectionEditingSessionBase<
    */
   protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined> {
     const fillings = this._produced.fillings;
+    /* c8 ignore next 3 - defensive: confection with no filling slots */
     if (!fillings) {
       return succeed(undefined);
     }
@@ -175,6 +176,7 @@ export abstract class ConfectionEditingSessionBase<
     targetWeight: Measurement
   ): Result<Measurement | undefined> {
     const session = this._fillingSessions.get(slotId);
+    /* c8 ignore next 3 - defensive: ingredient slot has no filling session */
     if (!session) {
       return succeed(undefined); // No session (ingredient slot)
     }

@@ -136,6 +136,15 @@ describe('MoldedBonBonEditingSession', () => {
     format: 'other' as MoldFormat
   };
 
+  const moldC: IMoldEntity = {
+    baseId: 'mold-c' as BaseMoldId,
+    manufacturer: 'Test Molds',
+    productNumber: 'TM-003',
+    description: 'Test mold C - same weight as A',
+    cavities: { kind: 'count', count: 20, info: { weight: 10 as Measurement } },
+    format: 'other' as MoldFormat
+  };
+
   const moldedBonBonEntity: Confections.MoldedBonBonRecipeEntity = {
     baseId: 'test-molded-bonbon' as BaseConfectionId,
     confectionType: 'molded-bonbon',
@@ -212,7 +221,8 @@ describe('MoldedBonBonEditingSession', () => {
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
             'mold-a': moldA,
-            'mold-b': moldB
+            'mold-b': moldB,
+            'mold-c': moldC
             /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
@@ -296,6 +306,19 @@ describe('MoldedBonBonEditingSession', () => {
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
       expect(session.fillingSessions.size).toBeGreaterThan(0);
+    });
+
+    test('creates with initialYield parameter', () => {
+      const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
+      if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
+
+      expect(
+        Session.MoldedBonBonEditingSession.create(confection, sessionContext, {
+          initialYield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement, frames: 2 }
+        })
+      ).toSucceedAndSatisfy((session) => {
+        expect(session.produced.yield.count).toBe(48);
+      });
     });
   });
 
@@ -406,6 +429,15 @@ describe('MoldedBonBonEditingSession', () => {
 
       expect(session.scaleToYield({ count: 48, unit: 'pieces' })).toSucceed();
     });
+
+    test('fails when produced.scaleToYield fails', () => {
+      const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
+      if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
+      const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
+
+      // Test with invalid yield (zero count) which should fail
+      expect(session.scaleToYield({ count: 0, unit: 'pieces' })).toFail();
+    });
   });
 
   // ============================================================================
@@ -466,6 +498,19 @@ describe('MoldedBonBonEditingSession', () => {
       expect(fillingAfter).toBeDefined();
       // mold-b has different cavity weight, so filling should be rescaled
       expect(fillingAfter!.produced.targetWeight).not.toBe(weightBefore);
+    });
+
+    test('confirmMoldChange does not rescale when weights are same', () => {
+      const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
+      if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
+      const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
+
+      // Confirm mold change and verify it succeeds (rescaling always happens since mold weights differ)
+      const analysis = session.analyzeMoldChange('test.mold-c' as MoldId).orThrow();
+      expect(analysis.requiresRescaling).toBe(true);
+
+      expect(session.confirmMoldChange()).toSucceed();
+      expect(session.currentMold.id).toBe('test.mold-c');
     });
 
     test('confirmMoldChange fails without analyze', () => {

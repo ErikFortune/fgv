@@ -305,6 +305,7 @@ export class SettingsManager implements ISettingsManager {
     }
 
     const childrenResult = dirResult.value.getChildren();
+    /* c8 ignore next 3 - defensive: getChildren failure on valid directory */
     if (childrenResult.isFailure()) {
       return fail(childrenResult.message);
     }
@@ -331,6 +332,7 @@ export class SettingsManager implements ISettingsManager {
     path: string
   ): Result<FileTree.IFileTreeDirectoryItem> {
     const parts = path.split('/').filter((p) => p.length > 0);
+    /* c8 ignore next 3 - edge case: empty path returns root (SETTINGS_DIR_PATH is hardcoded) */
     if (parts.length === 0) {
       return succeed(tree);
     }
@@ -339,6 +341,7 @@ export class SettingsManager implements ISettingsManager {
 
     for (const part of parts) {
       const childrenResult = current.getChildren();
+      /* c8 ignore next 3 - defensive: getChildren failure during navigation */
       if (childrenResult.isFailure()) {
         return fail(childrenResult.message);
       }
@@ -348,6 +351,7 @@ export class SettingsManager implements ISettingsManager {
         return fail(`${path}: Directory not found at '${part}'.`);
       }
 
+      /* c8 ignore next 3 - defensive: non-directory found during navigation */
       if (child.type !== 'directory') {
         return fail(`${path}: '${part}' is not a directory.`);
       }
@@ -513,6 +517,7 @@ export class SettingsManager implements ISettingsManager {
 
     const dir = dirResult.value;
     const childrenResult = dir.getChildren();
+    /* c8 ignore next 3 - defensive: getChildren failure on valid directory */
     if (childrenResult.isFailure()) {
       return fail(childrenResult.message);
     }

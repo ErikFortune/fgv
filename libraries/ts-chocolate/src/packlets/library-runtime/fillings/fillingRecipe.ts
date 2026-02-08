@@ -168,7 +168,7 @@ export class FillingRecipe implements IFillingRecipe {
       const entity = this._recipe.variations.find(
         (v) => v.variationSpec === this._recipe.goldenVariationSpec
       );
-      /* c8 ignore next 3 - defensive coding: data validation ensures golden variation exists */
+      /* c8 ignore next 5 - defensive coding: data validation ensures golden variation exists */
       if (!entity) {
         return Failure.with(
           `Golden variation ${this._recipe.goldenVariationSpec} not found in recipe ${this._id}`

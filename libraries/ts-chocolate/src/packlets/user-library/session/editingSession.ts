@@ -263,13 +263,15 @@ export class EditingSession {
    */
   public saveAsNewVariation(options: ISaveVariationOptions): Result<ISaveResult> {
     const analysis = this.analyzeSaveOptions();
+    // TODO: use result pattern
+    /* c8 ignore next 3 - unreachable: analyzeSaveOptions always returns isMutable=true (TODO pending) */
     if (!analysis.canCreateVariation) {
       return fail('Cannot create new variation: collection is immutable');
     }
 
     const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
 
-    // TODO: Implement producedToSource conversion when needed
+    // TODO: Implement producedToSource conversion
     // For now, just create the journal entry
     return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
       succeed({
@@ -289,6 +291,7 @@ export class EditingSession {
    */
   public saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult> {
     const analysis = this.analyzeSaveOptions();
+    /* c8 ignore next 3 - unreachable: analyzeSaveOptions always returns isMutable=true (TODO pending) */
     if (!analysis.canAddAlternatives) {
       return fail('Cannot add alternatives: collection is immutable or no ingredient changes');
     }

@@ -91,7 +91,7 @@ The key store for encryption key management, if configured.
 
 </td><td>
 
-ISettingsManager | undefined
+[ISettingsManager](ISettingsManager.md) | undefined
 
 </td><td>
 

@@ -63,6 +63,7 @@ export class ConfectionEditingSession {
    * Use ConfectionEditingSession.create() instead.
    * @internal
    */
+  /* c8 ignore next 3 - private constructor for factory class */
   private constructor() {
     // Factory class - do not instantiate
   }
@@ -92,7 +93,7 @@ export class ConfectionEditingSession {
     } else if (baseConfection.isRolledTruffle()) {
       return RolledTruffleEditingSession.create(baseConfection, context, params);
     }
-    // c8 ignore next 2 - defensive coding
+    /* c8 ignore next 3 - defensive: exhaustive confection type check */
     // @ts-expect-error - exhaustive check
     return Failure.with(`Unknown confection type: ${baseConfection.confectionType}`);
   }

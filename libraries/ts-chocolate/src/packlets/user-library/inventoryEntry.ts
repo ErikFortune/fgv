@@ -147,6 +147,13 @@ export class MoldInventoryEntry
   }
 
   /**
+   * {@inheritDoc IInventoryEntryBase.quantity}
+   */
+  public override get quantity(): number {
+    return this._entity.count;
+  }
+
+  /**
    * Factory method to create a materialized mold inventory entry.
    * @param context - Session context for resolving references
    * @param id - Composite inventory entry ID
