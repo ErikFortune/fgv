@@ -20,22 +20,26 @@
 
 import { Command } from 'commander';
 import { password } from '@inquirer/prompts';
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, succeed } from '@fgv/ts-utils';
 import { IWorkspace } from '@fgv/ts-chocolate';
 import { loadWorkspace, showMenu, showError, showInfo, MenuBreadcrumb, type MenuResult } from './shared';
+import {
+  browseIngredients,
+  browseMoldsInteractive,
+  browseProceduresInteractive,
+  browseFillingsInteractive,
+  browseConfectionsInteractive,
+  browseSessionsInteractive,
+  browseJournalsInteractive,
+  browseInventoryInteractive,
+  IBrowseContext
+} from './browse';
 
 /**
  * Options for the browse command.
  */
 interface IBrowseCommandOptions {
-  /**
-   * Path to the workspace directory.
-   */
   readonly workspace: string;
-
-  /**
-   * Device name for this instance.
-   */
   readonly deviceName?: string;
 }
 
@@ -53,6 +57,19 @@ type BrowseCategory =
   | 'inventory';
 
 /**
+ * Creates a browse context from a workspace.
+ */
+function createBrowseContext(workspace: IWorkspace): IBrowseContext {
+  const library = workspace.data;
+  return {
+    library,
+    userLibrary: workspace.userData,
+    breadcrumb: new MenuBreadcrumb(),
+    renderContext: { library }
+  };
+}
+
+/**
  * Unlocks a workspace if it has a keystore.
  * If unlock fails or user skips, proceeds with public collections only.
  */
@@ -65,22 +82,19 @@ async function unlockWorkspaceIfNeeded(workspace: IWorkspace): Promise<Result<vo
     return succeed(undefined);
   }
 
-  // Workspace is locked - prompt for password (allow empty to skip)
   const pwd = await password({
     message: 'Enter keystore password to unlock protected collections (press Enter to skip):',
     mask: '*'
   });
 
-  // If user pressed Enter without typing, skip unlock
   if (!pwd || pwd.trim() === '') {
     showInfo('Skipping keystore unlock - only public collections will be available');
     return succeed(undefined);
   }
 
-  // Try to unlock
   const unlockResult = await workspace.unlock(pwd);
   if (unlockResult.isFailure()) {
-    await showError(`Failed to unlock workspace: ${unlockResult.message}`);
+    showError(`Failed to unlock workspace: ${unlockResult.message}`);
     showInfo('Proceeding with public collections only');
     return succeed(undefined);
   }
@@ -92,14 +106,11 @@ async function unlockWorkspaceIfNeeded(workspace: IWorkspace): Promise<Result<vo
 /**
  * Shows the main browse menu.
  */
-async function showMainMenu(
-  workspace: IWorkspace,
-  breadcrumb: MenuBreadcrumb
-): Promise<MenuResult<BrowseCategory>> {
-  const library = workspace.data;
-  const userLibrary = workspace.userData;
+async function showMainMenu(browseContext: IBrowseContext): Promise<MenuResult<BrowseCategory>> {
+  const library = browseContext.library;
+  const userLibrary = browseContext.userLibrary;
+  const breadcrumb = browseContext.breadcrumb;
 
-  // Get counts for each category
   const ingredientCount = library.ingredients.size;
   const fillingCount = library.fillings.size;
   const moldCount = library.molds.size;
@@ -161,255 +172,14 @@ async function showMainMenu(
 }
 
 /**
- * Browses ingredients.
- */
-async function browseIngredients(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Ingredients');
-
-  const library = workspace.data;
-  const ingredients = Array.from(library.ingredients.values());
-
-  if (ingredients.length === 0) {
-    showInfo('No ingredients found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${ingredients.length} ingredient(s)`);
-  console.log('\nIngredients:');
-  for (const ingredient of ingredients) {
-    console.log(`  - ${ingredient.name} (${ingredient.id})`);
-    if (ingredient.description) {
-      console.log(`    ${ingredient.description}`);
-    }
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses fillings.
- */
-async function browseFillings(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Fillings');
-
-  const library = workspace.data;
-  const fillings = Array.from(library.fillings.values());
-
-  if (fillings.length === 0) {
-    showInfo('No fillings found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${fillings.length} filling(s)`);
-  console.log('\nFillings:');
-  for (const filling of fillings) {
-    console.log(`  - ${filling.name} (${filling.id})`);
-    if (filling.description) {
-      console.log(`    ${filling.description}`);
-    }
-    console.log(`    Variations: ${filling.variations.length}`);
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses molds.
- */
-async function browseMolds(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Molds');
-
-  const library = workspace.data;
-  const molds = Array.from(library.molds.values());
-
-  if (molds.length === 0) {
-    showInfo('No molds found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${molds.length} mold(s)`);
-  console.log('\nMolds:');
-  for (const mold of molds) {
-    console.log(`  - ${JSON.stringify(mold, null, 2)}`);
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses procedures.
- */
-async function browseProcedures(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Procedures');
-
-  const library = workspace.data;
-  const procedures = Array.from(library.procedures.values());
-
-  if (procedures.length === 0) {
-    showInfo('No procedures found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${procedures.length} procedure(s)`);
-  console.log('\nProcedures:');
-  for (const procedure of procedures) {
-    console.log(`  - ${procedure.name} (${procedure.id})`);
-    if (procedure.description) {
-      console.log(`    ${procedure.description}`);
-    }
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses confections.
- */
-async function browseConfections(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Confections');
-
-  const library = workspace.data;
-  const confections = Array.from(library.confections.values());
-
-  if (confections.length === 0) {
-    showInfo('No confections found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${confections.length} confection(s)`);
-  console.log('\nConfections:');
-  for (const confection of confections) {
-    console.log(`  - ${confection.name} (${confection.id})`);
-    if (confection.description) {
-      console.log(`    ${confection.description}`);
-    }
-    const type = confection.isMoldedBonBon()
-      ? 'Molded Bon Bon'
-      : confection.isBarTruffle()
-      ? 'Bar Truffle'
-      : confection.isRolledTruffle()
-      ? 'Rolled Truffle'
-      : 'Unknown';
-    console.log(`    Type: ${type}`);
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses sessions.
- */
-async function browseSessions(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Sessions');
-
-  const userLibrary = workspace.userData;
-  if (!userLibrary) {
-    breadcrumb.pop();
-    return fail('User library not available');
-  }
-
-  const sessions = Array.from(userLibrary.sessions.values());
-
-  if (sessions.length === 0) {
-    showInfo('No sessions found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${sessions.length} session(s)`);
-  console.log('\nSessions:');
-  for (const session of sessions) {
-    console.log(`  - ${JSON.stringify(session, null, 2)}`);
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses journals.
- */
-async function browseJournals(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Journals');
-
-  const userLibrary = workspace.userData;
-  if (!userLibrary) {
-    breadcrumb.pop();
-    return fail('User library not available');
-  }
-
-  const journals = Array.from(userLibrary.journals.values());
-
-  if (journals.length === 0) {
-    showInfo('No journal entries found');
-    breadcrumb.pop();
-    return succeed(undefined);
-  }
-
-  showInfo(`Found ${journals.length} journal entry/entries`);
-  console.log('\nJournal Entries:');
-  for (const entry of journals) {
-    console.log(`  - ${JSON.stringify(entry, null, 2)}`);
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
- * Browses inventory.
- */
-async function browseInventory(workspace: IWorkspace, breadcrumb: MenuBreadcrumb): Promise<Result<void>> {
-  breadcrumb.push('Inventory');
-
-  const userLibrary = workspace.userData;
-  if (!userLibrary) {
-    breadcrumb.pop();
-    return fail('User library not available');
-  }
-
-  const moldInventory = Array.from(userLibrary.moldInventory.values());
-  const ingredientInventory = Array.from(userLibrary.ingredientInventory.values());
-
-  showInfo(`Mold Inventory: ${moldInventory.length} entry/entries`);
-  showInfo(`Ingredient Inventory: ${ingredientInventory.length} entry/entries`);
-
-  if (moldInventory.length > 0) {
-    console.log('\nMold Inventory:');
-    for (const entry of moldInventory) {
-      console.log(`  - ${JSON.stringify(entry, null, 2)}`);
-    }
-  }
-
-  if (ingredientInventory.length > 0) {
-    console.log('\nIngredient Inventory:');
-    for (const entry of ingredientInventory) {
-      console.log(`  - ${JSON.stringify(entry, null, 2)}`);
-    }
-  }
-
-  breadcrumb.pop();
-  return succeed(undefined);
-}
-
-/**
  * Main browse loop.
  */
 async function browseWorkspace(workspace: IWorkspace): Promise<Result<void>> {
-  const breadcrumb = new MenuBreadcrumb();
+  const browseContext = createBrowseContext(workspace);
+  const breadcrumb = browseContext.breadcrumb;
 
   while (true) {
-    const menuResult = await showMainMenu(workspace, breadcrumb);
+    const menuResult = await showMainMenu(browseContext);
 
     if (menuResult.action === 'exit') {
       return succeed(undefined);
@@ -424,7 +194,6 @@ async function browseWorkspace(workspace: IWorkspace): Promise<Result<void>> {
       continue;
     }
 
-    // Handle category selection - menuResult.action === 'value'
     if (menuResult.action !== 'value') {
       continue;
     }
@@ -434,41 +203,39 @@ async function browseWorkspace(workspace: IWorkspace): Promise<Result<void>> {
 
     switch (category) {
       case 'ingredients':
-        result = await browseIngredients(workspace, breadcrumb);
+        result = await browseIngredients(browseContext);
         break;
       case 'fillings':
-        result = await browseFillings(workspace, breadcrumb);
+        result = await browseFillingsInteractive(browseContext);
         break;
       case 'molds':
-        result = await browseMolds(workspace, breadcrumb);
+        result = await browseMoldsInteractive(browseContext);
         break;
       case 'procedures':
-        result = await browseProcedures(workspace, breadcrumb);
+        result = await browseProceduresInteractive(browseContext);
         break;
       case 'confections':
-        result = await browseConfections(workspace, breadcrumb);
+        result = await browseConfectionsInteractive(browseContext);
         break;
       case 'sessions':
-        result = await browseSessions(workspace, breadcrumb);
+        result = await browseSessionsInteractive(browseContext);
         break;
       case 'journals':
-        result = await browseJournals(workspace, breadcrumb);
+        result = await browseJournalsInteractive(browseContext);
         break;
       case 'inventory':
-        result = await browseInventory(workspace, breadcrumb);
+        result = await browseInventoryInteractive(browseContext);
         break;
     }
 
     if (result.isFailure()) {
-      await showError(result.message);
+      showError(result.message);
     }
   }
 }
 
 /**
  * Creates the browse command.
- *
- * @returns The browse command
  */
 export function createBrowseCommand(): Command {
   const cmd = new Command('browse');
@@ -478,30 +245,27 @@ export function createBrowseCommand(): Command {
     .requiredOption('-w, --workspace <path>', 'Path to workspace directory')
     .option('-d, --device-name <name>', 'Device name for this instance')
     .action(async (options: IBrowseCommandOptions) => {
-      // Load workspace
       const workspaceResult = await loadWorkspace({
         workspacePath: options.workspace,
         deviceName: options.deviceName
       });
 
       if (workspaceResult.isFailure()) {
-        await showError(workspaceResult.message);
+        showError(workspaceResult.message);
         process.exit(1);
       }
 
       const workspace = workspaceResult.value;
 
-      // Unlock if needed
       const unlockResult = await unlockWorkspaceIfNeeded(workspace);
       if (unlockResult.isFailure()) {
-        await showError(unlockResult.message);
+        showError(unlockResult.message);
         process.exit(1);
       }
 
-      // Start browsing
       const browseResult = await browseWorkspace(workspace);
       if (browseResult.isFailure()) {
-        await showError(browseResult.message);
+        showError(browseResult.message);
         process.exit(1);
       }
     });
