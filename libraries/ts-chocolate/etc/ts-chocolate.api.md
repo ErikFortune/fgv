@@ -254,11 +254,11 @@ function atLeast<T>(min: number, getter: (item: T) => number | undefined): Filte
 function atMost<T>(max: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
-class BarTruffleEditingSession extends ConfectionEditingSessionBase<IProducedBarTruffleEntity, BarTruffleRecipe> {
+class BarTruffleEditingSession<TRecipe extends IBarTruffleRecipe = IBarTruffleRecipe> extends ConfectionEditingSessionBase<IProducedBarTruffleEntity, TRecipe> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    static create(baseConfection: BarTruffleRecipe, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
-    static fromPersistedState(baseConfection: BarTruffleRecipe, history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession>;
+    static create<T extends IBarTruffleRecipe = IBarTruffleRecipe>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession<T>>;
+    static fromPersistedState<T extends IBarTruffleRecipe = IBarTruffleRecipe>(baseConfection: T, history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession<T>>;
     scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
 }
 
@@ -647,6 +647,7 @@ class ChocolateLibrary implements IVariationContext<AnyIngredient>, IIngredientC
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
+    isCollectionMutable(collectionId: CollectionId): Result<boolean>;
     readonly logger: Logging.LogReporter<unknown>;
     get molds(): MaterializedLibrary<MoldId, IMoldEntity, Mold, never>;
     get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, Procedure, never>;
@@ -847,11 +848,11 @@ const confectionDecoration: Converter<IConfectionDecoration>;
 
 // @public
 class ConfectionEditingSession {
-    static create(baseConfection: AnyConfectionRecipe, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
+    static create<T extends IConfectionBase>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
 }
 
 // @public
-abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends AnyConfectionRecipe> {
+abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends IConfectionBase> {
     // @internal
     protected constructor(baseConfection: TRuntime, produced: ProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams);
     get baseConfection(): TRuntime;
@@ -892,6 +893,13 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
         type: 'ingredient';
         ingredientId: IngredientId;
     }): Result<EditingSession | undefined>;
+    toPersistedState(options: {
+        readonly collectionId: CollectionId;
+        readonly baseId?: BaseSessionId;
+        readonly status?: PersistedSessionStatus;
+        readonly label?: string;
+        readonly notes?: Model.ICategorizedNote[];
+    }): Result<IConfectionSessionEntity>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1326,6 +1334,12 @@ function createDefaultCommonSettings(): ICommonSettings;
 
 // @public
 function createDefaultDeviceSettings(deviceId: DeviceId, deviceName?: string): IDeviceSettings;
+
+// @public
+function createDefaultLibraryDirectories(rootPath: string): Result<void>;
+
+// @public
+function createDefaultUserEntityDirectories(rootPath: string): Result<void>;
 
 // @public
 function createFillingId(collectionId: CollectionId, baseId: BaseFillingId): FillingId;
@@ -1826,6 +1840,7 @@ class FillingRecipe implements IFillingRecipe {
     get goldenVariation(): FillingRecipeVariation;
     get goldenVariationSpec(): FillingRecipeVariationSpec;
     get id(): FillingId;
+    get isMutable(): boolean;
     get latestVariation(): FillingRecipeVariation;
     get name(): FillingName;
     get tags(): ReadonlyArray<string>;
@@ -2012,6 +2027,7 @@ class FillingRecipeVariation implements IFillingRecipeVariation {
     get fillingRecipe(): IFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<AnyIngredient>>>;
     getProcedures(): Result<IResolvedProcedures | undefined>;
+    get isMutable(): boolean;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get preferredProcedure(): IResolvedFillingRecipeProcedure | undefined;
     get procedures(): IResolvedProcedures | undefined;
@@ -3011,6 +3027,7 @@ interface IFillingRecipe {
     readonly goldenVariation: IFillingRecipeVariation;
     readonly goldenVariationSpec: FillingRecipeVariationSpec;
     readonly id: FillingId;
+    readonly isMutable: boolean;
     readonly latestVariation: IFillingRecipeVariation;
     readonly name: FillingName;
     readonly tags?: ReadonlyArray<string>;
@@ -3079,6 +3096,7 @@ interface IFillingRecipeVariation {
     readonly fillingId: FillingId;
     readonly fillingRecipe: IFillingRecipe;
     getIngredients(filter?: FillingRecipeIngredientsFilter[]): Result<IterableIterator<IResolvedFillingIngredient<IIngredient>>>;
+    readonly isMutable: boolean;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly preferredProcedure: IResolvedFillingRecipeProcedure | undefined;
     readonly procedures?: IResolvedProcedures;
@@ -4555,6 +4573,7 @@ interface ISaveResult {
     readonly journalEntry?: IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity;
     readonly journalId?: string;
     readonly newVariationSpec?: FillingRecipeVariationSpec | ConfectionRecipeVariationSpec;
+    readonly variationEntity?: Fillings.IFillingRecipeVariationEntity;
 }
 
 // @public
@@ -5107,6 +5126,7 @@ interface IValidationReport {
 interface IVariationContext<TIngredient extends IIngredient = IIngredient> {
     readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, IFillingRecipe, IFillingRecipeQuerySpec>;
     readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, TIngredient, IIngredientQuerySpec>;
+    isCollectionMutable(collectionId: CollectionId): Result<boolean>;
     readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
 }
 
@@ -5345,6 +5365,7 @@ declare namespace LibraryData {
         getSessionsDirectory,
         getMoldInventoryDirectory,
         getIngredientInventoryDirectory,
+        createDefaultLibraryDirectories,
         LibraryPaths,
         specToLoadParams,
         getSubLibraryPath,
@@ -5651,15 +5672,15 @@ type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMoldEntity>;
 type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMoldEntity>;
 
 // @public
-class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, MoldedBonBonRecipe> {
+class MoldedBonBonEditingSession<TRecipe extends IMoldedBonBonRecipe = IMoldedBonBonRecipe> extends ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, TRecipe> {
     analyzeMoldChange(moldId: MoldId): Result<IMoldChangeAnalysis>;
     cancelMoldChange(): void;
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     confirmMoldChange(): Result<undefined>;
-    static create(baseConfection: MoldedBonBonRecipe, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    static create<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession<T>>;
     get currentMold(): IMold;
-    static fromPersistedState(baseConfection: MoldedBonBonRecipe, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+    static fromPersistedState<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(baseConfection: T, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession<T>>;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
     setFrames(frames: number, bufferPercentage?: number): Result<Confections.IMoldedBonBonYield>;
@@ -6203,6 +6224,7 @@ class ProducedFilling {
     getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>;
     hasChanges(original: IProducedFillingEntity): boolean;
     get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredientEntity>;
+    static mergeAsAlternatives(produced: IProducedFillingEntity, original: Fillings.IFillingRecipeVariationEntity): Result<Fillings.IFillingRecipeVariationEntity>;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>): Result<ProducedFilling>;
@@ -6213,6 +6235,7 @@ class ProducedFilling {
     setProcedure(id: ProcedureId | undefined): Result<void>;
     get snapshot(): IProducedFillingEntity;
     get targetWeight(): Measurement;
+    static toSourceVariation(snapshot: IProducedFillingEntity, newVariationSpec: string, createdDate?: string): Result<Fillings.IFillingRecipeVariationEntity>;
     undo(): Result<boolean>;
     get variationId(): FillingRecipeVariationId;
 }
@@ -6355,11 +6378,11 @@ function resolveSettings(common: ICommonSettings, device: IDeviceSettings): IRes
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
 
 // @public
-class RolledTruffleEditingSession extends ConfectionEditingSessionBase<IProducedRolledTruffleEntity, RolledTruffleRecipe> {
+class RolledTruffleEditingSession<TRecipe extends IRolledTruffleRecipe = IRolledTruffleRecipe> extends ConfectionEditingSessionBase<IProducedRolledTruffleEntity, TRecipe> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
-    static create(baseConfection: RolledTruffleRecipe, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
-    static fromPersistedState(baseConfection: RolledTruffleRecipe, history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+    static create<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession<T>>;
+    static fromPersistedState<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(baseConfection: T, history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession<T>>;
     scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
 }
 
@@ -6989,6 +7012,7 @@ const urlCategory: Converter<UrlCategory>;
 
 declare namespace UserEntities {
     export {
+        createDefaultUserEntityDirectories,
         UserEntityLibrary,
         IUserEntityLibrary,
         IInstantiatedUserEntityLibrarySource,
@@ -7063,6 +7087,7 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // (undocumented)
     get ingredientInventory(): MaterializedLibrary<Inventory.IngredientInventoryEntryId, Inventory.IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, IIngredient, Indexers.IIngredientQuerySpec>;
+    isCollectionMutable(collectionId: CollectionId): Result<boolean>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

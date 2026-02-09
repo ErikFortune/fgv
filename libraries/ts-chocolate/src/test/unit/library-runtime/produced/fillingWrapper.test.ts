@@ -22,6 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import {
   FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
   IngredientId,
   Measurement,
   MeasurementUnit,
@@ -633,6 +634,343 @@ describe('ProducedFilling', () => {
       expect(history.original).toEqual(baseProducedFilling);
       expect(history.undoStack).toHaveLength(1);
       expect(history.redoStack).toHaveLength(1);
+    });
+  });
+
+  describe('mergeAsAlternatives', () => {
+    const originalVariation: Fillings.IFillingRecipeVariationEntity = {
+      variationSpec: 'test-variation' as unknown as FillingRecipeVariationSpec,
+      createdDate: '2026-01-01T00:00:00.000Z',
+      ingredients: [
+        {
+          ingredient: {
+            ids: ['test.dark-chocolate-a' as IngredientId, 'test.dark-chocolate-b' as IngredientId],
+            preferredId: 'test.dark-chocolate-a' as IngredientId
+          },
+          amount: 200 as Measurement,
+          unit: 'g' as MeasurementUnit
+        },
+        {
+          ingredient: {
+            ids: ['test.cream-a' as IngredientId],
+            preferredId: 'test.cream-a' as IngredientId
+          },
+          amount: 100 as Measurement,
+          unit: 'mL' as MeasurementUnit
+        }
+      ],
+      baseWeight: 300 as Measurement
+    };
+
+    test('merges produced ingredient that already exists in alternatives', () => {
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate-b' as IngredientId,
+            amount: 250 as Measurement,
+            unit: 'g' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.cream-a' as IngredientId,
+            amount: 120 as Measurement,
+            unit: 'mL' as MeasurementUnit
+          }
+        ]
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalVariation)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.ingredients[0].ingredient.ids).toEqual([
+            'test.dark-chocolate-a' as IngredientId,
+            'test.dark-chocolate-b' as IngredientId
+          ]);
+          expect(merged.ingredients[0].ingredient.preferredId).toBe('test.dark-chocolate-b' as IngredientId);
+          expect(merged.ingredients[0].amount).toBe(200 as Measurement);
+        }
+      );
+    });
+
+    test('merges new produced ingredient as additional alternative', () => {
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate-c' as IngredientId,
+            amount: 250 as Measurement,
+            unit: 'g' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.cream-b' as IngredientId,
+            amount: 120 as Measurement,
+            unit: 'mL' as MeasurementUnit
+          }
+        ]
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalVariation)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.ingredients[0].ingredient.ids).toEqual([
+            'test.dark-chocolate-a' as IngredientId,
+            'test.dark-chocolate-b' as IngredientId,
+            'test.dark-chocolate-c' as IngredientId
+          ]);
+          expect(merged.ingredients[0].ingredient.preferredId).toBe('test.dark-chocolate-c' as IngredientId);
+          expect(merged.ingredients[0].amount).toBe(200 as Measurement);
+
+          expect(merged.ingredients[1].ingredient.ids).toEqual([
+            'test.cream-a' as IngredientId,
+            'test.cream-b' as IngredientId
+          ]);
+          expect(merged.ingredients[1].ingredient.preferredId).toBe('test.cream-b' as IngredientId);
+          expect(merged.ingredients[1].amount).toBe(100 as Measurement);
+        }
+      );
+    });
+
+    test('preserves original amounts and metadata', () => {
+      const originalWithMetadata: Fillings.IFillingRecipeVariationEntity = {
+        ...originalVariation,
+        ingredients: [
+          {
+            ingredient: {
+              ids: ['test.dark-chocolate-a' as IngredientId],
+              preferredId: 'test.dark-chocolate-a' as IngredientId
+            },
+            amount: 200 as Measurement,
+            unit: 'g' as MeasurementUnit,
+            modifiers: { spoonLevel: 'level' },
+            notes: [
+              { category: 'general' as NoteCategory, note: 'original note' }
+            ] as CommonModel.ICategorizedNote[]
+          }
+        ]
+      };
+
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate-b' as IngredientId,
+            amount: 999 as Measurement,
+            unit: 'mL' as MeasurementUnit,
+            modifiers: { toTaste: true },
+            notes: [
+              { category: 'warning' as NoteCategory, note: 'produced note' }
+            ] as CommonModel.ICategorizedNote[]
+          }
+        ]
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalWithMetadata)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.ingredients[0].amount).toBe(200 as Measurement);
+          expect(merged.ingredients[0].unit).toBe('g' as MeasurementUnit);
+          expect(merged.ingredients[0].modifiers).toEqual({ spoonLevel: 'level' });
+          expect(merged.ingredients[0].notes).toEqual([
+            { category: 'general' as NoteCategory, note: 'original note' }
+          ] as CommonModel.ICategorizedNote[]);
+        }
+      );
+    });
+
+    test('handles produced with more ingredients than original', () => {
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate-a' as IngredientId,
+            amount: 200 as Measurement,
+            unit: 'g' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.cream-a' as IngredientId,
+            amount: 100 as Measurement,
+            unit: 'mL' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.butter' as IngredientId,
+            amount: 50 as Measurement,
+            unit: 'g' as MeasurementUnit
+          }
+        ]
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalVariation)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.ingredients).toHaveLength(3);
+          expect(merged.ingredients[2].ingredient.ids).toEqual(['test.butter' as IngredientId]);
+          expect(merged.ingredients[2].ingredient.preferredId).toBe('test.butter' as IngredientId);
+          expect(merged.ingredients[2].amount).toBe(50 as Measurement);
+        }
+      );
+    });
+
+    test('handles produced with fewer ingredients than original', () => {
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate-c' as IngredientId,
+            amount: 250 as Measurement,
+            unit: 'g' as MeasurementUnit
+          }
+        ]
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalVariation)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.ingredients).toHaveLength(2);
+          expect(merged.ingredients[0].ingredient.preferredId).toBe('test.dark-chocolate-c' as IngredientId);
+          expect(merged.ingredients[1]).toEqual(originalVariation.ingredients[1]);
+        }
+      );
+    });
+
+    test('merges procedure when both exist', () => {
+      const originalWithProc: Fillings.IFillingRecipeVariationEntity = {
+        ...originalVariation,
+        procedures: {
+          options: [{ id: 'test.proc-a' as ProcedureId }],
+          preferredId: 'test.proc-a' as ProcedureId
+        }
+      };
+
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [],
+        procedureId: 'test.proc-b' as ProcedureId
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalWithProc)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.procedures?.options).toHaveLength(2);
+          expect(merged.procedures?.options.map((o) => o.id)).toEqual([
+            'test.proc-a' as ProcedureId,
+            'test.proc-b' as ProcedureId
+          ]);
+          expect(merged.procedures?.preferredId).toBe('test.proc-b' as ProcedureId);
+        }
+      );
+    });
+
+    test('handles procedure when produced has same as original', () => {
+      const originalWithProc: Fillings.IFillingRecipeVariationEntity = {
+        ...originalVariation,
+        procedures: {
+          options: [{ id: 'test.proc-a' as ProcedureId }],
+          preferredId: 'test.proc-a' as ProcedureId
+        }
+      };
+
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [],
+        procedureId: 'test.proc-a' as ProcedureId
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalWithProc)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.procedures?.options).toHaveLength(1);
+          expect(merged.procedures?.preferredId).toBe('test.proc-a' as ProcedureId);
+        }
+      );
+    });
+
+    test('creates procedure when original has none', () => {
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [],
+        procedureId: 'test.proc-a' as ProcedureId
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalVariation)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.procedures?.options).toHaveLength(1);
+          expect(merged.procedures?.preferredId).toBe('test.proc-a' as ProcedureId);
+        }
+      );
+    });
+
+    test('keeps original procedure when produced has none', () => {
+      const originalWithProc: Fillings.IFillingRecipeVariationEntity = {
+        ...originalVariation,
+        procedures: {
+          options: [{ id: 'test.proc-a' as ProcedureId }],
+          preferredId: 'test.proc-a' as ProcedureId
+        }
+      };
+
+      const produced: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [],
+        procedureId: undefined
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(produced, originalWithProc)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.procedures?.options).toHaveLength(1);
+          expect(merged.procedures?.preferredId).toBe('test.proc-a' as ProcedureId);
+        }
+      );
+    });
+
+    test('preserves notes from produced, falls back to original', () => {
+      const originalWithNotes: Fillings.IFillingRecipeVariationEntity = {
+        ...originalVariation,
+        notes: [
+          { category: 'general' as NoteCategory, note: 'original note' }
+        ] as CommonModel.ICategorizedNote[]
+      };
+
+      const producedWithNotes: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 300 as Measurement,
+        ingredients: [],
+        notes: [
+          { category: 'warning' as NoteCategory, note: 'produced note' }
+        ] as CommonModel.ICategorizedNote[]
+      };
+
+      expect(ProducedFilling.mergeAsAlternatives(producedWithNotes, originalWithNotes)).toSucceedAndSatisfy(
+        (merged) => {
+          expect(merged.notes).toEqual([
+            { category: 'warning' as NoteCategory, note: 'produced note' }
+          ] as CommonModel.ICategorizedNote[]);
+        }
+      );
+
+      const producedWithoutNotes: IProducedFillingEntity = {
+        ...producedWithNotes,
+        notes: undefined
+      };
+
+      expect(
+        ProducedFilling.mergeAsAlternatives(producedWithoutNotes, originalWithNotes)
+      ).toSucceedAndSatisfy((merged) => {
+        expect(merged.notes).toEqual([
+          { category: 'general' as NoteCategory, note: 'original note' }
+        ] as CommonModel.ICategorizedNote[]);
+      });
     });
   });
 });

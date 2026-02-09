@@ -24,4 +24,4 @@
  */
 
 export * from './model';
-export { UserEntityLibrary } from './userEntityLibrary';
+export { createDefaultUserEntityDirectories, UserEntityLibrary } from './userEntityLibrary';

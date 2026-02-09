@@ -28,6 +28,7 @@ import { CryptoUtils } from '@fgv/ts-extras';
 import {
   createNodeWorkspace,
   createNodeWorkspaceLegacy,
+  createWorkspaceDirectories,
   initializeWorkspace
 } from '../../../packlets/workspace';
 import { DeviceId } from '../../../packlets/settings';
@@ -88,6 +89,175 @@ describe('createNodeWorkspace', () => {
     expect(result).toSucceedAndSatisfy((workspace) => {
       expect(workspace.keyStore).toBeUndefined();
     });
+  });
+
+  test('ignore-errors mode creates minimal workspace on platform failure', async () => {
+    // Create a file to block directory creation
+    const blockingFilePath = path.join(tempDir, 'blocking-file');
+    fs.writeFileSync(blockingFilePath, 'test');
+
+    const result = await createNodeWorkspace({
+      layout: { mode: 'single-root', rootPath: blockingFilePath },
+      startupMode: 'ignore-errors',
+      builtin: true
+    });
+
+    expect(result).toSucceedAndSatisfy((workspace) => {
+      // Workspace should be created successfully despite platform failure
+      expect(workspace.state).toBe('no-keystore');
+      expect(workspace.isReady).toBe(true);
+
+      // Should have built-in data
+      expect(workspace.data).toBeDefined();
+
+      // Should not have settings (platform init failed)
+      expect(workspace.settings).toBeUndefined();
+
+      // Should not have key store (no platform init)
+      expect(workspace.keyStore).toBeUndefined();
+    });
+  });
+
+  test('fail-on-error mode rejects workspace on platform failure', async () => {
+    // Create a file to block directory creation
+    const blockingFilePath = path.join(tempDir, 'blocking-file-2');
+    fs.writeFileSync(blockingFilePath, 'test');
+
+    const result = await createNodeWorkspace({
+      layout: { mode: 'single-root', rootPath: blockingFilePath },
+      startupMode: 'fail-on-error'
+    });
+
+    expect(result).toFailWith(/platform initialization failed/i);
+  });
+
+  test('creates workspace with dual-root layout', async () => {
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-'));
+    const libDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-lib-'));
+    try {
+      const deviceId = 'test-device' as DeviceId;
+      initializeWorkspace({ workspacePath: installDir, deviceId }).orThrow();
+      createWorkspaceDirectories(libDir).orThrow();
+
+      const result = await createNodeWorkspace({
+        layout: {
+          mode: 'dual-root',
+          installationPath: installDir,
+          libraryPath: libDir
+        }
+      });
+      expect(result).toSucceedAndSatisfy((workspace) => {
+        expect(workspace.state).toBe('no-keystore');
+        expect(workspace.isReady).toBe(true);
+        expect(workspace.settings).toBeDefined();
+      });
+    } finally {
+      fs.rmSync(installDir, { recursive: true, force: true });
+      fs.rmSync(libDir, { recursive: true, force: true });
+    }
+  });
+
+  test('creates workspace with dual-root layout and read-only library', async () => {
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-'));
+    const libDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-lib-'));
+    try {
+      const deviceId = 'test-device' as DeviceId;
+      initializeWorkspace({ workspacePath: installDir, deviceId }).orThrow();
+      createWorkspaceDirectories(libDir).orThrow();
+
+      const result = await createNodeWorkspace({
+        layout: {
+          mode: 'dual-root',
+          installationPath: installDir,
+          libraryPath: libDir,
+          libraryReadOnly: true
+        }
+      });
+      expect(result).toSucceedAndSatisfy((workspace) => {
+        expect(workspace.state).toBe('no-keystore');
+        expect(workspace.isReady).toBe(true);
+        expect(workspace.settings).toBeDefined();
+      });
+    } finally {
+      fs.rmSync(installDir, { recursive: true, force: true });
+      fs.rmSync(libDir, { recursive: true, force: true });
+    }
+  });
+
+  test('creates workspace with multi-root layout', async () => {
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-'));
+    const libDir1 = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-lib1-'));
+    const libDir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-lib2-'));
+    try {
+      const deviceId = 'test-device' as DeviceId;
+      initializeWorkspace({ workspacePath: installDir, deviceId }).orThrow();
+      createWorkspaceDirectories(libDir1).orThrow();
+      createWorkspaceDirectories(libDir2).orThrow();
+
+      const result = await createNodeWorkspace({
+        layout: {
+          mode: 'multi-root',
+          installationPath: installDir,
+          libraryPaths: [{ path: libDir1 }, { path: libDir2, readOnly: true }]
+        }
+      });
+      expect(result).toSucceedAndSatisfy((workspace) => {
+        expect(workspace.state).toBe('no-keystore');
+        expect(workspace.isReady).toBe(true);
+        expect(workspace.settings).toBeDefined();
+      });
+    } finally {
+      fs.rmSync(installDir, { recursive: true, force: true });
+      fs.rmSync(libDir1, { recursive: true, force: true });
+      fs.rmSync(libDir2, { recursive: true, force: true });
+    }
+  });
+
+  test('dual-root fails when library directory is empty (no data structure)', async () => {
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-'));
+    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-empty-'));
+    try {
+      const deviceId = 'test-device' as DeviceId;
+      initializeWorkspace({ workspacePath: installDir, deviceId }).orThrow();
+
+      const result = await createNodeWorkspace({
+        layout: {
+          mode: 'dual-root',
+          installationPath: installDir,
+          libraryPath: emptyDir
+        },
+        startupMode: 'fail-on-error'
+      });
+      expect(result).toFailWith(/directory not found/i);
+    } finally {
+      fs.rmSync(installDir, { recursive: true, force: true });
+      fs.rmSync(emptyDir, { recursive: true, force: true });
+    }
+  });
+
+  test('multi-root fails when any library directory is empty', async () => {
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-'));
+    const libDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-lib-'));
+    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-empty-'));
+    try {
+      const deviceId = 'test-device' as DeviceId;
+      initializeWorkspace({ workspacePath: installDir, deviceId }).orThrow();
+      createWorkspaceDirectories(libDir).orThrow();
+
+      const result = await createNodeWorkspace({
+        layout: {
+          mode: 'multi-root',
+          installationPath: installDir,
+          libraryPaths: [{ path: libDir }, { path: emptyDir }]
+        },
+        startupMode: 'fail-on-error'
+      });
+      expect(result).toFailWith(/directory not found/i);
+    } finally {
+      fs.rmSync(installDir, { recursive: true, force: true });
+      fs.rmSync(libDir, { recursive: true, force: true });
+      fs.rmSync(emptyDir, { recursive: true, force: true });
+    }
   });
 });
 

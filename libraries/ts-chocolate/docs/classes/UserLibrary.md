@@ -231,6 +231,19 @@ Creates an editing session for a filling recipe at a target weight.
 </td></tr>
 <tr><td>
 
+[isCollectionMutable(collectionId)](./UserLibrary.isCollectionMutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if a collection is mutable.
+
+</td></tr>
+<tr><td>
+
 [createPersistedFillingSession(variationId, options)](./UserLibrary.createPersistedFillingSession.md)
 
 </td><td>

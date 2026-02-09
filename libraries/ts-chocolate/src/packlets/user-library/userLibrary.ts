@@ -26,6 +26,7 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
 import {
+  CollectionId,
   ConfectionId,
   ConfectionType,
   FillingId,
@@ -55,7 +56,6 @@ import {
   Session as SessionEntities
 } from '../entities';
 import {
-  BarTruffleRecipe,
   IConfectionBase,
   IConfectionContext,
   IFillingRecipe,
@@ -63,9 +63,7 @@ import {
   IMold,
   Indexers,
   IProcedure,
-  MaterializedLibrary,
-  MoldedBonBonRecipe,
-  RolledTruffleRecipe
+  MaterializedLibrary
 } from '../library-runtime';
 import * as Session from './session';
 import { IUserEntityLibrary } from '../user-entities';
@@ -258,6 +256,16 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     return this._confectionContext.procedures;
   }
 
+  /**
+   * Checks if a collection is mutable.
+   * Required by IVariationContext.
+   * @param collectionId - The collection ID to check
+   * @returns Success with boolean indicating mutability, or Failure if collection not found
+   */
+  public isCollectionMutable(collectionId: CollectionId): Result<boolean> {
+    return this._confectionContext.isCollectionMutable(collectionId);
+  }
+
   // ============================================================================
   // User Library Methods
   // ============================================================================
@@ -296,14 +304,6 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
 
     const session = sessionResult.value;
 
-    // TODO: we need to implement persistence for confection sessions
-    // Currently only filling sessions support persistence
-    if (!(session instanceof Session.EditingSession)) {
-      return fail(
-        `Session ${sessionId} does not support persistence (confection sessions not yet implemented)`
-      );
-    }
-
     // Get the existing persisted session
     const existingResult = this._entities.sessions.get(sessionId);
     /* c8 ignore next 3 - defensive: session already validated before save */
@@ -315,20 +315,22 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     const collectionId = Helpers.getSessionCollectionId(sessionId);
     const baseId = Helpers.getSessionBaseId(sessionId);
 
+    const persistOptions = {
+      collectionId,
+      baseId,
+      status: existing.status,
+      label: existing.label,
+      notes: existing.notes ? [...existing.notes] : undefined
+    };
+
     // Create updated persisted state
-    return session
-      .toPersistedState({
-        collectionId,
-        baseId,
-        status: existing.status,
-        label: existing.label,
-        notes: existing.notes ? [...existing.notes] : undefined
-      })
-      .onSuccess((persisted) => {
-        return this._entities.sessions.upsertSession(collectionId, persisted).onSuccess(() => {
-          return succeed(persisted as AnySessionEntity);
-        });
+    const persistedResult = session.toPersistedState(persistOptions);
+
+    return persistedResult.onSuccess((persisted) => {
+      return this._entities.sessions.upsertSession(collectionId, persisted).onSuccess(() => {
+        return succeed(persisted as AnySessionEntity);
       });
+    });
   }
 
   // ============================================================================
@@ -461,10 +463,9 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     persisted: IConfectionSessionEntity,
     confection: IConfectionBase
   ): Result<Session.AnyConfectionEditingSession> {
-    // TODO: we should add and use proper type guards for persisted confections
     if (confection.isMoldedBonBon() && persisted.confectionType === ('molded-bonbon' as ConfectionType)) {
       return Session.MoldedBonBonEditingSession.fromPersistedState(
-        confection as unknown as MoldedBonBonRecipe,
+        confection,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
         this
       );
@@ -472,7 +473,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
 
     if (confection.isBarTruffle() && persisted.confectionType === ('bar-truffle' as ConfectionType)) {
       return Session.BarTruffleEditingSession.fromPersistedState(
-        confection as unknown as BarTruffleRecipe,
+        confection,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
         this
       );
@@ -480,7 +481,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
 
     if (confection.isRolledTruffle() && persisted.confectionType === ('rolled-truffle' as ConfectionType)) {
       return Session.RolledTruffleEditingSession.fromPersistedState(
-        confection as unknown as RolledTruffleRecipe,
+        confection,
         persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
         this
       );

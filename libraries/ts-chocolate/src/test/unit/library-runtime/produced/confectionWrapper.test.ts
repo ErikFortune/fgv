@@ -21,23 +21,42 @@
 import '@fgv/ts-utils-jest';
 
 import {
+  BaseConfectionId,
+  BaseIngredientId,
+  BaseMoldId,
+  CollectionId,
+  ConfectionId,
+  ConfectionName,
   ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
   FillingId,
   IngredientId,
   Measurement,
+  Millimeters,
+  MoldFormat,
   Model as CommonModel,
   MoldId,
   NoteCategory,
+  Percentage,
   ProcedureId,
   SlotId
 } from '../../../../packlets/common';
 import {
   Confections,
+  ConfectionsLibrary,
+  FillingsLibrary,
+  IGanacheCharacteristics,
+  IChocolateIngredientEntity,
+  IIngredientEntity,
+  IMoldEntity,
+  IngredientsLibrary,
   IProducedBarTruffleEntity,
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
+  MoldsLibrary,
   Session
 } from '../../../../packlets/entities';
+import { ChocolateEntityLibrary, ChocolateLibrary } from '../../../../packlets/library-runtime';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   ProducedBarTruffle,
@@ -762,5 +781,427 @@ describe('ProducedRolledTruffle', () => {
     expect(changes.hasChanges).toBe(true);
     expect(changes.coatingChanged).toBe(true);
     expect(changes.enrobingChocolateChanged).toBe(false);
+  });
+});
+
+// ============================================================================
+// Ingredient-Type Filling Slot Tests
+// ============================================================================
+
+describe('Ingredient-type filling slot conversion', () => {
+  test('ProducedMoldedBonBon.fromSource() converts ingredient-type filling slot', () => {
+    const cocoaChars: IGanacheCharacteristics = {
+      cacaoFat: 10 as Percentage,
+      sugar: 5 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 2 as Percentage,
+      solids: 83 as Percentage,
+      otherFats: 0 as Percentage
+    };
+
+    const testChars: IGanacheCharacteristics = {
+      cacaoFat: 36 as Percentage,
+      sugar: 34 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 1 as Percentage,
+      solids: 29 as Percentage,
+      otherFats: 0 as Percentage
+    };
+
+    const cocoaPowder: IIngredientEntity = {
+      baseId: 'cocoa-powder' as BaseIngredientId,
+      name: 'Cocoa Powder',
+      category: 'other',
+      ganacheCharacteristics: cocoaChars
+    };
+
+    const darkChocolate: IChocolateIngredientEntity = {
+      baseId: 'dark-chocolate' as BaseIngredientId,
+      name: 'Dark Chocolate 70%',
+      category: 'chocolate',
+      chocolateType: 'dark',
+      cacaoPercentage: 70 as Percentage,
+      ganacheCharacteristics: testChars
+    };
+
+    const moldA: IMoldEntity = {
+      baseId: 'mold-a' as BaseMoldId,
+      manufacturer: 'Test Molds',
+      productNumber: 'TM-001',
+      description: 'Test mold A',
+      cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
+      format: 'other' as MoldFormat
+    };
+
+    const ingredientFillingConfection: Confections.MoldedBonBonRecipeEntity = {
+      baseId: 'ingredient-filling-bonbon' as BaseConfectionId,
+      confectionType: 'molded-bonbon',
+      name: 'Cocoa Dusted Bonbon' as ConfectionName,
+      goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+      variations: [
+        {
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+          fillings: [
+            {
+              slotId: 'coating' as SlotId,
+              name: 'Cocoa Coating',
+              filling: {
+                options: [{ type: 'ingredient' as const, id: 'test.cocoa-powder' as IngredientId }],
+                preferredId: 'test.cocoa-powder' as Confections.FillingOptionId
+              }
+            }
+          ],
+          molds: {
+            options: [{ id: 'test.mold-a' as MoldId }],
+            preferredId: 'test.mold-a' as MoldId
+          },
+          shellChocolate: {
+            ids: ['test.dark-chocolate' as IngredientId],
+            preferredId: 'test.dark-chocolate' as IngredientId
+          }
+        }
+      ]
+    };
+
+    const ingredients = IngredientsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'cocoa-powder': cocoaPowder,
+            'dark-chocolate': darkChocolate
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const fillings = FillingsLibrary.create({
+      builtin: false,
+      collections: []
+    }).orThrow();
+
+    const molds = MoldsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'mold-a': moldA
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const confections = ConfectionsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'ingredient-filling-bonbon': ingredientFillingConfection
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const library = ChocolateEntityLibrary.create({
+      builtin: false,
+      libraries: { ingredients, fillings, molds, confections }
+    }).orThrow();
+
+    const chocolateLib = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+
+    const confection = chocolateLib.confections
+      .get('test.ingredient-filling-bonbon' as ConfectionId)
+      .orThrow();
+
+    expect(confection.isMoldedBonBon()).toBe(true);
+    if (!confection.isMoldedBonBon()) {
+      throw new Error('Expected molded bonbon');
+    }
+
+    const variation = confection.goldenVariation;
+
+    expect(ProducedMoldedBonBon.fromSource(variation)).toSucceedAndSatisfy((produced) => {
+      expect(produced.fillings).toHaveLength(1);
+      const slot = produced.fillings![0];
+      expect(slot.slotType).toBe('ingredient');
+      if (slot.slotType === 'ingredient') {
+        expect(slot.ingredientId).toBe('test.cocoa-powder' as IngredientId);
+        expect(slot.slotId).toBe('coating' as SlotId);
+      }
+    });
+  });
+
+  test('ProducedBarTruffle.fromSource() converts ingredient-type filling slot', () => {
+    const cocoaChars: IGanacheCharacteristics = {
+      cacaoFat: 10 as Percentage,
+      sugar: 5 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 2 as Percentage,
+      solids: 83 as Percentage,
+      otherFats: 0 as Percentage
+    };
+
+    const testChars: IGanacheCharacteristics = {
+      cacaoFat: 36 as Percentage,
+      sugar: 34 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 1 as Percentage,
+      solids: 29 as Percentage,
+      otherFats: 0 as Percentage
+    };
+
+    const cocoaPowder: IIngredientEntity = {
+      baseId: 'cocoa-powder' as BaseIngredientId,
+      name: 'Cocoa Powder',
+      category: 'other',
+      ganacheCharacteristics: cocoaChars
+    };
+
+    const darkChocolate: IChocolateIngredientEntity = {
+      baseId: 'dark-chocolate' as BaseIngredientId,
+      name: 'Dark Chocolate 70%',
+      category: 'chocolate',
+      chocolateType: 'dark',
+      cacaoPercentage: 70 as Percentage,
+      ganacheCharacteristics: testChars
+    };
+
+    const ingredientFillingBarTruffle: Confections.BarTruffleRecipeEntity = {
+      baseId: 'ingredient-filling-bar' as BaseConfectionId,
+      confectionType: 'bar-truffle',
+      name: 'Cocoa Dusted Bar' as ConfectionName,
+      goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+      variations: [
+        {
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+          frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 8 as Millimeters },
+          singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
+          fillings: [
+            {
+              slotId: 'coating' as SlotId,
+              name: 'Cocoa Coating',
+              filling: {
+                options: [{ type: 'ingredient' as const, id: 'test.cocoa-powder' as IngredientId }],
+                preferredId: 'test.cocoa-powder' as Confections.FillingOptionId
+              }
+            }
+          ],
+          enrobingChocolate: {
+            ids: ['test.dark-chocolate' as IngredientId],
+            preferredId: 'test.dark-chocolate' as IngredientId
+          }
+        }
+      ]
+    };
+
+    const ingredients = IngredientsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'cocoa-powder': cocoaPowder,
+            'dark-chocolate': darkChocolate
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const fillings = FillingsLibrary.create({
+      builtin: false,
+      collections: []
+    }).orThrow();
+
+    const confections = ConfectionsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'ingredient-filling-bar': ingredientFillingBarTruffle
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const library = ChocolateEntityLibrary.create({
+      builtin: false,
+      libraries: { ingredients, fillings, confections }
+    }).orThrow();
+
+    const chocolateLib = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+
+    const confection = chocolateLib.confections.get('test.ingredient-filling-bar' as ConfectionId).orThrow();
+
+    expect(confection.isBarTruffle()).toBe(true);
+    if (!confection.isBarTruffle()) {
+      throw new Error('Expected bar truffle');
+    }
+
+    const variation = confection.goldenVariation;
+
+    expect(ProducedBarTruffle.fromSource(variation)).toSucceedAndSatisfy((produced) => {
+      expect(produced.fillings).toHaveLength(1);
+      const slot = produced.fillings![0];
+      expect(slot.slotType).toBe('ingredient');
+      if (slot.slotType === 'ingredient') {
+        expect(slot.ingredientId).toBe('test.cocoa-powder' as IngredientId);
+        expect(slot.slotId).toBe('coating' as SlotId);
+      }
+    });
+  });
+
+  test('ProducedRolledTruffle.fromSource() converts ingredient-type filling slot', () => {
+    const cocoaChars: IGanacheCharacteristics = {
+      cacaoFat: 10 as Percentage,
+      sugar: 5 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 2 as Percentage,
+      solids: 83 as Percentage,
+      otherFats: 0 as Percentage
+    };
+
+    const testChars: IGanacheCharacteristics = {
+      cacaoFat: 36 as Percentage,
+      sugar: 34 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 1 as Percentage,
+      solids: 29 as Percentage,
+      otherFats: 0 as Percentage
+    };
+
+    const cocoaPowder: IIngredientEntity = {
+      baseId: 'cocoa-powder' as BaseIngredientId,
+      name: 'Cocoa Powder',
+      category: 'other',
+      ganacheCharacteristics: cocoaChars
+    };
+
+    const darkChocolate: IChocolateIngredientEntity = {
+      baseId: 'dark-chocolate' as BaseIngredientId,
+      name: 'Dark Chocolate 70%',
+      category: 'chocolate',
+      chocolateType: 'dark',
+      cacaoPercentage: 70 as Percentage,
+      ganacheCharacteristics: testChars
+    };
+
+    const ingredientFillingRolledTruffle: Confections.RolledTruffleRecipeEntity = {
+      baseId: 'ingredient-filling-rolled' as BaseConfectionId,
+      confectionType: 'rolled-truffle',
+      name: 'Cocoa Dusted Rolled' as ConfectionName,
+      goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+      variations: [
+        {
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+          fillings: [
+            {
+              slotId: 'dusting' as SlotId,
+              name: 'Cocoa Dusting',
+              filling: {
+                options: [{ type: 'ingredient' as const, id: 'test.cocoa-powder' as IngredientId }],
+                preferredId: 'test.cocoa-powder' as Confections.FillingOptionId
+              }
+            }
+          ],
+          enrobingChocolate: {
+            ids: ['test.dark-chocolate' as IngredientId],
+            preferredId: 'test.dark-chocolate' as IngredientId
+          },
+          coatings: {
+            ids: ['test.cocoa-powder' as IngredientId],
+            preferredId: 'test.cocoa-powder' as IngredientId
+          }
+        }
+      ]
+    };
+
+    const ingredients = IngredientsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'cocoa-powder': cocoaPowder,
+            'dark-chocolate': darkChocolate
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const fillings = FillingsLibrary.create({
+      builtin: false,
+      collections: []
+    }).orThrow();
+
+    const confections = ConfectionsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'ingredient-filling-rolled': ingredientFillingRolledTruffle
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const library = ChocolateEntityLibrary.create({
+      builtin: false,
+      libraries: { ingredients, fillings, confections }
+    }).orThrow();
+
+    const chocolateLib = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+
+    const confection = chocolateLib.confections
+      .get('test.ingredient-filling-rolled' as ConfectionId)
+      .orThrow();
+
+    expect(confection.isRolledTruffle()).toBe(true);
+    if (!confection.isRolledTruffle()) {
+      throw new Error('Expected rolled truffle');
+    }
+
+    const variation = confection.goldenVariation;
+
+    expect(ProducedRolledTruffle.fromSource(variation)).toSucceedAndSatisfy((produced) => {
+      expect(produced.fillings).toHaveLength(1);
+      const slot = produced.fillings![0];
+      expect(slot.slotType).toBe('ingredient');
+      if (slot.slotType === 'ingredient') {
+        expect(slot.ingredientId).toBe('test.cocoa-powder' as IngredientId);
+        expect(slot.slotId).toBe('dusting' as SlotId);
+      }
+    });
   });
 });

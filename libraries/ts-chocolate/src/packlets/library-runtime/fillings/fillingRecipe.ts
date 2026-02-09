@@ -58,6 +58,7 @@ export class FillingRecipe implements IFillingRecipe {
   private readonly _recipe: IFillingRecipeEntity;
   private readonly _sourceId: CollectionId;
   private readonly _baseId: BaseFillingId;
+  private readonly _isMutable: boolean;
 
   // Lazy-loaded variations
   private _goldenVariation: FillingRecipeVariation | undefined;
@@ -79,6 +80,7 @@ export class FillingRecipe implements IFillingRecipe {
     const parsed = Converters.parsedFillingId.convert(id).orThrow();
     this._sourceId = parsed.collectionId;
     this._baseId = parsed.itemId;
+    this._isMutable = this._context.isCollectionMutable(this._sourceId).orDefault(false);
   }
 
   /**
@@ -112,6 +114,13 @@ export class FillingRecipe implements IFillingRecipe {
    */
   public get collectionId(): CollectionId {
     return this._sourceId;
+  }
+
+  /**
+   * Whether this recipe's collection is mutable.
+   */
+  public get isMutable(): boolean {
+    return this._isMutable;
   }
 
   /**

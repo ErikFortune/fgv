@@ -231,9 +231,7 @@ export class EditingSession {
    */
   public analyzeSaveOptions(): ISaveAnalysis {
     const changes = this._produced.getChanges(this._originalSnapshot);
-    // TODO: Check collection mutability when that property is added to IFillingRecipe
-    // For now, assume all collections are mutable
-    const isMutable = true;
+    const isMutable = this._baseRecipe.isMutable;
 
     return {
       canCreateVariation: isMutable,
@@ -263,22 +261,23 @@ export class EditingSession {
    */
   public saveAsNewVariation(options: ISaveVariationOptions): Result<ISaveResult> {
     const analysis = this.analyzeSaveOptions();
-    // TODO: use result pattern
-    /* c8 ignore next 3 - unreachable: analyzeSaveOptions always returns isMutable=true (TODO pending) */
     if (!analysis.canCreateVariation) {
       return fail('Cannot create new variation: collection is immutable');
     }
 
     const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
 
-    // TODO: Implement producedToSource conversion
-    // For now, just create the journal entry
-    return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
-      succeed({
-        journalId: journalEntry.baseId,
-        journalEntry,
-        newVariationSpec: options.variationSpec
-      })
+    // Convert produced state to source variation entity
+    return ProducedFilling.toSourceVariation(this._produced.snapshot, options.variationSpec).onSuccess(
+      (variationEntity) =>
+        this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
+          succeed({
+            journalId: journalEntry.baseId,
+            journalEntry,
+            newVariationSpec: options.variationSpec,
+            variationEntity
+          })
+        )
     );
   }
 
@@ -291,21 +290,23 @@ export class EditingSession {
    */
   public saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult> {
     const analysis = this.analyzeSaveOptions();
-    /* c8 ignore next 3 - unreachable: analyzeSaveOptions always returns isMutable=true (TODO pending) */
     if (!analysis.canAddAlternatives) {
       return fail('Cannot add alternatives: collection is immutable or no ingredient changes');
     }
 
     const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
 
-    // TODO: Implement alternatives logic - merge new ingredients as options
-    // For now, return placeholder result
-    return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
-      succeed({
-        journalId: journalEntry.baseId,
-        journalEntry,
-        newVariationSpec: options.variationSpec
-      })
+    // Merge produced choices as alternatives into original variation
+    return ProducedFilling.mergeAsAlternatives(this._produced.snapshot, this._baseRecipe.entity).onSuccess(
+      (mergedVariation) =>
+        this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
+          succeed({
+            journalId: journalEntry.baseId,
+            journalEntry,
+            newVariationSpec: options.variationSpec,
+            variationEntity: mergedVariation
+          })
+        )
     );
   }
 
@@ -319,14 +320,17 @@ export class EditingSession {
   public saveAsNewRecipe(options: ISaveNewRecipeOptions): Result<ISaveResult> {
     const sessionNotes = this._produced.snapshot.notes ? [...this._produced.snapshot.notes] : undefined;
 
-    // TODO: Implement producedToSource conversion when needed
-    // For now, just create the journal entry
-    return this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
-      succeed({
-        journalId: journalEntry.baseId,
-        journalEntry,
-        newVariationSpec: options.variationSpec
-      })
+    // Convert produced state to source variation entity
+    return ProducedFilling.toSourceVariation(this._produced.snapshot, options.variationSpec).onSuccess(
+      (variationEntity) =>
+        this._createJournalEntry(options.variationSpec, sessionNotes).onSuccess((journalEntry) =>
+          succeed({
+            journalId: journalEntry.baseId,
+            journalEntry,
+            newVariationSpec: options.variationSpec,
+            variationEntity
+          })
+        )
     );
   }
 

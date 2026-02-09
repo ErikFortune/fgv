@@ -5,7 +5,7 @@
 Editing session for molded bonbon confections.
 Supports frame-based yield specification and mold change workflow.
 
-**Extends:** [`ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, MoldedBonBonRecipe>`](../../classes/ConfectionEditingSessionBase.md)
+**Extends:** [`ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, TRecipe>`](../../classes/ConfectionEditingSessionBase.md)
 
 ## Properties
 
@@ -279,6 +279,19 @@ Sets or updates a filling slot.
 </td><td>
 
 Removes a filling slot.
+
+</td></tr>
+<tr><td>
+
+[toPersistedState(options)](./ConfectionEditingSessionBase.toPersistedState.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a persisted session state from this confection editing session.
 
 </td></tr>
 <tr><td>

@@ -27,7 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedBarTruffleEntity, Session } from '../../entities';
-import { BarTruffleRecipe, ProducedBarTruffle } from '../../library-runtime';
+import { IBarTruffleRecipe, ProducedBarTruffle } from '../../library-runtime';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { ISessionContext } from '../model';
@@ -43,17 +43,16 @@ import { IConfectionEditingSessionParams } from './model';
  *
  * @public
  */
-export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
-  IProducedBarTruffleEntity,
-  BarTruffleRecipe
-> {
+export class BarTruffleEditingSession<
+  TRecipe extends IBarTruffleRecipe = IBarTruffleRecipe
+> extends ConfectionEditingSessionBase<IProducedBarTruffleEntity, TRecipe> {
   /**
    * Creates a BarTruffleEditingSession.
    * Use BarTruffleEditingSession.create() instead.
    * @internal
    */
   private constructor(
-    baseConfection: BarTruffleRecipe,
+    baseConfection: TRecipe,
     produced: ProducedBarTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -77,11 +76,11 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with BarTruffleEditingSession, or Failure
    * @public
    */
-  public static create(
-    baseConfection: BarTruffleRecipe,
+  public static create<T extends IBarTruffleRecipe = IBarTruffleRecipe>(
+    baseConfection: T,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
-  ): Result<BarTruffleEditingSession> {
+  ): Result<BarTruffleEditingSession<T>> {
     return ProducedBarTruffle.fromSource(baseConfection.goldenVariation).onSuccess((produced) =>
       captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
     );
@@ -98,12 +97,12 @@ export class BarTruffleEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with restored session, or Failure
    * @public
    */
-  public static fromPersistedState(
-    baseConfection: BarTruffleRecipe,
+  public static fromPersistedState<T extends IBarTruffleRecipe = IBarTruffleRecipe>(
+    baseConfection: T,
     history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
-  ): Result<BarTruffleEditingSession> {
+  ): Result<BarTruffleEditingSession<T>> {
     return ProducedBarTruffle.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
     );

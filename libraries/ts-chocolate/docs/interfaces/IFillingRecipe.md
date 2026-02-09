@@ -70,6 +70,23 @@ The collection ID part of the composite ID.
 </td></tr>
 <tr><td>
 
+[isMutable](./IFillingRecipe.isMutable.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether this recipe's collection is mutable.
+
+</td></tr>
+<tr><td>
+
 [baseId](./IFillingRecipe.baseId.md)
 
 </td><td>

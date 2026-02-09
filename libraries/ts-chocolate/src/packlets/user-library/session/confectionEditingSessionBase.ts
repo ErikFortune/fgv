@@ -25,14 +25,30 @@
 
 import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
-import { FillingId, IngredientId, Measurement, SessionSpec, SlotId } from '../../common';
-import { Confections, AnyProducedConfectionEntity } from '../../entities';
-import { AnyConfection, ProducedConfectionBase } from '../../library-runtime';
+import {
+  BaseSessionId,
+  CollectionId,
+  FillingId,
+  Helpers,
+  IngredientId,
+  Measurement,
+  Model as CommonModel,
+  SessionSpec,
+  SlotId
+} from '../../common';
+import {
+  Confections,
+  AnyProducedConfectionEntity,
+  IConfectionSessionEntity,
+  PersistedSessionStatus,
+  Session as SessionEntities
+} from '../../entities';
+import { IConfectionBase, ProducedConfectionBase } from '../../library-runtime';
 
 import { EditingSession } from './editingSession';
 import { IConfectionEditingSessionParams, IFillingSessionMap } from './model';
 import { ISessionContext } from '../model';
-import { generateSessionId } from './sessionUtils';
+import { generateSessionId, generateSessionBaseId, getCurrentTimestamp } from './sessionUtils';
 
 // ============================================================================
 // Abstract Base Class
@@ -51,7 +67,7 @@ import { generateSessionId } from './sessionUtils';
  */
 export abstract class ConfectionEditingSessionBase<
   T extends AnyProducedConfectionEntity,
-  TRuntime extends AnyConfection
+  TRuntime extends IConfectionBase
 > {
   protected readonly _baseConfection: TRuntime;
   protected readonly _context: ISessionContext;
@@ -254,6 +270,62 @@ export abstract class ConfectionEditingSessionBase<
     // Convert Result<void> to Result<undefined>
     return this._produced.removeFillingSlot(slotId).onSuccess(() => {
       return this._removeFillingSession(slotId);
+    });
+  }
+
+  // ============================================================================
+  // Persistence
+  // ============================================================================
+
+  /**
+   * Creates a persisted session state from this confection editing session.
+   * Captures the complete editing state including undo/redo history.
+   *
+   * Note: Child filling sessions are persisted separately. The `childSessionIds`
+   * field is left empty and should be populated by the caller when persisting
+   * the complete session graph.
+   *
+   * @param options - Persistence options including collection ID
+   * @returns Result with persisted confection session
+   * @public
+   */
+  public toPersistedState(options: {
+    readonly collectionId: CollectionId;
+    readonly baseId?: BaseSessionId;
+    readonly status?: PersistedSessionStatus;
+    readonly label?: string;
+    readonly notes?: CommonModel.ICategorizedNote[];
+  }): Result<IConfectionSessionEntity> {
+    const baseIdResult = options.baseId ? succeed(options.baseId) : generateSessionBaseId();
+
+    return baseIdResult.onSuccess((baseId) => {
+      const goldenVariation = this._baseConfection.goldenVariation;
+      return Helpers.createConfectionRecipeVariationId({
+        collectionId: goldenVariation.confectionId,
+        itemId: goldenVariation.variationSpec
+      }).onSuccess((sourceVariationId) => {
+        const now = getCurrentTimestamp();
+
+        const session: IConfectionSessionEntity = {
+          baseId,
+          sessionType: 'confection',
+          confectionType: this._baseConfection.confectionType,
+          status: options.status ?? 'active',
+          createdAt: now,
+          updatedAt: now,
+          label: options.label,
+          notes: options.notes,
+          destination: {
+            defaultCollectionId: options.collectionId
+          },
+          sourceVariationId,
+          history: this._produced.getSerializedHistory(
+            this._originalSnapshot
+          ) as SessionEntities.ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>,
+          childSessionIds: {}
+        };
+        return succeed(session);
+      });
     });
   }
 

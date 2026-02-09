@@ -684,8 +684,6 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
         fillingId: option.id
       });
     }
-    // TODO: add a confection recipe with an ingredient-type filling and add tests so we can remove this exclusion
-    /* c8 ignore next 6 - ingredient-type filling slot: requires library data with ingredient filling options */
     return succeed({
       slotType: 'ingredient' as const,
       slotId: slot.slotId,
@@ -972,8 +970,6 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
         fillingId: option.id
       });
     }
-    // TODO: add a confection recipe with an ingredient-type filling and add tests so we can remove this exclusion
-    /* c8 ignore next 6 - ingredient-type filling slot: requires library data with ingredient filling options */
     return succeed({
       slotType: 'ingredient' as const,
       slotId: slot.slotId,
@@ -1173,8 +1169,6 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
         fillingId: option.id
       });
     }
-    // TODO: add a confection recipe with an ingredient-type filling and add tests so we can remove this exclusion
-    /* c8 ignore next 6 - ingredient-type filling slot: requires library data with ingredient filling options */
     return succeed({
       slotType: 'ingredient' as const,
       slotId: slot.slotId,

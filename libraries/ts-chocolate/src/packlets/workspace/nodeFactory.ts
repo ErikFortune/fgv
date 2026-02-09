@@ -18,13 +18,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, fail } from '@fgv/ts-utils';
+import * as path from 'path';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
+import { FileTree } from '@fgv/ts-json-base';
 import { IWorkspaceFactoryParams, IWorkspace } from './model';
 import { Workspace } from './workspace';
 import { initializeNodePlatform } from './nodePlatformInit';
 import { createWorkspaceFromPlatform } from './platformInit';
 import { DeviceId } from '../settings';
+import { ILibraryFileTreeSource } from '../library-data';
 
 /**
  * Startup mode for workspace initialization.
@@ -200,31 +203,73 @@ export function createNodeWorkspaceLegacy(params?: IWorkspaceFactoryParams): Res
 export async function createNodeWorkspace(params: ICreateNodeWorkspaceParams): Promise<Result<IWorkspace>> {
   const { layout, startupMode = 'fail-on-error', builtin = true, preWarm = false } = params;
 
-  // For now, only implement single-root mode
-  // TODO: Implement dual-root and multi-root modes
-  if (layout.mode !== 'single-root') {
-    return fail(`Directory layout mode '${layout.mode}' not yet implemented`);
-  }
+  // Determine user library path based on layout mode
+  const userLibraryPath = layout.mode === 'single-root' ? layout.rootPath : layout.installationPath;
 
   // Stage 1: Platform initialization
   const platformResult = await initializeNodePlatform({
-    userLibraryPath: layout.rootPath,
+    userLibraryPath,
     deviceId: params.deviceId,
     deviceName: params.deviceName
   });
 
   if (platformResult.isFailure()) {
     if (startupMode === 'ignore-errors') {
-      // TODO: Create minimal workspace with defaults
-      return fail('ignore-errors mode not yet implemented');
+      // Create minimal workspace with built-in data only (no file sources, no key store)
+      return Workspace.create({ builtin, preWarm });
     }
     return fail(`Platform initialization failed: ${platformResult.message}`);
   }
 
-  // Stage 2: Create workspace from platform init result
+  // Stage 2: Create additional file sources for multi-directory layouts
+  const additionalFileSources: ILibraryFileTreeSource[] = [];
+
+  if (layout.mode === 'dual-root') {
+    const sourceResult = createFileTreeSource(layout.libraryPath, !(layout.libraryReadOnly ?? false));
+    /* c8 ignore next 6 - defensive: DirectoryItem.create rarely fails */
+    if (sourceResult.isFailure()) {
+      if (startupMode === 'ignore-errors') {
+        return Workspace.create({ builtin, preWarm });
+      }
+      return fail(`Failed to create library source for ${layout.libraryPath}: ${sourceResult.message}`);
+    }
+    additionalFileSources.push(sourceResult.value);
+  } else if (layout.mode === 'multi-root') {
+    for (const libPath of layout.libraryPaths) {
+      const sourceResult = createFileTreeSource(libPath.path, !(libPath.readOnly ?? false));
+      /* c8 ignore next 6 - defensive: DirectoryItem.create rarely fails */
+      if (sourceResult.isFailure()) {
+        if (startupMode === 'ignore-errors') {
+          return Workspace.create({ builtin, preWarm });
+        }
+        return fail(`Failed to create library source for ${libPath.path}: ${sourceResult.message}`);
+      }
+      additionalFileSources.push(sourceResult.value);
+    }
+  }
+
+  // Stage 3: Create workspace from platform init result
   return createWorkspaceFromPlatform({
     platformInit: platformResult.value,
     builtin,
-    preWarm
+    preWarm,
+    additionalFileSources: additionalFileSources.length > 0 ? additionalFileSources : undefined
   });
+}
+
+/**
+ * Creates a file tree source from a directory path.
+ * @param dirPath - Path to the directory
+ * @param mutable - Whether the directory is mutable (writable)
+ * @returns Success with file tree source, or Failure if creation fails
+ */
+function createFileTreeSource(dirPath: string, mutable: boolean): Result<ILibraryFileTreeSource> {
+  const resolvedPath = path.resolve(dirPath);
+  const accessors = new FileTree.FsFileTreeAccessors({
+    prefix: resolvedPath,
+    mutable
+  });
+  return FileTree.DirectoryItem.create('.', accessors).onSuccess((directory) =>
+    succeed({ directory, mutable })
+  );
 }

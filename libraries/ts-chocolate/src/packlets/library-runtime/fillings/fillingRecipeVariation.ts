@@ -178,6 +178,14 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
     }
     return this._recipe!;
   }
+
+  /**
+   * Whether this variation's parent collection is mutable.
+   */
+  public get isMutable(): boolean {
+    return this.fillingRecipe.isMutable;
+  }
+
   // ============================================================================
   // Computed Properties
   // ============================================================================

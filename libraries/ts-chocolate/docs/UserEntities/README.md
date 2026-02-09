@@ -67,3 +67,26 @@ Parameters for creating a UserEntities.UserEntityLibrary | UserEntityLibrary.
 
 </td></tr>
 </tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[createDefaultUserEntityDirectories](./functions/createDefaultUserEntityDirectories.md)
+
+</td><td>
+
+Creates the standard user entity data directories at the given root path.
+
+</td></tr>
+</tbody></table>

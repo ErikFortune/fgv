@@ -39,7 +39,8 @@ import {
 import {
   IFillingEditJournalEntryEntity,
   IConfectionEditJournalEntryEntity,
-  Confections
+  Confections,
+  Fillings
 } from '../../entities';
 import { IConfectionBase } from '../../library-runtime';
 
@@ -234,6 +235,11 @@ export interface ISaveResult {
    * The new variation spec if one was created
    */
   readonly newVariationSpec?: FillingRecipeVariationSpec | ConfectionRecipeVariationSpec;
+
+  /**
+   * The new variation entity if one was created (for persistence by caller)
+   */
+  readonly variationEntity?: Fillings.IFillingRecipeVariationEntity;
 }
 
 // ============================================================================

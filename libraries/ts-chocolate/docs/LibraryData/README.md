@@ -631,6 +631,15 @@ Gets the ingredient inventory directory from a library tree.
 </td></tr>
 <tr><td>
 
+[createDefaultLibraryDirectories](./functions/createDefaultLibraryDirectories.md)
+
+</td><td>
+
+Creates the standard library data directories at the given root path.
+
+</td></tr>
+<tr><td>
+
 [specToLoadParams](./functions/specToLoadParams.md)
 
 </td><td>

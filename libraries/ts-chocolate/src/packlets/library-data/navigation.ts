@@ -18,7 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Failure, Result, Success } from '@fgv/ts-utils';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { captureResult, fail, Failure, Result, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 /**
@@ -235,4 +238,30 @@ export function getIngredientInventoryDirectory(
   tree: FileTree.FileTreeItem
 ): Result<FileTree.IFileTreeDirectoryItem> {
   return navigateToDirectory(tree, LibraryPaths.ingredientInventory);
+}
+
+/**
+ * Creates the standard library data directories at the given root path.
+ * Creates directories for ingredients, fillings, confections, molds, procedures, and tasks.
+ *
+ * @param rootPath - Absolute path to the root directory
+ * @returns Success or failure
+ * @public
+ */
+export function createDefaultLibraryDirectories(rootPath: string): Result<void> {
+  const directories = [
+    LibraryPaths.ingredients,
+    LibraryPaths.fillings,
+    LibraryPaths.confections,
+    LibraryPaths.molds,
+    LibraryPaths.procedures,
+    LibraryPaths.tasks
+  ];
+
+  return captureResult(() => {
+    for (const dir of directories) {
+      const fullPath = path.join(rootPath, dir);
+      fs.mkdirSync(fullPath, { recursive: true });
+    }
+  }).onFailure((msg) => fail(`Failed to create library directories: ${msg}`));
 }

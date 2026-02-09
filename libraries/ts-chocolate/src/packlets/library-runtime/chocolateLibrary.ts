@@ -25,7 +25,7 @@
 
 import { Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId, IngredientId, MoldId, ProcedureId, FillingId, TaskId } from '../common';
+import { CollectionId, ConfectionId, IngredientId, MoldId, ProcedureId, FillingId, TaskId } from '../common';
 import {
   Confections,
   Fillings,
@@ -524,6 +524,18 @@ export class ChocolateLibrary
   public invalidateIndexers(): void {
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();
+  }
+
+  /**
+   * Checks if a collection is mutable.
+   * @param collectionId - The collection ID to check
+   * @returns Success with boolean indicating mutability, or Failure if collection not found
+   */
+  public isCollectionMutable(collectionId: CollectionId): Result<boolean> {
+    return this._entities.fillings.collections
+      .get(collectionId)
+      .withErrorFormat((err) => `Collection ${collectionId} not found: ${err}`)
+      .asResult.onSuccess((collection) => Success.with(collection.isMutable));
   }
 
   /**

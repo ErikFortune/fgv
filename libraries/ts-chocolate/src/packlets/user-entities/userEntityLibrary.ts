@@ -23,7 +23,10 @@
  * @packageDocumentation
  */
 
-import { Logging, Result, succeed } from '@fgv/ts-utils';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { captureResult, fail, Logging, Result, succeed } from '@fgv/ts-utils';
 
 import { CollectionId } from '../common';
 import {
@@ -32,7 +35,13 @@ import {
   MoldInventoryLibrary,
   SessionLibrary
 } from '../entities';
-import { IFileTreeSource, ILibraryFileTreeSource, normalizeFileSources, SubLibraryId } from '../library-data';
+import {
+  IFileTreeSource,
+  ILibraryFileTreeSource,
+  LibraryPaths,
+  normalizeFileSources,
+  SubLibraryId
+} from '../library-data';
 import { IUserEntityLibrary, IUserEntityLibraryCreateParams } from './model';
 
 /**
@@ -179,4 +188,28 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   public get ingredientInventory(): IngredientInventoryLibrary {
     return this._ingredientInventory;
   }
+}
+
+/**
+ * Creates the standard user entity data directories at the given root path.
+ * Creates directories for sessions, journals, mold inventory, and ingredient inventory.
+ *
+ * @param rootPath - Absolute path to the root directory
+ * @returns Success or failure
+ * @public
+ */
+export function createDefaultUserEntityDirectories(rootPath: string): Result<void> {
+  const directories = [
+    LibraryPaths.sessions,
+    LibraryPaths.journals,
+    LibraryPaths.moldInventory,
+    LibraryPaths.ingredientInventory
+  ];
+
+  return captureResult(() => {
+    for (const dir of directories) {
+      const fullPath = path.join(rootPath, dir);
+      fs.mkdirSync(fullPath, { recursive: true });
+    }
+  }).onFailure((msg) => fail(`Failed to create user entity directories: ${msg}`));
 }

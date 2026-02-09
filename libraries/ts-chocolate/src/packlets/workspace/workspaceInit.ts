@@ -28,7 +28,7 @@ import * as path from 'path';
 
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
-import { LibraryPaths } from '../library-data';
+import { createDefaultLibraryDirectories, LibraryPaths } from '../library-data';
 import {
   createDefaultCommonSettings,
   createDefaultDeviceSettings,
@@ -36,6 +36,7 @@ import {
   ICommonSettings,
   IDeviceSettings
 } from '../settings';
+import { createDefaultUserEntityDirectories } from '../user-entities';
 
 /**
  * Parameters for workspace initialization.
@@ -87,24 +88,24 @@ export interface IWorkspaceInitResult {
  * @public
  */
 export function createWorkspaceDirectories(workspacePath: string): Result<void> {
-  const directories = [
-    LibraryPaths.settings,
-    LibraryPaths.ingredients,
-    LibraryPaths.fillings,
-    LibraryPaths.confections,
-    LibraryPaths.molds,
-    LibraryPaths.procedures,
-    LibraryPaths.tasks,
-    LibraryPaths.sessions,
-    LibraryPaths.journals
-  ];
+  // Create settings directory
+  const settingsResult = captureResult(() => {
+    const settingsPath = path.join(workspacePath, LibraryPaths.settings);
+    fs.mkdirSync(settingsPath, { recursive: true });
+  });
 
-  return captureResult(() => {
-    for (const dir of directories) {
-      const fullPath = path.join(workspacePath, dir);
-      fs.mkdirSync(fullPath, { recursive: true });
-    }
-  }).onFailure((msg) => fail(`Failed to create workspace directories: ${msg}`));
+  if (settingsResult.isFailure()) {
+    return fail(`Failed to create workspace directories: ${settingsResult.message}`);
+  }
+
+  // Delegate library and user entity directory creation to their respective modules
+  return createDefaultLibraryDirectories(workspacePath)
+    .onFailure((msg) => fail(`Failed to create workspace directories: ${msg}`))
+    .onSuccess(() =>
+      createDefaultUserEntityDirectories(workspacePath).onFailure((msg) =>
+        fail(`Failed to create workspace directories: ${msg}`)
+      )
+    );
 }
 
 /**
@@ -159,7 +160,6 @@ export function writeDeviceSettings(
  * @public
  */
 export function initializeWorkspace(params: IWorkspaceInitParams): Result<IWorkspaceInitResult> {
-  // TODO: workspace is just an orchestrator, so it should call the library to create default libraries and the user library to create user default libraries
   const commonSettings = createDefaultCommonSettings();
   const deviceSettings = createDefaultDeviceSettings(params.deviceId, params.deviceName);
 

@@ -356,6 +356,19 @@ Invalidates all indexer caches.
 </td></tr>
 <tr><td>
 
+[isCollectionMutable(collectionId)](./ChocolateLibrary.isCollectionMutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if a collection is mutable.
+
+</td></tr>
+<tr><td>
+
 [createWeightContext()](./ChocolateLibrary.createWeightContext.md)
 
 </td><td>

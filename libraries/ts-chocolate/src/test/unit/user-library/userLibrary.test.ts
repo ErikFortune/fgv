@@ -553,6 +553,53 @@ describe('UserLibrary', () => {
       // Just verify the getter returns a MaterializedLibrary
       expect(userLib.procedures).toBeDefined();
     });
+
+    test('isCollectionMutable delegates to confection context', () => {
+      // The test collection in beforeEach has isMutable: false
+      expect(userLib.isCollectionMutable('test' as CollectionId)).toSucceedWith(false);
+    });
+
+    test('isCollectionMutable returns true for mutable collection', () => {
+      // Create a context with a mutable collection
+      const mutableIngredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'mutable' as CollectionId,
+            isMutable: true,
+            /* eslint-disable @typescript-eslint/naming-convention */
+            items: { 'dark-chocolate': darkChocolate }
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        ]
+      }).orThrow();
+
+      const mutableRecipes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'mutable' as CollectionId,
+            isMutable: true,
+            /* eslint-disable @typescript-eslint/naming-convention */
+            items: { 'test-ganache': testRecipe }
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        ]
+      }).orThrow();
+
+      const mutableLibrary = ChocolateEntityLibrary.create({
+        libraries: { ingredients: mutableIngredients, fillings: mutableRecipes }
+      }).orThrow();
+
+      const mutableCtx = ChocolateLibrary.fromChocolateEntityLibrary(mutableLibrary).orThrow();
+      const mutableUserLib = UserLibrary.create(UserEntityLibrary.create().orThrow(), mutableCtx).orThrow();
+
+      expect(mutableUserLib.isCollectionMutable('mutable' as CollectionId)).toSucceedWith(true);
+    });
+
+    test('isCollectionMutable fails for non-existent collection', () => {
+      expect(userLib.isCollectionMutable('nonexistent' as CollectionId)).toFailWith(/not found/i);
+    });
   });
 
   // ============================================================================
@@ -708,14 +755,21 @@ describe('UserLibrary', () => {
       });
     });
 
-    test('fails to save confection session (non-persistable)', () => {
+    test('saves confection session', () => {
       const sessionId = `user.${moldedBonBonSessionEntity.baseId}` as SessionId;
 
       // First materialize the confection session
       expect(userLib.sessions.get(sessionId)).toSucceed();
 
-      // Then verify saveSession fails for confection sessions (lines 301-304)
-      expect(userLib.saveSession(sessionId)).toFailWith(/does not support persistence/i);
+      // Then verify saveSession works for confection sessions
+      expect(userLib.saveSession(sessionId)).toSucceedAndSatisfy((saved) => {
+        expect(saved.sessionType).toBe('confection');
+        if (saved.sessionType === 'confection') {
+          expect(saved.confectionType).toBe('molded-bonbon');
+          expect(saved.sourceVariationId).toBe(moldedBonBonSessionEntity.sourceVariationId);
+          expect(saved.childSessionIds).toEqual({});
+        }
+      });
     });
 
     // Note: Lines 309-310 (session not found in entities during save) represent defensive

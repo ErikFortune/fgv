@@ -27,7 +27,7 @@ import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts
 
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedMoldedBonBonEntity, Session } from '../../entities';
-import { MoldedBonBonRecipe, IMold, ProducedMoldedBonBon } from '../../library-runtime';
+import { IMoldedBonBonRecipe, IMold, ProducedMoldedBonBon } from '../../library-runtime';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams, IMoldChangeAnalysis } from './model';
@@ -43,10 +43,9 @@ import { ISessionContext } from '../model';
  *
  * @public
  */
-export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
-  IProducedMoldedBonBonEntity,
-  MoldedBonBonRecipe
-> {
+export class MoldedBonBonEditingSession<
+  TRecipe extends IMoldedBonBonRecipe = IMoldedBonBonRecipe
+> extends ConfectionEditingSessionBase<IProducedMoldedBonBonEntity, TRecipe> {
   private _currentMold: IMold;
   private _pendingMoldChange?: IMoldChangeAnalysis;
 
@@ -56,7 +55,7 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @internal
    */
   private constructor(
-    baseConfection: MoldedBonBonRecipe,
+    baseConfection: TRecipe,
     produced: ProducedMoldedBonBon,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -83,11 +82,11 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with MoldedBonBonEditingSession, or Failure
    * @public
    */
-  public static create(
-    baseConfection: MoldedBonBonRecipe,
+  public static create<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(
+    baseConfection: T,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
-  ): Result<MoldedBonBonEditingSession> {
+  ): Result<MoldedBonBonEditingSession<T>> {
     return ProducedMoldedBonBon.fromSource(baseConfection.goldenVariation).onSuccess((produced) =>
       captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
     );
@@ -104,12 +103,12 @@ export class MoldedBonBonEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with restored session, or Failure
    * @public
    */
-  public static fromPersistedState(
-    baseConfection: MoldedBonBonRecipe,
+  public static fromPersistedState<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(
+    baseConfection: T,
     history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
-  ): Result<MoldedBonBonEditingSession> {
+  ): Result<MoldedBonBonEditingSession<T>> {
     return ProducedMoldedBonBon.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
     );

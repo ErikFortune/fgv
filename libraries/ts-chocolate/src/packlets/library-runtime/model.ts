@@ -395,6 +395,11 @@ export interface IFillingRecipeVariation {
    */
   readonly fillingRecipe: IFillingRecipe;
 
+  /**
+   * Whether this variation's parent collection is mutable.
+   */
+  readonly isMutable: boolean;
+
   // ---- Variation Properties (from IFillingRecipeVariationEntity) ----
 
   /**
@@ -574,6 +579,11 @@ export interface IFillingRecipe {
    * The collection ID part of the composite ID.
    */
   readonly collectionId: CollectionId;
+
+  /**
+   * Whether this recipe's collection is mutable.
+   */
+  readonly isMutable: boolean;
 
   /**
    * The base recipe ID within the source.
@@ -868,6 +878,9 @@ export interface IVariationContext<TIngredient extends IIngredient = IIngredient
   >;
   /** Map of all procedures, keyed by composite ID. */
   readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
+
+  /** Check if a collection is mutable. */
+  isCollectionMutable(collectionId: CollectionId): Result<boolean>;
 }
 
 /**

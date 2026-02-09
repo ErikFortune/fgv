@@ -272,4 +272,17 @@ Clears all cached runtime objects.
 Pre-warms the reverse indexes for efficient queries.
 
 </td></tr>
+<tr><td>
+
+[isCollectionMutable(collectionId)](./IChocolateLibrary.isCollectionMutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Check if a collection is mutable.
+
+</td></tr>
 </tbody></table>

@@ -143,4 +143,17 @@ Description
 Creates an editing session for a filling recipe at a target weight.
 
 </td></tr>
+<tr><td>
+
+[isCollectionMutable(collectionId)](./ISessionContext.isCollectionMutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Check if a collection is mutable.
+
+</td></tr>
 </tbody></table>

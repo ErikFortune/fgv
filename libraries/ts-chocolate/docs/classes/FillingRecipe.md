@@ -63,6 +63,23 @@ The source ID part of the composite ID
 </td></tr>
 <tr><td>
 
+[isMutable](./FillingRecipe.isMutable.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether this recipe's collection is mutable.
+
+</td></tr>
+<tr><td>
+
 [baseId](./FillingRecipe.baseId.md)
 
 </td><td>

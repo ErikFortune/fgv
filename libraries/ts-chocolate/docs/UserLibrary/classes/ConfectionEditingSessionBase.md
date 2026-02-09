@@ -187,6 +187,19 @@ Removes a filling slot.
 </td></tr>
 <tr><td>
 
+[toPersistedState(options)](./ConfectionEditingSessionBase.toPersistedState.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a persisted session state from this confection editing session.
+
+</td></tr>
+<tr><td>
+
 [getFillingSession(slotId)](./ConfectionEditingSessionBase.getFillingSession.md)
 
 </td><td>

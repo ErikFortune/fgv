@@ -184,6 +184,223 @@ export class ProducedFilling {
   }
 
   // ============================================================================
+  // Produced → Source Conversion
+  // ============================================================================
+
+  /**
+   * Converts a produced filling entity back to a source recipe variation entity.
+   * Used when saving a new variation from an editing session.
+   * @param snapshot - The produced filling snapshot to convert
+   * @param newVariationSpec - The variation spec for the new variation
+   * @param createdDate - Optional creation date (defaults to current ISO date)
+   * @returns Result with source variation entity
+   * @public
+   */
+  public static toSourceVariation(
+    snapshot: IProducedFillingEntity,
+    newVariationSpec: string,
+    createdDate?: string
+  ): Result<Fillings.IFillingRecipeVariationEntity> {
+    // Validate and convert variationSpec
+    return CommonConverters.fillingRecipeVariationSpec
+      .convert(newVariationSpec)
+      .onSuccess((variationSpec) => {
+        // Use targetWeight as the base weight (it represents the current recipe state)
+        // The snapshot.scaleFactor is relative to the original source, but the user
+        // may have scaled the recipe further during editing via scaleToTargetWeight().
+        return CommonConverters.measurement.convert(snapshot.targetWeight).onSuccess((baseWeight) => {
+          // Convert ingredients back to source format (no scaling needed - use as-is)
+          const ingredients = snapshot.ingredients.map((ing) =>
+            ProducedFilling._convertIngredientToSourceUnscaled(ing)
+          );
+
+          return mapResults(ingredients).onSuccess((sourceIngredients) => {
+            // Convert procedure back to source format
+            const procedures = snapshot.procedureId
+              ? {
+                  options: [{ id: snapshot.procedureId }],
+                  preferredId: snapshot.procedureId
+                }
+              : undefined;
+
+            const variation: Fillings.IFillingRecipeVariationEntity = {
+              variationSpec,
+              createdDate: createdDate ?? new Date().toISOString(),
+              ingredients: sourceIngredients,
+              baseWeight,
+              notes: snapshot.notes,
+              procedures
+            };
+
+            return succeed(variation);
+          });
+        });
+      });
+  }
+
+  /**
+   * Converts a single produced ingredient back to source format without scaling.
+   * Wraps the single ingredient ID in IIdsWithPreferred format.
+   * The ingredient amounts are used as-is since they represent the current recipe state.
+   * @param ing - The produced ingredient to convert
+   * @returns Result with source ingredient entity
+   * @internal
+   */
+  private static _convertIngredientToSourceUnscaled(
+    ing: Fillings.IProducedFillingIngredientEntity
+  ): Result<Fillings.IFillingIngredientEntity> {
+    // Use amount as-is - it already represents the current recipe state
+    return CommonConverters.measurement.convert(ing.amount).onSuccess((amount) =>
+      succeed({
+        ingredient: {
+          ids: [ing.ingredientId],
+          preferredId: ing.ingredientId
+        },
+        amount,
+        unit: ing.unit,
+        modifiers: ing.modifiers,
+        notes: ing.notes
+      })
+    );
+  }
+
+  /**
+   * Merges produced ingredient choices as alternatives into the original variation.
+   * Preserves original amounts and structure; only adds ingredient IDs as options.
+   * @param produced - The produced filling with user's ingredient choices
+   * @param original - The original source variation entity
+   * @returns Result with updated variation entity containing merged alternatives
+   * @public
+   */
+  public static mergeAsAlternatives(
+    produced: IProducedFillingEntity,
+    original: Fillings.IFillingRecipeVariationEntity
+  ): Result<Fillings.IFillingRecipeVariationEntity> {
+    // Merge ingredients by position
+    const mergedIngredients: Fillings.IFillingIngredientEntity[] = [];
+
+    // Process ingredients that exist in both produced and original
+    const minLen = Math.min(produced.ingredients.length, original.ingredients.length);
+    for (let i = 0; i < minLen; i++) {
+      const producedIng = produced.ingredients[i];
+      const originalIng = original.ingredients[i];
+      mergedIngredients.push(ProducedFilling._mergeIngredientAlternative(producedIng, originalIng));
+    }
+
+    // If original has more ingredients, keep them unchanged
+    for (let i = minLen; i < original.ingredients.length; i++) {
+      mergedIngredients.push(original.ingredients[i]);
+    }
+
+    // If produced has more ingredients, append as new single-option entries
+    for (let i = minLen; i < produced.ingredients.length; i++) {
+      const producedIng = produced.ingredients[i];
+      mergedIngredients.push({
+        ingredient: {
+          ids: [producedIng.ingredientId],
+          preferredId: producedIng.ingredientId
+        },
+        amount: producedIng.amount,
+        unit: producedIng.unit,
+        modifiers: producedIng.modifiers,
+        notes: producedIng.notes
+      });
+    }
+
+    // Merge procedures
+    const mergedProcedures = ProducedFilling._mergeProcedureAlternative(
+      produced.procedureId,
+      original.procedures
+    );
+
+    const merged: Fillings.IFillingRecipeVariationEntity = {
+      variationSpec: original.variationSpec,
+      createdDate: original.createdDate,
+      ingredients: mergedIngredients,
+      baseWeight: original.baseWeight,
+      yield: original.yield,
+      notes: produced.notes ?? original.notes,
+      ratings: original.ratings,
+      procedures: mergedProcedures
+    };
+
+    return succeed(merged);
+  }
+
+  /**
+   * Merges a single produced ingredient choice as an alternative into the original.
+   * Preserves original amount, unit, modifiers, and notes.
+   * Only modifies the ingredient IDs list and preferred selection.
+   * @internal
+   */
+  private static _mergeIngredientAlternative(
+    produced: Fillings.IProducedFillingIngredientEntity,
+    original: Fillings.IFillingIngredientEntity
+  ): Fillings.IFillingIngredientEntity {
+    const existingIds = original.ingredient.ids;
+    const producedId = produced.ingredientId;
+
+    // Check if the produced ID is already in the options
+    const alreadyExists = existingIds.includes(producedId);
+
+    const mergedIds = alreadyExists
+      ? [...existingIds] // Keep existing IDs
+      : [...existingIds, producedId]; // Append new ID
+
+    return {
+      ingredient: {
+        ids: mergedIds,
+        preferredId: producedId,
+        slotId: original.ingredient.slotId
+      },
+      amount: original.amount, // Use original amount
+      unit: original.unit,
+      modifiers: original.modifiers,
+      notes: original.notes
+    };
+  }
+
+  /**
+   * Merges a produced procedure choice as an alternative into the original procedures.
+   * @internal
+   */
+  private static _mergeProcedureAlternative(
+    producedProcedureId: ProcedureId | undefined,
+    originalProcedures: Fillings.IFillingRecipeVariationEntity['procedures']
+  ): Fillings.IFillingRecipeVariationEntity['procedures'] {
+    // No procedure in either → undefined
+    if (!producedProcedureId && !originalProcedures) {
+      return undefined;
+    }
+
+    // No produced procedure but original exists → keep original
+    if (!producedProcedureId) {
+      return originalProcedures;
+    }
+
+    // Produced has procedure but original doesn't → create new
+    if (!originalProcedures) {
+      return {
+        options: [{ id: producedProcedureId }],
+        preferredId: producedProcedureId
+      };
+    }
+
+    // Both exist → merge
+    const existingIds = originalProcedures.options.map((o) => o.id);
+    const alreadyExists = existingIds.includes(producedProcedureId);
+
+    const mergedOptions = alreadyExists
+      ? [...originalProcedures.options]
+      : [...originalProcedures.options, { id: producedProcedureId }];
+
+    return {
+      options: mergedOptions,
+      preferredId: producedProcedureId
+    };
+  }
+
+  // ============================================================================
   // Snapshot Management
   // ============================================================================
 

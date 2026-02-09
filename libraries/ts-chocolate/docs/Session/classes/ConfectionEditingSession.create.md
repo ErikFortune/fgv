@@ -11,14 +11,14 @@ Dispatches to type-specific session classes:
 **Signature:**
 
 ```typescript
-static create(baseConfection: AnyConfection, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
+static create(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>baseConfection</td><td>AnyConfection</td><td>The source confection to edit</td></tr>
+<tr><td>baseConfection</td><td>T</td><td>The source confection to edit</td></tr>
 <tr><td>context</td><td>ISessionContext</td><td>The runtime context for resource access</td></tr>
 <tr><td>params</td><td>IConfectionEditingSessionParams</td><td>Optional session parameters (sessionId, initialYield)</td></tr>
 </tbody></table>

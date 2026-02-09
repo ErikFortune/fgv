@@ -27,11 +27,7 @@ import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
-import {
-  RolledTruffleRecipe,
-  RolledTruffleRecipeVariation,
-  ProducedRolledTruffle
-} from '../../library-runtime';
+import { IRolledTruffleRecipe, ProducedRolledTruffle } from '../../library-runtime';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 import { IConfectionEditingSessionParams } from './model';
@@ -47,17 +43,16 @@ import { ISessionContext } from '../model';
  *
  * @public
  */
-export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
-  IProducedRolledTruffleEntity,
-  RolledTruffleRecipe
-> {
+export class RolledTruffleEditingSession<
+  TRecipe extends IRolledTruffleRecipe = IRolledTruffleRecipe
+> extends ConfectionEditingSessionBase<IProducedRolledTruffleEntity, TRecipe> {
   /**
    * Creates a RolledTruffleEditingSession.
    * Use RolledTruffleEditingSession.create() instead.
    * @internal
    */
   private constructor(
-    baseConfection: RolledTruffleRecipe,
+    baseConfection: TRecipe,
     produced: ProducedRolledTruffle,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
@@ -81,14 +76,12 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with RolledTruffleEditingSession, or Failure
    * @public
    */
-  public static create(
-    baseConfection: RolledTruffleRecipe,
+  public static create<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(
+    baseConfection: T,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
-  ): Result<RolledTruffleEditingSession> {
-    return ProducedRolledTruffle.fromSource(
-      baseConfection.goldenVariation as RolledTruffleRecipeVariation
-    ).onSuccess((produced) =>
+  ): Result<RolledTruffleEditingSession<T>> {
+    return ProducedRolledTruffle.fromSource(baseConfection.goldenVariation).onSuccess((produced) =>
       captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );
   }
@@ -104,12 +97,12 @@ export class RolledTruffleEditingSession extends ConfectionEditingSessionBase<
    * @returns Success with restored session, or Failure
    * @public
    */
-  public static fromPersistedState(
-    baseConfection: RolledTruffleRecipe,
+  public static fromPersistedState<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(
+    baseConfection: T,
     history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
-  ): Result<RolledTruffleEditingSession> {
+  ): Result<RolledTruffleEditingSession<T>> {
     return ProducedRolledTruffle.restoreFromHistory(history).onSuccess((produced) =>
       captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
     );

@@ -318,6 +318,9 @@ describe('ConfectionEditingSession', () => {
       get confections() {
         return ctx.confections;
       },
+      isCollectionMutable(collectionId: CollectionId) {
+        return ctx.isCollectionMutable(collectionId);
+      },
       createFillingSession(filling: IFillingRecipe, targetWeight: Measurement) {
         const variation = filling.goldenVariation;
         const baseWeight = variation.entity.baseWeight;

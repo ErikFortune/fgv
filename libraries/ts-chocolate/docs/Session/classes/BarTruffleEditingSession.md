@@ -5,7 +5,7 @@
 Editing session for bar truffle confections.
 Supports linear count-based scaling with proportional filling adjustment.
 
-**Extends:** [`ConfectionEditingSessionBase<IProducedBarTruffleEntity, BarTruffleRecipe>`](../../classes/ConfectionEditingSessionBase.md)
+**Extends:** [`ConfectionEditingSessionBase<IProducedBarTruffleEntity, TRecipe>`](../../classes/ConfectionEditingSessionBase.md)
 
 ## Properties
 
@@ -193,6 +193,19 @@ Sets or updates a filling slot.
 </td><td>
 
 Removes a filling slot.
+
+</td></tr>
+<tr><td>
+
+[toPersistedState(options)](./ConfectionEditingSessionBase.toPersistedState.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a persisted session state from this confection editing session.
 
 </td></tr>
 <tr><td>

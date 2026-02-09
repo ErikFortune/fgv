@@ -152,6 +152,32 @@ Factory method for restoring a ProducedFilling from serialized history.
 </td></tr>
 <tr><td>
 
+[toSourceVariation(snapshot, newVariationSpec, createdDate)](./ProducedFilling.toSourceVariation.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Converts a produced filling entity back to a source recipe variation entity.
+
+</td></tr>
+<tr><td>
+
+[mergeAsAlternatives(produced, original)](./ProducedFilling.mergeAsAlternatives.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Merges produced ingredient choices as alternatives into the original variation.
+
+</td></tr>
+<tr><td>
+
 [createSnapshot()](./ProducedFilling.createSnapshot.md)
 
 </td><td>

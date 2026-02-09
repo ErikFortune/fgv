@@ -9,14 +9,14 @@ via their persisted session IDs from IPersistedConfectionSession.childSessionIds
 **Signature:**
 
 ```typescript
-static fromPersistedState(baseConfection: RolledTruffleRecipe, history: ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession>;
+static fromPersistedState(baseConfection: T, history: ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession<T>>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>baseConfection</td><td>RolledTruffleRecipe</td><td>The source rolled truffle confection</td></tr>
+<tr><td>baseConfection</td><td>T</td><td>The source rolled truffle confection</td></tr>
 <tr><td>history</td><td>ISerializedEditingHistoryEntity&lt;IProducedRolledTruffleEntity&gt;</td><td>Serialized editing history</td></tr>
 <tr><td>context</td><td>ISessionContext</td><td>The runtime context</td></tr>
 <tr><td>params</td><td>IConfectionEditingSessionParams</td><td>Optional session parameters</td></tr>
@@ -24,6 +24,6 @@ static fromPersistedState(baseConfection: RolledTruffleRecipe, history: ISeriali
 
 **Returns:**
 
-Result&lt;[RolledTruffleEditingSession](../../../classes/RolledTruffleEditingSession.md)&gt;
+Result&lt;[RolledTruffleEditingSession](../../../classes/RolledTruffleEditingSession.md)&lt;T&gt;&gt;
 
 Success with restored session, or Failure

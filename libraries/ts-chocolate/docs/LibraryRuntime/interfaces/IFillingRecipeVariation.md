@@ -119,6 +119,23 @@ The parent filling recipe - resolved.
 </td></tr>
 <tr><td>
 
+[isMutable](./IFillingRecipeVariation.isMutable.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether this variation's parent collection is mutable.
+
+</td></tr>
+<tr><td>
+
 [baseWeight](./IFillingRecipeVariation.baseWeight.md)
 
 </td><td>

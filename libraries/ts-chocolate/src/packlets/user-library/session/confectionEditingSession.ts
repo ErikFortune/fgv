@@ -25,7 +25,7 @@
 
 import { Failure, Result } from '@fgv/ts-utils';
 
-import { AnyConfection } from '../../library-runtime';
+import { IConfectionBase } from '../../library-runtime';
 
 import { BarTruffleEditingSession } from './barTruffleEditingSession';
 import { MoldedBonBonEditingSession } from './moldedBonBonEditingSession';
@@ -81,8 +81,8 @@ export class ConfectionEditingSession {
    * @returns Success with type-specific session, or Failure
    * @public
    */
-  public static create(
-    baseConfection: AnyConfection,
+  public static create<T extends IConfectionBase>(
+    baseConfection: T,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<AnyConfectionEditingSession> {
@@ -93,8 +93,7 @@ export class ConfectionEditingSession {
     } else if (baseConfection.isRolledTruffle()) {
       return RolledTruffleEditingSession.create(baseConfection, context, params);
     }
-    /* c8 ignore next 3 - defensive: exhaustive confection type check */
-    // @ts-expect-error - exhaustive check
+    /* c8 ignore next 2 - defensive: exhaustive confection type check */
     return Failure.with(`Unknown confection type: ${baseConfection.confectionType}`);
   }
 }

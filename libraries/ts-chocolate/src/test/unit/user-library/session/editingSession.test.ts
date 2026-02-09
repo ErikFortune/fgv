@@ -127,7 +127,7 @@ describe('EditingSession', () => {
       collections: [
         {
           id: 'test' as CollectionId,
-          isMutable: false,
+          isMutable: true,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
             'dark-chocolate': darkChocolate,
@@ -144,7 +144,7 @@ describe('EditingSession', () => {
       collections: [
         {
           id: 'test' as CollectionId,
-          isMutable: false,
+          isMutable: true,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
             'test-ganache': testRecipe
@@ -357,6 +357,73 @@ describe('EditingSession', () => {
       expect(analysis.recommendedOption).toBe('alternatives');
       expect(analysis.changes.ingredientsChanged).toBe(true);
     });
+
+    test('indicates immutable collection cannot create variations', () => {
+      // Create a context with an immutable collection
+      const immutableIngredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable' as CollectionId,
+            isMutable: false,
+            /* eslint-disable @typescript-eslint/naming-convention */
+            items: {
+              'dark-chocolate': darkChocolate,
+              cream,
+              butter
+            }
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        ]
+      }).orThrow();
+
+      const immutableRecipes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache': {
+                ...testRecipe,
+                variations: [
+                  {
+                    ...testRecipe.variations[0],
+                    ingredients: [
+                      {
+                        ingredient: { ids: ['immutable.dark-chocolate' as IngredientId] },
+                        amount: 200 as Measurement
+                      },
+                      { ingredient: { ids: ['immutable.cream' as IngredientId] }, amount: 100 as Measurement }
+                    ]
+                  }
+                ]
+              }
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const immutableLibrary = ChocolateEntityLibrary.create({
+        libraries: { ingredients: immutableIngredients, fillings: immutableRecipes }
+      }).orThrow();
+
+      const immutableCtx = ChocolateLibrary.fromChocolateEntityLibrary(immutableLibrary).orThrow();
+      const variation = immutableCtx.fillings
+        .get('immutable.test-ganache' as FillingId)
+        .orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
+      const analysis = session.analyzeSaveOptions();
+
+      expect(analysis.canCreateVariation).toBe(false);
+      expect(analysis.canAddAlternatives).toBe(false);
+      expect(analysis.mustCreateNew).toBe(true);
+      expect(analysis.recommendedOption).toBe('new');
+    });
   });
 
   // ============================================================================
@@ -364,7 +431,7 @@ describe('EditingSession', () => {
   // ============================================================================
 
   describe('saveAsNewVariation', () => {
-    test('creates journal entry with new variation spec', () => {
+    test('creates journal entry with new variation spec and variation entity', () => {
       const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(variation).orThrow();
 
@@ -379,12 +446,110 @@ describe('EditingSession', () => {
         expect(result.journalId).toBeDefined();
         expect(result.journalEntry).toBeDefined();
         expect(result.newVariationSpec).toBe('2026-01-02-01');
+        expect(result.variationEntity).toBeDefined();
+        expect(result.variationEntity?.variationSpec).toBe('2026-01-02-01');
+        // Base weight matches the scaled target weight (600g)
+        expect(result.variationEntity?.baseWeight).toBe(600);
+        expect(result.variationEntity?.ingredients).toHaveLength(2);
+        // Check ingredients are properly converted with scaled amounts
+        expect(result.variationEntity?.ingredients[0].ingredient.ids).toHaveLength(1);
+        expect(result.variationEntity?.ingredients[0].amount).toBe(400); // 200 * 2
+        expect(result.variationEntity?.ingredients[1].amount).toBe(200); // 100 * 2
       });
+    });
+
+    test('converts procedure to source format', () => {
+      const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      // Set a procedure
+      session.setProcedure('test.procedure' as ProcedureId).orThrow();
+
+      expect(
+        session.saveAsNewVariation({
+          variationSpec: '2026-01-03-01' as FillingRecipeVariationSpec,
+          baseWeight: 300 as Measurement
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.variationEntity).toBeDefined();
+        expect(result.variationEntity?.procedures).toBeDefined();
+        expect(result.variationEntity?.procedures?.preferredId).toBe('test.procedure');
+        expect(result.variationEntity?.procedures?.options).toHaveLength(1);
+        expect(result.variationEntity?.procedures?.options[0].id).toBe('test.procedure');
+      });
+    });
+
+    test('fails for immutable collection', () => {
+      // Create a context with an immutable collection
+      const immutableIngredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable' as CollectionId,
+            isMutable: false,
+            /* eslint-disable @typescript-eslint/naming-convention */
+            items: {
+              'dark-chocolate': darkChocolate,
+              cream,
+              butter
+            }
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        ]
+      }).orThrow();
+
+      const immutableRecipes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache': {
+                ...testRecipe,
+                variations: [
+                  {
+                    ...testRecipe.variations[0],
+                    ingredients: [
+                      {
+                        ingredient: { ids: ['immutable.dark-chocolate' as IngredientId] },
+                        amount: 200 as Measurement
+                      },
+                      { ingredient: { ids: ['immutable.cream' as IngredientId] }, amount: 100 as Measurement }
+                    ]
+                  }
+                ]
+              }
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const immutableLibrary = ChocolateEntityLibrary.create({
+        libraries: { ingredients: immutableIngredients, fillings: immutableRecipes }
+      }).orThrow();
+
+      const immutableCtx = ChocolateLibrary.fromChocolateEntityLibrary(immutableLibrary).orThrow();
+      const variation = immutableCtx.fillings
+        .get('immutable.test-ganache' as FillingId)
+        .orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
+
+      expect(
+        session.saveAsNewVariation({
+          variationSpec: '2026-01-02-01' as FillingRecipeVariationSpec,
+          baseWeight: 600 as Measurement
+        })
+      ).toFailWith(/collection is immutable/i);
     });
   });
 
   describe('saveAsAlternatives', () => {
-    test('creates journal entry', () => {
+    test('creates journal entry with merged variation entity', () => {
       const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(variation).orThrow();
 
@@ -397,12 +562,84 @@ describe('EditingSession', () => {
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
         expect(result.journalEntry).toBeDefined();
+        expect(result.variationEntity).toBeDefined();
+        expect(result.variationEntity?.ingredients).toHaveLength(3);
+        expect(result.variationEntity?.ingredients[0].amount).toBe(200 as Measurement);
+        expect(result.variationEntity?.ingredients[1].amount).toBe(100 as Measurement);
+        expect(result.variationEntity?.ingredients[2].amount).toBe(30 as Measurement);
       });
+    });
+
+    test('fails for immutable collection', () => {
+      // Create a context with an immutable collection
+      const immutableIngredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable' as CollectionId,
+            isMutable: false,
+            /* eslint-disable @typescript-eslint/naming-convention */
+            items: {
+              'dark-chocolate': darkChocolate,
+              cream,
+              butter
+            }
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        ]
+      }).orThrow();
+
+      const immutableRecipes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache': {
+                ...testRecipe,
+                variations: [
+                  {
+                    ...testRecipe.variations[0],
+                    ingredients: [
+                      {
+                        ingredient: { ids: ['immutable.dark-chocolate' as IngredientId] },
+                        amount: 200 as Measurement
+                      },
+                      { ingredient: { ids: ['immutable.cream' as IngredientId] }, amount: 100 as Measurement }
+                    ]
+                  }
+                ]
+              }
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const immutableLibrary = ChocolateEntityLibrary.create({
+        libraries: { ingredients: immutableIngredients, fillings: immutableRecipes }
+      }).orThrow();
+
+      const immutableCtx = ChocolateLibrary.fromChocolateEntityLibrary(immutableLibrary).orThrow();
+      const variation = immutableCtx.fillings
+        .get('immutable.test-ganache' as FillingId)
+        .orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      session.setIngredient('immutable.butter' as IngredientId, 30 as Measurement).orThrow();
+
+      expect(
+        session.saveAsAlternatives({
+          variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
+        })
+      ).toFailWith(/collection is immutable/i);
     });
   });
 
   describe('saveAsNewRecipe', () => {
-    test('creates journal entry with new recipe info', () => {
+    test('creates journal entry with new recipe info and variation entity', () => {
       const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(variation).orThrow();
 
@@ -417,6 +654,15 @@ describe('EditingSession', () => {
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
         expect(result.journalEntry).toBeDefined();
+        expect(result.variationEntity).toBeDefined();
+        expect(result.variationEntity?.variationSpec).toBe('2026-01-01-01');
+        // Base weight matches the scaled target weight (600g)
+        expect(result.variationEntity?.baseWeight).toBe(600);
+        expect(result.variationEntity?.ingredients).toHaveLength(2);
+        // Check ingredients are properly converted with scaled amounts
+        expect(result.variationEntity?.ingredients[0].ingredient.ids).toHaveLength(1);
+        expect(result.variationEntity?.ingredients[0].amount).toBe(400); // 200 * 2
+        expect(result.variationEntity?.ingredients[1].amount).toBe(200); // 100 * 2
       });
     });
   });

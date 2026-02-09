@@ -9,14 +9,14 @@ via their persisted session IDs from IPersistedConfectionSession.childSessionIds
 **Signature:**
 
 ```typescript
-static fromPersistedState(baseConfection: MoldedBonBonRecipe, history: ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession>;
+static fromPersistedState(baseConfection: T, history: ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession<T>>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>baseConfection</td><td>MoldedBonBonRecipe</td><td>The source molded bonbon confection</td></tr>
+<tr><td>baseConfection</td><td>T</td><td>The source molded bonbon confection</td></tr>
 <tr><td>history</td><td>ISerializedEditingHistoryEntity&lt;IProducedMoldedBonBonEntity&gt;</td><td>Serialized editing history</td></tr>
 <tr><td>context</td><td>ISessionContext</td><td>The runtime context</td></tr>
 <tr><td>params</td><td>IConfectionEditingSessionParams</td><td>Optional session parameters</td></tr>
@@ -24,6 +24,6 @@ static fromPersistedState(baseConfection: MoldedBonBonRecipe, history: ISerializ
 
 **Returns:**
 
-Result&lt;[MoldedBonBonEditingSession](../../classes/MoldedBonBonEditingSession.md)&gt;
+Result&lt;[MoldedBonBonEditingSession](../../classes/MoldedBonBonEditingSession.md)&lt;T&gt;&gt;
 
 Success with restored session, or Failure

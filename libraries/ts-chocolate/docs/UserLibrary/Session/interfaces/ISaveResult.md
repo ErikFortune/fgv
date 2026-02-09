@@ -75,4 +75,21 @@ The full journal entry if one was created.
 The new variation spec if one was created
 
 </td></tr>
+<tr><td>
+
+[variationEntity](./ISaveResult.variationEntity.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IFillingRecipeVariationEntity](../../../interfaces/IFillingRecipeVariationEntity.md)
+
+</td><td>
+
+The new variation entity if one was created (for persistence by caller)
+
+</td></tr>
 </tbody></table>
