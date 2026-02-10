@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { FillingId, FillingRecipeVariationSpec, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
 
 import { interactiveSelect, ISelectableItem } from '../../shared';
@@ -133,6 +133,10 @@ export async function showFillingDetail(
         confectionsUsing,
         context
       );
+      if (navResult === 'exit') {
+        context.breadcrumb.pop();
+        return fail('exit');
+      }
       if (navResult === 'back') {
         break;
       }
@@ -152,7 +156,7 @@ async function showFillingActionMenu(
   currentVariation: LibraryRuntime.IFillingRecipeVariation,
   confectionsUsing: LibraryRuntime.IConfectionBase[],
   context: IBrowseContext
-): Promise<'back' | 'continue'> {
+): Promise<'back' | 'continue' | 'exit'> {
   const choices = actions.map((action) => ({
     value: action.key,
     name: action.label,
@@ -163,10 +167,14 @@ async function showFillingActionMenu(
     message: `${filling.name} - Actions`,
     choices,
     showBack: true,
-    showExit: false
+    showExit: true
   });
 
-  if (menuResult.action === 'back' || menuResult.action === 'exit') {
+  if (menuResult.action === 'exit') {
+    return 'exit';
+  }
+
+  if (menuResult.action === 'back') {
     return 'back';
   }
 
@@ -178,7 +186,10 @@ async function showFillingActionMenu(
       const ingredientId = key.substring('view-ingredient:'.length) as IngredientId;
       const ingredientResult = context.library.ingredients.get(ingredientId);
       if (ingredientResult.isSuccess()) {
-        await showIngredientDetail(ingredientResult.value, context);
+        const detailResult = await showIngredientDetail(ingredientResult.value, context);
+        if (detailResult.isFailure() && detailResult.message === 'exit') {
+          return 'exit';
+        }
         return 'continue';
       } else {
         showError(`Ingredient not found: ${ingredientId}`);
@@ -207,7 +218,10 @@ async function showFillingActionMenu(
         if (selectedVariation) {
           // Re-render with new variation
           context.breadcrumb.pop();
-          await showFillingDetail(filling, context, selectedVariation.variationSpec);
+          const detailResult = await showFillingDetail(filling, context, selectedVariation.variationSpec);
+          if (detailResult.isFailure() && detailResult.message === 'exit') {
+            return 'exit';
+          }
           // After returning from the recursive call, we should exit this menu
           return 'back';
         }
@@ -303,7 +317,11 @@ export async function browseFillingsInteractive(context: IBrowseContext): Promis
     }
 
     const selected = selectionResult.value as IFillingSelectableItem;
-    await showFillingDetail(selected.filling, context);
+    const detailResult = await showFillingDetail(selected.filling, context);
+    if (detailResult.isFailure() && detailResult.message === 'exit') {
+      context.breadcrumb.pop();
+      return fail('exit');
+    }
   }
 
   context.breadcrumb.pop();

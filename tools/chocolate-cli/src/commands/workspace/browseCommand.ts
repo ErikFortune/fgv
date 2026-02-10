@@ -229,6 +229,9 @@ async function browseWorkspace(workspace: IWorkspace): Promise<Result<void>> {
     }
 
     if (result.isFailure()) {
+      if (result.message === 'exit') {
+        return succeed(undefined);
+      }
       showError(result.message);
     }
   }

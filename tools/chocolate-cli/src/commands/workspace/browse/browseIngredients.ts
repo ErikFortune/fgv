@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
 
 import { interactiveSelect, ISelectableItem } from '../../shared';
@@ -72,6 +72,10 @@ export async function showIngredientDetail(
   if (result.actions.length > 0) {
     while (true) {
       const menuResult = await showActionMenu(result.actions, ingredient, context);
+      if (menuResult === 'exit') {
+        context.breadcrumb.pop();
+        return fail('exit');
+      }
       if (menuResult === 'back') {
         break;
       }
@@ -90,7 +94,7 @@ async function showActionMenu(
   actions: ReadonlyArray<IEntityAction>,
   ingredient: LibraryRuntime.IIngredient,
   context: IBrowseContext
-): Promise<'back' | 'continue'> {
+): Promise<'back' | 'continue' | 'exit'> {
   const choices = actions.map((action) => ({
     value: action.key,
     name: action.label,
@@ -101,16 +105,20 @@ async function showActionMenu(
     message: `${ingredient.name} - Actions`,
     choices,
     showBack: true,
-    showExit: false
+    showExit: true
   });
 
-  if (menuResult.action === 'back' || menuResult.action === 'exit') {
+  if (menuResult.action === 'exit') {
+    return 'exit';
+  }
+
+  if (menuResult.action === 'back') {
     return 'back';
   }
 
   if (menuResult.action === 'value' && menuResult.value === 'view-fillings') {
     await showFillingsUsingIngredient(ingredient, context);
-    return 'continue';
+    return 'continue'; // Sub-navigation doesn't propagate exit
   }
 
   return 'back';
@@ -204,7 +212,11 @@ export async function browseIngredients(context: IBrowseContext): Promise<Result
     }
 
     const selected = selectionResult.value as IIngredientSelectableItem;
-    await showIngredientDetail(selected.ingredient, context);
+    const detailResult = await showIngredientDetail(selected.ingredient, context);
+    if (detailResult.isFailure() && detailResult.message === 'exit') {
+      context.breadcrumb.pop();
+      return fail('exit');
+    }
   }
 
   context.breadcrumb.pop();

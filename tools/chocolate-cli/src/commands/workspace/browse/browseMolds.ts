@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { LibraryRuntime, MoldId } from '@fgv/ts-chocolate';
 
 import { interactiveSelect, ISelectableItem } from '../../shared';
@@ -69,6 +69,10 @@ export async function showMoldDetail(
   if (result.actions.length > 0) {
     while (true) {
       const navResult = await showMoldActionMenu(result.actions, mold, context);
+      if (navResult === 'exit') {
+        context.breadcrumb.pop();
+        return fail('exit');
+      }
       if (navResult === 'back') {
         break;
       }
@@ -86,7 +90,7 @@ async function showMoldActionMenu(
   actions: ReadonlyArray<IEntityAction>,
   mold: LibraryRuntime.IMold,
   context: IBrowseContext
-): Promise<'back' | 'continue'> {
+): Promise<'back' | 'continue' | 'exit'> {
   const choices = actions.map((action) => ({
     value: action.key,
     name: action.label,
@@ -97,10 +101,14 @@ async function showMoldActionMenu(
     message: `${mold.displayName} - Actions`,
     choices,
     showBack: true,
-    showExit: false
+    showExit: true
   });
 
-  if (menuResult.action === 'back' || menuResult.action === 'exit') {
+  if (menuResult.action === 'exit') {
+    return 'exit';
+  }
+
+  if (menuResult.action === 'back') {
     return 'back';
   }
 
@@ -110,7 +118,10 @@ async function showMoldActionMenu(
       const moldId = key.substring('view-mold:'.length) as MoldId;
       const relatedResult = context.library.molds.get(moldId);
       if (relatedResult.isSuccess()) {
-        await showMoldDetail(relatedResult.value, context);
+        const detailResult = await showMoldDetail(relatedResult.value, context);
+        if (detailResult.isFailure() && detailResult.message === 'exit') {
+          return 'exit';
+        }
         return 'continue';
       } else {
         showError(`Mold not found: ${moldId}`);
@@ -152,7 +163,11 @@ export async function browseMoldsInteractive(context: IBrowseContext): Promise<R
     }
 
     const selected = selectionResult.value as IMoldSelectableItem;
-    await showMoldDetail(selected.mold, context);
+    const detailResult = await showMoldDetail(selected.mold, context);
+    if (detailResult.isFailure() && detailResult.message === 'exit') {
+      context.breadcrumb.pop();
+      return fail('exit');
+    }
   }
 
   context.breadcrumb.pop();

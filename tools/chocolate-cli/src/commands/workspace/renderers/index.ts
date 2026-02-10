@@ -24,3 +24,6 @@ export * from './moldRenderer';
 export * from './procedureRenderer';
 export * from './fillingRenderer';
 export * from './confectionRenderer';
+export * from './inventoryRenderer';
+export * from './journalRenderer';
+export * from './sessionRenderer';

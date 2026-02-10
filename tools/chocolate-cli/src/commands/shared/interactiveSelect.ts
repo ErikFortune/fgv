@@ -112,7 +112,7 @@ export async function interactiveSelect<T extends ISelectableItem>(
 
   try {
     const selectedId = await search({
-      message: prompt,
+      message: `${prompt} (Esc to go back)`,
       source: searchSource,
       pageSize: 15
     });

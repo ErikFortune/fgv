@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { ConfectionId, FillingId, IngredientId, LibraryRuntime, MoldId } from '@fgv/ts-chocolate';
 
 import { interactiveSelect, ISelectableItem } from '../../shared';
@@ -73,6 +73,10 @@ export async function showConfectionDetail(
   if (result.actions.length > 0) {
     while (true) {
       const navResult = await showConfectionActionMenu(result.actions, confection, context);
+      if (navResult === 'exit') {
+        context.breadcrumb.pop();
+        return fail('exit');
+      }
       if (navResult === 'back') {
         break;
       }
@@ -90,7 +94,7 @@ async function showConfectionActionMenu(
   actions: ReadonlyArray<IEntityAction>,
   confection: LibraryRuntime.IConfectionBase,
   context: IBrowseContext
-): Promise<'back' | 'continue'> {
+): Promise<'back' | 'continue' | 'exit'> {
   const choices = actions.map((action) => ({
     value: action.key,
     name: action.label,
@@ -101,10 +105,14 @@ async function showConfectionActionMenu(
     message: `${confection.name} - Actions`,
     choices,
     showBack: true,
-    showExit: false
+    showExit: true
   });
 
-  if (menuResult.action === 'back' || menuResult.action === 'exit') {
+  if (menuResult.action === 'exit') {
+    return 'exit';
+  }
+
+  if (menuResult.action === 'back') {
     return 'back';
   }
 
@@ -116,7 +124,10 @@ async function showConfectionActionMenu(
       const ingredientId = key.substring('view-ingredient:'.length) as IngredientId;
       const ingredientResult = context.library.ingredients.get(ingredientId);
       if (ingredientResult.isSuccess()) {
-        await showIngredientDetail(ingredientResult.value, context);
+        const detailResult = await showIngredientDetail(ingredientResult.value, context);
+        if (detailResult.isFailure() && detailResult.message === 'exit') {
+          return 'exit';
+        }
         return 'continue';
       } else {
         showError(`Ingredient not found: ${ingredientId}`);
@@ -128,7 +139,10 @@ async function showConfectionActionMenu(
       const fillingId = key.substring('view-filling:'.length) as FillingId;
       const fillingResult = context.library.fillings.get(fillingId);
       if (fillingResult.isSuccess()) {
-        await showFillingDetail(fillingResult.value, context);
+        const detailResult = await showFillingDetail(fillingResult.value, context);
+        if (detailResult.isFailure() && detailResult.message === 'exit') {
+          return 'exit';
+        }
         return 'continue';
       } else {
         showError(`Filling not found: ${fillingId}`);
@@ -140,7 +154,10 @@ async function showConfectionActionMenu(
       const moldId = key.substring('view-mold:'.length) as MoldId;
       const moldResult = context.library.molds.get(moldId);
       if (moldResult.isSuccess()) {
-        await showMoldDetail(moldResult.value, context);
+        const detailResult = await showMoldDetail(moldResult.value, context);
+        if (detailResult.isFailure() && detailResult.message === 'exit') {
+          return 'exit';
+        }
         return 'continue';
       } else {
         showError(`Mold not found: ${moldId}`);
@@ -182,7 +199,11 @@ export async function browseConfectionsInteractive(context: IBrowseContext): Pro
     }
 
     const selected = selectionResult.value as IConfectionSelectableItem;
-    await showConfectionDetail(selected.confection, context);
+    const detailResult = await showConfectionDetail(selected.confection, context);
+    if (detailResult.isFailure() && detailResult.message === 'exit') {
+      context.breadcrumb.pop();
+      return fail('exit');
+    }
   }
 
   context.breadcrumb.pop();
