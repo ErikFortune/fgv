@@ -20,7 +20,7 @@
 
 import { IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
 
-import { formatCategorizedNotes, formatNumber, formatUrls, padRight } from '../../shared';
+import { formatCategorizedNotes, formatNumber, formatUrls, padRight } from '../../shared/outputFormatter';
 import { IEntityAction, IRenderResult } from './rendererTypes';
 
 /**
@@ -105,8 +105,9 @@ export function renderFillingDetail(
     lines.push('');
     lines.push('Ratings:');
     for (const rating of variation.ratings) {
-      const ratingNotes = rating.notes ? ` - ${rating.notes}` : '';
-      lines.push(`  ${padRight(rating.category, 12)}: ${rating.score}/5${ratingNotes}`);
+      const ratingNotes = formatCategorizedNotes(rating.notes);
+      const ratingNotesSuffix = ratingNotes ? ` - ${ratingNotes}` : '';
+      lines.push(`  ${padRight(rating.category, 12)}: ${rating.score}/5${ratingNotesSuffix}`);
     }
   }
 

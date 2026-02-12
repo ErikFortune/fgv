@@ -20,7 +20,7 @@
 
 import { LibraryRuntime } from '@fgv/ts-chocolate';
 
-import { formatNumber, formatUrls, padRight } from '../../shared';
+import { formatNumber, formatUrls, padRight } from '../../shared/outputFormatter';
 import { IEntityAction, IRenderContext, IRenderResult } from './rendererTypes';
 
 /**

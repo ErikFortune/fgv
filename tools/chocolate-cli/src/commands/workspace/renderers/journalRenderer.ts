@@ -20,7 +20,7 @@
 
 import { UserLibrary as UserLib } from '@fgv/ts-chocolate';
 
-import { formatCategorizedNotes } from '../../shared';
+import { formatCategorizedNotes } from '../../shared/outputFormatter';
 import { IEntityAction, IRenderResult } from './rendererTypes';
 
 /**
