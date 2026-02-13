@@ -28,6 +28,7 @@
     "@fgv/ts-chocolate": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-web-extras": "workspace:*",
     "@heroicons/react": "~2.2.0",
     "tslib": "^2.8.1",

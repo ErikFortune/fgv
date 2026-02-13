@@ -23,14 +23,22 @@
  * @packageDocumentation
  */
 
-// Workspace - primary application entry point
+// Workspace - primary application entry point (platform-agnostic)
 export {
   Workspace,
   IWorkspace,
   IWorkspaceCreateParams,
+  IWorkspaceCreateWithSettingsParams,
   IWorkspaceFactoryParams,
   WorkspaceState,
-  createNodeWorkspace
+  type IPlatformInitResult,
+  type IPlatformInitOptions,
+  type IPlatformInitializer,
+  type ICommonWorkspaceInitParams,
+  type IResolvedExternalLibrary,
+  toLibraryFileSources,
+  toUserLibrarySource,
+  createWorkspaceFromPlatform
 } from './packlets/workspace';
 
 // All branded types and common utilities

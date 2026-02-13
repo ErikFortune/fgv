@@ -1385,8 +1385,6 @@ export function createNodeWorkspaceLegacy(params?: IWorkspaceFactoryParams): Res
 // @public
 function createSessionId(collectionId: CollectionId, baseId: BaseSessionId): SessionId;
 
-// Warning: (ae-forgotten-export) The symbol "ICommonWorkspaceInitParams" needs to be exported by the entry point index.d.ts
-//
 // @public
 export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams): Result<IWorkspace>;
 
@@ -2577,6 +2575,14 @@ interface ICommonSettings {
     readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
     readonly schemaVersion: SettingsSchemaVersion;
     readonly tools?: IToolSettings;
+}
+
+// @public
+export interface ICommonWorkspaceInitParams {
+    readonly additionalFileSources?: ReadonlyArray<ILibraryFileTreeSource>;
+    readonly builtin?: FullLibraryLoadSpec;
+    readonly platformInit: IPlatformInitResult;
+    readonly preWarm?: boolean;
 }
 
 // @public
@@ -4057,9 +4063,6 @@ const ingredientSnapshotEntity: Converter<IIngredientSnapshotEntity>;
 // @public
 type IngredientUsageType = 'primary' | 'alternate' | 'any';
 
-// Warning: (ae-forgotten-export) The symbol "IPlatformInitOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "IPlatformInitResult" needs to be exported by the entry point index.d.ts
-//
 // @public
 export function initializeNodePlatform(options: IPlatformInitOptions): Promise<Result<IPlatformInitResult>>;
 
@@ -4177,6 +4180,32 @@ const inventoryType: Converter<InventoryType>;
 interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
     readonly options: ReadonlyArray<TOption>;
     readonly preferredId?: TId;
+}
+
+// @public
+export interface IPlatformInitializer {
+    initialize(options: IPlatformInitOptions): Promise<Result<IPlatformInitResult>>;
+    resolveExternalLibrary(ref: ExternalLibraryRef, config: IExternalLibraryRefConfig): Result<FileTree.IFileTreeDirectoryItem>;
+}
+
+// @public
+export interface IPlatformInitOptions {
+    readonly deviceId?: DeviceId;
+    readonly deviceName?: string;
+    readonly keyStorePath?: string;
+    readonly userLibraryPath: string;
+}
+
+// @public
+export interface IPlatformInitResult {
+    readonly commonSettings: ICommonSettings;
+    readonly cryptoProvider: CryptoUtils.ICryptoProvider;
+    readonly deviceId: DeviceId;
+    readonly deviceSettings: IDeviceSettings;
+    readonly externalLibraries: ReadonlyArray<IResolvedExternalLibrary>;
+    readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
+    readonly resolvedSettings: IResolvedSettings;
+    readonly userLibraryTree: FileTree.IFileTreeDirectoryItem;
 }
 
 // @public
@@ -4430,6 +4459,15 @@ interface IResolvedConfectionProcedure {
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedure: IProcedure;
+}
+
+// @public
+export interface IResolvedExternalLibrary {
+    readonly fileTree: FileTree.IFileTreeDirectoryItem;
+    readonly load?: boolean | Partial<Record<SubLibraryId | 'default', boolean>>;
+    readonly mutable?: boolean;
+    readonly name: string;
+    readonly originalRef: ExternalLibraryRef;
 }
 
 // @public
@@ -5241,6 +5279,11 @@ export interface IWorkspaceCreateParams {
     readonly logger?: Logging.LogReporter<unknown>;
     readonly preWarm?: boolean;
     readonly userFileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+}
+
+// @public
+export interface IWorkspaceCreateWithSettingsParams extends IWorkspaceCreateParams {
+    readonly settings: ISettingsManager;
 }
 
 // @public
@@ -7026,6 +7069,9 @@ function toJournalId(from: unknown): Result<JournalId>;
 function toKebabCase(input: string): string;
 
 // @public
+export function toLibraryFileSources(libraries: ReadonlyArray<IResolvedExternalLibrary>): ReadonlyArray<ILibraryFileTreeSource>;
+
+// @public
 function toMeasurement(from: unknown): Result<Measurement>;
 
 // @public
@@ -7059,6 +7105,9 @@ function toSlotId(from: unknown): Result<SlotId>;
 
 // @public
 function toUrlCategory(from: unknown): Result<UrlCategory>;
+
+// @public
+export function toUserLibrarySource(userLibraryTree: FileTree.IFileTreeDirectoryItem, mutable?: boolean): ILibraryFileTreeSource;
 
 // @public
 class UnitScalerRegistry {
@@ -7387,7 +7436,6 @@ const workflowPreferences: Converter<IWorkflowPreferences>;
 // @public
 export class Workspace implements IWorkspace {
     static create(params?: IWorkspaceCreateParams): Result<Workspace>;
-    // Warning: (ae-forgotten-export) The symbol "IWorkspaceCreateWithSettingsParams" needs to be exported by the entry point index.d.ts
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
     get data(): ChocolateLibrary;
     get isReady(): boolean;

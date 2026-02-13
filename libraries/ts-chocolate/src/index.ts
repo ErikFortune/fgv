@@ -44,7 +44,15 @@ export {
   createWorkspaceFromPlatform,
   initializeWorkspace,
   IWorkspaceInitParams,
-  IWorkspaceInitResult
+  IWorkspaceInitResult,
+  type IWorkspaceCreateWithSettingsParams,
+  type IPlatformInitResult,
+  type IPlatformInitOptions,
+  type IPlatformInitializer,
+  type ICommonWorkspaceInitParams,
+  type IResolvedExternalLibrary,
+  toLibraryFileSources,
+  toUserLibrarySource
 } from './packlets/workspace';
 
 // All branded types and common utilities

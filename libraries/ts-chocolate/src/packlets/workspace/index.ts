@@ -47,7 +47,7 @@ export {
 // Workspace class
 export { Workspace } from './workspace';
 
-// Node.js factory (browser factory is exported separately via index.browser.ts)
+// Node.js factory
 export {
   createNodeWorkspace,
   createNodeWorkspaceLegacy,

@@ -48,8 +48,7 @@
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
-    "js-yaml": "~4.1.1",
-    "@fgv/ts-web-extras": "workspace:*"
+    "js-yaml": "~4.1.1"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

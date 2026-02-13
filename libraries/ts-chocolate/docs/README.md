@@ -259,6 +259,60 @@ Parameters for workspace initialization.
 Result of workspace initialization.
 
 </td></tr>
+<tr><td>
+
+[IWorkspaceCreateWithSettingsParams](./interfaces/IWorkspaceCreateWithSettingsParams.md)
+
+</td><td>
+
+Parameters for creating a workspace with pre-created settings manager.
+
+</td></tr>
+<tr><td>
+
+[IPlatformInitResult](./interfaces/IPlatformInitResult.md)
+
+</td><td>
+
+Result of platform-specific initialization (Stage 1).
+
+</td></tr>
+<tr><td>
+
+[IPlatformInitOptions](./interfaces/IPlatformInitOptions.md)
+
+</td><td>
+
+Options for platform initialization.
+
+</td></tr>
+<tr><td>
+
+[IPlatformInitializer](./interfaces/IPlatformInitializer.md)
+
+</td><td>
+
+Interface for platform-specific initialization.
+
+</td></tr>
+<tr><td>
+
+[ICommonWorkspaceInitParams](./interfaces/ICommonWorkspaceInitParams.md)
+
+</td><td>
+
+Parameters for common workspace initialization (Stage 2).
+
+</td></tr>
+<tr><td>
+
+[IResolvedExternalLibrary](./interfaces/IResolvedExternalLibrary.md)
+
+</td><td>
+
+An external library reference after platform resolution.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -870,6 +924,24 @@ Creates a workspace from platform initialization results (Stage 2).
 </td><td>
 
 Initializes a new workspace with default settings and directory structure.
+
+</td></tr>
+<tr><td>
+
+[toLibraryFileSources](./functions/toLibraryFileSources.md)
+
+</td><td>
+
+Converts resolved external libraries to library file tree sources.
+
+</td></tr>
+<tr><td>
+
+[toUserLibrarySource](./functions/toUserLibrarySource.md)
+
+</td><td>
+
+Converts user library tree to a library file tree source for user data.
 
 </td></tr>
 </tbody></table>
