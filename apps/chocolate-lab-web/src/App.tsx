@@ -14,7 +14,8 @@ import {
   Modal,
   KeyboardShortcutProvider,
   useKeyboardShortcuts,
-  type IShortcut
+  type IShortcut,
+  SidebarLayout
 } from '@fgv/ts-app-shell';
 import {
   type AppMode,
@@ -25,7 +26,8 @@ import {
   TAB_LABELS,
   useNavigationStore,
   selectActiveTab,
-  selectModeTabs
+  selectModeTabs,
+  TabSidebar
 } from '@fgv/chocolate-lab-ui';
 
 // ============================================================================
@@ -81,12 +83,12 @@ const TAB_DESCRIPTIONS: Record<AppTab, string> = {
   procedures: 'Build step-by-step procedures from task sequences.'
 };
 
-function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
+function TabPlaceholder({ tab }: { readonly tab: AppTab }): React.ReactElement {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
       <h2 className="text-2xl font-semibold text-choco-primary mb-3">{TAB_LABELS[tab]}</h2>
       <p className="text-gray-500 max-w-md">{TAB_DESCRIPTIONS[tab]}</p>
-      <p className="text-gray-400 text-sm mt-6">Content coming in Phase 2+</p>
+      <p className="text-gray-400 text-sm mt-6">Entity list + cascade coming in Phase 3+</p>
     </div>
   );
 }
@@ -143,10 +145,10 @@ function AppShell(): React.ReactElement {
       {/* Second bar: tab selector */}
       <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={setTab} />
 
-      {/* Main content area */}
-      <main className="flex-1 overflow-auto">
-        <TabContent tab={activeTab} />
-      </main>
+      {/* Main content area: sidebar + entity list */}
+      <SidebarLayout sidebar={<TabSidebar />}>
+        <TabPlaceholder tab={activeTab} />
+      </SidebarLayout>
 
       {/* Toast notifications */}
       <ToastContainer toasts={activeToasts} onDismiss={dismissMessage} />

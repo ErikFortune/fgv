@@ -37,11 +37,13 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import {
   AppMode,
   AppTab,
+  DEFAULT_FILTER_STATE,
   DEFAULT_TABS,
   ICascadeEntry,
   IFilterState,
   MODE_TABS,
-  createDefaultFilterState
+  createDefaultFilterState,
+  hasActiveFilters
 } from './model';
 
 // ============================================================================
@@ -206,7 +208,7 @@ export function selectActiveTab(state: INavigationState): AppTab {
  */
 export function selectCurrentFilter(state: INavigationState): IFilterState {
   const tab = selectActiveTab(state);
-  return state.filtersByTab[tab] ?? createDefaultFilterState();
+  return state.filtersByTab[tab] ?? DEFAULT_FILTER_STATE;
 }
 
 /**
@@ -222,5 +224,5 @@ export function selectModeTabs(state: INavigationState): ReadonlyArray<AppTab> {
  * @public
  */
 export function selectHasActiveFilters(state: INavigationState): boolean {
-  return Object.values(state.filtersByTab).some((f) => f !== undefined && f.search.length > 0);
+  return Object.values(state.filtersByTab).some((f) => f !== undefined && hasActiveFilters(f));
 }

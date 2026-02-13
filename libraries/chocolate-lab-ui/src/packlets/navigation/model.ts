@@ -143,19 +143,48 @@ export interface ICascadeEntry {
 // ============================================================================
 
 /**
- * Per-tab filter state. Extensible — specific filter shapes
- * will be defined per entity type in Phase 2.
+ * Per-tab filter state.
+ *
+ * Stores the free-text search query and a map of named filter selections.
+ * Each key in `selections` corresponds to a filter row (e.g., 'categories', 'tags')
+ * and its value is the array of selected filter option values (as strings).
+ *
  * @public
  */
 export interface IFilterState {
   /** Free-text search query */
   readonly search: string;
+  /** Named filter selections (key = filter name, value = selected option values) */
+  readonly selections: Readonly<Record<string, ReadonlyArray<string>>>;
 }
+
+/**
+ * Stable default filter state singleton.
+ * Use this in selectors to avoid creating new objects on every call.
+ * @public
+ */
+export const DEFAULT_FILTER_STATE: IFilterState = { search: '', selections: {} };
 
 /**
  * Creates a default (empty) filter state.
  * @public
  */
 export function createDefaultFilterState(): IFilterState {
-  return { search: '' };
+  return { search: '', selections: {} };
+}
+
+/**
+ * Returns the total number of active filter selections (excluding search).
+ * @public
+ */
+export function countActiveSelections(state: IFilterState): number {
+  return Object.values(state.selections).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+/**
+ * Returns true if any filters are active (search or selections).
+ * @public
+ */
+export function hasActiveFilters(state: IFilterState): boolean {
+  return state.search.length > 0 || countActiveSelections(state) > 0;
 }

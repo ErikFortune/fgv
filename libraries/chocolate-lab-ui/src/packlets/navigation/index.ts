@@ -12,11 +12,14 @@ export {
   type CascadeColumnMode,
   type ICascadeEntry,
   type IFilterState,
+  DEFAULT_FILTER_STATE,
   DEFAULT_TABS,
   MODE_TABS,
   TAB_LABELS,
   MODE_LABELS,
-  createDefaultFilterState
+  createDefaultFilterState,
+  countActiveSelections,
+  hasActiveFilters
 } from './model';
 
 export {

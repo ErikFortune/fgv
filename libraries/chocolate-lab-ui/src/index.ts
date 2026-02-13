@@ -16,3 +16,6 @@ export * from './packlets/workspace';
 
 // Navigation store and types
 export * from './packlets/navigation';
+
+// Sidebar content and filter configurations
+export * from './packlets/sidebar';
