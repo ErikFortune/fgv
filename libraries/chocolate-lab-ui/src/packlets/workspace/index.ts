@@ -1,8 +1,10 @@
 /**
- * Workspace packlet - browser platform initialization for Chocolate Lab.
+ * Workspace packlet - browser platform initialization and reactive wrapper for Chocolate Lab.
  *
- * Provides the browser-specific platform initializer that uses
- * localStorage-backed FileTree for persistence.
+ * Provides:
+ * - Browser-specific platform initializer (localStorage-backed FileTree)
+ * - ReactiveWorkspace wrapper for useSyncExternalStore integration
+ * - WorkspaceProvider + useWorkspace hook for React components
  *
  * @packageDocumentation
  */
@@ -13,3 +15,12 @@ export {
   initializeBrowserPlatform,
   type IBrowserPlatformInitOptions
 } from './browserPlatformInit';
+
+export { ReactiveWorkspace, type WorkspaceListener } from './reactiveWorkspace';
+
+export {
+  WorkspaceProvider,
+  useWorkspace,
+  useReactiveWorkspace,
+  type IWorkspaceProviderProps
+} from './useWorkspace';

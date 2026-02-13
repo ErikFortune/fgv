@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   ModeSelector,
@@ -15,11 +15,17 @@ import {
   KeyboardShortcutProvider,
   useKeyboardShortcuts,
   type IShortcut,
-  SidebarLayout
+  SidebarLayout,
+  EntityList,
+  type IEntityDescriptor,
+  CascadeContainer,
+  type ICascadeColumn
 } from '@fgv/ts-app-shell';
+import { Workspace, type LibraryRuntime } from '@fgv/ts-chocolate';
 import {
   type AppMode,
   type AppTab,
+  type ICascadeEntry,
   DEFAULT_TABS,
   MODE_LABELS,
   MODE_TABS,
@@ -27,8 +33,13 @@ import {
   useNavigationStore,
   selectActiveTab,
   selectModeTabs,
-  TabSidebar
+  TabSidebar,
+  ReactiveWorkspace,
+  WorkspaceProvider,
+  useWorkspace,
+  IngredientDetail
 } from '@fgv/chocolate-lab-ui';
+import type { IngredientId } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -67,7 +78,109 @@ function SettingsButton({ onOpen }: { readonly onOpen: () => void }): React.Reac
 }
 
 // ============================================================================
-// Empty Tab Content
+// Workspace Initialization (lazy — avoids webpack circular dep evaluation order)
+// ============================================================================
+
+let _reactiveWorkspace: ReactiveWorkspace | undefined;
+
+function getReactiveWorkspace(): ReactiveWorkspace {
+  if (!_reactiveWorkspace) {
+    _reactiveWorkspace = new ReactiveWorkspace(Workspace.create({ preWarm: true }).orThrow());
+  }
+  return _reactiveWorkspace;
+}
+
+// ============================================================================
+// Ingredient List Descriptor
+// ============================================================================
+
+const INGREDIENT_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.AnyIngredient, IngredientId> = {
+  getId: (i: LibraryRuntime.AnyIngredient): IngredientId => i.id,
+  getLabel: (i: LibraryRuntime.AnyIngredient): string => i.name,
+  getSublabel: (i: LibraryRuntime.AnyIngredient): string | undefined =>
+    [i.manufacturer, i.category].filter(Boolean).join(' · ') || undefined,
+  getStatus: undefined
+};
+
+// ============================================================================
+// Ingredients Tab Content
+// ============================================================================
+
+function IngredientsTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const pushCascade = useNavigationStore((s) => s.pushCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+
+  // Collect all ingredients into an array (memoized on workspace version)
+  const ingredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
+    return Array.from(workspace.data.ingredients.values());
+  }, [workspace]);
+
+  // Selected ingredient ID = first cascade entry of type 'ingredient'
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'ingredient'
+      ? (cascadeStack[0].entityId as IngredientId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: IngredientId): void => {
+      const entry: ICascadeEntry = { entityType: 'ingredient', entityId: id, mode: 'view' };
+      // Replace the cascade with just this ingredient
+      pushCascade(entry);
+    },
+    [pushCascade]
+  );
+
+  // Build cascade columns from the cascade stack
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack
+      .filter((e) => e.entityType === 'ingredient')
+      .map((entry) => {
+        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <IngredientDetail ingredient={result.value} />
+        };
+      });
+  }, [cascadeStack, workspace]);
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      {/* Entity list (collapses when cascade is open) */}
+      <div
+        className={`flex flex-col overflow-hidden transition-all ${
+          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
+        }`}
+      >
+        <EntityList<LibraryRuntime.AnyIngredient, IngredientId>
+          entities={ingredients}
+          descriptor={INGREDIENT_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          emptyState={{
+            title: 'No Ingredients',
+            description: 'No ingredients found in the library.'
+          }}
+        />
+      </div>
+
+      {/* Cascade columns */}
+      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// Empty Tab Content (for tabs not yet implemented)
 // ============================================================================
 
 const TAB_DESCRIPTIONS: Record<AppTab, string> = {
@@ -88,9 +201,22 @@ function TabPlaceholder({ tab }: { readonly tab: AppTab }): React.ReactElement {
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
       <h2 className="text-2xl font-semibold text-choco-primary mb-3">{TAB_LABELS[tab]}</h2>
       <p className="text-gray-500 max-w-md">{TAB_DESCRIPTIONS[tab]}</p>
-      <p className="text-gray-400 text-sm mt-6">Entity list + cascade coming in Phase 3+</p>
+      <p className="text-gray-400 text-sm mt-6">Coming in a future phase.</p>
     </div>
   );
+}
+
+// ============================================================================
+// Tab Content Router
+// ============================================================================
+
+function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
+  switch (tab) {
+    case 'ingredients':
+      return <IngredientsTabContent />;
+    default:
+      return <TabPlaceholder tab={tab} />;
+  }
 }
 
 // ============================================================================
@@ -145,9 +271,9 @@ function AppShell(): React.ReactElement {
       {/* Second bar: tab selector */}
       <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={setTab} />
 
-      {/* Main content area: sidebar + entity list */}
+      {/* Main content area: sidebar + tab content */}
       <SidebarLayout sidebar={<TabSidebar />}>
-        <TabPlaceholder tab={activeTab} />
+        <TabContent tab={activeTab} />
       </SidebarLayout>
 
       {/* Toast notifications */}
@@ -172,11 +298,16 @@ function AppShell(): React.ReactElement {
  * Root application component for Chocolate Lab Web Edition.
  */
 export default function App(): React.ReactElement {
+  // Lazy-initialize once on first render (not at module evaluation time)
+  const [reactiveWorkspace] = useState(getReactiveWorkspace);
+
   return (
-    <KeyboardShortcutProvider>
-      <MessagesProvider>
-        <AppShell />
-      </MessagesProvider>
-    </KeyboardShortcutProvider>
+    <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>
+      <KeyboardShortcutProvider>
+        <MessagesProvider>
+          <AppShell />
+        </MessagesProvider>
+      </KeyboardShortcutProvider>
+    </WorkspaceProvider>
   );
 }

@@ -19,3 +19,6 @@ export * from './packlets/navigation';
 
 // Sidebar content and filter configurations
 export * from './packlets/sidebar';
+
+// Ingredient presentation components
+export * from './packlets/ingredients';

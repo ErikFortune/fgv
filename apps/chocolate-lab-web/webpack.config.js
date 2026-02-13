@@ -17,7 +17,7 @@ module.exports = (env, argv) => {
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       symlinks: true,
-      conditionNames: ['default', 'import', 'require'],
+      conditionNames: ['node', 'require'],
       fallback: {
         crypto: false,
         stream: require.resolve('stream-browserify'),
@@ -29,7 +29,8 @@ module.exports = (env, argv) => {
         fs: false,
         path: false,
         os: false,
-        vm: false
+        vm: false,
+        worker_threads: false
       }
     },
     module: {

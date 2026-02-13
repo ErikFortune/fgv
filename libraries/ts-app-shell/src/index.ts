@@ -28,3 +28,6 @@ export * from './packlets/keyboard';
 
 // Sidebar layout, search, filters, and entity list
 export * from './packlets/sidebar';
+
+// Column cascade container
+export * from './packlets/cascade';
