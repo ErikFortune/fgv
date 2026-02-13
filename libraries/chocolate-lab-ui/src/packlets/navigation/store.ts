@@ -80,6 +80,8 @@ export interface INavigationActions {
   setTab: (tab: AppTab) => void;
   /** Push an entity onto the cascade stack. */
   pushCascade: (entry: ICascadeEntry) => void;
+  /** Replace the cascade stack atomically (squash to new entries). */
+  squashCascade: (entries: ReadonlyArray<ICascadeEntry>) => void;
   /** Pop the rightmost cascade column. */
   popCascade: () => void;
   /** Pop the cascade stack back to a specific depth (0 = clear all). */
@@ -146,6 +148,10 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
       set((state) => ({
         cascadeStack: [...state.cascadeStack, entry]
       }));
+    },
+
+    squashCascade: (entries: ReadonlyArray<ICascadeEntry>): void => {
+      set({ cascadeStack: entries });
     },
 
     popCascade: (): void => {

@@ -37,9 +37,10 @@ import {
   ReactiveWorkspace,
   WorkspaceProvider,
   useWorkspace,
-  IngredientDetail
+  IngredientDetail,
+  FillingDetail
 } from '@fgv/chocolate-lab-ui';
-import type { IngredientId } from '@fgv/ts-chocolate';
+import type { IngredientId, FillingId } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -99,6 +100,20 @@ const INGREDIENT_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.AnyIngredient, Ing
   getLabel: (i: LibraryRuntime.AnyIngredient): string => i.name,
   getSublabel: (i: LibraryRuntime.AnyIngredient): string | undefined =>
     [i.manufacturer, i.category].filter(Boolean).join(' · ') || undefined,
+  getStatus: undefined
+};
+
+// ============================================================================
+// Filling List Descriptor
+// ============================================================================
+
+const FILLING_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.FillingRecipe, FillingId> = {
+  getId: (f: LibraryRuntime.FillingRecipe): FillingId => f.id,
+  getLabel: (f: LibraryRuntime.FillingRecipe): string => f.name,
+  getSublabel: (f: LibraryRuntime.FillingRecipe): string | undefined =>
+    [f.entity.category, f.variationCount > 1 ? `${f.variationCount} variations` : undefined]
+      .filter(Boolean)
+      .join(' · ') || undefined,
   getStatus: undefined
 };
 
@@ -180,6 +195,113 @@ function IngredientsTabContent(): React.ReactElement {
 }
 
 // ============================================================================
+// Fillings Tab Content
+// ============================================================================
+
+function FillingsTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+
+  // Collect all fillings into an array (memoized on workspace version)
+  const fillings = useMemo<ReadonlyArray<LibraryRuntime.FillingRecipe>>(() => {
+    return Array.from(workspace.data.fillings.values());
+  }, [workspace]);
+
+  // Selected filling ID = first cascade entry of type 'filling'
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'filling'
+      ? (cascadeStack[0].entityId as FillingId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: FillingId): void => {
+      const entry: ICascadeEntry = { entityType: 'filling', entityId: id, mode: 'view' };
+      squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  // Drill-down: clicking an ingredient inside a filling replaces the ingredient column
+  const handleIngredientClick = useCallback(
+    (ingredientId: IngredientId): void => {
+      // Keep the filling (first entry) and replace everything after with the new ingredient
+      const filling = cascadeStack[0];
+      const entry: ICascadeEntry = { entityType: 'ingredient', entityId: ingredientId, mode: 'view' };
+      squashCascade(filling ? [filling, entry] : [entry]);
+    },
+    [squashCascade, cascadeStack]
+  );
+
+  // Build cascade columns from the cascade stack
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack.map((entry) => {
+      if (entry.entityType === 'filling') {
+        const result = workspace.data.fillings.get(entry.entityId as FillingId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load filling: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <FillingDetail filling={result.value} onIngredientClick={handleIngredientClick} />
+        };
+      }
+      if (entry.entityType === 'ingredient') {
+        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <IngredientDetail ingredient={result.value} />
+        };
+      }
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [cascadeStack, workspace, handleIngredientClick]);
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      {/* Entity list (collapses when cascade is open) */}
+      <div
+        className={`flex flex-col overflow-hidden transition-all ${
+          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
+        }`}
+      >
+        <EntityList<LibraryRuntime.FillingRecipe, FillingId>
+          entities={fillings}
+          descriptor={FILLING_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          emptyState={{
+            title: 'No Fillings',
+            description: 'No filling recipes found in the library.'
+          }}
+        />
+      </div>
+
+      {/* Cascade columns */}
+      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
+    </div>
+  );
+}
+
+// ============================================================================
 // Empty Tab Content (for tabs not yet implemented)
 // ============================================================================
 
@@ -214,6 +336,8 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
   switch (tab) {
     case 'ingredients':
       return <IngredientsTabContent />;
+    case 'fillings':
+      return <FillingsTabContent />;
     default:
       return <TabPlaceholder tab={tab} />;
   }

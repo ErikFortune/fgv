@@ -22,3 +22,6 @@ export * from './packlets/sidebar';
 
 // Ingredient presentation components
 export * from './packlets/ingredients';
+
+// Filling presentation components
+export * from './packlets/fillings';
