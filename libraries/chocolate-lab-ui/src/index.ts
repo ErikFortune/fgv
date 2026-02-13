@@ -25,3 +25,15 @@ export * from './packlets/ingredients';
 
 // Filling presentation components
 export * from './packlets/fillings';
+
+// Mold presentation components
+export * from './packlets/molds';
+
+// Task presentation components
+export * from './packlets/tasks';
+
+// Procedure presentation components
+export * from './packlets/procedures';
+
+// Confection presentation components
+export * from './packlets/confections';

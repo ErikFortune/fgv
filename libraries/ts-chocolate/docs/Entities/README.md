@@ -734,3 +734,35 @@ A task invocation - either a reference to a library task or an inline task defin
 
 </td></tr>
 </tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[isTaskRefEntity](./functions/isTaskRefEntity.md)
+
+</td><td>
+
+Type guard for task ref - discriminates by presence of `taskId`
+
+</td></tr>
+<tr><td>
+
+[isInlineTaskEntity](./functions/isInlineTaskEntity.md)
+
+</td><td>
+
+Type guard for inline task - discriminates by presence of `task`
+
+</td></tr>
+</tbody></table>

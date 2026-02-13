@@ -1680,6 +1680,8 @@ declare namespace Entities {
         IInlineTaskEntity,
         IRenderOptions,
         ITaskEntityInvocation,
+        isTaskRefEntity,
+        isInlineTaskEntity,
         Converters_6 as Converters,
         Confections,
         Fillings,

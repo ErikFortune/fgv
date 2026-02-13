@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // ============================================================================
 // Filter Option
@@ -67,11 +67,14 @@ export interface IFilterRowProps<TValue> {
 // FilterRow Component
 // ============================================================================
 
+/** Minimum number of options before showing the search-within-filter input */
+const SEARCH_THRESHOLD: number = 8;
+
 /**
- * A compact filter row with a flyout panel for selecting filter values.
+ * A compact filter row with a right-side flyout overlay for selecting filter values.
  *
- * Collapsed: shows the label, active count badge, and clear button.
- * Expanded: shows a flyout overlay with checkboxes/radio buttons for each option.
+ * Collapsed: shows the label, status summary text, and a `\u203A` chevron.
+ * Expanded: a flyout panel slides out to the right of the sidebar, overlaying the main pane.
  *
  * @public
  */
@@ -79,20 +82,44 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
   const { label, options, selected, onSelectionChange, multiple = true, isEqual = defaultIsEqual } = props;
 
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [flyoutSearch, setFlyoutSearch] = useState('');
+  const rowRef = useRef<HTMLDivElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
 
-  // Close flyout on outside click
+  // Close flyout on outside click (check both row and flyout)
   useEffect(() => {
     if (!open) {
       return undefined;
     }
     const handleClick = (e: MouseEvent): void => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        rowRef.current &&
+        !rowRef.current.contains(target) &&
+        flyoutRef.current &&
+        !flyoutRef.current.contains(target)
+      ) {
         setOpen(false);
+        setFlyoutSearch('');
       }
     };
     document.addEventListener('mousedown', handleClick);
     return (): void => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  // Close flyout on Escape
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+    const handleKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setFlyoutSearch('');
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return (): void => document.removeEventListener('keydown', handleKey);
   }, [open]);
 
   const isSelected = useCallback(
@@ -130,69 +157,159 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
 
   const activeCount = selected.length;
 
+  // Status summary text for the collapsed row
+  const statusText = useMemo((): string => {
+    if (activeCount === 0) {
+      return 'All';
+    }
+    if (activeCount === 1) {
+      // Show the label of the single selected option
+      const sel = selected[0];
+      const match = options.find((o) => isEqual(o.value, sel));
+      return match ? match.label : '1 selected';
+    }
+    return `${activeCount} selected`;
+  }, [activeCount, selected, options, isEqual]);
+
+  // Filter options by flyout search
+  const filteredOptions = useMemo(() => {
+    const q = flyoutSearch.trim().toLowerCase();
+    if (q.length === 0) {
+      return options;
+    }
+    return options.filter((o) => o.label.toLowerCase().includes(q));
+  }, [options, flyoutSearch]);
+
+  // Compute flyout position: anchored to the right edge of the sidebar row, aligned vertically
+  const [flyoutStyle, setFlyoutStyle] = useState<React.CSSProperties>({});
+  useEffect(() => {
+    if (!open || !rowRef.current) {
+      return;
+    }
+    const rect = rowRef.current.getBoundingClientRect();
+    // Find the sidebar container (the <aside> ancestor)
+    let sidebar: HTMLElement | null = rowRef.current;
+    while (sidebar && sidebar.tagName !== 'ASIDE') {
+      sidebar = sidebar.parentElement;
+    }
+    const rightEdge = sidebar ? sidebar.getBoundingClientRect().right : rect.right;
+
+    // Flyout appears at the right edge of the sidebar, vertically aligned with the row
+    const maxHeight = Math.min(400, window.innerHeight - rect.top - 8);
+    setFlyoutStyle({
+      position: 'fixed',
+      top: rect.top,
+      left: rightEdge,
+      width: 280,
+      maxHeight,
+      zIndex: 50
+    });
+  }, [open]);
+
+  const handleToggle = useCallback((): void => {
+    setOpen((prev) => {
+      if (prev) {
+        setFlyoutSearch('');
+      }
+      return !prev;
+    });
+  }, []);
+
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={rowRef}>
       {/* Collapsed row */}
       <button
-        onClick={(): void => setOpen(!open)}
+        onClick={handleToggle}
         className={`flex items-center justify-between w-full px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${
           activeCount > 0 ? 'text-choco-primary font-medium' : 'text-gray-600'
         }`}
       >
-        <span className="flex items-center gap-2">
-          <span>{label}</span>
-          {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs font-medium rounded-full bg-choco-accent text-white">
-              {activeCount}
-            </span>
-          )}
-        </span>
-        <span className="flex items-center gap-1">
+        <span className="truncate">{label}</span>
+        <span className="flex items-center gap-1.5 shrink-0 ml-2">
           {activeCount > 0 && (
             <span
               onClick={clearSelection}
-              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+              className="text-gray-400 hover:text-gray-600 cursor-pointer text-xs"
               role="button"
               aria-label={`Clear ${label} filter`}
             >
-              &times;
+              {'\u00D7'}
             </span>
           )}
-          <span className="text-gray-400 text-xs">{open ? '\u25B4' : '\u25BE'}</span>
+          <span className={`text-xs ${activeCount > 0 ? 'text-choco-accent' : 'text-gray-400'}`}>
+            {statusText}
+          </span>
+          <span className="text-gray-400 text-xs">{'\u203A'}</span>
         </span>
       </button>
 
-      {/* Flyout panel */}
+      {/* Right-side flyout overlay */}
       {open && (
-        <div className="absolute left-0 right-0 z-40 mt-0.5 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-          {options.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-gray-400">No options available</div>
-          ) : (
-            options.map((option, idx) => {
-              const checked = isSelected(option.value);
-              return (
-                <button
-                  key={idx}
-                  onClick={(): void => toggleValue(option.value)}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
-                    checked ? 'text-choco-primary font-medium' : 'text-gray-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-flex items-center justify-center w-4 h-4 border rounded ${
-                      multiple ? 'rounded' : 'rounded-full'
-                    } ${checked ? 'bg-choco-accent border-choco-accent text-white' : 'border-gray-300'}`}
-                  >
-                    {checked && <span className="text-[10px]">{'\u2713'}</span>}
-                  </span>
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {option.count !== undefined && (
-                    <span className="text-xs text-gray-400">{option.count}</span>
-                  )}
-                </button>
-              );
-            })
+        <div
+          ref={flyoutRef}
+          className="bg-white border border-gray-200 rounded-r-lg shadow-xl overflow-hidden flex flex-col"
+          style={flyoutStyle}
+        >
+          {/* Flyout header */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+            <span className="text-xs font-medium text-gray-600">{label}</span>
+            {activeCount > 0 && (
+              <button
+                onClick={(): void => onSelectionChange([])}
+                className="text-xs text-choco-accent hover:text-choco-primary"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Search within filter (for long lists) */}
+          {options.length >= SEARCH_THRESHOLD && (
+            <div className="px-3 py-1.5 border-b border-gray-100">
+              <input
+                type="text"
+                value={flyoutSearch}
+                onChange={(e): void => setFlyoutSearch(e.target.value)}
+                placeholder={`Search ${label.toLowerCase()}...`}
+                className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:border-choco-accent"
+                autoFocus
+              />
+            </div>
           )}
+
+          {/* Options list */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-gray-400">
+                {options.length === 0 ? 'No options available' : 'No matches'}
+              </div>
+            ) : (
+              filteredOptions.map((option, idx) => {
+                const checked = isSelected(option.value);
+                return (
+                  <button
+                    key={idx}
+                    onClick={(): void => toggleValue(option.value)}
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
+                      checked ? 'text-choco-primary font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex items-center justify-center w-4 h-4 border rounded ${
+                        multiple ? 'rounded' : 'rounded-full'
+                      } ${checked ? 'bg-choco-accent border-choco-accent text-white' : 'border-gray-300'}`}
+                    >
+                      {checked && <span className="text-[10px]">{'\u2713'}</span>}
+                    </span>
+                    <span className="flex-1 truncate">{option.label}</span>
+                    {option.count !== undefined && (
+                      <span className="text-xs text-gray-400">{option.count}</span>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>

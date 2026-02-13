@@ -38,9 +38,16 @@ import {
   WorkspaceProvider,
   useWorkspace,
   IngredientDetail,
-  FillingDetail
+  FillingDetail,
+  MoldDetail,
+  TaskDetail,
+  ProcedureDetail,
+  ConfectionDetail,
+  WorkspaceFilterOptionProvider,
+  useFilteredEntities,
+  type IEntityFilterSpec
 } from '@fgv/chocolate-lab-ui';
-import type { IngredientId, FillingId } from '@fgv/ts-chocolate';
+import type { IngredientId, FillingId, MoldId, TaskId, ProcedureId, ConfectionId } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -117,6 +124,102 @@ const FILLING_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.FillingRecipe, Fillin
   getStatus: undefined
 };
 
+const CONFECTION_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IConfectionBase, ConfectionId> = {
+  getId: (c: LibraryRuntime.IConfectionBase): ConfectionId => c.id,
+  getLabel: (c: LibraryRuntime.IConfectionBase): string => c.name,
+  getSublabel: (c: LibraryRuntime.IConfectionBase): string | undefined =>
+    [c.confectionType, c.description].filter(Boolean).join(' · ') || undefined,
+  getStatus: undefined
+};
+
+const PROCEDURE_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IProcedure, ProcedureId> = {
+  getId: (p: LibraryRuntime.IProcedure): ProcedureId => p.id,
+  getLabel: (p: LibraryRuntime.IProcedure): string => p.name,
+  getSublabel: (p: LibraryRuntime.IProcedure): string | undefined =>
+    [p.category, `${p.stepCount} step${p.stepCount !== 1 ? 's' : ''}`].filter(Boolean).join(' · ') ||
+    undefined,
+  getStatus: undefined
+};
+
+const TASK_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.ITask, TaskId> = {
+  getId: (t: LibraryRuntime.ITask): TaskId => t.id,
+  getLabel: (t: LibraryRuntime.ITask): string => t.name,
+  getSublabel: (t: LibraryRuntime.ITask): string | undefined =>
+    t.requiredVariables.length > 0
+      ? `${t.requiredVariables.length} variable${t.requiredVariables.length > 1 ? 's' : ''}`
+      : undefined,
+  getStatus: undefined
+};
+
+const MOLD_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IMold, MoldId> = {
+  getId: (m: LibraryRuntime.IMold): MoldId => m.id,
+  getLabel: (m: LibraryRuntime.IMold): string => m.displayName,
+  getSublabel: (m: LibraryRuntime.IMold): string | undefined =>
+    [m.format, m.description].filter(Boolean).join(' · ') || undefined,
+  getStatus: undefined
+};
+
+// ============================================================================
+// Filter Specs (how to extract filterable properties from each entity type)
+// ============================================================================
+
+function collectionFromId(id: string): string {
+  return id.split('.')[0] ?? id;
+}
+
+const INGREDIENT_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.AnyIngredient> = {
+  getSearchText: (i) => [i.name, i.manufacturer, i.category].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (i) => i.collectionId,
+    category: (i) => i.category,
+    tags: (i) => i.tags ?? []
+  }
+};
+
+const FILLING_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.FillingRecipe> = {
+  getSearchText: (f) => [f.name, f.entity.category].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (f) => f.collectionId,
+    category: (f) => f.entity.category,
+    tags: (f) => f.tags ?? []
+  }
+};
+
+const CONFECTION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IConfectionBase> = {
+  getSearchText: (c) => [c.name, c.confectionType, c.description].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (c) => c.collectionId,
+    category: (c) => c.confectionType,
+    tags: (c) => c.tags ?? []
+  }
+};
+
+const MOLD_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IMold> = {
+  getSearchText: (m) => [m.displayName, m.manufacturer, m.format, m.description].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (m) => m.collectionId,
+    shape: (m) => m.format,
+    cavities: (m) => String(m.cavityCount)
+  }
+};
+
+const PROCEDURE_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IProcedure> = {
+  getSearchText: (p) => [p.name, p.category, p.description].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (p) => collectionFromId(p.id),
+    category: (p) => p.category,
+    tags: (p) => p.tags ?? []
+  }
+};
+
+const TASK_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.ITask> = {
+  getSearchText: (t) => [t.name, t.template].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (t) => collectionFromId(t.id),
+    tags: (t) => t.tags ?? []
+  }
+};
+
 // ============================================================================
 // Ingredients Tab Content
 // ============================================================================
@@ -177,7 +280,7 @@ function IngredientsTabContent(): React.ReactElement {
         }`}
       >
         <EntityList<LibraryRuntime.AnyIngredient, IngredientId>
-          entities={ingredients}
+          entities={useFilteredEntities(ingredients, INGREDIENT_FILTER_SPEC)}
           descriptor={INGREDIENT_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
@@ -223,20 +326,21 @@ function FillingsTabContent(): React.ReactElement {
     [squashCascade]
   );
 
-  // Drill-down: clicking an ingredient inside a filling replaces the ingredient column
-  const handleIngredientClick = useCallback(
-    (ingredientId: IngredientId): void => {
-      // Keep the filling (first entry) and replace everything after with the new ingredient
-      const filling = cascadeStack[0];
-      const entry: ICascadeEntry = { entityType: 'ingredient', entityId: ingredientId, mode: 'view' };
-      squashCascade(filling ? [filling, entry] : [entry]);
+  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
+  const squashAt = useCallback(
+    (depth: number, entry: ICascadeEntry): void => {
+      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
     },
     [squashCascade, cascadeStack]
   );
 
   // Build cascade columns from the cascade stack
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry) => {
+    return cascadeStack.map((entry, index) => {
+      const onIngredientClick = (id: IngredientId): void => {
+        squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+      };
+
       if (entry.entityType === 'filling') {
         const result = workspace.data.fillings.get(entry.entityId as FillingId);
         if (result.isFailure()) {
@@ -249,7 +353,7 @@ function FillingsTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <FillingDetail filling={result.value} onIngredientClick={handleIngredientClick} />
+          content: <FillingDetail filling={result.value} onIngredientClick={onIngredientClick} />
         };
       }
       if (entry.entityType === 'ingredient') {
@@ -273,7 +377,7 @@ function FillingsTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [cascadeStack, workspace, handleIngredientClick]);
+  }, [cascadeStack, workspace, squashAt]);
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -284,7 +388,7 @@ function FillingsTabContent(): React.ReactElement {
         }`}
       >
         <EntityList<LibraryRuntime.FillingRecipe, FillingId>
-          entities={fillings}
+          entities={useFilteredEntities(fillings, FILLING_FILTER_SPEC)}
           descriptor={FILLING_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
@@ -296,6 +400,441 @@ function FillingsTabContent(): React.ReactElement {
       </div>
 
       {/* Cascade columns */}
+      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// Molds Tab Content
+// ============================================================================
+
+function MoldsTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+
+  const molds = useMemo<ReadonlyArray<LibraryRuntime.IMold>>(() => {
+    return Array.from(workspace.data.molds.values());
+  }, [workspace]);
+
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'mold'
+      ? (cascadeStack[0].entityId as MoldId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: MoldId): void => {
+      const entry: ICascadeEntry = { entityType: 'mold', entityId: id, mode: 'view' };
+      squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack.map((entry) => {
+      if (entry.entityType === 'mold') {
+        const result = workspace.data.molds.get(entry.entityId as MoldId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load mold: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.displayName,
+          content: <MoldDetail mold={result.value} />
+        };
+      }
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [cascadeStack, workspace]);
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      <div
+        className={`flex flex-col overflow-hidden transition-all ${
+          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
+        }`}
+      >
+        <EntityList<LibraryRuntime.IMold, MoldId>
+          entities={useFilteredEntities(molds, MOLD_FILTER_SPEC)}
+          descriptor={MOLD_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          emptyState={{
+            title: 'No Molds',
+            description: 'No molds found in the library.'
+          }}
+        />
+      </div>
+      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// Tasks Tab Content
+// ============================================================================
+
+function TasksTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+
+  const tasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
+    return Array.from(workspace.data.tasks.values());
+  }, [workspace]);
+
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'task'
+      ? (cascadeStack[0].entityId as TaskId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: TaskId): void => {
+      const entry: ICascadeEntry = { entityType: 'task', entityId: id, mode: 'view' };
+      squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack.map((entry) => {
+      if (entry.entityType === 'task') {
+        const result = workspace.data.tasks.get(entry.entityId as TaskId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <TaskDetail task={result.value} />
+        };
+      }
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [cascadeStack, workspace]);
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      <div
+        className={`flex flex-col overflow-hidden transition-all ${
+          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
+        }`}
+      >
+        <EntityList<LibraryRuntime.ITask, TaskId>
+          entities={useFilteredEntities(tasks, TASK_FILTER_SPEC)}
+          descriptor={TASK_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          emptyState={{
+            title: 'No Tasks',
+            description: 'No tasks found in the library.'
+          }}
+        />
+      </div>
+      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// Procedures Tab Content
+// ============================================================================
+
+function ProceduresTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+
+  const procedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
+    return Array.from(workspace.data.procedures.values());
+  }, [workspace]);
+
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'procedure'
+      ? (cascadeStack[0].entityId as ProcedureId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: ProcedureId): void => {
+      const entry: ICascadeEntry = { entityType: 'procedure', entityId: id, mode: 'view' };
+      squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
+  const squashAt = useCallback(
+    (depth: number, entry: ICascadeEntry): void => {
+      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
+    },
+    [squashCascade, cascadeStack]
+  );
+
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack.map((entry, index) => {
+      const onTaskClick = (id: TaskId): void => {
+        squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
+      };
+
+      if (entry.entityType === 'procedure') {
+        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
+        };
+      }
+      if (entry.entityType === 'task') {
+        const result = workspace.data.tasks.get(entry.entityId as TaskId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <TaskDetail task={result.value} />
+        };
+      }
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [cascadeStack, workspace, squashAt]);
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      <div
+        className={`flex flex-col overflow-hidden transition-all ${
+          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
+        }`}
+      >
+        <EntityList<LibraryRuntime.IProcedure, ProcedureId>
+          entities={useFilteredEntities(procedures, PROCEDURE_FILTER_SPEC)}
+          descriptor={PROCEDURE_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          emptyState={{
+            title: 'No Procedures',
+            description: 'No procedures found in the library.'
+          }}
+        />
+      </div>
+      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// Confections Tab Content
+// ============================================================================
+
+function ConfectionsTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+
+  const confections = useMemo<ReadonlyArray<LibraryRuntime.IConfectionBase>>(() => {
+    return Array.from(workspace.data.confections.values());
+  }, [workspace]);
+
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'confection'
+      ? (cascadeStack[0].entityId as ConfectionId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: ConfectionId): void => {
+      const entry: ICascadeEntry = { entityType: 'confection', entityId: id, mode: 'view' };
+      squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
+  const squashAt = useCallback(
+    (depth: number, entry: ICascadeEntry): void => {
+      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
+    },
+    [squashCascade, cascadeStack]
+  );
+
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack.map((entry, index) => {
+      // Per-pane drill-down callbacks that squash to the right of this pane
+      const onIngredientClick = (id: IngredientId): void => {
+        squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+      };
+      const onFillingClick = (id: FillingId): void => {
+        squashAt(index, { entityType: 'filling', entityId: id, mode: 'view' });
+      };
+      const onMoldClick = (id: MoldId): void => {
+        squashAt(index, { entityType: 'mold', entityId: id, mode: 'view' });
+      };
+      const onProcedureClick = (id: ProcedureId): void => {
+        squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+      };
+      const onTaskClick = (id: TaskId): void => {
+        squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
+      };
+
+      if (entry.entityType === 'confection') {
+        const result = workspace.data.confections.get(entry.entityId as ConfectionId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load confection: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: (
+            <ConfectionDetail
+              confection={result.value}
+              onFillingClick={onFillingClick}
+              onIngredientClick={onIngredientClick}
+              onMoldClick={onMoldClick}
+              onProcedureClick={onProcedureClick}
+            />
+          )
+        };
+      }
+      if (entry.entityType === 'filling') {
+        const result = workspace.data.fillings.get(entry.entityId as FillingId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load filling: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <FillingDetail filling={result.value} onIngredientClick={onIngredientClick} />
+        };
+      }
+      if (entry.entityType === 'ingredient') {
+        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <IngredientDetail ingredient={result.value} />
+        };
+      }
+      if (entry.entityType === 'mold') {
+        const result = workspace.data.molds.get(entry.entityId as MoldId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load mold: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.displayName,
+          content: <MoldDetail mold={result.value} />
+        };
+      }
+      if (entry.entityType === 'procedure') {
+        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
+        };
+      }
+      if (entry.entityType === 'task') {
+        const result = workspace.data.tasks.get(entry.entityId as TaskId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <TaskDetail task={result.value} />
+        };
+      }
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [cascadeStack, workspace, squashAt]);
+
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      <div
+        className={`flex flex-col overflow-hidden transition-all ${
+          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
+        }`}
+      >
+        <EntityList<LibraryRuntime.IConfectionBase, ConfectionId>
+          entities={useFilteredEntities(confections, CONFECTION_FILTER_SPEC)}
+          descriptor={CONFECTION_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          emptyState={{
+            title: 'No Confections',
+            description: 'No confections found in the library.'
+          }}
+        />
+      </div>
       {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
     </div>
   );
@@ -338,6 +877,14 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
       return <IngredientsTabContent />;
     case 'fillings':
       return <FillingsTabContent />;
+    case 'molds':
+      return <MoldsTabContent />;
+    case 'tasks':
+      return <TasksTabContent />;
+    case 'procedures':
+      return <ProceduresTabContent />;
+    case 'confections':
+      return <ConfectionsTabContent />;
     default:
       return <TabPlaceholder tab={tab} />;
   }
@@ -348,6 +895,7 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
 // ============================================================================
 
 function AppShell(): React.ReactElement {
+  const workspace = useWorkspace();
   const mode = useNavigationStore((s) => s.mode);
   const activeTab = useNavigationStore(selectActiveTab);
   const modeTabs = useNavigationStore(selectModeTabs);
@@ -358,6 +906,8 @@ function AppShell(): React.ReactElement {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
+
+  const filterOptionProvider = useMemo(() => new WorkspaceFilterOptionProvider(workspace.data), [workspace]);
 
   // Sync navigation state ↔ URL hash
   useUrlSync(URL_SYNC_CONFIG, { mode, activeTab }, { setMode, setTab });
@@ -396,7 +946,7 @@ function AppShell(): React.ReactElement {
       <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={setTab} />
 
       {/* Main content area: sidebar + tab content */}
-      <SidebarLayout sidebar={<TabSidebar />}>
+      <SidebarLayout sidebar={<TabSidebar optionProvider={filterOptionProvider} />}>
         <TabContent tab={activeTab} />
       </SidebarLayout>
 

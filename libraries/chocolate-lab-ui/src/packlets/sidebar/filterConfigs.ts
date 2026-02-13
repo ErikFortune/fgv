@@ -61,26 +61,31 @@ export interface IFilterDefinition {
 export const TAB_FILTER_DEFINITIONS: Record<AppTab, ReadonlyArray<IFilterDefinition>> = {
   // Library tabs
   ingredients: [
+    { key: 'collection', label: 'Collection' },
     { key: 'category', label: 'Category' },
     { key: 'tags', label: 'Tags' }
   ],
   fillings: [
+    { key: 'collection', label: 'Collection' },
     { key: 'category', label: 'Category' },
-    { key: 'tags', label: 'Tags' },
-    { key: 'chocolate', label: 'Chocolate', multiple: false }
+    { key: 'tags', label: 'Tags' }
   ],
   confections: [
+    { key: 'collection', label: 'Collection' },
     { key: 'category', label: 'Category' },
-    { key: 'tags', label: 'Tags' },
-    { key: 'mold', label: 'Mold' },
-    { key: 'chocolate', label: 'Chocolate', multiple: false }
+    { key: 'tags', label: 'Tags' }
   ],
   molds: [
+    { key: 'collection', label: 'Collection' },
     { key: 'shape', label: 'Shape' },
-    { key: 'cavities', label: 'Cavities', multiple: false }
+    { key: 'cavities', label: 'Cavities' }
   ],
-  tasks: [{ key: 'category', label: 'Category' }],
+  tasks: [
+    { key: 'collection', label: 'Collection' },
+    { key: 'tags', label: 'Tags' }
+  ],
   procedures: [
+    { key: 'collection', label: 'Collection' },
     { key: 'category', label: 'Category' },
     { key: 'tags', label: 'Tags' }
   ],

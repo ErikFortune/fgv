@@ -103,7 +103,9 @@ export {
   IRawTaskEntity,
   IInlineTaskEntity,
   IRenderOptions,
-  ITaskEntityInvocation
+  ITaskEntityInvocation,
+  isTaskRefEntity,
+  isInlineTaskEntity
 } from './tasks';
 
 // Export aggregated converters namespace

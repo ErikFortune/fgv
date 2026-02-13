@@ -63,7 +63,7 @@ export type AppTab = ProductionTab | LibraryTab;
  */
 export const DEFAULT_TABS: Record<AppMode, AppTab> = {
   production: 'sessions',
-  library: 'ingredients'
+  library: 'confections'
 } as const;
 
 /**
@@ -72,7 +72,7 @@ export const DEFAULT_TABS: Record<AppMode, AppTab> = {
  */
 export const MODE_TABS: Record<AppMode, ReadonlyArray<AppTab>> = {
   production: ['sessions', 'journal', 'ingredient-inventory', 'mold-inventory'],
-  library: ['ingredients', 'fillings', 'confections', 'molds', 'tasks', 'procedures']
+  library: ['confections', 'fillings', 'ingredients', 'molds', 'procedures', 'tasks']
 } as const;
 
 /**
