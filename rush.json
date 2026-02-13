@@ -543,6 +543,26 @@
       "projectFolder": "plugins/typedoc-compact-theme",
       "shouldPublish": false,
       "tags": ["plugins", "typedoc"]
+    },
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "projectFolder": "libraries/ts-app-shell",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
+    },
+    {
+      "packageName": "@fgv/chocolate-lab-ui",
+      "projectFolder": "libraries/chocolate-lab-ui",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react", "chocolate"]
+    },
+    {
+      "packageName": "@fgv/chocolate-lab-web",
+      "projectFolder": "apps/chocolate-lab-web",
+      "shouldPublish": false,
+      "tags": ["apps", "ui", "browser", "chocolate"]
     }
   ]
 }

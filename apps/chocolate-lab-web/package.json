@@ -1,0 +1,72 @@
+{
+  "name": "@fgv/chocolate-lab-web",
+  "version": "0.1.0",
+  "description": "Chocolate Lab Web Edition - a full-featured chocolate kitchen app",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "clean": "rimraf lib dist",
+    "test": "echo 'No tests configured for chocolate-lab-web - this is a frontend app' && exit 0"
+  },
+  "keywords": [
+    "chocolate",
+    "recipe",
+    "kitchen",
+    "web",
+    "react"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@fgv/ts-app-shell": "workspace:*",
+    "@fgv/chocolate-lab-ui": "workspace:*",
+    "@fgv/ts-chocolate": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-web-extras": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
+    "react": "~19.2.3",
+    "react-dom": "~19.2.3",
+    "@heroicons/react": "~2.2.0",
+    "zustand": "~5.0.0",
+    "core-js": "~3.47.0",
+    "whatwg-fetch": "~3.6.20",
+    "stream-browserify": "~3.0.0",
+    "util": "~0.12.5",
+    "buffer": "~6.0.3",
+    "process": "~0.11.10"
+  },
+  "devDependencies": {
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@types/react": "~19.2.8",
+    "@types/react-dom": "~19.2.3",
+    "@types/node": "^20.14.9",
+    "typescript": "5.9.3",
+    "webpack": "~5.104.1",
+    "webpack-cli": "~6.0.1",
+    "webpack-dev-server": "~5.2.2",
+    "@babel/core": "~7.28.3",
+    "@babel/preset-env": "~7.28.3",
+    "@babel/preset-react": "~7.28.5",
+    "@babel/preset-typescript": "~7.28.5",
+    "babel-loader": "~10.0.0",
+    "css-loader": "~7.1.2",
+    "style-loader": "~4.0.0",
+    "postcss-loader": "~8.2.0",
+    "postcss": "~8.5.6",
+    "autoprefixer": "~10.4.23",
+    "tailwindcss": "^3.4.0",
+    "html-webpack-plugin": "~5.6.5",
+    "jest": "^29.7.0",
+    "rimraf": "^6.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  }
+}

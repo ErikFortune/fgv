@@ -8,6 +8,127 @@ importers:
 
   .: {}
 
+  ../../apps/chocolate-lab-web:
+    dependencies:
+      '@fgv/chocolate-lab-ui':
+        specifier: workspace:*
+        version: link:../../libraries/chocolate-lab-ui
+      '@fgv/ts-app-shell':
+        specifier: workspace:*
+        version: link:../../libraries/ts-app-shell
+      '@fgv/ts-chocolate':
+        specifier: workspace:*
+        version: link:../../libraries/ts-chocolate
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-web-extras
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.2.3)
+      buffer:
+        specifier: ~6.0.3
+        version: 6.0.3
+      core-js:
+        specifier: ~3.47.0
+        version: 3.47.0
+      process:
+        specifier: ~0.11.10
+        version: 0.11.10
+      react:
+        specifier: ~19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.3(react@19.2.3)
+      stream-browserify:
+        specifier: ~3.0.0
+        version: 3.0.0
+      util:
+        specifier: ~0.12.5
+        version: 0.12.5
+      whatwg-fetch:
+        specifier: ~3.6.20
+        version: 3.6.20
+      zustand:
+        specifier: ~5.0.0
+        version: 5.0.11(@types/react@19.2.8)(react@19.2.3)
+    devDependencies:
+      '@babel/core':
+        specifier: ~7.28.3
+        version: 7.28.6
+      '@babel/preset-env':
+        specifier: ~7.28.3
+        version: 7.28.6(@babel/core@7.28.6)
+      '@babel/preset-react':
+        specifier: ~7.28.5
+        version: 7.28.5(@babel/core@7.28.6)
+      '@babel/preset-typescript':
+        specifier: ~7.28.5
+        version: 7.28.5(@babel/core@7.28.6)
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils-jest
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.30
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.8
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.8)
+      autoprefixer:
+        specifier: ~10.4.23
+        version: 10.4.23(postcss@8.5.6)
+      babel-loader:
+        specifier: ~10.0.0
+        version: 10.0.0(@babel/core@7.28.6)(webpack@5.104.1)
+      css-loader:
+        specifier: ~7.1.2
+        version: 7.1.2(webpack@5.104.1)
+      html-webpack-plugin:
+        specifier: ~5.6.5
+        version: 5.6.6(webpack@5.104.1)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.30)(ts-node@10.9.2)
+      postcss:
+        specifier: ~8.5.6
+        version: 8.5.6
+      postcss-loader:
+        specifier: ~8.2.0
+        version: 8.2.0(postcss@8.5.6)(typescript@5.9.3)(webpack@5.104.1)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.2
+      style-loader:
+        specifier: ~4.0.0
+        version: 4.0.0(webpack@5.104.1)
+      tailwindcss:
+        specifier: ^3.4.0
+        version: 3.4.19
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      webpack:
+        specifier: ~5.104.1
+        version: 5.104.1(webpack-cli@6.0.1)
+      webpack-cli:
+        specifier: ~6.0.1
+        version: 6.0.1(webpack-dev-server@5.2.3)(webpack@5.104.1)
+      webpack-dev-server:
+        specifier: ~5.2.2
+        version: 5.2.3(webpack-cli@6.0.1)(webpack@5.104.1)
+
   ../../apps/sudoku:
     dependencies:
       '@fgv/ts-json-base':
@@ -135,6 +256,215 @@ importers:
       vitest:
         specifier: ^2.1.1
         version: 2.1.9(jsdom@25.0.1)
+
+  ../../libraries/chocolate-lab-ui:
+    dependencies:
+      '@fgv/ts-app-shell':
+        specifier: workspace:*
+        version: link:../ts-app-shell
+      '@fgv/ts-chocolate':
+        specifier: workspace:*
+        version: link:../ts-chocolate
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../ts-web-extras
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.2.3)
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+      zustand:
+        specifier: ~5.0.0
+        version: 5.0.11(@types/react@19.2.8)(react@19.2.3)
+    devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.1
+        version: 4.6.1(eslint@9.39.2)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.1.7
+        version: 1.1.7(@types/node@20.19.30)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.1.7
+        version: 1.1.7(@rushstack/heft@1.1.7)(@types/node@20.19.30)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-web-rig':
+        specifier: 1.2.0
+        version: 1.2.0(@rushstack/heft@1.1.7)(@types/node@20.19.30)(webpack-cli@6.0.1)
+      '@testing-library/dom':
+        specifier: ^10.4.0
+        version: 10.4.1
+      '@testing-library/jest-dom':
+        specifier: ^6.4.2
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16
+        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3)(@types/react@19.2.8)(react-dom@19.2.3)(react@19.2.3)
+      '@testing-library/user-event':
+        specifier: ^14.6.1
+        version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.30
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.8
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.8)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.53.0(@typescript-eslint/parser@8.53.0)(eslint@9.39.2)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.53.0(eslint@9.39.2)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2
+      eslint-plugin-import:
+        specifier: ^2.32.0
+        version: 2.32.0(eslint@9.39.2)
+      eslint-plugin-node:
+        specifier: ^11.1.0
+        version: 11.1.0(eslint@9.39.2)
+      eslint-plugin-promise:
+        specifier: ^7.2.1
+        version: 7.2.1(eslint@9.39.2)
+      eslint-plugin-react:
+        specifier: ^7.34.0
+        version: 7.37.5(eslint@9.39.2)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.39.2)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.30)(ts-node@10.9.2)
+      react:
+        specifier: ~19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.3(react@19.2.3)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.2
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  ../../libraries/ts-app-shell:
+    dependencies:
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.2.3)
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+    devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.1
+        version: 4.6.1(eslint@9.39.2)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.1.7
+        version: 1.1.7(@types/node@20.19.30)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.1.7
+        version: 1.1.7(@rushstack/heft@1.1.7)(@types/node@20.19.30)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-web-rig':
+        specifier: 1.2.0
+        version: 1.2.0(@rushstack/heft@1.1.7)(@types/node@20.19.30)(webpack-cli@6.0.1)
+      '@testing-library/dom':
+        specifier: ^10.4.0
+        version: 10.4.1
+      '@testing-library/jest-dom':
+        specifier: ^6.4.2
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16
+        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3)(@types/react@19.2.8)(react-dom@19.2.3)(react@19.2.3)
+      '@testing-library/user-event':
+        specifier: ^14.6.1
+        version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.30
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.8
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.8)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.53.0(@typescript-eslint/parser@8.53.0)(eslint@9.39.2)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.53.0(eslint@9.39.2)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2
+      eslint-plugin-import:
+        specifier: ^2.32.0
+        version: 2.32.0(eslint@9.39.2)
+      eslint-plugin-node:
+        specifier: ^11.1.0
+        version: 11.1.0(eslint@9.39.2)
+      eslint-plugin-promise:
+        specifier: ^7.2.1
+        version: 7.2.1(eslint@9.39.2)
+      eslint-plugin-react:
+        specifier: ^7.34.0
+        version: 7.37.5(eslint@9.39.2)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.39.2)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.30)(ts-node@10.9.2)
+      react:
+        specifier: ~19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.3(react@19.2.3)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.2
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   ../../libraries/ts-bcp47:
     dependencies:
@@ -5924,7 +6254,6 @@ packages:
     resolution: {integrity: sha512-3MbSL37jEchWZz2p2mjntRZtPt837ij10ApxKfgmXCTuHWagYg7iA5bqPw6C8BMPfwidlvfPI/fxOc42HLhcyg==}
     dependencies:
       csstype: 3.2.3
-    dev: true
 
   /@types/retry@0.12.2:
     resolution: {integrity: sha512-XISRgDJ2Tc5q4TRqvgJtzsRkFYNJzZrhTdtMoGVBttwzzQJkPnS3WWTFc7kuDRoPtPakl+T+OfdEUjYJj7Jbow==}
@@ -7968,7 +8297,6 @@ packages:
 
   /csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
-    dev: true
 
   /data-urls@3.0.2:
     resolution: {integrity: sha512-Jy/tj3ldjZJo63sVAvg6LHt2mHvl4V6AgRAmNDtLdm7faqtsx+aJG42rsyCo9JCoRVKwPFzKlIPx3DIibwSIaQ==}
@@ -14606,3 +14934,25 @@ packages:
   /yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  /zustand@5.0.11(@types/react@19.2.8)(react@19.2.3):
+    resolution: {integrity: sha512-fdZY+dk7zn/vbWNCYmzZULHRrss0jx5pPFiOuMZ/5HJN6Yv3u+1Wswy/4MpZEkEGhtNH+pwxZB8OKgUBPzYAGg==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+    dependencies:
+      '@types/react': 19.2.8
+      react: 19.2.3
+    dev: false
