@@ -162,6 +162,24 @@ Validates unknown value is a NoteCategory | NoteCategory.
 </td></tr>
 <tr><td>
 
+[isValidGroupName](./functions/isValidGroupName.md)
+
+</td><td>
+
+Type guard for GroupName | GroupName.
+
+</td></tr>
+<tr><td>
+
+[toGroupName](./functions/toGroupName.md)
+
+</td><td>
+
+Validates unknown value is a GroupName | GroupName.
+
+</td></tr>
+<tr><td>
+
 [isValidUrlCategory](./functions/isValidUrlCategory.md)
 
 </td><td>

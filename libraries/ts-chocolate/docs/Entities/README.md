@@ -280,6 +280,15 @@ Produced rolled truffle with concrete choices.
 </td></tr>
 <tr><td>
 
+[IConfectionDerivationEntity](./interfaces/IConfectionDerivationEntity.md)
+
+</td><td>
+
+Reference to a source confection recipe+variation from which a confection recipe was derived.
+
+</td></tr>
+<tr><td>
+
 [IConfectionYield](./interfaces/IConfectionYield.md)
 
 </td><td>
@@ -420,6 +429,15 @@ Journal entry for filling production sessions.
 </td><td>
 
 Journal entry for filling recipe edits.
+
+</td></tr>
+<tr><td>
+
+[IGroupNotesJournalEntryEntity](./interfaces/IGroupNotesJournalEntryEntity.md)
+
+</td><td>
+
+Journal entry for session group metadata and notes.
 
 </td></tr>
 <tr><td>
@@ -650,6 +668,15 @@ Union type for filling journal entries (edit or production)
 </td><td>
 
 Discriminated union of all journal entry types.
+
+</td></tr>
+<tr><td>
+
+[AnyRecipeJournalEntryEntity](./type-aliases/AnyRecipeJournalEntryEntity.md)
+
+</td><td>
+
+Discriminated union of recipe-based journal entry types.
 
 </td></tr>
 <tr><td>

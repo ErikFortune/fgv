@@ -39,6 +39,7 @@ export {
   IProducedBarTruffleEntity,
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
+  IConfectionDerivationEntity,
   IConfectionYield
 } from './confections';
 export {
@@ -67,10 +68,12 @@ export {
   AnyConfectionJournalEntry,
   AnyFillingJournalEntry,
   AnyJournalEntryEntity,
+  AnyRecipeJournalEntryEntity,
   IConfectionProductionJournalEntryEntity,
   IConfectionEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
   IFillingEditJournalEntryEntity,
+  IGroupNotesJournalEntryEntity,
   JournalEntryType
 } from './journal';
 

@@ -45,6 +45,7 @@ import {
   IMoldedBonBonYield,
   AnyConfectionYield,
   IFillingSlotEntity,
+  IConfectionDerivationEntity,
   IFrameDimensions,
   IIngredientFillingOptionEntity,
   MoldedBonBonRecipeEntity,
@@ -317,6 +318,17 @@ export const anyConfectionRecipeVariationEntity: Converter<AnyConfectionRecipeVa
 // ============================================================================
 
 /**
+ * Converter for {@link Entities.Confections.IConfectionDerivationEntity | IConfectionDerivationEntity}.
+ * @public
+ */
+export const confectionDerivationEntity: Converter<IConfectionDerivationEntity> =
+  Converters.object<IConfectionDerivationEntity>({
+    sourceVariationId: CommonConverters.confectionRecipeVariationId,
+    derivedDate: Converters.string, // ISO 8601 date string
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+/**
  * Common fields shared by all confection types (identity and metadata only)
  * @internal
  */
@@ -328,7 +340,8 @@ const commonConfectionFields: Conversion.FieldConverters<
   description: Converters.string.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional(),
-  goldenVariationSpec: CommonConverters.confectionRecipeVariationSpec
+  goldenVariationSpec: CommonConverters.confectionRecipeVariationSpec,
+  derivedFrom: confectionDerivationEntity.optional()
 };
 
 /**

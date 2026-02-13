@@ -53,6 +53,7 @@ import {
   IConfectionProductionJournalEntryEntity,
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
+  IGroupNotesJournalEntryEntity,
   JournalEntryType
 } from './model';
 
@@ -273,6 +274,20 @@ export const confectionProductionJournalEntryEntity: Converter<IConfectionProduc
   });
 
 /**
+ * Converter for {@link Entities.Journal.IGroupNotesJournalEntryEntity | IGroupNotesJournalEntryEntity}.
+ * @public
+ */
+export const groupNotesJournalEntryEntity: Converter<IGroupNotesJournalEntryEntity> =
+  Converters.object<IGroupNotesJournalEntryEntity>({
+    type: Converters.literal('group-notes'),
+    baseId: CommonConverters.baseJournalId,
+    timestamp: Converters.string,
+    group: CommonConverters.groupName,
+    label: Converters.string.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+/**
  * Converter for {@link Entities.Journal.AnyJournalEntryEntity | AnyJournalEntryEntity}.
  * Uses discriminated object pattern on `type` field.
  * Note: Kebab-case keys are intentional - they match the type discriminator values.
@@ -284,6 +299,7 @@ export const anyJournalEntryEntity: Converter<AnyJournalEntryEntity> =
     'filling-edit': fillingEditJournalEntryEntity,
     'confection-edit': confectionEditJournalEntryEntity,
     'filling-production': fillingProductionJournalEntryEntity,
-    'confection-production': confectionProductionJournalEntryEntity
+    'confection-production': confectionProductionJournalEntryEntity,
+    'group-notes': groupNotesJournalEntryEntity
     /* eslint-enable @typescript-eslint/naming-convention */
   });

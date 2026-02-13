@@ -161,4 +161,21 @@ readonly TVariation[]
 Variations history - contains type-specific configuration details
 
 </td></tr>
+<tr><td>
+
+[derivedFrom](./IConfectionRecipeEntityBase.derivedFrom.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IConfectionDerivationEntity](../../../interfaces/IConfectionDerivationEntity.md)
+
+</td><td>
+
+Optional derivation info - tracks lineage if this confection recipe was forked
+
+</td></tr>
 </tbody></table>

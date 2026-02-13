@@ -503,3 +503,11 @@ export type UrlCategory = Brand<string, 'UrlCategory'>;
  * @public
  */
 export const DefaultUrlCategory: UrlCategory = 'general' as UrlCategory;
+
+/**
+ * Name for a session group, used to organize related sessions and journal entries.
+ * Uses the standard base ID pattern (alphanumeric, dashes, underscores).
+ * Examples: '2026-01-15-valentines', 'weekly-batch-03', 'experiment-dark-ganache'
+ * @public
+ */
+export type GroupName = Brand<string, 'GroupName'>;

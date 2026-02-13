@@ -213,7 +213,7 @@ const anyInventoryEntryEntity: Converter<AnyInventoryEntryEntity>;
 type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
 
 // @public
-type AnyJournalEntryEntity = IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity | IFillingProductionJournalEntryEntity | IConfectionProductionJournalEntryEntity;
+type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity | IGroupNotesJournalEntryEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -230,6 +230,11 @@ type AnyProducedConfectionEntity = IProducedMoldedBonBonEntity | IProducedBarTru
 //
 // @public
 const anyProducedConfectionEntity: Converter<AnyProducedConfectionEntity>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IJournalEntryEntityBase"
+//
+// @public
+type AnyRecipeJournalEntryEntity = IFillingEditJournalEntryEntity | IConfectionEditJournalEntryEntity | IFillingProductionJournalEntryEntity | IConfectionProductionJournalEntryEntity;
 
 // @public
 type AnyResolvedFillingSlotEntity = IResolvedFillingSlotEntity | IResolvedIngredientSlotEntity;
@@ -847,6 +852,11 @@ type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId,
 // @public
 const confectionDecoration: Converter<IConfectionDecoration>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const confectionDerivationEntity: Converter<IConfectionDerivationEntity>;
+
 // @public
 class ConfectionEditingSession {
     static create<T extends IConfectionBase>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<AnyConfectionEditingSession>;
@@ -1025,6 +1035,7 @@ declare namespace Confections {
         IBarTruffleRecipeVariationEntity,
         IRolledTruffleRecipeVariationEntity,
         AnyConfectionRecipeVariationEntity,
+        IConfectionDerivationEntity,
         IConfectionRecipeEntityBase,
         MoldedBonBonRecipeEntity,
         BarTruffleRecipeEntity,
@@ -1165,6 +1176,7 @@ declare namespace Converters {
         measurementUnitOption,
         noteCategory,
         categorizedNote,
+        groupName,
         urlCategory,
         categorizedUrl,
         kebabCase,
@@ -1272,6 +1284,7 @@ declare namespace Converters_5 {
         barTruffleRecipeVariationEntity,
         rolledTruffleRecipeVariationEntity,
         anyConfectionRecipeVariationEntity,
+        confectionDerivationEntity,
         baseConfectionEntity,
         moldedBonBonEntity,
         barTruffleEntity,
@@ -1617,6 +1630,7 @@ declare namespace Entities {
         IProducedBarTruffleEntity,
         IProducedMoldedBonBonEntity,
         IProducedRolledTruffleEntity,
+        IConfectionDerivationEntity,
         IConfectionYield,
         FillingsLibrary,
         FillingCategory_2 as FillingCategory,
@@ -1637,10 +1651,12 @@ declare namespace Entities {
         AnyConfectionJournalEntry,
         AnyFillingJournalEntry,
         AnyJournalEntryEntity,
+        AnyRecipeJournalEntryEntity,
         IConfectionProductionJournalEntryEntity,
         IConfectionEditJournalEntryEntity,
         IFillingProductionJournalEntryEntity,
         IFillingEditJournalEntryEntity,
+        IGroupNotesJournalEntryEntity,
         JournalEntryType,
         SessionLibrary,
         AnySessionEntity,
@@ -2232,6 +2248,17 @@ function getSubLibraryPath(subLibraryId: SubLibraryId): string;
 function getTasksDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
+export type GroupName = Brand<string, 'GroupName'>;
+
+// @public
+const groupName: Converter<GroupName>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const groupNotesJournalEntryEntity: Converter<IGroupNotesJournalEntryEntity>;
+
+// @public
 function hasAllTags<T>(tags: string[], getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
 
 // @public
@@ -2610,6 +2637,13 @@ interface IConfectionDecoration {
 }
 
 // @public
+interface IConfectionDerivationEntity {
+    readonly derivedDate: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly sourceVariationId: ConfectionRecipeVariationId;
+}
+
+// @public
 interface IConfectionEditingSessionParams {
     readonly initialYield?: Confections.AnyConfectionYield;
     readonly sessionId?: SessionSpec;
@@ -2647,6 +2681,7 @@ interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBas
 interface IConfectionRecipeEntityBase<TType extends ConfectionType = ConfectionType, TVariation extends AnyConfectionRecipeVariationEntity = AnyConfectionRecipeVariationEntity> {
     readonly baseId: BaseConfectionId;
     readonly confectionType: TType;
+    readonly derivedFrom?: IConfectionDerivationEntity;
     readonly description?: string;
     readonly goldenVariationSpec: ConfectionRecipeVariationSpec;
     readonly name: ConfectionName;
@@ -3233,6 +3268,16 @@ interface IGanacheValidation {
 }
 
 // @public
+interface IGroupNotesJournalEntryEntity {
+    readonly baseId: BaseJournalId;
+    readonly group: GroupName;
+    readonly label?: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly timestamp: string;
+    readonly type: 'group-notes';
+}
+
+// @public
 interface IHasId<TId extends string> {
     // (undocumented)
     readonly id: TId;
@@ -3449,7 +3494,7 @@ interface IIterationOptions {
 }
 
 // @public
-interface IJournalEntryBase<TRecipe, TVariation, TVariationId, TEntity extends AnyJournalEntryEntity = AnyJournalEntryEntity> {
+interface IJournalEntryBase<TRecipe, TVariation, TVariationId, TEntity extends AnyRecipeJournalEntryEntity = AnyRecipeJournalEntryEntity> {
     readonly baseId: BaseJournalId;
     readonly entity: TEntity;
     readonly id: JournalId;
@@ -4696,6 +4741,7 @@ interface ISessionEntityBase {
     readonly baseId: BaseSessionId;
     readonly createdAt: string;
     readonly destination?: ISessionDestinationEntity;
+    readonly group?: GroupName;
     readonly label?: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly sessionType: PersistedSessionType;
@@ -4778,6 +4824,11 @@ function isFillingProductionJournalEntryEntity(entry: AnyJournalEntryEntity): en
 //
 // @public
 function isFillingSessionEntity(session: AnySessionEntity): session is IFillingSessionEntity;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isGroupNotesJournalEntryEntity(entry: AnyJournalEntryEntity): entry is IGroupNotesJournalEntryEntity;
 
 // @public
 export interface ISingleRootParams {
@@ -4953,6 +5004,9 @@ function isValidFillingName(from: unknown): from is FillingName;
 
 // @public
 function isValidFillingRecipeVariationSpec(from: unknown): from is FillingRecipeVariationSpec;
+
+// @public
+function isValidGroupName(from: unknown): from is GroupName;
 
 // @public
 function isValidJournalId(from: unknown): from is JournalId;
@@ -5153,6 +5207,7 @@ interface IWeightContribution {
 
 // @public
 interface IWorkflowPreferences {
+    readonly adaptedRecipeNameSuffix?: string;
     readonly autoExpandIngredients?: boolean;
     readonly autoSaveIntervalSeconds?: number;
     readonly confirmAbandon?: boolean;
@@ -5224,6 +5279,7 @@ declare namespace Journal {
         confectionEditJournalEntryEntity,
         fillingProductionJournalEntryEntity,
         confectionProductionJournalEntryEntity,
+        groupNotesJournalEntryEntity,
         anyJournalEntryEntity
     }
 }
@@ -5235,6 +5291,7 @@ declare namespace Journal_2 {
         isConfectionEditJournalEntryEntity,
         isFillingProductionJournalEntryEntity,
         isConfectionProductionJournalEntryEntity,
+        isGroupNotesJournalEntryEntity,
         JournalEntryType,
         allJournalEntryTypes,
         IJournalEntryEntityBase,
@@ -5242,6 +5299,8 @@ declare namespace Journal_2 {
         IConfectionEditJournalEntryEntity,
         IFillingProductionJournalEntryEntity,
         IConfectionProductionJournalEntryEntity,
+        IGroupNotesJournalEntryEntity,
+        AnyRecipeJournalEntryEntity,
         AnyJournalEntryEntity,
         isFillingJournalEntry,
         isConfectionJournalEntry,
@@ -5275,7 +5334,7 @@ type JournalCollectionEntryInit = SubLibraryEntryInit<BaseJournalId, AnyJournalE
 type JournalCollectionValidator = SubLibraryCollectionValidator<BaseJournalId, AnyJournalEntryEntity>;
 
 // @public
-type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit';
+type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit' | 'group-notes';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6958,6 +7017,9 @@ function toFillingName(from: unknown): Result<FillingName>;
 function toFillingRecipeVariationSpec(from: unknown): Result<FillingRecipeVariationSpec>;
 
 // @public
+function toGroupName(from: unknown): Result<GroupName>;
+
+// @public
 function toJournalId(from: unknown): Result<JournalId>;
 
 // @public
@@ -7191,6 +7253,8 @@ declare namespace Validation {
         toBaseConfectionId,
         isValidNoteCategory,
         toNoteCategory,
+        isValidGroupName,
+        toGroupName,
         isValidUrlCategory,
         toUrlCategory,
         isValidFillingName,

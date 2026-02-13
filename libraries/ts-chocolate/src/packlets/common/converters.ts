@@ -75,7 +75,8 @@ import {
   UrlCategory,
   WeightUnit,
   ProcedureType,
-  NoteCategory
+  NoteCategory,
+  GroupName
 } from './ids';
 import {
   allAdditionalChocolatePurposes,
@@ -124,6 +125,7 @@ import {
   toMillimeters,
   toMinutes,
   toNoteCategory,
+  toGroupName,
   toPercentage,
   toRatingScore,
   toBaseSessionId,
@@ -776,6 +778,12 @@ export const categorizedNote: Converter<ICategorizedNote> = Converters.object<IC
   category: noteCategory,
   note: Converters.string
 });
+
+/**
+ * Converter for {@link GroupName | GroupName}.
+ * @public
+ */
+export const groupName: Converter<GroupName> = Converters.generic(toGroupName);
 
 /**
  * Creates a converter for {@link Model.IRefWithNotes | IRefWithNotes\<TId\>} objects.

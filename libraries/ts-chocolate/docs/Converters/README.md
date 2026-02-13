@@ -721,6 +721,15 @@ Converter for Model.ICategorizedNote | ICategorizedNote.
 </td></tr>
 <tr><td>
 
+[groupName](./variables/groupName.md)
+
+</td><td>
+
+Converter for GroupName | GroupName.
+
+</td></tr>
+<tr><td>
+
 [urlCategory](./variables/urlCategory.md)
 
 </td><td>

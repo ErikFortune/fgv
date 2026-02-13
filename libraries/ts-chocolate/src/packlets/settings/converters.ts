@@ -101,7 +101,8 @@ export const workflowPreferences: Converter<IWorkflowPreferences> = Converters.o
   autoSaveIntervalSeconds: Converters.number.optional(),
   confirmAbandon: Converters.boolean.optional(),
   showPercentages: Converters.boolean.optional(),
-  autoExpandIngredients: Converters.boolean.optional()
+  autoExpandIngredients: Converters.boolean.optional(),
+  adaptedRecipeNameSuffix: Converters.string.optional()
 });
 
 /**

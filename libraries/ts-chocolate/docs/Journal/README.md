@@ -161,6 +161,15 @@ Type guard for Entities.Journal.IConfectionProductionJournalEntryEntity | IConfe
 </td></tr>
 <tr><td>
 
+[isGroupNotesJournalEntryEntity](./functions/isGroupNotesJournalEntryEntity.md)
+
+</td><td>
+
+Type guard for Entities.Journal.IGroupNotesJournalEntryEntity | IGroupNotesJournalEntryEntity.
+
+</td></tr>
+<tr><td>
+
 [isFillingJournalEntry](./functions/isFillingJournalEntry.md)
 
 </td><td>

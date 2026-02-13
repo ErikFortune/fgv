@@ -36,7 +36,8 @@ import {
   SessionId,
   BaseSessionId,
   SlotId,
-  CollectionId
+  CollectionId,
+  GroupName
 } from '../../common';
 import { AnyProducedConfectionEntity } from '../confections';
 import { IProducedFillingEntity } from '../fillings';
@@ -153,6 +154,8 @@ export interface ISessionEntityBase {
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** Destination configuration for saving derived entities */
   readonly destination?: ISessionDestinationEntity;
+  /** Optional group identifier for organizing related sessions */
+  readonly group?: GroupName;
 }
 
 // ============================================================================

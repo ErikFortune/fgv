@@ -198,6 +198,15 @@ Converter for Entities.Confections.AnyConfectionRecipeVariationEntity | AnyConfe
 </td></tr>
 <tr><td>
 
+[confectionDerivationEntity](./variables/confectionDerivationEntity.md)
+
+</td><td>
+
+Converter for Entities.Confections.IConfectionDerivationEntity | IConfectionDerivationEntity.
+
+</td></tr>
+<tr><td>
+
 [baseConfectionEntity](./variables/baseConfectionEntity.md)
 
 </td><td>

@@ -44,6 +44,7 @@ import {
   Validation,
   BaseJournalId,
   NoteCategory,
+  GroupName,
   SessionId,
   JournalId
 } from '../../../packlets/common';
@@ -87,6 +88,8 @@ const {
   toUrlCategory,
   isValidNoteCategory,
   toNoteCategory,
+  isValidGroupName,
+  toGroupName,
   isValidSessionId,
   toSessionId,
   isValidJournalId,
@@ -922,6 +925,39 @@ describe('Common validation', () => {
         expect(toNoteCategory('')).toFailWith(/Invalid NoteCategory/);
         expect(toNoteCategory('bad.category')).toFailWith(/Invalid NoteCategory/);
         expect(toNoteCategory(123)).toFailWith(/Invalid NoteCategory/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // GroupName Validation
+  // ============================================================================
+
+  describe('GroupName validation', () => {
+    describe('isValidGroupName', () => {
+      test('returns true for valid group names', () => {
+        expect(isValidGroupName('2026-01-15-valentines')).toBe(true);
+        expect(isValidGroupName('weekly-batch-03')).toBe(true);
+        expect(isValidGroupName('experiment_dark_ganache')).toBe(true);
+      });
+
+      test('returns false for invalid group names', () => {
+        expect(isValidGroupName('')).toBe(false);
+        expect(isValidGroupName('bad.group')).toBe(false);
+        expect(isValidGroupName(123)).toBe(false);
+      });
+    });
+
+    describe('toGroupName', () => {
+      test('succeeds with valid group name', () => {
+        expect(toGroupName('2026-01-15-valentines')).toSucceedWith('2026-01-15-valentines' as GroupName);
+        expect(toGroupName('weekly-batch-03')).toSucceedWith('weekly-batch-03' as GroupName);
+      });
+
+      test('fails with invalid group name', () => {
+        expect(toGroupName('')).toFailWith(/Invalid GroupName/);
+        expect(toGroupName('bad.group')).toFailWith(/Invalid GroupName/);
+        expect(toGroupName(123)).toFailWith(/Invalid GroupName/);
       });
     });
   });

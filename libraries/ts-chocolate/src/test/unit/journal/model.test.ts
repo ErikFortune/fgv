@@ -29,10 +29,12 @@ import {
   IFillingProductionJournalEntryEntity,
   IConfectionEditJournalEntryEntity,
   IConfectionProductionJournalEntryEntity,
+  IGroupNotesJournalEntryEntity,
   IFillingRecipeVariationEntity,
   IProducedFillingEntity,
   IProducedMoldedBonBonEntity
 } from '../../../packlets/entities';
+import { GroupName, NoteCategory } from '../../../packlets/common';
 
 describe('Journal Model', () => {
   describe('allJournalEntryTypes', () => {
@@ -41,10 +43,11 @@ describe('Journal Model', () => {
       expect(Journal.allJournalEntryTypes).toContain('confection-edit');
       expect(Journal.allJournalEntryTypes).toContain('filling-production');
       expect(Journal.allJournalEntryTypes).toContain('confection-production');
+      expect(Journal.allJournalEntryTypes).toContain('group-notes');
     });
 
     test('has correct number of entry types', () => {
-      expect(Journal.allJournalEntryTypes.length).toBe(4);
+      expect(Journal.allJournalEntryTypes.length).toBe(5);
     });
 
     test('type assertion for JournalEntryType', () => {
@@ -221,6 +224,35 @@ describe('Journal Model', () => {
         if (Journal.isConfectionProductionJournalEntryEntity(entry)) {
           expect(entry.type).toBe('confection-production');
           expect(entry.yield.count).toBe(24);
+        }
+      });
+    });
+
+    describe('isGroupNotesJournalEntryEntity', () => {
+      const groupNotesEntry: IGroupNotesJournalEntryEntity = {
+        type: 'group-notes',
+        baseId: '2026-01-15-100000-00000005' as IGroupNotesJournalEntryEntity['baseId'],
+        timestamp: '2026-01-15T10:00:00Z',
+        group: '2026-01-15-batch' as GroupName,
+        label: 'January batch',
+        notes: [{ category: 'general' as NoteCategory, note: 'First batch of the year' }]
+      };
+
+      test('returns true for group notes entries', () => {
+        expect(Journal.isGroupNotesJournalEntryEntity(groupNotesEntry)).toBe(true);
+      });
+
+      test('returns false for other entry types', () => {
+        expect(Journal.isGroupNotesJournalEntryEntity(fillingEditEntry)).toBe(false);
+        expect(Journal.isGroupNotesJournalEntryEntity(confectionProductionEntry)).toBe(false);
+      });
+
+      test('narrows type correctly', () => {
+        const entry: AnyJournalEntryEntity = groupNotesEntry;
+        if (Journal.isGroupNotesJournalEntryEntity(entry)) {
+          expect(entry.type).toBe('group-notes');
+          expect(entry.group).toBe('2026-01-15-batch');
+          expect(entry.label).toBe('January batch');
         }
       });
     });

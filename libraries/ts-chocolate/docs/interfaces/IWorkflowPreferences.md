@@ -92,4 +92,21 @@ boolean
 Whether to auto-expand ingredient details
 
 </td></tr>
+<tr><td>
+
+[adaptedRecipeNameSuffix](./IWorkflowPreferences.adaptedRecipeNameSuffix.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Suffix appended to recipe names when creating adapted copies (default: " (adapted)")
+
+</td></tr>
 </tbody></table>

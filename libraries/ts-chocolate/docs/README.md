@@ -761,6 +761,15 @@ Category for a URL associated with an entity.
 </td></tr>
 <tr><td>
 
+[GroupName](./type-aliases/GroupName.md)
+
+</td><td>
+
+Name for a session group, used to organize related sessions and journal entries.
+
+</td></tr>
+<tr><td>
+
 [WorkspaceState](./type-aliases/WorkspaceState.md)
 
 </td><td>

@@ -325,6 +325,33 @@ export type AnyConfectionRecipeVariationEntity =
   | IRolledTruffleRecipeVariationEntity;
 
 // ============================================================================
+// Derivation Tracking
+// ============================================================================
+
+/**
+ * Reference to a source confection recipe+variation from which a confection recipe was derived.
+ * Used to track lineage when a user edits a read-only confection recipe and creates
+ * a new confection recipe in a writable collection.
+ * @public
+ */
+export interface IConfectionDerivationEntity {
+  /**
+   * Source confection recipe variation ID (format: "sourceId.confectionId\@variationSpec")
+   */
+  readonly sourceVariationId: ConfectionRecipeVariationId;
+
+  /**
+   * Date of derivation (ISO 8601 format)
+   */
+  readonly derivedDate: string;
+
+  /**
+   * Optional categorized notes about the derivation
+   */
+  readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+}
+
+// ============================================================================
 // Base Confection Interface
 // ============================================================================
 
@@ -353,6 +380,11 @@ export interface IConfectionRecipeEntityBase<
   readonly goldenVariationSpec: ConfectionRecipeVariationSpec;
   /** Variations history - contains type-specific configuration details */
   readonly variations: ReadonlyArray<TVariation>;
+  /**
+   * Optional derivation info - tracks lineage if this confection recipe was forked
+   * from another confection recipe (e.g., when editing a read-only confection recipe)
+   */
+  readonly derivedFrom?: IConfectionDerivationEntity;
 }
 
 // ============================================================================

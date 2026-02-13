@@ -64,7 +64,8 @@ import {
   SlotId,
   CollectionId,
   UrlCategory,
-  NoteCategory
+  NoteCategory,
+  GroupName
 } from './ids';
 
 // ============================================================================
@@ -273,6 +274,30 @@ export function toNoteCategory(from: unknown): Result<NoteCategory> {
   return Failure.with(
     'Invalid NoteCategory: must be non-empty alphanumeric with dashes/underscores, no dots'
   );
+}
+
+/**
+ * Type guard for {@link GroupName | GroupName}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link GroupName | GroupName}.
+ * @public
+ */
+export function isValidGroupName(from: unknown): from is GroupName {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link GroupName | GroupName}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link GroupName | GroupName} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toGroupName(from: unknown): Result<GroupName> {
+  if (isValidGroupName(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid GroupName: must be non-empty alphanumeric with dashes/underscores, no dots');
 }
 
 /**

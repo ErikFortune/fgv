@@ -24,7 +24,7 @@
  */
 
 import { BaseJournalId, JournalId } from '../common';
-import { AnyJournalEntryEntity } from '../entities';
+import { AnyRecipeJournalEntryEntity } from '../entities';
 import { ISessionContext } from './model';
 import { IJournalEntryBase } from './model';
 
@@ -42,7 +42,7 @@ export abstract class JournalEntryBase<
   TRecipe,
   TVariation,
   TVariationId,
-  TEntity extends AnyJournalEntryEntity
+  TEntity extends AnyRecipeJournalEntryEntity
 > implements IJournalEntryBase<TRecipe, TVariation, TVariationId, TEntity>
 {
   protected readonly _context: ISessionContext;

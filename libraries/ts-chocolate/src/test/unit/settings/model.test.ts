@@ -56,7 +56,8 @@ describe('settings model', () => {
         autoSaveIntervalSeconds: 60,
         confirmAbandon: true,
         showPercentages: true,
-        autoExpandIngredients: false
+        autoExpandIngredients: false,
+        adaptedRecipeNameSuffix: ' (adapted)'
       });
     });
 

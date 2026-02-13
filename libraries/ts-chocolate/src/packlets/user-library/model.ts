@@ -37,6 +37,7 @@ import {
 } from '../common';
 import {
   AnyJournalEntryEntity,
+  AnyRecipeJournalEntryEntity,
   AnySessionEntity,
   IConfectionEditJournalEntryEntity,
   IConfectionProductionJournalEntryEntity,
@@ -122,7 +123,7 @@ export interface IJournalEntryBase<
   TRecipe,
   TVariation,
   TVariationId,
-  TEntity extends AnyJournalEntryEntity = AnyJournalEntryEntity
+  TEntity extends AnyRecipeJournalEntryEntity = AnyRecipeJournalEntryEntity
 > {
   /** Composite journal entry ID (collectionId.baseId) */
   readonly id: JournalId;

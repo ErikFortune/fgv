@@ -199,4 +199,21 @@ Optional categorized notes
 Destination configuration for saving derived entities
 
 </td></tr>
+<tr><td>
+
+[group](./ISessionEntityBase.group.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[GroupName](../../type-aliases/GroupName.md)
+
+</td><td>
+
+Optional group identifier for organizing related sessions
+
+</td></tr>
 </tbody></table>

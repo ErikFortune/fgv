@@ -103,6 +103,8 @@ export interface IWorkflowPreferences {
   readonly showPercentages?: boolean;
   /** Whether to auto-expand ingredient details */
   readonly autoExpandIngredients?: boolean;
+  /** Suffix appended to recipe names when creating adapted copies (default: " (adapted)") */
+  readonly adaptedRecipeNameSuffix?: string;
 }
 
 // ============================================================================
@@ -274,7 +276,8 @@ export const DEFAULT_WORKFLOW: IWorkflowPreferences = {
   autoSaveIntervalSeconds: 60,
   confirmAbandon: true,
   showPercentages: true,
-  autoExpandIngredients: false
+  autoExpandIngredients: false,
+  adaptedRecipeNameSuffix: ' (adapted)'
 };
 
 /**
