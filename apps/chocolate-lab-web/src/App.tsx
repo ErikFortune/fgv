@@ -18,8 +18,8 @@ import {
   SidebarLayout,
   EntityList,
   type IEntityDescriptor,
-  CascadeContainer,
-  type ICascadeColumn
+  type ICascadeColumn,
+  EntityTabLayout
 } from '@fgv/ts-app-shell';
 import { Workspace, type LibraryRuntime } from '@fgv/ts-chocolate';
 import {
@@ -226,9 +226,11 @@ const TASK_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.ITask> = {
 
 function IngredientsTabContent(): React.ReactElement {
   const workspace = useWorkspace();
-  const pushCascade = useNavigationStore((s) => s.pushCascade);
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
   const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
 
   // Collect all ingredients into an array (memoized on workspace version)
   const ingredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
@@ -245,9 +247,9 @@ function IngredientsTabContent(): React.ReactElement {
     (id: IngredientId): void => {
       const entry: ICascadeEntry = { entityType: 'ingredient', entityId: id, mode: 'view' };
       // Replace the cascade with just this ingredient
-      pushCascade(entry);
+      squashCascade([entry]);
     },
-    [pushCascade]
+    [squashCascade]
   );
 
   // Build cascade columns from the cascade stack
@@ -272,28 +274,25 @@ function IngredientsTabContent(): React.ReactElement {
   }, [cascadeStack, workspace]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Entity list (collapses when cascade is open) */}
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${
-          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
-        }`}
-      >
+    <EntityTabLayout
+      list={
         <EntityList<LibraryRuntime.AnyIngredient, IngredientId>
           entities={useFilteredEntities(ingredients, INGREDIENT_FILTER_SPEC)}
           descriptor={INGREDIENT_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
+          onDrill={collapseList}
           emptyState={{
             title: 'No Ingredients',
             description: 'No ingredients found in the library.'
           }}
         />
-      </div>
-
-      {/* Cascade columns */}
-      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
-    </div>
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+    />
   );
 }
 
@@ -306,6 +305,8 @@ function FillingsTabContent(): React.ReactElement {
   const squashCascade = useNavigationStore((s) => s.squashCascade);
   const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
 
   // Collect all fillings into an array (memoized on workspace version)
   const fillings = useMemo<ReadonlyArray<LibraryRuntime.FillingRecipe>>(() => {
@@ -380,28 +381,25 @@ function FillingsTabContent(): React.ReactElement {
   }, [cascadeStack, workspace, squashAt]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Entity list (collapses when cascade is open) */}
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${
-          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
-        }`}
-      >
+    <EntityTabLayout
+      list={
         <EntityList<LibraryRuntime.FillingRecipe, FillingId>
           entities={useFilteredEntities(fillings, FILLING_FILTER_SPEC)}
           descriptor={FILLING_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
+          onDrill={collapseList}
           emptyState={{
             title: 'No Fillings',
             description: 'No filling recipes found in the library.'
           }}
         />
-      </div>
-
-      {/* Cascade columns */}
-      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
-    </div>
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+    />
   );
 }
 
@@ -414,6 +412,8 @@ function MoldsTabContent(): React.ReactElement {
   const squashCascade = useNavigationStore((s) => s.squashCascade);
   const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
 
   const molds = useMemo<ReadonlyArray<LibraryRuntime.IMold>>(() => {
     return Array.from(workspace.data.molds.values());
@@ -458,25 +458,25 @@ function MoldsTabContent(): React.ReactElement {
   }, [cascadeStack, workspace]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${
-          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
-        }`}
-      >
+    <EntityTabLayout
+      list={
         <EntityList<LibraryRuntime.IMold, MoldId>
           entities={useFilteredEntities(molds, MOLD_FILTER_SPEC)}
           descriptor={MOLD_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
+          onDrill={collapseList}
           emptyState={{
             title: 'No Molds',
             description: 'No molds found in the library.'
           }}
         />
-      </div>
-      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
-    </div>
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+    />
   );
 }
 
@@ -489,6 +489,8 @@ function TasksTabContent(): React.ReactElement {
   const squashCascade = useNavigationStore((s) => s.squashCascade);
   const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
 
   const tasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
     return Array.from(workspace.data.tasks.values());
@@ -533,25 +535,25 @@ function TasksTabContent(): React.ReactElement {
   }, [cascadeStack, workspace]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${
-          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
-        }`}
-      >
+    <EntityTabLayout
+      list={
         <EntityList<LibraryRuntime.ITask, TaskId>
           entities={useFilteredEntities(tasks, TASK_FILTER_SPEC)}
           descriptor={TASK_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
+          onDrill={collapseList}
           emptyState={{
             title: 'No Tasks',
             description: 'No tasks found in the library.'
           }}
         />
-      </div>
-      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
-    </div>
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+    />
   );
 }
 
@@ -564,6 +566,8 @@ function ProceduresTabContent(): React.ReactElement {
   const squashCascade = useNavigationStore((s) => s.squashCascade);
   const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
 
   const procedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
     return Array.from(workspace.data.procedures.values());
@@ -635,25 +639,25 @@ function ProceduresTabContent(): React.ReactElement {
   }, [cascadeStack, workspace, squashAt]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${
-          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
-        }`}
-      >
+    <EntityTabLayout
+      list={
         <EntityList<LibraryRuntime.IProcedure, ProcedureId>
           entities={useFilteredEntities(procedures, PROCEDURE_FILTER_SPEC)}
           descriptor={PROCEDURE_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
+          onDrill={collapseList}
           emptyState={{
             title: 'No Procedures',
             description: 'No procedures found in the library.'
           }}
         />
-      </div>
-      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
-    </div>
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+    />
   );
 }
 
@@ -666,6 +670,8 @@ function ConfectionsTabContent(): React.ReactElement {
   const squashCascade = useNavigationStore((s) => s.squashCascade);
   const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
 
   const confections = useMemo<ReadonlyArray<LibraryRuntime.IConfectionBase>>(() => {
     return Array.from(workspace.data.confections.values());
@@ -818,25 +824,25 @@ function ConfectionsTabContent(): React.ReactElement {
   }, [cascadeStack, workspace, squashAt]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${
-          cascadeStack.length > 0 ? 'w-0 min-w-0' : 'flex-1'
-        }`}
-      >
+    <EntityTabLayout
+      list={
         <EntityList<LibraryRuntime.IConfectionBase, ConfectionId>
           entities={useFilteredEntities(confections, CONFECTION_FILTER_SPEC)}
           descriptor={CONFECTION_DESCRIPTOR}
           selectedId={selectedId}
           onSelect={handleSelect}
+          onDrill={collapseList}
           emptyState={{
             title: 'No Confections',
             description: 'No confections found in the library.'
           }}
         />
-      </div>
-      {cascadeStack.length > 0 && <CascadeContainer columns={cascadeColumns} onPopTo={popCascadeTo} />}
-    </div>
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+    />
   );
 }
 

@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 // ============================================================================
 // Cascade Column
@@ -59,6 +59,8 @@ export interface ICascadeContainerProps {
   readonly onPopTo: (depth: number) => void;
   /** Minimum column width in CSS units (default: '400px') */
   readonly minColumnWidth?: string;
+  /** Callback when the user clicks inside a cascade column (signals list should collapse) */
+  readonly onFocus?: () => void;
 }
 
 // ============================================================================
@@ -75,8 +77,27 @@ export interface ICascadeContainerProps {
  * @public
  */
 export function CascadeContainer(props: ICascadeContainerProps): React.ReactElement | null {
-  const { columns, onPopTo, minColumnWidth = '400px' } = props;
+  const { columns, onPopTo, minColumnWidth = '400px', onFocus } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((): void => {
+    onFocus?.();
+  }, [onFocus]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent): void => {
+      if (e.key === 'Escape' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (columns.length > 1) {
+          onPopTo(columns.length - 1);
+        } else {
+          onPopTo(0);
+        }
+      }
+    },
+    [columns.length, onPopTo]
+  );
 
   // Auto-scroll to rightmost column when columns change
   useEffect(() => {
@@ -93,7 +114,11 @@ export function CascadeContainer(props: ICascadeContainerProps): React.ReactElem
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div
+      className="flex flex-col flex-1 overflow-hidden outline-none"
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+    >
       {/* Breadcrumb trail */}
       <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-gray-200 text-xs shrink-0 overflow-x-auto">
         <button
@@ -120,7 +145,11 @@ export function CascadeContainer(props: ICascadeContainerProps): React.ReactElem
       </div>
 
       {/* Columns */}
-      <div ref={scrollRef} className="flex flex-1 overflow-x-auto overflow-y-hidden">
+      <div
+        ref={scrollRef}
+        className="flex flex-1 overflow-x-auto overflow-y-hidden"
+        onMouseDown={handleMouseDown}
+      >
         {columns.map((col) => (
           <div
             key={col.key}

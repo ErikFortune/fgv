@@ -61,6 +61,8 @@ export interface INavigationState {
   readonly activeTabByMode: Record<AppMode, AppTab>;
   /** Column cascade stack (ordered left-to-right) */
   readonly cascadeStack: ReadonlyArray<ICascadeEntry>;
+  /** Whether the entity list is collapsed (user has focused into the detail pane) */
+  readonly listCollapsed: boolean;
   /** Per-tab filter state (persisted across tab switches) */
   readonly filtersByTab: Partial<Record<AppTab, IFilterState>>;
 }
@@ -92,6 +94,8 @@ export interface INavigationActions {
   setFilter: (tab: AppTab, filter: Partial<IFilterState>) => void;
   /** Clear the filter state for a specific tab. */
   clearFilter: (tab: AppTab) => void;
+  /** Collapse the entity list (user focused into detail pane). */
+  collapseList: () => void;
   /** Clear all filters across all tabs. */
   clearAllFilters: () => void;
 }
@@ -123,11 +127,12 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
       library: DEFAULT_TABS.library
     },
     cascadeStack: [],
+    listCollapsed: false,
     filtersByTab: {},
 
     // ---- Actions ----
     setMode: (mode: AppMode): void => {
-      set({ mode, cascadeStack: [] });
+      set({ mode, cascadeStack: [], listCollapsed: false });
     },
 
     setTab: (tab: AppTab): void => {
@@ -139,7 +144,8 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
         }
         return {
           activeTabByMode: { ...state.activeTabByMode, [mode]: tab },
-          cascadeStack: []
+          cascadeStack: [],
+          listCollapsed: false
         };
       });
     },
@@ -151,7 +157,10 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
     },
 
     squashCascade: (entries: ReadonlyArray<ICascadeEntry>): void => {
-      set({ cascadeStack: entries });
+      set((state) => ({
+        cascadeStack: entries,
+        listCollapsed: entries.length === 0 ? false : state.listCollapsed
+      }));
     },
 
     popCascade: (): void => {
@@ -161,13 +170,21 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
     },
 
     popCascadeTo: (depth: number): void => {
-      set((state) => ({
-        cascadeStack: state.cascadeStack.slice(0, Math.max(0, depth))
-      }));
+      set((state) => {
+        const newStack = state.cascadeStack.slice(0, Math.max(0, depth));
+        return {
+          cascadeStack: newStack,
+          listCollapsed: newStack.length > 0 ? state.listCollapsed : false
+        };
+      });
     },
 
     clearCascade: (): void => {
-      set({ cascadeStack: [] });
+      set({ cascadeStack: [], listCollapsed: false });
+    },
+
+    collapseList: (): void => {
+      set({ listCollapsed: true });
     },
 
     setFilter: (tab: AppTab, filter: Partial<IFilterState>): void => {

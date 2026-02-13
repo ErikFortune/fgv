@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 // ============================================================================
 // Entity Item Descriptor
@@ -68,8 +68,10 @@ export interface IEntityListProps<TEntity, TId extends string = string> {
   readonly descriptor: IEntityDescriptor<TEntity, TId>;
   /** Currently selected entity ID (if any) */
   readonly selectedId?: TId;
-  /** Callback when an entity is selected */
+  /** Callback when an entity is selected (browse — list stays open) */
   readonly onSelect: (id: TId) => void;
+  /** Callback when the user drills into the selected entity (Enter/→ — collapses list) */
+  readonly onDrill?: () => void;
   /** Empty state configuration */
   readonly emptyState?: IEmptyStateConfig;
   /** Optional header content (e.g., result count) */
@@ -118,14 +120,58 @@ export interface IEmptyStateAction {
 export function EntityList<TEntity, TId extends string = string>(
   props: IEntityListProps<TEntity, TId>
 ): React.ReactElement {
-  const { entities, descriptor, selectedId, onSelect, emptyState, header } = props;
+  const { entities, descriptor, selectedId, onSelect, onDrill, emptyState, header } = props;
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Scroll the selected item into view when selection changes
+  useEffect(() => {
+    if (selectedId && listRef.current) {
+      const selectedButton = listRef.current.querySelector(`[data-entity-id="${selectedId}"]`);
+      if (selectedButton) {
+        selectedButton.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [selectedId]);
+
+  // Find the index of the currently selected entity
+  const selectedIndex = entities.findIndex((e) => descriptor.getId(e) === selectedId);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent): void => {
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault();
+          const nextIndex = selectedIndex < entities.length - 1 ? selectedIndex + 1 : 0;
+          onSelect(descriptor.getId(entities[nextIndex]));
+          break;
+        }
+        case 'ArrowUp': {
+          e.preventDefault();
+          const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : entities.length - 1;
+          onSelect(descriptor.getId(entities[prevIndex]));
+          break;
+        }
+        case 'Enter':
+        case 'ArrowRight': {
+          if (selectedId !== undefined && onDrill) {
+            e.preventDefault();
+            onDrill();
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    [entities, descriptor, selectedId, selectedIndex, onSelect, onDrill]
+  );
 
   if (entities.length === 0 && emptyState) {
     return <EmptyState config={emptyState} />;
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Optional header */}
       {header !== undefined ? (
         <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-100">{header}</div>
@@ -136,7 +182,7 @@ export function EntityList<TEntity, TId extends string = string>(
       ) : null}
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={listRef} className="flex-1 overflow-y-auto">
         {entities.map((entity) => {
           const id = descriptor.getId(entity);
           const label = descriptor.getLabel(entity);
@@ -147,6 +193,7 @@ export function EntityList<TEntity, TId extends string = string>(
           return (
             <button
               key={id}
+              data-entity-id={id}
               onClick={(): void => onSelect(id)}
               className={`flex items-start gap-2 w-full px-3 py-2 text-left border-b border-gray-50 transition-colors ${
                 isSelected
