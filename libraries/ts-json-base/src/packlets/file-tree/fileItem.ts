@@ -119,11 +119,11 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeFileItem.(getContents:1)}
+   * {@inheritDoc FileTree.IFileTreeFileItem.getContents}
    */
   public getContents(): Result<JsonValue>;
   /**
-   * {@inheritDoc FileTree.IFileTreeFileItem.(getContents:2)}
+   * {@inheritDoc FileTree.IFileTreeFileItem.getContents}
    */
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
   public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | JsonValue> {
@@ -176,14 +176,15 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   /**
    * Default function to infer the content type of a file.
    * @param filePath - The path of the file.
+   * @param provided - Optional supplied content type.
    * @returns `Success` with the content type of the file if successful, or
    * `Failure` with an error message otherwise.
    * @remarks This default implementation always returns `Success` with `undefined`.
    * @public
    */
   public static defaultInferContentType<TCT extends string = string>(
-    __filePath: string,
-    __provided?: string
+    filePath: string,
+    provided?: string
   ): Result<TCT | undefined> {
     return succeed(undefined);
   }
@@ -198,7 +199,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
    * @public
    */
   public static defaultAcceptContentType<TCT extends string = string>(
-    __filePath: string,
+    filePath: string,
     provided?: TCT
   ): Result<TCT | undefined> {
     return succeed(provided);
