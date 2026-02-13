@@ -733,6 +733,7 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 class CollectionManager<TCompositeId extends string, TBaseId extends string, TItem> implements ICollectionManager {
     constructor(library: SubLibraryBase<TCompositeId, TBaseId, TItem>);
     create(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    createWithFile(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
     delete(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
     exists(collectionId: CollectionId): boolean;
     get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
@@ -6736,6 +6737,7 @@ export type StartupMode = 'fail-on-error' | 'ignore-errors';
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
+    createCollectionFile(collectionId: CollectionId, yamlContent: string): Result<FileTree.FileTreeItem>;
     getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined;
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;

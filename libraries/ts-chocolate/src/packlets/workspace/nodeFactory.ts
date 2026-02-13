@@ -224,6 +224,24 @@ export async function createNodeWorkspace(params: ICreateNodeWorkspaceParams): P
   // Stage 2: Create additional file sources for multi-directory layouts
   const additionalFileSources: ILibraryFileTreeSource[] = [];
 
+  // For single-root mode, add the root as an entity file source so sub-libraries
+  // (ingredients, fillings, etc.) get a mutable data directory for new collection files.
+  if (layout.mode === 'single-root') {
+    const sourceResult = createFileTreeSource(layout.rootPath, true);
+    if (sourceResult.isSuccess()) {
+      additionalFileSources.push({
+        ...sourceResult.value,
+        load: {
+          // Entity sub-libraries get the root as a mutable source
+          default: true,
+          // Journals and sessions are already loaded by the user library source
+          journals: false,
+          sessions: false
+        }
+      });
+    }
+  }
+
   if (layout.mode === 'dual-root') {
     const sourceResult = createFileTreeSource(layout.libraryPath, !(layout.libraryReadOnly ?? false));
     /* c8 ignore next 6 - defensive: DirectoryItem.create rarely fails */

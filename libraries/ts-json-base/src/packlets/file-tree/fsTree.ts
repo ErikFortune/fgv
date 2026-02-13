@@ -32,6 +32,7 @@ import fs from 'fs';
 import {
   captureResult,
   DetailedResult,
+  fail,
   failWithDetail,
   Result,
   succeed,
@@ -76,7 +77,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
+   * {@inheritDoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
    */
   public resolveAbsolutePath(...paths: string[]): string {
     if (this.prefix && !path.isAbsolute(paths[0])) {
@@ -86,28 +87,28 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getExtension}
    */
   public getExtension(itemPath: string): string {
     return path.extname(itemPath);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getBaseName}
    */
   public getBaseName(itemPath: string, suffix?: string): string {
     return path.basename(itemPath, suffix);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.joinPaths}
+   * {@inheritDoc FileTree.IFileTreeAccessors.joinPaths}
    */
   public joinPaths(...paths: string[]): string {
     return path.join(...paths);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getItem}
    */
   public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
     return captureResult(() => {
@@ -123,14 +124,14 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContents}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getFileContents}
    */
   public getFileContents(filePath: string): Result<string> {
     return captureResult(() => fs.readFileSync(this.resolveAbsolutePath(filePath), 'utf8'));
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getFileContentType}
    */
   public getFileContentType(filePath: string, provided?: string): Result<TCT | undefined> {
     if (provided !== undefined) {
@@ -141,7 +142,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getChildren}
    */
   public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     return captureResult(() => {
@@ -160,7 +161,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
    */
   public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
     const absolutePath = this.resolveAbsolutePath(path);
@@ -194,7 +195,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
-   * {@inheritdoc FileTree.IMutableFileTreeAccessors.saveFileContents}
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.saveFileContents}
    */
   public saveFileContents(path: string, contents: string): Result<string> {
     return this.fileIsMutable(path).asResult.onSuccess(() => {
@@ -203,6 +204,23 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
         fs.writeFileSync(absolutePath, contents, 'utf8');
         return contents;
       });
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.createDirectory}
+   */
+  public createDirectory(dirPath: string): Result<string> {
+    const absolutePath = this.resolveAbsolutePath(dirPath);
+
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return fail(`${absolutePath}: mutability is disabled`);
+    }
+
+    return captureResult(() => {
+      fs.mkdirSync(absolutePath, { recursive: true });
+      return absolutePath;
     });
   }
 }

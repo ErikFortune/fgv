@@ -211,6 +211,23 @@ export interface IFileTreeDirectoryItem<TCT extends string = string> {
    * or `Failure` with an error message otherwise.
    */
   getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+
+  /**
+   * Creates a new file as a child of this directory.
+   * @param name - The file name to create.
+   * @param contents - The string contents to write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   * @remarks This method is optional. Only available on mutable directory items.
+   */
+  createChildFile?(name: string, contents: string): Result<IFileTreeFileItem<TCT>>;
+
+  /**
+   * Creates a new subdirectory as a child of this directory.
+   * @param name - The directory name to create.
+   * @returns `Success` with the new directory item, or `Failure` with an error message.
+   * @remarks This method is optional. Only available on mutable directory items.
+   */
+  createChildDirectory?(name: string): Result<IFileTreeDirectoryItem<TCT>>;
 }
 
 /**
@@ -304,6 +321,13 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
    * @returns `Success` if the file was saved, or `Failure` with an error message.
    */
   saveFileContents(path: string, contents: string): Result<string>;
+
+  /**
+   * Creates a directory at the given path, including any missing parent directories.
+   * @param path - The path of the directory to create.
+   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
+   */
+  createDirectory?(path: string): Result<string>;
 }
 
 /**

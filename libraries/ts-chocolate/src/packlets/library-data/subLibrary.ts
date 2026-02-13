@@ -63,6 +63,7 @@ import {
   normalizeMergeSource,
   specToLoadParams
 } from './libraryLoader';
+import { navigateToDirectory } from './navigation';
 
 // ============================================================================
 // Type Aliases
@@ -397,6 +398,18 @@ export abstract class SubLibraryBase<
   private readonly _sourceItems: Map<CollectionId, FileTree.FileTreeItem>;
 
   /**
+   * Mutable data directory for creating new collection files.
+   * Set during construction if a mutable file source was configured.
+   */
+  private _mutableDataDirectory: FileTree.IFileTreeDirectoryItem | undefined;
+
+  /**
+   * Mutable source root directory for lazy creation of data directories.
+   * Used when the data directory doesn't exist yet at construction time.
+   */
+  private _mutableSourceRoot: FileTree.IFileTreeDirectoryItem | undefined;
+
+  /**
    * Creates a new SubLibraryBase instance with full loading support.
    *
    * This constructor handles all collection loading:
@@ -529,6 +542,26 @@ export abstract class SubLibraryBase<
     if (libraryParams?.protectedCollections) {
       for (const pc of libraryParams.protectedCollections) {
         this._protectedCollections.set(pc.ref.collectionId, pc);
+      }
+    }
+
+    // Find the first mutable file source and store its data directory.
+    // A source is mutable if mutable is true, an array, or an object (anything except false/undefined).
+    this._mutableDataDirectory = undefined;
+    for (const source of fileSources) {
+      if (source.mutable === false || source.mutable === undefined) {
+        continue;
+      }
+      const dataDirResult = params.directoryNavigator(source.directory);
+      if (dataDirResult.isSuccess()) {
+        this._mutableDataDirectory = dataDirResult.value;
+        break;
+      }
+      // Data directory doesn't exist yet - try to create it on demand
+      // Store the source root and navigator for lazy creation in createCollectionFile
+      if (source.directory.createChildDirectory !== undefined) {
+        this._mutableSourceRoot = source.directory;
+        break;
       }
     }
   }
@@ -1201,6 +1234,125 @@ export abstract class SubLibraryBase<
    */
   public getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined {
     return this._sourceItems.get(collectionId);
+  }
+
+  /**
+   * Creates a YAML file for a collection in the mutable data directory and
+   * registers it as a source item for persistence.
+   *
+   * @param collectionId - ID of the collection
+   * @param yamlContent - The YAML content to write
+   * @returns Success with the created file item, or Failure if no writable directory or file creation fails
+   * @public
+   */
+  public createCollectionFile(
+    collectionId: CollectionId,
+    yamlContent: string
+  ): Result<FileTree.FileTreeItem> {
+    return this._ensureMutableDataDirectory().onSuccess((dataDir) => {
+      const fileName = `${collectionId}.yaml`;
+      /* c8 ignore next 3 - defensive: createChildFile always available on DirectoryItem */
+      if (dataDir.createChildFile === undefined) {
+        return fail(`${dataDir.absolutePath}: file creation not supported`);
+      }
+      return dataDir.createChildFile(fileName, yamlContent).onSuccess((fileItem) => {
+        this._sourceItems.set(collectionId, fileItem);
+        return succeed(fileItem as FileTree.FileTreeItem);
+      });
+    });
+  }
+
+  /**
+   * Ensures that a mutable data directory is available, creating it if necessary.
+   * @returns Success with the mutable data directory, or Failure if not available
+   */
+  private _ensureMutableDataDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    if (this._mutableDataDirectory !== undefined) {
+      return succeed(this._mutableDataDirectory);
+    }
+
+    if (this._mutableSourceRoot === undefined) {
+      return fail('No writable data directory available');
+    }
+
+    /* c8 ignore next 13 - lazy directory creation only when data dir absent at construction */
+    // Try to create the data directory structure by navigating from the source root.
+    // The navigator knows the path (e.g., "data/ingredients").
+    // First try navigating (in case it was created since construction).
+    const navResult = this._directoryNavigator(this._mutableSourceRoot);
+    if (navResult.isSuccess()) {
+      this._mutableDataDirectory = navResult.value;
+      return succeed(this._mutableDataDirectory);
+    }
+
+    // Navigation failed — create directories from the source root.
+    // Use the navigator's expected path to determine what needs to be created.
+    return this._createDataDirectoryPath(this._mutableSourceRoot);
+  }
+
+  /**
+   * Creates the data directory path from a source root by creating
+   * each missing segment and re-navigating until the path resolves.
+   *
+   * The navigator error message format from `navigateToDirectory` is:
+   *   "full/path: Directory not found at 'segment'."
+   * The full path prefix (before the colon) tells us which segments exist.
+   */
+  /* c8 ignore next 56 - directory creation fallback: tested via integration tests with real filesystem */
+  private _createDataDirectoryPath(
+    sourceRoot: FileTree.IFileTreeDirectoryItem
+  ): Result<FileTree.IFileTreeDirectoryItem> {
+    // Create missing directories one at a time (max depth 5).
+    for (let attempts = 0; attempts < 5; attempts++) {
+      const navResult = this._directoryNavigator(sourceRoot);
+      if (navResult.isSuccess()) {
+        this._mutableDataDirectory = navResult.value;
+        return succeed(this._mutableDataDirectory);
+      }
+
+      // navigateToDirectory reports: "full/path: Directory not found at 'segment'."
+      const match = /^(.+): Directory not found at '([^']+)'/.exec(navResult.message);
+      if (match?.[2] === undefined) {
+        return fail(`Cannot create data directory: ${navResult.message}`);
+      }
+
+      const fullPath = match[1];
+      const missingSegment = match[2];
+
+      // The parent of the missing segment is at the path before the missing segment.
+      // E.g., for "data/ingredients" missing at "ingredients", parent path is "data".
+      // For "data/ingredients" missing at "data", parent is the root.
+      const pathParts = fullPath.split('/');
+      const missingIndex = pathParts.indexOf(missingSegment);
+      const parentPath = missingIndex > 0 ? pathParts.slice(0, missingIndex).join('/') : '';
+
+      // Navigate to the parent directory
+      let parent: FileTree.IFileTreeDirectoryItem;
+      if (parentPath === '') {
+        parent = sourceRoot;
+      } else {
+        const parentResult = navigateToDirectory(sourceRoot, parentPath);
+        if (parentResult.isFailure()) {
+          return fail(`Cannot find parent directory '${parentPath}': ${parentResult.message}`);
+        }
+        parent = parentResult.value;
+      }
+
+      if (parent.createChildDirectory === undefined) {
+        return fail(`${parent.absolutePath}: directory creation not supported`);
+      }
+
+      const createResult = parent.createChildDirectory(missingSegment);
+      if (createResult.isFailure()) {
+        return fail(`Failed to create directory '${missingSegment}': ${createResult.message}`);
+      }
+    }
+
+    // Final attempt
+    return this._directoryNavigator(sourceRoot).onSuccess((dir) => {
+      this._mutableDataDirectory = dir;
+      return succeed(dir);
+    });
   }
 
   // ============================================================================

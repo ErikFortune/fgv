@@ -32,7 +32,7 @@ import {
 import { DefaultJsonLike } from './jsonLike';
 
 /**
- * {@inheritdoc JsonFile.JsonFsHelper.readJsonFileSync}
+ * {@inheritDoc JsonFile.JsonFsHelper.readJsonFileSync}
  * @public
  */
 export function readJsonFileSync(srcPath: string): Result<JsonValue> {

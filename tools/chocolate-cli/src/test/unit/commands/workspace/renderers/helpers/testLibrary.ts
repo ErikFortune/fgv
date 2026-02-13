@@ -82,7 +82,6 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
   // Ingredients (6 types)
   // ==========================================================================
 
-  /* eslint-disable @typescript-eslint/naming-convention */
   const darkChocolate: Entities.Ingredients.IChocolateIngredientEntity = {
     baseId: 'dark-choc-70' as BaseIngredientId,
     name: 'Test Dark Chocolate 70%',
@@ -122,6 +121,7 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
     ]
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const milkChocolate: Entities.Ingredients.IChocolateIngredientEntity = {
     baseId: 'milk-choc-40' as BaseIngredientId,
     name: 'Test Milk Chocolate 40%',
@@ -614,7 +614,6 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
       }
     ]
   };
-  /* eslint-enable @typescript-eslint/naming-convention */
 
   // ==========================================================================
   // Assembly

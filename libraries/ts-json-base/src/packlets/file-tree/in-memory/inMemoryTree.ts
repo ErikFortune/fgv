@@ -225,7 +225,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
+   * {@inheritDoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
    */
   public resolveAbsolutePath(...paths: string[]): string {
     const parts = paths[0].startsWith('/') ? paths : [this._tree.prefix, ...paths];
@@ -234,7 +234,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getExtension}
    */
   public getExtension(path: string): string {
     const parts = path.split('.');
@@ -245,7 +245,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getBaseName}
    */
   public getBaseName(path: string, suffix?: string): string {
     /* c8 ignore next 1 - ?? is defense in depth should never happen */
@@ -257,14 +257,14 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.joinPaths}
+   * {@inheritDoc FileTree.IFileTreeAccessors.joinPaths}
    */
   public joinPaths(...paths: string[]): string {
     return paths.join('/');
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getItem}
    */
   public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
     const existing = this._tree.byAbsolutePath.get(itemPath);
@@ -279,7 +279,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContents}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getFileContents}
    */
   public getFileContents(path: string): Result<string> {
     const absolutePath = this.resolveAbsolutePath(path);
@@ -297,7 +297,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getFileContentType}
    */
   public getFileContentType(path: string, provided?: string): Result<TCT | undefined> {
     // If provided contentType is given, use it directly (highest priority)
@@ -322,7 +322,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
+   * {@inheritDoc FileTree.IFileTreeAccessors.getChildren}
    */
   public getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     const item = this._tree.byAbsolutePath.get(path);
@@ -379,7 +379,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
    */
   public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
     const absolutePath = this.resolveAbsolutePath(path);
@@ -398,7 +398,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
-   * {@inheritdoc FileTree.IMutableFileTreeAccessors.saveFileContents}
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.saveFileContents}
    */
   public saveFileContents(path: string, contents: string): Result<string> {
     const isMutable = this.fileIsMutable(path);

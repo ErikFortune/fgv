@@ -24,8 +24,8 @@
  */
 
 import { Collections, Converter, Converters, fail, Result, succeed } from '@fgv/ts-utils';
-import { CollectionId } from '../common';
-import { ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
+import { CollectionId, Helpers as CommonHelpers } from '../common';
+import { ICollectionSourceFile, ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
 import { ICollectionManager } from './model';
 
 /**
@@ -152,6 +152,40 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
         items: {},
         metadata: validatedMetadata
       });
+    });
+  }
+
+  /**
+   * Create a new mutable collection with a backing YAML file on disk.
+   *
+   * Creates both the in-memory collection and a YAML file in the library's
+   * mutable data directory, enabling `EditableCollection.save()` to work.
+   *
+   * @param collectionId - ID for the new collection
+   * @param metadata - Collection metadata (name, description, etc.)
+   * @returns Success with the collection entry, or Failure if creation fails
+   */
+  public createWithFile(
+    collectionId: CollectionId,
+    metadata: ICollectionSourceMetadata
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
+    // Create the in-memory collection first
+    return this.create(collectionId, metadata).onSuccess((entry) => {
+      // Build initial YAML content: metadata + empty items
+      const sourceFile: ICollectionSourceFile = {
+        metadata,
+        items: {}
+      };
+      return CommonHelpers.serializeToYaml(sourceFile)
+        .withErrorFormat((msg) => `Failed to serialize collection: ${msg}`)
+        .onSuccess((yamlContent) =>
+          this._library.createCollectionFile(collectionId, yamlContent).onSuccess(() => succeed(entry))
+        )
+        .onFailure((msg) => {
+          // Roll back the in-memory collection on file creation failure
+          this._library.removeCollection(collectionId);
+          return fail(msg);
+        });
     });
   }
 

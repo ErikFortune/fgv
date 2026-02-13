@@ -95,6 +95,19 @@ Create a new mutable collection.
 </td></tr>
 <tr><td>
 
+[createWithFile(collectionId, metadata)](./CollectionManager.createWithFile.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Create a new mutable collection with a backing YAML file on disk.
+
+</td></tr>
+<tr><td>
+
 [delete(collectionId)](./CollectionManager.delete.md)
 
 </td><td>

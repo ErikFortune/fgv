@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { fail, succeed } from '@fgv/ts-utils';
 import { CollectionManager } from '../../../packlets/editing';
 import { IngredientsLibrary } from '../../../packlets/entities';
 import { CollectionId } from '../../../packlets/common';
@@ -447,6 +448,170 @@ describe('CollectionManager', () => {
 
     test('fails for non-existent collection', () => {
       expect(manager.isMutable('nonexistent' as CollectionId)).toFailWith(/not found/i);
+    });
+  });
+
+  // ============================================================================
+  // createWithFile()
+  // ============================================================================
+
+  describe('createWithFile', () => {
+    describe('without mutable file source', () => {
+      test('fails when no mutable data directory is available', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'File Collection'
+        };
+
+        expect(manager.createWithFile('file-coll' as CollectionId, metadata)).toFailWith(
+          /no writable data directory/i
+        );
+
+        // Verify the collection was not created
+        expect(manager.exists('file-coll' as CollectionId)).toBe(false);
+      });
+
+      test('fails with invalid metadata', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: ''
+        };
+
+        expect(manager.createWithFile('test' as CollectionId, metadata)).toFailWith(/cannot be empty/i);
+      });
+
+      test('fails when collection already exists', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'Existing'
+        };
+
+        manager.create('existing' as CollectionId, metadata).orThrow();
+
+        expect(manager.createWithFile('existing' as CollectionId, metadata)).toFailWith(/already exists/i);
+      });
+    });
+
+    describe('with mutable file source', () => {
+      let libraryWithFiles: IngredientsLibrary;
+      let managerWithFiles: CollectionManager<string, string, unknown>;
+      let createFileResult: jest.Mock;
+      let capturedYamlContent: string | undefined;
+
+      beforeEach(() => {
+        // Create a basic library
+        libraryWithFiles = IngredientsLibrary.create({ builtin: false }).orThrow();
+        managerWithFiles = new CollectionManager(libraryWithFiles);
+
+        // Mock createCollectionFile to capture calls and control behavior
+        createFileResult = jest.fn();
+        capturedYamlContent = undefined;
+
+        jest
+          .spyOn(libraryWithFiles, 'createCollectionFile')
+          .mockImplementation((collectionId, yamlContent) => {
+            capturedYamlContent = yamlContent;
+            return createFileResult(collectionId, yamlContent);
+          });
+      });
+
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
+
+      test('successfully creates collection with file', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'Test Collection',
+          description: 'A test collection with file'
+        };
+
+        // Mock successful file creation
+        createFileResult.mockReturnValue(succeed({}));
+
+        expect(managerWithFiles.createWithFile('test-coll' as CollectionId, metadata)).toSucceed();
+
+        // Verify collection exists in memory
+        expect(managerWithFiles.exists('test-coll' as CollectionId)).toBe(true);
+
+        // Verify file creation was called
+        expect(createFileResult).toHaveBeenCalledWith(
+          'test-coll',
+          expect.stringContaining('name: Test Collection')
+        );
+      });
+
+      test('created file contains metadata and empty items', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'Test Collection',
+          description: 'Description here'
+        };
+
+        // Mock successful file creation
+        createFileResult.mockReturnValue(succeed({}));
+
+        managerWithFiles.createWithFile('test' as CollectionId, metadata).orThrow();
+
+        // Verify YAML content structure
+        expect(capturedYamlContent).toBeDefined();
+        expect(capturedYamlContent).toContain('name: Test Collection');
+        expect(capturedYamlContent).toContain('description: Description here');
+        expect(capturedYamlContent).toContain('items: {}');
+      });
+
+      test('registers source item after file creation', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'With Source'
+        };
+
+        // Mock successful file creation
+        createFileResult.mockReturnValue(succeed({}));
+
+        managerWithFiles.createWithFile('with-source' as CollectionId, metadata).orThrow();
+
+        // Verify createCollectionFile was called (which registers the source item)
+        expect(createFileResult).toHaveBeenCalledWith('with-source', expect.any(String));
+      });
+
+      test('rolls back collection on file creation failure', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'Rollback Test'
+        };
+
+        // Make file creation fail
+        createFileResult.mockReturnValue(fail('File system error'));
+
+        expect(managerWithFiles.createWithFile('rollback' as CollectionId, metadata)).toFailWith(
+          /file system error/i
+        );
+
+        // Verify collection was rolled back
+        expect(managerWithFiles.exists('rollback' as CollectionId)).toBe(false);
+      });
+
+      test('fails with invalid metadata', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'a'.repeat(201)
+        };
+
+        expect(managerWithFiles.createWithFile('invalid' as CollectionId, metadata)).toFailWith(
+          /exceeds 200 characters/i
+        );
+
+        // Verify file creation was never attempted
+        expect(createFileResult).not.toHaveBeenCalled();
+      });
+
+      test('fails when collection already exists', () => {
+        const metadata: ICollectionSourceMetadata = {
+          name: 'Duplicate'
+        };
+
+        managerWithFiles.create('dup' as CollectionId, metadata).orThrow();
+
+        expect(managerWithFiles.createWithFile('dup' as CollectionId, metadata)).toFailWith(
+          /already exists/i
+        );
+
+        // File creation should not have been attempted for duplicate
+        expect(createFileResult).not.toHaveBeenCalled();
+      });
     });
   });
 

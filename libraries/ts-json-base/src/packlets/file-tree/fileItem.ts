@@ -31,38 +31,38 @@ import { IFileTreeAccessors, IFileTreeFileItem, isMutableAccessors, SaveDetail }
  */
 export class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem."type"}
+   * {@inheritDoc FileTree.IFileTreeFileItem."type"}
    */
   public readonly type: 'file' = 'file';
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.absolutePath}
+   * {@inheritDoc FileTree.IFileTreeFileItem.absolutePath}
    */
   public readonly absolutePath: string;
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.name}
+   * {@inheritDoc FileTree.IFileTreeFileItem.name}
    */
   public get name(): string {
     return this._hal.getBaseName(this.absolutePath);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.baseName}
+   * {@inheritDoc FileTree.IFileTreeFileItem.baseName}
    */
   public get baseName(): string {
     return this._hal.getBaseName(this.absolutePath, this.extension);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.extension}
+   * {@inheritDoc FileTree.IFileTreeFileItem.extension}
    */
   public get extension(): string {
     return this._hal.getExtension(this.absolutePath);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.contentType}
+   * {@inheritDoc FileTree.IFileTreeFileItem.contentType}
    */
   public get contentType(): TCT | undefined {
     return this._contentType;
@@ -108,7 +108,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.getIsMutable}
+   * {@inheritDoc FileTree.IFileTreeFileItem.getIsMutable}
    */
   public getIsMutable(): DetailedResult<boolean, SaveDetail> {
     if (isMutableAccessors(this._hal)) {
@@ -119,11 +119,11 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:1)}
+   * {@inheritDoc FileTree.IFileTreeFileItem.(getContents:1)}
    */
   public getContents(): Result<JsonValue>;
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:2)}
+   * {@inheritDoc FileTree.IFileTreeFileItem.(getContents:2)}
    */
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
   public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | JsonValue> {
@@ -139,7 +139,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.getRawContents}
+   * {@inheritDoc FileTree.IFileTreeFileItem.getRawContents}
    */
   public getRawContents(): Result<string> {
     return this._hal.getFileContents(this.absolutePath);
@@ -154,7 +154,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.setContents}
+   * {@inheritDoc FileTree.IFileTreeFileItem.setContents}
    */
   public setContents(json: JsonValue): Result<JsonValue> {
     return captureResult(() => JSON.stringify(json, null, 2)).onSuccess((contents) =>
@@ -163,7 +163,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.setRawContents}
+   * {@inheritDoc FileTree.IFileTreeFileItem.setRawContents}
    */
   public setRawContents(contents: string): Result<string> {
     if (isMutableAccessors(this._hal)) {

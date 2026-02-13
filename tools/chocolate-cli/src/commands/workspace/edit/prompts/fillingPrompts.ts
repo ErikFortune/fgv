@@ -18,27 +18,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Command } from 'commander';
-import { createInitCommand } from './initCommand';
-import { createKeystoreCommand } from './keystoreCommand';
-import { createBrowseCommand } from './browseCommand';
-import { createEditCommand } from './edit';
+import { Result, fail } from '@fgv/ts-utils';
+import { Entities } from '@fgv/ts-chocolate';
 
 /**
- * Creates the workspace command with all subcommands.
- *
- * @returns The workspace command
+ * Filling entities are too complex for interactive prompts.
+ * Use --from-file to import from a JSON or YAML file instead.
+ * @returns Failure result with instructions
  */
-export function createWorkspaceCommand(): Command {
-  const cmd = new Command('workspace');
+export async function promptNewFilling(): Promise<Result<Entities.IFillingRecipeEntity>> {
+  return fail(
+    'Interactive prompts for Filling entities are not supported due to their complexity. ' +
+      'Please use --from-file to import from a JSON or YAML file.'
+  );
+}
 
-  cmd.description('Manage chocolate workspaces');
-
-  // Add subcommands
-  cmd.addCommand(createInitCommand());
-  cmd.addCommand(createKeystoreCommand());
-  cmd.addCommand(createBrowseCommand());
-  cmd.addCommand(createEditCommand());
-
-  return cmd;
+/**
+ * Filling entities are too complex for interactive editing.
+ * Use --from-file to provide updated data from a JSON or YAML file instead.
+ * @param _existing - The existing filling entity (unused)
+ * @returns Failure result with instructions
+ */
+export async function promptEditFilling(
+  _existing: Entities.IFillingRecipeEntity
+): Promise<Result<Entities.IFillingRecipeEntity>> {
+  return fail(
+    'Interactive editing for Filling entities is not supported due to their complexity. ' +
+      'Please use --from-file to provide updated data from a JSON or YAML file.'
+  );
 }

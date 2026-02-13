@@ -18,27 +18,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Command } from 'commander';
-import { createInitCommand } from './initCommand';
-import { createKeystoreCommand } from './keystoreCommand';
-import { createBrowseCommand } from './browseCommand';
-import { createEditCommand } from './edit';
-
-/**
- * Creates the workspace command with all subcommands.
- *
- * @returns The workspace command
- */
-export function createWorkspaceCommand(): Command {
-  const cmd = new Command('workspace');
-
-  cmd.description('Manage chocolate workspaces');
-
-  // Add subcommands
-  cmd.addCommand(createInitCommand());
-  cmd.addCommand(createKeystoreCommand());
-  cmd.addCommand(createBrowseCommand());
-  cmd.addCommand(createEditCommand());
-
-  return cmd;
-}
+export { createEditCommand } from './editCommand';
+export * from './editTypes';
