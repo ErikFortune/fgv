@@ -11,5 +11,17 @@
  * @packageDocumentation
  */
 
-// Placeholder - components will be added as they are implemented
-export {};
+// Top bar components
+export * from './packlets/top-bar';
+
+// Messages infrastructure (context, toasts, status bar)
+export * from './packlets/messages';
+
+// URL hash synchronization for mode/tab navigation
+export * from './packlets/url-sync';
+
+// Modal dialog
+export * from './packlets/modal';
+
+// Keyboard shortcut registry
+export * from './packlets/keyboard';
