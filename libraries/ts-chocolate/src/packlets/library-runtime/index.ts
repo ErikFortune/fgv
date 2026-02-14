@@ -110,8 +110,11 @@ export { IMoldContext, IMold, Mold } from './molds';
 // Decorations
 export { IDecorationContext, IDecoration, IResolvedDecorationIngredient, Decoration } from './decorations';
 
-// Produced wrappers (mutable editing containers)
+// Produced wrappers (mutable editing containers for recipes)
 export * from './produced';
+
+// Edited wrappers (mutable editing containers for ingredients, molds)
+export * from './edited';
 
 import * as Internal from './internal';
 export { Internal };

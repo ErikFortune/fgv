@@ -1622,6 +1622,40 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     static validateStructure(data: unknown): Result<true>;
 }
 
+// @public
+class EditedIngredient {
+    applyUpdate(update: Partial<Ingredients.IngredientEntity>): Result<void>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    get category(): IngredientCategory;
+    static create(initial: Ingredients.IngredientEntity): Result<EditedIngredient>;
+    createSnapshot(): Ingredients.IngredientEntity;
+    get current(): Ingredients.IngredientEntity;
+    get ganacheCharacteristics(): Ingredients.IGanacheCharacteristics;
+    getChanges(original: Ingredients.IngredientEntity): IIngredientChanges;
+    getSerializedHistory(original: Ingredients.IngredientEntity): Session.ISerializedEditingHistoryEntity<Ingredients.IngredientEntity>;
+    hasChanges(original: Ingredients.IngredientEntity): boolean;
+    get name(): string;
+    redo(): Result<boolean>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Ingredients.IngredientEntity>): Result<EditedIngredient>;
+    restoreSnapshot(snapshot: Ingredients.IngredientEntity): Result<void>;
+    setAllergens(allergens: ReadonlyArray<Allergen> | undefined): Result<void>;
+    setCertifications(certifications: ReadonlyArray<Certification> | undefined): Result<void>;
+    setDensity(density: number | undefined): Result<void>;
+    setDescription(description: string | undefined): Result<void>;
+    setGanacheCharacteristics(ganacheCharacteristics: Ingredients.IGanacheCharacteristics): Result<void>;
+    setManufacturer(manufacturer: string | undefined): Result<void>;
+    setMeasurementUnits(measurementUnits: Model.IOptionsWithPreferred<Model.IMeasurementUnitOption, MeasurementUnit> | undefined): Result<void>;
+    setName(name: string): Result<void>;
+    setPhase(phase: IngredientPhase | undefined): Result<void>;
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    setTraceAllergens(traceAllergens: ReadonlyArray<Allergen> | undefined): Result<void>;
+    setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
+    setVegan(vegan: boolean | undefined): Result<void>;
+    get snapshot(): Ingredients.IngredientEntity;
+    undo(): Result<boolean>;
+}
+
 declare namespace Editing {
     export {
         Ingredients_2 as Ingredients,
@@ -3549,6 +3583,25 @@ interface IIngredient<TEntity extends IngredientEntity = IngredientEntity> {
     readonly traceAllergens?: ReadonlyArray<Allergen>;
     usedByFillings(): IFillingRecipe[];
     readonly vegan?: boolean;
+}
+
+// @public
+interface IIngredientChanges {
+    readonly allergensChanged: boolean;
+    readonly categoryChanged: boolean;
+    readonly certificationsChanged: boolean;
+    readonly densityChanged: boolean;
+    readonly descriptionChanged: boolean;
+    readonly ganacheCharacteristicsChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly manufacturerChanged: boolean;
+    readonly measurementUnitsChanged: boolean;
+    readonly nameChanged: boolean;
+    readonly phaseChanged: boolean;
+    readonly tagsChanged: boolean;
+    readonly traceAllergensChanged: boolean;
+    readonly urlsChanged: boolean;
+    readonly veganChanged: boolean;
 }
 
 // @internal
@@ -5888,7 +5941,9 @@ declare namespace LibraryRuntime {
         ProducedConfectionBase,
         ProducedMoldedBonBon,
         ProducedBarTruffle,
-        ProducedRolledTruffle
+        ProducedRolledTruffle,
+        IIngredientChanges,
+        EditedIngredient
     }
 }
 export { LibraryRuntime }

@@ -295,9 +295,11 @@ export function toUserLibrarySource(
   return {
     directory: userLibraryTree,
     load: {
-      // User library loads all sub-libraries so it can serve as the
-      // mutable backing store for new collections (e.g., localStorage in browser).
-      default: true
+      // User library only loads user-specific sub-libraries (journals, sessions).
+      // Entity libraries (ingredients, fillings, etc.) come from built-in or external sources.
+      journals: true,
+      sessions: true,
+      default: false
     },
     mutable
   };

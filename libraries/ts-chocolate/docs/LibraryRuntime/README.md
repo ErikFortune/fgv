@@ -129,6 +129,15 @@ Mutable wrapper for IProducedRolledTruffle with undo/redo support.
 </td></tr>
 <tr><td>
 
+[EditedIngredient](./classes/EditedIngredient.md)
+
+</td><td>
+
+Mutable wrapper for IngredientEntity with undo/redo support.
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
@@ -769,6 +778,15 @@ Structure describing what changed between two produced fillings
 </td><td>
 
 Structure describing what changed between two produced confections
+
+</td></tr>
+<tr><td>
+
+[IIngredientChanges](./interfaces/IIngredientChanges.md)
+
+</td><td>
+
+Structure describing what changed between two ingredient entities
 
 </td></tr>
 <tr><td>
