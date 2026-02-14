@@ -21,7 +21,7 @@ class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends
     // Warning: (ae-incompatible-release-tags) The symbol "addCollectionEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addCollectionEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     addCollectionEntry(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, ResultMapResultDetail>;
-    addCollectionWithItems(collectionId: string, items?: Iterable<KeyValueEntry<string, unknown>>, options?: IAddCollectionWithItemsOptions): Result<TCOLLECTIONID>;
+    addCollectionWithItems(collectionId: string, items?: Iterable<KeyValueEntry<string, unknown>>, options?: IAddCollectionWithItemsOptions<TMETADATA>): Result<TCOLLECTIONID>;
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     addToCollection(collectionId: TCOLLECTIONID, itemId: TITEMID, value: TITEM): DetailedResult<TCOMPOSITEID, ResultMapResultDetail>;
@@ -239,6 +239,39 @@ class BooleanValidator<TC = unknown> extends GenericValidator<boolean, TC> {
 //
 // @public
 type BooleanValidatorConstructorParams<TC = unknown> = GenericValidatorConstructorParams<boolean, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "BootLogger"
+//
+// @public
+class BootLogger implements ILogger {
+    constructor(logLevel?: ReporterLogLevel);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    info(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    get isReady(): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get logLevel(): ReporterLogLevel;
+    ready(logger: ILogger): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
 
 // @public
 export type Brand<T, B> = T & {
@@ -1242,8 +1275,9 @@ class HashingNormalizer extends Normalizer {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IAddCollectionWithItemsOptions {
+interface IAddCollectionWithItemsOptions<TMETADATA = unknown> {
     readonly isImmutable?: boolean;
+    readonly metadata?: TMETADATA;
 }
 
 // @public
@@ -1882,6 +1916,7 @@ abstract class LoggerBase implements ILogger {
 
 declare namespace Logging {
     export {
+        BootLogger,
         shouldLog,
         stringifyLogValue,
         ReporterLogLevel,

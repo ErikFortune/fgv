@@ -10,3 +10,13 @@ export { TabSidebar, type ITabSidebarProps, type IFilterOptionProvider } from '.
 export { WorkspaceFilterOptionProvider } from './WorkspaceFilterOptionProvider';
 
 export { useFilteredEntities, type IEntityFilterSpec } from './useFilteredEntities';
+
+export { useCollectionInfo, type ICollectionInfo } from './collectionInfo';
+
+export { useCollectionActions, type ICollectionActions } from './useCollectionActions';
+
+export {
+  CreateCollectionDialog,
+  type ICreateCollectionDialogProps,
+  type ICreateCollectionData
+} from './CreateCollectionDialog';

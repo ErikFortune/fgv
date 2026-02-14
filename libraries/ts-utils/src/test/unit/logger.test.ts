@@ -22,7 +22,7 @@
 
 import '../helpers/jest';
 
-import { InMemoryLogger, ILogger, LogReporter, NoOpLogger } from '../../packlets/logging';
+import { BootLogger, InMemoryLogger, ILogger, LogReporter, NoOpLogger } from '../../packlets/logging';
 
 import { fail, MessageLogLevel, Result, succeed } from '../../packlets/base';
 
@@ -1149,6 +1149,111 @@ describe('Logger class', () => {
           expect(logger.logged).toContain('error message');
         });
       });
+    });
+  });
+
+  describe('BootLogger class', () => {
+    test('starts not ready', () => {
+      const boot = new BootLogger();
+      expect(boot.isReady).toBe(false);
+    });
+
+    test('defaults to detail log level', () => {
+      const boot = new BootLogger();
+      expect(boot.logLevel).toBe('detail');
+    });
+
+    test('accepts a custom log level', () => {
+      const boot = new BootLogger('warning');
+      expect(boot.logLevel).toBe('warning');
+    });
+
+    test('buffers log calls before ready', () => {
+      const boot = new BootLogger();
+      expect(boot.info('hello')).toSucceedWith('hello');
+      expect(boot.warn('caution')).toSucceedWith('caution');
+      expect(boot.error('bad')).toSucceedWith('bad');
+      expect(boot.detail('verbose')).toSucceedWith('verbose');
+      expect(boot.isReady).toBe(false);
+    });
+
+    test('replays buffered entries to the real logger on ready', () => {
+      const boot = new BootLogger();
+      boot.info('msg1');
+      boot.warn('msg2');
+      boot.error('msg3');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      expect(boot.isReady).toBe(true);
+      expect(real.logged).toEqual(['msg1', 'msg2', 'msg3']);
+    });
+
+    test('replays entries with correct log levels', () => {
+      const boot = new BootLogger();
+      boot.detail('d');
+      boot.info('i');
+      boot.warn('w');
+      boot.error('e');
+
+      // Use a logger that only accepts errors to verify levels are preserved
+      const errorOnly = new InMemoryLogger('error');
+      boot.ready(errorOnly);
+
+      expect(errorOnly.logged).toEqual(['e']);
+      expect(errorOnly.suppressed).toEqual(['d', 'i', 'w']);
+    });
+
+    test('forwards calls directly after ready', () => {
+      const boot = new BootLogger();
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      boot.info('after-ready');
+      expect(real.logged).toEqual(['after-ready']);
+    });
+
+    test('does not double-replay on subsequent calls after ready', () => {
+      const boot = new BootLogger();
+      boot.info('before');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      boot.info('after');
+      expect(real.logged).toEqual(['before', 'after']);
+    });
+
+    test('delegates logLevel to the real logger after ready', () => {
+      const boot = new BootLogger('detail');
+      expect(boot.logLevel).toBe('detail');
+
+      const real = new InMemoryLogger('warning');
+      boot.ready(real);
+
+      expect(boot.logLevel).toBe('warning');
+    });
+
+    test('replays log calls with multiple parameters', () => {
+      const boot = new BootLogger();
+      boot.info('count: ', 42, ' items');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      expect(real.logged).toEqual(['count: 42 items']);
+    });
+
+    test('log method with explicit level works before and after ready', () => {
+      const boot = new BootLogger();
+      boot.log('warning', 'pre-ready warning');
+
+      const real = new InMemoryLogger('detail');
+      boot.ready(real);
+
+      boot.log('error', 'post-ready error');
+      expect(real.logged).toEqual(['pre-ready warning', 'post-ready error']);
     });
   });
 });

@@ -41,7 +41,9 @@ export {
   type ICommonWorkspaceInitParams,
   toLibraryFileSources,
   toUserLibrarySource,
-  createWorkspaceFromPlatform
+  createWorkspaceFromPlatform,
+  ensureDirectoryPath,
+  ensureWorkspaceDirectoriesInTree
 } from './platformInit';
 
 // Workspace class

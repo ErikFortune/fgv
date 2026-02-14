@@ -93,4 +93,21 @@ boolean
 Whether to pre-warm the runtime caches on creation.
 
 </td></tr>
+<tr><td>
+
+[logger](./ICommonWorkspaceInitParams.logger.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+LogReporter&lt;unknown, unknown&gt;
+
+</td><td>
+
+Optional logger for workspace operations.
+
+</td></tr>
 </tbody></table>

@@ -20,5 +20,6 @@
  * SOFTWARE.
  */
 
+export * from './bootLogger';
 export * from './logger';
 export * from './logReporter';

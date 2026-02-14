@@ -1,0 +1,348 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * Collection management action hooks for the sidebar.
+ *
+ * Provides callbacks for add-by-reference, create, and delete operations
+ * on collections, wired to the workspace and reactive notification system.
+ *
+ * @packageDocumentation
+ */
+
+import { useCallback } from 'react';
+
+import { type FileTree } from '@fgv/ts-json-base';
+import { type CollectionId, LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
+import { FileApiTreeAccessors, safeShowDirectoryPicker, supportsFileSystemAccess } from '@fgv/ts-web-extras';
+
+import { selectActiveTab, useNavigationStore } from '../navigation';
+import { useReactiveWorkspace, useWorkspace } from '../workspace';
+import { type ICreateCollectionData } from './CreateCollectionDialog';
+
+// ============================================================================
+// Sub-Library Accessor (maps tab → entity sub-library)
+// ============================================================================
+
+/**
+ * Returns the entity-layer sub-library for a given tab.
+ * @internal
+ */
+function getSubLibraryForTab(
+  entities: LibraryRuntime.ChocolateEntityLibrary,
+  tab: string
+): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
+  switch (tab) {
+    case 'ingredients':
+      return entities.ingredients;
+    case 'fillings':
+      return entities.fillings;
+    case 'confections':
+      return entities.confections;
+    case 'decorations':
+      return entities.decorations;
+    case 'molds':
+      return entities.molds;
+    case 'procedures':
+      return entities.procedures;
+    case 'tasks':
+      return entities.tasks;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Maps a tab name to the sub-library path within a library tree.
+ * @internal
+ */
+function getSubLibraryPathForTab(tab: string): string | undefined {
+  switch (tab) {
+    case 'ingredients':
+      return LibraryData.LibraryPaths.ingredients;
+    case 'fillings':
+      return LibraryData.LibraryPaths.fillings;
+    case 'confections':
+      return LibraryData.LibraryPaths.confections;
+    case 'decorations':
+      return LibraryData.LibraryPaths.decorations;
+    case 'molds':
+      return LibraryData.LibraryPaths.molds;
+    case 'procedures':
+      return LibraryData.LibraryPaths.procedures;
+    case 'tasks':
+      return LibraryData.LibraryPaths.tasks;
+    default:
+      return undefined;
+  }
+}
+
+// ============================================================================
+// Collection Actions Result
+// ============================================================================
+
+/**
+ * Collection management action callbacks returned by useCollectionActions.
+ * @public
+ */
+export interface ICollectionActions {
+  /** Whether the File System Access API is available */
+  readonly canAddDirectory: boolean;
+  /** Open a directory picker and load collections from the selected directory */
+  readonly addDirectory: () => Promise<void>;
+  /** Create a new empty mutable collection from dialog data */
+  readonly createCollection: (data: ICreateCollectionData) => void;
+  /** Delete a mutable collection by ID */
+  readonly deleteCollection: (collectionId: string) => void;
+  /** Save all dirty persistent trees to disk */
+  readonly saveAll: () => Promise<void>;
+  /** Whether any persistent trees have unsaved changes */
+  readonly hasDirtyTrees: boolean;
+}
+
+// ============================================================================
+// Hook
+// ============================================================================
+
+/**
+ * Provides collection management action callbacks wired to the workspace.
+ *
+ * Actions operate on the active tab's sub-library and trigger
+ * workspace cache invalidation + reactive notification after mutations.
+ *
+ * @public
+ */
+export function useCollectionActions(): ICollectionActions {
+  const workspace = useWorkspace();
+  const reactiveWorkspace = useReactiveWorkspace();
+  const activeTab = useNavigationStore(selectActiveTab);
+
+  const canAddDirectory = typeof window !== 'undefined' && supportsFileSystemAccess(window);
+
+  const addDirectory = useCallback(async (): Promise<void> => {
+    if (!canAddDirectory) {
+      workspace.data.logger.warn('File System Access API not supported in this browser');
+      return;
+    }
+
+    const dirHandle = await safeShowDirectoryPicker(window, {
+      mode: 'readwrite',
+      id: 'chocolate-lab-add-directory'
+    });
+
+    if (!dirHandle) {
+      return; // User cancelled
+    }
+
+    // Create a persistent FileTree from the directory handle
+    const treeResult = await FileApiTreeAccessors.createPersistent(dirHandle);
+    if (treeResult.isFailure()) {
+      workspace.data.logger.error(`Failed to open directory: ${treeResult.message}`);
+      return;
+    }
+
+    const tree = treeResult.value;
+
+    // Try to navigate to the sub-library directory for the active tab
+    const subLibraryPath = getSubLibraryPathForTab(activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+
+    if (!subLibraryPath || !subLibrary) {
+      workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+      return;
+    }
+
+    // Try the sub-library path first (e.g., data/ingredients)
+    // If that fails, try the root (user may have pointed at the sub-library dir directly)
+    const dirResult = tree.getDirectory(`/${subLibraryPath}`);
+    const sourceDirResult = dirResult.isSuccess() ? dirResult : tree.getDirectory('/');
+
+    if (sourceDirResult.isFailure()) {
+      workspace.data.logger.error(`Failed to find data directory: ${sourceDirResult.message}`);
+      return;
+    }
+
+    const loadResult = subLibrary.loadFromFileTreeSource({
+      directory: sourceDirResult.value,
+      load: true,
+      mutable: true
+    });
+
+    if (loadResult.isFailure()) {
+      workspace.data.logger.error(`Failed to load collections: ${loadResult.message}`);
+      return;
+    }
+
+    workspace.data.logger.info(`Loaded ${loadResult.value} collection(s) from directory for ${activeTab}`);
+
+    // Register the persistent tree for dirty tracking / save-in-place
+    const accessors = tree.hal;
+    if ('syncToDisk' in accessors && 'isDirty' in accessors) {
+      reactiveWorkspace.registerPersistentTree(dirHandle.name, {
+        tree,
+        accessors: accessors as FileTree.IPersistentFileTreeAccessors,
+        label: dirHandle.name
+      });
+    }
+
+    // Invalidate caches and notify React
+    workspace.data.clearCache();
+    reactiveWorkspace.notifyChange();
+  }, [canAddDirectory, workspace, reactiveWorkspace, activeTab]);
+
+  const createCollection = useCallback(
+    (data: ICreateCollectionData): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      if (!subLibrary) {
+        workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+        return;
+      }
+
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: data.name,
+        ...(data.description ? { description: data.description } : {}),
+        ...(data.tags && data.tags.length > 0 ? { tags: data.tags } : {})
+      };
+
+      const result = subLibrary.addCollectionWithItems(data.id, undefined, { metadata });
+      if (result.isFailure()) {
+        workspace.data.logger.error(`Failed to create collection '${data.id}': ${result.message}`);
+        return;
+      }
+
+      // Build YAML content with metadata block
+      const yamlContent = buildCollectionYaml(data);
+      const fileResult = subLibrary.createCollectionFile(result.value as CollectionId, yamlContent);
+      if (fileResult.isFailure()) {
+        workspace.data.logger.info(
+          `Collection '${data.id}' created in-memory (persistence failed: ${fileResult.message})`
+        );
+      } else {
+        workspace.data.logger.info(`Collection '${data.id}' created with backing file`);
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+    },
+    [workspace, reactiveWorkspace, activeTab]
+  );
+
+  const deleteCollection = useCallback(
+    (collectionId: string): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      if (!subLibrary) {
+        return;
+      }
+
+      // Use CollectionManager pattern: check mutability, then delete
+      const isMutableResult = subLibrary.collections.get(collectionId as CollectionId).asResult;
+
+      if (isMutableResult.isFailure()) {
+        workspace.data.logger.error(`Collection '${collectionId}' not found`);
+        return;
+      }
+
+      if (!isMutableResult.value.isMutable) {
+        workspace.data.logger.warn(`Collection '${collectionId}' is immutable and cannot be deleted`);
+        return;
+      }
+
+      const deleteResult = subLibrary.removeCollection(collectionId as CollectionId);
+      if (deleteResult.isFailure()) {
+        workspace.data.logger.error(`Failed to delete collection '${collectionId}': ${deleteResult.message}`);
+        return;
+      }
+
+      workspace.data.logger.info(`Deleted collection '${collectionId}'`);
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+    },
+    [workspace, reactiveWorkspace, activeTab]
+  );
+
+  const saveAll = useCallback(async (): Promise<void> => {
+    const result = await reactiveWorkspace.syncAllToDisk();
+    if (result.isFailure()) {
+      workspace.data.logger.error(`Save failed: ${result.message}`);
+    } else {
+      workspace.data.logger.info('All changes saved to disk');
+    }
+    reactiveWorkspace.notifyChange();
+  }, [workspace, reactiveWorkspace]);
+
+  return {
+    canAddDirectory,
+    addDirectory,
+    createCollection,
+    deleteCollection,
+    saveAll,
+    hasDirtyTrees: reactiveWorkspace.hasDirtyTrees
+  };
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Builds YAML content for a new collection file with metadata.
+ * @internal
+ */
+function buildCollectionYaml(data: ICreateCollectionData): string {
+  const lines: string[] = [];
+
+  // Metadata block
+  const hasMetadata = data.name || data.description || (data.tags && data.tags.length > 0);
+  if (hasMetadata) {
+    lines.push('metadata:');
+    if (data.name) {
+      lines.push(`  name: ${yamlQuote(data.name)}`);
+    }
+    if (data.description) {
+      lines.push(`  description: ${yamlQuote(data.description)}`);
+    }
+    if (data.tags && data.tags.length > 0) {
+      lines.push('  tags:');
+      for (const tag of data.tags) {
+        lines.push(`    - ${yamlQuote(tag)}`);
+      }
+    }
+    lines.push('');
+  }
+
+  // Empty items block
+  lines.push('items: {}');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Wraps a string in quotes if it contains characters that need YAML escaping.
+ * @internal
+ */
+function yamlQuote(value: string): string {
+  if (/[:#{}[\],&*?|>!%@`'"]/.test(value) || value !== value.trim()) {
+    return JSON.stringify(value);
+  }
+  return value;
+}

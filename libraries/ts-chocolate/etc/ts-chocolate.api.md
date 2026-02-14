@@ -1734,6 +1734,14 @@ const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
 // @public
 type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 
+// @public
+export function ensureDirectoryPath(root: FileTree.IFileTreeDirectoryItem, relativePath: string): Result<FileTree.IFileTreeDirectoryItem>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createWorkspaceDirectories"
+//
+// @public
+export function ensureWorkspaceDirectoriesInTree(root: FileTree.IFileTreeDirectoryItem): Result<void>;
+
 declare namespace Entities {
     export {
         ConfectionsLibrary,
@@ -2715,6 +2723,7 @@ interface ICommonSettings {
 export interface ICommonWorkspaceInitParams {
     readonly additionalFileSources?: ReadonlyArray<ILibraryFileTreeSource>;
     readonly builtin?: FullLibraryLoadSpec;
+    readonly logger?: Logging.LogReporter<unknown>;
     readonly platformInit: IPlatformInitResult;
     readonly preWarm?: boolean;
 }

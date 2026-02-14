@@ -295,7 +295,26 @@ All changes are breaking (acceptable — ts-chocolate is new with no external de
 
 ---
 
-## 8. Key Technical Decisions Summary
+## 8. Opportunistic Backlog
+
+Items identified during development that aren't blocking but should be picked up when convenient (e.g., next time we're debugging in the relevant area).
+
+### Messages Window Improvements
+*Identified during persistence debugging — detail-level diagnostic messages exist but aren't visible without code changes.*
+
+- **Filter control** — add severity filter (detail/info/warning/error) to the messages panel to control which messages are displayed and which trigger toast notifications
+- **Copy messages** — add a "Copy Messages" button to the messages panel for easy sharing of log output
+- **Persist filter settings** — save the filter configuration in workspace settings so debug-level visibility survives page reloads
+
+These would let developers insert `detail`-level diagnostic messages in production code and enable them on demand via the UI when debugging, without rebuilding.
+
+### Other
+
+- Refactor node `createWorkspaceDirectories` to delegate to the FileTree-based `ensureWorkspaceDirectoriesInTree` (reduce duplication)
+
+---
+
+## 9. Key Technical Decisions Summary
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|

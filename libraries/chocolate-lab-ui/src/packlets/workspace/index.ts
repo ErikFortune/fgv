@@ -16,7 +16,7 @@ export {
   type IBrowserPlatformInitOptions
 } from './browserPlatformInit';
 
-export { ReactiveWorkspace, type WorkspaceListener } from './reactiveWorkspace';
+export { ReactiveWorkspace, type WorkspaceListener, type IPersistentTreeEntry } from './reactiveWorkspace';
 
 export {
   WorkspaceProvider,

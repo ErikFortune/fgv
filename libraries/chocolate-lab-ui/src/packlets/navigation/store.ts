@@ -37,9 +37,11 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import {
   AppMode,
   AppTab,
+  DEFAULT_COLLECTION_VISIBILITY,
   DEFAULT_FILTER_STATE,
   DEFAULT_TABS,
   ICascadeEntry,
+  ICollectionVisibility,
   IFilterState,
   MODE_TABS,
   createDefaultFilterState,
@@ -65,6 +67,8 @@ export interface INavigationState {
   readonly listCollapsed: boolean;
   /** Per-tab filter state (persisted across tab switches) */
   readonly filtersByTab: Partial<Record<AppTab, IFilterState>>;
+  /** Per-tab collection visibility (persisted across tab switches) */
+  readonly collectionVisibilityByTab: Partial<Record<AppTab, ICollectionVisibility>>;
   /** Whether compare mode is active (multi-select for side-by-side comparison) */
   readonly compareMode: boolean;
   /** Entity IDs selected for comparison */
@@ -104,6 +108,10 @@ export interface INavigationActions {
   collapseList: () => void;
   /** Clear all filters across all tabs. */
   clearAllFilters: () => void;
+  /** Toggle visibility of a collection on a specific tab. */
+  toggleCollectionVisibility: (tab: AppTab, collectionId: string) => void;
+  /** Set visibility for all collections on a specific tab. */
+  setAllCollectionsVisible: (tab: AppTab, visible: boolean, collectionIds: ReadonlyArray<string>) => void;
   /** Toggle compare mode on/off. Turning off clears compare selections. */
   toggleCompareMode: () => void;
   /** Toggle an entity ID in/out of the compare selection (max 4). */
@@ -145,6 +153,7 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
     cascadeStack: [],
     listCollapsed: false,
     filtersByTab: {},
+    collectionVisibilityByTab: {},
     compareMode: false,
     compareIds: new Set<string>(),
     showingComparison: false,
@@ -240,6 +249,34 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
       set({ filtersByTab: {} });
     },
 
+    toggleCollectionVisibility: (tab: AppTab, collectionId: string): void => {
+      set((state) => {
+        const existing = state.collectionVisibilityByTab[tab] ?? {};
+        const currentlyVisible = existing[collectionId] !== false;
+        return {
+          collectionVisibilityByTab: {
+            ...state.collectionVisibilityByTab,
+            [tab]: { ...existing, [collectionId]: !currentlyVisible }
+          }
+        };
+      });
+    },
+
+    setAllCollectionsVisible: (tab: AppTab, visible: boolean, collectionIds: ReadonlyArray<string>): void => {
+      set((state) => {
+        const updated: Record<string, boolean> = {};
+        for (const id of collectionIds) {
+          updated[id] = visible;
+        }
+        return {
+          collectionVisibilityByTab: {
+            ...state.collectionVisibilityByTab,
+            [tab]: updated
+          }
+        };
+      });
+    },
+
     toggleCompareMode: (): void => {
       set((state) => ({
         compareMode: !state.compareMode,
@@ -316,4 +353,22 @@ export function selectModeTabs(state: INavigationState): ReadonlyArray<AppTab> {
  */
 export function selectHasActiveFilters(state: INavigationState): boolean {
   return Object.values(state.filtersByTab).some((f) => f !== undefined && hasActiveFilters(f));
+}
+
+/**
+ * Selector: get the collection visibility state for the current tab.
+ * @public
+ */
+export function selectCurrentCollectionVisibility(state: INavigationState): ICollectionVisibility {
+  const tab = selectActiveTab(state);
+  return state.collectionVisibilityByTab[tab] ?? DEFAULT_COLLECTION_VISIBILITY;
+}
+
+/**
+ * Returns whether a specific collection is visible on the current tab.
+ * Collections not in the visibility map are visible by default.
+ * @public
+ */
+export function isCollectionVisible(visibility: ICollectionVisibility, collectionId: string): boolean {
+  return visibility[collectionId] !== false;
 }

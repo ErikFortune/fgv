@@ -491,17 +491,19 @@ describe('DirectoryItem', () => {
       const nonMutableAccessors = InMemoryTreeAccessors.create([]).orThrow();
       const directoryItem = DirectoryItem.create('/', nonMutableAccessors).orThrow();
 
-      // InMemoryTreeAccessors passes the isMutableAccessors check but doesn't have createDirectory,
-      // so we get "directory creation not supported" instead of "mutation not supported"
-      expect(directoryItem.createChildDirectory?.('newdir')).toFailWith(/directory creation not supported/i);
+      // Non-mutable InMemoryTreeAccessors fails at the mutability check
+      expect(directoryItem.createChildDirectory?.('newdir')).toFailWith(/mutability is disabled/i);
     });
 
-    test('fails when accessors do not support createDirectory', () => {
-      // InMemoryTreeAccessors implements IMutableFileTreeAccessors but doesn't have createDirectory
+    test('succeeds with mutable InMemoryTreeAccessors', () => {
+      // InMemoryTreeAccessors now implements createDirectory
       const mutableAccessors = InMemoryTreeAccessors.create([], { mutable: true }).orThrow();
       const directoryItem = DirectoryItem.create('/', mutableAccessors).orThrow();
 
-      expect(directoryItem.createChildDirectory?.('newdir')).toFailWith(/directory creation not supported/i);
+      expect(directoryItem.createChildDirectory?.('newdir')).toSucceedAndSatisfy((childDir) => {
+        expect(childDir.type).toBe('directory');
+        expect(childDir.name).toBe('newdir');
+      });
     });
 
     test('succeeds creating multiple subdirectories', () => {

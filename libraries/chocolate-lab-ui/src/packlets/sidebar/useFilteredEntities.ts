@@ -28,7 +28,14 @@
 
 import { useMemo } from 'react';
 
-import { type IFilterState, useNavigationStore, selectCurrentFilter } from '../navigation';
+import {
+  type ICollectionVisibility,
+  type IFilterState,
+  isCollectionVisible,
+  useNavigationStore,
+  selectCurrentFilter,
+  selectCurrentCollectionVisibility
+} from '../navigation';
 
 // ============================================================================
 // Filter Spec
@@ -51,6 +58,12 @@ export interface IEntityFilterSpec<TEntity> {
   readonly selectionExtractors: Readonly<
     Record<string, (entity: TEntity) => string | ReadonlyArray<string> | undefined>
   >;
+  /**
+   * Optional: extract the collection ID from an entity.
+   * When provided, entities from hidden collections are excluded before
+   * search and selection filters are applied.
+   */
+  readonly getCollectionId?: (entity: TEntity) => string | undefined;
 }
 
 // ============================================================================
@@ -63,9 +76,19 @@ export interface IEntityFilterSpec<TEntity> {
 function applyFilters<TEntity>(
   entities: ReadonlyArray<TEntity>,
   filterState: IFilterState,
-  spec: IEntityFilterSpec<TEntity>
+  spec: IEntityFilterSpec<TEntity>,
+  collectionVisibility: ICollectionVisibility
 ): ReadonlyArray<TEntity> {
   let result = entities;
+
+  // Apply collection visibility pre-filter
+  if (spec.getCollectionId) {
+    const extractor = spec.getCollectionId;
+    result = result.filter((entity) => {
+      const collectionId = extractor(entity);
+      return collectionId === undefined || isCollectionVisible(collectionVisibility, collectionId);
+    });
+  }
 
   // Apply search filter
   const search = filterState.search.trim().toLowerCase();
@@ -117,6 +140,10 @@ export function useFilteredEntities<TEntity>(
   spec: IEntityFilterSpec<TEntity>
 ): ReadonlyArray<TEntity> {
   const filterState = useNavigationStore(selectCurrentFilter);
+  const collectionVisibility = useNavigationStore(selectCurrentCollectionVisibility);
 
-  return useMemo(() => applyFilters(entities, filterState, spec), [entities, filterState, spec]);
+  return useMemo(
+    () => applyFilters(entities, filterState, spec, collectionVisibility),
+    [entities, filterState, spec, collectionVisibility]
+  );
 }

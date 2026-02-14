@@ -11,7 +11,9 @@ export {
   type CascadeEntityType,
   type CascadeColumnMode,
   type ICascadeEntry,
+  type ICollectionVisibility,
   type IFilterState,
+  DEFAULT_COLLECTION_VISIBILITY,
   DEFAULT_FILTER_STATE,
   DEFAULT_TABS,
   MODE_TABS,
@@ -29,6 +31,8 @@ export {
   useNavigationStore,
   selectActiveTab,
   selectCurrentFilter,
+  selectCurrentCollectionVisibility,
   selectModeTabs,
-  selectHasActiveFilters
+  selectHasActiveFilters,
+  isCollectionVisible
 } from './store';

@@ -429,7 +429,7 @@ export abstract class SubLibraryBase<
     const fileSources = normalizeFileSources(libraryParams?.fileSources);
     const additionalCollections = libraryParams?.collections ?? [];
     /* c8 ignore next - default logger branch tested implicitly */
-    const logger = params.logger ?? new Logging.LogReporter<unknown>();
+    const logger = params.logger ?? libraryParams?.logger ?? new Logging.LogReporter<unknown>();
 
     // Load built-in collections (includes protected collection metadata)
     const builtInResult = SubLibraryBase._loadBuiltInCollections(

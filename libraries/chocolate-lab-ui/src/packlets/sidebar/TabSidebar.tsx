@@ -29,8 +29,8 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo } from 'react';
-import { FilterBar, FilterRow, type IFilterOption } from '@fgv/ts-app-shell';
+import React, { useCallback, useMemo, useState } from 'react';
+import { CollectionSection, FilterBar, FilterRow, type IFilterOption } from '@fgv/ts-app-shell';
 
 import {
   type AppTab,
@@ -40,6 +40,9 @@ import {
   selectActiveTab,
   selectCurrentFilter
 } from '../navigation';
+
+import { useCollectionInfo } from './collectionInfo';
+import { CreateCollectionDialog, type ICreateCollectionData } from './CreateCollectionDialog';
 
 import { TAB_FILTER_DEFINITIONS, type IFilterDefinition } from './filterConfigs';
 
@@ -81,6 +84,12 @@ const PLACEHOLDER_PROVIDER: IFilterOptionProvider = {
 export interface ITabSidebarProps {
   /** Optional filter option provider (defaults to placeholder) */
   readonly optionProvider?: IFilterOptionProvider;
+  /** Callback when "Add Directory" is clicked in the collection section */
+  readonly onAddDirectory?: () => void;
+  /** Callback when the user confirms creation of a new collection */
+  readonly onCreateCollection?: (data: ICreateCollectionData) => void;
+  /** Callback when delete is clicked for a mutable collection */
+  readonly onDeleteCollection?: (collectionId: string) => void;
 }
 
 // ============================================================================
@@ -98,12 +107,22 @@ export interface ITabSidebarProps {
  * @public
  */
 export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
-  const { optionProvider = PLACEHOLDER_PROVIDER } = props;
+  const {
+    optionProvider = PLACEHOLDER_PROVIDER,
+    onAddDirectory,
+    onCreateCollection,
+    onDeleteCollection
+  } = props;
+
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const activeTab = useNavigationStore(selectActiveTab);
   const filterState = useNavigationStore(selectCurrentFilter);
   const setFilter = useNavigationStore((s) => s.setFilter);
   const clearFilter = useNavigationStore((s) => s.clearFilter);
+  const toggleCollectionVisibility = useNavigationStore((s) => s.toggleCollectionVisibility);
+
+  const collectionInfos = useCollectionInfo();
 
   const filterDefs = TAB_FILTER_DEFINITIONS[activeTab];
 
@@ -127,29 +146,72 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     clearFilter(activeTab);
   }, [activeTab, clearFilter]);
 
+  const handleToggleCollectionVisibility = useCallback(
+    (collectionId: string): void => {
+      toggleCollectionVisibility(activeTab, collectionId);
+    },
+    [activeTab, toggleCollectionVisibility]
+  );
+
+  const handleOpenCreateDialog = useCallback((): void => {
+    setIsCreateDialogOpen(true);
+  }, []);
+
+  const handleCloseCreateDialog = useCallback((): void => {
+    setIsCreateDialogOpen(false);
+  }, []);
+
+  const handleCreateCollection = useCallback(
+    (data: ICreateCollectionData): void => {
+      onCreateCollection?.(data);
+    },
+    [onCreateCollection]
+  );
+
+  const existingCollectionIds = useMemo(() => new Set(collectionInfos.map((c) => c.id)), [collectionInfos]);
+
   const activeFilterCount = useMemo(() => countActiveSelections(filterState), [filterState]);
 
   return (
-    <FilterBar
-      search={{
-        value: filterState.search,
-        onChange: handleSearchChange,
-        placeholder: `Search ${activeTab}...`
-      }}
-      activeFilterCount={activeFilterCount}
-      onClearAll={handleClearAll}
-    >
-      {filterDefs.map((def: IFilterDefinition) => (
-        <FilterRow<string>
-          key={def.key}
-          label={def.label}
-          options={optionProvider.getOptions(activeTab, def.key)}
-          selected={getSelections(filterState, def.key)}
-          onSelectionChange={(selected): void => handleSelectionChange(def.key, selected)}
-          multiple={def.multiple}
+    <div className="flex flex-col">
+      <FilterBar
+        search={{
+          value: filterState.search,
+          onChange: handleSearchChange,
+          placeholder: `Search ${activeTab}...`
+        }}
+        activeFilterCount={activeFilterCount}
+        onClearAll={handleClearAll}
+      >
+        {filterDefs.map((def: IFilterDefinition) => (
+          <FilterRow<string>
+            key={def.key}
+            label={def.label}
+            options={optionProvider.getOptions(activeTab, def.key)}
+            selected={getSelections(filterState, def.key)}
+            onSelectionChange={(selected): void => handleSelectionChange(def.key, selected)}
+            multiple={def.multiple}
+          />
+        ))}
+      </FilterBar>
+
+      <CollectionSection
+        collections={collectionInfos}
+        onToggleVisibility={handleToggleCollectionVisibility}
+        onAddDirectory={onAddDirectory}
+        onCreateCollection={onCreateCollection ? handleOpenCreateDialog : undefined}
+        onDeleteCollection={onDeleteCollection}
+      />
+
+      {onCreateCollection && (
+        <CreateCollectionDialog
+          isOpen={isCreateDialogOpen}
+          onClose={handleCloseCreateDialog}
+          onCreate={handleCreateCollection}
+          existingIds={existingCollectionIds}
         />
-      ))}
-    </FilterBar>
+      )}
+    </div>
   );
 }
 

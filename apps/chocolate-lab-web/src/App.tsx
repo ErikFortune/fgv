@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   ModeSelector,
@@ -23,8 +23,8 @@ import {
   EntityTabLayout,
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
-import type { Logging } from '@fgv/ts-utils';
-import { Workspace, type LibraryRuntime } from '@fgv/ts-chocolate';
+import { Logging } from '@fgv/ts-utils';
+import { createWorkspaceFromPlatform, type LibraryRuntime } from '@fgv/ts-chocolate';
 import {
   type AppMode,
   type AppTab,
@@ -49,6 +49,8 @@ import {
   DecorationDetail,
   WorkspaceFilterOptionProvider,
   useFilteredEntities,
+  useCollectionActions,
+  initializeBrowserPlatform,
   type IEntityFilterSpec
 } from '@fgv/chocolate-lab-ui';
 import type {
@@ -101,13 +103,29 @@ function SettingsButton({ onOpen }: { readonly onOpen: () => void }): React.Reac
 // Workspace Initialization (lazy — avoids webpack circular dep evaluation order)
 // ============================================================================
 
-let _reactiveWorkspace: ReactiveWorkspace | undefined;
+const _bootLogger = new Logging.BootLogger();
+const _bootReporter = new Logging.LogReporter<unknown>({ logger: _bootLogger });
 
-function getReactiveWorkspace(logger?: Logging.LogReporter<unknown>): ReactiveWorkspace {
-  if (!_reactiveWorkspace) {
-    _reactiveWorkspace = new ReactiveWorkspace(Workspace.create({ preWarm: true, logger }).orThrow());
+let _reactiveWorkspacePromise: Promise<ReactiveWorkspace> | undefined;
+
+function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
+  if (!_reactiveWorkspacePromise) {
+    _reactiveWorkspacePromise = (async () => {
+      const platformInit = await initializeBrowserPlatform({ userLibraryPath: 'localStorage' });
+      const workspace = platformInit
+        .onSuccess((init) =>
+          createWorkspaceFromPlatform({
+            platformInit: init,
+            builtin: true,
+            preWarm: true,
+            logger: _bootReporter
+          })
+        )
+        .orThrow();
+      return new ReactiveWorkspace(workspace);
+    })();
   }
-  return _reactiveWorkspace;
+  return _reactiveWorkspacePromise;
 }
 
 // ============================================================================
@@ -196,6 +214,7 @@ function collectionFromId(id: string): string {
 
 const INGREDIENT_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.AnyIngredient> = {
   getSearchText: (i) => [i.name, i.manufacturer, i.category].filter(Boolean).join(' '),
+  getCollectionId: (i) => i.collectionId,
   selectionExtractors: {
     collection: (i) => i.collectionId,
     category: (i) => i.category,
@@ -205,6 +224,7 @@ const INGREDIENT_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.AnyIngredient> = 
 
 const FILLING_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.FillingRecipe> = {
   getSearchText: (f) => [f.name, f.entity.category].filter(Boolean).join(' '),
+  getCollectionId: (f) => f.collectionId,
   selectionExtractors: {
     collection: (f) => f.collectionId,
     category: (f) => f.entity.category,
@@ -214,6 +234,7 @@ const FILLING_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.FillingRecipe> = {
 
 const CONFECTION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IConfectionBase> = {
   getSearchText: (c) => [c.name, c.confectionType, c.description].filter(Boolean).join(' '),
+  getCollectionId: (c) => c.collectionId,
   selectionExtractors: {
     collection: (c) => c.collectionId,
     category: (c) => c.confectionType,
@@ -223,6 +244,7 @@ const CONFECTION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IConfectionBase> 
 
 const MOLD_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IMold> = {
   getSearchText: (m) => [m.displayName, m.manufacturer, m.format, m.description].filter(Boolean).join(' '),
+  getCollectionId: (m) => m.collectionId,
   selectionExtractors: {
     collection: (m) => m.collectionId,
     shape: (m) => m.format,
@@ -232,6 +254,7 @@ const MOLD_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IMold> = {
 
 const PROCEDURE_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IProcedure> = {
   getSearchText: (p) => [p.name, p.category, p.description].filter(Boolean).join(' '),
+  getCollectionId: (p) => collectionFromId(p.id),
   selectionExtractors: {
     collection: (p) => collectionFromId(p.id),
     category: (p) => p.category,
@@ -241,6 +264,7 @@ const PROCEDURE_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IProcedure> = {
 
 const TASK_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.ITask> = {
   getSearchText: (t) => [t.name, t.template].filter(Boolean).join(' '),
+  getCollectionId: (t) => collectionFromId(t.id),
   selectionExtractors: {
     collection: (t) => collectionFromId(t.id),
     tags: (t) => t.tags ?? []
@@ -249,6 +273,7 @@ const TASK_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.ITask> = {
 
 const DECORATION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IDecoration> = {
   getSearchText: (d) => [d.name, d.description].filter(Boolean).join(' '),
+  getCollectionId: (d) => collectionFromId(d.id),
   selectionExtractors: {
     collection: (d) => collectionFromId(d.id),
     tags: (d) => d.tags ?? []
@@ -1386,6 +1411,25 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
 }
 
 // ============================================================================
+// Sidebar with Collection Actions
+// ============================================================================
+
+function TabSidebarWithActions(props: {
+  readonly optionProvider: WorkspaceFilterOptionProvider;
+}): React.ReactElement {
+  const { addDirectory, createCollection, deleteCollection } = useCollectionActions();
+
+  return (
+    <TabSidebar
+      optionProvider={props.optionProvider}
+      onAddDirectory={addDirectory}
+      onCreateCollection={createCollection}
+      onDeleteCollection={deleteCollection}
+    />
+  );
+}
+
+// ============================================================================
 // App Shell (inner, needs MessagesProvider)
 // ============================================================================
 
@@ -1441,7 +1485,7 @@ function AppShell(): React.ReactElement {
       <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={setTab} />
 
       {/* Main content area: sidebar + tab content */}
-      <SidebarLayout sidebar={<TabSidebar optionProvider={filterOptionProvider} />}>
+      <SidebarLayout sidebar={<TabSidebarWithActions optionProvider={filterOptionProvider} />}>
         <TabContent tab={activeTab} />
       </SidebarLayout>
 
@@ -1468,7 +1512,28 @@ function AppShell(): React.ReactElement {
  */
 function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }): React.ReactElement {
   const reporter = useLogReporter();
-  const [reactiveWorkspace] = useState(() => getReactiveWorkspace(reporter));
+  const [reactiveWorkspace, setReactiveWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Connect the boot logger to the real logger so buffered messages
+    // are replayed as toasts and all future log calls go through it.
+    _bootLogger.ready(reporter.logger);
+  }, [reporter]);
+
+  useEffect(() => {
+    getReactiveWorkspaceAsync()
+      .then(setReactiveWorkspace)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+  }, []);
+
+  if (error) {
+    return <div className="p-8 text-red-600">Failed to initialize workspace: {error}</div>;
+  }
+
+  if (!reactiveWorkspace) {
+    return <div className="p-8 text-gray-500">Loading workspace…</div>;
+  }
 
   return <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>{children}</WorkspaceProvider>;
 }

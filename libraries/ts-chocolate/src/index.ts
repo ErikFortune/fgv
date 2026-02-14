@@ -52,7 +52,9 @@ export {
   type ICommonWorkspaceInitParams,
   type IResolvedExternalLibrary,
   toLibraryFileSources,
-  toUserLibrarySource
+  toUserLibrarySource,
+  ensureDirectoryPath,
+  ensureWorkspaceDirectoriesInTree
 } from './packlets/workspace';
 
 // All branded types and common utilities

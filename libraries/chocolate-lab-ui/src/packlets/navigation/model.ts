@@ -148,6 +148,24 @@ export interface ICascadeEntry {
 }
 
 // ============================================================================
+// Collection Visibility
+// ============================================================================
+
+/**
+ * Per-tab collection visibility state.
+ * Maps collection IDs to their visibility (true = visible, false = hidden).
+ * Collections not present in the map are visible by default.
+ * @public
+ */
+export type ICollectionVisibility = Readonly<Record<string, boolean>>;
+
+/**
+ * Stable default collection visibility singleton.
+ * @public
+ */
+export const DEFAULT_COLLECTION_VISIBILITY: ICollectionVisibility = {};
+
+// ============================================================================
 // Filter State
 // ============================================================================
 

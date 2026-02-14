@@ -447,5 +447,139 @@ describe('FileSystemAccessTreeAccessors', () => {
       // Should succeed but without write permission due to error
       expect(result).toSucceed();
     });
+
+    test('handles permission status "prompt" by requesting permission', async () => {
+      const dirHandle = createMockDirectoryHandle(
+        '/',
+        { 'test.txt': { content: 'test', type: 'text/plain' } },
+        { permissionStatus: 'prompt', requestGranted: true }
+      );
+
+      const result = await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, {
+        requireWritePermission: true
+      });
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        expect(accessors).toBeInstanceOf(FileSystemAccessTreeAccessors);
+      });
+    });
+
+    test('handles sync failures with aggregated errors', async () => {
+      const dirHandle = createMockDirectoryHandle('/', {
+        'file1.txt': { content: 'content1', type: 'text/plain' },
+        'file2.txt': { content: 'content2', type: 'text/plain' }
+      });
+
+      const accessors = (
+        await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+      ).orThrow();
+
+      // Modify files
+      accessors.saveFileContents('/file1.txt', 'modified1').orThrow();
+      accessors.saveFileContents('/file2.txt', 'modified2').orThrow();
+
+      // Replace the file handles with ones that fail to write
+      const handles = (accessors as any)._handles as Map<string, any>;
+      for (const [, handle] of handles) {
+        handle.createWritable = jest.fn().mockRejectedValue(new Error('Write permission denied'));
+      }
+
+      const syncResult = await accessors.syncToDisk();
+      expect(syncResult).toFailWith(/Failed to sync 2 file\(s\)/i);
+    });
+
+    test('handles getFileContents failure during sync', async () => {
+      const dirHandle = createMockDirectoryHandle('/', {
+        'test.txt': { content: 'original', type: 'text/plain' }
+      });
+
+      const accessors = (
+        await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+      ).orThrow();
+
+      // Add a new file
+      accessors.saveFileContents('/newfile.txt', 'new content').orThrow();
+
+      // Override getFileContents to fail
+      const originalGetFileContents = accessors.getFileContents.bind(accessors);
+      accessors.getFileContents = jest.fn((path: string) => {
+        if (path === '/newfile.txt') {
+          return { isSuccess: () => false, isFailure: () => true, message: 'File read error' } as any;
+        }
+        return originalGetFileContents(path);
+      });
+
+      const syncResult = await accessors.syncToDisk();
+      expect(syncResult).toFailWith(/File read error/i);
+    });
+
+    test('handles file write failure during sync', async () => {
+      const dirHandle = createMockDirectoryHandle('/', {
+        'test.txt': { content: 'original', type: 'text/plain' }
+      });
+
+      const accessors = (
+        await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+      ).orThrow();
+
+      accessors.saveFileContents('/test.txt', 'modified').orThrow();
+
+      // Replace the handle with one that fails to write
+      const handles = (accessors as any)._handles as Map<string, any>;
+      const handle = handles.get('/test.txt');
+      handle.createWritable = jest.fn().mockRejectedValue(new Error('Disk full'));
+
+      const syncResult = await accessors.syncToDisk();
+      expect(syncResult).toFailWith(/Failed to write file.*Disk full/i);
+    });
+
+    test('handles invalid file path with no filename', async () => {
+      const dirHandle = createMockDirectoryHandle('/', {
+        'existing.txt': { content: 'existing', type: 'text/plain' }
+      });
+
+      const accessors = (
+        await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+      ).orThrow();
+
+      // Override resolveAbsolutePath to return an empty path to trigger the error
+      const originalResolveAbsolutePath = (accessors as any).resolveAbsolutePath.bind(accessors);
+      (accessors as any).resolveAbsolutePath = jest.fn((path: string) => {
+        if (path === '/badpath') {
+          return ''; // This will result in no parts after split
+        }
+        return originalResolveAbsolutePath(path);
+      });
+
+      // Create a new file with the bad path - don't throw if it fails
+      const saveResult = accessors.saveFileContents('/badpath', 'content');
+      if (saveResult.isFailure()) {
+        // saveFileContents itself might reject the path
+        expect(saveResult).toFailWith(/invalid file path/i);
+      } else {
+        // If save succeeded, sync should fail
+        const syncResult = await accessors.syncToDisk();
+        expect(syncResult).toFailWith(/Invalid file path/i);
+      }
+    });
+
+    test('handles file creation failure in _createAndWriteFile', async () => {
+      const dirHandle = createMockDirectoryHandle('/', {
+        'existing.txt': { content: 'existing', type: 'text/plain' }
+      });
+
+      const accessors = (
+        await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+      ).orThrow();
+
+      // Add a new file that will need to be created
+      accessors.saveFileContents('/newdir/newfile.txt', 'new content').orThrow();
+
+      // Mock getDirectoryHandle to fail
+      const rootDir = (accessors as any)._rootDir;
+      rootDir.getDirectoryHandle = jest.fn().mockRejectedValue(new Error('Permission denied'));
+
+      const syncResult = await accessors.syncToDisk();
+      expect(syncResult).toFailWith(/Failed to create file.*Permission denied/i);
+    });
   });
 });

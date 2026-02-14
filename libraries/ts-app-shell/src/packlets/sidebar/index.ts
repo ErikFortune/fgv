@@ -19,3 +19,9 @@ export {
   type IEmptyStateConfig,
   type IEmptyStateAction
 } from './EntityList';
+
+export {
+  CollectionSection,
+  type ICollectionSectionProps,
+  type ICollectionRowItem
+} from './CollectionSection';

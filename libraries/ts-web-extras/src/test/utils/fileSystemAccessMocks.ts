@@ -39,6 +39,8 @@ export interface MockFileData {
 export interface MockDirectoryOptions {
   hasWritePermission?: boolean;
   permissionError?: boolean;
+  permissionStatus?: PermissionState;
+  requestGranted?: boolean;
 }
 
 /**
@@ -186,7 +188,12 @@ export function createMockDirectoryHandle(
   files: Record<string, MockFileData>,
   options: MockDirectoryOptions = {}
 ): FileSystemDirectoryHandle {
-  const { hasWritePermission = true, permissionError = false } = options;
+  const {
+    hasWritePermission = true,
+    permissionError = false,
+    permissionStatus,
+    requestGranted = true
+  } = options;
   const structure = parseFileStructure(files);
   const fileHandles = new Map<string, FileSystemFileHandle>();
   const dirHandles = new Map<string, FileSystemDirectoryHandle>();
@@ -285,6 +292,9 @@ export function createMockDirectoryHandle(
         if (permissionError) {
           throw new Error('Permission query failed');
         }
+        if (permissionStatus) {
+          return permissionStatus;
+        }
         if (descriptor?.mode === 'readwrite' && !hasWritePermission) {
           return 'denied';
         }
@@ -294,6 +304,9 @@ export function createMockDirectoryHandle(
       async requestPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState> {
         if (permissionError) {
           throw new Error('Permission request failed');
+        }
+        if (permissionStatus === 'prompt') {
+          return requestGranted ? 'granted' : 'denied';
         }
         if (descriptor?.mode === 'readwrite' && !hasWritePermission) {
           return 'denied';

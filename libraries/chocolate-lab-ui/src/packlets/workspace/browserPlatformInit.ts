@@ -35,7 +35,7 @@ import {
   FileApiTreeAccessors,
   ILocalStorageTreeParams
 } from '@fgv/ts-web-extras';
-import { LibraryData, Settings } from '@fgv/ts-chocolate';
+import { ensureWorkspaceDirectoriesInTree, LibraryData, Settings } from '@fgv/ts-chocolate';
 
 import type {
   IPlatformInitializer,
@@ -152,6 +152,13 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
               .getDirectory('/')
               .withErrorFormat((msg) => `root directory: ${msg}`)
               .onSuccess((userLibraryTree) => {
+                // Ensure standard workspace directories exist in the localStorage tree
+                // so sub-libraries have a mutable data directory for collection persistence.
+                const dirsResult = ensureWorkspaceDirectoriesInTree(userLibraryTree);
+                if (dirsResult.isFailure()) {
+                  return fail(`workspace directories: ${dirsResult.message}`);
+                }
+
                 return this._loadSettings(tree, deviceId, browserOptions.deviceName)
                   .withErrorFormat((msg) => `settings: ${msg}`)
                   .onSuccess(({ common, device }) => {

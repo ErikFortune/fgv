@@ -131,12 +131,17 @@ export type AggregatedResultMapEntryInit<
  * Options for {@link Collections.AggregatedResultMapBase.addCollectionWithItems | addCollectionWithItems}.
  * @public
  */
-export interface IAddCollectionWithItemsOptions {
+export interface IAddCollectionWithItemsOptions<TMETADATA = unknown> {
   /**
    * If true, the collection will be immutable (read-only).
    * Defaults to false (mutable).
    */
   readonly isImmutable?: boolean;
+
+  /**
+   * Optional metadata to attach to the collection.
+   */
+  readonly metadata?: TMETADATA;
 }
 
 /**
@@ -766,14 +771,16 @@ export class AggregatedResultMapBase<
   public addCollectionWithItems(
     collectionId: string,
     items?: Iterable<KeyValueEntry<string, unknown>>,
-    options?: IAddCollectionWithItemsOptions
+    options?: IAddCollectionWithItemsOptions<TMETADATA>
   ): Result<TCOLLECTIONID> {
     const isMutable = options?.isImmutable !== true;
     const entries = items ? Array.from(items) : [];
     return this._collectionIdConverter
       .convert(collectionId)
       .onSuccess((id) =>
-        this.addCollectionEntry({ isMutable, id, entries }).asResult.onSuccess(() => Success.with(id))
+        this.addCollectionEntry({ isMutable, id, entries, metadata: options?.metadata }).asResult.onSuccess(
+          () => Success.with(id)
+        )
       );
   }
 

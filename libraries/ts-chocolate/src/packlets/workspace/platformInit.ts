@@ -35,11 +35,11 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
+import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils } from '@fgv/ts-extras';
-import { FullLibraryLoadSpec, ILibraryFileTreeSource, SubLibraryId } from '../library-data';
+import { FullLibraryLoadSpec, ILibraryFileTreeSource, LibraryPaths, SubLibraryId } from '../library-data';
 import {
   DeviceId,
   ExternalLibraryRef,
@@ -240,6 +240,12 @@ export interface ICommonWorkspaceInitParams {
    * @defaultValue false
    */
   readonly preWarm?: boolean;
+
+  /**
+   * Optional logger for workspace operations.
+   * If not provided, a default NoOp logger is used.
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // ============================================================================
@@ -289,13 +295,101 @@ export function toUserLibrarySource(
   return {
     directory: userLibraryTree,
     load: {
-      journals: true,
-      sessions: true,
-      // User library doesn't contain shared library data by default
-      default: false
+      // User library loads all sub-libraries so it can serve as the
+      // mutable backing store for new collections (e.g., localStorage in browser).
+      default: true
     },
     mutable
   };
+}
+
+// ============================================================================
+// FileTree-based Workspace Directory Initialization
+// ============================================================================
+
+/**
+ * All standard workspace directory paths that should be pre-created.
+ * @internal
+ */
+const WORKSPACE_DIRECTORY_PATHS: ReadonlyArray<string> = [
+  // Library entity directories
+  LibraryPaths.ingredients,
+  LibraryPaths.fillings,
+  LibraryPaths.confections,
+  LibraryPaths.decorations,
+  LibraryPaths.molds,
+  LibraryPaths.procedures,
+  LibraryPaths.tasks,
+  // User entity directories
+  LibraryPaths.sessions,
+  LibraryPaths.journals,
+  LibraryPaths.moldInventory,
+  LibraryPaths.ingredientInventory,
+  // Settings
+  LibraryPaths.settings
+];
+
+/**
+ * Ensures a directory path exists in a FileTree, creating intermediate
+ * directories as needed (analogous to `mkdir -p`).
+ *
+ * @param root - The root directory item to start from
+ * @param relativePath - A `/`-separated relative path (e.g. `data/ingredients`)
+ * @returns Success with the leaf directory item, or Failure if creation is not supported
+ * @public
+ */
+export function ensureDirectoryPath(
+  root: FileTree.IFileTreeDirectoryItem,
+  relativePath: string
+): Result<FileTree.IFileTreeDirectoryItem> {
+  const segments = relativePath.split('/').filter((s) => s.length > 0);
+  let current = root;
+
+  for (const segment of segments) {
+    // Check if child already exists
+    const childrenResult = current.getChildren();
+    if (childrenResult.isSuccess()) {
+      const existing = childrenResult.value.find(
+        (child): child is FileTree.IFileTreeDirectoryItem => 'getChildren' in child && child.name === segment
+      );
+      if (existing) {
+        current = existing;
+        continue;
+      }
+    }
+
+    // Create the directory
+    if (current.createChildDirectory === undefined) {
+      return fail(`${current.absolutePath}: directory creation not supported`);
+    }
+    const createResult = current.createChildDirectory(segment);
+    if (createResult.isFailure()) {
+      return fail(`${current.absolutePath}/${segment}: ${createResult.message}`);
+    }
+    current = createResult.value;
+  }
+
+  return succeed(current);
+}
+
+/**
+ * Ensures the standard workspace directory structure exists in a FileTree.
+ *
+ * Platform-agnostic equivalent of {@link createWorkspaceDirectories} — works
+ * with any writable FileTree (localStorage, File System Access API, in-memory, etc.).
+ *
+ * @param root - The root directory item of the workspace tree
+ * @returns Success if all directories were created/verified, Failure otherwise
+ * @public
+ */
+export function ensureWorkspaceDirectoriesInTree(root: FileTree.IFileTreeDirectoryItem): Result<void> {
+  for (const dirPath of WORKSPACE_DIRECTORY_PATHS) {
+    const result = ensureDirectoryPath(root, dirPath);
+    if (result.isFailure()) {
+      return fail(`Failed to ensure workspace directory '${dirPath}': ${result.message}`);
+    }
+  }
+  return succeed(undefined);
 }
 
 // ============================================================================
@@ -367,7 +461,8 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
         userFileSources: userSource,
         keyStore: keyStoreConfig,
         preWarm,
-        settings
+        settings,
+        logger: params.logger
       });
     });
 }

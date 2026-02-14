@@ -265,6 +265,8 @@ export function getIngredientInventoryDirectory(
  * @public
  */
 export function createDefaultLibraryDirectories(rootPath: string): Result<void> {
+  // Node.js fs-based implementation. For a platform-agnostic FileTree-based
+  // equivalent, see ensureWorkspaceDirectoriesInTree in the workspace packlet.
   const directories = [
     LibraryPaths.ingredients,
     LibraryPaths.fillings,

@@ -379,6 +379,40 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.createDirectory}
+   */
+  public createDirectory(dirPath: string): Result<string> {
+    const absolutePath = this.resolveAbsolutePath(dirPath);
+
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return fail(`${absolutePath}: mutability is disabled`);
+    }
+
+    // Add to the TreeBuilder (read layer)
+    const treeResult = this._tree.addDirectory(absolutePath);
+    if (treeResult.isFailure()) {
+      return fail(treeResult.message);
+    }
+
+    // Add to the mutable layer
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    let dir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    for (const part of parts) {
+      const result = dir.getOrAddDirectory(part);
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      dir = result.value as MutableInMemoryDirectory<TCT>;
+      if (!this._mutableByPath.has(dir.absolutePath)) {
+        this._mutableByPath.set(dir.absolutePath, dir);
+      }
+    }
+
+    return succeed(absolutePath);
+  }
+
+  /**
    * {@inheritDoc FileTree.IMutableFileTreeAccessors.fileIsMutable}
    */
   public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
@@ -426,9 +460,15 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
       }
     }
 
-    // Update or add the file
+    // Update or add the file in the mutable layer
     return dir.updateOrAddFile(parts[0], contents).onSuccess((file) => {
       this._mutableByPath.set(file.absolutePath, file as MutableInMemoryFile<TCT>);
+
+      // Also register in the read layer so getItem/getChildren can find it
+      if (!this._tree.byAbsolutePath.has(file.absolutePath)) {
+        this._tree.addFile(file.absolutePath, contents);
+      }
+
       return succeed(contents);
     });
   }

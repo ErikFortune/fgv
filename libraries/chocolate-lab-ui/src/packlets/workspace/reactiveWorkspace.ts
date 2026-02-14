@@ -30,6 +30,8 @@
  * @packageDocumentation
  */
 
+import { type Result, succeed, fail } from '@fgv/ts-utils';
+import { type FileTree } from '@fgv/ts-json-base';
 import type { IWorkspace } from '@fgv/ts-chocolate';
 
 // ============================================================================
@@ -52,10 +54,24 @@ export type WorkspaceListener = () => void;
  *
  * @public
  */
+/**
+ * A registered persistent file tree with its accessors.
+ * @public
+ */
+export interface IPersistentTreeEntry {
+  /** The FileTree instance */
+  readonly tree: FileTree.FileTree;
+  /** The persistent accessors (for syncToDisk, isDirty, etc.) */
+  readonly accessors: FileTree.IPersistentFileTreeAccessors;
+  /** Label for display (e.g., directory name) */
+  readonly label: string;
+}
+
 export class ReactiveWorkspace {
   private readonly _workspace: IWorkspace;
   private readonly _listeners: Set<WorkspaceListener> = new Set();
   private _version: number = 0;
+  private readonly _persistentTrees: Map<string, IPersistentTreeEntry> = new Map();
 
   public constructor(workspace: IWorkspace) {
     this._workspace = workspace;
@@ -119,5 +135,57 @@ export class ReactiveWorkspace {
     for (const listener of this._listeners) {
       listener();
     }
+  }
+
+  // ============================================================================
+  // Persistent Tree Registry
+  // ============================================================================
+
+  /**
+   * Register a persistent FileTree for dirty tracking and save-in-place.
+   * @param id - Unique identifier for this tree (e.g., directory handle name)
+   * @param entry - The tree entry with accessors and label
+   */
+  public registerPersistentTree(id: string, entry: IPersistentTreeEntry): void {
+    this._persistentTrees.set(id, entry);
+  }
+
+  /**
+   * Get all registered persistent trees.
+   */
+  public get persistentTrees(): ReadonlyMap<string, IPersistentTreeEntry> {
+    return this._persistentTrees;
+  }
+
+  /**
+   * Whether any registered persistent tree has unsaved changes.
+   */
+  public get hasDirtyTrees(): boolean {
+    for (const entry of this._persistentTrees.values()) {
+      if (entry.accessors.isDirty()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Sync all dirty persistent trees to disk.
+   * @returns Success if all syncs succeeded, Failure with aggregated errors otherwise.
+   */
+  public async syncAllToDisk(): Promise<Result<void>> {
+    const errors: string[] = [];
+    for (const [id, entry] of this._persistentTrees) {
+      if (entry.accessors.isDirty()) {
+        const result = await entry.accessors.syncToDisk();
+        if (result.isFailure()) {
+          errors.push(`${id}: ${result.message}`);
+        }
+      }
+    }
+    if (errors.length > 0) {
+      return fail(`Failed to sync ${errors.length} tree(s):\n${errors.join('\n')}`);
+    }
+    return succeed(undefined);
   }
 }

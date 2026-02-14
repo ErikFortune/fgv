@@ -962,6 +962,24 @@ Converts resolved external libraries to library file tree sources.
 Converts user library tree to a library file tree source for user data.
 
 </td></tr>
+<tr><td>
+
+[ensureDirectoryPath](./functions/ensureDirectoryPath.md)
+
+</td><td>
+
+Ensures a directory path exists in a FileTree, creating intermediate
+
+</td></tr>
+<tr><td>
+
+[ensureWorkspaceDirectoriesInTree](./functions/ensureWorkspaceDirectoriesInTree.md)
+
+</td><td>
+
+Ensures the standard workspace directory structure exists in a FileTree.
+
+</td></tr>
 </tbody></table>
 
 ## Variables
