@@ -27,6 +27,8 @@ import {
   toLibraryFileSources,
   toUserLibrarySource,
   createWorkspaceFromPlatform,
+  ensureDirectoryPath,
+  ensureWorkspaceDirectoriesInTree,
   IResolvedExternalLibrary,
   IPlatformInitResult
 } from '../../../packlets/workspace';
@@ -44,10 +46,17 @@ describe('workspace platformInit helpers', () => {
   // Helper: create an in-memory FileTree directory
   // ============================================================================
 
-  function createInMemoryTree(inMemoryFiles?: FileTree.IInMemoryFile[]): FileTree.IFileTreeDirectoryItem {
+  function createInMemoryTree(
+    inMemoryFiles?: FileTree.IInMemoryFile[],
+    options?: { mutable?: boolean }
+  ): FileTree.IFileTreeDirectoryItem {
     const files = inMemoryFiles ?? [{ path: '/placeholder.txt', contents: '' }];
-    const tree = FileTree.inMemory(files).orThrow();
+    const tree = FileTree.inMemory(files, { mutable: options?.mutable ?? false }).orThrow();
     return tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+  }
+
+  function createMutableTree(inMemoryFiles?: FileTree.IInMemoryFile[]): FileTree.IFileTreeDirectoryItem {
+    return createInMemoryTree(inMemoryFiles, { mutable: true });
   }
 
   // ============================================================================
@@ -264,6 +273,94 @@ describe('workspace platformInit helpers', () => {
       });
       // Should succeed - external library source is incorporated (but not loaded)
       expect(createWorkspaceFromPlatform({ platformInit, builtin: false })).toSucceed();
+    });
+  });
+
+  // ============================================================================
+  // ensureDirectoryPath
+  // ============================================================================
+
+  describe('ensureDirectoryPath', () => {
+    test('creates a single-level directory', () => {
+      const root = createMutableTree();
+      expect(ensureDirectoryPath(root, 'foo')).toSucceedAndSatisfy((dir) => {
+        expect(dir.name).toBe('foo');
+      });
+    });
+
+    test('creates nested directories', () => {
+      const root = createMutableTree();
+      expect(ensureDirectoryPath(root, 'data/ingredients')).toSucceedAndSatisfy((dir) => {
+        expect(dir.name).toBe('ingredients');
+      });
+    });
+
+    test('reuses existing directories', () => {
+      const root = createMutableTree();
+      // Create once
+      const first = ensureDirectoryPath(root, 'data/ingredients').orThrow();
+      // Create again — should return the same directory
+      expect(ensureDirectoryPath(root, 'data/ingredients')).toSucceedAndSatisfy((dir) => {
+        expect(dir.absolutePath).toBe(first.absolutePath);
+      });
+    });
+
+    test('handles empty path segments (leading/trailing slashes)', () => {
+      const root = createMutableTree();
+      expect(ensureDirectoryPath(root, '/data//ingredients/')).toSucceedAndSatisfy((dir) => {
+        expect(dir.name).toBe('ingredients');
+      });
+    });
+
+    test('returns root for empty path', () => {
+      const root = createMutableTree();
+      expect(ensureDirectoryPath(root, '')).toSucceedAndSatisfy((dir) => {
+        expect(dir.absolutePath).toBe(root.absolutePath);
+      });
+    });
+
+    test('fails when directory creation is not supported', () => {
+      // Immutable tree rejects directory creation
+      const root = createInMemoryTree();
+      expect(ensureDirectoryPath(root, 'newdir')).toFail();
+    });
+  });
+
+  // ============================================================================
+  // ensureWorkspaceDirectoriesInTree
+  // ============================================================================
+
+  describe('ensureWorkspaceDirectoriesInTree', () => {
+    test('creates all standard workspace directories', () => {
+      const root = createMutableTree();
+      expect(ensureWorkspaceDirectoriesInTree(root)).toSucceed();
+
+      // Verify a few key directories exist
+      const children = root.getChildren().orThrow();
+      const dataDir = children.find(
+        (c): c is FileTree.IFileTreeDirectoryItem => 'getChildren' in c && c.name === 'data'
+      );
+      expect(dataDir).toBeDefined();
+
+      const dataChildren = dataDir!.getChildren().orThrow();
+      const names = dataChildren.map((c) => c.name);
+      expect(names).toContain('ingredients');
+      expect(names).toContain('fillings');
+      expect(names).toContain('sessions');
+      expect(names).toContain('journals');
+      expect(names).toContain('settings');
+    });
+
+    test('is idempotent', () => {
+      const root = createMutableTree();
+      expect(ensureWorkspaceDirectoriesInTree(root)).toSucceed();
+      expect(ensureWorkspaceDirectoriesInTree(root)).toSucceed();
+    });
+
+    test('fails when directory creation is not supported', () => {
+      // Immutable tree does not support createChildDirectory
+      const root = createInMemoryTree();
+      expect(ensureWorkspaceDirectoriesInTree(root)).toFailWith(/Failed to ensure workspace directory/);
     });
   });
 });

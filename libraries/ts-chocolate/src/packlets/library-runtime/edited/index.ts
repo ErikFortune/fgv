@@ -24,3 +24,4 @@
  */
 
 export * from './ingredientWrapper';
+export * from './moldWrapper';

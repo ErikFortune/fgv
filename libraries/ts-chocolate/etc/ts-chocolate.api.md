@@ -1656,6 +1656,36 @@ class EditedIngredient {
     undo(): Result<boolean>;
 }
 
+// @public
+class EditedMold {
+    applyUpdate(update: Partial<Molds_2.IMoldEntity>): Result<void>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    static create(initial: Molds_2.IMoldEntity): Result<EditedMold>;
+    createSnapshot(): Molds_2.IMoldEntity;
+    get current(): Molds_2.IMoldEntity;
+    get format(): MoldFormat;
+    getChanges(original: Molds_2.IMoldEntity): IMoldChanges;
+    getSerializedHistory(original: Molds_2.IMoldEntity): Session.ISerializedEditingHistoryEntity<Molds_2.IMoldEntity>;
+    hasChanges(original: Molds_2.IMoldEntity): boolean;
+    get manufacturer(): string;
+    get productNumber(): string;
+    redo(): Result<boolean>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Molds_2.IMoldEntity>): Result<EditedMold>;
+    restoreSnapshot(snapshot: Molds_2.IMoldEntity): Result<void>;
+    setCavities(cavities: Molds_2.ICavities): Result<void>;
+    setDescription(description: string | undefined): Result<void>;
+    setFormat(format: MoldFormat): Result<void>;
+    setManufacturer(manufacturer: string): Result<void>;
+    setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
+    setProductNumber(productNumber: string): Result<void>;
+    setRelated(related: ReadonlyArray<MoldId> | undefined): Result<void>;
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
+    get snapshot(): Molds_2.IMoldEntity;
+    undo(): Result<boolean>;
+}
+
 declare namespace Editing {
     export {
         Ingredients_2 as Ingredients,
@@ -3882,6 +3912,20 @@ interface IMoldChangeAnalysis {
     readonly weightDelta: Measurement;
 }
 
+// @public
+interface IMoldChanges {
+    readonly cavitiesChanged: boolean;
+    readonly descriptionChanged: boolean;
+    readonly formatChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly manufacturerChanged: boolean;
+    readonly notesChanged: boolean;
+    readonly productNumberChanged: boolean;
+    readonly relatedChanged: boolean;
+    readonly tagsChanged: boolean;
+    readonly urlsChanged: boolean;
+}
+
 // @internal
 interface IMoldContext {
 }
@@ -5943,7 +5987,9 @@ declare namespace LibraryRuntime {
         ProducedBarTruffle,
         ProducedRolledTruffle,
         IIngredientChanges,
-        EditedIngredient
+        EditedIngredient,
+        IMoldChanges,
+        EditedMold
     }
 }
 export { LibraryRuntime }

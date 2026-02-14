@@ -1,0 +1,25 @@
+[Home](../../README.md) > [LibraryRuntime](../README.md) > [EditedMold](./EditedMold.md) > getSerializedHistory
+
+## EditedMold.getSerializedHistory() method
+
+Serializes the complete editing history for persistence.
+Includes current state, original state, and undo/redo stacks.
+
+**Signature:**
+
+```typescript
+getSerializedHistory(original: IMoldEntity): ISerializedEditingHistoryEntity<IMoldEntity>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>original</td><td>IMoldEntity</td><td>Original state when editing started (for change detection on restore)</td></tr>
+</tbody></table>
+
+**Returns:**
+
+[ISerializedEditingHistoryEntity](../../interfaces/ISerializedEditingHistoryEntity.md)&lt;[IMoldEntity](../../interfaces/IMoldEntity.md)&gt;
+
+Serialized editing history

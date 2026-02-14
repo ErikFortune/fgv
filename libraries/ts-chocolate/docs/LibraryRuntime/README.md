@@ -138,6 +138,15 @@ Mutable wrapper for IngredientEntity with undo/redo support.
 </td></tr>
 <tr><td>
 
+[EditedMold](./classes/EditedMold.md)
+
+</td><td>
+
+Mutable wrapper for IMoldEntity with undo/redo support.
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
@@ -787,6 +796,15 @@ Structure describing what changed between two produced confections
 </td><td>
 
 Structure describing what changed between two ingredient entities
+
+</td></tr>
+<tr><td>
+
+[IMoldChanges](./interfaces/IMoldChanges.md)
+
+</td><td>
+
+Structure describing what changed between two mold entities
 
 </td></tr>
 <tr><td>
