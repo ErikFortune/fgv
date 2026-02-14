@@ -27,6 +27,7 @@
 
 import React, { useState, useMemo } from 'react';
 
+import { PreferredSelector } from '@fgv/ts-app-shell';
 import type {
   LibraryRuntime,
   Model,
@@ -57,6 +58,10 @@ export interface IConfectionDetailProps {
   readonly onMoldClick?: (id: MoldId) => void;
   /** Callback when a procedure is clicked for drill-down */
   readonly onProcedureClick?: (id: ProcedureId) => void;
+  /** Callback to compare selected variations side-by-side */
+  readonly onCompareVariations?: (specs: ReadonlyArray<ConfectionRecipeVariationSpec>) => void;
+  /** Override the initially selected variation (defaults to golden) */
+  readonly defaultVariationSpec?: ConfectionRecipeVariationSpec;
 }
 
 // ============================================================================
@@ -166,84 +171,6 @@ function UrlsSection({
 }
 
 // ============================================================================
-// Clickable Row Helper
-// ============================================================================
-
-function ClickableRow({
-  label,
-  sublabel,
-  preferred,
-  onClick
-}: {
-  readonly label: string;
-  readonly sublabel?: string;
-  readonly preferred?: boolean;
-  readonly onClick?: () => void;
-}): React.ReactElement {
-  return (
-    <div
-      className={`flex items-center gap-2 py-1.5 px-2 rounded-md text-sm ${
-        onClick ? 'cursor-pointer hover:bg-gray-50' : ''
-      }`}
-      onClick={onClick}
-    >
-      <span className="flex-1 min-w-0 truncate text-gray-800">
-        {label}
-        {preferred && <span className="ml-1 text-xs text-amber-500">★</span>}
-      </span>
-      {sublabel && <span className="text-xs text-gray-400 shrink-0">{sublabel}</span>}
-      {onClick && <span className="text-gray-300 text-xs shrink-0">›</span>}
-    </div>
-  );
-}
-
-// ============================================================================
-// Variation Selector
-// ============================================================================
-
-function VariationSelector({
-  variations,
-  goldenSpec,
-  selectedSpec,
-  onSelect
-}: {
-  readonly variations: ReadonlyArray<LibraryRuntime.AnyConfectionRecipeVariation>;
-  readonly goldenSpec: ConfectionRecipeVariationSpec;
-  readonly selectedSpec: ConfectionRecipeVariationSpec;
-  readonly onSelect: (spec: ConfectionRecipeVariationSpec) => void;
-}): React.ReactElement | null {
-  if (variations.length <= 1) {
-    return null;
-  }
-  return (
-    <DetailSection title="Variations">
-      <div className="flex flex-wrap gap-1">
-        {variations.map((v) => {
-          const isSelected = v.variationSpec === selectedSpec;
-          const isGolden = v.variationSpec === goldenSpec;
-          return (
-            <button
-              key={v.variationSpec}
-              onClick={(): void => {
-                onSelect(v.variationSpec);
-              }}
-              className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-                isSelected
-                  ? 'bg-choco-primary text-white border-choco-primary'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-choco-primary/40'
-              }`}
-            >
-              {v.variationSpec}
-              {isGolden ? ' ★' : ''}
-            </button>
-          );
-        })}
-      </div>
-    </DetailSection>
-  );
-}
-
-// ============================================================================
 // Yield Section
 // ============================================================================
 
@@ -290,6 +217,53 @@ function DecorationsSection({
 // Filling Slots Section
 // ============================================================================
 
+function FillingSlotRow({
+  slot,
+  onFillingClick,
+  onIngredientClick
+}: {
+  readonly slot: LibraryRuntime.IResolvedFillingSlot;
+  readonly onFillingClick?: (id: FillingId) => void;
+  readonly onIngredientClick?: (id: IngredientId) => void;
+}): React.ReactElement {
+  const items = useMemo(() => {
+    return slot.filling.options.map((opt) => ({
+      id: opt.id,
+      label: opt.type === 'recipe' ? opt.filling.name : opt.ingredient.name,
+      sublabel: opt.type
+    }));
+  }, [slot]);
+
+  const [selectedId, setSelectedId] = useState(slot.filling.preferredId ?? slot.filling.options[0]?.id ?? '');
+
+  const handleDrillDown = useMemo(() => {
+    if (!onFillingClick && !onIngredientClick) {
+      return undefined;
+    }
+    return (id: string): void => {
+      const opt = slot.filling.options.find((o) => o.id === id);
+      if (opt?.type === 'recipe' && onFillingClick) {
+        onFillingClick(id as FillingId);
+      } else if (opt?.type === 'ingredient' && onIngredientClick) {
+        onIngredientClick(id as IngredientId);
+      }
+    };
+  }, [slot, onFillingClick, onIngredientClick]);
+
+  return (
+    <div className="mb-2">
+      <div className="text-xs text-gray-400 mb-0.5">{slot.name ?? slot.slotId}</div>
+      <PreferredSelector
+        items={items}
+        selectedId={selectedId}
+        preferredId={slot.filling.preferredId}
+        onSelect={setSelectedId}
+        onDrillDown={handleDrillDown}
+      />
+    </div>
+  );
+}
+
 function FillingSlotsSection({
   fillings,
   onFillingClick,
@@ -305,34 +279,12 @@ function FillingSlotsSection({
   return (
     <DetailSection title="Fillings">
       {fillings.map((slot) => (
-        <div key={slot.slotId} className="mb-2">
-          <div className="text-xs text-gray-400 mb-0.5">{slot.name ?? slot.slotId}</div>
-          {slot.filling.options.map((opt) => {
-            const isPreferred = opt.id === slot.filling.preferredId;
-            if (opt.type === 'recipe') {
-              return (
-                <ClickableRow
-                  key={opt.id}
-                  label={opt.filling.name}
-                  sublabel="recipe"
-                  preferred={isPreferred}
-                  onClick={onFillingClick ? (): void => onFillingClick(opt.id as FillingId) : undefined}
-                />
-              );
-            }
-            return (
-              <ClickableRow
-                key={opt.id}
-                label={opt.ingredient.name}
-                sublabel="ingredient"
-                preferred={isPreferred}
-                onClick={
-                  onIngredientClick ? (): void => onIngredientClick(opt.id as IngredientId) : undefined
-                }
-              />
-            );
-          })}
-        </div>
+        <FillingSlotRow
+          key={slot.slotId}
+          slot={slot}
+          onFillingClick={onFillingClick}
+          onIngredientClick={onIngredientClick}
+        />
       ))}
     </DetailSection>
   );
@@ -349,17 +301,27 @@ function ProceduresSection({
   readonly procedures: Model.IOptionsWithPreferred<LibraryRuntime.IResolvedConfectionProcedure, ProcedureId>;
   readonly onProcedureClick?: (id: ProcedureId) => void;
 }): React.ReactElement {
+  const items = useMemo(() => {
+    return procedures.options.map((p) => ({
+      id: p.id,
+      label: p.procedure.name,
+      sublabel: p.procedure.category
+    }));
+  }, [procedures]);
+
+  const [selectedId, setSelectedId] = useState<ProcedureId>(
+    procedures.preferredId ?? procedures.options[0]?.id ?? ('' as ProcedureId)
+  );
+
   return (
     <DetailSection title="Procedures">
-      {procedures.options.map((p) => (
-        <ClickableRow
-          key={p.id}
-          label={p.procedure.name}
-          sublabel={p.procedure.category}
-          preferred={p.id === procedures.preferredId}
-          onClick={onProcedureClick ? (): void => onProcedureClick(p.id) : undefined}
-        />
-      ))}
+      <PreferredSelector<ProcedureId>
+        items={items}
+        selectedId={selectedId}
+        preferredId={procedures.preferredId}
+        onSelect={setSelectedId}
+        onDrillDown={onProcedureClick}
+      />
     </DetailSection>
   );
 }
@@ -377,21 +339,25 @@ function ChocolateSpecSection({
   readonly spec: LibraryRuntime.IResolvedChocolateSpec;
   readonly onIngredientClick?: (id: IngredientId) => void;
 }): React.ReactElement {
+  const items = useMemo(() => {
+    const result = [{ id: spec.chocolate.id, label: spec.chocolate.name }];
+    for (const alt of spec.alternates) {
+      result.push({ id: alt.id, label: alt.name });
+    }
+    return result;
+  }, [spec]);
+
+  const [selectedId, setSelectedId] = useState<IngredientId>(spec.chocolate.id);
+
   return (
     <DetailSection title={title}>
-      <ClickableRow
-        label={spec.chocolate.name}
-        sublabel="preferred"
-        onClick={onIngredientClick ? (): void => onIngredientClick(spec.chocolate.id) : undefined}
+      <PreferredSelector<IngredientId>
+        items={items}
+        selectedId={selectedId}
+        preferredId={spec.chocolate.id}
+        onSelect={setSelectedId}
+        onDrillDown={onIngredientClick}
       />
-      {spec.alternates.map((alt) => (
-        <ClickableRow
-          key={alt.id}
-          label={alt.name}
-          sublabel="alternate"
-          onClick={onIngredientClick ? (): void => onIngredientClick(alt.id) : undefined}
-        />
-      ))}
     </DetailSection>
   );
 }
@@ -407,17 +373,27 @@ function MoldsSection({
   readonly molds: Model.IOptionsWithPreferred<LibraryRuntime.IResolvedConfectionMoldRef, MoldId>;
   readonly onMoldClick?: (id: MoldId) => void;
 }): React.ReactElement {
+  const items = useMemo(() => {
+    return molds.options.map((m) => ({
+      id: m.id,
+      label: m.mold.displayName,
+      sublabel: m.mold.format
+    }));
+  }, [molds]);
+
+  const [selectedId, setSelectedId] = useState<MoldId>(
+    molds.preferredId ?? molds.options[0]?.id ?? ('' as MoldId)
+  );
+
   return (
     <DetailSection title="Molds">
-      {molds.options.map((m) => (
-        <ClickableRow
-          key={m.id}
-          label={m.mold.displayName}
-          sublabel={m.mold.format}
-          preferred={m.id === molds.preferredId}
-          onClick={onMoldClick ? (): void => onMoldClick(m.id) : undefined}
-        />
-      ))}
+      <PreferredSelector<MoldId>
+        items={items}
+        selectedId={selectedId}
+        preferredId={molds.preferredId}
+        onSelect={setSelectedId}
+        onDrillDown={onMoldClick}
+      />
     </DetailSection>
   );
 }
@@ -479,16 +455,26 @@ function CoatingsSection({
   readonly coatings: LibraryRuntime.IResolvedCoatings;
   readonly onIngredientClick?: (id: IngredientId) => void;
 }): React.ReactElement {
+  const items = useMemo(() => {
+    return coatings.options.map((c) => ({
+      id: c.id,
+      label: c.ingredient.name
+    }));
+  }, [coatings]);
+
+  const [selectedId, setSelectedId] = useState<IngredientId>(
+    coatings.preferred?.id ?? coatings.options[0]?.id ?? ('' as IngredientId)
+  );
+
   return (
     <DetailSection title="Coatings">
-      {coatings.options.map((c) => (
-        <ClickableRow
-          key={c.id}
-          label={c.ingredient.name}
-          preferred={coatings.preferred?.id === c.id}
-          onClick={onIngredientClick ? (): void => onIngredientClick(c.id) : undefined}
-        />
-      ))}
+      <PreferredSelector<IngredientId>
+        items={items}
+        selectedId={selectedId}
+        preferredId={coatings.preferred?.id}
+        onSelect={setSelectedId}
+        onDrillDown={onIngredientClick}
+      />
     </DetailSection>
   );
 }
@@ -594,16 +580,31 @@ function RolledTruffleContent({
  * @public
  */
 export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElement {
-  const { confection, onFillingClick, onIngredientClick, onMoldClick, onProcedureClick } = props;
+  const {
+    confection,
+    onFillingClick,
+    onIngredientClick,
+    onMoldClick,
+    onProcedureClick,
+    onCompareVariations
+  } = props;
 
   const [selectedSpec, setSelectedSpec] = useState<ConfectionRecipeVariationSpec>(
-    confection.goldenVariationSpec
+    props.defaultVariationSpec ?? confection.goldenVariationSpec
   );
 
   const selectedVariation = useMemo(() => {
     const result = confection.getVariation(selectedSpec);
     return result.isSuccess() ? result.value : confection.goldenVariation;
   }, [confection, selectedSpec]);
+
+  const variationItems = useMemo(() => {
+    return confection.variations.map((v) => ({
+      id: v.variationSpec,
+      label: v.variationSpec,
+      sublabel: v.createdDate
+    }));
+  }, [confection]);
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -618,12 +619,16 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
       </div>
 
       {/* Variation selector */}
-      <VariationSelector
-        variations={confection.variations}
-        goldenSpec={confection.goldenVariationSpec}
-        selectedSpec={selectedSpec}
-        onSelect={setSelectedSpec}
-      />
+      {confection.variations.length > 1 && (
+        <PreferredSelector<ConfectionRecipeVariationSpec>
+          items={variationItems}
+          selectedId={selectedSpec}
+          preferredId={confection.goldenVariationSpec}
+          onSelect={setSelectedSpec}
+          onCompare={onCompareVariations}
+          label="Variations"
+        />
+      )}
 
       {/* Yield */}
       <YieldSection yieldSpec={selectedVariation.yield} />

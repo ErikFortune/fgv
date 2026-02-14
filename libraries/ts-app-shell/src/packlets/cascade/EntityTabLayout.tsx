@@ -28,6 +28,7 @@
 import React from 'react';
 
 import { CascadeContainer, type ICascadeColumn } from './CascadeContainer';
+import { ComparisonView, type IComparisonColumn } from './ComparisonView';
 
 // ============================================================================
 // EntityTabLayout Props
@@ -48,6 +49,18 @@ export interface IEntityTabLayoutProps {
   readonly listCollapsed: boolean;
   /** Callback to collapse the entity list (fired when user clicks inside cascade) */
   readonly onListCollapse: () => void;
+  /** Whether compare mode is active */
+  readonly compareMode?: boolean;
+  /** Columns for the comparison view (when compare mode is active with 2+ selections) */
+  readonly comparisonColumns?: ReadonlyArray<IComparisonColumn>;
+  /** Whether the comparison view is actively showing (user explicitly triggered) */
+  readonly showingComparison?: boolean;
+  /** Callback to exit the comparison view (back to selection list) */
+  readonly onExitComparison?: () => void;
+  /** Columns for variation comparison (when comparing variations of a single recipe) */
+  readonly variationCompareColumns?: ReadonlyArray<IComparisonColumn>;
+  /** Callback to exit variation comparison mode */
+  readonly onExitVariationCompare?: () => void;
 }
 
 // ============================================================================
@@ -65,21 +78,83 @@ export interface IEntityTabLayoutProps {
  * @public
  */
 export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElement {
-  const { list, cascadeColumns, onPopTo, listCollapsed, onListCollapse } = props;
+  const { list, cascadeColumns, onPopTo, listCollapsed, onListCollapse, compareMode, comparisonColumns } =
+    props;
+
+  const variationCompareColumns = props.variationCompareColumns;
+  const onExitVariationCompare = props.onExitVariationCompare;
+  const showingComparison = props.showingComparison ?? false;
+  const onExitComparison = props.onExitComparison;
+
+  const isVariationCompare = variationCompareColumns !== undefined && variationCompareColumns.length >= 2;
+  const showComparison =
+    !isVariationCompare &&
+    showingComparison &&
+    comparisonColumns !== undefined &&
+    comparisonColumns.length >= 2;
+  const showCascade = !compareMode && !isVariationCompare && !showComparison && cascadeColumns.length > 0;
+  const hasCascadeOrCompare = cascadeColumns.length > 0 || showComparison;
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Entity list (collapses when user focuses into detail pane) */}
-      <div
-        className={`flex flex-col overflow-hidden transition-all ${listCollapsed ? 'w-0 min-w-0' : 'flex-1'}`}
-      >
-        {list}
-      </div>
-
-      {/* Cascade columns */}
-      {cascadeColumns.length > 0 && (
-        <CascadeContainer columns={cascadeColumns} onPopTo={onPopTo} onFocus={onListCollapse} />
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Variation compare banner */}
+      {isVariationCompare && onExitVariationCompare && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-b border-amber-200 shrink-0">
+          <span className="text-xs text-amber-700">
+            Comparing {variationCompareColumns.length} variations
+          </span>
+          <button
+            onClick={onExitVariationCompare}
+            className="px-2 py-0.5 text-xs rounded border border-amber-300 text-amber-700 hover:bg-amber-100 transition-colors"
+          >
+            Exit
+          </button>
+        </div>
       )}
+
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Entity list — proportional width when cascade is showing, full width when browsing */}
+        <div
+          className={`flex flex-col overflow-hidden transition-all ${
+            isVariationCompare || showComparison
+              ? 'w-0 min-w-0'
+              : listCollapsed
+              ? 'w-0 min-w-0'
+              : hasCascadeOrCompare
+              ? 'w-1/4 max-w-xs shrink-0 border-r border-gray-200'
+              : 'w-full max-w-sm shrink-0 border-r border-gray-200'
+          }`}
+        >
+          {list}
+        </div>
+
+        {/* Cascade columns (normal mode) */}
+        {showCascade && (
+          <CascadeContainer columns={cascadeColumns} onPopTo={onPopTo} onFocus={onListCollapse} />
+        )}
+
+        {/* Entity comparison view (compare mode — explicitly triggered) */}
+        {showComparison && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border-b border-blue-200 shrink-0">
+              <span className="text-xs text-blue-700">Comparing {comparisonColumns.length} items</span>
+              {onExitComparison && (
+                <button
+                  onClick={onExitComparison}
+                  className="px-2 py-0.5 text-xs rounded border border-blue-300 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  ← Back to list
+                </button>
+              )}
+            </div>
+            <ComparisonView columns={comparisonColumns} />
+          </div>
+        )}
+
+        {/* Variation comparison view */}
+        {isVariationCompare && <ComparisonView columns={variationCompareColumns} />}
+      </div>
     </div>
   );
 }

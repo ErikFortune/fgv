@@ -31,3 +31,6 @@ export * from './packlets/sidebar';
 
 // Column cascade container
 export * from './packlets/cascade';
+
+// Selectors (PreferredSelector popover)
+export * from './packlets/selectors';

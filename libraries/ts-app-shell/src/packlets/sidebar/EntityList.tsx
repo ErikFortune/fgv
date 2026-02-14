@@ -72,10 +72,22 @@ export interface IEntityListProps<TEntity, TId extends string = string> {
   readonly onSelect: (id: TId) => void;
   /** Callback when the user drills into the selected entity (Enter/→ — collapses list) */
   readonly onDrill?: () => void;
+  /** Whether compare mode is active (shows checkboxes for multi-select) */
+  readonly compareMode?: boolean;
+  /** Entity IDs currently checked for comparison */
+  readonly checkedIds?: ReadonlySet<string>;
+  /** Callback to toggle an entity ID in/out of the compare selection */
+  readonly onCheckedChange?: (id: TId) => void;
   /** Empty state configuration */
   readonly emptyState?: IEmptyStateConfig;
   /** Optional header content (e.g., result count) */
   readonly header?: React.ReactNode;
+  /** Callback to toggle compare mode on/off (shows compare button in header) */
+  readonly onToggleCompare?: () => void;
+  /** Number of items currently selected for comparison */
+  readonly compareCount?: number;
+  /** Callback to start the comparison view (user clicks 'Compare Now') */
+  readonly onStartComparison?: () => void;
 }
 
 /**
@@ -120,7 +132,18 @@ export interface IEmptyStateAction {
 export function EntityList<TEntity, TId extends string = string>(
   props: IEntityListProps<TEntity, TId>
 ): React.ReactElement {
-  const { entities, descriptor, selectedId, onSelect, onDrill, emptyState, header } = props;
+  const {
+    entities,
+    descriptor,
+    selectedId,
+    onSelect,
+    onDrill,
+    compareMode,
+    checkedIds,
+    onCheckedChange,
+    emptyState,
+    header
+  } = props;
   const listRef = useRef<HTMLDivElement>(null);
 
   // Scroll the selected item into view when selection changes
@@ -172,12 +195,48 @@ export function EntityList<TEntity, TId extends string = string>(
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden" onKeyDown={handleKeyDown}>
-      {/* Optional header */}
+      {/* Header with item count and optional compare toggle */}
       {header !== undefined ? (
         <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-100">{header}</div>
       ) : entities.length > 0 ? (
-        <div className="px-3 py-1.5 text-xs text-gray-400 border-b border-gray-100">
-          {entities.length} item{entities.length !== 1 ? 's' : ''}
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-100">
+          <span className="text-xs text-gray-400">
+            {entities.length} item{entities.length !== 1 ? 's' : ''}
+            {compareMode && props.compareCount !== undefined && props.compareCount > 0 && (
+              <span className="ml-1.5 text-choco-accent">· {props.compareCount} selected</span>
+            )}
+          </span>
+          <div className="flex items-center gap-1">
+            {compareMode &&
+              props.onStartComparison &&
+              props.compareCount !== undefined &&
+              props.compareCount >= 2 && (
+                <button
+                  onClick={(e): void => {
+                    e.stopPropagation();
+                    props.onStartComparison?.();
+                  }}
+                  className="px-2 py-0.5 text-[11px] rounded border transition-colors bg-choco-primary text-white border-choco-primary hover:bg-choco-primary/90"
+                >
+                  Compare Now
+                </button>
+              )}
+            {props.onToggleCompare && (
+              <button
+                onClick={(e): void => {
+                  e.stopPropagation();
+                  props.onToggleCompare?.();
+                }}
+                className={`px-2 py-0.5 text-[11px] rounded border transition-colors ${
+                  compareMode
+                    ? 'bg-choco-accent text-white border-choco-accent'
+                    : 'bg-white text-gray-500 border-gray-300 hover:border-choco-accent hover:text-choco-accent'
+                }`}
+              >
+                {compareMode ? 'Cancel' : 'Compare'}
+              </button>
+            )}
+          </div>
         </div>
       ) : null}
 
@@ -189,22 +248,52 @@ export function EntityList<TEntity, TId extends string = string>(
           const sublabel = descriptor.getSublabel?.(entity);
           const status = descriptor.getStatus?.(entity);
           const isSelected = id === selectedId;
+          const isChecked = compareMode === true && checkedIds !== undefined && checkedIds.has(id);
 
           return (
             <button
               key={id}
               data-entity-id={id}
-              onClick={(): void => onSelect(id)}
-              className={`flex items-start gap-2 w-full px-3 py-2 text-left border-b border-gray-50 transition-colors ${
-                isSelected
+              onClick={(): void => {
+                if (compareMode && onCheckedChange) {
+                  onCheckedChange(id);
+                } else {
+                  onSelect(id);
+                }
+              }}
+              className={`flex items-center gap-2 w-full px-3 py-2 text-left border-b border-gray-50 transition-colors ${
+                isChecked
+                  ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
+                  : isSelected && !compareMode
                   ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
                   : 'hover:bg-gray-50 border-l-2 border-l-transparent'
               }`}
             >
+              {compareMode && (
+                <span
+                  className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors ${
+                    isChecked ? 'bg-choco-accent border-choco-accent text-white' : 'border-gray-300 bg-white'
+                  }`}
+                >
+                  {isChecked && (
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <div
                   className={`text-sm truncate ${
-                    isSelected ? 'font-medium text-choco-primary' : 'text-gray-800'
+                    (isSelected && !compareMode) || isChecked
+                      ? 'font-medium text-choco-primary'
+                      : 'text-gray-800'
                   }`}
                 >
                   {label}

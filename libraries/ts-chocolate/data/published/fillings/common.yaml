@@ -47,6 +47,38 @@ items:
           options:
             - id: common.ganache-cold-method
           preferredId: common.ganache-cold-method
+      - variationSpec: 2026-02-13-01
+        createdDate: '2026-02-13'
+        ingredients:
+          - ingredient:
+              ids:
+                - cacao-barry.guayaquil-64
+                - common.chocolate-dark-64
+                - felchlin.arriba-72
+              preferredId: cacao-barry.guayaquil-64
+            amount: 300
+          - ingredient:
+              ids:
+                - common.heavy-cream-36
+              preferredId: common.heavy-cream-36
+            amount: 150
+          - ingredient:
+              ids:
+                - common.butter-82
+              preferredId: common.butter-82
+            amount: 15
+            notes:
+              - category: user
+                note: Added at 35°C for shine
+        baseWeight: 465
+        yield: ~50 bonbons
+        notes:
+          - category: user
+            note: Standard 2:1 ratio with butter finish
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+          preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   milk-ganache-classic:
     baseId: milk-ganache-classic

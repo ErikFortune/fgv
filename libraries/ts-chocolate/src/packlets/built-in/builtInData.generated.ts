@@ -8,7 +8,6 @@
 //   - data/published/ingredients/felchlin.yaml
 //   - data/published/ingredients/guittard.yaml
 //   - data/published/fillings/common.yaml
-//   - data/published/fillings/fgv.json
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/procedures/common.yaml
@@ -1336,6 +1335,55 @@ export const fillingCollections: Record<string, JsonObject> = {
               ],
               preferredId: 'common.ganache-cold-method'
             }
+          },
+          {
+            variationSpec: '2026-02-13-01',
+            createdDate: '2026-02-13',
+            ingredients: [
+              {
+                ingredient: {
+                  ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64', 'felchlin.arriba-72'],
+                  preferredId: 'cacao-barry.guayaquil-64'
+                },
+                amount: 300
+              },
+              {
+                ingredient: {
+                  ids: ['common.heavy-cream-36'],
+                  preferredId: 'common.heavy-cream-36'
+                },
+                amount: 150
+              },
+              {
+                ingredient: {
+                  ids: ['common.butter-82'],
+                  preferredId: 'common.butter-82'
+                },
+                amount: 15,
+                notes: [
+                  {
+                    category: 'user',
+                    note: 'Added at 35°C for shine'
+                  }
+                ]
+              }
+            ],
+            baseWeight: 465,
+            yield: '~50 bonbons',
+            notes: [
+              {
+                category: 'user',
+                note: 'Standard 2:1 ratio with butter finish'
+              }
+            ],
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ],
         goldenVariationSpec: '2026-01-01-01'
@@ -1699,20 +1747,6 @@ export const fillingCollections: Record<string, JsonObject> = {
         ],
         goldenVariationSpec: '2026-01-01-01'
       }
-    }
-  },
-  fgv: {
-    format: 'encrypted-collection-v1',
-    secretName: 'fgv',
-    algorithm: 'AES-256-GCM',
-    iv: '+M1nBhsOYZuPR8VP',
-    authTag: 'DkW+F3s3/42gyEuDRR0AAg==',
-    encryptedData:
-      '1NSE2pdIwbMOUyb6xwfhZmRNLQYH5ZGbIAUwUbk5PQAtdGsCKLmkTqeAWwNmeT6uMyNK6ZuOfb/Ffl0hW0aDbTdqD8KZlL3z9OlmOk+pKeTY3ELPAxQAkKxvyQaz1W1ogwxCVvMoQSfQDsXeMCTlqgFDkS26gC9BB8OYF05Qr7DLCSiK7EbmccCA3UyYYZVjZeZQziMdo7Ll8jnIXiiRzgd9aRgMmFKR2d5V6sdi2Fl7qK/+H0lQF72Y0WBe5UuUVZsr3JzZkOrp65NLSpx4Zhg6W9aljEFdPf2mNzmcxalWZxr6CQpTsi2OlDmWuhq0ECRZMZfY5Ylv+eL9dgrs56jL9pPx0scZvlYEsPIsT9murWWr4KLvLP/JTvGQcYZc14MKCFfhqUVpilrY2zIceINsmHRKU3LVQhKxGKZz3tF9f47isndgknmcKGFe9rqyoSducsOK9r3HF6PL+N7eZEWi7JoWBXEX0kMswxxoGqF8vSw3jaKwkVXV6McORulndVUcTa1iZol+sdsi/ZPfuA2fdpYtX2CCYjxzhM9LXjx6TjICwPTw3cmYcuzImlQgE8ZIu2OKpFbV/EfR6MjBvwckb357YNGIBGkfo45UAL5FgXuE8GhEoD12mjNEs4xNjvQN8sSxNyemhkRZ58lbDV+8mXIvipKdAGCBuxVnlvf1ySrVvCGlmZ5WRCP9lMnk6pj75UjGaTqn+dIbL68hXn+hqowMROf1drUXGzXhMwlAqv13PhJPlp3PTiYqtL0BYv/yOkbP/zyJ5sBlU1CUhywmtz/bq4wT+mfrIORvA93/QuRsGihLj4B3C9t1YvMpMrbHc/QxFqM77yIYLjU+6xQzRsbIUa/sN9qLrUeGpIS1/VGeaQJ/DpHFWNWXThIfousJd6OGmLxViP5jDIIr5+qHDEuuX5JBolPDRLwZi7vyDAmdGNv8WsFhBgJxzPnlFjU//25UFiuNAn1SGku71yWPDoqPl+xskYrQUc/r/no3Og861zPK3MW/F1irDrF59hZufaOA7CUoOIP3iaVhk9jj+WMtEH/OcsaxiuqUbfJ8DHgQ9R7qv+ZpNAzs56K4h5wkyaXWI5DDPJUScYCH4hi4VrKyOvsTxgEZntMWikbbzRJAl+OBJ7lZfR65n0AG',
-    keyDerivation: {
-      kdf: 'pbkdf2',
-      salt: 'b66D4cOQ+u16mkzWNuayRw==',
-      iterations: 100000
     }
   }
 };

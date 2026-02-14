@@ -65,6 +65,12 @@ export interface INavigationState {
   readonly listCollapsed: boolean;
   /** Per-tab filter state (persisted across tab switches) */
   readonly filtersByTab: Partial<Record<AppTab, IFilterState>>;
+  /** Whether compare mode is active (multi-select for side-by-side comparison) */
+  readonly compareMode: boolean;
+  /** Entity IDs selected for comparison */
+  readonly compareIds: ReadonlySet<string>;
+  /** Whether the comparison view is actively showing (user clicked 'Compare Now') */
+  readonly showingComparison: boolean;
 }
 
 // ============================================================================
@@ -98,6 +104,16 @@ export interface INavigationActions {
   collapseList: () => void;
   /** Clear all filters across all tabs. */
   clearAllFilters: () => void;
+  /** Toggle compare mode on/off. Turning off clears compare selections. */
+  toggleCompareMode: () => void;
+  /** Toggle an entity ID in/out of the compare selection (max 4). */
+  toggleCompareId: (id: string) => void;
+  /** Clear all compare selections (without leaving compare mode). */
+  clearCompareIds: () => void;
+  /** Show the comparison view (user explicitly triggered compare). */
+  startComparison: () => void;
+  /** Exit the comparison view back to the selection list. */
+  exitComparison: () => void;
 }
 
 // ============================================================================
@@ -129,10 +145,20 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
     cascadeStack: [],
     listCollapsed: false,
     filtersByTab: {},
+    compareMode: false,
+    compareIds: new Set<string>(),
+    showingComparison: false,
 
     // ---- Actions ----
     setMode: (mode: AppMode): void => {
-      set({ mode, cascadeStack: [], listCollapsed: false });
+      set({
+        mode,
+        cascadeStack: [],
+        listCollapsed: false,
+        compareMode: false,
+        compareIds: new Set<string>(),
+        showingComparison: false
+      });
     },
 
     setTab: (tab: AppTab): void => {
@@ -145,7 +171,10 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
         return {
           activeTabByMode: { ...state.activeTabByMode, [mode]: tab },
           cascadeStack: [],
-          listCollapsed: false
+          listCollapsed: false,
+          compareMode: false,
+          compareIds: new Set<string>(),
+          showingComparison: false
         };
       });
     },
@@ -209,6 +238,45 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
 
     clearAllFilters: (): void => {
       set({ filtersByTab: {} });
+    },
+
+    toggleCompareMode: (): void => {
+      set((state) => ({
+        compareMode: !state.compareMode,
+        compareIds: new Set<string>(),
+        showingComparison: false,
+        cascadeStack: [],
+        listCollapsed: false
+      }));
+    },
+
+    toggleCompareId: (id: string): void => {
+      set((state) => {
+        const next = new Set(state.compareIds);
+        if (next.has(id)) {
+          next.delete(id);
+        } else if (next.size < 4) {
+          next.add(id);
+        }
+        return { compareIds: next };
+      });
+    },
+
+    clearCompareIds: (): void => {
+      set({ compareIds: new Set<string>(), showingComparison: false });
+    },
+
+    startComparison: (): void => {
+      set((state) => {
+        if (state.compareIds.size < 2) {
+          return state;
+        }
+        return { showingComparison: true };
+      });
+    },
+
+    exitComparison: (): void => {
+      set({ showingComparison: false });
     }
   })
 );

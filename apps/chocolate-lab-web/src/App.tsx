@@ -19,7 +19,8 @@ import {
   EntityList,
   type IEntityDescriptor,
   type ICascadeColumn,
-  EntityTabLayout
+  EntityTabLayout,
+  type IComparisonColumn
 } from '@fgv/ts-app-shell';
 import { Workspace, type LibraryRuntime } from '@fgv/ts-chocolate';
 import {
@@ -231,6 +232,13 @@ function IngredientsTabContent(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
   const listCollapsed = useNavigationStore((s) => s.listCollapsed);
   const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
 
   // Collect all ingredients into an array (memoized on workspace version)
   const ingredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
@@ -273,6 +281,16 @@ function IngredientsTabContent(): React.ReactElement {
       });
   }, [cascadeStack, workspace]);
 
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.ingredients.get(id as IngredientId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <IngredientDetail ingredient={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
   return (
     <EntityTabLayout
       list={
@@ -282,6 +300,12 @@ function IngredientsTabContent(): React.ReactElement {
           selectedId={selectedId}
           onSelect={handleSelect}
           onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
           emptyState={{
             title: 'No Ingredients',
             description: 'No ingredients found in the library.'
@@ -292,6 +316,10 @@ function IngredientsTabContent(): React.ReactElement {
       onPopTo={popCascadeTo}
       listCollapsed={listCollapsed}
       onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
     />
   );
 }
@@ -307,6 +335,16 @@ function FillingsTabContent(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
   const listCollapsed = useNavigationStore((s) => s.listCollapsed);
   const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const [variationCompare, setVariationCompare] = useState<
+    { id: FillingId; specs: ReadonlyArray<string> } | undefined
+  >(undefined);
 
   // Collect all fillings into an array (memoized on workspace version)
   const fillings = useMemo<ReadonlyArray<LibraryRuntime.FillingRecipe>>(() => {
@@ -351,10 +389,17 @@ function FillingsTabContent(): React.ReactElement {
             content: <div className="p-4 text-red-500">Failed to load filling: {entry.entityId}</div>
           };
         }
+        const fillingId = entry.entityId as FillingId;
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <FillingDetail filling={result.value} onIngredientClick={onIngredientClick} />
+          content: (
+            <FillingDetail
+              filling={result.value}
+              onIngredientClick={onIngredientClick}
+              onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
+            />
+          )
         };
       }
       if (entry.entityType === 'ingredient') {
@@ -380,6 +425,37 @@ function FillingsTabContent(): React.ReactElement {
     });
   }, [cascadeStack, workspace, squashAt]);
 
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.fillings.get(id as FillingId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <FillingDetail filling={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
+  const variationCompareColumns = useMemo<ReadonlyArray<IComparisonColumn> | undefined>(() => {
+    if (variationCompare === undefined) {
+      return undefined;
+    }
+    const result = workspace.data.fillings.get(variationCompare.id);
+    if (result.isFailure()) {
+      return undefined;
+    }
+    const filling = result.value;
+    const specsSet = new Set(variationCompare.specs);
+    return filling.variations
+      .filter((v) => specsSet.has(v.variationSpec))
+      .map((v) => ({
+        key: v.variationSpec,
+        label: `${filling.name} — ${v.variationSpec}${
+          v.variationSpec === filling.goldenVariationSpec ? ' ★' : ''
+        }`,
+        content: <FillingDetail filling={filling} defaultVariationSpec={v.variationSpec} />
+      }));
+  }, [variationCompare, workspace]);
+
   return (
     <EntityTabLayout
       list={
@@ -389,6 +465,12 @@ function FillingsTabContent(): React.ReactElement {
           selectedId={selectedId}
           onSelect={handleSelect}
           onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
           emptyState={{
             title: 'No Fillings',
             description: 'No filling recipes found in the library.'
@@ -399,6 +481,12 @@ function FillingsTabContent(): React.ReactElement {
       onPopTo={popCascadeTo}
       listCollapsed={listCollapsed}
       onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
+      variationCompareColumns={variationCompareColumns}
+      onExitVariationCompare={(): void => setVariationCompare(undefined)}
     />
   );
 }
@@ -414,6 +502,13 @@ function MoldsTabContent(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
   const listCollapsed = useNavigationStore((s) => s.listCollapsed);
   const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
 
   const molds = useMemo<ReadonlyArray<LibraryRuntime.IMold>>(() => {
     return Array.from(workspace.data.molds.values());
@@ -457,6 +552,16 @@ function MoldsTabContent(): React.ReactElement {
     });
   }, [cascadeStack, workspace]);
 
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.molds.get(id as MoldId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.displayName, content: <MoldDetail mold={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
   return (
     <EntityTabLayout
       list={
@@ -466,6 +571,12 @@ function MoldsTabContent(): React.ReactElement {
           selectedId={selectedId}
           onSelect={handleSelect}
           onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
           emptyState={{
             title: 'No Molds',
             description: 'No molds found in the library.'
@@ -476,6 +587,10 @@ function MoldsTabContent(): React.ReactElement {
       onPopTo={popCascadeTo}
       listCollapsed={listCollapsed}
       onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
     />
   );
 }
@@ -491,6 +606,13 @@ function TasksTabContent(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
   const listCollapsed = useNavigationStore((s) => s.listCollapsed);
   const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
 
   const tasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
     return Array.from(workspace.data.tasks.values());
@@ -534,6 +656,16 @@ function TasksTabContent(): React.ReactElement {
     });
   }, [cascadeStack, workspace]);
 
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.tasks.get(id as TaskId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <TaskDetail task={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
   return (
     <EntityTabLayout
       list={
@@ -543,6 +675,12 @@ function TasksTabContent(): React.ReactElement {
           selectedId={selectedId}
           onSelect={handleSelect}
           onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
           emptyState={{
             title: 'No Tasks',
             description: 'No tasks found in the library.'
@@ -553,6 +691,10 @@ function TasksTabContent(): React.ReactElement {
       onPopTo={popCascadeTo}
       listCollapsed={listCollapsed}
       onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
     />
   );
 }
@@ -568,6 +710,13 @@ function ProceduresTabContent(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
   const listCollapsed = useNavigationStore((s) => s.listCollapsed);
   const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
 
   const procedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
     return Array.from(workspace.data.procedures.values());
@@ -638,6 +787,16 @@ function ProceduresTabContent(): React.ReactElement {
     });
   }, [cascadeStack, workspace, squashAt]);
 
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.procedures.get(id as ProcedureId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <ProcedureDetail procedure={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
   return (
     <EntityTabLayout
       list={
@@ -647,6 +806,12 @@ function ProceduresTabContent(): React.ReactElement {
           selectedId={selectedId}
           onSelect={handleSelect}
           onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
           emptyState={{
             title: 'No Procedures',
             description: 'No procedures found in the library.'
@@ -657,6 +822,10 @@ function ProceduresTabContent(): React.ReactElement {
       onPopTo={popCascadeTo}
       listCollapsed={listCollapsed}
       onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
     />
   );
 }
@@ -672,6 +841,16 @@ function ConfectionsTabContent(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
   const listCollapsed = useNavigationStore((s) => s.listCollapsed);
   const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const [variationCompare, setVariationCompare] = useState<
+    { id: ConfectionId; specs: ReadonlyArray<string> } | undefined
+  >(undefined);
 
   const confections = useMemo<ReadonlyArray<LibraryRuntime.IConfectionBase>>(() => {
     return Array.from(workspace.data.confections.values());
@@ -736,6 +915,9 @@ function ConfectionsTabContent(): React.ReactElement {
               onIngredientClick={onIngredientClick}
               onMoldClick={onMoldClick}
               onProcedureClick={onProcedureClick}
+              onCompareVariations={(specs): void =>
+                setVariationCompare({ id: entry.entityId as ConfectionId, specs })
+              }
             />
           )
         };
@@ -823,6 +1005,37 @@ function ConfectionsTabContent(): React.ReactElement {
     });
   }, [cascadeStack, workspace, squashAt]);
 
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.confections.get(id as ConfectionId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <ConfectionDetail confection={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
+  const variationCompareColumns = useMemo<ReadonlyArray<IComparisonColumn> | undefined>(() => {
+    if (variationCompare === undefined) {
+      return undefined;
+    }
+    const result = workspace.data.confections.get(variationCompare.id);
+    if (result.isFailure()) {
+      return undefined;
+    }
+    const confection = result.value;
+    const specsSet = new Set(variationCompare.specs);
+    return confection.variations
+      .filter((v) => specsSet.has(v.variationSpec))
+      .map((v) => ({
+        key: v.variationSpec,
+        label: `${confection.name} — ${v.variationSpec}${
+          v.variationSpec === confection.goldenVariationSpec ? ' ★' : ''
+        }`,
+        content: <ConfectionDetail confection={confection} defaultVariationSpec={v.variationSpec} />
+      }));
+  }, [variationCompare, workspace]);
+
   return (
     <EntityTabLayout
       list={
@@ -832,6 +1045,12 @@ function ConfectionsTabContent(): React.ReactElement {
           selectedId={selectedId}
           onSelect={handleSelect}
           onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
           emptyState={{
             title: 'No Confections',
             description: 'No confections found in the library.'
@@ -842,6 +1061,12 @@ function ConfectionsTabContent(): React.ReactElement {
       onPopTo={popCascadeTo}
       listCollapsed={listCollapsed}
       onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
+      variationCompareColumns={variationCompareColumns}
+      onExitVariationCompare={(): void => setVariationCompare(undefined)}
     />
   );
 }
