@@ -37,12 +37,14 @@ import type { Validator } from '@fgv/ts-utils';
 
 import {
   BaseConfectionId,
+  BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
   ConfectionId,
+  DecorationId,
   ConfectionRecipeVariationId,
   ConfectionRecipeVariationSpec,
   FillingId,
@@ -62,6 +64,7 @@ import { ID_SEPARATOR, VARIATION_ID_SEPARATOR } from './model';
 
 import {
   isValidBaseConfectionId,
+  isValidBaseDecorationId,
   isValidBaseFillingId,
   isValidBaseIngredientId,
   isValidBaseMoldId,
@@ -133,6 +136,15 @@ export const baseTaskId: Validator<BaseTaskId> = Validators.isA<BaseTaskId>('Bas
 export const baseConfectionId: Validator<BaseConfectionId> = Validators.isA<BaseConfectionId>(
   'BaseConfectionId',
   isValidBaseConfectionId
+);
+
+/**
+ * In-place `Validator` for {@link BaseDecorationId | BaseDecorationId}.
+ * @public
+ */
+export const baseDecorationId: Validator<BaseDecorationId> = Validators.isA<BaseDecorationId>(
+  'BaseDecorationId',
+  isValidBaseDecorationId
 );
 
 /**
@@ -229,6 +241,20 @@ export const confectionId: Validator<ConfectionId> = Validators.compositeId<
   collectionId: collectionId,
   separator: ID_SEPARATOR,
   itemId: baseConfectionId
+});
+
+/**
+ * In-place `Validator` for {@link DecorationId | DecorationId} (composite string).
+ * @public
+ */
+export const decorationId: Validator<DecorationId> = Validators.compositeId<
+  DecorationId,
+  CollectionId,
+  BaseDecorationId
+>({
+  collectionId: collectionId,
+  separator: ID_SEPARATOR,
+  itemId: baseDecorationId
 });
 
 /**

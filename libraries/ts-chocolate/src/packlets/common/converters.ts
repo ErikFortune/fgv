@@ -29,6 +29,7 @@ import {
   AdditionalChocolatePurpose,
   Allergen,
   BaseConfectionId,
+  BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
   BaseMoldId,
@@ -43,6 +44,7 @@ import {
   ConfectionId,
   ConfectionName,
   ConfectionType,
+  DecorationId,
   ConfectionRecipeVariationId,
   ConfectionRecipeVariationSpec,
   DegreesMacMichael,
@@ -109,6 +111,7 @@ import {
 } from './model';
 import {
   toBaseConfectionId,
+  toBaseDecorationId,
   toBaseFillingId,
   toBaseIngredientId,
   toBaseMoldId,
@@ -196,6 +199,12 @@ export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId
 export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
 
 /**
+ * Converter for {@link BaseDecorationId | BaseDecorationId}.
+ * @public
+ */
+export const baseDecorationId: Converter<BaseDecorationId> = Converters.generic(toBaseDecorationId);
+
+/**
  * Converter for {@link BaseJournalId | BaseJournalId}.
  * @public
  */
@@ -271,6 +280,35 @@ export const confectionId: Converter<ConfectionId> = Converters.compositeIdStrin
   collectionId,
   ID_SEPARATOR,
   baseConfectionId
+);
+
+/**
+ * Converter for {@link DecorationId | DecorationId} (composite string).
+ * Accepts either a {@link DecorationId | DecorationId} string or a `CompositeId` object representation.
+ * @public
+ */
+export const decorationId: Converter<DecorationId> = Converters.compositeIdString(
+  CommonValidators.decorationId,
+  collectionId,
+  ID_SEPARATOR,
+  baseDecorationId
+);
+
+/**
+ * Type alias for parsed {@link DecorationId | DecorationId} components.
+ * @public
+ */
+export type ParsedDecorationId = Converters.ICompositeId<CollectionId, BaseDecorationId>;
+
+/**
+ * Converter that parses a {@link DecorationId | DecorationId} string into its component parts
+ * or validates a `CompositeId` object representation.
+ * @public
+ */
+export const parsedDecorationId: Converter<ParsedDecorationId> = Converters.compositeId(
+  collectionId,
+  ID_SEPARATOR,
+  baseDecorationId
 );
 
 /**

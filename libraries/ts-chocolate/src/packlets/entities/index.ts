@@ -98,6 +98,15 @@ export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } 
 export { ProceduresLibrary, IProcedureEntity, IProcedureStepEntity } from './procedures';
 
 export {
+  DecorationsLibrary,
+  IDecorationEntity,
+  IDecorationIngredientEntity,
+  IDecorationRating,
+  IDecorationRefEntity,
+  allDecorationRatingCategories
+} from './decorations';
+
+export {
   TasksLibrary,
   ITaskEntity,
   IRawTaskEntity,
@@ -114,6 +123,7 @@ export { Converters };
 
 // Export as namespaces for consumers who prefer that style (includes Converters)
 import * as Confections from './confections';
+import * as Decorations from './decorations';
 import * as Fillings from './fillings';
 import * as Ingredients from './ingredients';
 import * as Inventory from './inventory';
@@ -123,4 +133,15 @@ import * as Procedures from './procedures';
 import * as Session from './session';
 import * as Tasks from './tasks';
 
-export { Confections, Fillings, Ingredients, Inventory, Journal, Molds, Procedures, Session, Tasks };
+export {
+  Confections,
+  Decorations,
+  Fillings,
+  Ingredients,
+  Inventory,
+  Journal,
+  Molds,
+  Procedures,
+  Session,
+  Tasks
+};

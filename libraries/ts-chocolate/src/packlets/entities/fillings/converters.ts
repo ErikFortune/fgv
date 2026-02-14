@@ -121,6 +121,7 @@ export const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedure
 export const fillingRecipeVariationEntity: Converter<IFillingRecipeVariationEntity> =
   Converters.object<IFillingRecipeVariationEntity>({
     variationSpec: CommonConverters.fillingRecipeVariationSpec,
+    name: Converters.string.optional(),
     createdDate: Converters.string, // ISO 8601 date string
     ingredients: Converters.arrayOf(fillingIngredientEntity),
     baseWeight: CommonConverters.measurement,

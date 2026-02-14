@@ -26,10 +26,12 @@ import {
   getMoldsDirectory,
   getProceduresDirectory,
   getFillingsDirectory,
-  getTasksDirectory
+  getTasksDirectory,
+  getDecorationsDirectory
 } from '../library-data';
 import {
   confectionCollections,
+  decorationCollections,
   ingredientCollections,
   moldCollections,
   procedureCollections,
@@ -66,6 +68,10 @@ const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
   ...Object.entries(confectionCollections).map(([name, data]) => ({
     path: `/data/confections/${name}.json`,
     contents: data
+  })),
+  ...Object.entries(decorationCollections).map(([name, data]) => ({
+    path: `/data/decorations/${name}.json`,
+    contents: data
   }))
 ];
 
@@ -96,7 +102,9 @@ export class BuiltInData {
    *     │   └── common.json
    *     ├── tasks/
    *     │   └── common.json
-   *     └── confections/
+   *     ├── confections/
+   *     │   └── common.json
+   *     └── decorations/
    *         └── common.json
    * ```
    * @returns `Success` with the library tree root directory, or `Failure` with an error message.
@@ -165,6 +173,14 @@ export class BuiltInData {
    */
   public static getConfectionsDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
     return BuiltInData.getLibraryTree().onSuccess((tree) => getConfectionsDirectory(tree));
+  }
+
+  /**
+   * Gets the decorations directory from the built-in library tree.
+   * @returns `Success` with the decorations directory, or `Failure` if not found.
+   */
+  public static getDecorationsDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    return BuiltInData.getLibraryTree().onSuccess((tree) => getDecorationsDirectory(tree));
   }
 
   /**

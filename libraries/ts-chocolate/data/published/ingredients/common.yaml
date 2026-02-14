@@ -540,3 +540,38 @@ items:
       - inclusion
     density: 0.64
     category: other
+  gold-leaf:
+    baseId: gold-leaf
+    name: Edible Gold Leaf
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    description: 23-karat edible gold leaf sheets for elegant decoration
+    vegan: true
+    tags:
+      - decoration
+      - gold
+      - elegant
+    category: decoration
+  cocoa-butter-colored:
+    baseId: cocoa-butter-colored
+    name: Colored Cocoa Butter
+    ganacheCharacteristics:
+      cacaoFat: 100
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    description: Pre-colored cocoa butter for transfer sheets and airbrushing
+    vegan: true
+    tags:
+      - decoration
+      - cocoa-butter
+      - color
+      - transfer
+    category: decoration

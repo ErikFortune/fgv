@@ -32,6 +32,7 @@ import { Result } from '@fgv/ts-utils';
 
 import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import type { MaterializedLibrary } from './materializedLibrary';
+import type { IDecoration } from './decorations/model';
 import type { IMold } from './molds/model';
 import type { IProcedure } from './procedures/model';
 import type { ITask } from './tasks/model';
@@ -61,6 +62,7 @@ import {
   IngredientCategory,
   IngredientId,
   Measurement,
+  DecorationId,
   MoldId,
   Percentage,
   ProcedureId,
@@ -71,6 +73,7 @@ import {
 } from '../common';
 import {
   Confections,
+  Decorations,
   Fillings,
   Ingredients,
   IAlcoholIngredientEntity,
@@ -82,6 +85,7 @@ import {
   IFillingRecipeVariationEntity,
   IngredientEntity,
   ISugarIngredientEntity,
+  IDecorationEntity,
   IMoldEntity,
   IProcedureEntity,
   IRawTaskEntity
@@ -378,6 +382,11 @@ export interface IFillingRecipeVariation {
    * Variation spec portion of the identifier.
    */
   readonly variationSpec: FillingRecipeVariationSpec;
+
+  /**
+   * Optional human-readable name for this variation.
+   */
+  readonly name?: string;
 
   /**
    * Date this variation was created (ISO 8601 format).
@@ -1119,8 +1128,8 @@ export interface IConfectionBase<
 
   // ---- Convenience accessors for golden variation properties ----
 
-  /** Decorations from the golden variation */
-  readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
+  /** Resolved decorations from the golden variation */
+  readonly decorations?: CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>;
 
   /** Yield specification from the golden variation */
   readonly yield: Confections.IConfectionYield;
@@ -1316,6 +1325,25 @@ export interface IResolvedConfectionMoldRef {
 }
 
 // ============================================================================
+// Resolved Decoration Reference (for confections)
+// ============================================================================
+
+/**
+ * A resolved decoration reference with the full decoration object.
+ * @public
+ */
+export interface IResolvedConfectionDecorationRef {
+  /** The decoration ID (for IOptionsWithPreferred compatibility) */
+  readonly id: DecorationId;
+  /** The resolved decoration object */
+  readonly decoration: IDecoration;
+  /** Optional notes specific to using this decoration */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
+  /** The original decoration entity reference data */
+  readonly entity: Decorations.IDecorationRefEntity;
+}
+
+// ============================================================================
 // Resolved Procedure Reference (for confections)
 // ============================================================================
 
@@ -1395,6 +1423,11 @@ export interface IConfectionRecipeVariationBase<
   readonly variationSpec: ConfectionRecipeVariationSpec;
 
   /**
+   * Optional human-readable name for this variation.
+   */
+  readonly name?: string;
+
+  /**
    * Date this variation was created (ISO 8601 format).
    */
   readonly createdDate: string;
@@ -1418,9 +1451,10 @@ export interface IConfectionRecipeVariationBase<
   readonly yield: Confections.IConfectionYield;
 
   /**
-   * Optional decorations for this variation.
+   * Resolved decorations for this variation.
+   * Undefined if the variation has no decorations.
    */
-  readonly decorations?: ReadonlyArray<Confections.IConfectionDecoration>;
+  readonly decorations?: CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>;
 
   /**
    * Optional notes about this variation.
@@ -1563,6 +1597,12 @@ export interface IConfectionContext extends IVariationContext<IIngredient> {
    * Used for resolving mold references.
    */
   readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
+
+  /**
+   * Materialized library of runtime decorations.
+   * Used for resolving decoration references.
+   */
+  readonly decorations: MaterializedLibrary<DecorationId, IDecorationEntity, IDecoration, never>;
 
   /**
    * Materialized library of runtime confections.

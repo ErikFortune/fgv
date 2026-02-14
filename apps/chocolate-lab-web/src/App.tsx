@@ -46,11 +46,20 @@ import {
   TaskDetail,
   ProcedureDetail,
   ConfectionDetail,
+  DecorationDetail,
   WorkspaceFilterOptionProvider,
   useFilteredEntities,
   type IEntityFilterSpec
 } from '@fgv/chocolate-lab-ui';
-import type { IngredientId, FillingId, MoldId, TaskId, ProcedureId, ConfectionId } from '@fgv/ts-chocolate';
+import type {
+  IngredientId,
+  FillingId,
+  MoldId,
+  TaskId,
+  ProcedureId,
+  ConfectionId,
+  DecorationId
+} from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -162,6 +171,21 @@ const MOLD_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IMold, MoldId> = {
   getStatus: undefined
 };
 
+const DECORATION_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IDecoration, DecorationId> = {
+  getId: (d: LibraryRuntime.IDecoration): DecorationId => d.id,
+  getLabel: (d: LibraryRuntime.IDecoration): string => d.name,
+  getSublabel: (d: LibraryRuntime.IDecoration): string | undefined =>
+    [
+      d.description,
+      d.ingredients.length > 0
+        ? `${d.ingredients.length} ingredient${d.ingredients.length > 1 ? 's' : ''}`
+        : undefined
+    ]
+      .filter(Boolean)
+      .join(' · ') || undefined,
+  getStatus: undefined
+};
+
 // ============================================================================
 // Filter Specs (how to extract filterable properties from each entity type)
 // ============================================================================
@@ -220,6 +244,14 @@ const TASK_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.ITask> = {
   selectionExtractors: {
     collection: (t) => collectionFromId(t.id),
     tags: (t) => t.tags ?? []
+  }
+};
+
+const DECORATION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IDecoration> = {
+  getSearchText: (d) => [d.name, d.description].filter(Boolean).join(' '),
+  selectionExtractors: {
+    collection: (d) => collectionFromId(d.id),
+    tags: (d) => d.tags ?? []
   }
 };
 
@@ -935,6 +967,9 @@ function ConfectionsTabContent(): React.ReactElement {
       const onProcedureClick = (id: ProcedureId): void => {
         squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
       };
+      const onDecorationClick = (id: DecorationId): void => {
+        squashAt(index, { entityType: 'decoration', entityId: id, mode: 'view' });
+      };
       const onTaskClick = (id: TaskId): void => {
         squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
       };
@@ -958,6 +993,7 @@ function ConfectionsTabContent(): React.ReactElement {
               onIngredientClick={onIngredientClick}
               onMoldClick={onMoldClick}
               onProcedureClick={onProcedureClick}
+              onDecorationClick={onDecorationClick}
               onCompareVariations={(specs): void =>
                 setVariationCompare({ id: entry.entityId as ConfectionId, specs })
               }
@@ -1014,6 +1050,27 @@ function ConfectionsTabContent(): React.ReactElement {
           key: entry.entityId,
           label: result.value.displayName,
           content: <MoldDetail mold={result.value} />
+        };
+      }
+      if (entry.entityType === 'decoration') {
+        const result = workspace.data.decorations.get(entry.entityId as DecorationId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load decoration: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: (
+            <DecorationDetail
+              decoration={result.value}
+              onIngredientClick={onIngredientClick}
+              onProcedureClick={onProcedureClick}
+            />
+          )
         };
       }
       if (entry.entityType === 'procedure') {
@@ -1121,6 +1178,161 @@ function ConfectionsTabContent(): React.ReactElement {
 }
 
 // ============================================================================
+// Decorations Tab Content
+// ============================================================================
+
+function DecorationsTabContent(): React.ReactElement {
+  const workspace = useWorkspace();
+  const squashCascade = useNavigationStore((s) => s.squashCascade);
+  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
+  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
+  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
+  const collapseList = useNavigationStore((s) => s.collapseList);
+  const compareMode = useNavigationStore((s) => s.compareMode);
+  const compareIds = useNavigationStore((s) => s.compareIds);
+  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
+  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
+  const showingComparison = useNavigationStore((s) => s.showingComparison);
+  const startComparison = useNavigationStore((s) => s.startComparison);
+  const exitComparison = useNavigationStore((s) => s.exitComparison);
+
+  const decorations = useMemo<ReadonlyArray<LibraryRuntime.IDecoration>>(() => {
+    return Array.from(workspace.data.decorations.values());
+  }, [workspace]);
+
+  const selectedId =
+    cascadeStack.length > 0 && cascadeStack[0].entityType === 'decoration'
+      ? (cascadeStack[0].entityId as DecorationId)
+      : undefined;
+
+  const handleSelect = useCallback(
+    (id: DecorationId): void => {
+      const entry: ICascadeEntry = { entityType: 'decoration', entityId: id, mode: 'view' };
+      squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
+  const squashAt = useCallback(
+    (depth: number, entry: ICascadeEntry): void => {
+      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
+    },
+    [squashCascade, cascadeStack]
+  );
+
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascadeStack.map((entry, index) => {
+      const onIngredientClick = (id: IngredientId): void => {
+        squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+      };
+      const onProcedureClick = (id: ProcedureId): void => {
+        squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+      };
+
+      if (entry.entityType === 'decoration') {
+        const result = workspace.data.decorations.get(entry.entityId as DecorationId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load decoration: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: (
+            <DecorationDetail
+              decoration={result.value}
+              onIngredientClick={onIngredientClick}
+              onProcedureClick={onProcedureClick}
+            />
+          )
+        };
+      }
+      if (entry.entityType === 'ingredient') {
+        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <IngredientDetail ingredient={result.value} />
+        };
+      }
+      if (entry.entityType === 'procedure') {
+        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <ProcedureDetail procedure={result.value} />
+        };
+      }
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [cascadeStack, workspace, squashAt]);
+
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.decorations.get(id as DecorationId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <DecorationDetail decoration={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
+  return (
+    <EntityTabLayout
+      list={
+        <EntityList<LibraryRuntime.IDecoration, DecorationId>
+          entities={useFilteredEntities(decorations, DECORATION_FILTER_SPEC)}
+          descriptor={DECORATION_DESCRIPTOR}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          onDrill={collapseList}
+          compareMode={compareMode}
+          checkedIds={compareIds}
+          onCheckedChange={toggleCompareId}
+          onToggleCompare={toggleCompareMode}
+          compareCount={compareIds.size}
+          onStartComparison={startComparison}
+          emptyState={{
+            title: 'No Decorations',
+            description: 'No decorations found in the library.'
+          }}
+        />
+      }
+      cascadeColumns={cascadeColumns}
+      onPopTo={popCascadeTo}
+      listCollapsed={listCollapsed}
+      onListCollapse={collapseList}
+      compareMode={compareMode}
+      comparisonColumns={comparisonColumns}
+      showingComparison={showingComparison}
+      onExitComparison={exitComparison}
+    />
+  );
+}
+
+// ============================================================================
 // Empty Tab Content (for tabs not yet implemented)
 // ============================================================================
 
@@ -1132,6 +1344,7 @@ const TAB_DESCRIPTIONS: Record<AppTab, string> = {
   ingredients: 'Browse and manage chocolate ingredients with ganache characteristics.',
   fillings: 'Create and refine filling recipes with variation tracking.',
   confections: 'Design confection recipes combining fillings, molds, and chocolates.',
+  decorations: 'Browse decoration techniques with ingredients, procedures, and ratings.',
   molds: 'Catalog your mold collection with cavity specifications.',
   tasks: 'Define reusable tasks for production procedures.',
   procedures: 'Build step-by-step procedures from task sequences.'
@@ -1165,6 +1378,8 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
       return <ProceduresTabContent />;
     case 'confections':
       return <ConfectionsTabContent />;
+    case 'decorations':
+      return <DecorationsTabContent />;
     default:
       return <TabPlaceholder tab={tab} />;
   }

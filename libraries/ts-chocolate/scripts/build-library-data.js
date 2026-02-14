@@ -27,6 +27,7 @@ const MOLDS_DIR = path.join(__dirname, '../data/published/molds');
 const PROCEDURES_DIR = path.join(__dirname, '../data/published/procedures');
 const TASKS_DIR = path.join(__dirname, '../data/published/tasks');
 const CONFECTIONS_DIR = path.join(__dirname, '../data/published/confections');
+const DECORATIONS_DIR = path.join(__dirname, '../data/published/decorations');
 const OUTPUT_FILE = path.join(__dirname, '../src/packlets/built-in/builtInData.generated.ts');
 
 /**
@@ -94,6 +95,9 @@ const tasks = loadCollectionsFromDir(TASKS_DIR);
 // Load confections
 const confections = loadCollectionsFromDir(CONFECTIONS_DIR);
 
+// Load decorations
+const decorations = loadCollectionsFromDir(DECORATIONS_DIR);
+
 // Build source file comments
 const sourceComments = [
   ...ingredients.files.map((f) => `//   - data/published/ingredients/${f}`),
@@ -101,7 +105,8 @@ const sourceComments = [
   ...molds.files.map((f) => `//   - data/published/molds/${f}`),
   ...procedures.files.map((f) => `//   - data/published/procedures/${f}`),
   ...tasks.files.map((f) => `//   - data/published/tasks/${f}`),
-  ...confections.files.map((f) => `//   - data/published/confections/${f}`)
+  ...confections.files.map((f) => `//   - data/published/confections/${f}`),
+  ...decorations.files.map((f) => `//   - data/published/decorations/${f}`)
 ].join('\n');
 
 // Generate TypeScript with embedded JSON
@@ -166,6 +171,16 @@ export const confectionCollections: Record<string, JsonObject> = ${JSON.stringif
   null,
   2
 )};
+
+/**
+ * Generated decoration collections from source YAML files.
+ * @public
+ */
+export const decorationCollections: Record<string, JsonObject> = ${JSON.stringify(
+  decorations.collections,
+  null,
+  2
+)};
 /* eslint-enable @typescript-eslint/naming-convention */
 `;
 
@@ -178,7 +193,8 @@ const allFiles = [
   ...molds.files,
   ...procedures.files,
   ...tasks.files,
-  ...confections.files
+  ...confections.files,
+  ...decorations.files
 ];
 const yamlCount = allFiles.filter(isYamlFile).length;
 const jsonCount = allFiles.filter(isJsonFile).length;
@@ -190,5 +206,5 @@ console.log(
     procedures.files.length
   } procedure files, ${tasks.files.length} task files, and ${
     confections.files.length
-  } confection files (${yamlCount} YAML, ${jsonCount} JSON)`
+  } confection files, and ${decorations.files.length} decoration files (${yamlCount} YAML, ${jsonCount} JSON)`
 );

@@ -107,6 +107,9 @@ export {
 // Molds
 export { IMoldContext, IMold, Mold } from './molds';
 
+// Decorations
+export { IDecorationContext, IDecoration, IResolvedDecorationIngredient, Decoration } from './decorations';
+
 // Produced wrappers (mutable editing containers)
 export * from './produced';
 

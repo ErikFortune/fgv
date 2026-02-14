@@ -32,6 +32,7 @@ import {
   ConfectionType,
   ConfectionRecipeVariationSpec,
   Converters,
+  DecorationId,
   Model as CommonModel,
   ProcedureId,
   CollectionId
@@ -40,6 +41,7 @@ import { Confections } from '../../entities';
 import {
   AnyConfectionRecipeVariation,
   IConfectionContext,
+  IResolvedConfectionDecorationRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
   IConfectionBase
@@ -176,10 +178,12 @@ export abstract class ConfectionBase<
   // ============================================================================
 
   /**
-   * Decorations from the golden variation
+   * Resolved decorations from the golden variation
    */
-  public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
-    return this._goldenVariationEntity.decorations;
+  public get decorations():
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>
+    | undefined {
+    return this.goldenVariation.decorations;
   }
 
   /**

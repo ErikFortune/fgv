@@ -188,12 +188,13 @@ export function formatConfectionHuman(
   }
 
   // Decorations
-  if (variation.decorations && variation.decorations.length > 0) {
+  if (variation.decorations && variation.decorations.options.length > 0) {
     lines.push('');
     lines.push('Decorations:');
-    for (const decoration of variation.decorations) {
-      const preferredMarker = decoration.preferred ? ' (preferred)' : '';
-      lines.push(`  ${decoration.description}${preferredMarker}`);
+    const preferredDecId = variation.decorations.preferredId;
+    for (const dec of variation.decorations.options) {
+      const preferredMarker = dec.id === preferredDecId ? ' (preferred)' : '';
+      lines.push(`  ${dec.id}${preferredMarker}`);
     }
   }
 

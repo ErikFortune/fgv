@@ -34,7 +34,8 @@ import {
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
-  BaseConfectionId
+  BaseConfectionId,
+  BaseDecorationId
 } from '../common';
 import * as Entities from '../entities';
 import { IngredientEntity, IngredientsLibrary } from '../entities';
@@ -43,6 +44,7 @@ import { Converters as EntityConverters } from '../entities';
 import { IMoldEntity, MoldsLibrary } from '../entities';
 import { IProcedureEntity, ProceduresLibrary } from '../entities';
 import { IRawTaskEntity, TasksLibrary } from '../entities';
+import { IDecorationEntity, DecorationsLibrary } from '../entities';
 import { EditableCollection } from '../editing';
 import {
   FullLibraryLoadSpec,
@@ -92,6 +94,11 @@ export interface IInstantiatedEntityLibrarySources {
    * Pre-built confections library
    */
   readonly confections?: Entities.Confections.ConfectionsLibrary;
+
+  /**
+   * Pre-built decorations library
+   */
+  readonly decorations?: DecorationsLibrary;
 }
 
 /**
@@ -154,6 +161,7 @@ export class ChocolateEntityLibrary {
   private readonly _procedures: ProceduresLibrary;
   private readonly _tasks: TasksLibrary;
   private readonly _confections: Entities.Confections.ConfectionsLibrary;
+  private readonly _decorations: DecorationsLibrary;
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -167,6 +175,7 @@ export class ChocolateEntityLibrary {
     procedures: ProceduresLibrary,
     tasks: TasksLibrary,
     confections: Entities.Confections.ConfectionsLibrary,
+    decorations: DecorationsLibrary,
     logger?: Logging.ILogger
   ) {
     /* c8 ignore next - default logger branch tested implicitly via create() */
@@ -177,6 +186,7 @@ export class ChocolateEntityLibrary {
     this._procedures = procedures;
     this._tasks = tasks;
     this._confections = confections;
+    this._decorations = decorations;
     this.logger = new Logging.LogReporter({ logger });
   }
 
@@ -236,26 +246,36 @@ export class ChocolateEntityLibrary {
       logger
     }).report(logger);
 
+    const decorationsResult = DecorationsLibrary.create({
+      builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'decorations'),
+      fileSources: ChocolateEntityLibrary._toFileSources(fileSources, 'decorations'),
+      mergeLibraries: params.libraries?.decorations,
+      logger
+    }).report(logger);
+
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
         moldsResult.onSuccess((molds) =>
           proceduresResult.onSuccess((procedures) =>
             tasksResult.onSuccess((tasks) =>
-              confectionsResult.onSuccess((confections) => {
-                const library = new ChocolateEntityLibrary(
-                  ingredients,
-                  recipes,
-                  molds,
-                  procedures,
-                  tasks,
-                  confections,
-                  logger.logger
-                );
-                logger.info(
-                  `ChocolateEntityLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections`
-                );
-                return Success.with(library);
-              })
+              confectionsResult.onSuccess((confections) =>
+                decorationsResult.onSuccess((decorations) => {
+                  const library = new ChocolateEntityLibrary(
+                    ingredients,
+                    recipes,
+                    molds,
+                    procedures,
+                    tasks,
+                    confections,
+                    decorations,
+                    logger.logger
+                  );
+                  logger.info(
+                    `ChocolateEntityLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections, ${decorations.size} decorations`
+                  );
+                  return Success.with(library);
+                })
+              )
             )
           )
         )
@@ -317,6 +337,13 @@ export class ChocolateEntityLibrary {
    */
   public get confections(): Entities.Confections.ConfectionsLibrary {
     return this._confections;
+  }
+
+  /**
+   * The {@link Entities.Decorations.DecorationsLibrary | decorations library}.
+   */
+  public get decorations(): DecorationsLibrary {
+    return this._decorations;
   }
 
   /**
@@ -418,6 +445,23 @@ export class ChocolateEntityLibrary {
       collectionId,
       CommonConverters.baseConfectionId,
       EntityConverters.Confections.anyConfectionRawEntity
+    );
+  }
+
+  /**
+   * Get an editable decorations collection with persistence enabled.
+   * @param collectionId - ID of the collection to make editable
+   * @returns Result containing EditableCollection with persistence, or Failure
+   * @public
+   */
+  public getEditableDecorationsEntityCollection(
+    collectionId: CollectionId
+  ): Result<EditableCollection<IDecorationEntity, BaseDecorationId>> {
+    return EditableCollection.fromLibrary(
+      this.decorations,
+      collectionId,
+      CommonConverters.baseDecorationId,
+      EntityConverters.Decorations.decorationEntity
     );
   }
 }

@@ -28,11 +28,13 @@
 import {
   Allergen,
   BaseConfectionId,
+  BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
+  DecorationId,
   CacaoVariety,
   Celsius,
   Certification,
@@ -510,15 +512,10 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
             }
           }
         ],
-        decorations: [
-          {
-            description: 'Gold leaf',
-            preferred: true
-          },
-          {
-            description: 'Cocoa powder'
-          }
-        ],
+        decorations: {
+          options: [{ id: 'test.gold-leaf' as DecorationId }, { id: 'test.cocoa-powder' as DecorationId }],
+          preferredId: 'test.gold-leaf' as DecorationId
+        },
         procedures: {
           options: [
             {
@@ -718,6 +715,32 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
     ]
   }).orThrow();
 
+  const decorations = Entities.Decorations.DecorationsLibrary.create({
+    builtin: false,
+    collections: [
+      {
+        id: 'test' as CollectionId,
+        isMutable: false,
+        items: {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          'gold-leaf': {
+            baseId: 'gold-leaf' as BaseDecorationId,
+            name: 'Gold Leaf',
+            description: 'Decorative gold leaf',
+            ingredients: []
+          },
+          'cocoa-powder': {
+            baseId: 'cocoa-powder' as BaseDecorationId,
+            name: 'Cocoa Powder Dusting',
+            description: 'Light cocoa powder dusting',
+            ingredients: []
+          }
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
+      }
+    ]
+  }).orThrow();
+
   const entityLibrary = LibraryRuntime.ChocolateEntityLibrary.create({
     libraries: {
       ingredients,
@@ -725,6 +748,7 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
       molds,
       procedures,
       tasks,
+      decorations,
       confections
     }
   }).orThrow();

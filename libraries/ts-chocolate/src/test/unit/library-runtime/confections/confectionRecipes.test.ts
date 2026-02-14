@@ -40,6 +40,8 @@ import {
   ConfectionName,
   ConfectionRecipeVariationSpec,
   SlotId,
+  DecorationId,
+  BaseDecorationId,
   ProcedureId,
   BaseProcedureId
 } from '../../../../packlets/common';
@@ -55,7 +57,9 @@ import {
   ConfectionsLibrary,
   Confections,
   IProcedureEntity,
-  ProceduresLibrary
+  ProceduresLibrary,
+  IDecorationEntity,
+  DecorationsLibrary
 } from '../../../../packlets/entities';
 import { ChocolateEntityLibrary, ChocolateLibrary } from '../../../../packlets/library-runtime';
 
@@ -174,12 +178,16 @@ describe('Confection Recipes', () => {
     variations: [
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+        name: 'Original',
         createdDate: '2026-01-01',
         additionalTags: ['dark-chocolate'],
         additionalUrls: [
           { category: 'video', url: 'https://example.com/video' }
         ] as CommonModel.ICategorizedUrl[],
-        decorations: [{ description: 'Gold pattern transfer' }] as Confections.IConfectionDecoration[],
+        decorations: {
+          options: [{ id: 'test.gold-leaf-accent' as DecorationId }],
+          preferredId: 'test.gold-leaf-accent' as DecorationId
+        },
         yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
         fillings: [
           {
@@ -454,6 +462,28 @@ describe('Confection Recipes', () => {
       ]
     }).orThrow();
 
+    const testDecoration: IDecorationEntity = {
+      baseId: 'gold-leaf-accent' as BaseDecorationId,
+      name: 'Gold Leaf Accent',
+      description: 'Decorative gold leaf accent',
+      ingredients: []
+    };
+
+    const decorations = DecorationsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'gold-leaf-accent': testDecoration
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
     const confections = ConfectionsLibrary.create({
       builtin: false,
       collections: [
@@ -474,7 +504,7 @@ describe('Confection Recipes', () => {
 
     const library = ChocolateEntityLibrary.create({
       builtin: false,
-      libraries: { ingredients, fillings, molds, procedures, confections }
+      libraries: { ingredients, fillings, molds, procedures, decorations, confections }
     }).orThrow();
 
     ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
@@ -817,6 +847,7 @@ describe('Confection Recipes', () => {
 
           expect(variation.createdDate).toBe('2026-01-01');
           expect(variation.variationSpec).toBe('2026-01-01-01');
+          expect(variation.name).toBe('Original');
           expect(variation.confectionId).toBe('test.test-molded-bonbon');
         }
       );
@@ -851,8 +882,10 @@ describe('Confection Recipes', () => {
           const variation = confection.goldenVariation;
 
           expect(variation.decorations).toBeDefined();
-          expect(variation.decorations).toHaveLength(1);
-          expect(variation.decorations?.[0].description).toBe('Gold pattern transfer');
+          expect(variation.decorations?.options).toHaveLength(1);
+          expect(variation.decorations?.options[0].id).toBe('test.gold-leaf-accent');
+          expect(variation.decorations?.options[0].decoration.name).toBe('Gold Leaf Accent');
+          expect(variation.decorations?.preferredId).toBe('test.gold-leaf-accent');
         }
       );
     });

@@ -315,6 +315,9 @@ describe('ConfectionEditingSession', () => {
       get molds() {
         return ctx.molds;
       },
+      get decorations() {
+        return ctx.decorations;
+      },
       get confections() {
         return ctx.confections;
       },

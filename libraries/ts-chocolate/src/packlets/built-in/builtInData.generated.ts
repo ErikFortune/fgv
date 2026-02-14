@@ -13,6 +13,7 @@
 //   - data/published/procedures/common.yaml
 //   - data/published/tasks/common.yaml
 //   - data/published/confections/common.yaml
+//   - data/published/decorations/common.yaml
 
 /* eslint-disable max-lines */
 import { JsonObject } from '@fgv/ts-json-base';
@@ -852,6 +853,38 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['hazelnut', 'nut', 'roasted', 'inclusion'],
         density: 0.64,
         category: 'other'
+      },
+      'gold-leaf': {
+        baseId: 'gold-leaf',
+        name: 'Edible Gold Leaf',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        },
+        description: '23-karat edible gold leaf sheets for elegant decoration',
+        vegan: true,
+        tags: ['decoration', 'gold', 'elegant'],
+        category: 'decoration'
+      },
+      'cocoa-butter-colored': {
+        baseId: 'cocoa-butter-colored',
+        name: 'Colored Cocoa Butter',
+        ganacheCharacteristics: {
+          cacaoFat: 100,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        },
+        description: 'Pre-colored cocoa butter for transfer sheets and airbrushing',
+        vegan: true,
+        tags: ['decoration', 'cocoa-butter', 'color', 'transfer'],
+        category: 'decoration'
       }
     }
   },
@@ -1295,6 +1328,7 @@ export const fillingCollections: Record<string, JsonObject> = {
         variations: [
           {
             variationSpec: '2026-01-01-01',
+            name: 'Original',
             createdDate: '2026-01-01',
             ingredients: [
               {
@@ -1346,7 +1380,8 @@ export const fillingCollections: Record<string, JsonObject> = {
             }
           },
           {
-            variationSpec: '2026-02-13-01',
+            variationSpec: '2026-02-13-01-reduced',
+            name: 'Reduced Batch',
             createdDate: '2026-02-13',
             ingredients: [
               {
@@ -2416,6 +2451,83 @@ export const procedureCollections: Record<string, JsonObject> = {
           }
         ],
         tags: ['rolled', 'truffle', 'coated', 'confection']
+      },
+      'transfer-sheet-application': {
+        baseId: 'transfer-sheet-application',
+        name: 'Transfer Sheet Application',
+        category: 'decoration',
+        steps: [
+          {
+            order: 1,
+            task: {
+              task: {
+                baseId: 'transfer-sheet-step-1',
+                name: 'Prepare Mold Surface',
+                template: 'Ensure mold cavities are clean and polished'
+              },
+              params: {}
+            },
+            activeTime: 2
+          },
+          {
+            order: 2,
+            task: {
+              task: {
+                baseId: 'transfer-sheet-step-2',
+                name: 'Cut Transfer Sheet',
+                template: 'Cut transfer sheet to fit mold cavity dimensions'
+              },
+              params: {}
+            },
+            activeTime: 3
+          },
+          {
+            order: 3,
+            task: {
+              task: {
+                baseId: 'transfer-sheet-step-3',
+                name: 'Apply to Mold',
+                template: 'Press transfer sheet (printed side down) into mold cavity'
+              },
+              params: {}
+            },
+            activeTime: 5,
+            notes: [
+              {
+                category: 'user',
+                note: 'Ensure no air bubbles between sheet and mold surface'
+              }
+            ]
+          },
+          {
+            order: 4,
+            task: {
+              task: {
+                baseId: 'transfer-sheet-step-4',
+                name: 'Pour Tempered Chocolate',
+                template: 'Pour tempered chocolate over transfer sheet and proceed with shell method'
+              },
+              params: {}
+            },
+            activeTime: 5,
+            temperature: 31
+          },
+          {
+            order: 5,
+            task: {
+              task: {
+                baseId: 'transfer-sheet-step-5',
+                name: 'Peel Transfer Sheet',
+                template: 'After chocolate sets, peel away transfer sheet backing to reveal pattern'
+              },
+              params: {}
+            },
+            activeTime: 2,
+            waitTime: 15,
+            temperature: 16
+          }
+        ],
+        tags: ['decoration', 'transfer', 'cocoa-butter', 'pattern']
       }
     }
   }
@@ -2572,6 +2684,7 @@ export const confectionCollections: Record<string, JsonObject> = {
         variations: [
           {
             variationSpec: '2026-01-01-01',
+            name: 'Single Fill',
             createdDate: '2026-01-01',
             notes: [
               {
@@ -2629,18 +2742,21 @@ export const confectionCollections: Record<string, JsonObject> = {
               ],
               preferredId: 'common.shell-bonbon-method'
             },
-            decorations: [
-              {
-                description: 'Gold leaf accent on dome peak',
-                preferred: true
-              },
-              {
-                description: 'Cocoa butter transfer sheet design'
-              }
-            ]
+            decorations: {
+              options: [
+                {
+                  id: 'common.gold-leaf-accent'
+                },
+                {
+                  id: 'common.cocoa-butter-transfer'
+                }
+              ],
+              preferredId: 'common.gold-leaf-accent'
+            }
           },
           {
-            variationSpec: '2026-02-13-01',
+            variationSpec: '2026-02-13-01-dual-fill',
+            name: 'Dual Fill',
             createdDate: '2026-02-13',
             notes: [
               {
@@ -2712,15 +2828,17 @@ export const confectionCollections: Record<string, JsonObject> = {
               ],
               preferredId: 'common.shell-bonbon-method'
             },
-            decorations: [
-              {
-                description: 'Gold leaf accent on dome peak',
-                preferred: true
-              },
-              {
-                description: 'Cocoa butter transfer sheet design'
-              }
-            ]
+            decorations: {
+              options: [
+                {
+                  id: 'common.gold-leaf-accent'
+                },
+                {
+                  id: 'common.cocoa-butter-transfer'
+                }
+              ],
+              preferredId: 'common.gold-leaf-accent'
+            }
           }
         ]
       },
@@ -2781,15 +2899,17 @@ export const confectionCollections: Record<string, JsonObject> = {
               ],
               preferredId: 'common.enrobe-truffle-method'
             },
-            decorations: [
-              {
-                description: 'Dipping fork wave pattern',
-                preferred: true
-              },
-              {
-                description: 'Cocoa powder light dusting'
-              }
-            ]
+            decorations: {
+              options: [
+                {
+                  id: 'common.dipping-fork-wave'
+                },
+                {
+                  id: 'common.cocoa-powder-dusting'
+                }
+              ],
+              preferredId: 'common.dipping-fork-wave'
+            }
           }
         ]
       },
@@ -2841,6 +2961,157 @@ export const confectionCollections: Record<string, JsonObject> = {
               ],
               preferredId: 'common.roll-and-coat-method'
             }
+          }
+        ]
+      }
+    }
+  }
+};
+
+/**
+ * Generated decoration collections from source YAML files.
+ * @public
+ */
+export const decorationCollections: Record<string, JsonObject> = {
+  common: {
+    metadata: {
+      name: 'Common Decorations',
+      description: 'Seed data decorations for the decorations library'
+    },
+    items: {
+      'gold-leaf-accent': {
+        baseId: 'gold-leaf-accent',
+        name: 'Gold Leaf Accent',
+        description: 'Delicate gold leaf applied to dome peak for an elegant finish',
+        ingredients: [
+          {
+            ingredient: {
+              ids: ['common.gold-leaf'],
+              preferredId: 'common.gold-leaf'
+            },
+            amount: 1
+          }
+        ],
+        tags: ['elegant', 'gold', 'accent'],
+        ratings: [
+          {
+            category: 'difficulty',
+            score: 3,
+            notes: [
+              {
+                category: 'user',
+                note: 'Requires steady hand and tweezers'
+              }
+            ]
+          },
+          {
+            category: 'durability',
+            score: 4
+          },
+          {
+            category: 'appearance',
+            score: 5
+          }
+        ]
+      },
+      'cocoa-butter-transfer': {
+        baseId: 'cocoa-butter-transfer',
+        name: 'Cocoa Butter Transfer Sheet',
+        description: 'Decorative pattern applied via colored cocoa butter transfer sheet',
+        ingredients: [
+          {
+            ingredient: {
+              ids: ['common.cocoa-butter-colored'],
+              preferredId: 'common.cocoa-butter-colored'
+            },
+            amount: 5
+          }
+        ],
+        procedures: {
+          options: [
+            {
+              id: 'common.transfer-sheet-application'
+            }
+          ],
+          preferredId: 'common.transfer-sheet-application'
+        },
+        tags: ['transfer', 'pattern', 'cocoa-butter'],
+        ratings: [
+          {
+            category: 'difficulty',
+            score: 2
+          },
+          {
+            category: 'durability',
+            score: 5
+          },
+          {
+            category: 'appearance',
+            score: 4
+          }
+        ]
+      },
+      'dipping-fork-wave': {
+        baseId: 'dipping-fork-wave',
+        name: 'Dipping Fork Wave Pattern',
+        description: 'Classic wave pattern created with a dipping fork during enrobing',
+        ingredients: [
+          {
+            ingredient: {
+              ids: ['common.chocolate-dark-64', 'cacao-barry.guayaquil-64'],
+              preferredId: 'common.chocolate-dark-64'
+            },
+            amount: 5,
+            notes: [
+              {
+                category: 'user',
+                note: 'Uses same chocolate as enrobing'
+              }
+            ]
+          }
+        ],
+        tags: ['classic', 'enrobed', 'wave'],
+        ratings: [
+          {
+            category: 'difficulty',
+            score: 2
+          },
+          {
+            category: 'durability',
+            score: 5
+          },
+          {
+            category: 'appearance',
+            score: 3
+          }
+        ]
+      },
+      'cocoa-powder-dusting': {
+        baseId: 'cocoa-powder-dusting',
+        name: 'Cocoa Powder Light Dusting',
+        description: 'Light dusting of cocoa powder for a rustic finish',
+        ingredients: [
+          {
+            ingredient: {
+              ids: ['common.cocoa-powder'],
+              preferredId: 'common.cocoa-powder'
+            },
+            amount: 5
+          }
+        ],
+        tags: ['classic', 'rustic', 'cocoa'],
+        ratings: [
+          {
+            category: 'difficulty',
+            score: 1
+          },
+          {
+            category: 'durability',
+            score: 3
+          },
+          {
+            category: 'appearance',
+            score: 3
           }
         ]
       }

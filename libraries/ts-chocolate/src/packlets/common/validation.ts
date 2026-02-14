@@ -40,6 +40,7 @@ import {
 } from './model';
 import {
   BaseConfectionId,
+  BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
   BaseMoldId,
@@ -247,6 +248,32 @@ export function toBaseConfectionId(from: unknown): Result<BaseConfectionId> {
   }
   return Failure.with(
     'Invalid BaseConfectionId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
+}
+
+/**
+ * Type guard for {@link BaseDecorationId | BaseDecorationId}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link BaseDecorationId | BaseDecorationId}.
+ * @public
+ */
+export function isValidBaseDecorationId(from: unknown): from is BaseDecorationId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link BaseDecorationId | BaseDecorationId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseDecorationId | BaseDecorationId} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toBaseDecorationId(from: unknown): Result<BaseDecorationId> {
+  if (isValidBaseDecorationId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid BaseDecorationId: must be non-empty alphanumeric with dashes/underscores, no dots'
   );
 }
 

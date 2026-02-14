@@ -49,7 +49,14 @@ export type ProductionTab = 'sessions' | 'journal' | 'ingredient-inventory' | 'm
  * Tabs available in Library mode.
  * @public
  */
-export type LibraryTab = 'ingredients' | 'fillings' | 'confections' | 'molds' | 'tasks' | 'procedures';
+export type LibraryTab =
+  | 'ingredients'
+  | 'fillings'
+  | 'confections'
+  | 'decorations'
+  | 'molds'
+  | 'tasks'
+  | 'procedures';
 
 /**
  * Union of all tab identifiers.
@@ -72,7 +79,7 @@ export const DEFAULT_TABS: Record<AppMode, AppTab> = {
  */
 export const MODE_TABS: Record<AppMode, ReadonlyArray<AppTab>> = {
   production: ['sessions', 'journal', 'ingredient-inventory', 'mold-inventory'],
-  library: ['confections', 'fillings', 'ingredients', 'molds', 'procedures', 'tasks']
+  library: ['confections', 'fillings', 'ingredients', 'molds', 'decorations', 'procedures', 'tasks']
 } as const;
 
 /**
@@ -87,6 +94,7 @@ export const TAB_LABELS: Record<AppTab, string> = {
   ingredients: 'Ingredients',
   fillings: 'Fillings',
   confections: 'Confections',
+  decorations: 'Decorations',
   molds: 'Molds',
   tasks: 'Tasks',
   procedures: 'Procedures'
@@ -113,6 +121,7 @@ export type CascadeEntityType =
   | 'ingredient'
   | 'filling'
   | 'confection'
+  | 'decoration'
   | 'mold'
   | 'task'
   | 'procedure'

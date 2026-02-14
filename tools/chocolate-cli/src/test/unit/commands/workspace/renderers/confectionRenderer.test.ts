@@ -141,8 +141,8 @@ describe('confectionRenderer', () => {
       const result = renderConfectionDetail(bonbon);
 
       expect(result.text).toContain('Decorations:');
-      expect(result.text).toContain('Gold leaf (preferred)');
-      expect(result.text).toContain('Cocoa powder');
+      expect(result.text).toContain('Gold Leaf (test.gold-leaf) (preferred)');
+      expect(result.text).toContain('Cocoa Powder Dusting (test.cocoa-powder)');
     });
 
     test('renders procedures with preferred and notes', () => {

@@ -26,6 +26,7 @@
 import { Conversion, Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters, Model, MoldId } from '../../common';
+import { Converters as DecorationConverters } from '../decorations';
 import {
   AnyConfectionRecipeVariationEntity,
   AnyFillingOptionEntity,
@@ -257,10 +258,15 @@ export const coatingsEntity: Converter<ICoatingsEntity> = CommonConverters.idsWi
  */
 const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariationEntityBase> = {
   variationSpec: CommonConverters.confectionRecipeVariationSpec,
+  name: Converters.string.optional(),
   createdDate: Converters.string, // ISO 8601 date string
   yield: confectionYield,
   fillings: Converters.arrayOf(fillingSlotEntity).optional(),
-  decorations: Converters.arrayOf(confectionDecoration).optional(),
+  decorations: CommonConverters.optionsWithPreferred(
+    DecorationConverters.decorationRefEntity,
+    CommonConverters.decorationId,
+    'decoration'
+  ).optional(),
   procedures: RecipeConverters.procedureEntities.optional(),
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
   additionalTags: Converters.arrayOf(Converters.string).optional(),

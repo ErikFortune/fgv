@@ -15,6 +15,7 @@ items:
     goldenVariationSpec: '2026-01-01-01'
     variations:
       - variationSpec: '2026-01-01-01'
+        name: Single Fill
         createdDate: '2026-01-01'
         notes:
           - category: user
@@ -49,10 +50,12 @@ items:
             - id: common.shell-bonbon-method
           preferredId: common.shell-bonbon-method
         decorations:
-          - description: Gold leaf accent on dome peak
-            preferred: true
-          - description: Cocoa butter transfer sheet design
-      - variationSpec: '2026-02-13-01'
+          options:
+            - id: common.gold-leaf-accent
+            - id: common.cocoa-butter-transfer
+          preferredId: common.gold-leaf-accent
+      - variationSpec: '2026-02-13-01-dual-fill'
+        name: Dual Fill
         createdDate: '2026-02-13'
         notes:
           - category: user
@@ -95,9 +98,10 @@ items:
             - id: common.shell-bonbon-method
           preferredId: common.shell-bonbon-method
         decorations:
-          - description: Gold leaf accent on dome peak
-            preferred: true
-          - description: Cocoa butter transfer sheet design
+          options:
+            - id: common.gold-leaf-accent
+            - id: common.cocoa-butter-transfer
+          preferredId: common.gold-leaf-accent
 
   # Bar Truffle example
   dark-bar-truffle:
@@ -140,9 +144,10 @@ items:
             - id: common.enrobe-truffle-method
           preferredId: common.enrobe-truffle-method
         decorations:
-          - description: Dipping fork wave pattern
-            preferred: true
-          - description: Cocoa powder light dusting
+          options:
+            - id: common.dipping-fork-wave
+            - id: common.cocoa-powder-dusting
+          preferredId: common.dipping-fork-wave
 
   # Rolled Truffle example
   dark-cocoa-truffle:

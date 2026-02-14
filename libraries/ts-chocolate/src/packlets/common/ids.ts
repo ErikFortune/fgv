@@ -210,6 +210,22 @@ export type ConfectionRecipeVariationSpec = Brand<string, 'ConfectionRecipeVaria
 export type ConfectionRecipeVariationId = Brand<string, 'ConfectionRecipeVariationId'>;
 
 /**
+ * Decoration identifier within a single collection
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type BaseDecorationId = Brand<string, 'BaseDecorationId'>;
+
+/**
+ * Globally unique decoration identifier (composite)
+ * Format: "collectionId.baseDecorationId"
+ * Must contain exactly one dot separator
+ * @public
+ */
+export type DecorationId = Brand<string, 'DecorationId'>;
+
+/**
  * Unique identifier for an editing session
  * Format: YYYY-MM-DD-HHMMSS-xxxxxxxx
  * @public
@@ -321,6 +337,7 @@ export type IngredientCategory =
   | 'liquid'
   | 'flavor'
   | 'alcohol'
+  | 'decoration'
   | 'other';
 
 /**
@@ -471,10 +488,10 @@ export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 export type FillingCategory = 'ganache' | 'caramel' | 'gianduja' | 'other';
 
 /**
- * Procedure type - can be a filling category, confection type, or other
+ * Procedure type - can be a filling category, confection type, decoration, or other
  * @public
  */
-export type ProcedureType = FillingCategory | ConfectionType | 'other';
+export type ProcedureType = FillingCategory | ConfectionType | 'decoration' | 'other';
 
 /**
  * Category for notes associated with an entity.

@@ -58,6 +58,10 @@ export const LibraryPaths = {
    */
   confections: 'data/confections',
   /**
+   * Path to the decorations data directory.
+   */
+  decorations: 'data/decorations',
+  /**
    * Path to the sessions data directory (user library).
    */
   sessions: 'data/sessions',
@@ -207,6 +211,18 @@ export function getConfectionsDirectory(
 }
 
 /**
+ * Gets the decorations directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the decorations directory or `Failure` if not found.
+ * @public
+ */
+export function getDecorationsDirectory(
+  tree: FileTree.FileTreeItem
+): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.decorations);
+}
+
+/**
  * Gets the sessions directory from a library tree.
  * @param tree - The root library FileTree item.
  * @returns `Success` with the sessions directory or `Failure` if not found.
@@ -253,6 +269,7 @@ export function createDefaultLibraryDirectories(rootPath: string): Result<void> 
     LibraryPaths.ingredients,
     LibraryPaths.fillings,
     LibraryPaths.confections,
+    LibraryPaths.decorations,
     LibraryPaths.molds,
     LibraryPaths.procedures,
     LibraryPaths.tasks

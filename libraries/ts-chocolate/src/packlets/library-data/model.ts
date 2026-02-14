@@ -232,6 +232,7 @@ export type SubLibraryId =
   | 'procedures'
   | 'tasks'
   | 'confections'
+  | 'decorations'
   | 'sessions'
   | 'moldInventory'
   | 'ingredientInventory';
@@ -248,6 +249,7 @@ export const allSubLibraryIds: ReadonlyArray<SubLibraryId> = [
   'procedures',
   'tasks',
   'confections',
+  'decorations',
   'sessions',
   'moldInventory',
   'ingredientInventory'

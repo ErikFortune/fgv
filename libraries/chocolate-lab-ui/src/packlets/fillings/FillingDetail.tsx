@@ -244,7 +244,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
   const variationItems = useMemo(() => {
     return filling.variations.map((v) => ({
       id: v.variationSpec,
-      label: v.variationSpec
+      label: v.name ?? v.variationSpec
     }));
   }, [filling]);
 

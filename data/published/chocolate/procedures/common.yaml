@@ -331,3 +331,56 @@ items:
         waitTime: 30
         temperature: 18
     tags: [rolled, truffle, coated, confection]
+
+  transfer-sheet-application:
+    baseId: transfer-sheet-application
+    name: Transfer Sheet Application
+    category: decoration
+    steps:
+      - order: 1
+        task:
+          task:
+            baseId: transfer-sheet-step-1
+            name: Prepare Mold Surface
+            template: Ensure mold cavities are clean and polished
+          params: {}
+        activeTime: 2
+      - order: 2
+        task:
+          task:
+            baseId: transfer-sheet-step-2
+            name: Cut Transfer Sheet
+            template: Cut transfer sheet to fit mold cavity dimensions
+          params: {}
+        activeTime: 3
+      - order: 3
+        task:
+          task:
+            baseId: transfer-sheet-step-3
+            name: Apply to Mold
+            template: Press transfer sheet (printed side down) into mold cavity
+          params: {}
+        activeTime: 5
+        notes:
+          - category: user
+            note: Ensure no air bubbles between sheet and mold surface
+      - order: 4
+        task:
+          task:
+            baseId: transfer-sheet-step-4
+            name: Pour Tempered Chocolate
+            template: Pour tempered chocolate over transfer sheet and proceed with shell method
+          params: {}
+        activeTime: 5
+        temperature: 31
+      - order: 5
+        task:
+          task:
+            baseId: transfer-sheet-step-5
+            name: Peel Transfer Sheet
+            template: After chocolate sets, peel away transfer sheet backing to reveal pattern
+          params: {}
+        activeTime: 2
+        waitTime: 15
+        temperature: 16
+    tags: [decoration, transfer, cocoa-butter, pattern]

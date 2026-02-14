@@ -221,12 +221,13 @@ export function renderConfectionDetail(confection: LibraryRuntime.IConfectionBas
   }
 
   // Decorations
-  if (confection.decorations && confection.decorations.length > 0) {
+  if (confection.decorations && confection.decorations.options.length > 0) {
     lines.push('');
     lines.push('Decorations:');
-    for (const decoration of confection.decorations) {
-      const preferredMarker = decoration.preferred ? ' (preferred)' : '';
-      lines.push(`  ${decoration.description}${preferredMarker}`);
+    const preferredDecId = confection.decorations.preferredId;
+    for (const dec of confection.decorations.options) {
+      const preferredMarker = dec.id === preferredDecId ? ' (preferred)' : '';
+      lines.push(`  ${dec.decoration.name} (${dec.id})${preferredMarker}`);
     }
   }
 

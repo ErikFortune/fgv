@@ -154,6 +154,13 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
   }
 
   /**
+   * Optional human-readable name for this variation.
+   */
+  public get name(): string | undefined {
+    return this._entity.name;
+  }
+
+  /**
    * Date this variation was created (ISO 8601 format)
    */
   public get createdDate(): string {

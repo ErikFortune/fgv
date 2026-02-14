@@ -140,6 +140,17 @@ function procedureOptions(key: string): OptionExtractor | undefined {
   }
 }
 
+function decorationOptions(key: string): OptionExtractor | undefined {
+  switch (key) {
+    case 'tags':
+      return (data) => collectOptions(flatTags(Array.from(data.decorations.values())));
+    case 'collection':
+      return (data) => collectOptions(Array.from(data.decorations.values()).map((d) => d.id.split('.')[0]));
+    default:
+      return undefined;
+  }
+}
+
 function taskOptions(key: string): OptionExtractor | undefined {
   switch (key) {
     case 'category':
@@ -162,6 +173,8 @@ function getExtractor(tab: AppTab, key: string): OptionExtractor | undefined {
       return fillingOptions(key);
     case 'confections':
       return confectionOptions(key);
+    case 'decorations':
+      return decorationOptions(key);
     case 'molds':
       return moldOptions(key);
     case 'procedures':

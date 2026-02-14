@@ -16,6 +16,7 @@ items:
       - bonbon
     variations:
       - variationSpec: 2026-01-01-01
+        name: Original
         createdDate: '2026-01-01'
         ingredients:
           - ingredient:
@@ -48,7 +49,8 @@ items:
             - id: common.ganache-cold-method
             - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
-      - variationSpec: 2026-02-13-01
+      - variationSpec: 2026-02-13-01-reduced
+        name: Reduced Batch
         createdDate: '2026-02-13'
         ingredients:
           - ingredient:

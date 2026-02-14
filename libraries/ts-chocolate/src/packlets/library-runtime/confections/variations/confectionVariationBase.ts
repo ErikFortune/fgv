@@ -28,12 +28,14 @@ import { Result, mapResults, succeed } from '@fgv/ts-utils';
 import {
   ConfectionId,
   ConfectionRecipeVariationSpec,
+  DecorationId,
   Model as CommonModel,
   ProcedureId
 } from '../../../common';
 import { Confections } from '../../../entities';
 import {
   IConfectionContext,
+  IResolvedConfectionDecorationRef,
   IResolvedConfectionProcedure,
   IResolvedFillingSlot,
   IResolvedFillingOption,
@@ -66,6 +68,9 @@ export abstract class ConfectionRecipeVariationBase<
   // Lazy-resolved caches (undefined = not yet resolved)
   private _confection: TConfection | undefined;
   private _resolvedFillings: ReadonlyArray<IResolvedFillingSlot> | undefined;
+  private _resolvedDecorations:
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>
+    | undefined;
   private _resolvedProcedures:
     | CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
     | undefined;
@@ -92,6 +97,13 @@ export abstract class ConfectionRecipeVariationBase<
    */
   public get variationSpec(): ConfectionRecipeVariationSpec {
     return this._entity.variationSpec;
+  }
+
+  /**
+   * Optional human-readable name for this variation.
+   */
+  public get name(): string | undefined {
+    return this._entity.name;
   }
 
   /**
@@ -148,10 +160,53 @@ export abstract class ConfectionRecipeVariationBase<
   }
 
   /**
-   * Optional decorations for this variation.
+   * Gets resolved decorations for this variation.
+   * @returns Result with resolved decorations (undefined if none), or Failure if resolution fails
+   * @public
    */
-  public get decorations(): ReadonlyArray<Confections.IConfectionDecoration> | undefined {
-    return this._entity.decorations;
+  public getDecorations(): Result<
+    CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId> | undefined
+  > {
+    if (this._resolvedDecorations === undefined) {
+      const decorationRefs = this._entity.decorations;
+      if (!decorationRefs || decorationRefs.options.length === 0) {
+        return succeed(undefined);
+      }
+
+      return this._context.decorations
+        .getRefsWithAlternates(decorationRefs)
+        .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve decorations: ${msg}`)
+        .onSuccess((resolved) => {
+          const options: IResolvedConfectionDecorationRef[] = [
+            {
+              id: resolved.primaryId,
+              decoration: resolved.primary,
+              notes: resolved.primaryNotes,
+              entity: decorationRefs.options.find((r) => r.id === resolved.primaryId)!
+            },
+            ...resolved.alternates.map((alt) => ({
+              id: alt.id,
+              decoration: alt.item,
+              notes: alt.notes,
+              entity: decorationRefs.options.find((r) => r.id === alt.id)!
+            }))
+          ];
+          this._resolvedDecorations = { options, preferredId: decorationRefs.preferredId };
+          return succeed(this._resolvedDecorations);
+        });
+    }
+    return succeed(this._resolvedDecorations);
+  }
+
+  /**
+   * Resolved decorations for this variation.
+   * Undefined if the variation has no decorations.
+   * @throws if resolution fails - prefer getDecorations() for proper error handling
+   */
+  public get decorations():
+    | CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>
+    | undefined {
+    return this.getDecorations().orThrow();
   }
 
   /**

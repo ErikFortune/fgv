@@ -105,7 +105,15 @@ export interface IFillingIngredientEntity {
  * Categories for rating a filling recipe variation
  * @public
  */
-export type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
+export type RatingCategory =
+  | 'overall'
+  | 'taste'
+  | 'texture'
+  | 'shelf-life'
+  | 'appearance'
+  | 'workability'
+  | 'difficulty'
+  | 'durability';
 
 /**
  * Categories for classifying filling recipes by type
@@ -129,7 +137,9 @@ export const allRatingCategories: RatingCategory[] = [
   'texture',
   'shelf-life',
   'appearance',
-  'workability'
+  'workability',
+  'difficulty',
+  'durability'
 ];
 
 /**
@@ -199,6 +209,13 @@ export interface IFillingRecipeVariationEntity {
    * Unique identifier for this variation
    */
   readonly variationSpec: FillingRecipeVariationSpec;
+
+  /**
+   * Optional human-readable name for this variation.
+   * Used as display label in the UI; the kebab-case form may also
+   * appear as the extension of the variationSpec.
+   */
+  readonly name?: string;
 
   /**
    * Date this variation was created (ISO 8601 format)

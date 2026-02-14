@@ -33,6 +33,7 @@ import type {
   LibraryRuntime,
   Model,
   ConfectionRecipeVariationSpec,
+  DecorationId,
   FillingId,
   IngredientId,
   MoldId,
@@ -59,6 +60,8 @@ export interface IConfectionDetailProps {
   readonly onMoldClick?: (id: MoldId) => void;
   /** Callback when a procedure is clicked for drill-down */
   readonly onProcedureClick?: (id: ProcedureId) => void;
+  /** Callback when a decoration is clicked for drill-down */
+  readonly onDecorationClick?: (id: DecorationId) => void;
   /** Callback to compare selected variations side-by-side */
   readonly onCompareVariations?: (specs: ReadonlyArray<ConfectionRecipeVariationSpec>) => void;
   /** Override the initially selected variation (defaults to golden) */
@@ -195,21 +198,27 @@ function YieldSection({
 // ============================================================================
 
 function DecorationsSection({
-  decorations
+  decorations,
+  onDecorationClick
 }: {
-  readonly decorations: ReadonlyArray<Entities.Confections.IConfectionDecoration>;
-}): React.ReactElement | null {
-  if (decorations.length === 0) {
-    return null;
-  }
+  readonly decorations: LibraryRuntime.IConfectionBase['decorations'] & {};
+  readonly onDecorationClick?: (id: DecorationId) => void;
+}): React.ReactElement {
+  const items = useMemo(() => {
+    return decorations.options.map((d) => ({
+      id: d.id,
+      label: d.decoration.name,
+      sublabel: d.decoration.description
+    }));
+  }, [decorations]);
+
   return (
     <DetailSection title="Decorations">
-      {decorations.map((d, i) => (
-        <div key={i} className="text-sm text-gray-700 py-0.5">
-          {d.description}
-          {d.preferred && <span className="ml-1 text-xs text-amber-500">★ preferred</span>}
-        </div>
-      ))}
+      <EntityRow<DecorationId>
+        items={items}
+        preferredId={decorations.preferredId}
+        onClick={onDecorationClick}
+      />
     </DetailSection>
   );
 }
@@ -545,6 +554,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     onIngredientClick,
     onMoldClick,
     onProcedureClick,
+    onDecorationClick,
     onCompareVariations
   } = props;
 
@@ -560,7 +570,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
   const variationItems = useMemo(() => {
     return confection.variations.map((v) => ({
       id: v.variationSpec,
-      label: v.variationSpec
+      label: v.name ?? v.variationSpec
     }));
   }, [confection]);
 
@@ -619,7 +629,12 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
       )}
 
       {/* Decorations */}
-      {selectedVariation.decorations && <DecorationsSection decorations={selectedVariation.decorations} />}
+      {selectedVariation.decorations && (
+        <DecorationsSection
+          decorations={selectedVariation.decorations}
+          onDecorationClick={onDecorationClick}
+        />
+      )}
 
       {/* Procedures */}
       {selectedVariation.procedures && (

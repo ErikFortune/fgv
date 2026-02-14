@@ -1,0 +1,105 @@
+# Common decorations - seed data for the decorations library
+
+metadata:
+  name: Common Decorations
+  description: Seed data decorations for the decorations library
+
+items:
+  gold-leaf-accent:
+    baseId: gold-leaf-accent
+    name: Gold Leaf Accent
+    description: Delicate gold leaf applied to dome peak for an elegant finish
+    ingredients:
+      - ingredient:
+          ids:
+            - common.gold-leaf
+          preferredId: common.gold-leaf
+        amount: 1
+    tags:
+      - elegant
+      - gold
+      - accent
+    ratings:
+      - category: difficulty
+        score: 3
+        notes:
+          - category: user
+            note: Requires steady hand and tweezers
+      - category: durability
+        score: 4
+      - category: appearance
+        score: 5
+
+  cocoa-butter-transfer:
+    baseId: cocoa-butter-transfer
+    name: Cocoa Butter Transfer Sheet
+    description: Decorative pattern applied via colored cocoa butter transfer sheet
+    ingredients:
+      - ingredient:
+          ids:
+            - common.cocoa-butter-colored
+          preferredId: common.cocoa-butter-colored
+        amount: 5
+    procedures:
+      options:
+        - id: common.transfer-sheet-application
+      preferredId: common.transfer-sheet-application
+    tags:
+      - transfer
+      - pattern
+      - cocoa-butter
+    ratings:
+      - category: difficulty
+        score: 2
+      - category: durability
+        score: 5
+      - category: appearance
+        score: 4
+
+  dipping-fork-wave:
+    baseId: dipping-fork-wave
+    name: Dipping Fork Wave Pattern
+    description: Classic wave pattern created with a dipping fork during enrobing
+    ingredients:
+      - ingredient:
+          ids:
+            - common.chocolate-dark-64
+            - cacao-barry.guayaquil-64
+          preferredId: common.chocolate-dark-64
+        amount: 5
+        notes:
+          - category: user
+            note: Uses same chocolate as enrobing
+    tags:
+      - classic
+      - enrobed
+      - wave
+    ratings:
+      - category: difficulty
+        score: 2
+      - category: durability
+        score: 5
+      - category: appearance
+        score: 3
+
+  cocoa-powder-dusting:
+    baseId: cocoa-powder-dusting
+    name: Cocoa Powder Light Dusting
+    description: Light dusting of cocoa powder for a rustic finish
+    ingredients:
+      - ingredient:
+          ids:
+            - common.cocoa-powder
+          preferredId: common.cocoa-powder
+        amount: 5
+    tags:
+      - classic
+      - rustic
+      - cocoa
+    ratings:
+      - category: difficulty
+        score: 1
+      - category: durability
+        score: 3
+      - category: appearance
+        score: 3

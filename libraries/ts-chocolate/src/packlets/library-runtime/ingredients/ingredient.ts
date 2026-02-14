@@ -102,6 +102,7 @@ export abstract class Ingredient {
         return AlcoholIngredient.create(context, id, ingredient as IAlcoholIngredientEntity);
       case 'liquid':
       case 'flavor':
+      case 'decoration':
       case 'other':
         return GenericIngredient.create(context, id, ingredient);
       /* c8 ignore next 4 - defensive coding: Ingredient union type ensures all categories are handled */

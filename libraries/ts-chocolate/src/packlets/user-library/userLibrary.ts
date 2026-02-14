@@ -29,6 +29,7 @@ import {
   CollectionId,
   ConfectionId,
   ConfectionType,
+  DecorationId,
   FillingId,
   FillingRecipeVariationId,
   Helpers,
@@ -44,6 +45,7 @@ import {
   AnyJournalEntryEntity,
   AnySessionEntity,
   IConfectionSessionEntity,
+  IDecorationEntity,
   IFillingRecipeEntity,
   IFillingSessionEntity,
   IMoldEntity,
@@ -58,6 +60,7 @@ import {
 import {
   IConfectionBase,
   IConfectionContext,
+  IDecoration,
   IFillingRecipe,
   IIngredient,
   IMold,
@@ -233,6 +236,14 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
    */
   public get molds(): MaterializedLibrary<MoldId, IMoldEntity, IMold, never> {
     return this._confectionContext.molds;
+  }
+
+  /**
+   * Gets the materialized decorations library from the confection context.
+   * Required by IConfectionContext.
+   */
+  public get decorations(): MaterializedLibrary<DecorationId, IDecorationEntity, IDecoration, never> {
+    return this._confectionContext.decorations;
   }
 
   /**

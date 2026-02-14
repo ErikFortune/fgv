@@ -35,12 +35,14 @@ import {
   Millimeters,
   Model,
   MoldId,
+  DecorationId,
   ProcedureId,
   FillingId,
   SlotId
 } from '../../common';
 
 import { IProcedureRefEntity } from '../fillings';
+import { IDecorationRefEntity } from '../decorations';
 
 // ============================================================================
 // Yield and Decoration Types
@@ -96,6 +98,7 @@ export function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is
 }
 
 /**
+ * @deprecated Use {@link Entities.Decorations.IDecorationRefEntity | IDecorationRefEntity} instead.
  * Decoration specification for a {@link Entities.Confections.AnyConfectionEntity | confection}.
  * @public
  */
@@ -257,14 +260,16 @@ export type ICoatingsEntity = Model.IIdsWithPreferred<IngredientId>;
 export interface IConfectionRecipeVariationEntityBase {
   /** Unique identifier for this variation */
   readonly variationSpec: ConfectionRecipeVariationSpec;
+  /** Optional human-readable name for this variation */
+  readonly name?: string;
   /** Date this variation was created (ISO 8601 format) */
   readonly createdDate: string;
   /** Yield specification for this variation */
   readonly yield: IConfectionYield;
   /** Optional filling slots - each slot has independent options with a preferred selection */
   readonly fillings?: ReadonlyArray<IFillingSlotEntity>;
-  /** Optional decorations for this variation */
-  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+  /** Optional decoration references with preferred selection */
+  readonly decorations?: Model.IOptionsWithPreferred<IDecorationRefEntity, DecorationId>;
   /** Optional procedures with preferred selection */
   readonly procedures?: Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>;
   /** Optional categorized notes about this variation */

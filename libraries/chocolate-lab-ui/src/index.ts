@@ -37,3 +37,6 @@ export * from './packlets/procedures';
 
 // Confection presentation components
 export * from './packlets/confections';
+
+// Decoration presentation components
+export * from './packlets/decorations';

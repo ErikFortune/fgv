@@ -25,10 +25,20 @@
 
 import { Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
-import { CollectionId, ConfectionId, IngredientId, MoldId, ProcedureId, FillingId, TaskId } from '../common';
+import {
+  CollectionId,
+  ConfectionId,
+  DecorationId,
+  IngredientId,
+  MoldId,
+  ProcedureId,
+  FillingId,
+  TaskId
+} from '../common';
 import {
   Confections,
   Fillings,
+  IDecorationEntity,
   IngredientEntity,
   IMoldEntity,
   IProcedureEntity,
@@ -57,6 +67,7 @@ import { MaterializedLibrary } from './materializedLibrary';
 import { Task } from './tasks';
 import { Procedure } from './procedures';
 import { Mold } from './molds';
+import { Decoration } from './decorations';
 
 /**
  * Parameters for creating a ChocolateLibrary with a new library
@@ -110,6 +121,7 @@ export class ChocolateLibrary
   private _confections:
     | MaterializedLibrary<ConfectionId, Confections.AnyConfectionRecipeEntity, AnyConfection, never>
     | undefined;
+  private _decorations: MaterializedLibrary<DecorationId, IDecorationEntity, Decoration, never> | undefined;
 
   // Extensible indexer orchestrators
   private readonly _recipeOrchestrator: FillingRecipeIndexerOrchestrator;
@@ -215,6 +227,14 @@ export class ChocolateLibrary
    */
   public get tasks(): MaterializedLibrary<TaskId, IRawTaskEntity, Task, never> {
     return this._getTasks();
+  }
+
+  /**
+   * A materialized library of all decorations, keyed by composite ID.
+   * Decorations are resolved lazily on access and cached.
+   */
+  public get decorations(): MaterializedLibrary<DecorationId, IDecorationEntity, Decoration, never> {
+    return this._getDecorations();
   }
 
   /**
@@ -368,6 +388,21 @@ export class ChocolateLibrary
       });
     }
     return this._molds;
+  }
+
+  /**
+   * Gets or creates the materialized decorations library.
+   * @internal
+   */
+  private _getDecorations(): MaterializedLibrary<DecorationId, IDecorationEntity, Decoration, never> {
+    if (!this._decorations) {
+      this._decorations = new MaterializedLibrary({
+        inner: this._entities.decorations,
+        converter: (entity, id) => Decoration.create(this, id, entity),
+        logger: this.logger
+      });
+    }
+    return this._decorations;
   }
 
   // ============================================================================

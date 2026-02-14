@@ -56,6 +56,7 @@ export const allIngredientCategories: IngredientCategory[] = [
   'liquid',
   'flavor',
   'alcohol',
+  'decoration',
   'other'
 ];
 
@@ -204,4 +205,9 @@ export const allFillingCategories: FillingCategory[] = ['ganache', 'caramel', 'g
  * All possible procedure types
  * @public
  */
-export const allProcedureTypes: ProcedureType[] = [...allFillingCategories, ...allConfectionTypes, 'other'];
+export const allProcedureTypes: ProcedureType[] = [
+  ...allFillingCategories,
+  ...allConfectionTypes,
+  'decoration',
+  'other'
+];

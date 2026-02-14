@@ -75,6 +75,10 @@ export const TAB_FILTER_DEFINITIONS: Record<AppTab, ReadonlyArray<IFilterDefinit
     { key: 'category', label: 'Category' },
     { key: 'tags', label: 'Tags' }
   ],
+  decorations: [
+    { key: 'collection', label: 'Collection' },
+    { key: 'tags', label: 'Tags' }
+  ],
   molds: [
     { key: 'collection', label: 'Collection' },
     { key: 'shape', label: 'Shape' },
