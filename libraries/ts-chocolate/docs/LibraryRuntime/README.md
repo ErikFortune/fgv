@@ -845,6 +845,15 @@ A rendered procedure step with resolved template values.
 </td></tr>
 <tr><td>
 
+[IResolvedProcedureStep](./interfaces/IResolvedProcedureStep.md)
+
+</td><td>
+
+A procedure step with resolved task reference.
+
+</td></tr>
+<tr><td>
+
 [IMold](./interfaces/IMold.md)
 
 </td><td>

@@ -2,10 +2,10 @@
 
 ## IProcedure.steps property
 
-Steps of the procedure in order
+Steps of the procedure in order, with resolved task references
 
 **Signature:**
 
 ```typescript
-readonly steps: readonly IProcedureStepEntity[];
+readonly steps: readonly IResolvedProcedureStep[];
 ```

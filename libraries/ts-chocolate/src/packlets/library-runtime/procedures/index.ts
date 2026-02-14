@@ -28,6 +28,7 @@ export {
   IProcedure,
   IProcedureRenderContext,
   IRenderedProcedure,
-  IRenderedStep
+  IRenderedStep,
+  IResolvedProcedureStep
 } from './model';
 export { Procedure } from './procedure';

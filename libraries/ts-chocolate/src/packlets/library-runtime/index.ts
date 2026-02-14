@@ -100,6 +100,7 @@ export {
   IProcedureRenderContext,
   IRenderedProcedure,
   IRenderedStep,
+  IResolvedProcedureStep,
   Procedure
 } from './procedures';
 

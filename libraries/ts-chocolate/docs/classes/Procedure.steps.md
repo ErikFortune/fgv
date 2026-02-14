@@ -2,10 +2,11 @@
 
 ## Procedure.steps property
 
-Steps of the procedure in order
+Steps of the procedure in order, with resolved task references.
+Lazily resolved on first access and cached.
 
 **Signature:**
 
 ```typescript
-readonly steps: readonly IProcedureStepEntity[];
+readonly steps: readonly IResolvedProcedureStep[];
 ```

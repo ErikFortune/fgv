@@ -153,6 +153,34 @@ function IngredientRow({
 }
 
 // ============================================================================
+// Procedures Section
+// ============================================================================
+
+function ProceduresSection({
+  procedures,
+  onProcedureClick
+}: {
+  readonly procedures: LibraryRuntime.IResolvedProcedures;
+  readonly onProcedureClick?: (id: ProcedureId) => void;
+}): React.ReactElement {
+  const items = useMemo(() => {
+    return procedures.procedures.map((p) => ({
+      id: p.id,
+      label: p.procedure.name,
+      sublabel: p.procedure.category
+    }));
+  }, [procedures]);
+
+  const preferredId = procedures.recommendedProcedure?.id;
+
+  return (
+    <DetailSection title="Procedures">
+      <EntityRow<ProcedureId> items={items} preferredId={preferredId} onClick={onProcedureClick} />
+    </DetailSection>
+  );
+}
+
+// ============================================================================
 // Ratings Section
 // ============================================================================
 
@@ -278,7 +306,10 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
         {ingredients.length === 0 && <p className="text-xs text-gray-400 italic">No ingredients resolved.</p>}
       </DetailSection>
 
-      {/* Procedures - TODO: add after subagent resolves runtime procedure entities */}
+      {/* Procedures */}
+      {selectedVariation.procedures && (
+        <ProceduresSection procedures={selectedVariation.procedures} onProcedureClick={onProcedureClick} />
+      )}
 
       {/* Ratings */}
       <RatingsSection ratings={selectedVariation.ratings} />

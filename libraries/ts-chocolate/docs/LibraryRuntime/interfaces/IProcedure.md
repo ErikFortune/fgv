@@ -124,11 +124,11 @@ Optional category this procedure applies to
 
 </td><td>
 
-readonly [IProcedureStepEntity](../../interfaces/IProcedureStepEntity.md)[]
+readonly [IResolvedProcedureStep](../../interfaces/IResolvedProcedureStep.md)[]
 
 </td><td>
 
-Steps of the procedure in order
+Steps of the procedure in order, with resolved task references
 
 </td></tr>
 <tr><td>

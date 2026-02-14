@@ -8,5 +8,5 @@ Undefined if no recommended procedure is specified.
 **Signature:**
 
 ```typescript
-readonly recommendedProcedure: IProcedureEntity;
+readonly recommendedProcedure: IProcedure;
 ```

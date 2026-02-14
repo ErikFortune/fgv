@@ -381,6 +381,12 @@ function FillingsTabContent(): React.ReactElement {
       const onIngredientClick = (id: IngredientId): void => {
         squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
       };
+      const onProcedureClick = (id: ProcedureId): void => {
+        squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+      };
+      const onTaskClick = (id: TaskId): void => {
+        squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
+      };
 
       if (entry.entityType === 'filling') {
         const result = workspace.data.fillings.get(entry.entityId as FillingId);
@@ -399,6 +405,7 @@ function FillingsTabContent(): React.ReactElement {
             <FillingDetail
               filling={result.value}
               onIngredientClick={onIngredientClick}
+              onProcedureClick={onProcedureClick}
               onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
             />
           )
@@ -417,6 +424,36 @@ function FillingsTabContent(): React.ReactElement {
           key: entry.entityId,
           label: result.value.name,
           content: <IngredientDetail ingredient={result.value} />
+        };
+      }
+      if (entry.entityType === 'procedure') {
+        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
+        };
+      }
+      if (entry.entityType === 'task') {
+        const result = workspace.data.tasks.get(entry.entityId as TaskId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <TaskDetail task={result.value} />
         };
       }
       return {
@@ -724,14 +761,6 @@ function ProceduresTabContent(): React.ReactElement {
     return Array.from(workspace.data.procedures.values());
   }, [workspace]);
 
-  const resolveTaskName = useCallback(
-    (taskId: TaskId): string | undefined => {
-      const result = workspace.data.tasks.get(taskId);
-      return result.isSuccess() ? result.value.name : undefined;
-    },
-    [workspace]
-  );
-
   const selectedId =
     cascadeStack.length > 0 && cascadeStack[0].entityType === 'procedure'
       ? (cascadeStack[0].entityId as ProcedureId)
@@ -771,13 +800,7 @@ function ProceduresTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: (
-            <ProcedureDetail
-              procedure={result.value}
-              onTaskClick={onTaskClick}
-              resolveTaskName={resolveTaskName}
-            />
-          )
+          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
         };
       }
       if (entry.entityType === 'task') {
@@ -801,7 +824,7 @@ function ProceduresTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [cascadeStack, workspace, squashAt, resolveTaskName]);
+  }, [cascadeStack, workspace, squashAt]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {
@@ -812,10 +835,10 @@ function ProceduresTabContent(): React.ReactElement {
       return {
         key: id,
         label: result.value.name,
-        content: <ProcedureDetail procedure={result.value} resolveTaskName={resolveTaskName} />
+        content: <ProcedureDetail procedure={result.value} />
       };
     });
-  }, [compareIds, workspace, resolveTaskName]);
+  }, [compareIds, workspace]);
 
   return (
     <EntityTabLayout
@@ -954,7 +977,13 @@ function ConfectionsTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <FillingDetail filling={result.value} onIngredientClick={onIngredientClick} />
+          content: (
+            <FillingDetail
+              filling={result.value}
+              onIngredientClick={onIngredientClick}
+              onProcedureClick={onProcedureClick}
+            />
+          )
         };
       }
       if (entry.entityType === 'ingredient') {

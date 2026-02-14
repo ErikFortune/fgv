@@ -43,8 +43,6 @@ export interface IProcedureDetailProps {
   readonly procedure: LibraryRuntime.IProcedure;
   /** Optional callback when a task reference is clicked (drill-down) */
   readonly onTaskClick?: (taskId: TaskId) => void;
-  /** Optional resolver to get a human-readable task name from a task ID */
-  readonly resolveTaskName?: (taskId: TaskId) => string | undefined;
 }
 
 // ============================================================================
@@ -181,15 +179,14 @@ function TimingSummary({
 
 function StepRow({
   step,
-  onTaskClick,
-  resolveTaskName
+  onTaskClick
 }: {
-  readonly step: Entities.IProcedureStepEntity;
+  readonly step: LibraryRuntime.IResolvedProcedureStep;
   readonly onTaskClick?: (taskId: TaskId) => void;
-  readonly resolveTaskName?: (taskId: TaskId) => string | undefined;
 }): React.ReactElement {
   const task = step.task;
   const isRef = Entities.isTaskRefEntity(task);
+  const resolvedTaskName = step.resolvedTask?.name;
   const timingParts: string[] = [];
   if (step.activeTime !== undefined) {
     timingParts.push(`${step.activeTime}min active`);
@@ -230,12 +227,10 @@ function StepRow({
         <span className="text-xs text-gray-400 font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
         <div className="flex-1 min-w-0">
           <div className="text-sm text-gray-800 flex items-center gap-1">
-            <span>{resolveTaskName?.(task.taskId) ?? task.taskId}</span>
+            <span>{resolvedTaskName ?? task.taskId}</span>
             {clickable && <span className="text-gray-400 text-xs">→</span>}
           </div>
-          {resolveTaskName?.(task.taskId) && (
-            <div className="text-[10px] text-gray-400 font-mono">{task.taskId}</div>
-          )}
+          {resolvedTaskName && <div className="text-[10px] text-gray-400 font-mono">{task.taskId}</div>}
           {hasParams && (
             <div className="text-xs text-gray-400 mt-0.5">
               {Object.entries(params)
@@ -316,12 +311,7 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
       <DetailSection title={`Steps (${procedure.stepCount})`}>
         <div>
           {procedure.steps.map((step) => (
-            <StepRow
-              key={step.order}
-              step={step}
-              onTaskClick={onTaskClick}
-              resolveTaskName={props.resolveTaskName}
-            />
+            <StepRow key={step.order} step={step} onTaskClick={onTaskClick} />
           ))}
         </div>
         {procedure.steps.length === 0 && <p className="text-xs text-gray-400 italic">No steps defined.</p>}

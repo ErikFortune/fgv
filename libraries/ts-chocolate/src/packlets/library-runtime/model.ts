@@ -517,7 +517,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * The fully resolved procedure object.
    */
-  readonly procedure: IProcedureEntity;
+  readonly procedure: IProcedure;
 
   /**
    * Optional notes specific to using this procedure with the recipe.
@@ -544,7 +544,7 @@ export interface IResolvedProcedures {
    * The recommended/default procedure - fully resolved.
    * Undefined if no recommended procedure is specified.
    */
-  readonly recommendedProcedure?: IProcedureEntity;
+  readonly recommendedProcedure?: IProcedure;
 }
 
 // ============================================================================

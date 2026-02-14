@@ -270,13 +270,28 @@ describe('Procedure', () => {
       expect(proc.category).toBeUndefined();
     });
 
-    test('returns steps array', () => {
+    test('returns steps array with correct order', () => {
       const id = 'test.multi-step' as ProcedureId;
       const proc = Procedure.create(stubContext, id, multiStepProcedure).orThrow();
       expect(proc.steps).toHaveLength(3);
       expect(proc.steps[0].order).toBe(1);
       expect(proc.steps[1].order).toBe(2);
       expect(proc.steps[2].order).toBe(3);
+    });
+
+    test('steps for inline tasks have no resolvedTask', () => {
+      const id = 'test.simple' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
+      expect(proc.steps).toHaveLength(1);
+      expect(proc.steps[0].resolvedTask).toBeUndefined();
+    });
+
+    test('steps are cached after first access', () => {
+      const id = 'test.simple' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
+      const first = proc.steps;
+      const second = proc.steps;
+      expect(first).toBe(second);
     });
 
     test('returns tags when present', () => {
@@ -497,6 +512,76 @@ describe('Procedure', () => {
       expect(proc.render(renderContext)).toSucceedAndSatisfy((rendered) => {
         expect(rendered.description).toBe('A test procedure with description');
       });
+    });
+  });
+
+  // ============================================================================
+  // Tests - steps with task references (resolved eagerly)
+  // ============================================================================
+
+  describe('steps - task reference resolution', () => {
+    let context: IProcedureContext;
+
+    beforeEach(() => {
+      const tasks = TasksLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: { testTask: taskEntity }
+          }
+        ]
+      }).orThrow();
+
+      const entityLib = ChocolateEntityLibrary.create({ libraries: { tasks } }).orThrow();
+      const library = ChocolateLibrary.fromChocolateEntityLibrary(entityLib).orThrow();
+      context = library;
+    });
+
+    test('steps resolves task ref to resolvedTask', () => {
+      const procedureWithTaskRef: IProcedureEntity = {
+        baseId: 'with-task-ref' as BaseProcedureId,
+        name: 'Procedure With Task Ref',
+        steps: [
+          {
+            order: 1,
+            task: {
+              taskId: 'test.testTask' as TaskId,
+              params: { ingredient: 'chocolate', temp: 50 }
+            },
+            activeTime: 5 as Minutes
+          }
+        ]
+      };
+
+      const id = 'test.with-task-ref' as ProcedureId;
+      const proc = Procedure.create(context, id, procedureWithTaskRef).orThrow();
+      expect(proc.steps).toHaveLength(1);
+      expect(proc.steps[0].resolvedTask).toBeDefined();
+      expect(proc.steps[0].resolvedTask!.name).toBe('Test Task');
+    });
+
+    test('steps returns step without resolvedTask when task ref not found', () => {
+      const procedureWithBadRef: IProcedureEntity = {
+        baseId: 'bad-ref' as BaseProcedureId,
+        name: 'Procedure With Bad Ref',
+        steps: [
+          {
+            order: 1,
+            task: {
+              taskId: 'test.nonexistent' as TaskId,
+              params: {}
+            }
+          }
+        ]
+      };
+
+      const id = 'test.bad-ref' as ProcedureId;
+      const proc = Procedure.create(context, id, procedureWithBadRef).orThrow();
+      expect(proc.steps).toHaveLength(1);
+      expect(proc.steps[0].resolvedTask).toBeUndefined();
+      expect(proc.steps[0].order).toBe(1);
     });
   });
 

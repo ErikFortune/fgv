@@ -40,7 +40,8 @@ import {
   IProcedure,
   IProcedureRenderContext,
   IRenderedProcedure,
-  IRenderedStep
+  IRenderedStep,
+  IResolvedProcedureStep
 } from './model';
 
 // ============================================================================
@@ -64,6 +65,7 @@ export class Procedure implements IProcedure {
   private readonly _context: IProcedureContext;
   private readonly _id: ProcedureId;
   private readonly _procedure: IProcedureEntity;
+  private _resolvedSteps: ReadonlyArray<IResolvedProcedureStep> | undefined;
 
   private constructor(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity) {
     this._context = context;
@@ -130,10 +132,14 @@ export class Procedure implements IProcedure {
   }
 
   /**
-   * Steps of the procedure in order
+   * Steps of the procedure in order, with resolved task references.
+   * Lazily resolved on first access and cached.
    */
-  public get steps(): ReadonlyArray<IProcedureStepEntity> {
-    return this._procedure.steps;
+  public get steps(): ReadonlyArray<IResolvedProcedureStep> {
+    if (this._resolvedSteps === undefined) {
+      this._resolvedSteps = this._procedure.steps.map((step) => this._resolveStep(step));
+    }
+    return this._resolvedSteps;
   }
 
   /**
@@ -231,6 +237,30 @@ export class Procedure implements IProcedure {
         });
       }
     );
+  }
+
+  /**
+   * Resolves a single step's task reference (without rendering templates).
+   * For task refs, looks up the runtime Task and attaches it.
+   * For inline tasks, returns the step as-is (no resolvedTask).
+   *
+   * @param step - The procedure step to resolve
+   * @returns The resolved step with optional resolvedTask
+   */
+  private _resolveStep(step: IProcedureStepEntity): IResolvedProcedureStep {
+    const invocation = step.task;
+
+    if (Tasks.isTaskRefEntity(invocation)) {
+      const taskResult = this._context.tasks.get(invocation.taskId as TaskId);
+      if (taskResult.isSuccess()) {
+        return { ...step, resolvedTask: taskResult.value };
+      }
+      // If task resolution fails, return step without resolvedTask
+      return { ...step };
+    }
+
+    // Inline tasks: no resolvedTask
+    return { ...step };
   }
 
   /**

@@ -4222,7 +4222,7 @@ interface IProcedure {
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
     readonly stepCount: number;
-    readonly steps: ReadonlyArray<IProcedureStepEntity>;
+    readonly steps: ReadonlyArray<IResolvedProcedureStep>;
     readonly tags?: ReadonlyArray<string>;
     readonly totalActiveTime: Minutes | undefined;
     readonly totalHoldTime: Minutes | undefined;
@@ -4489,7 +4489,7 @@ interface IResolvedFillingRecipeProcedure {
     readonly entity: Fillings.IProcedureRefEntity;
     readonly id: ProcedureId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly procedure: IProcedureEntity;
+    readonly procedure: IProcedure;
 }
 
 // @public
@@ -4539,7 +4539,12 @@ interface IResolvedIngredientSlotEntity {
 // @public
 interface IResolvedProcedures {
     readonly procedures: ReadonlyArray<IResolvedFillingRecipeProcedure>;
-    readonly recommendedProcedure?: IProcedureEntity;
+    readonly recommendedProcedure?: IProcedure;
+}
+
+// @public
+interface IResolvedProcedureStep extends IProcedureStepEntity {
+    readonly resolvedTask?: Task;
 }
 
 // @public
@@ -5565,6 +5570,7 @@ declare namespace LibraryRuntime {
         IProcedureRenderContext,
         IRenderedProcedure,
         IRenderedStep,
+        IResolvedProcedureStep,
         Procedure,
         IMoldContext,
         IMold,
@@ -6167,7 +6173,7 @@ class Procedure implements IProcedure {
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
     get stepCount(): number;
-    get steps(): ReadonlyArray<IProcedureStepEntity>;
+    get steps(): ReadonlyArray<IResolvedProcedureStep>;
     get tags(): ReadonlyArray<string> | undefined;
     get totalActiveTime(): Minutes | undefined;
     get totalHoldTime(): Minutes | undefined;

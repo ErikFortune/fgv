@@ -51,7 +51,7 @@ Available procedures for this recipe - fully resolved.
 
 </td><td>
 
-[IProcedureEntity](../../interfaces/IProcedureEntity.md)
+[IProcedure](../../interfaces/IProcedure.md)
 
 </td><td>
 

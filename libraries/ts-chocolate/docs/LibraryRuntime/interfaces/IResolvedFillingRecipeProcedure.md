@@ -52,7 +52,7 @@ The procedure ID (for consistency with IResolvedConfectionProcedure).
 
 </td><td>
 
-[IProcedureEntity](../../interfaces/IProcedureEntity.md)
+[IProcedure](../../interfaces/IProcedure.md)
 
 </td><td>
 

@@ -1,5 +1,5 @@
 /**
- * @fgv/ts-app-shell - Shared React UI primitives for application shells.
+ * \@fgv/ts-app-shell - Shared React UI primitives for application shells.
  *
  * Provides reusable components for:
  * - Column cascade (master-detail drill-down)

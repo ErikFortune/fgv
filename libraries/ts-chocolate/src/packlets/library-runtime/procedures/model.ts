@@ -88,6 +88,24 @@ export interface IProcedureRenderContext {
 }
 
 // ============================================================================
+// Resolved Procedure Step
+// ============================================================================
+
+/**
+ * A procedure step with resolved task reference.
+ * For task ref steps, includes the resolved runtime Task object.
+ * For inline tasks, resolvedTask is undefined.
+ * @public
+ */
+export interface IResolvedProcedureStep extends IProcedureStepEntity {
+  /**
+   * The resolved task (if a task ref was used).
+   * Undefined for inline tasks.
+   */
+  readonly resolvedTask?: Task;
+}
+
+// ============================================================================
 // Rendered Step
 // ============================================================================
 
@@ -188,8 +206,8 @@ export interface IProcedure {
   /** Optional category this procedure applies to */
   readonly category?: ProcedureType;
 
-  /** Steps of the procedure in order */
-  readonly steps: ReadonlyArray<IProcedureStepEntity>;
+  /** Steps of the procedure in order, with resolved task references */
+  readonly steps: ReadonlyArray<IResolvedProcedureStep>;
 
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;

@@ -357,7 +357,7 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
     // Return recommended procedure if set, otherwise first procedure
     if (this.procedures.recommendedProcedure) {
       return this.procedures.procedures.find(
-        (p) => p.procedure.baseId === this.procedures!.recommendedProcedure!.baseId
+        (p) => p.procedure.id === this.procedures!.recommendedProcedure!.id
       );
     }
     return this.procedures.procedures[0];
@@ -386,7 +386,7 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
         .asResult.onSuccess((procedure) => {
           resolvedProcedures.push({
             id: ref.id,
-            procedure: procedure.entity,
+            procedure,
             notes: ref.notes,
             entity: ref
           });
@@ -401,7 +401,7 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
       this._context.procedures
         .get(procedureEntities.preferredId)
         .asResult.onSuccess((procedure) => {
-          recommendedProcedure = procedure.entity;
+          recommendedProcedure = procedure;
           return Success.with(undefined);
         })
         .aggregateError(errors, (msg) => `recommended procedure ${procedureEntities.preferredId}: ${msg}`);
