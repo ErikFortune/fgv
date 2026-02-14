@@ -20,5 +20,7 @@
  * SOFTWARE.
  */
 
+export { EntityRow } from './EntityRow';
+export type { IEntityRowProps } from './EntityRow';
 export { PreferredSelector } from './PreferredSelector';
 export type { IPreferredSelectorProps, ISelectableItem } from './PreferredSelector';

@@ -244,7 +244,17 @@ All changes are breaking (acceptable — ts-chocolate is new with no external de
 
 **Assessment checkpoint before Phase 4:** Confirm no surprises in the read-only experience.
 
-### Phase 4: Editing (Library)
+### Phase 4a: Editing (Library Collections)
+**Scope:** Make Library collections editable.
+
+- Collection management additions to sidebar
+- Collection as filter - show and hide collection contents 
+- Collection management - Add from file, create new, remove
+- Visual indicator for immutable collections - cannot be deleted
+- Visual indicator for protected (encrypted) collections indicating if they've been unlocked.  Command to enter password to unlock locked collections.
+- Indicator for collections with unsaved changes.  Auto-save and manual save.
+
+### Phase 4b: Editing (Library)
 **Scope:** Make Library entities editable.
 
 - Produced* wrapper integration (editing context per column)

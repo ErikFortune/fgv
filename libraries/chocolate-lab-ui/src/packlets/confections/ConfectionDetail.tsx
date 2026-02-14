@@ -25,9 +25,10 @@
  * @packageDocumentation
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { PreferredSelector } from '@fgv/ts-app-shell';
+import { EntityRow } from '@fgv/ts-app-shell';
+import type { ISelectableItem } from '@fgv/ts-app-shell';
 import type {
   LibraryRuntime,
   Model,
@@ -234,9 +235,7 @@ function FillingSlotRow({
     }));
   }, [slot]);
 
-  const [selectedId, setSelectedId] = useState(slot.filling.preferredId ?? slot.filling.options[0]?.id ?? '');
-
-  const handleDrillDown = useMemo(() => {
+  const handleClick = useMemo(() => {
     if (!onFillingClick && !onIngredientClick) {
       return undefined;
     }
@@ -251,15 +250,9 @@ function FillingSlotRow({
   }, [slot, onFillingClick, onIngredientClick]);
 
   return (
-    <div className="mb-2">
-      <div className="text-xs text-gray-400 mb-0.5">{slot.name ?? slot.slotId}</div>
-      <PreferredSelector
-        items={items}
-        selectedId={selectedId}
-        preferredId={slot.filling.preferredId}
-        onSelect={setSelectedId}
-        onDrillDown={handleDrillDown}
-      />
+    <div className="mb-1">
+      <div className="text-xs text-gray-400 mb-0.5 pl-[22px]">{slot.name ?? slot.slotId}</div>
+      <EntityRow items={items} preferredId={slot.filling.preferredId} onClick={handleClick} />
     </div>
   );
 }
@@ -309,19 +302,9 @@ function ProceduresSection({
     }));
   }, [procedures]);
 
-  const [selectedId, setSelectedId] = useState<ProcedureId>(
-    procedures.preferredId ?? procedures.options[0]?.id ?? ('' as ProcedureId)
-  );
-
   return (
     <DetailSection title="Procedures">
-      <PreferredSelector<ProcedureId>
-        items={items}
-        selectedId={selectedId}
-        preferredId={procedures.preferredId}
-        onSelect={setSelectedId}
-        onDrillDown={onProcedureClick}
-      />
+      <EntityRow<ProcedureId> items={items} preferredId={procedures.preferredId} onClick={onProcedureClick} />
     </DetailSection>
   );
 }
@@ -340,24 +323,16 @@ function ChocolateSpecSection({
   readonly onIngredientClick?: (id: IngredientId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
-    const result = [{ id: spec.chocolate.id, label: spec.chocolate.name }];
+    const result: ISelectableItem<IngredientId>[] = [{ id: spec.chocolate.id, label: spec.chocolate.name }];
     for (const alt of spec.alternates) {
       result.push({ id: alt.id, label: alt.name });
     }
     return result;
   }, [spec]);
 
-  const [selectedId, setSelectedId] = useState<IngredientId>(spec.chocolate.id);
-
   return (
     <DetailSection title={title}>
-      <PreferredSelector<IngredientId>
-        items={items}
-        selectedId={selectedId}
-        preferredId={spec.chocolate.id}
-        onSelect={setSelectedId}
-        onDrillDown={onIngredientClick}
-      />
+      <EntityRow<IngredientId> items={items} preferredId={spec.chocolate.id} onClick={onIngredientClick} />
     </DetailSection>
   );
 }
@@ -381,19 +356,9 @@ function MoldsSection({
     }));
   }, [molds]);
 
-  const [selectedId, setSelectedId] = useState<MoldId>(
-    molds.preferredId ?? molds.options[0]?.id ?? ('' as MoldId)
-  );
-
   return (
     <DetailSection title="Molds">
-      <PreferredSelector<MoldId>
-        items={items}
-        selectedId={selectedId}
-        preferredId={molds.preferredId}
-        onSelect={setSelectedId}
-        onDrillDown={onMoldClick}
-      />
+      <EntityRow<MoldId> items={items} preferredId={molds.preferredId} onClick={onMoldClick} />
     </DetailSection>
   );
 }
@@ -462,18 +427,12 @@ function CoatingsSection({
     }));
   }, [coatings]);
 
-  const [selectedId, setSelectedId] = useState<IngredientId>(
-    coatings.preferred?.id ?? coatings.options[0]?.id ?? ('' as IngredientId)
-  );
-
   return (
     <DetailSection title="Coatings">
-      <PreferredSelector<IngredientId>
+      <EntityRow<IngredientId>
         items={items}
-        selectedId={selectedId}
         preferredId={coatings.preferred?.id}
-        onSelect={setSelectedId}
-        onDrillDown={onIngredientClick}
+        onClick={onIngredientClick}
       />
     </DetailSection>
   );
@@ -601,8 +560,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
   const variationItems = useMemo(() => {
     return confection.variations.map((v) => ({
       id: v.variationSpec,
-      label: v.variationSpec,
-      sublabel: v.createdDate
+      label: v.variationSpec
     }));
   }, [confection]);
 
@@ -620,14 +578,16 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
 
       {/* Variation selector */}
       {confection.variations.length > 1 && (
-        <PreferredSelector<ConfectionRecipeVariationSpec>
-          items={variationItems}
-          selectedId={selectedSpec}
-          preferredId={confection.goldenVariationSpec}
-          onSelect={setSelectedSpec}
-          onCompare={onCompareVariations}
-          label="Variations"
-        />
+        <div className="mb-4">
+          <EntityRow<ConfectionRecipeVariationSpec>
+            items={variationItems}
+            selectedId={selectedSpec}
+            preferredId={confection.goldenVariationSpec}
+            onSelect={setSelectedSpec}
+            onCompare={onCompareVariations}
+            label="Variations"
+          />
+        </div>
       )}
 
       {/* Yield */}
