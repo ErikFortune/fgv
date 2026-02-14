@@ -2,10 +2,11 @@
 
 ## IConfectionRecipeVariationBase.decorations property
 
-Optional decorations for this variation.
+Resolved decorations for this variation.
+Undefined if the variation has no decorations.
 
 **Signature:**
 
 ```typescript
-readonly decorations: readonly IConfectionDecoration[];
+readonly decorations: IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>;
 ```

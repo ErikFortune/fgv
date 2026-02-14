@@ -2,10 +2,10 @@
 
 ## IConfectionRecipeVariationEntityBase.decorations property
 
-Optional decorations for this variation
+Optional decoration references with preferred selection
 
 **Signature:**
 
 ```typescript
-readonly decorations: readonly IConfectionDecoration[];
+readonly decorations: IOptionsWithPreferred<IDecorationRefEntity, DecorationId>;
 ```

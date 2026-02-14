@@ -29,7 +29,7 @@ Frame-based yield specification for molded bonbons.
 
 </td><td>
 
-Decoration specification for a Entities.Confections.AnyConfectionEntity | confection.
+
 
 </td></tr>
 <tr><td>

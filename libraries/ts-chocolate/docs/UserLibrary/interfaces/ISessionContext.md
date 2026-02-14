@@ -46,6 +46,23 @@ Materialized library of runtime molds.
 </td></tr>
 <tr><td>
 
+[decorations](./ISessionContext.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[DecorationId](../../type-aliases/DecorationId.md), [IDecorationEntity](../../interfaces/IDecorationEntity.md), [IDecoration](../../interfaces/IDecoration.md), never&gt;
+
+</td><td>
+
+Materialized library of runtime decorations.
+
+</td></tr>
+<tr><td>
+
 [confections](./ISessionContext.confections.md)
 
 </td><td>

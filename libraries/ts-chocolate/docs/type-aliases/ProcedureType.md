@@ -2,10 +2,10 @@
 
 # Type Alias: ProcedureType
 
-Procedure type - can be a filling category, confection type, or other
+Procedure type - can be a filling category, confection type, decoration, or other
 
 ## Type
 
 ```typescript
-type ProcedureType = FillingCategory | ConfectionType | "other"
+type ProcedureType = FillingCategory | ConfectionType | "decoration" | "other"
 ```

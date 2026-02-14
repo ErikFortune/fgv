@@ -89,6 +89,15 @@ In-place `Validator` for BaseConfectionId | BaseConfectionId.
 </td></tr>
 <tr><td>
 
+[baseDecorationId](./variables/baseDecorationId.md)
+
+</td><td>
+
+In-place `Validator` for BaseDecorationId | BaseDecorationId.
+
+</td></tr>
+<tr><td>
+
 [baseJournalId](./variables/baseJournalId.md)
 
 </td><td>
@@ -157,6 +166,15 @@ In-place `Validator` for TaskId | TaskId (composite string).
 </td><td>
 
 In-place `Validator` for ConfectionId | ConfectionId (composite string).
+
+</td></tr>
+<tr><td>
+
+[decorationId](./variables/decorationId.md)
+
+</td><td>
+
+In-place `Validator` for DecorationId | DecorationId (composite string).
 
 </td></tr>
 <tr><td>

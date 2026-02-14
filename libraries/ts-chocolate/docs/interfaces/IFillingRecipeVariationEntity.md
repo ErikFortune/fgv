@@ -43,6 +43,23 @@ Unique identifier for this variation
 </td></tr>
 <tr><td>
 
+[name](./IFillingRecipeVariationEntity.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional human-readable name for this variation.
+
+</td></tr>
+<tr><td>
+
 [createdDate](./IFillingRecipeVariationEntity.createdDate.md)
 
 </td><td>

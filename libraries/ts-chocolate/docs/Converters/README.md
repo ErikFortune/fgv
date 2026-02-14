@@ -18,6 +18,15 @@ Description
 <tbody>
 <tr><td>
 
+[ParsedDecorationId](./type-aliases/ParsedDecorationId.md)
+
+</td><td>
+
+Type alias for parsed DecorationId | DecorationId components.
+
+</td></tr>
+<tr><td>
+
 [ParsedIngredientId](./type-aliases/ParsedIngredientId.md)
 
 </td><td>
@@ -235,6 +244,15 @@ Converter for BaseConfectionId | BaseConfectionId.
 </td></tr>
 <tr><td>
 
+[baseDecorationId](./variables/baseDecorationId.md)
+
+</td><td>
+
+Converter for BaseDecorationId | BaseDecorationId.
+
+</td></tr>
+<tr><td>
+
 [baseJournalId](./variables/baseJournalId.md)
 
 </td><td>
@@ -294,6 +312,24 @@ Converter for TaskId | TaskId (composite string).
 </td><td>
 
 Converter for ConfectionId | ConfectionId (composite string).
+
+</td></tr>
+<tr><td>
+
+[decorationId](./variables/decorationId.md)
+
+</td><td>
+
+Converter for DecorationId | DecorationId (composite string).
+
+</td></tr>
+<tr><td>
+
+[parsedDecorationId](./variables/parsedDecorationId.md)
+
+</td><td>
+
+Converter that parses a DecorationId | DecorationId string into its component parts
 
 </td></tr>
 <tr><td>

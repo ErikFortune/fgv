@@ -291,11 +291,11 @@ Gets effective URLs for the golden variation (base + variation's additional URLs
 
 </td><td>
 
-readonly [IConfectionDecoration](IConfectionDecoration.md)[]
+[IOptionsWithPreferred](IOptionsWithPreferred.md)&lt;[IResolvedConfectionDecorationRef](IResolvedConfectionDecorationRef.md), [DecorationId](../type-aliases/DecorationId.md)&gt;
 
 </td><td>
 
-Decorations from the golden variation
+Resolved decorations from the golden variation
 
 </td></tr>
 <tr><td>

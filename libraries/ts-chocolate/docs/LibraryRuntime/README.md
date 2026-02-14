@@ -343,6 +343,15 @@ A resolved view of a procedure with proper task resolution.
 A resolved view of a mold with computed properties.
 
 </td></tr>
+<tr><td>
+
+[Decoration](./classes/Decoration.md)
+
+</td><td>
+
+A resolved view of a decoration with materialized ingredient references.
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -638,6 +647,15 @@ A resolved mold reference with the full mold object.
 </td></tr>
 <tr><td>
 
+[IResolvedConfectionDecorationRef](./interfaces/IResolvedConfectionDecorationRef.md)
+
+</td><td>
+
+A resolved decoration reference with the full decoration object.
+
+</td></tr>
+<tr><td>
+
 [IResolvedConfectionProcedure](./interfaces/IResolvedConfectionProcedure.md)
 
 </td><td>
@@ -859,6 +877,24 @@ A procedure step with resolved task reference.
 </td><td>
 
 A resolved runtime view of a mold with computed properties.
+
+</td></tr>
+<tr><td>
+
+[IDecoration](./interfaces/IDecoration.md)
+
+</td><td>
+
+A resolved view of a decoration with materialized ingredient and procedure references.
+
+</td></tr>
+<tr><td>
+
+[IResolvedDecorationIngredient](./interfaces/IResolvedDecorationIngredient.md)
+
+</td><td>
+
+A resolved decoration ingredient with runtime ingredient reference.
 
 </td></tr>
 </tbody></table>

@@ -148,6 +148,23 @@ The Entities.Tasks.TasksLibrary | tasks library.
 The Entities.Confections.ConfectionsLibrary | confections library.
 
 </td></tr>
+<tr><td>
+
+[decorations](./ChocolateEntityLibrary.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[DecorationsLibrary](../../classes/DecorationsLibrary.md)
+
+</td><td>
+
+The Entities.Decorations.DecorationsLibrary | decorations library.
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -255,6 +272,19 @@ Get an editable tasks collection with persistence enabled.
 </td><td>
 
 Get an editable confections collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableDecorationsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableDecorationsEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable decorations collection with persistence enabled.
 
 </td></tr>
 </tbody></table>

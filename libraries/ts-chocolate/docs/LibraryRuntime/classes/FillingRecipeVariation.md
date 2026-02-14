@@ -62,6 +62,23 @@ The variation specifier
 </td></tr>
 <tr><td>
 
+[name](./FillingRecipeVariation.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string | undefined
+
+</td><td>
+
+Optional human-readable name for this variation.
+
+</td></tr>
+<tr><td>
+
 [createdDate](./FillingRecipeVariation.createdDate.md)
 
 </td><td>

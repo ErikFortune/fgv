@@ -153,6 +153,23 @@ Gets the materialized molds library from the confection context.
 </td></tr>
 <tr><td>
 
+[decorations](./UserLibrary.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](MaterializedLibrary.md)&lt;[DecorationId](../type-aliases/DecorationId.md), [IDecorationEntity](../interfaces/IDecorationEntity.md), [IDecoration](../interfaces/IDecoration.md), never&gt;
+
+</td><td>
+
+Gets the materialized decorations library from the confection context.
+
+</td></tr>
+<tr><td>
+
 [ingredients](./UserLibrary.ingredients.md)
 
 </td><td>

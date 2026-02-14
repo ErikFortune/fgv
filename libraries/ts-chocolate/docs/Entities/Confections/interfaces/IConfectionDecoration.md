@@ -2,7 +2,7 @@
 
 # Interface: IConfectionDecoration
 
-Decoration specification for a Entities.Confections.AnyConfectionEntity | confection.
+
 
 ## Properties
 

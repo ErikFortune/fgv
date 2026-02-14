@@ -142,4 +142,17 @@ Gets the tasks directory from the built-in library tree.
 Gets the confections directory from the built-in library tree.
 
 </td></tr>
+<tr><td>
+
+[getDecorationsDirectory()](./BuiltInData.getDecorationsDirectory.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Gets the decorations directory from the built-in library tree.
+
+</td></tr>
 </tbody></table>

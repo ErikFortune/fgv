@@ -127,4 +127,21 @@ Pre-built tasks library
 Pre-built confections library
 
 </td></tr>
+<tr><td>
+
+[decorations](./IInstantiatedEntityLibrarySources.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[DecorationsLibrary](../classes/DecorationsLibrary.md)
+
+</td><td>
+
+Pre-built decorations library
+
+</td></tr>
 </tbody></table>

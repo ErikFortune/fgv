@@ -527,6 +527,24 @@ Globally unique confection variation identifier (composite)
 </td></tr>
 <tr><td>
 
+[BaseDecorationId](./type-aliases/BaseDecorationId.md)
+
+</td><td>
+
+Decoration identifier within a single collection
+
+</td></tr>
+<tr><td>
+
+[DecorationId](./type-aliases/DecorationId.md)
+
+</td><td>
+
+Globally unique decoration identifier (composite)
+
+</td></tr>
+<tr><td>
+
 [SessionSpec](./type-aliases/SessionSpec.md)
 
 </td><td>
@@ -792,7 +810,7 @@ Filling recipe category for classification
 
 </td><td>
 
-Procedure type - can be a filling category, confection type, or other
+Procedure type - can be a filling category, confection type, decoration, or other
 
 </td></tr>
 <tr><td>

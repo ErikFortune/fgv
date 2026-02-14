@@ -46,6 +46,23 @@ Variation specifier for this variation.
 </td></tr>
 <tr><td>
 
+[name](./ConfectionRecipeVariationBase.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string | undefined
+
+</td><td>
+
+Optional human-readable name for this variation.
+
+</td></tr>
+<tr><td>
+
 [createdDate](./ConfectionRecipeVariationBase.createdDate.md)
 
 </td><td>
@@ -156,11 +173,11 @@ Yield specification for this variation.
 
 </td><td>
 
-readonly [IConfectionDecoration](../interfaces/IConfectionDecoration.md)[] | undefined
+[IOptionsWithPreferred](../interfaces/IOptionsWithPreferred.md)&lt;[IResolvedConfectionDecorationRef](../interfaces/IResolvedConfectionDecorationRef.md), [DecorationId](../type-aliases/DecorationId.md)&gt; | undefined
 
 </td><td>
 
-Optional decorations for this variation.
+Resolved decorations for this variation.
 
 </td></tr>
 <tr><td>
@@ -266,6 +283,19 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[getDecorations()](./ConfectionRecipeVariationBase.getDecorations.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved decorations for this variation.
+
+</td></tr>
 <tr><td>
 
 [getFillings()](./ConfectionRecipeVariationBase.getFillings.md)

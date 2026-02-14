@@ -7,5 +7,5 @@ Identifiers for sub-libraries within the chocolate library system.
 ## Type
 
 ```typescript
-type SubLibraryId = "ingredients" | "fillings" | "journals" | "molds" | "procedures" | "tasks" | "confections" | "sessions" | "moldInventory" | "ingredientInventory"
+type SubLibraryId = "ingredients" | "fillings" | "journals" | "molds" | "procedures" | "tasks" | "confections" | "decorations" | "sessions" | "moldInventory" | "ingredientInventory"
 ```

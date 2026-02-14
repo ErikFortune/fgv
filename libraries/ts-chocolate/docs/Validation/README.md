@@ -144,6 +144,24 @@ Validates unknown value is a BaseConfectionId | BaseConfectionId.
 </td></tr>
 <tr><td>
 
+[isValidBaseDecorationId](./functions/isValidBaseDecorationId.md)
+
+</td><td>
+
+Type guard for BaseDecorationId | BaseDecorationId.
+
+</td></tr>
+<tr><td>
+
+[toBaseDecorationId](./functions/toBaseDecorationId.md)
+
+</td><td>
+
+Validates unknown value is a BaseDecorationId | BaseDecorationId.
+
+</td></tr>
+<tr><td>
+
 [isValidNoteCategory](./functions/isValidNoteCategory.md)
 
 </td><td>

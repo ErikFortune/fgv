@@ -604,6 +604,15 @@ Gets the confections directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getDecorationsDirectory](./functions/getDecorationsDirectory.md)
+
+</td><td>
+
+Gets the decorations directory from a library tree.
+
+</td></tr>
+<tr><td>
+
 [getSessionsDirectory](./functions/getSessionsDirectory.md)
 
 </td><td>

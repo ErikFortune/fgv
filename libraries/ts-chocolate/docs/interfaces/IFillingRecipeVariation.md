@@ -68,6 +68,23 @@ Variation spec portion of the identifier.
 </td></tr>
 <tr><td>
 
+[name](./IFillingRecipeVariation.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional human-readable name for this variation.
+
+</td></tr>
+<tr><td>
+
 [createdDate](./IFillingRecipeVariation.createdDate.md)
 
 </td><td>

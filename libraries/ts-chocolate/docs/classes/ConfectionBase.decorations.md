@@ -2,10 +2,10 @@
 
 ## ConfectionBase.decorations property
 
-Decorations from the golden variation
+Resolved decorations from the golden variation
 
 **Signature:**
 
 ```typescript
-readonly decorations: readonly IConfectionDecoration[] | undefined;
+readonly decorations: IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId> | undefined;
 ```

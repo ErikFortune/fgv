@@ -96,6 +96,23 @@ Variation specifier for this variation.
 </td></tr>
 <tr><td>
 
+[name](./IConfectionRecipeVariationBase.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional human-readable name for this variation.
+
+</td></tr>
+<tr><td>
+
 [createdDate](./IConfectionRecipeVariationBase.createdDate.md)
 
 </td><td>
@@ -172,11 +189,11 @@ Yield specification for this variation.
 
 </td><td>
 
-readonly [IConfectionDecoration](IConfectionDecoration.md)[]
+[IOptionsWithPreferred](IOptionsWithPreferred.md)&lt;[IResolvedConfectionDecorationRef](IResolvedConfectionDecorationRef.md), [DecorationId](../type-aliases/DecorationId.md)&gt;
 
 </td><td>
 
-Optional decorations for this variation.
+Resolved decorations for this variation.
 
 </td></tr>
 <tr><td>

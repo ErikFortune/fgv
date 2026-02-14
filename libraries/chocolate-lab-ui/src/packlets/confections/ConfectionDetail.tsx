@@ -600,6 +600,9 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
         </div>
       )}
 
+      {/* Variation spec subtitle */}
+      <p className="text-[10px] text-gray-400 font-mono -mt-3 mb-4">{selectedVariation.variationSpec}</p>
+
       {/* Yield */}
       <YieldSection yieldSpec={selectedVariation.yield} />
 

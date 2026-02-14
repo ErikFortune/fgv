@@ -190,11 +190,11 @@ The ID of the golden (approved default) variation
 
 </td><td>
 
-readonly [IConfectionDecoration](../interfaces/IConfectionDecoration.md)[] | undefined
+[IOptionsWithPreferred](../interfaces/IOptionsWithPreferred.md)&lt;[IResolvedConfectionDecorationRef](../interfaces/IResolvedConfectionDecorationRef.md), [DecorationId](../type-aliases/DecorationId.md)&gt; | undefined
 
 </td><td>
 
-Decorations from the golden variation
+Resolved decorations from the golden variation
 
 </td></tr>
 <tr><td>

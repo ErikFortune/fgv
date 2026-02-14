@@ -20,7 +20,9 @@ The tree is structured to mirror a real filesystem library:
     │   └── common.json
     ├── tasks/
     │   └── common.json
-    └── confections/
+    ├── confections/
+    │   └── common.json
+    └── decorations/
         └── common.json
 ```
 

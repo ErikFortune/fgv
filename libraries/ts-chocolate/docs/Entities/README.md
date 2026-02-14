@@ -36,6 +36,15 @@ Aggregated converters from all entity submodules
 </td></tr>
 <tr><td>
 
+[Decorations](./Decorations/README.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [Fillings](./Fillings/README.md)
 
 </td><td>
@@ -199,6 +208,15 @@ Multi-source mold library with type-safe access
 </td><td>
 
 Multi-source procedure library with type-safe access
+
+</td></tr>
+<tr><td>
+
+[DecorationsLibrary](./classes/DecorationsLibrary.md)
+
+</td><td>
+
+Multi-source decoration library with type-safe access
 
 </td></tr>
 <tr><td>
@@ -523,6 +541,42 @@ A single step in a procedure (persisted data model).
 </td></tr>
 <tr><td>
 
+[IDecorationEntity](./interfaces/IDecorationEntity.md)
+
+</td><td>
+
+A decoration entity — a first-class library entity describing a confection decoration.
+
+</td></tr>
+<tr><td>
+
+[IDecorationIngredientEntity](./interfaces/IDecorationIngredientEntity.md)
+
+</td><td>
+
+An ingredient used in a decoration, with alternates and an amount.
+
+</td></tr>
+<tr><td>
+
+[IDecorationRating](./interfaces/IDecorationRating.md)
+
+</td><td>
+
+Rating for a specific category of a decoration.
+
+</td></tr>
+<tr><td>
+
+[IDecorationRefEntity](./interfaces/IDecorationRefEntity.md)
+
+</td><td>
+
+Reference to a decoration entity from a confection variation.
+
+</td></tr>
+<tr><td>
+
 [ITaskEntity](./interfaces/ITaskEntity.md)
 
 </td><td>
@@ -763,6 +817,29 @@ Type guard for task ref - discriminates by presence of `taskId`
 </td><td>
 
 Type guard for inline task - discriminates by presence of `task`
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[allDecorationRatingCategories](./variables/allDecorationRatingCategories.md)
+
+</td><td>
+
+Valid rating categories for decorations
 
 </td></tr>
 </tbody></table>

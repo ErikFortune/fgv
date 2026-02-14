@@ -80,6 +80,23 @@ Unique identifier for this variation
 </td></tr>
 <tr><td>
 
+[name](./IConfectionRecipeVariationEntityBase.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional human-readable name for this variation
+
+</td></tr>
+<tr><td>
+
 [createdDate](./IConfectionRecipeVariationEntityBase.createdDate.md)
 
 </td><td>
@@ -139,11 +156,11 @@ Optional filling slots - each slot has independent options with a preferred sele
 
 </td><td>
 
-readonly [IConfectionDecoration](../../interfaces/IConfectionDecoration.md)[]
+[IOptionsWithPreferred](../../interfaces/IOptionsWithPreferred.md)&lt;[IDecorationRefEntity](../../interfaces/IDecorationRefEntity.md), [DecorationId](../../type-aliases/DecorationId.md)&gt;
 
 </td><td>
 
-Optional decorations for this variation
+Optional decoration references with preferred selection
 
 </td></tr>
 <tr><td>

@@ -7,5 +7,5 @@ Categories for rating a filling recipe variation
 ## Type
 
 ```typescript
-type RatingCategory = "overall" | "taste" | "texture" | "shelf-life" | "appearance" | "workability"
+type RatingCategory = "overall" | "taste" | "texture" | "shelf-life" | "appearance" | "workability" | "difficulty" | "durability"
 ```

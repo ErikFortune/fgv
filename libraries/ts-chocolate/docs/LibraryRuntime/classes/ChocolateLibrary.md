@@ -136,6 +136,23 @@ A materialized library of all tasks, keyed by composite ID.
 </td></tr>
 <tr><td>
 
+[decorations](./ChocolateLibrary.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[DecorationId](../../type-aliases/DecorationId.md), [IDecorationEntity](../../interfaces/IDecorationEntity.md), [Decoration](../../classes/Decoration.md), never&gt;
+
+</td><td>
+
+A materialized library of all decorations, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
 [ingredients](./ChocolateLibrary.ingredients.md)
 
 </td><td>
