@@ -1,5 +1,5 @@
 /**
- * @fgv/chocolate-lab-ui - Chocolate-specific React components for the Chocolate Lab application.
+ * \@fgv/chocolate-lab-ui - Chocolate-specific React components for the Chocolate Lab application.
  *
  * Provides components for:
  * - Entity presentation and editing (ingredients, fillings, confections, molds, procedures, tasks)

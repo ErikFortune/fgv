@@ -29,10 +29,61 @@ items:
               options:
                 - type: recipe
                   id: common.dark-ganache-classic
+                - type: recipe
+                  id: common.milk-ganache-classic
+                - type: recipe
+                  id: common.caramelized-ganache
               preferredId: common.dark-ganache-classic
         molds:
           options:
             - id: common.dome-25mm
+            - id: cw.chocolate-world-cw-2227
+          preferredId: common.dome-25mm
+        shellChocolate:
+          ids:
+            - cacao-barry.guayaquil-64
+            - common.chocolate-dark-64
+          preferredId: cacao-barry.guayaquil-64
+        procedures:
+          options:
+            - id: common.shell-bonbon-method
+          preferredId: common.shell-bonbon-method
+        decorations:
+          - description: Gold leaf accent on dome peak
+            preferred: true
+          - description: Cocoa butter transfer sheet design
+      - variationSpec: '2026-02-13-01'
+        createdDate: '2026-02-13'
+        notes:
+          - category: user
+            note: 'Dual-fill: gianduja base with dark ganache cap'
+        yield:
+          count: 24
+          unit: pieces
+          weightPerPiece: 14
+        fillings:
+          - slotId: inner
+            name: Gianduja Base
+            filling:
+              options:
+                - type: recipe
+                  id: common.gianduja-basic
+              preferredId: common.gianduja-basic
+          - slotId: center
+            name: Ganache Cap
+            filling:
+              options:
+                - type: recipe
+                  id: common.dark-ganache-classic
+                - type: recipe
+                  id: common.milk-ganache-classic
+                - type: recipe
+                  id: common.caramelized-ganache
+              preferredId: common.dark-ganache-classic
+        molds:
+          options:
+            - id: common.dome-25mm
+            - id: cw.chocolate-world-cw-2227
           preferredId: common.dome-25mm
         shellChocolate:
           ids:

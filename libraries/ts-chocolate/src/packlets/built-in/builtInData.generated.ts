@@ -1092,6 +1092,12 @@ export const ingredientCollections: Record<string, JsonObject> = {
         category: 'chocolate',
         chocolateType: 'dark',
         cacaoPercentage: 61,
+        urls: [
+          {
+            category: 'product-page',
+            url: 'https://www.guittard.com/our-chocolate/detail/pro_lever-du-soleil'
+          }
+        ],
         ganacheCharacteristics: {
           cacaoFat: 38,
           sugar: 37,
@@ -1331,6 +1337,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1380,6 +1389,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1440,6 +1452,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1500,6 +1515,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1551,6 +1569,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1617,6 +1638,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1677,6 +1701,9 @@ export const fillingCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
@@ -1879,6 +1906,12 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Chocolate World',
         productNumber: 'CW 2227',
         description: 'Hex Swirl',
+        urls: [
+          {
+            category: 'product-page',
+            url: 'https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227'
+          }
+        ],
         cavities: {
           kind: 'count',
           count: 32,
@@ -1917,12 +1950,11 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 1,
             task: {
-              task: {
-                baseId: 'ganache-cold-method-step-1',
-                name: 'Melt Chocolate',
-                template: 'Melt chocolate to 40-45C'
-              },
-              params: {}
+              taskId: 'common.melt-chocolate',
+              params: {
+                ingredient: 'chocolate',
+                temp: 45
+              }
             },
             activeTime: 5,
             temperature: 45
@@ -1930,12 +1962,11 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 2,
             task: {
-              task: {
-                baseId: 'ganache-cold-method-step-2',
-                name: 'Warm Cream',
-                template: 'Warm cream to 35C'
-              },
-              params: {}
+              taskId: 'common.warm-ingredient',
+              params: {
+                ingredient: 'cream',
+                temp: 35
+              }
             },
             activeTime: 3,
             temperature: 35
@@ -1943,24 +1974,21 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 3,
             task: {
-              task: {
-                baseId: 'ganache-cold-method-step-3',
-                name: 'Combine and Emulsify',
-                template: 'Combine and emulsify with immersion blender'
-              },
-              params: {}
+              taskId: 'common.combine-and-emulsify',
+              params: {
+                tool: 'immersion blender'
+              }
             },
             activeTime: 5
           },
           {
             order: 4,
             task: {
-              task: {
-                baseId: 'ganache-cold-method-step-4',
-                name: 'Add Butter',
-                template: 'Add butter at 35C and blend until smooth'
-              },
-              params: {}
+              taskId: 'common.add-and-blend',
+              params: {
+                ingredient: 'butter',
+                temp: 35
+              }
             },
             activeTime: 2,
             temperature: 35
@@ -1968,12 +1996,10 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 5,
             task: {
-              task: {
-                baseId: 'ganache-cold-method-step-5',
-                name: 'Rest',
-                template: 'Rest at room temperature'
-              },
-              params: {}
+              taskId: 'common.rest-at-temperature',
+              params: {
+                temp: 'room temperature'
+              }
             },
             waitTime: 30
           }
@@ -1988,12 +2014,10 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 1,
             task: {
-              task: {
-                baseId: 'ganache-hot-method-step-1',
-                name: 'Boil Cream',
-                template: 'Bring cream to boil'
-              },
-              params: {}
+              taskId: 'common.bring-to-boil',
+              params: {
+                ingredient: 'cream'
+              }
             },
             activeTime: 5,
             temperature: 100
@@ -2001,35 +2025,28 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 2,
             task: {
-              task: {
-                baseId: 'ganache-hot-method-step-2',
-                name: 'Pour Over Chocolate',
-                template: 'Pour over finely chopped chocolate'
-              },
-              params: {}
+              taskId: 'common.pour-over',
+              params: {
+                source: 'cream',
+                target: 'finely chopped chocolate'
+              }
             },
             activeTime: 1
           },
           {
             order: 3,
             task: {
-              task: {
-                baseId: 'ganache-hot-method-step-3',
-                name: 'Let Stand',
-                template: 'Let stand 1-2 minutes'
-              },
-              params: {}
+              taskId: 'common.let-stand',
+              params: {
+                duration: 2
+              }
             },
             waitTime: 2
           },
           {
             order: 4,
             task: {
-              task: {
-                baseId: 'ganache-hot-method-step-4',
-                name: 'Stir to Emulsify',
-                template: 'Stir from center outward to emulsify'
-              },
+              taskId: 'common.stir-to-emulsify',
               params: {}
             },
             activeTime: 5
@@ -2037,12 +2054,10 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 5,
             task: {
-              task: {
-                baseId: 'ganache-hot-method-step-5',
-                name: 'Add Butter',
-                template: 'Add butter and blend until smooth'
-              },
-              params: {}
+              taskId: 'common.blend-until-smooth',
+              params: {
+                ingredient: 'butter'
+              }
             },
             activeTime: 2
           }
@@ -2057,12 +2072,11 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 1,
             task: {
-              task: {
-                baseId: 'gianduja-step-1',
-                name: 'Roast Hazelnuts',
-                template: 'Roast hazelnuts at 150C until golden'
-              },
-              params: {}
+              taskId: 'common.roast-nuts',
+              params: {
+                nuts: 'hazelnuts',
+                temp: 150
+              }
             },
             activeTime: 15,
             temperature: 150
@@ -2070,11 +2084,7 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 2,
             task: {
-              task: {
-                baseId: 'gianduja-step-2',
-                name: 'Remove Skins',
-                template: 'Rub off skins while warm'
-              },
+              taskId: 'common.remove-skins',
               params: {}
             },
             activeTime: 5
@@ -2082,24 +2092,21 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 3,
             task: {
-              task: {
-                baseId: 'gianduja-step-3',
-                name: 'Grind to Paste',
-                template: 'Grind to paste in food processor'
-              },
-              params: {}
+              taskId: 'common.grind-to-paste',
+              params: {
+                ingredient: 'hazelnuts'
+              }
             },
             activeTime: 10
           },
           {
             order: 4,
             task: {
-              task: {
-                baseId: 'gianduja-step-4',
-                name: 'Melt Chocolate',
-                template: 'Melt chocolate to 45C'
-              },
-              params: {}
+              taskId: 'common.melt-chocolate',
+              params: {
+                ingredient: 'chocolate',
+                temp: 45
+              }
             },
             activeTime: 5,
             temperature: 45
@@ -2107,23 +2114,17 @@ export const procedureCollections: Record<string, JsonObject> = {
           {
             order: 5,
             task: {
-              task: {
-                baseId: 'gianduja-step-5',
-                name: 'Combine',
-                template: 'Combine paste and chocolate, mix until smooth'
-              },
-              params: {}
+              taskId: 'common.combine-and-mix',
+              params: {
+                ingredients: 'paste and chocolate'
+              }
             },
             activeTime: 5
           },
           {
             order: 6,
             task: {
-              task: {
-                baseId: 'gianduja-step-6',
-                name: 'Temper and Mold',
-                template: 'Temper and pour into molds'
-              },
+              taskId: 'common.temper-and-mold',
               params: {}
             },
             activeTime: 15
@@ -2591,6 +2592,14 @@ export const confectionCollections: Record<string, JsonObject> = {
                     {
                       type: 'recipe',
                       id: 'common.dark-ganache-classic'
+                    },
+                    {
+                      type: 'recipe',
+                      id: 'common.milk-ganache-classic'
+                    },
+                    {
+                      type: 'recipe',
+                      id: 'common.caramelized-ganache'
                     }
                   ],
                   preferredId: 'common.dark-ganache-classic'
@@ -2601,6 +2610,92 @@ export const confectionCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.dome-25mm'
+                },
+                {
+                  id: 'cw.chocolate-world-cw-2227'
+                }
+              ],
+              preferredId: 'common.dome-25mm'
+            },
+            shellChocolate: {
+              ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64'],
+              preferredId: 'cacao-barry.guayaquil-64'
+            },
+            procedures: {
+              options: [
+                {
+                  id: 'common.shell-bonbon-method'
+                }
+              ],
+              preferredId: 'common.shell-bonbon-method'
+            },
+            decorations: [
+              {
+                description: 'Gold leaf accent on dome peak',
+                preferred: true
+              },
+              {
+                description: 'Cocoa butter transfer sheet design'
+              }
+            ]
+          },
+          {
+            variationSpec: '2026-02-13-01',
+            createdDate: '2026-02-13',
+            notes: [
+              {
+                category: 'user',
+                note: 'Dual-fill: gianduja base with dark ganache cap'
+              }
+            ],
+            yield: {
+              count: 24,
+              unit: 'pieces',
+              weightPerPiece: 14
+            },
+            fillings: [
+              {
+                slotId: 'inner',
+                name: 'Gianduja Base',
+                filling: {
+                  options: [
+                    {
+                      type: 'recipe',
+                      id: 'common.gianduja-basic'
+                    }
+                  ],
+                  preferredId: 'common.gianduja-basic'
+                }
+              },
+              {
+                slotId: 'center',
+                name: 'Ganache Cap',
+                filling: {
+                  options: [
+                    {
+                      type: 'recipe',
+                      id: 'common.dark-ganache-classic'
+                    },
+                    {
+                      type: 'recipe',
+                      id: 'common.milk-ganache-classic'
+                    },
+                    {
+                      type: 'recipe',
+                      id: 'common.caramelized-ganache'
+                    }
+                  ],
+                  preferredId: 'common.dark-ganache-classic'
+                }
+              }
+            ],
+            molds: {
+              options: [
+                {
+                  id: 'common.dome-25mm'
+                },
+                {
+                  id: 'cw.chocolate-world-cw-2227'
                 }
               ],
               preferredId: 'common.dome-25mm'

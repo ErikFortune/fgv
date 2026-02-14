@@ -10,6 +10,9 @@ items:
     manufacturer: Chocolate World
     productNumber: CW 2227
     description: Hex Swirl
+    urls:
+      - category: product-page
+        url: https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227
     cavities:
       kind: count
       count: 32

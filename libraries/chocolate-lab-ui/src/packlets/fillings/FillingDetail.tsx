@@ -29,7 +29,7 @@ import React, { useMemo, useState } from 'react';
 
 import { EntityRow } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
-import type { IngredientId, FillingRecipeVariationSpec } from '@fgv/ts-chocolate';
+import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Props
@@ -44,6 +44,8 @@ export interface IFillingDetailProps {
   readonly filling: LibraryRuntime.FillingRecipe;
   /** Callback when an ingredient is clicked for cascade drill-down */
   readonly onIngredientClick?: (ingredientId: IngredientId) => void;
+  /** Callback when a procedure is clicked for cascade drill-down */
+  readonly onProcedureClick?: (procedureId: ProcedureId) => void;
   /** Callback to compare selected variations side-by-side */
   readonly onCompareVariations?: (specs: ReadonlyArray<FillingRecipeVariationSpec>) => void;
   /** Override the initially selected variation (defaults to golden) */
@@ -193,7 +195,7 @@ function RatingsSection({
  * @public
  */
 export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
-  const { filling, onIngredientClick, onCompareVariations, defaultVariationSpec } = props;
+  const { filling, onIngredientClick, onProcedureClick, onCompareVariations, defaultVariationSpec } = props;
 
   // Track selected variation (default to golden or override)
   const [selectedSpec, setSelectedSpec] = useState<FillingRecipeVariationSpec>(
@@ -275,6 +277,8 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
         </div>
         {ingredients.length === 0 && <p className="text-xs text-gray-400 italic">No ingredients resolved.</p>}
       </DetailSection>
+
+      {/* Procedures - TODO: add after subagent resolves runtime procedure entities */}
 
       {/* Ratings */}
       <RatingsSection ratings={selectedVariation.ratings} />

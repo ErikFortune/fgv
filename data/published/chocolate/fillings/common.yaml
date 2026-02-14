@@ -46,6 +46,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
       - variationSpec: 2026-02-13-01
         createdDate: '2026-02-13'
@@ -78,6 +79,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   milk-ganache-classic:
@@ -120,6 +122,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   white-ganache-classic:
@@ -164,6 +167,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   vegan-ganache-coconut-cream:
@@ -199,6 +203,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   vegan-ganache-coconut-oil:
@@ -244,6 +249,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   caramelized-ganache:
@@ -287,6 +293,7 @@ items:
         procedures:
           options:
             - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
           preferredId: common.ganache-cold-method
     goldenVariationSpec: 2026-01-01-01
   gianduja-basic:

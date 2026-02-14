@@ -41,6 +41,9 @@ items:
     category: chocolate
     chocolateType: dark
     cacaoPercentage: 61
+    urls:
+      - category: product-page
+        url: https://www.guittard.com/our-chocolate/detail/pro_lever-du-soleil
     ganacheCharacteristics:
       cacaoFat: 38
       sugar: 37

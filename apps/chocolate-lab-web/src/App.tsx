@@ -9,6 +9,7 @@ import {
   ToastContainer,
   StatusBar,
   useMessages,
+  useLogReporter,
   useUrlSync,
   type IUrlSyncConfig,
   Modal,
@@ -22,6 +23,7 @@ import {
   EntityTabLayout,
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
+import type { Logging } from '@fgv/ts-utils';
 import { Workspace, type LibraryRuntime } from '@fgv/ts-chocolate';
 import {
   type AppMode,
@@ -92,9 +94,9 @@ function SettingsButton({ onOpen }: { readonly onOpen: () => void }): React.Reac
 
 let _reactiveWorkspace: ReactiveWorkspace | undefined;
 
-function getReactiveWorkspace(): ReactiveWorkspace {
+function getReactiveWorkspace(logger?: Logging.LogReporter<unknown>): ReactiveWorkspace {
   if (!_reactiveWorkspace) {
-    _reactiveWorkspace = new ReactiveWorkspace(Workspace.create({ preWarm: true }).orThrow());
+    _reactiveWorkspace = new ReactiveWorkspace(Workspace.create({ preWarm: true, logger }).orThrow());
   }
   return _reactiveWorkspace;
 }
@@ -722,6 +724,14 @@ function ProceduresTabContent(): React.ReactElement {
     return Array.from(workspace.data.procedures.values());
   }, [workspace]);
 
+  const resolveTaskName = useCallback(
+    (taskId: TaskId): string | undefined => {
+      const result = workspace.data.tasks.get(taskId);
+      return result.isSuccess() ? result.value.name : undefined;
+    },
+    [workspace]
+  );
+
   const selectedId =
     cascadeStack.length > 0 && cascadeStack[0].entityType === 'procedure'
       ? (cascadeStack[0].entityId as ProcedureId)
@@ -761,7 +771,13 @@ function ProceduresTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
+          content: (
+            <ProcedureDetail
+              procedure={result.value}
+              onTaskClick={onTaskClick}
+              resolveTaskName={resolveTaskName}
+            />
+          )
         };
       }
       if (entry.entityType === 'task') {
@@ -785,7 +801,7 @@ function ProceduresTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [cascadeStack, workspace, squashAt]);
+  }, [cascadeStack, workspace, squashAt, resolveTaskName]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {
@@ -793,9 +809,13 @@ function ProceduresTabContent(): React.ReactElement {
       if (result.isFailure()) {
         return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
       }
-      return { key: id, label: result.value.name, content: <ProcedureDetail procedure={result.value} /> };
+      return {
+        key: id,
+        label: result.value.name,
+        content: <ProcedureDetail procedure={result.value} resolveTaskName={resolveTaskName} />
+      };
     });
-  }, [compareIds, workspace]);
+  }, [compareIds, workspace, resolveTaskName]);
 
   return (
     <EntityTabLayout
@@ -1202,17 +1222,21 @@ function AppShell(): React.ReactElement {
 /**
  * Root application component for Chocolate Lab Web Edition.
  */
-export default function App(): React.ReactElement {
-  // Lazy-initialize once on first render (not at module evaluation time)
-  const [reactiveWorkspace] = useState(getReactiveWorkspace);
+function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }): React.ReactElement {
+  const reporter = useLogReporter();
+  const [reactiveWorkspace] = useState(() => getReactiveWorkspace(reporter));
 
+  return <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>{children}</WorkspaceProvider>;
+}
+
+export default function App(): React.ReactElement {
   return (
-    <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>
-      <KeyboardShortcutProvider>
-        <MessagesProvider>
+    <MessagesProvider>
+      <WorkspaceBootstrap>
+        <KeyboardShortcutProvider>
           <AppShell />
-        </MessagesProvider>
-      </KeyboardShortcutProvider>
-    </WorkspaceProvider>
+        </KeyboardShortcutProvider>
+      </WorkspaceBootstrap>
+    </MessagesProvider>
   );
 }
