@@ -19,9 +19,10 @@
 // SOFTWARE.
 
 /**
- * Runtime wrappers for edited entities (ingredients, molds) with mutable editing and snapshot-based history
+ * Runtime wrappers for edited entities (ingredients, molds, tasks) with mutable editing and snapshot-based history
  * @packageDocumentation
  */
 
 export * from './ingredientWrapper';
 export * from './moldWrapper';
+export * from './taskWrapper';

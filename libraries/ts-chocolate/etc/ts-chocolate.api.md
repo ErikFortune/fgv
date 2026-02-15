@@ -1396,6 +1396,9 @@ function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): II
 function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string): IMoldEntity;
 
 // @public
+function createBlankRawTaskEntity(baseId: BaseTaskId, name: string): IRawTaskEntity;
+
+// @public
 function createConfectionRecipeVariationId(parts: {
     collectionId: ConfectionId;
     itemId: ConfectionRecipeVariationSpec;
@@ -1712,10 +1715,41 @@ class EditedMold {
     undo(): Result<boolean>;
 }
 
+// @public
+class EditedTask {
+    applyUpdate(update: Partial<IRawTaskEntity_4>): Result<void>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    // Warning: (ae-forgotten-export) The symbol "IRawTaskEntity_4" needs to be exported by the entry point index.d.ts
+    static create(initial: IRawTaskEntity_4): Result<EditedTask>;
+    createSnapshot(): IRawTaskEntity_4;
+    get current(): IRawTaskEntity_4;
+    getChanges(original: IRawTaskEntity_4): ITaskChanges;
+    getSerializedHistory(original: IRawTaskEntity_4): Session.ISerializedEditingHistoryEntity<IRawTaskEntity_4>;
+    hasChanges(original: IRawTaskEntity_4): boolean;
+    get name(): string;
+    redo(): Result<boolean>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IRawTaskEntity_4>): Result<EditedTask>;
+    restoreSnapshot(snapshot: IRawTaskEntity_4): Result<void>;
+    setDefaultActiveTime(defaultActiveTime: Minutes | undefined): Result<void>;
+    setDefaultHoldTime(defaultHoldTime: Minutes | undefined): Result<void>;
+    setDefaults(defaults: Readonly<Record<string, unknown>> | undefined): Result<void>;
+    setDefaultTemperature(defaultTemperature: Celsius | undefined): Result<void>;
+    setDefaultWaitTime(defaultWaitTime: Minutes | undefined): Result<void>;
+    setName(name: string): Result<void>;
+    setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    setTemplate(template: string): Result<void>;
+    get snapshot(): IRawTaskEntity_4;
+    get template(): string;
+    undo(): Result<boolean>;
+}
+
 declare namespace Editing {
     export {
         Ingredients_2 as Ingredients,
         Molds_3 as Molds,
+        Tasks_2 as Tasks,
         IEditorContext,
         IEditorContextValidator,
         IValidatingEditorContext,
@@ -5473,6 +5507,20 @@ interface ITask {
     validateParams(params: Record<string, unknown>): Result<Tasks.ITaskRefValidation>;
 }
 
+// @public
+interface ITaskChanges {
+    readonly defaultActiveTimeChanged: boolean;
+    readonly defaultHoldTimeChanged: boolean;
+    readonly defaultsChanged: boolean;
+    readonly defaultTemperatureChanged: boolean;
+    readonly defaultWaitTimeChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly nameChanged: boolean;
+    readonly notesChanged: boolean;
+    readonly tagsChanged: boolean;
+    readonly templateChanged: boolean;
+}
+
 // @internal
 interface ITaskContext {
     readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, ITask, never>;
@@ -6026,7 +6074,9 @@ declare namespace LibraryRuntime {
         IIngredientChanges,
         EditedIngredient,
         IMoldChanges,
-        EditedMold
+        EditedMold,
+        ITaskChanges,
+        EditedTask
     }
 }
 export { LibraryRuntime }
@@ -7350,6 +7400,14 @@ const taskCollections: Record<string, JsonObject>;
 // @public
 type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, IRawTaskEntity>;
 
+// Warning: (ae-forgotten-export) The symbol "IRawTaskEntity_3" needs to be exported by the entry point index.d.ts
+//
+// @public
+class TaskEditorContext extends ValidatingEditorContext<IRawTaskEntity_3, BaseTaskId, TaskId> {
+    static createFromCollection(collection: EditableCollection<IRawTaskEntity_3, BaseTaskId>): Result<TaskEditorContext>;
+    getTaskDisplayName(task: IRawTaskEntity_3): string;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -7384,6 +7442,7 @@ declare namespace Tasks {
         Converters_4 as Converters,
         isTaskRefEntity,
         isInlineTaskEntity,
+        createBlankRawTaskEntity,
         IRawTaskEntity,
         ITaskEntity,
         ITaskRefEntity,
@@ -7403,6 +7462,13 @@ declare namespace Tasks {
         ITasksLibraryParams,
         ITasksLibraryAsyncParams,
         TasksLibrary
+    }
+}
+
+declare namespace Tasks_2 {
+    export {
+        Validators_4 as Validators,
+        TaskEditorContext
     }
 }
 
@@ -7679,11 +7745,25 @@ function validateOptionsWithPreferred<TOption extends IHasId<TId>, TId extends s
 // @public
 function validatePositiveNumber(value: unknown, fieldName: string): Result<number>;
 
+// Warning: (ae-forgotten-export) The symbol "IRawTaskEntity_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateRawTaskEntity(entity: IRawTaskEntity_2): Result<IRawTaskEntity_2>;
+
 // @public
 function validateStringLength<T extends string = string>(value: T, fieldName: string, options: {
     minLength?: number;
     maxLength?: number;
 }): Result<T>;
+
+// @public
+function validateTaskName(entity: IRawTaskEntity_2): Result<true>;
+
+// @public
+function validateTaskTemplate(entity: IRawTaskEntity_2): Result<true>;
+
+// @public
+function validateTaskTiming(entity: IRawTaskEntity_2): Result<true>;
 
 // @public
 function validateTemperatureCurve(entity: IngredientEntity): Result<true>;
@@ -7851,6 +7931,15 @@ declare namespace Validators_3 {
         validateCavityDimensions,
         validateCavityWeight,
         validateMoldEntity
+    }
+}
+
+declare namespace Validators_4 {
+    export {
+        validateTaskName,
+        validateTaskTemplate,
+        validateTaskTiming,
+        validateRawTaskEntity
     }
 }
 

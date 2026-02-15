@@ -264,3 +264,22 @@ export const defaultRenderOptions: Required<Omit<IRenderOptions, 'additionalCont
   onInvalidTaskRef: 'warn',
   onMissingVariables: 'warn'
 };
+
+// ============================================================================
+// Factory
+// ============================================================================
+
+/**
+ * Create a blank raw task entity with sensible defaults.
+ * @param baseId - Base identifier for the task
+ * @param name - Display name for the task
+ * @returns A minimal valid raw task entity
+ * @public
+ */
+export function createBlankRawTaskEntity(baseId: BaseTaskId, name: string): IRawTaskEntity {
+  return {
+    baseId,
+    name,
+    template: ''
+  };
+}

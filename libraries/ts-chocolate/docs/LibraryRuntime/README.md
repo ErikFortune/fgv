@@ -147,6 +147,15 @@ Mutable wrapper for IMoldEntity with undo/redo support.
 </td></tr>
 <tr><td>
 
+[EditedTask](./classes/EditedTask.md)
+
+</td><td>
+
+Mutable wrapper for IRawTaskEntity with undo/redo support.
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
@@ -805,6 +814,15 @@ Structure describing what changed between two ingredient entities
 </td><td>
 
 Structure describing what changed between two mold entities
+
+</td></tr>
+<tr><td>
+
+[ITaskChanges](./interfaces/ITaskChanges.md)
+
+</td><td>
+
+Structure describing what changed between two raw task entities
 
 </td></tr>
 <tr><td>

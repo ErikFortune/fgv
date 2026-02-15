@@ -138,6 +138,29 @@ Parameters for creating a TasksLibrary instance asynchronously with encryption s
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[createBlankRawTaskEntity](./functions/createBlankRawTaskEntity.md)
+
+</td><td>
+
+Create a blank raw task entity with sensible defaults.
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

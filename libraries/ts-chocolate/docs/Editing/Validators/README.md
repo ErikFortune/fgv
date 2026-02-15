@@ -2,7 +2,7 @@
 
 # Namespace: Validators
 
-Semantic validators for mold entities.
+Semantic validators for raw task entities.
 These validators handle cross-field and business rule validation.
 Type/format/constraint validation is handled by converters.
 
@@ -20,34 +20,34 @@ Description
 <tbody>
 <tr><td>
 
-[validateCavities](./functions/validateCavities.md)
+[validateTaskName](./functions/validateTaskName.md)
 
 </td><td>
 
-Validate cavity counts are positive.
+Validate that the task name is non-empty.
 
 </td></tr>
 <tr><td>
 
-[validateCavityDimensions](./functions/validateCavityDimensions.md)
+[validateTaskTemplate](./functions/validateTaskTemplate.md)
 
 </td><td>
 
-Validate cavity dimensions are positive when present.
+Validate that the template is non-empty.
 
 </td></tr>
 <tr><td>
 
-[validateCavityWeight](./functions/validateCavityWeight.md)
+[validateTaskTiming](./functions/validateTaskTiming.md)
 
 </td><td>
 
-Validate cavity weight is positive when present.
+Validate that default times are non-negative when present.
 
 </td></tr>
 <tr><td>
 
-[validateMoldEntity](./functions/validateMoldEntity.md)
+[validateRawTaskEntity](./functions/validateRawTaskEntity.md)
 
 </td><td>
 

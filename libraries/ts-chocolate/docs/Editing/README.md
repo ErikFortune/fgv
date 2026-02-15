@@ -35,6 +35,15 @@ Ingredient editing - specialized editing functionality for ingredients
 Mold editing - specialized editing functionality for molds
 
 </td></tr>
+<tr><td>
+
+[Tasks](./Tasks/README.md)
+
+</td><td>
+
+Task editing - specialized editing functionality for tasks
+
+</td></tr>
 </tbody></table>
 
 ## Classes
