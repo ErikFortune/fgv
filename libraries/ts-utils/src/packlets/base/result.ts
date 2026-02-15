@@ -74,7 +74,7 @@ export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
 
 /**
- * Simple logger interface used by {@link IResult.(orThrow:1) | orThrow(logger)} and {@link IResult.(orThrow:2) | orThrow(formatter)}.
+ * Simple logger interface used by {@link IResult.orThrow | orThrow(logger)} and {@link IResult.orThrow | orThrow(formatter)}.
  * @public
  */
 export interface IResultLogger<TD = unknown> {
@@ -122,7 +122,9 @@ export interface IResultReportOptions<TD = unknown> {
  * @public
  */
 export interface IResultReporter<T, TD = unknown> {
+  /** Reports a successful result at the specified log level. */
   reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void;
+  /** Reports a failed result at the specified log level. */
   reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
 }
 
@@ -218,7 +220,7 @@ export interface IResult<T> {
    * error will also be reported.
    * @returns The return value, if the operation was successful.
    * @throws The error message if the operation failed.
-   * @deprecated Use {@link IResult.(orThrow:1) | orThrow(logger)} or {@link IResult.(orThrow:2) | orThrow(formatter)} instead.
+   * @deprecated Use {@link IResult.orThrow | orThrow(logger)} or {@link IResult.orThrow | orThrow(formatter)} instead.
    */
   getValueOrThrow(logger?: IResultLogger): T;
 
@@ -233,7 +235,7 @@ export interface IResult<T> {
    *
    * @returns The return value, if the operation was successful.  Returns
    * the supplied default value or `undefined` if no default is supplied.
-   * @deprecated Use {@link IResult.(orDefault:1) | orDefault(T)} or {@link IResult.(orDefault:2) | orDefault()} instead.
+   * @deprecated Use {@link IResult.orDefault | orDefault(T)} or {@link IResult.orDefault | orDefault()} instead.
    */
   getValueOrDefault(dflt?: T): T | undefined;
 
@@ -361,7 +363,7 @@ export interface IResult<T> {
  */
 export class Success<out T> implements IResult<T> {
   /**
-   * {@inheritdoc IResult.success}
+   * {@inheritDoc IResult.success}
    */
   public readonly success: true = true;
 
@@ -391,26 +393,26 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.isSuccess}
+   * {@inheritDoc IResult.isSuccess}
    */
   public isSuccess(): this is Success<T> {
     return true;
   }
 
   /**
-   * {@inheritdoc IResult.isFailure}
+   * {@inheritDoc IResult.isFailure}
    */
   public isFailure(): this is Failure<T> {
     return false;
   }
 
   /**
-   * {@inheritdoc IResult.(orThrow:1)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(logger?: IResultLogger): T;
 
   /**
-   * {@inheritdoc IResult.(orThrow:2)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(cb: ErrorFormatter): T;
   public orThrow(__logger?: IResultLogger | ErrorFormatter): T {
@@ -418,11 +420,11 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.(orDefault:1)}
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(dflt: T): T;
   /**
-   * {@inheritdoc IResult.(orDefault:2)}
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
@@ -430,65 +432,65 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrThrow}
-   * @deprecated Use {@link Success.(orThrow:1) | orThrow(logger)} or {@link Success.(orThrow:2) | orThrow(formatter)} instead.
+   * {@inheritDoc IResult.getValueOrThrow}
+   * @deprecated Use {@link Success.orThrow | orThrow(logger)} or {@link Success.orThrow | orThrow(formatter)} instead.
    */
   public getValueOrThrow(__logger?: IResultLogger): T {
     return this._value;
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrDefault}
-   * @deprecated Use {@link Success.(orDefault:1) | orDefault(T)} or {@link Success.(orDefault:2) | orDefault()} instead.
+   * {@inheritDoc IResult.getValueOrDefault}
+   * @deprecated Use {@link Success.orDefault | orDefault(T)} or {@link Success.orDefault | orDefault()} instead.
    */
   public getValueOrDefault(dflt?: T): T | undefined {
     return this._value ?? dflt;
   }
 
   /**
-   * {@inheritdoc IResult.onSuccess}
+   * {@inheritDoc IResult.onSuccess}
    */
   public onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN> {
     return cb(this._value);
   }
 
   /**
-   * {@inheritdoc IResult.onFailure}
+   * {@inheritDoc IResult.onFailure}
    */
   public onFailure(__: FailureContinuation<T>): Result<T> {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.withErrorFormat}
+   * {@inheritDoc IResult.withErrorFormat}
    */
   public withErrorFormat(__cb: ErrorFormatter): Result<T> {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.withFailureDetail}
+   * {@inheritDoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(__detail: TD): DetailedResult<T, TD> {
     return succeedWithDetail(this._value);
   }
 
   /**
-   * {@inheritdoc IResult.withDetail}
+   * {@inheritDoc IResult.withDetail}
    */
   public withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD> {
     return succeedWithDetail(this._value, successDetail ?? detail);
   }
 
   /**
-   * {@inheritdoc IResult.aggregateError}
+   * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T> {
     const successOptions =
@@ -515,7 +517,7 @@ export class Success<out T> implements IResult<T> {
  */
 export class Failure<out T> implements IResult<T> {
   /**
-   * {@inheritdoc IResult.success}
+   * {@inheritDoc IResult.success}
    */
   public readonly success: false = false;
   /**
@@ -544,26 +546,26 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.isSuccess}
+   * {@inheritDoc IResult.isSuccess}
    */
   public isSuccess(): this is Success<T> {
     return false;
   }
 
   /**
-   * {@inheritdoc IResult.isFailure}
+   * {@inheritDoc IResult.isFailure}
    */
   public isFailure(): this is Failure<T> {
     return true;
   }
 
   /**
-   * {@inheritdoc IResult.(orThrow:1)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(logger?: IResultLogger): never;
 
   /**
-   * {@inheritdoc IResult.(orThrow:2)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(cb: ErrorFormatter): never;
   public orThrow(logOrFormat?: IResultLogger | ErrorFormatter): never {
@@ -578,11 +580,11 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.(orDefault:1)}
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(dflt: T): T;
   /**
-   * {@inheritdoc IResult.(orDefault:2)}
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
@@ -590,8 +592,8 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrThrow}
-   * @deprecated Use {@link Failure.(orThrow:1) | orThrow(logger)} or {@link Failure.(orThrow:2) | orThrow(formatter)} instead.
+   * {@inheritDoc IResult.getValueOrThrow}
+   * @deprecated Use {@link Failure.orThrow | orThrow(logger)} or {@link Failure.orThrow | orThrow(formatter)} instead.
    */
   public getValueOrThrow(logger?: IResultLogger): never {
     if (logger !== undefined) {
@@ -601,50 +603,50 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrDefault}
-   * @deprecated Use {@link Failure.(orDefault:1) | orDefault(T)} or {@link Failure.(orDefault:2) | orDefault()} instead.
+   * {@inheritDoc IResult.getValueOrDefault}
+   * @deprecated Use {@link Failure.orDefault | orDefault(T)} or {@link Failure.orDefault | orDefault()} instead.
    */
   public getValueOrDefault(dflt?: T): T | undefined {
     return dflt;
   }
 
   /**
-   * {@inheritdoc IResult.onSuccess}
+   * {@inheritDoc IResult.onSuccess}
    */
   public onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN> {
     return new Failure(this._message);
   }
 
   /**
-   * {@inheritdoc IResult.onFailure}
+   * {@inheritDoc IResult.onFailure}
    */
   public onFailure(cb: FailureContinuation<T>): Result<T> {
     return cb(this._message);
   }
 
   /**
-   * {@inheritdoc IResult.withErrorFormat}
+   * {@inheritDoc IResult.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter): Result<T> {
     return fail(cb(this._message));
   }
 
   /**
-   * {@inheritdoc IResult.withFailureDetail}
+   * {@inheritDoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(detail: TD): DetailedResult<T, TD> {
     return failWithDetail(this._message, detail);
   }
 
   /**
-   * {@inheritdoc IResult.withDetail}
+   * {@inheritDoc IResult.withDetail}
    */
   public withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD> {
     return failWithDetail(this._message, detail);
   }
 
   /**
-   * {@inheritdoc IResult.aggregateError}
+   * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this {
     const message = formatter ? formatter(this._message) : this._message;
@@ -653,7 +655,7 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T> {
     const failureOptions =
@@ -698,7 +700,7 @@ export function succeed<T>(value: T): Success<T> {
 }
 
 /**
- * {@inheritdoc succeed}
+ * {@inheritDoc succeed}
  * @public
  */
 export function succeeds<T>(value: T): Success<T> {
@@ -718,7 +720,7 @@ export function fail<T>(message: string): Failure<T> {
 }
 
 /**
- * {@inheritdoc fail}
+ * {@inheritDoc fail}
  * @public
  */
 export function fails<T>(message: string): Failure<T> {
@@ -814,7 +816,7 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
    * Propagates this {@link DetailedSuccess}.
    * @remarks
    * Failure does not mutate return type so we can return this event directly.
-   * @param _cb - {@link DetailedFailureContinuation | Failure callback} to be called
+   * @param __cb - {@link DetailedFailureContinuation | Failure callback} to be called
    * on a {@link DetailedResult} in case of failure (ignored).
    * @returns `this`
    */
@@ -823,14 +825,14 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
   }
 
   /**
-   * {@inheritdoc Success.withErrorFormat}
+   * {@inheritDoc Success.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD> {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(
     reporter?: IResultReporter<T, unknown>,
@@ -907,7 +909,7 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
    * @remarks
    * Mutates the success type as the success callback would have, but does not
    * call the success callback.
-   * @param _cb - {@link DetailedSuccessContinuation | Success callback} to be called
+   * @param __cb - {@link DetailedSuccessContinuation | Success callback} to be called
    * on a {@link DetailedResult} in case of success (ignored).
    * @returns A new {@link DetailedFailure | DetailedFailure<TN, TD>} which contains
    * the error message and detail from this one.
@@ -927,14 +929,14 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
   }
 
   /**
-   * {@inheritdoc IResult.withErrorFormat}
+   * {@inheritDoc IResult.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
     return failWithDetail(cb(this._message, this._detail), this._detail);
   }
 
   /**
-   * {@inheritdoc IResult.aggregateError}
+   * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this {
     const message = formatter ? formatter(this._message, this._detail) : this._message;
@@ -943,7 +945,7 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(
     reporter?: IResultReporter<T, unknown>,
@@ -1025,7 +1027,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 }
 
 /**
- * {@inheritdoc succeedWithDetail}
+ * {@inheritDoc succeedWithDetail}
  * @public
  */
 export function succeedsWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
@@ -1048,7 +1050,7 @@ export function failWithDetail<T, TD>(message: string, detail?: TD): DetailedFai
 }
 
 /**
- * {@inheritdoc failWithDetail}
+ * {@inheritDoc failWithDetail}
  * @public
  */
 export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD> {

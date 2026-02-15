@@ -34,7 +34,7 @@ export interface IResultMapConstructorParams<TK extends string = string, TV = un
 }
 
 /**
- * Deferred constructor for the {@link Collections.ResultMap.(getOrAdd:2) | getOrAdd} method.
+ * Deferred constructor for the {@link Collections.ResultMap.getOrAdd | getOrAdd} method.
  * @public
  */
 export type ResultMapValueFactory<TK extends string = string, TV = unknown> = (key: TK) => Result<TV>;

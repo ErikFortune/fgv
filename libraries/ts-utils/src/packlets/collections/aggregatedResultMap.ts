@@ -223,19 +223,19 @@ export class AggregatedResultMapValidator<
     this.converters = converters;
   }
 
-  /** {@inheritdoc IResultMapValidator.map} */
+  /** {@inheritDoc Collections.ResultMapValidator.map} */
   public get map(): IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
     return this._map;
   }
 
-  /** {@inheritdoc IResultMapValidator.get} */
+  /** {@inheritDoc Collections.ResultMapValidator.get} */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
       return this._map.get(k);
     });
   }
 
-  /** {@inheritdoc IResultMapValidator.has} */
+  /** {@inheritDoc Collections.ResultMapValidator.has} */
   public has(key: string): boolean {
     const result = this.converters.convertKey(key);
     if (result.isFailure()) {
@@ -244,28 +244,28 @@ export class AggregatedResultMapValidator<
     return this._map.has(result.value);
   }
 
-  /** {@inheritdoc IResultMapValidator.add} */
+  /** {@inheritDoc Collections.ResultMapValidator.add} */
   public add(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
       return this._map.add(vk, vv);
     });
   }
 
-  /** {@inheritdoc IResultMapValidator.set} */
+  /** {@inheritDoc Collections.ResultMapValidator.set} */
   public set(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
       return this._map.set(vk, vv);
     });
   }
 
-  /** {@inheritdoc IResultMapValidator.update} */
+  /** {@inheritDoc Collections.ResultMapValidator.update} */
   public update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
       return this._map.update(vk, vv);
     });
   }
 
-  /** {@inheritdoc IResultMapValidator.delete} */
+  /** {@inheritDoc Collections.ResultMapValidator.delete} */
   public delete(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
       return this._map.delete(k);

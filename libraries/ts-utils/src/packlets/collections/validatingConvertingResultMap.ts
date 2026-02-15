@@ -56,7 +56,7 @@ export interface IValidatingReadOnlyConvertingResultMapConstructorParams<TK exte
 /**
  * A read-only result map that wraps an inner {@link Collections.IReadOnlyResultMap | IReadOnlyResultMap}
  * of source type and returns lazily-converted, cached values of a target type, with a
- * {@link Collections.ReadOnlyConvertingResultMapValidator | validating} property for weakly-typed access.
+ * {@link Collections.ReadOnlyResultMapValidator | validating} property for weakly-typed access.
  * @public
  */
 export class ValidatingReadOnlyConvertingResultMap<
@@ -126,7 +126,7 @@ export interface IValidatingConvertingResultMapConstructorParams<
 /**
  * A result map that wraps an inner {@link Collections.IResultMap | IResultMap} of source type
  * and returns lazily-converted, cached values of a target type, with a
- * {@link Collections.ReadOnlyConvertingResultMapValidator | validating} property for weakly-typed access
+ * {@link Collections.ReadOnlyResultMapValidator | validating} property for weakly-typed access
  * and a {@link Collections.CacheInvalidatingResultMapWrapper | source} property for mutable access
  * to the underlying source map.
  * @public

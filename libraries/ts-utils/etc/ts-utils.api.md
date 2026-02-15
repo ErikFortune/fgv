@@ -86,40 +86,40 @@ class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID ex
     constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     add(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
     readonly converters: KeyValueConverters<TCOMPOSITEID, TITEM>;
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     delete(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     has(key: string): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get map(): IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     set(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -861,9 +861,6 @@ class ConvertingCollectorValidator<TITEM extends ICollectible<any, any>, TSRC = 
     add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     add(key: string, factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // (undocumented)
     protected _collector: ConvertingCollector<TITEM, TSRC>;
@@ -1048,8 +1045,14 @@ export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFa
 export class Failure<out T> implements IResult<T> {
     constructor(message: string);
     aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
     // @deprecated
     getValueOrThrow(logger?: IResultLogger): never;
     isFailure(): this is Failure<T>;
@@ -1059,9 +1062,21 @@ export class Failure<out T> implements IResult<T> {
     protected readonly _message: string;
     onFailure(cb: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orDefault(dflt: T): T;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orDefault(): T | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orThrow(logger?: IResultLogger): never;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T>;
     readonly success: false;
@@ -1091,6 +1106,9 @@ type FieldConverters<T, TC = unknown> = {
     [key in keyof T]: Converter<T[key], TC | unknown> | Validator<T[key], TC>;
 };
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "populateObject" has more than one declaration; you need to add a TSDoc member reference selector
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "populateObject" has more than one declaration; you need to add a TSDoc member reference selector
+//
 // @public
 export type FieldInitializers<T> = {
     [key in keyof T]: (state: Partial<T>) => Result<T[key]>;
@@ -1356,7 +1374,6 @@ interface ICollectibleConstructorParamsWithIndex<TKEY extends string = string, T
 //
 // @public
 interface ICollectorConstructorParams<TITEM extends ICollectible<any, any>> {
-    // (undocumented)
     items?: TITEM[];
 }
 
@@ -1364,9 +1381,7 @@ interface ICollectorConstructorParams<TITEM extends ICollectible<any, any>> {
 //
 // @public
 interface ICollectorValidatorCreateParams<TITEM extends ICollectible<any, any>> {
-    // (undocumented)
     readonly collector: Collector<TITEM>;
-    // (undocumented)
     readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 }
 
@@ -1393,9 +1408,7 @@ interface IConvertingCollectorConstructorParams<TITEM extends ICollectible<any, 
 //
 // @public
 interface IConvertingCollectorValidatorCreateParams<TITEM extends ICollectible<any, any>, TSRC = TITEM> {
-    // (undocumented)
     collector: ConvertingCollector<TITEM, TSRC>;
-    // (undocumented)
     converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 }
 
@@ -1652,8 +1665,14 @@ interface IRecordOfValidatorOptions<TK extends string = string, TC = unknown> {
 // @public
 export interface IResult<T> {
     aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
     // @deprecated
     getValueOrThrow(logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
@@ -1675,6 +1694,9 @@ export interface IResult<T> {
     withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+//
 // @public
 export interface IResultLogger<TD = unknown> {
     error(message: string, detail?: TD): void;
@@ -1735,9 +1757,7 @@ interface IResultMapValidatorCreateParams<TK extends string = string, TV = unkno
 
 // @public
 export interface IResultReporter<T, TD = unknown> {
-    // (undocumented)
     reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
-    // (undocumented)
     reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void;
 }
 
@@ -1838,8 +1858,8 @@ interface IValidatingResultMapConstructorParams<TK extends string = string, TV =
     entries?: Iterable<KeyValueEntry<string, unknown>>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "recordOf"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "mapOf"
 //
 // @public
 interface KeyedConverterOptions<T extends string = string, TC = unknown> {
@@ -1852,8 +1872,6 @@ export function keysForRecord<TK extends string>(obj: Record<TK, unknown>): TK[]
 
 // @public
 class KeyValueConverters<TK extends string = string, TV = unknown> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>);
     convertEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -1971,9 +1989,7 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     get logLevel(): ReporterLogLevel;
     // @internal
     protected readonly _messageFormatter: LogMessageFormatter<TD>;
-    // (undocumented)
     reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
-    // (undocumented)
     reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void;
     static tryFormatObject<T = unknown, TD = unknown>(value: T, detail?: TD): string;
     // @internal
@@ -2178,9 +2194,6 @@ interface ObjectConverterOptions<T> {
 // @public
 class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params: ObjectValidatorConstructorParams<T, TC>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2306,6 +2319,8 @@ export function populateObject<T>(initializers: FieldInitializers<T>, options?: 
 // @public @deprecated
 export function populateObject<T>(initializers: FieldInitializers<T>, order: (keyof T)[] | undefined, aggregatedErrors?: IMessageAggregator): Result<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "populateObject" has more than one declaration; you need to add a TSDoc member reference selector
+//
 // @public
 export interface PopulateObjectOptions<T> {
     order?: (keyof T)[];
@@ -2551,7 +2566,7 @@ function strictObject<T, TC = unknown>(properties: FieldConverters<T, TC>, optio
 // @public @deprecated
 function strictObject<T, TC = unknown>(properties: FieldConverters<T, TC>, optional: (keyof T)[]): ObjectConverter<T, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "strictObject"
 //
 // @public
 type StrictObjectConverterOptions<T> = Omit<ObjectConverterOptions<T>, 'strict'>;
@@ -2634,8 +2649,14 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 export class Success<out T> implements IResult<T> {
     constructor(value: T);
     aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
     // @deprecated
     getValueOrThrow(__logger?: IResultLogger): T;
     isFailure(): this is Failure<T>;
@@ -2643,9 +2664,21 @@ export class Success<out T> implements IResult<T> {
     readonly message: undefined;
     onFailure(__: FailureContinuation<T>): Result<T>;
     onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orDefault(dflt: T): T;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orDefault" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orDefault(): T | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orThrow(logger?: IResultLogger): T;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
+    //
+    // (undocumented)
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T>;
     readonly success: true;

@@ -83,7 +83,7 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.add}
+   * {@inheritDoc Collections.Collector.add}
    */
   public add(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
@@ -102,7 +102,7 @@ export class ConvertingCollector<
    * Adds an item to the collector using a supplied {@link Collections.CollectibleFactoryCallback | factory callback}
    * at a specified key, failing if an item with that key already exists or if the created item is invalid.
    * @param key - The key of the item to add.
-   * @param callback - The factory callback to create the item.
+   * @param cb - The factory callback to create the item.
    * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
    * an error if the item cannot be created and indexed.
    */
@@ -126,12 +126,12 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
+   * {@inheritDoc Collections.Collector.getOrAdd}
    */
   public getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * {@inheritDoc Collections.Collector.getOrAdd}
    */
   public getOrAdd(
     key: CollectibleKey<TITEM>,

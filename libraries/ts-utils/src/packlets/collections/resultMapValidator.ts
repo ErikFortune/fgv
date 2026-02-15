@@ -31,17 +31,17 @@ import { KeyValueConverters } from './keyValueConverters';
  */
 export interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMapValidator.map}
+   * {@inheritDoc Collections.ReadOnlyResultMapValidator.map}
    */
   readonly map: IReadOnlyResultMap<TK, TV>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritDoc Collections.ResultMap.get}
    */
   get(key: string): DetailedResult<TV, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   has(key: string): boolean;
 }
@@ -137,7 +137,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.add}
+   * {@inheritDoc Collections.ResultMap.add}
    */
   public add(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
@@ -146,7 +146,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.delete}
+   * {@inheritDoc Collections.ResultMap.delete}
    */
   public delete(key: string): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -155,7 +155,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritDoc Collections.ResultMap.get}
    */
   public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -164,12 +164,12 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.(getOrAdd:1)}
+   * {@inheritDoc Collections.ResultMap.getOrAdd}
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.(getOrAdd:2)}
+   * {@inheritDoc Collections.ResultMap.getOrAdd}
    */
   public getOrAdd(
     key: string,
@@ -199,14 +199,14 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
     return this._map.has(key as TK);
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.set}
+   * {@inheritDoc Collections.ResultMap.set}
    */
   public set(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
@@ -215,7 +215,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.update}
+   * {@inheritDoc Collections.ResultMap.update}
    */
   public update(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {

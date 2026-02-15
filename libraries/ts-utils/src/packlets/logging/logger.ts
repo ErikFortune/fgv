@@ -287,10 +287,6 @@ export class InMemoryLogger extends LoggerBase {
 
   /**
    * {@inheritDoc Logging.LoggerBase._suppressLog}
-   * @param level - The level of the message.
-   * @param message - The message to suppress.
-   * @param parameters - The parameters to suppress.
-   * @returns `Success` with `undefined` if the message is suppressed.
    * @internal
    */
   protected _suppressLog(
