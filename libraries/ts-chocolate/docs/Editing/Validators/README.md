@@ -2,7 +2,7 @@
 
 # Namespace: Validators
 
-Semantic validators for ingredient entities.
+Semantic validators for mold entities.
 These validators handle cross-field and business rule validation.
 Type/format/constraint validation is handled by converters.
 
@@ -20,52 +20,34 @@ Description
 <tbody>
 <tr><td>
 
-[validateGanacheCharacteristics](./functions/validateGanacheCharacteristics.md)
+[validateCavities](./functions/validateCavities.md)
 
 </td><td>
 
-Validate ganache characteristics percentages.
+Validate cavity counts are positive.
 
 </td></tr>
 <tr><td>
 
-[validateTemperatureCurve](./functions/validateTemperatureCurve.md)
+[validateCavityDimensions](./functions/validateCavityDimensions.md)
 
 </td><td>
 
-Validate temperature curve for chocolate ingredients.
+Validate cavity dimensions are positive when present.
 
 </td></tr>
 <tr><td>
 
-[validateChocolateFields](./functions/validateChocolateFields.md)
+[validateCavityWeight](./functions/validateCavityWeight.md)
 
 </td><td>
 
-Validate chocolate-specific fields.
+Validate cavity weight is positive when present.
 
 </td></tr>
 <tr><td>
 
-[validateDairyFields](./functions/validateDairyFields.md)
-
-</td><td>
-
-Validate dairy-specific fields.
-
-</td></tr>
-<tr><td>
-
-[validateAlcoholFields](./functions/validateAlcoholFields.md)
-
-</td><td>
-
-Validate alcohol-specific fields.
-
-</td></tr>
-<tr><td>
-
-[validateIngredientEntity](./functions/validateIngredientEntity.md)
+[validateMoldEntity](./functions/validateMoldEntity.md)
 
 </td><td>
 

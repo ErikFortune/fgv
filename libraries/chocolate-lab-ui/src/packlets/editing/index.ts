@@ -18,4 +18,8 @@ export {
 
 export { EditingToolbar, type IEditingToolbarProps } from './EditingToolbar';
 
-export { EntityCreateForm, type IEntityCreateFormProps, type IAiParseResult } from './EntityCreateForm';
+export { EntityCreateForm, type IEntityCreateFormProps } from './EntityCreateForm';
+
+export { NotesEditor, type INotesEditorProps } from './NotesEditor';
+
+export { UrlsEditor, type IUrlsEditorProps } from './UrlsEditor';

@@ -1,7 +1,10 @@
 /**
- * AI assist packlet - prompt generation and JSON-to-entity glue for ingredient creation.
+ * AI assist packlet - prompt generation and note helpers for entity creation.
  * @packageDocumentation
  */
 
+export { AI_NOTE_CATEGORY, extractAiNote } from './normalizeNotes';
+
 export { buildIngredientAiPrompt } from './ingredientPrompt';
-export { parseIngredientJson, AI_NOTE_CATEGORY, type IIngredientParseResult } from './ingredientFromJson';
+
+export { buildMoldAiPrompt } from './moldPrompt';

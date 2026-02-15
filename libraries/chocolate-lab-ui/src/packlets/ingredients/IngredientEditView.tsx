@@ -28,6 +28,18 @@
 import React, { useCallback } from 'react';
 
 import {
+  EditField,
+  EditSection,
+  TextInput,
+  OptionalTextInput,
+  TextAreaInput,
+  NumberInput,
+  SelectInput,
+  TagsInput,
+  CheckboxInput
+} from '@fgv/ts-app-shell';
+
+import {
   Entities,
   LibraryRuntime,
   IngredientCategory,
@@ -72,7 +84,7 @@ export interface IIngredientEditViewProps {
 }
 
 // ============================================================================
-// Field Helpers
+// Constants & Chocolate-Specific Helpers
 // ============================================================================
 
 const ALL_CATEGORIES: ReadonlyArray<IngredientCategory> = [
@@ -85,81 +97,6 @@ const ALL_CATEGORIES: ReadonlyArray<IngredientCategory> = [
   'flavor',
   'other'
 ];
-
-function EditField({
-  label,
-  children
-}: {
-  readonly label: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="flex items-baseline gap-2 py-1">
-      <label className="text-xs text-gray-500 w-32 shrink-0">{label}</label>
-      <div className="flex-1">{children}</div>
-    </div>
-  );
-}
-
-function TextInput({
-  value,
-  onChange,
-  placeholder
-}: {
-  readonly value: string;
-  readonly onChange: (value: string) => void;
-  readonly placeholder?: string;
-}): React.ReactElement {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-    />
-  );
-}
-
-function OptionalTextInput({
-  value,
-  onChange,
-  placeholder
-}: {
-  readonly value: string | undefined;
-  readonly onChange: (value: string | undefined) => void;
-  readonly placeholder?: string;
-}): React.ReactElement {
-  return (
-    <input
-      type="text"
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value || undefined)}
-      placeholder={placeholder}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-    />
-  );
-}
-
-function TextAreaInput({
-  value,
-  onChange,
-  placeholder
-}: {
-  readonly value: string | undefined;
-  readonly onChange: (value: string | undefined) => void;
-  readonly placeholder?: string;
-}): React.ReactElement {
-  return (
-    <textarea
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value || undefined)}
-      placeholder={placeholder}
-      rows={3}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary resize-y"
-    />
-  );
-}
 
 function PercentageInput({
   value,
@@ -188,143 +125,6 @@ function PercentageInput({
         aria-label={label}
       />
       <span className="text-xs text-gray-500">%</span>
-    </div>
-  );
-}
-
-function SelectInput<T extends string>({
-  value,
-  options,
-  onChange
-}: {
-  readonly value: T;
-  readonly options: ReadonlyArray<T>;
-  readonly onChange: (value: T) => void;
-}): React.ReactElement {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as T)}
-      className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function TagsInput({
-  value,
-  onChange,
-  placeholder
-}: {
-  readonly value: ReadonlyArray<string> | undefined;
-  readonly onChange: (value: ReadonlyArray<string> | undefined) => void;
-  readonly placeholder?: string;
-}): React.ReactElement {
-  const text = value?.join(', ') ?? '';
-  return (
-    <input
-      type="text"
-      value={text}
-      onChange={(e) => {
-        const raw = e.target.value;
-        if (!raw.trim()) {
-          onChange(undefined);
-        } else {
-          onChange(
-            raw
-              .split(',')
-              .map((s) => s.trim())
-              .filter((s) => s.length > 0)
-          );
-        }
-      }}
-      placeholder={placeholder ?? 'comma-separated values'}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-    />
-  );
-}
-
-function NumberInput({
-  value,
-  onChange,
-  label,
-  min,
-  max,
-  step
-}: {
-  readonly value: number | undefined;
-  readonly onChange: (value: number | undefined) => void;
-  readonly label: string;
-  readonly min?: number;
-  readonly max?: number;
-  readonly step?: number;
-}): React.ReactElement {
-  return (
-    <input
-      type="number"
-      value={value ?? ''}
-      onChange={(e) => {
-        const raw = e.target.value;
-        if (!raw.trim()) {
-          onChange(undefined);
-        } else {
-          const num = parseFloat(raw);
-          if (!isNaN(num)) {
-            onChange(num);
-          }
-        }
-      }}
-      min={min}
-      max={max}
-      step={step ?? 0.1}
-      className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary text-right"
-      aria-label={label}
-    />
-  );
-}
-
-function CheckboxInput({
-  value,
-  onChange,
-  label
-}: {
-  readonly value: boolean | undefined;
-  readonly onChange: (value: boolean | undefined) => void;
-  readonly label: string;
-}): React.ReactElement {
-  return (
-    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-      <input
-        type="checkbox"
-        checked={value ?? false}
-        onChange={(e) => onChange(e.target.checked || undefined)}
-        className="rounded border-gray-300 text-choco-primary focus:ring-choco-primary"
-      />
-      {label}
-    </label>
-  );
-}
-
-// ============================================================================
-// Section Helpers
-// ============================================================================
-
-function EditSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">{title}</h4>
-      {children}
     </div>
   );
 }

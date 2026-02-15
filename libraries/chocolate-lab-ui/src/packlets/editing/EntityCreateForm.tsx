@@ -41,17 +41,6 @@ import type { Result } from '@fgv/ts-utils';
 // ============================================================================
 
 /**
- * Result of parsing AI-generated JSON for an entity.
- * @public
- */
-export interface IAiParseResult<TEntity> {
-  /** The validated entity */
-  readonly entity: TEntity;
-  /** Optional notes from the AI about assumptions */
-  readonly notes?: string;
-}
-
-/**
  * Props for the EntityCreateForm component.
  * @public
  */
@@ -60,8 +49,8 @@ export interface IEntityCreateFormProps<TEntity> {
   readonly slugify: (name: string) => string;
   /** Build an AI prompt string from the ingredient name */
   readonly buildPrompt: (name: string) => string;
-  /** Parse unknown JSON into a validated entity */
-  readonly parseJson: (from: unknown) => Result<IAiParseResult<TEntity>>;
+  /** Convert unknown JSON into a validated entity */
+  readonly convert: (from: unknown) => Result<TEntity>;
   /** Build a blank entity from name and ID (for manual creation) */
   readonly makeBlank: (name: string, id: string) => TEntity;
   /** Called when the user creates an entity (manual or AI) */
@@ -91,7 +80,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   const {
     slugify,
     buildPrompt,
-    parseJson,
+    convert,
     makeBlank,
     onCreate,
     onCancel,
@@ -150,15 +139,15 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         return;
       }
 
-      const result = parseJson(parsed);
+      const result = convert(parsed);
       if (result.isFailure()) {
         setPasteError(`Validation failed: ${result.message}`);
         return;
       }
 
-      onCreate(result.value.entity, 'ai');
+      onCreate(result.value, 'ai');
     },
-    [parseJson, onCreate]
+    [convert, onCreate]
   );
 
   const handlePaste = useCallback(

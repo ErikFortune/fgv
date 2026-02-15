@@ -2,30 +2,7 @@
 
 # Namespace: AiAssist
 
-AI assist packlet - prompt generation and JSON-to-entity glue for ingredient creation.
-
-## Interfaces
-
-<table><thead><tr><th>
-
-Name
-
-</th><th>
-
-Description
-
-</th></tr></thead>
-<tbody>
-<tr><td>
-
-[IIngredientParseResult](./interfaces/IIngredientParseResult.md)
-
-</td><td>
-
-Result of parsing AI-generated ingredient JSON.
-
-</td></tr>
-</tbody></table>
+AI assist packlet - prompt generation and note helpers for entity creation.
 
 ## Functions
 
@@ -41,6 +18,15 @@ Description
 <tbody>
 <tr><td>
 
+[extractAiNote](./functions/extractAiNote.md)
+
+</td><td>
+
+Extracts the first AI-category note text from a notes array.
+
+</td></tr>
+<tr><td>
+
 [buildIngredientAiPrompt](./functions/buildIngredientAiPrompt.md)
 
 </td><td>
@@ -50,12 +36,11 @@ Builds a detailed AI prompt for generating an ingredient entity JSON object.
 </td></tr>
 <tr><td>
 
-[parseIngredientJson](./functions/parseIngredientJson.md)
+[buildMoldAiPrompt](./functions/buildMoldAiPrompt.md)
 
 </td><td>
 
-Parses and validates an unknown value (typically from AI-generated JSON)
-into a validated IngredientEntity.
+Builds a detailed AI prompt for generating a mold entity JSON object.
 
 </td></tr>
 </tbody></table>

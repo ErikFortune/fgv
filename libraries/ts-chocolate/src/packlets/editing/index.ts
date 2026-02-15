@@ -48,4 +48,7 @@ export * from './validatingEditorContext';
 // Ingredient editing (specialized)
 import * as Ingredients from './ingredients';
 
-export { Ingredients };
+// Mold editing (specialized)
+import * as Molds from './molds';
+
+export { Ingredients, Molds };

@@ -26,6 +26,15 @@ Description
 Ingredient editing - specialized editing functionality for ingredients
 
 </td></tr>
+<tr><td>
+
+[Molds](./Molds/README.md)
+
+</td><td>
+
+Mold editing - specialized editing functionality for molds
+
+</td></tr>
 </tbody></table>
 
 ## Classes

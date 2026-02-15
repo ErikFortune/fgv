@@ -280,3 +280,30 @@ export function isAlcoholIngredientEntity(
 ): ingredient is IAlcoholIngredientEntity {
   return ingredient.category === 'alcohol';
 }
+
+// ============================================================================
+// Factory
+// ============================================================================
+
+/**
+ * Create a blank ingredient entity with sensible defaults.
+ * @param baseId - Base identifier for the ingredient
+ * @param name - Display name for the ingredient
+ * @returns A minimal valid ingredient entity
+ * @public
+ */
+export function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): IIngredientEntity {
+  return {
+    baseId,
+    name,
+    category: 'other',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 0 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    }
+  };
+}

@@ -20,7 +20,7 @@ Description
 
 </td><td>
 
-AI assist packlet - prompt generation and JSON-to-entity glue for ingredient creation.
+AI assist packlet - prompt generation and note helpers for entity creation.
 
 </td></tr>
 <tr><td>

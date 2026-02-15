@@ -127,3 +127,24 @@ export interface IMoldEntity {
    */
   readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
 }
+
+// ============================================================================
+// Factory
+// ============================================================================
+
+/**
+ * Create a blank mold entity with sensible defaults.
+ * @param baseId - Base identifier for the mold
+ * @param manufacturer - Manufacturer name (used as initial display name)
+ * @returns A minimal valid mold entity
+ * @public
+ */
+export function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string): IMoldEntity {
+  return {
+    baseId,
+    manufacturer,
+    productNumber: '',
+    cavities: { kind: 'grid', columns: 3, rows: 8 },
+    format: 'other'
+  };
+}

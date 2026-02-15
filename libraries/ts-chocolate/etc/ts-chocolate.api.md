@@ -36,10 +36,10 @@ const AI_NOTE_CATEGORY: NoteCategory;
 
 declare namespace AiAssist {
     export {
-        buildIngredientAiPrompt,
-        parseIngredientJson,
         AI_NOTE_CATEGORY,
-        IIngredientParseResult
+        extractAiNote,
+        buildIngredientAiPrompt,
+        buildMoldAiPrompt
     }
 }
 export { AiAssist }
@@ -480,6 +480,9 @@ const bonBonDimensions: Converter<IBonBonDimensions>;
 
 // @public
 function buildIngredientAiPrompt(ingredientName: string): string;
+
+// @public
+function buildMoldAiPrompt(moldDescription: string): string;
 
 declare namespace BuiltIn {
     export {
@@ -1387,6 +1390,12 @@ declare namespace Converters_8 {
 }
 
 // @public
+function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): IIngredientEntity;
+
+// @public
+function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string): IMoldEntity;
+
+// @public
 function createConfectionRecipeVariationId(parts: {
     collectionId: ConfectionId;
     itemId: ConfectionRecipeVariationSpec;
@@ -1706,6 +1715,7 @@ class EditedMold {
 declare namespace Editing {
     export {
         Ingredients_2 as Ingredients,
+        Molds_3 as Molds,
         IEditorContext,
         IEditorContextValidator,
         IValidatingEditorContext,
@@ -1952,6 +1962,9 @@ const externalLibraryRef: Converter<ExternalLibraryRef>;
 //
 // @public
 const externalLibraryRefConfig: Converter<IExternalLibraryRefConfig>;
+
+// @public
+function extractAiNote(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): string | undefined;
 
 // @public
 class FatIngredient extends IngredientBase implements IFatIngredient {
@@ -3720,12 +3733,6 @@ interface IIngredientModifiers {
 }
 
 // @public
-interface IIngredientParseResult {
-    readonly entity: IngredientEntity;
-    readonly notes?: string;
-}
-
-// @public
 interface IIngredientQueryOptions {
     readonly includeAlternates?: boolean;
 }
@@ -4331,6 +4338,7 @@ declare namespace Ingredients {
         isDairyIngredientEntity,
         isFatIngredientEntity,
         isAlcoholIngredientEntity,
+        createBlankIngredientEntity,
         IGanacheCharacteristics,
         ITemperatureCurve,
         IIngredientEntity,
@@ -6216,6 +6224,15 @@ const moldedBonBonRecipeVariationEntity: Converter<IMoldedBonBonRecipeVariationE
 // @public
 const moldedBonBonYield: Converter<IMoldedBonBonYield>;
 
+// Warning: (ae-forgotten-export) The symbol "IMoldEntity_3" needs to be exported by the entry point index.d.ts
+//
+// @public
+class MoldEditorContext extends ValidatingEditorContext<IMoldEntity_3, BaseMoldId, MoldId> {
+    static createFromCollection(collection: EditableCollection<IMoldEntity_3, BaseMoldId>): Result<MoldEditorContext>;
+    getMoldDisplayName(mold: IMoldEntity_3): string;
+    getMoldFormat(mold: IMoldEntity_3): string;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -6303,6 +6320,7 @@ declare namespace Molds {
 declare namespace Molds_2 {
     export {
         Molds as Converters,
+        createBlankMoldEntity,
         ICavityDimensions,
         ICavityInfo,
         ICavities,
@@ -6316,6 +6334,13 @@ declare namespace Molds_2 {
         IMoldsLibraryParams,
         IMoldsLibraryAsyncParams,
         MoldsLibrary
+    }
+}
+
+declare namespace Molds_3 {
+    export {
+        Validators_3 as Validators,
+        MoldEditorContext
     }
 }
 
@@ -6473,12 +6498,6 @@ function parseFillingRecipeVariationId(id: FillingRecipeVariationId): Result<Par
 
 // @public
 function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IngredientEntity"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Result"
-//
-// @public
-function parseIngredientJson(from: unknown): Result<IIngredientParseResult>;
 
 // @public
 function parseJournalId(id: JournalId): Result<ParsedJournalId>;
@@ -7613,6 +7632,17 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
 // @public
 function validateAlcoholFields(entity: IngredientEntity): Result<true>;
 
+// Warning: (ae-forgotten-export) The symbol "IMoldEntity_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateCavities(entity: IMoldEntity_2): Result<true>;
+
+// @public
+function validateCavityDimensions(entity: IMoldEntity_2): Result<true>;
+
+// @public
+function validateCavityWeight(entity: IMoldEntity_2): Result<true>;
+
 // @public
 function validateChocolateFields(entity: IngredientEntity): Result<true>;
 
@@ -7633,6 +7663,9 @@ function validateIngredientEntity(entity: IngredientEntity): Result<IngredientEn
 
 // @public
 function validateKebabCase(input: string): Result<string>;
+
+// @public
+function validateMoldEntity(entity: IMoldEntity_2): Result<IMoldEntity_2>;
 
 // @public
 function validateNonEmptyString<T extends string = string>(value: T, fieldName: string): Result<T>;
@@ -7809,6 +7842,15 @@ declare namespace Validators_2 {
         validateDairyFields,
         validateAlcoholFields,
         validateIngredientEntity
+    }
+}
+
+declare namespace Validators_3 {
+    export {
+        validateCavities,
+        validateCavityDimensions,
+        validateCavityWeight,
+        validateMoldEntity
     }
 }
 

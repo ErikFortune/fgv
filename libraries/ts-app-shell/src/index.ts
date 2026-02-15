@@ -37,3 +37,6 @@ export * from './packlets/selectors';
 
 // JSON drop zone (generic drop/paste target with converter validation)
 export * from './packlets/drop-zone';
+
+// Generic edit field primitives for entity editors
+export * from './packlets/editing';

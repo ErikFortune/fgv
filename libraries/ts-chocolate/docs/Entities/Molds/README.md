@@ -87,3 +87,26 @@ Parameters for creating a MoldsLibrary instance asynchronously with encryption s
 
 </td></tr>
 </tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[createBlankMoldEntity](./functions/createBlankMoldEntity.md)
+
+</td><td>
+
+Create a blank mold entity with sensible defaults.
+
+</td></tr>
+</tbody></table>

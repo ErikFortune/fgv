@@ -168,4 +168,13 @@ Type guard for Entities.Ingredients.IFatIngredientEntity | IFatIngredientEntity.
 Type guard for Entities.Ingredients.IAlcoholIngredientEntity | IAlcoholIngredientEntity.
 
 </td></tr>
+<tr><td>
+
+[createBlankIngredientEntity](./functions/createBlankIngredientEntity.md)
+
+</td><td>
+
+Create a blank ingredient entity with sensible defaults.
+
+</td></tr>
 </tbody></table>

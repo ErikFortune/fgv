@@ -26,6 +26,7 @@
  */
 
 import React from 'react';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import type { LibraryRuntime, Model, Entities } from '@fgv/ts-chocolate';
 
@@ -40,6 +41,8 @@ import type { LibraryRuntime, Model, Entities } from '@fgv/ts-chocolate';
 export interface IMoldDetailProps {
   /** The resolved mold to display */
   readonly mold: LibraryRuntime.IMold;
+  /** Optional callback to switch to edit mode */
+  readonly onEdit?: () => void;
 }
 
 // ============================================================================
@@ -213,7 +216,7 @@ function UrlsSection({
  * @public
  */
 export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
-  const { mold } = props;
+  const { mold, onEdit } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -222,6 +225,16 @@ export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
         <div className="flex items-center gap-2 mb-1">
           <h2 className="text-lg font-semibold text-gray-900">{mold.displayName}</h2>
           <CategoryBadge label={mold.format} />
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="ml-auto flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              title="Edit mold"
+            >
+              <PencilSquareIcon className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
         {mold.description && <p className="text-sm text-gray-600">{mold.description}</p>}
         <p className="text-xs text-gray-400 mt-0.5 font-mono">{mold.id}</p>
