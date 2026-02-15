@@ -79,4 +79,22 @@ Controls which collections to load from this source.
 Mutability specification for collections from this source.
 
 </td></tr>
+<tr><td>
+
+[skipMissingDirectories](./IFileTreeSource.skipMissingDirectories.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+If true, gracefully skip this source when its data directory does not exist
+instead of failing.
+
+</td></tr>
 </tbody></table>

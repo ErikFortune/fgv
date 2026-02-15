@@ -422,6 +422,23 @@ Whether the ingredient is vegan
 </td></tr>
 <tr><td>
 
+[notes](./IngredientBase.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICategorizedNote](../../interfaces/ICategorizedNote.md)[]
+
+</td><td>
+
+Categorized notes (e.g., AI assumptions, user annotations)
+
+</td></tr>
+<tr><td>
+
 [entity](./IngredientBase.entity.md)
 
 </td><td>

@@ -575,6 +575,20 @@ describe('IngredientsLibrary', () => {
         })
       ).toFail();
     });
+
+    test('succeeds with skipMissingDirectories when ingredients directory does not exist', () => {
+      const files: FileTree.IInMemoryFile[] = [{ path: '/library/readme.txt', contents: 'empty' }];
+      const root = getLibraryDir(files);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: { directory: root, skipMissingDirectories: true }
+        })
+      ).toSucceedAndSatisfy((library) => {
+        expect(library.collectionCount).toBe(0);
+      });
+    });
   });
 
   // ============================================================================
@@ -1093,6 +1107,30 @@ describe('IngredientsLibrary.createAsync', () => {
 
   test('creates library without built-ins when builtin: false', async () => {
     const result = await IngredientsLibrary.createAsync({ builtin: false });
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.size).toBe(0);
+    });
+  });
+
+  test('fails when ingredients directory does not exist (async)', async () => {
+    const tree = FileTree.inMemory([{ path: '/library/readme.txt', contents: 'empty' }]).orThrow();
+    const root = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+    const result = await IngredientsLibrary.createAsync({
+      builtin: false,
+      fileSources: { directory: root }
+    });
+    expect(result).toFail();
+  });
+
+  test('succeeds with skipMissingDirectories when ingredients directory does not exist (async)', async () => {
+    const tree = FileTree.inMemory([{ path: '/library/readme.txt', contents: 'empty' }]).orThrow();
+    const root = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+    const result = await IngredientsLibrary.createAsync({
+      builtin: false,
+      fileSources: { directory: root, skipMissingDirectories: true }
+    });
     expect(result).toSucceedAndSatisfy((lib) => {
       expect(lib.collections.size).toBe(0);
     });

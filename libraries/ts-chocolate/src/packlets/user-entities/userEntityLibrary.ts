@@ -157,7 +157,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     return sources.map((source) => ({
       directory: source.directory,
       load: false, // No built-in data for user libraries
-      mutable: source.mutable
+      mutable: source.mutable,
+      skipMissingDirectories: source.skipMissingDirectories
     }));
   }
 

@@ -648,8 +648,17 @@ export abstract class SubLibraryBase<
       logger
     });
 
-    return directoryNavigator(source.directory).onSuccess((dataDir) => {
-      return loader.loadFromFileTree(dataDir, { ...loadParams, onEncryptedFile }).onSuccess((result) => {
+    const dataDirResult = directoryNavigator(source.directory);
+    if (dataDirResult.isFailure()) {
+      if (source.skipMissingDirectories) {
+        return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
+      }
+      return fail(dataDirResult.message);
+    }
+
+    return loader
+      .loadFromFileTree(dataDirResult.value, { ...loadParams, onEncryptedFile })
+      .onSuccess((result) => {
         // Mark protected collections with isBuiltIn flag
         /* c8 ignore next 4 - protected collection paths tested but coverage intermittently missed */
         const protectedCollections = result.protectedCollections.map((pc) => ({
@@ -669,7 +678,6 @@ export abstract class SubLibraryBase<
           sourceItems
         });
       });
-    });
   }
 
   /**
@@ -811,8 +819,10 @@ export abstract class SubLibraryBase<
     });
 
     const dataDirResult = directoryNavigator(source.directory);
-    /* c8 ignore next 3 - defensive: directory navigation only fails with malformed FileTree */
     if (dataDirResult.isFailure()) {
+      if (source.skipMissingDirectories) {
+        return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
+      }
       return fail(dataDirResult.message);
     }
 

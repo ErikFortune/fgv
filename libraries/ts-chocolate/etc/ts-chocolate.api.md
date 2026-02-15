@@ -3286,6 +3286,7 @@ interface IFileTreeSource<TCollectionId extends string = string> {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly load?: LibraryLoadSpec<TCollectionId>;
     readonly mutable?: MutabilitySpec;
+    readonly skipMissingDirectories?: boolean;
 }
 
 // @public
@@ -3859,6 +3860,7 @@ interface ILibraryFileTreeSource {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly load?: FullLibraryLoadSpec;
     readonly mutable?: MutabilitySpec;
+    readonly skipMissingDirectories?: boolean;
 }
 
 // @public

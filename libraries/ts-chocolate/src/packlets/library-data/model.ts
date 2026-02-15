@@ -336,6 +336,14 @@ export interface IFileTreeSource<TCollectionId extends string = string> {
    * Default: false (all collections immutable)
    */
   readonly mutable?: MutabilitySpec;
+
+  /**
+   * If true, gracefully skip this source when its data directory does not exist
+   * instead of failing.  Useful for shared roots where not every sub-library's
+   * directory is guaranteed to be present.
+   * @defaultValue false
+   */
+  readonly skipMissingDirectories?: boolean;
 }
 
 /**
@@ -364,6 +372,14 @@ export interface ILibraryFileTreeSource {
    * Default: false (all collections immutable)
    */
   readonly mutable?: MutabilitySpec;
+
+  /**
+   * If true, gracefully skip this source when its data directory does not exist
+   * instead of failing.  Useful for shared roots where not every sub-library's
+   * directory is guaranteed to be present.
+   * @defaultValue false
+   */
+  readonly skipMissingDirectories?: boolean;
 }
 
 // ============================================================================

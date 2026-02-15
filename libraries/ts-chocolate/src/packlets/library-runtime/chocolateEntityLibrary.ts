@@ -293,7 +293,8 @@ export class ChocolateEntityLibrary {
     return sources.map((source) => ({
       directory: source.directory,
       load: resolveBuiltInSpec<CollectionId>(source.load, subLibraryId),
-      mutable: source.mutable
+      mutable: source.mutable,
+      skipMissingDirectories: source.skipMissingDirectories
     }));
   }
 

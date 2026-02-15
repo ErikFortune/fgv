@@ -251,6 +251,23 @@ Optional tags for searching/filtering
 </td></tr>
 <tr><td>
 
+[notes](./IIngredient.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICategorizedNote](../../interfaces/ICategorizedNote.md)[]
+
+</td><td>
+
+Optional categorized notes (e.g., AI assumptions, user annotations, sourcing)
+
+</td></tr>
+<tr><td>
+
 [entity](./IIngredient.entity.md)
 
 </td><td>

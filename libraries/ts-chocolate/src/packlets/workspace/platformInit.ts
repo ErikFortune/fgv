@@ -434,11 +434,22 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
       // Convert external libraries to file tree sources
       const externalSources = toLibraryFileSources(platformInit.externalLibraries);
 
-      // Convert user library to file tree source
+      // Convert user library to file tree source (journals/sessions only)
       const userSource = toUserLibrarySource(platformInit.userLibraryTree);
 
-      // Combine all file sources
-      const allFileSources: ILibraryFileTreeSource[] = [...externalSources, userSource];
+      // The entity library also needs to load from the user tree so that
+      // user-created entity collections (ingredients, fillings, etc.) are
+      // found on restart.  Built-in data comes from builtInData.generated.ts,
+      // not from this tree, so there is no risk of duplicate loading.
+      const userEntitySource: ILibraryFileTreeSource = {
+        directory: platformInit.userLibraryTree,
+        load: true,
+        mutable: true,
+        skipMissingDirectories: true
+      };
+
+      // Combine all file sources for the entity library
+      const allFileSources: ILibraryFileTreeSource[] = [...externalSources, userEntitySource];
 
       /* c8 ignore next 3 - not currently exercised: additionalFileSources is not passed by any caller */
       if (additionalFileSources) {
