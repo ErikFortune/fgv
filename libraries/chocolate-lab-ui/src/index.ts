@@ -40,3 +40,6 @@ export * from './packlets/confections';
 
 // Decoration presentation components
 export * from './packlets/decorations';
+
+// Editing context and toolbar
+export * from './packlets/editing';

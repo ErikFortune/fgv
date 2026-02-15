@@ -26,6 +26,7 @@
  */
 
 import React from 'react';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import type { LibraryRuntime } from '@fgv/ts-chocolate';
 
@@ -40,6 +41,8 @@ import type { LibraryRuntime } from '@fgv/ts-chocolate';
 export interface IIngredientDetailProps {
   /** The resolved runtime ingredient to display */
   readonly ingredient: LibraryRuntime.AnyIngredient;
+  /** Optional callback to switch to edit mode */
+  readonly onEdit?: () => void;
 }
 
 // ============================================================================
@@ -193,6 +196,8 @@ function ChocolateSection({
 export function IngredientDetail(props: IIngredientDetailProps): React.ReactElement {
   const { ingredient } = props;
 
+  const { onEdit } = props;
+
   return (
     <div className="flex flex-col p-4 overflow-y-auto">
       {/* Header */}
@@ -200,6 +205,16 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
         <div className="flex items-center gap-2 mb-1">
           <h3 className="text-lg font-semibold text-choco-primary">{ingredient.name}</h3>
           <CategoryBadge category={ingredient.category} />
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="ml-auto flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              title="Edit ingredient"
+            >
+              <PencilSquareIcon className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
         {ingredient.manufacturer && <p className="text-sm text-gray-500">{ingredient.manufacturer}</p>}
         {ingredient.description && <p className="text-sm text-gray-600 mt-1">{ingredient.description}</p>}
