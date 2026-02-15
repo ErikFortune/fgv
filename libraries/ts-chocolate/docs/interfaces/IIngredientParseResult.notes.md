@@ -2,7 +2,7 @@
 
 ## IIngredientParseResult.notes property
 
-Notes from the AI about assumptions and estimates, if present
+AI notes extracted for convenience display, if present
 
 **Signature:**
 

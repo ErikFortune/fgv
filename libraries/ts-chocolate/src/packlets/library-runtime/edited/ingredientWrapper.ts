@@ -73,6 +73,8 @@ export interface IIngredientChanges {
   readonly measurementUnitsChanged: boolean;
   /** True if urls changed */
   readonly urlsChanged: boolean;
+  /** True if notes changed */
+  readonly notesChanged: boolean;
   /** True if any changes were detected */
   readonly hasChanges: boolean;
 }
@@ -421,6 +423,22 @@ export class EditedIngredient {
   }
 
   /**
+   * Sets the notes list.
+   * @param notes - New notes array, or undefined to clear
+   * @returns Success
+   * @public
+   */
+  public setNotes(notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined): Result<void> {
+    this._pushUndo();
+    this._current = {
+      ...this._current,
+      notes: notes ? notes.map((n) => ({ ...n })) : undefined
+    };
+    this._redoStack = [];
+    return succeed(undefined);
+  }
+
+  /**
    * Applies a partial update to the current entity.
    * This is useful for bulk field updates or category-specific field changes.
    * Pushes current state to undo before change, clears redo.
@@ -526,6 +544,7 @@ export class EditedIngredient {
       original.measurementUnits
     );
     const urlsChanged = !EditedIngredient._urlsEqual(this._current.urls, original.urls);
+    const notesChanged = !EditedIngredient._notesEqual(this._current.notes, original.notes);
 
     return {
       nameChanged,
@@ -542,6 +561,7 @@ export class EditedIngredient {
       phaseChanged,
       measurementUnitsChanged,
       urlsChanged,
+      notesChanged,
       hasChanges:
         nameChanged ||
         categoryChanged ||
@@ -556,7 +576,8 @@ export class EditedIngredient {
         densityChanged ||
         phaseChanged ||
         measurementUnitsChanged ||
-        urlsChanged
+        urlsChanged ||
+        notesChanged
     };
   }
 
@@ -594,6 +615,7 @@ export class EditedIngredient {
           }
         : undefined,
       urls: entity.urls ? entity.urls.map((u) => ({ ...u })) : undefined,
+      notes: entity.notes ? entity.notes.map((n) => ({ ...n })) : undefined,
       // Category-specific array fields
       ...EditedIngredient._deepCopyCategoryFields(entity)
     };
@@ -698,5 +720,26 @@ export class EditedIngredient {
     const sortedA = [...a].sort((x, y) => x.url.localeCompare(y.url));
     const sortedB = [...b].sort((x, y) => x.url.localeCompare(y.url));
     return sortedA.every((url, i) => url.url === sortedB[i].url && url.category === sortedB[i].category);
+  }
+
+  /**
+   * Compares two categorized note arrays for equality.
+   */
+  private static _notesEqual(
+    a: ReadonlyArray<CommonModel.ICategorizedNote> | undefined,
+    b: ReadonlyArray<CommonModel.ICategorizedNote> | undefined
+  ): boolean {
+    if (a === undefined && b === undefined) {
+      return true;
+    }
+    if (a === undefined || b === undefined) {
+      return false;
+    }
+    if (a.length !== b.length) {
+      return false;
+    }
+    const sortedA = [...a].sort((x, y) => x.category.localeCompare(y.category));
+    const sortedB = [...b].sort((x, y) => x.category.localeCompare(y.category));
+    return sortedA.every((note, i) => note.category === sortedB[i].category && note.note === sortedB[i].note);
   }
 }

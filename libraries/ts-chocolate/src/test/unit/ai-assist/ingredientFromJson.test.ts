@@ -74,23 +74,66 @@ describe('parseIngredientJson', () => {
       });
     });
 
-    test('strips notes field and preserves it in result', () => {
+    test('converts legacy string notes to categorized note on entity', () => {
       const withNotes = {
         ...validSugarEntity,
         notes: 'Assumed standard granulated white sugar'
       };
       expect(parseIngredientJson(withNotes)).toSucceedAndSatisfy((result) => {
         expect(result.entity.baseId).toBe('granulated-sugar');
+        expect(result.entity.notes).toEqual([
+          { category: 'ai', note: 'Assumed standard granulated white sugar' }
+        ]);
         expect(result.notes).toBe('Assumed standard granulated white sugar');
       });
     });
 
-    test('returns undefined notes when notes field is not a string', () => {
+    test('passes through categorized notes array', () => {
+      const withCategorizedNotes = {
+        ...validSugarEntity,
+        notes: [
+          { category: 'ai', note: 'Estimated values' },
+          { category: 'user', note: 'Verified by lab test' }
+        ]
+      };
+      expect(parseIngredientJson(withCategorizedNotes)).toSucceedAndSatisfy((result) => {
+        expect(result.entity.notes).toEqual([
+          { category: 'ai', note: 'Estimated values' },
+          { category: 'user', note: 'Verified by lab test' }
+        ]);
+        expect(result.notes).toBe('Estimated values');
+      });
+    });
+
+    test('returns undefined notes when notes field is not a string or array', () => {
       const withNumericNotes = {
         ...validSugarEntity,
         notes: 42
       };
       expect(parseIngredientJson(withNumericNotes)).toSucceedAndSatisfy((result) => {
+        expect(result.entity.notes).toBeUndefined();
+        expect(result.notes).toBeUndefined();
+      });
+    });
+
+    test('returns undefined notes for empty string', () => {
+      const withEmptyNotes = {
+        ...validSugarEntity,
+        notes: '   '
+      };
+      expect(parseIngredientJson(withEmptyNotes)).toSucceedAndSatisfy((result) => {
+        expect(result.entity.notes).toBeUndefined();
+        expect(result.notes).toBeUndefined();
+      });
+    });
+
+    test('returns undefined notes for empty array', () => {
+      const withEmptyArray = {
+        ...validSugarEntity,
+        notes: []
+      };
+      expect(parseIngredientJson(withEmptyArray)).toSucceedAndSatisfy((result) => {
+        expect(result.entity.notes).toBeUndefined();
         expect(result.notes).toBeUndefined();
       });
     });

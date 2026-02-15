@@ -100,7 +100,8 @@ const commonIngredientEntityFields: Conversion.FieldConverters<Omit<IIngredientE
     IngredientConverters.measurementUnit,
     'measurementUnits'
   ).optional(),
-  urls: Converters.arrayOf(IngredientConverters.categorizedUrl).optional()
+  urls: Converters.arrayOf(IngredientConverters.categorizedUrl).optional(),
+  notes: Converters.arrayOf(IngredientConverters.categorizedNote).optional()
 };
 
 /**

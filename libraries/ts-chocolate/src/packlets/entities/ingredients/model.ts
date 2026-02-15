@@ -124,6 +124,8 @@ export interface IIngredientEntity {
   >;
   /** Optional categorized URLs for external resources (manufacturer, product page, etc.) */
   readonly urls?: ReadonlyArray<CommonModel.ICategorizedUrl>;
+  /** Optional categorized notes (e.g., AI assumptions, user annotations, sourcing) */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
 // ============================================================================

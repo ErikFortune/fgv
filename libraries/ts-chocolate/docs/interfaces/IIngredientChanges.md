@@ -264,6 +264,23 @@ True if urls changed
 </td></tr>
 <tr><td>
 
+[notesChanged](./IIngredientChanges.notesChanged.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+True if notes changed
+
+</td></tr>
+<tr><td>
+
 [hasChanges](./IIngredientChanges.hasChanges.md)
 
 </td><td>

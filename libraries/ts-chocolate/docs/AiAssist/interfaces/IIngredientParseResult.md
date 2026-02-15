@@ -3,7 +3,8 @@
 # Interface: IIngredientParseResult
 
 Result of parsing AI-generated ingredient JSON.
-Contains the validated entity and any notes the AI included.
+Contains the validated entity (with notes embedded) and
+a convenience accessor for any AI-specific notes.
 
 ## Properties
 
@@ -39,7 +40,7 @@ Description
 
 </td><td>
 
-The validated ingredient entity
+The validated ingredient entity (notes included on the entity)
 
 </td></tr>
 <tr><td>
@@ -56,7 +57,7 @@ string
 
 </td><td>
 
-Notes from the AI about assumptions and estimates, if present
+AI notes extracted for convenience display, if present
 
 </td></tr>
 </tbody></table>

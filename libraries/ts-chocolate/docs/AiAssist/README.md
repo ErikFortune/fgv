@@ -59,3 +59,26 @@ into a validated IngredientEntity.
 
 </td></tr>
 </tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[AI_NOTE_CATEGORY](./variables/AI_NOTE_CATEGORY.md)
+
+</td><td>
+
+The note category used for AI-generated notes.
+
+</td></tr>
+</tbody></table>

@@ -2,7 +2,7 @@
 
 ## IIngredientParseResult.entity property
 
-The validated ingredient entity
+The validated ingredient entity (notes included on the entity)
 
 **Signature:**
 

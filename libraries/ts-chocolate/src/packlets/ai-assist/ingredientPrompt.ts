@@ -77,6 +77,7 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
     .join(', ')}]
   - "preferredId": one of the measurement unit values above (optional)
 - "urls": array of objects with "category" (string) and "url" (string)
+- "notes": array of objects with "category" (string, e.g. "ai") and "note" (string). Use category "ai" for any assumptions or estimates you want to communicate.
 
 ### Category-specific fields:
 
@@ -108,7 +109,7 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 ## Instructions
 - Use your knowledge to fill in accurate values. Research the specific product if a manufacturer is identifiable.
 - For ganacheCharacteristics, provide your best estimates. The six percentages need not sum to 100 (they represent different compositional axes).
-- Include a top-level "notes" field (string) describing any assumptions you made, especially unconfirmed estimates. This field is informational and will be shown to the user but stripped before validation.
+- Include a "notes" array with at least one entry using category "ai" describing any assumptions you made, especially unconfirmed estimates. These notes are preserved on the entity and shown to the user.
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
 }

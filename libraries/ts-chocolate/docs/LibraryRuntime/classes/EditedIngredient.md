@@ -417,6 +417,19 @@ Sets the URLs list.
 </td></tr>
 <tr><td>
 
+[setNotes(notes)](./EditedIngredient.setNotes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the notes list.
+
+</td></tr>
+<tr><td>
+
 [applyUpdate(update)](./EditedIngredient.applyUpdate.md)
 
 </td><td>

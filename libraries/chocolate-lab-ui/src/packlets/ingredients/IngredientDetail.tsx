@@ -257,6 +257,20 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
 
       {/* Vegan */}
       {ingredient.vegan !== undefined && <DetailRow label="Vegan" value={ingredient.vegan ? 'Yes' : 'No'} />}
+
+      {/* Notes */}
+      {ingredient.notes.length > 0 && (
+        <DetailSection title="Notes">
+          {ingredient.notes.map((note, i) => (
+            <div key={i} className="mb-1.5">
+              <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-500 rounded mr-1.5">
+                {note.category}
+              </span>
+              <span className="text-sm text-gray-700">{note.note}</span>
+            </div>
+          ))}
+        </DetailSection>
+      )}
     </div>
   );
 }

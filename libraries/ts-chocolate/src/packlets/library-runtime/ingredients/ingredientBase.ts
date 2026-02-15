@@ -30,7 +30,8 @@ import {
   Converters,
   IngredientCategory,
   IngredientId,
-  CollectionId
+  CollectionId,
+  Model as CommonModel
 } from '../../common';
 import { Ingredients, IngredientEntity } from '../../entities';
 import { IIngredientContext, IIngredient, IFillingRecipe } from '../model';
@@ -174,6 +175,13 @@ export abstract class IngredientBase<TEntity extends IngredientEntity = Ingredie
    */
   public get vegan(): boolean | undefined {
     return this._ingredient.vegan;
+  }
+
+  /**
+   * Categorized notes (e.g., AI assumptions, user annotations)
+   */
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> {
+    return this._ingredient.notes ?? [];
   }
 
   // ============================================================================

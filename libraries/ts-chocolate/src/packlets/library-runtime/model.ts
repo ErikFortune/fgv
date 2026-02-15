@@ -157,6 +157,9 @@ export interface IIngredient<TEntity extends IngredientEntity = IngredientEntity
   /** Optional tags for searching/filtering */
   readonly tags?: ReadonlyArray<string>;
 
+  /** Optional categorized notes (e.g., AI assumptions, user annotations, sourcing) */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
+
   // ---- Navigation (runtime-specific) ----
 
   /**

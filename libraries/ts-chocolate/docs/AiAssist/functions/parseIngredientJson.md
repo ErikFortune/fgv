@@ -5,8 +5,9 @@
 Parses and validates an unknown value (typically from AI-generated JSON)
 into a validated IngredientEntity.
 
-Strips the informational "notes" field before validation since it is not
-part of the entity schema, but preserves it in the result for display.
+Handles both legacy plain-string `notes` (converted to categorized with
+category "ai") and the new `ICategorizedNote[]` format. Notes are embedded
+on the entity and also returned separately for convenience display.
 
 ## Signature
 

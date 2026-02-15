@@ -25,26 +25,61 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
+import { type NoteCategory, type Model as CommonModel } from '../common';
 import { Converters as IngredientConverters, IngredientEntity } from '../entities';
 
 /**
+ * The note category used for AI-generated notes.
+ * @public
+ */
+export const AI_NOTE_CATEGORY: NoteCategory = 'ai' as NoteCategory;
+
+/**
  * Result of parsing AI-generated ingredient JSON.
- * Contains the validated entity and any notes the AI included.
+ * Contains the validated entity (with notes embedded) and
+ * a convenience accessor for any AI-specific notes.
  * @public
  */
 export interface IIngredientParseResult {
-  /** The validated ingredient entity */
+  /** The validated ingredient entity (notes included on the entity) */
   readonly entity: IngredientEntity;
-  /** Notes from the AI about assumptions and estimates, if present */
+  /** AI notes extracted for convenience display, if present */
   readonly notes?: string;
+}
+
+/**
+ * Normalizes an AI-supplied `notes` value into an array of
+ * {@link CommonModel.ICategorizedNote | ICategorizedNote}.
+ *
+ * Handles three cases:
+ * 1. A plain string → wrapped as `[{ category: 'ai', note: string }]`
+ * 2. An array of `{ category, note }` objects → passed through
+ * 3. Anything else → returns `undefined`
+ *
+ * @param raw - The raw `notes` value from the AI JSON
+ * @returns Normalized notes array or undefined
+ * @internal
+ */
+function normalizeNotes(raw: unknown): CommonModel.ICategorizedNote[] | undefined {
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    return [{ category: AI_NOTE_CATEGORY, note: raw.trim() }];
+  }
+
+  if (Array.isArray(raw) && raw.length > 0) {
+    // Return the array as-is — the converter will validate each entry
+    return raw as CommonModel.ICategorizedNote[];
+  }
+
+  return undefined;
 }
 
 /**
  * Parses and validates an unknown value (typically from AI-generated JSON)
  * into a validated {@link IngredientEntity}.
  *
- * Strips the informational "notes" field before validation since it is not
- * part of the entity schema, but preserves it in the result for display.
+ * Handles both legacy plain-string `notes` (converted to categorized with
+ * category "ai") and the new `ICategorizedNote[]` format. Notes are embedded
+ * on the entity and also returned separately for convenience display.
  *
  * @param from - The unknown value to parse (should be a parsed JSON object)
  * @returns A {@link Result} containing the validated entity and any AI notes
@@ -56,13 +91,16 @@ export function parseIngredientJson(from: unknown): Result<IIngredientParseResul
   }
 
   const raw = from as Record<string, unknown>;
-  const notes = typeof raw.notes === 'string' ? raw.notes : undefined;
 
-  // Strip "notes" before validation since it is not part of the entity schema
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { notes: _stripped, ...entityData } = raw;
+  // Normalize notes: plain string → categorized array, array → pass through
+  const normalizedNotes = normalizeNotes(raw.notes);
 
-  return IngredientConverters.Ingredients.ingredientEntity
-    .convert(entityData)
-    .onSuccess((entity) => succeed({ entity, notes }));
+  // Replace raw notes with normalized version for validation
+  const entityData = { ...raw, notes: normalizedNotes };
+
+  return IngredientConverters.Ingredients.ingredientEntity.convert(entityData).onSuccess((entity) => {
+    // Extract AI notes for convenience display
+    const aiNote = entity.notes?.find((n) => n.category === AI_NOTE_CATEGORY);
+    return succeed({ entity, notes: aiNote?.note });
+  });
 }

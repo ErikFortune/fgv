@@ -33,6 +33,7 @@ import {
   IngredientCategory,
   Percentage,
   Model as CommonModel,
+  type NoteCategory,
   type Allergen,
   type Certification,
   type ChocolateType,
@@ -613,6 +614,88 @@ function AlcoholFieldsEditor({
   );
 }
 
+// ============================================================================
+// Notes Editor
+// ============================================================================
+
+function NotesEditor({
+  notes,
+  onChange
+}: {
+  readonly notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined;
+  readonly onChange: (notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined) => void;
+}): React.ReactElement {
+  const items = notes ?? [];
+
+  const handleNoteTextChange = useCallback(
+    (index: number, text: string) => {
+      const updated = items.map((n, i) => (i === index ? { ...n, note: text } : n));
+      onChange(updated.length > 0 ? updated : undefined);
+    },
+    [items, onChange]
+  );
+
+  const handleNoteCategoryChange = useCallback(
+    (index: number, category: string) => {
+      const updated = items.map((n, i) => (i === index ? { ...n, category: category as NoteCategory } : n));
+      onChange(updated.length > 0 ? updated : undefined);
+    },
+    [items, onChange]
+  );
+
+  const handleRemoveNote = useCallback(
+    (index: number) => {
+      const updated = items.filter((__n, i) => i !== index);
+      onChange(updated.length > 0 ? updated : undefined);
+    },
+    [items, onChange]
+  );
+
+  const handleAddNote = useCallback(() => {
+    onChange([...items, { category: 'general' as NoteCategory, note: '' }]);
+  }, [items, onChange]);
+
+  return (
+    <div className="space-y-2">
+      {items.map((note, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <input
+            type="text"
+            value={note.category}
+            onChange={(e) => handleNoteCategoryChange(i, e.target.value)}
+            className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            placeholder="category"
+          />
+          <textarea
+            value={note.note}
+            onChange={(e) => handleNoteTextChange(i, e.target.value)}
+            rows={2}
+            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary resize-y"
+            placeholder="Note text"
+          />
+          <button
+            onClick={() => handleRemoveNote(i)}
+            className="px-1.5 py-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+            title="Remove note"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={handleAddNote}
+        className="text-xs text-choco-primary hover:text-choco-primary/80 transition-colors"
+      >
+        + Add note
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// Category-Specific Editors
+// ============================================================================
+
 function CategorySpecificFields({
   entity,
   onUpdate
@@ -757,6 +840,14 @@ export function IngredientEditView(props: IIngredientEditViewProps): React.React
     [w, ctx]
   );
 
+  const handleNotesChange = useCallback(
+    (notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined) => {
+      w.setNotes(notes);
+      ctx.notifyMutation();
+    },
+    [w, ctx]
+  );
+
   // ---- Render ----
 
   return (
@@ -830,6 +921,11 @@ export function IngredientEditView(props: IIngredientEditViewProps): React.React
         {/* Vegan */}
         <EditSection title="Dietary">
           <CheckboxInput value={current.vegan} onChange={handleVeganChange} label="Vegan" />
+        </EditSection>
+
+        {/* Notes */}
+        <EditSection title="Notes">
+          <NotesEditor notes={current.notes} onChange={handleNotesChange} />
         </EditSection>
       </div>
     </div>

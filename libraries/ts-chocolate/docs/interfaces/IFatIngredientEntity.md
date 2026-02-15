@@ -298,4 +298,21 @@ readonly [ICategorizedUrl](ICategorizedUrl.md)[]
 Optional categorized URLs for external resources (manufacturer, product page, etc.)
 
 </td></tr>
+<tr><td>
+
+[notes](./IIngredientEntity.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICategorizedNote](ICategorizedNote.md)[]
+
+</td><td>
+
+Optional categorized notes (e.g., AI assumptions, user annotations, sourcing)
+
+</td></tr>
 </tbody></table>

@@ -31,10 +31,14 @@ const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
 // @public
 type AggregationMode = 'intersection' | 'union';
 
+// @public
+const AI_NOTE_CATEGORY: NoteCategory;
+
 declare namespace AiAssist {
     export {
         buildIngredientAiPrompt,
         parseIngredientJson,
+        AI_NOTE_CATEGORY,
         IIngredientParseResult
     }
 }
@@ -1659,6 +1663,7 @@ class EditedIngredient {
     setManufacturer(manufacturer: string | undefined): Result<void>;
     setMeasurementUnits(measurementUnits: Model.IOptionsWithPreferred<Model.IMeasurementUnitOption, MeasurementUnit> | undefined): Result<void>;
     setName(name: string): Result<void>;
+    setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
     setPhase(phase: IngredientPhase | undefined): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setTraceAllergens(traceAllergens: ReadonlyArray<Allergen> | undefined): Result<void>;
@@ -3620,6 +3625,7 @@ interface IIngredient<TEntity extends IngredientEntity = IngredientEntity> {
     isSugar(): this is ISugarIngredient;
     readonly manufacturer?: string;
     readonly name: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     primaryInFillings(): IFillingRecipe[];
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
@@ -3639,6 +3645,7 @@ interface IIngredientChanges {
     readonly manufacturerChanged: boolean;
     readonly measurementUnitsChanged: boolean;
     readonly nameChanged: boolean;
+    readonly notesChanged: boolean;
     readonly phaseChanged: boolean;
     readonly tagsChanged: boolean;
     readonly traceAllergensChanged: boolean;
@@ -3665,6 +3672,7 @@ interface IIngredientEntity {
     readonly manufacturer?: string;
     readonly measurementUnits?: Model.IOptionsWithPreferred<Model.IMeasurementUnitOption, MeasurementUnit>;
     readonly name: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly phase?: IngredientPhase;
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
@@ -4123,6 +4131,7 @@ abstract class IngredientBase<TEntity extends IngredientEntity = IngredientEntit
     isSugar(): this is SugarIngredient;
     get manufacturer(): string | undefined;
     get name(): string;
+    get notes(): ReadonlyArray<Model.ICategorizedNote>;
     primaryInFillings(): IFillingRecipe[];
     // (undocumented)
     protected readonly _sourceId: CollectionId;

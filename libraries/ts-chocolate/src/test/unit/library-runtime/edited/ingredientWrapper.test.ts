@@ -28,6 +28,7 @@ import {
   IngredientPhase,
   MeasurementUnit,
   Model as CommonModel,
+  NoteCategory,
   Percentage,
   UrlCategory
 } from '../../../../packlets/common';
@@ -472,6 +473,32 @@ describe('EditedIngredient', () => {
       expect(wrapper.current.urls).toHaveLength(1);
     });
 
+    test('setNotes() sets and clears notes', () => {
+      const wrapper = EditedIngredient.create(baseIngredient).orThrow();
+      const notes: CommonModel.ICategorizedNote[] = [
+        { category: 'ai' as NoteCategory, note: 'Estimated values' }
+      ];
+
+      expect(wrapper.setNotes(notes)).toSucceed();
+      expect(wrapper.current.notes).toHaveLength(1);
+      expect(wrapper.current.notes![0].note).toBe('Estimated values');
+
+      expect(wrapper.setNotes(undefined)).toSucceed();
+      expect(wrapper.current.notes).toBeUndefined();
+    });
+
+    test('setNotes() deep copies the array', () => {
+      const wrapper = EditedIngredient.create(baseIngredient).orThrow();
+      const notes: CommonModel.ICategorizedNote[] = [
+        { category: 'ai' as NoteCategory, note: 'Estimated values' }
+      ];
+
+      wrapper.setNotes(notes).orThrow();
+      notes.push({ category: 'user' as NoteCategory, note: 'Extra note' });
+
+      expect(wrapper.current.notes).toHaveLength(1);
+    });
+
     test('applyUpdate() applies partial update', () => {
       const wrapper = EditedIngredient.create(baseIngredient).orThrow();
 
@@ -783,6 +810,66 @@ describe('EditedIngredient', () => {
       expect(changes.urlsChanged).toBe(true);
     });
 
+    test('getChanges() detects notes change', () => {
+      const wrapper = EditedIngredient.create(baseIngredient).orThrow();
+      wrapper.setNotes([{ category: 'ai' as NoteCategory, note: 'Estimated' }]).orThrow();
+      const changes = wrapper.getChanges(baseIngredient);
+
+      expect(changes.notesChanged).toBe(true);
+    });
+
+    test('getChanges() notes comparison handles sorted order', () => {
+      const ingredient: Ingredients.IIngredientEntity = {
+        ...baseIngredient,
+        notes: [
+          { category: 'user' as NoteCategory, note: 'User note' },
+          { category: 'ai' as NoteCategory, note: 'AI note' }
+        ]
+      };
+      const wrapper = EditedIngredient.create(ingredient).orThrow();
+
+      wrapper
+        .setNotes([
+          { category: 'ai' as NoteCategory, note: 'AI note' },
+          { category: 'user' as NoteCategory, note: 'User note' }
+        ])
+        .orThrow();
+      const changes = wrapper.getChanges(ingredient);
+
+      expect(changes.notesChanged).toBe(false);
+    });
+
+    test('getChanges() notes comparison detects note text difference', () => {
+      const ingredient: Ingredients.IIngredientEntity = {
+        ...baseIngredient,
+        notes: [{ category: 'ai' as NoteCategory, note: 'Original' }]
+      };
+      const wrapper = EditedIngredient.create(ingredient).orThrow();
+
+      wrapper.setNotes([{ category: 'ai' as NoteCategory, note: 'Changed' }]).orThrow();
+      const changes = wrapper.getChanges(ingredient);
+
+      expect(changes.notesChanged).toBe(true);
+    });
+
+    test('getChanges() notes comparison detects length difference', () => {
+      const ingredient: Ingredients.IIngredientEntity = {
+        ...baseIngredient,
+        notes: [{ category: 'ai' as NoteCategory, note: 'AI note' }]
+      };
+      const wrapper = EditedIngredient.create(ingredient).orThrow();
+
+      wrapper
+        .setNotes([
+          { category: 'ai' as NoteCategory, note: 'AI note' },
+          { category: 'user' as NoteCategory, note: 'User note' }
+        ])
+        .orThrow();
+      const changes = wrapper.getChanges(ingredient);
+
+      expect(changes.notesChanged).toBe(true);
+    });
+
     test('getChanges() handles both undefined for optional arrays', () => {
       const wrapper = EditedIngredient.create(baseIngredient).orThrow();
       const changes = wrapper.getChanges(baseIngredient);
@@ -793,6 +880,7 @@ describe('EditedIngredient', () => {
       expect(changes.tagsChanged).toBe(false);
       expect(changes.measurementUnitsChanged).toBe(false);
       expect(changes.urlsChanged).toBe(false);
+      expect(changes.notesChanged).toBe(false);
     });
 
     test('getChanges() handles one undefined and one defined for optional arrays', () => {

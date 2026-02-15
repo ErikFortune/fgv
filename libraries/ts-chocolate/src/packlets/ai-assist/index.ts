@@ -4,4 +4,4 @@
  */
 
 export { buildIngredientAiPrompt } from './ingredientPrompt';
-export { parseIngredientJson, type IIngredientParseResult } from './ingredientFromJson';
+export { parseIngredientJson, AI_NOTE_CATEGORY, type IIngredientParseResult } from './ingredientFromJson';
