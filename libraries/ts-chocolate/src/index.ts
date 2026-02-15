@@ -60,6 +60,7 @@ export {
 // All branded types and common utilities
 export * from './packlets/common';
 
+import * as AiAssist from './packlets/ai-assist';
 import * as BuiltIn from './packlets/built-in';
 import * as Editing from './packlets/editing';
 import * as Entities from './packlets/entities';
@@ -69,4 +70,14 @@ import * as Settings from './packlets/settings';
 import * as UserEntities from './packlets/user-entities';
 import * as UserLibrary from './packlets/user-library';
 
-export { BuiltIn, Editing, Entities, LibraryData, LibraryRuntime, Settings, UserEntities, UserLibrary };
+export {
+  AiAssist,
+  BuiltIn,
+  Editing,
+  Entities,
+  LibraryData,
+  LibraryRuntime,
+  Settings,
+  UserEntities,
+  UserLibrary
+};

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
 import {
   ModeSelector,
   type IModeConfig,
@@ -24,7 +25,13 @@ import {
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
 import { Logging } from '@fgv/ts-utils';
-import { createWorkspaceFromPlatform, Entities, LibraryRuntime, type Percentage } from '@fgv/ts-chocolate';
+import {
+  createWorkspaceFromPlatform,
+  AiAssist,
+  Entities,
+  LibraryRuntime,
+  type Percentage
+} from '@fgv/ts-chocolate';
 import {
   type AppMode,
   type AppTab,
@@ -53,7 +60,8 @@ import {
   useFilteredEntities,
   useCollectionActions,
   initializeBrowserPlatform,
-  type IEntityFilterSpec
+  type IEntityFilterSpec,
+  EntityCreateForm
 } from '@fgv/chocolate-lab-ui';
 import type {
   BaseIngredientId,
@@ -338,11 +346,6 @@ function IngredientsTabContent(): React.ReactElement {
   // Keyed by entity ID so switching ingredients creates a fresh wrapper.
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(undefined);
 
-  // "New Ingredient" dialog state
-  const [showNewDialog, setShowNewDialog] = useState(false);
-  const [newIngredientName, setNewIngredientName] = useState('');
-  const [newIngredientIdOverride, setNewIngredientIdOverride] = useState('');
-
   // Find the first mutable collection ID (memoized)
   const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
     const collections = workspace.data.entities.ingredients.collections;
@@ -354,15 +357,15 @@ function IngredientsTabContent(): React.ReactElement {
     return undefined;
   }, [workspace, reactiveWorkspace.version]);
 
-  // Create a new ingredient from a name, add to mutable collection, and open in edit mode
+  // Create a new ingredient from an entity, add to mutable collection, and open in edit mode
   const handleCreateIngredient = useCallback(
-    (name: string, idOverride?: string): void => {
+    (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): void => {
       if (!mutableCollectionId) {
         workspace.data.logger.error('Cannot add ingredient: no mutable collection available');
         return;
       }
 
-      const baseId = (idOverride?.trim() || slugify(name)) as BaseIngredientId;
+      const baseId = entity.baseId as BaseIngredientId;
       const compositeId = `${mutableCollectionId}.${baseId}` as IngredientId;
 
       // Check for duplicate
@@ -371,8 +374,6 @@ function IngredientsTabContent(): React.ReactElement {
         workspace.data.logger.error(`Ingredient '${compositeId}' already exists`);
         return;
       }
-
-      const entity = makeBlankIngredient(baseId, name);
 
       // Add to in-memory collection
       const colResult = workspace.data.entities.ingredients.collections.get(mutableCollectionId);
@@ -402,21 +403,59 @@ function IngredientsTabContent(): React.ReactElement {
       }
       editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
 
+      if (source === 'ai') {
+        workspace.data.logger.info(`Created ingredient '${entity.name}' from AI-generated data`);
+      }
+
       const entry: ICascadeEntry = { entityType: 'ingredient', entityId: compositeId, mode: 'edit' };
       squashCascade([entry]);
     },
     [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
   );
 
-  const handleNewDialogConfirm = useCallback((): void => {
-    const trimmed = newIngredientName.trim();
-    if (trimmed) {
-      handleCreateIngredient(trimmed, newIngredientIdOverride || undefined);
-    }
-    setShowNewDialog(false);
-    setNewIngredientName('');
-    setNewIngredientIdOverride('');
-  }, [newIngredientName, newIngredientIdOverride, handleCreateIngredient]);
+  // Handle paste from the list header drop target button
+  const handleListHeaderPaste = useCallback((): void => {
+    navigator.clipboard.readText().then(
+      (text) => {
+        if (!text.trim()) {
+          workspace.data.logger.info('Clipboard is empty');
+          return;
+        }
+
+        // Strip markdown code fences
+        const stripped = text
+          .trim()
+          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
+          .trim();
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(stripped);
+        } catch (err: unknown) {
+          const detail = err instanceof Error ? err.message : String(err);
+          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
+          return;
+        }
+
+        const result = AiAssist.parseIngredientJson(parsed);
+        if (result.isFailure()) {
+          workspace.data.logger.error(`AI ingredient validation failed: ${result.message}`);
+          return;
+        }
+
+        const { entity, notes } = result.value;
+        if (notes) {
+          workspace.data.logger.info(`AI notes: ${notes}`);
+        }
+
+        handleCreateIngredient(entity, 'ai');
+        workspace.data.logger.info(`Opened '${entity.name}' for review — save when ready`);
+      },
+      () => {
+        workspace.data.logger.error('Could not read clipboard — permission may be required');
+      }
+    );
+  }, [workspace, handleCreateIngredient]);
 
   // Collect all ingredients into a sorted array (memoized on workspace version)
   const ingredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
@@ -563,11 +602,52 @@ function IngredientsTabContent(): React.ReactElement {
     []
   );
 
+  // Open the cascade in 'create' mode for a new ingredient
+  const handleNewIngredient = useCallback((): void => {
+    const entry: ICascadeEntry = { entityType: 'ingredient', entityId: '__new__', mode: 'create' };
+    squashCascade([entry]);
+  }, [squashCascade]);
+
+  // EntityCreateForm onCreate callback — wraps handleCreateIngredient with the blank entity builder
+  const handleCreateFormSubmit = useCallback(
+    (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): void => {
+      handleCreateIngredient(entity, source);
+    },
+    [handleCreateIngredient]
+  );
+
+  // Cancel the create form — clear the cascade
+  const handleCreateFormCancel = useCallback((): void => {
+    squashCascade([]);
+  }, [squashCascade]);
+
   // Build cascade columns from the cascade stack
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack
       .filter((e) => e.entityType === 'ingredient')
       .map((entry) => {
+        // Create mode: render EntityCreateForm
+        if (entry.mode === 'create') {
+          return {
+            key: '__new__',
+            label: 'New Ingredient',
+            content: (
+              <EntityCreateForm<Entities.Ingredients.IngredientEntity>
+                slugify={slugify}
+                buildPrompt={AiAssist.buildIngredientAiPrompt}
+                parseJson={AiAssist.parseIngredientJson}
+                makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
+                  makeBlankIngredient(id as BaseIngredientId, name)
+                }
+                onCreate={handleCreateFormSubmit}
+                onCancel={handleCreateFormCancel}
+                namePlaceholder="e.g. Callebaut 811 Dark"
+                entityLabel="Ingredient"
+              />
+            )
+          };
+        }
+
         const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
         if (result.isFailure()) {
           return {
@@ -617,7 +697,17 @@ function IngredientsTabContent(): React.ReactElement {
           )
         };
       });
-  }, [cascadeStack, workspace, getOrCreateWrapper, handleSave, handleCancelEdit, handleEdit]);
+  }, [
+    cascadeStack,
+    workspace,
+    getOrCreateWrapper,
+    handleSave,
+    handleSaveAs,
+    handleCancelEdit,
+    handleEdit,
+    handleCreateFormSubmit,
+    handleCreateFormCancel
+  ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {
@@ -633,14 +723,22 @@ function IngredientsTabContent(): React.ReactElement {
     <EntityTabLayout
       list={
         <div className="flex flex-col h-full">
-          <div className="px-3 py-2 border-b border-gray-200">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
             <button
-              onClick={(): void => setShowNewDialog(true)}
+              onClick={handleNewIngredient}
               disabled={mutableCollectionId === undefined}
               title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
-              className="w-full px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               + New Ingredient
+            </button>
+            <button
+              onClick={handleListHeaderPaste}
+              disabled={mutableCollectionId === undefined}
+              title="Paste ingredient from clipboard (AI-generated JSON)"
+              className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <CursorArrowRaysIcon className="w-5 h-5" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -662,66 +760,6 @@ function IngredientsTabContent(): React.ReactElement {
               }}
             />
           </div>
-          {showNewDialog && (
-            <Modal
-              isOpen={showNewDialog}
-              title="New Ingredient"
-              onClose={(): void => {
-                setShowNewDialog(false);
-                setNewIngredientName('');
-                setNewIngredientIdOverride('');
-              }}
-            >
-              <div className="flex flex-col gap-3 p-4">
-                <label className="text-sm font-medium text-gray-700">Ingredient Name</label>
-                <input
-                  type="text"
-                  value={newIngredientName}
-                  onChange={(e): void => setNewIngredientName(e.target.value)}
-                  onKeyDown={(e): void => {
-                    if (e.key === 'Enter') handleNewDialogConfirm();
-                  }}
-                  placeholder="e.g. Callebaut 811 Dark"
-                  className="px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-                  autoFocus
-                />
-                {newIngredientName.trim() && (
-                  <>
-                    <label className="text-sm font-medium text-gray-700">ID</label>
-                    <input
-                      type="text"
-                      value={newIngredientIdOverride}
-                      onChange={(e): void => setNewIngredientIdOverride(e.target.value)}
-                      onKeyDown={(e): void => {
-                        if (e.key === 'Enter') handleNewDialogConfirm();
-                      }}
-                      placeholder={slugify(newIngredientName.trim())}
-                      className="px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary font-mono"
-                    />
-                  </>
-                )}
-                <div className="flex justify-end gap-2 mt-2">
-                  <button
-                    onClick={(): void => {
-                      setShowNewDialog(false);
-                      setNewIngredientName('');
-                      setNewIngredientIdOverride('');
-                    }}
-                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleNewDialogConfirm}
-                    disabled={!newIngredientName.trim()}
-                    className="px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Create
-                  </button>
-                </div>
-              </div>
-            </Modal>
-          )}
         </div>
       }
       cascadeColumns={cascadeColumns}

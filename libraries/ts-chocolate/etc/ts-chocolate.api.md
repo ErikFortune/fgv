@@ -31,6 +31,15 @@ const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
 // @public
 type AggregationMode = 'intersection' | 'union';
 
+declare namespace AiAssist {
+    export {
+        buildIngredientAiPrompt,
+        parseIngredientJson,
+        IIngredientParseResult
+    }
+}
+export { AiAssist }
+
 // @public
 class AlcoholIngredient extends IngredientBase implements IAlcoholIngredient {
     // @internal
@@ -464,6 +473,9 @@ const baseTaskId_2: Validator<BaseTaskId>;
 //
 // @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
+
+// @public
+function buildIngredientAiPrompt(ingredientName: string): string;
 
 declare namespace BuiltIn {
     export {
@@ -3699,6 +3711,12 @@ interface IIngredientModifiers {
 }
 
 // @public
+interface IIngredientParseResult {
+    readonly entity: IngredientEntity;
+    readonly notes?: string;
+}
+
+// @public
 interface IIngredientQueryOptions {
     readonly includeAlternates?: boolean;
 }
@@ -6444,6 +6462,12 @@ function parseFillingRecipeVariationId(id: FillingRecipeVariationId): Result<Par
 
 // @public
 function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IngredientEntity"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Result"
+//
+// @public
+function parseIngredientJson(from: unknown): Result<IIngredientParseResult>;
 
 // @public
 function parseJournalId(id: JournalId): Result<ParsedJournalId>;

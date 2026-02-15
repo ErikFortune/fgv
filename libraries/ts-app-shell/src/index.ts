@@ -34,3 +34,6 @@ export * from './packlets/cascade';
 
 // Selectors (PreferredSelector popover)
 export * from './packlets/selectors';
+
+// JSON drop zone (generic drop/paste target with converter validation)
+export * from './packlets/drop-zone';

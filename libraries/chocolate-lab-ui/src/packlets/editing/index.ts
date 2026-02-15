@@ -17,3 +17,5 @@ export {
 } from './useEditingContext';
 
 export { EditingToolbar, type IEditingToolbarProps } from './EditingToolbar';
+
+export { EntityCreateForm, type IEntityCreateFormProps, type IAiParseResult } from './EntityCreateForm';

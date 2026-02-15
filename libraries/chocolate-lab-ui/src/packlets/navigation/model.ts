@@ -129,10 +129,10 @@ export type CascadeEntityType =
   | 'journal-entry';
 
 /**
- * Mode for a cascade column (view-only or editing).
+ * Mode for a cascade column (view-only, editing, or creating a new entity).
  * @public
  */
-export type CascadeColumnMode = 'view' | 'edit';
+export type CascadeColumnMode = 'view' | 'edit' | 'create';
 
 /**
  * A single entry in the column cascade stack.

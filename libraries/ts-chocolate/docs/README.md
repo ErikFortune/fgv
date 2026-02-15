@@ -16,6 +16,15 @@ Description
 <tbody>
 <tr><td>
 
+[AiAssist](./AiAssist/README.md)
+
+</td><td>
+
+AI assist packlet - prompt generation and JSON-to-entity glue for ingredient creation.
+
+</td></tr>
+<tr><td>
+
 [BuiltIn](./BuiltIn/README.md)
 
 </td><td>
