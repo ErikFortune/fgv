@@ -3180,6 +3180,12 @@ function DecorationsTabContent(): React.ReactElement {
   const exitComparison = useNavigationStore((s) => s.exitComparison);
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedDecoration } | undefined>(undefined);
+  const subIngredientRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
+    undefined
+  );
+  const subProcedureRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(
+    undefined
+  );
   const [subEntitySeed, setSubEntitySeed] = useState('');
 
   const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
@@ -3202,6 +3208,10 @@ function DecorationsTabContent(): React.ReactElement {
 
   const availableProcedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
     return Array.from(workspace.data.procedures.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const availableTasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
+    return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
 
   const selectedId =
@@ -3577,10 +3587,20 @@ function DecorationsTabContent(): React.ReactElement {
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
 
-      // Pop back to the decoration editor
+      // Open the new ingredient in edit mode (squashed after decoration editor)
+      const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
+      if (wrapperResult.isFailure()) {
+        workspace.data.logger.error(`Failed to create ingredient editing wrapper: ${wrapperResult.message}`);
+        return;
+      }
+      subIngredientRef.current = { id: compositeId, wrapper: wrapperResult.value };
+
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
       if (editIdx >= 0) {
-        squashCascade(cascadeStack.slice(0, editIdx + 1));
+        squashCascade([
+          ...cascadeStack.slice(0, editIdx + 1),
+          { entityType: 'ingredient', entityId: compositeId, mode: 'edit' }
+        ]);
       }
     },
     [workspace, reactiveWorkspace, cascadeStack, squashCascade]
@@ -3638,10 +3658,20 @@ function DecorationsTabContent(): React.ReactElement {
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
 
-      // Pop back to the decoration editor
+      // Open the new procedure in edit mode (squashed after decoration editor)
+      const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
+      if (wrapperResult.isFailure()) {
+        workspace.data.logger.error(`Failed to create procedure editing wrapper: ${wrapperResult.message}`);
+        return;
+      }
+      subProcedureRef.current = { id: compositeId, wrapper: wrapperResult.value };
+
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
       if (editIdx >= 0) {
-        squashCascade(cascadeStack.slice(0, editIdx + 1));
+        squashCascade([
+          ...cascadeStack.slice(0, editIdx + 1),
+          { entityType: 'procedure', entityId: compositeId, mode: 'edit' }
+        ]);
       }
     },
     [workspace, reactiveWorkspace, cascadeStack, squashCascade]
@@ -3657,6 +3687,140 @@ function DecorationsTabContent(): React.ReactElement {
     }
   }, [cascadeStack, squashCascade]);
 
+  // Get or create an EditedIngredient wrapper for sub-entity editing
+  const getOrCreateSubIngredientWrapper = useCallback(
+    (ingredient: LibraryRuntime.AnyIngredient): LibraryRuntime.EditedIngredient | undefined => {
+      const id = ingredient.id;
+      if (subIngredientRef.current?.id === id) {
+        return subIngredientRef.current.wrapper;
+      }
+      const result = LibraryRuntime.EditedIngredient.create(ingredient.entity);
+      if (result.isFailure()) {
+        return undefined;
+      }
+      subIngredientRef.current = { id, wrapper: result.value };
+      return result.value;
+    },
+    []
+  );
+
+  // Get or create an EditedProcedure wrapper for sub-entity editing
+  const getOrCreateSubProcedureWrapper = useCallback(
+    (procedure: LibraryRuntime.IProcedure): LibraryRuntime.EditedProcedure | undefined => {
+      const id = procedure.id;
+      if (subProcedureRef.current?.id === id) {
+        return subProcedureRef.current.wrapper;
+      }
+      const result = LibraryRuntime.EditedProcedure.create(procedure.entity);
+      if (result.isFailure()) {
+        return undefined;
+      }
+      subProcedureRef.current = { id, wrapper: result.value };
+      return result.value;
+    },
+    []
+  );
+
+  // Save a sub-entity ingredient and pop back to decoration editor
+  const handleSubIngredientSave = useCallback(
+    (wrapper: LibraryRuntime.EditedIngredient): void => {
+      const entity = wrapper.current;
+      const compositeId = subIngredientRef.current?.id;
+      if (!compositeId) return;
+
+      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const baseId = entity.baseId as BaseIngredientId;
+
+      const colResult = workspace.data.entities.ingredients.collections.get(collectionId);
+      if (colResult.isFailure() || !colResult.value.isMutable) {
+        workspace.data.logger.error(`Save failed: ingredient collection '${collectionId}' not available`);
+        return;
+      }
+      colResult.value.items.set(baseId, entity);
+
+      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(collectionId);
+      if (editableResult.isSuccess()) {
+        const editable = editableResult.value;
+        editable.set(baseId, entity);
+        if (editable.canSave()) {
+          const diskResult = editable.save();
+          if (diskResult.isFailure()) {
+            workspace.data.logger.error(`Disk save failed for ingredient: ${diskResult.message}`);
+          }
+        }
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+      subIngredientRef.current = undefined;
+
+      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
+      if (editIdx >= 0) {
+        squashCascade(cascadeStack.slice(0, editIdx + 1));
+      }
+    },
+    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+  );
+
+  // Cancel sub-entity ingredient editing — pop back to decoration editor
+  const handleSubIngredientCancel = useCallback((): void => {
+    subIngredientRef.current = undefined;
+    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
+    if (editIdx >= 0) {
+      squashCascade(cascadeStack.slice(0, editIdx + 1));
+    }
+  }, [cascadeStack, squashCascade]);
+
+  // Save a sub-entity procedure and pop back to decoration editor
+  const handleSubProcedureSave = useCallback(
+    (wrapper: LibraryRuntime.EditedProcedure): void => {
+      const entity = wrapper.current;
+      const compositeId = subProcedureRef.current?.id;
+      if (!compositeId) return;
+
+      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const baseId = entity.baseId as BaseProcedureId;
+
+      const colResult = workspace.data.entities.procedures.collections.get(collectionId);
+      if (colResult.isFailure() || !colResult.value.isMutable) {
+        workspace.data.logger.error(`Save failed: procedure collection '${collectionId}' not available`);
+        return;
+      }
+      colResult.value.items.set(baseId, entity);
+
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(collectionId);
+      if (editableResult.isSuccess()) {
+        const editable = editableResult.value;
+        editable.set(baseId, entity);
+        if (editable.canSave()) {
+          const diskResult = editable.save();
+          if (diskResult.isFailure()) {
+            workspace.data.logger.error(`Disk save failed for procedure: ${diskResult.message}`);
+          }
+        }
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+      subProcedureRef.current = undefined;
+
+      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
+      if (editIdx >= 0) {
+        squashCascade(cascadeStack.slice(0, editIdx + 1));
+      }
+    },
+    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+  );
+
+  // Cancel sub-entity procedure editing — pop back to decoration editor
+  const handleSubProcedureCancel = useCallback((): void => {
+    subProcedureRef.current = undefined;
+    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
+    if (editIdx >= 0) {
+      squashCascade(cascadeStack.slice(0, editIdx + 1));
+    }
+  }, [cascadeStack, squashCascade]);
+
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
       const onIngredientClick = (id: IngredientId): void => {
@@ -3664,6 +3828,9 @@ function DecorationsTabContent(): React.ReactElement {
       };
       const onProcedureClick = (id: ProcedureId): void => {
         squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+      };
+      const onTaskClick = (id: TaskId): void => {
+        squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
       };
 
       if (entry.entityType === 'decoration') {
@@ -3792,10 +3959,43 @@ function DecorationsTabContent(): React.ReactElement {
             content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
           };
         }
+
+        if (entry.mode === 'edit') {
+          const wrapper = getOrCreateSubIngredientWrapper(result.value);
+          if (!wrapper) {
+            return {
+              key: entry.entityId,
+              label: result.value.name,
+              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
+            };
+          }
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `Editing: ${result.value.name}`,
+            content: (
+              <IngredientEditView
+                wrapper={wrapper}
+                onSave={handleSubIngredientSave}
+                onCancel={handleSubIngredientCancel}
+              />
+            )
+          };
+        }
+
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <IngredientDetail ingredient={result.value} />
+          content: (
+            <IngredientDetail
+              ingredient={result.value}
+              onEdit={(): void => {
+                squashCascade([
+                  ...cascadeStack.slice(0, index),
+                  { ...cascadeStack[index], mode: 'edit' as const }
+                ]);
+              }}
+            />
+          )
         };
       }
       if (entry.entityType === 'procedure') {
@@ -3829,10 +4029,79 @@ function DecorationsTabContent(): React.ReactElement {
             content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
           };
         }
+
+        if (entry.mode === 'edit') {
+          const wrapper = getOrCreateSubProcedureWrapper(result.value);
+          if (!wrapper) {
+            return {
+              key: entry.entityId,
+              label: result.value.name,
+              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
+            };
+          }
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `Editing: ${result.value.name}`,
+            content: (
+              <ProcedureEditView
+                wrapper={wrapper}
+                availableTasks={availableTasks}
+                onSave={handleSubProcedureSave}
+                onCancel={handleSubProcedureCancel}
+              />
+            )
+          };
+        }
+
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <ProcedureDetail procedure={result.value} />
+          content: (
+            <ProcedureDetail
+              procedure={result.value}
+              onTaskClick={onTaskClick}
+              onEdit={(): void => {
+                squashCascade([
+                  ...cascadeStack.slice(0, index),
+                  { ...cascadeStack[index], mode: 'edit' as const }
+                ]);
+              }}
+            />
+          )
+        };
+      }
+      if (entry.entityType === 'task') {
+        const result = workspace.data.tasks.get(entry.entityId as TaskId);
+        if (result.isFailure()) {
+          // Check for inline task from a parent procedure
+          const parentProcEntry = cascadeStack
+            .slice(0, index)
+            .reverse()
+            .find((e) => e.entityType === 'procedure');
+          if (parentProcEntry) {
+            const proc = workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId);
+            const steps = proc.isSuccess() ? proc.value.getSteps() : undefined;
+            const inlineStep = steps?.isSuccess()
+              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
+              : undefined;
+            if (inlineStep) {
+              return {
+                key: entry.entityId,
+                label: `${inlineStep.resolvedTask.name} (inline)`,
+                content: <TaskDetail task={inlineStep.resolvedTask} />
+              };
+            }
+          }
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <TaskDetail task={result.value} />
         };
       }
       return {
@@ -3848,7 +4117,10 @@ function DecorationsTabContent(): React.ReactElement {
     popCascadeTo,
     availableIngredients,
     availableProcedures,
+    availableTasks,
     getOrCreateWrapper,
+    getOrCreateSubIngredientWrapper,
+    getOrCreateSubProcedureWrapper,
     handleEditDecoration,
     handleCancelDecorationEdit,
     handleSaveDecoration,
@@ -3861,7 +4133,11 @@ function DecorationsTabContent(): React.ReactElement {
     handlePasteIngredientFromDecoration,
     handleSubEntityIngredientCreate,
     handleSubEntityProcedureCreate,
-    handleSubEntityCancel
+    handleSubEntityCancel,
+    handleSubIngredientSave,
+    handleSubIngredientCancel,
+    handleSubProcedureSave,
+    handleSubProcedureCancel
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
