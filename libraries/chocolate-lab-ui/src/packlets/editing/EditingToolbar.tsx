@@ -137,7 +137,6 @@ export function EditingToolbar<TWrapper extends IEditable>(
             variant="default"
           >
             <ArrowUturnLeftIcon className="h-3.5 w-3.5" />
-            <span>Undo</span>
           </ToolbarButton>
           <ToolbarButton
             onClick={context.redo}
@@ -146,7 +145,6 @@ export function EditingToolbar<TWrapper extends IEditable>(
             variant="default"
           >
             <ArrowUturnRightIcon className="h-3.5 w-3.5" />
-            <span>Redo</span>
           </ToolbarButton>
         </div>
 

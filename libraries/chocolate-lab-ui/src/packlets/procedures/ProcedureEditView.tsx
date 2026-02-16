@@ -170,30 +170,14 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
     const nextOrder = entity.steps.length + 1;
     const match = findTaskMatch(seed);
     if (match) {
-      wrapper.addStep({
-        task: buildTaskRef(match.id as TaskId, {})
-      });
-      notify();
+      onEditStepTask?.(nextOrder, 'library', match.id);
       setNewStepText('');
       return;
     }
 
-    wrapper.addStep({
-      task: {
-        task: {
-          baseId: `inline-step-${nextOrder}` as never,
-          name: seed || `Step ${nextOrder}`,
-          template: seed || '{{step}}'
-        },
-        params: {}
-      }
-    });
-    notify();
-    if (seed) {
-      setUnresolvedByStep((prev) => ({ ...prev, [nextOrder]: seed }));
-    }
+    onEditStepTask?.(nextOrder, 'inline', seed || `Step ${nextOrder}`);
     setNewStepText('');
-  }, [entity.steps.length, findTaskMatch, newStepText, notify, wrapper]);
+  }, [entity.steps.length, findTaskMatch, newStepText, onEditStepTask]);
 
   const handleRemoveStep = useCallback(
     (order: number): void => {
@@ -306,7 +290,16 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                   {(() => {
                     const taskInvocation = step.task;
                     if ('taskId' in taskInvocation) {
-                      return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={(): void => onEditStepTask?.(step.order, 'library', taskInvocation.taskId)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          title="View library task"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                      );
                     }
                     return (
                       <button

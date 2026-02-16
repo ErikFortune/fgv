@@ -25,8 +25,8 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useEffect } from 'react';
-import { EyeIcon } from '@heroicons/react/24/outline';
+import React, { useCallback, useEffect, useState } from 'react';
+import { EyeIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 import { EditField, EditSection, TextInput, TextAreaInput, NumberInput, TagsInput } from '@fgv/ts-app-shell';
 
@@ -59,6 +59,12 @@ export interface ITaskEditViewProps {
   readonly onPreview?: () => void;
   /** Called on every edit mutation (e.g. to invalidate a live preview). */
   readonly onMutate?: () => void;
+  /** If true, this task is being edited in the context of a procedure step. */
+  readonly isStepContext?: boolean;
+  /** Current storage mode when editing in step context. */
+  readonly currentMode?: 'inline' | 'library';
+  /** Called when user wants to convert between inline and library modes. */
+  readonly onConvertMode?: (mode: 'inline' | 'library') => void;
 }
 
 // ============================================================================
@@ -80,12 +86,46 @@ export interface ITaskEditViewProps {
  * @public
  */
 export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
-  const { wrapper, onSave, onSaveAs, onCancel, readOnly, onPreview, onMutate } = props;
+  const {
+    wrapper,
+    onSave,
+    onSaveAs,
+    onCancel,
+    readOnly,
+    onPreview,
+    onMutate,
+    isStepContext,
+    currentMode,
+    onConvertMode
+  } = props;
 
   const ctx = useEditingContext<EditedTask>({ wrapper, onSave, onSaveAs, onCancel, readOnly });
   const entity = wrapper.current;
 
+  // ---- Base ID editing state ----
+  const [isEditingBaseId, setIsEditingBaseId] = useState(false);
+  const [baseIdDraft, setBaseIdDraft] = useState(entity.baseId);
+
   // ---- Field Handlers ----
+
+  const handleBaseIdEdit = useCallback(() => {
+    setBaseIdDraft(entity.baseId);
+    setIsEditingBaseId(true);
+  }, [entity.baseId]);
+
+  const handleBaseIdSave = useCallback(() => {
+    // Create new entity with updated baseId by restoring from snapshot with new baseId
+    const snapshot = wrapper.createSnapshot();
+    const newEntity = { ...snapshot, baseId: baseIdDraft as never };
+    wrapper.restoreSnapshot(newEntity);
+    ctx.notifyMutation();
+    setIsEditingBaseId(false);
+  }, [wrapper, ctx, baseIdDraft]);
+
+  const handleBaseIdCancel = useCallback(() => {
+    setBaseIdDraft(entity.baseId);
+    setIsEditingBaseId(false);
+  }, [entity.baseId]);
 
   const handleNameChange = useCallback(
     (value: string) => {
@@ -163,24 +203,90 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
       <EditingToolbar
         context={ctx}
         extraButtons={
-          onPreview ? (
-            <button
-              type="button"
-              onClick={onPreview}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
-              title="Open preview pane"
-            >
-              <EyeIcon className="h-3.5 w-3.5" />
-              <span>Preview</span>
-            </button>
-          ) : undefined
+          <>
+            {onPreview && (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+                title="Open preview pane"
+              >
+                <EyeIcon className="h-3.5 w-3.5" />
+                <span>Preview</span>
+              </button>
+            )}
+            {isStepContext && onConvertMode && (
+              <div className="inline-flex items-center gap-1 px-1 py-0.5 bg-gray-100 rounded text-xs">
+                <button
+                  type="button"
+                  onClick={(): void => onConvertMode('inline')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    currentMode === 'inline'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Save as inline task (embedded in procedure)"
+                >
+                  Inline
+                </button>
+                <button
+                  type="button"
+                  onClick={(): void => onConvertMode('library')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    currentMode === 'library'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Save to library (reusable task)"
+                >
+                  Library
+                </button>
+              </div>
+            )}
+          </>
         }
       />
 
       {/* Identity Section */}
       <EditSection title="Identity">
         <EditField label="Base ID">
-          <span className="text-sm font-mono text-gray-500">{entity.baseId}</span>
+          {isEditingBaseId ? (
+            <div className="flex items-center gap-2">
+              <TextInput
+                value={baseIdDraft}
+                onChange={(value: string): void => setBaseIdDraft(value as never)}
+                placeholder="e.g. melt-chocolate"
+              />
+              <button
+                type="button"
+                onClick={handleBaseIdSave}
+                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                title="Save base ID"
+              >
+                <CheckIcon className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleBaseIdCancel}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                title="Cancel"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono text-gray-500">{entity.baseId}</span>
+              <button
+                type="button"
+                onClick={handleBaseIdEdit}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                title="Edit base ID"
+              >
+                <PencilIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </EditField>
         <EditField label="Name">
           <TextInput value={entity.name} onChange={handleNameChange} placeholder="e.g. Melt Chocolate" />

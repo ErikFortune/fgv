@@ -2173,14 +2173,50 @@ function ProceduresTabContent(): React.ReactElement {
   const handleOpenStepTaskEditor = useCallback(
     (stepOrder: number, mode: 'inline' | 'library', seed: string): void => {
       const procId = editingRef.current?.id;
-      if (!procId) {
+      const procWrapper = editingRef.current?.wrapper;
+      if (!procId || !procWrapper) {
         return;
       }
-      const baseId = slugify(seed || `step-${stepOrder}`) as BaseTaskId;
-      const rawTask = createBlankRawTaskEntity(baseId, seed || `Step ${stepOrder}`);
-      const wrapperResult = LibraryRuntime.EditedTask.create(rawTask);
+
+      // Check if editing existing step
+      const currentStep = procWrapper.current.steps.find((s) => s.order === stepOrder);
+      let wrapperResult: Result<LibraryRuntime.EditedTask>;
+
+      if (currentStep && 'taskId' in currentStep.task) {
+        // Editing existing library task reference
+        const taskResult = workspace.data.tasks.get(currentStep.task.taskId);
+        if (taskResult.isFailure()) {
+          workspace.data.logger.error(
+            `Failed to load library task ${currentStep.task.taskId}: ${taskResult.message}`
+          );
+          return;
+        }
+        wrapperResult = LibraryRuntime.EditedTask.create(taskResult.value.entity);
+      } else if (currentStep && 'task' in currentStep.task) {
+        // Editing existing inline task
+        wrapperResult = LibraryRuntime.EditedTask.create(currentStep.task.task);
+      } else if (mode === 'library') {
+        // Creating new step with library task
+        const taskResult = workspace.data.tasks.get(seed as TaskId);
+        if (taskResult.isFailure()) {
+          workspace.data.logger.error(`Failed to load library task ${seed}: ${taskResult.message}`);
+          return;
+        }
+        wrapperResult = LibraryRuntime.EditedTask.create(taskResult.value.entity);
+
+        // Create step with library task reference immediately
+        procWrapper.addStep({
+          task: { taskId: seed as TaskId, params: {} }
+        });
+      } else {
+        // Creating new inline task
+        const baseId = slugify(seed || `step-${stepOrder}`) as BaseTaskId;
+        const rawTask = createBlankRawTaskEntity(baseId, seed || `Step ${stepOrder}`);
+        wrapperResult = LibraryRuntime.EditedTask.create(rawTask);
+      }
+
       if (wrapperResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create nested task wrapper: ${wrapperResult.message}`);
+        workspace.data.logger.error(`Failed to create task wrapper: ${wrapperResult.message}`);
         return;
       }
 
@@ -2192,7 +2228,8 @@ function ProceduresTabContent(): React.ReactElement {
         wrapper: wrapperResult.value
       });
 
-      const baseStack = cascadeStack.filter((e) => e.entityType !== 'task');
+      // Filter out preview and task entities to squash them
+      const baseStack = cascadeStack.filter((e) => e.mode !== 'preview' && e.entityType !== 'task');
       const ensuredProcedureEdit = baseStack.some(
         (e) => e.entityType === 'procedure' && e.entityId === procId && e.mode === 'edit'
       )
@@ -2313,6 +2350,74 @@ function ProceduresTabContent(): React.ReactElement {
       );
     },
     [cascadeStack, squashCascade]
+  );
+
+  const handleNestedTaskConvertMode = useCallback(
+    (targetMode: 'inline' | 'library'): void => {
+      const session = nestedTaskSession;
+      const procWrapper = editingRef.current?.wrapper;
+      const procId = editingRef.current?.id;
+      if (!session || !procWrapper || !procId) {
+        return;
+      }
+
+      const currentStep = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
+      if (!currentStep) {
+        return;
+      }
+
+      const existingParams = 'taskId' in currentStep.task ? currentStep.task.params : currentStep.task.params;
+
+      if (targetMode === 'library') {
+        // Convert inline → library
+        if (!mutableTaskCollectionId) {
+          workspace.data.logger.error('Cannot convert to library task: no mutable task collection');
+          return;
+        }
+
+        const baseId = session.wrapper.current.baseId as BaseTaskId;
+        const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
+        const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
+        if (colResult.isFailure() || !colResult.value.isMutable) {
+          workspace.data.logger.error('Cannot convert to library task: mutable collection not available');
+          return;
+        }
+
+        // Save to library collection
+        colResult.value.items.set(baseId, session.wrapper.current);
+        const editableResult =
+          workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
+        if (editableResult.isSuccess()) {
+          editableResult.value.set(baseId, session.wrapper.current);
+          if (editableResult.value.canSave()) {
+            editableResult.value.save();
+          }
+        }
+
+        // Update step to reference library task
+        procWrapper.updateStep(session.stepOrder, {
+          task: { taskId: compositeTaskId, params: { ...existingParams } }
+        });
+
+        // Update session mode
+        setNestedTaskSession({ ...session, mode: 'library' });
+      } else {
+        // Convert library → inline
+        // Copy task definition into step as inline
+        procWrapper.updateStep(session.stepOrder, {
+          task: { task: session.wrapper.current, params: { ...existingParams } }
+        });
+
+        // Update session mode
+        setNestedTaskSession({ ...session, mode: 'inline' });
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+      setEditVersion((v) => v + 1);
+      setPreviewVersion((v) => v + 1);
+    },
+    [nestedTaskSession, mutableTaskCollectionId, workspace, reactiveWorkspace]
   );
 
   const handleEditStepParams = useCallback(
@@ -2634,6 +2739,9 @@ function ProceduresTabContent(): React.ReactElement {
                 onCancel={handleNestedTaskCancel}
                 onPreview={(): void => handleNestedTaskPreview(entry.entityId)}
                 onMutate={(): void => setTaskPreviewVersion((v) => v + 1)}
+                isStepContext={true}
+                currentMode={nestedTaskSession.mode}
+                onConvertMode={handleNestedTaskConvertMode}
               />
             )
           };
