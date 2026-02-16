@@ -2,9 +2,7 @@
 
 # Namespace: Validators
 
-Semantic validators for raw task entities.
-These validators handle cross-field and business rule validation.
-Type/format/constraint validation is handled by converters.
+Semantic validators for procedure entities.
 
 ## Functions
 
@@ -20,34 +18,34 @@ Description
 <tbody>
 <tr><td>
 
-[validateTaskName](./functions/validateTaskName.md)
+[validateProcedureName](./functions/validateProcedureName.md)
 
 </td><td>
 
-Validate that the task name is non-empty.
+Validate that the procedure name is non-empty.
 
 </td></tr>
 <tr><td>
 
-[validateTaskTemplate](./functions/validateTaskTemplate.md)
+[validateStepOrder](./functions/validateStepOrder.md)
 
 </td><td>
 
-Validate that the template is non-empty.
+Validate that step order values are contiguous and 1-based.
 
 </td></tr>
 <tr><td>
 
-[validateTaskTiming](./functions/validateTaskTiming.md)
+[validateStepTaskContent](./functions/validateStepTaskContent.md)
 
 </td><td>
 
-Validate that default times are non-negative when present.
+Validate that each step has a non-empty task reference/inline template.
 
 </td></tr>
 <tr><td>
 
-[validateRawTaskEntity](./functions/validateRawTaskEntity.md)
+[validateProcedureEntity](./functions/validateProcedureEntity.md)
 
 </td><td>
 

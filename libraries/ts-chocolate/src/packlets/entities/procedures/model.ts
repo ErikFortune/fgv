@@ -68,6 +68,25 @@ export interface IProcedureStepEntity {
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
+// ============================================================================
+// Factory
+// ============================================================================
+
+/**
+ * Create a blank raw procedure entity with sensible defaults.
+ * @param baseId - Base identifier for the procedure
+ * @param name - Display name for the procedure
+ * @returns A minimal valid procedure entity
+ * @public
+ */
+export function createBlankRawProcedureEntity(baseId: BaseProcedureId, name: string): IProcedureEntity {
+  return {
+    baseId,
+    name,
+    steps: []
+  };
+}
+
 /**
  * Runtime validation state for a procedure step.
  * This is computed at render/use time based on which TasksLibrary is available.

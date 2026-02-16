@@ -44,6 +44,15 @@ Mold editing - specialized editing functionality for molds
 Task editing - specialized editing functionality for tasks
 
 </td></tr>
+<tr><td>
+
+[Procedures](./Procedures/README.md)
+
+</td><td>
+
+Procedure editing - specialized editing functionality for procedures
+
+</td></tr>
 </tbody></table>
 
 ## Classes

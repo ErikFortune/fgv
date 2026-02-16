@@ -119,3 +119,26 @@ Parameters for creating a ProceduresLibrary instance asynchronously with encrypt
 
 </td></tr>
 </tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[createBlankRawProcedureEntity](./functions/createBlankRawProcedureEntity.md)
+
+</td><td>
+
+Create a blank raw procedure entity with sensible defaults.
+
+</td></tr>
+</tbody></table>

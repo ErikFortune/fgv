@@ -1396,6 +1396,9 @@ function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): II
 function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string): IMoldEntity;
 
 // @public
+function createBlankRawProcedureEntity(baseId: BaseProcedureId, name: string): IProcedureEntity;
+
+// @public
 function createBlankRawTaskEntity(baseId: BaseTaskId, name: string): IRawTaskEntity;
 
 // @public
@@ -1716,6 +1719,64 @@ class EditedMold {
 }
 
 // @public
+class EditedProcedure {
+    // (undocumented)
+    addStep(step: Omit<IProcedureStepEntity_2, 'order'>): Result<void>;
+    // (undocumented)
+    applyUpdate(update: Partial<IProcedureEntity_4>): Result<void>;
+    // (undocumented)
+    canRedo(): boolean;
+    // (undocumented)
+    canUndo(): boolean;
+    // Warning: (ae-forgotten-export) The symbol "IProcedureEntity_4" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    static create(initial: IProcedureEntity_4): Result<EditedProcedure>;
+    // (undocumented)
+    createSnapshot(): IProcedureEntity_4;
+    // (undocumented)
+    get current(): IProcedureEntity_4;
+    // (undocumented)
+    getChanges(original: IProcedureEntity_4): IProcedureChanges;
+    // (undocumented)
+    getSerializedHistory(original: IProcedureEntity_4): Session.ISerializedEditingHistoryEntity<IProcedureEntity_4>;
+    // (undocumented)
+    hasChanges(original: IProcedureEntity_4): boolean;
+    // (undocumented)
+    moveStep(order: number, newIndex: number): Result<void>;
+    // (undocumented)
+    get name(): string;
+    // (undocumented)
+    redo(): Result<boolean>;
+    // (undocumented)
+    removeStep(order: number): Result<void>;
+    // (undocumented)
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProcedureEntity_4>): Result<EditedProcedure>;
+    // (undocumented)
+    restoreSnapshot(snapshot: IProcedureEntity_4): Result<void>;
+    // (undocumented)
+    setCategory(category: ProcedureType | undefined): Result<void>;
+    // (undocumented)
+    setDescription(description: string | undefined): Result<void>;
+    // (undocumented)
+    setName(name: string): Result<void>;
+    // (undocumented)
+    setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
+    // Warning: (ae-forgotten-export) The symbol "IProcedureStepEntity_2" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    setSteps(steps: ReadonlyArray<IProcedureStepEntity_2>): Result<void>;
+    // (undocumented)
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    // (undocumented)
+    get snapshot(): IProcedureEntity_4;
+    // (undocumented)
+    undo(): Result<boolean>;
+    // (undocumented)
+    updateStep(order: number, update: Partial<IProcedureStepEntity_2>): Result<void>;
+}
+
+// @public
 class EditedTask {
     applyUpdate(update: Partial<IRawTaskEntity_4>): Result<void>;
     canRedo(): boolean;
@@ -1750,6 +1811,7 @@ declare namespace Editing {
         Ingredients_2 as Ingredients,
         Molds_3 as Molds,
         Tasks_2 as Tasks,
+        Procedures_3 as Procedures,
         IEditorContext,
         IEditorContextValidator,
         IValidatingEditorContext,
@@ -4607,6 +4669,24 @@ interface IProcedure {
     readonly totalWaitTime: Minutes | undefined;
 }
 
+// @public
+interface IProcedureChanges {
+    // (undocumented)
+    readonly categoryChanged: boolean;
+    // (undocumented)
+    readonly descriptionChanged: boolean;
+    // (undocumented)
+    readonly hasChanges: boolean;
+    // (undocumented)
+    readonly nameChanged: boolean;
+    // (undocumented)
+    readonly notesChanged: boolean;
+    // (undocumented)
+    readonly stepsChanged: boolean;
+    // (undocumented)
+    readonly tagsChanged: boolean;
+}
+
 // @internal
 interface IProcedureContext {
     readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
@@ -6086,7 +6166,9 @@ declare namespace LibraryRuntime {
         IMoldChanges,
         EditedMold,
         ITaskChanges,
-        EditedTask
+        EditedTask,
+        IProcedureChanges,
+        EditedProcedure
     }
 }
 export { LibraryRuntime }
@@ -6652,6 +6734,13 @@ const procedureCollections: Record<string, JsonObject>;
 // @public
 type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedureEntity>;
 
+// Warning: (ae-forgotten-export) The symbol "IProcedureEntity_3" needs to be exported by the entry point index.d.ts
+//
+// @public
+class ProcedureEditorContext extends ValidatingEditorContext<IProcedureEntity_3, BaseProcedureId, ProcedureId> {
+    static createFromCollection(collection: EditableCollection<IProcedureEntity_3, BaseProcedureId>): Result<ProcedureEditorContext>;
+}
+
 // @public
 const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedureRefEntity, ProcedureId>>;
 
@@ -6684,6 +6773,7 @@ declare namespace Procedures {
 declare namespace Procedures_2 {
     export {
         Procedures as Converters,
+        createBlankRawProcedureEntity,
         IProcedureStepEntity,
         IProcedureStepValidation,
         IValidatedProcedureStep,
@@ -6697,6 +6787,13 @@ declare namespace Procedures_2 {
         IProceduresLibraryParams,
         IProceduresLibraryAsyncParams,
         ProceduresLibrary
+    }
+}
+
+declare namespace Procedures_3 {
+    export {
+        Validators_5 as Validators,
+        ProcedureEditorContext
     }
 }
 
@@ -7755,10 +7852,24 @@ function validateOptionsWithPreferred<TOption extends IHasId<TId>, TId extends s
 // @public
 function validatePositiveNumber(value: unknown, fieldName: string): Result<number>;
 
+// Warning: (ae-forgotten-export) The symbol "IProcedureEntity_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateProcedureEntity(entity: IProcedureEntity_2): Result<IProcedureEntity_2>;
+
+// @public
+function validateProcedureName(entity: IProcedureEntity_2): Result<true>;
+
 // Warning: (ae-forgotten-export) The symbol "IRawTaskEntity_2" needs to be exported by the entry point index.d.ts
 //
 // @public
 function validateRawTaskEntity(entity: IRawTaskEntity_2): Result<IRawTaskEntity_2>;
+
+// @public
+function validateStepOrder(entity: IProcedureEntity_2): Result<true>;
+
+// @public
+function validateStepTaskContent(entity: IProcedureEntity_2): Result<true>;
 
 // @public
 function validateStringLength<T extends string = string>(value: T, fieldName: string, options: {
@@ -7950,6 +8061,15 @@ declare namespace Validators_4 {
         validateTaskTemplate,
         validateTaskTiming,
         validateRawTaskEntity
+    }
+}
+
+declare namespace Validators_5 {
+    export {
+        validateProcedureName,
+        validateStepOrder,
+        validateStepTaskContent,
+        validateProcedureEntity
     }
 }
 

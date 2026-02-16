@@ -125,6 +125,7 @@ export type CascadeEntityType =
   | 'mold'
   | 'task'
   | 'procedure'
+  | 'step-params'
   | 'session'
   | 'journal-entry';
 

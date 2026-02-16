@@ -51,6 +51,9 @@ import {
   TaskEditView,
   TaskPreviewPanel,
   ProcedureDetail,
+  ProcedureEditView,
+  ProcedurePreviewPanel,
+  StepParameterEditor,
   ConfectionDetail,
   DecorationDetail,
   WorkspaceFilterOptionProvider,
@@ -63,6 +66,7 @@ import {
 import type {
   BaseIngredientId,
   BaseMoldId,
+  BaseProcedureId,
   BaseTaskId,
   CollectionId,
   IngredientId,
@@ -308,6 +312,7 @@ function slugify(name: string): string {
 const { createBlankIngredientEntity } = Entities.Ingredients;
 const { createBlankMoldEntity } = Entities.Molds;
 const { createBlankRawTaskEntity } = Entities.Tasks;
+const { createBlankRawProcedureEntity } = Entities.Procedures;
 
 // ============================================================================
 // Ingredients Tab Content
@@ -880,6 +885,37 @@ function FillingsTabContent(): React.ReactElement {
         };
       }
       if (entry.entityType === 'task') {
+        if (nestedTaskSession && entry.entityId === nestedTaskSession.taskEntityId) {
+          if (entry.mode === 'preview') {
+            return {
+              key: `${entry.entityId}:preview`,
+              label: `${nestedTaskSession.wrapper.current.name} (preview)`,
+              content: (
+                <TaskPreviewPanel
+                  template={nestedTaskSession.wrapper.current.template}
+                  defaults={nestedTaskSession.wrapper.current.defaults}
+                  taskName={nestedTaskSession.wrapper.current.name}
+                  onClose={(): void => handleCloseNestedTaskPreview(entry.entityId)}
+                />
+              )
+            };
+          }
+
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `${nestedTaskSession.wrapper.current.name} (editing)`,
+            content: (
+              <TaskEditView
+                wrapper={nestedTaskSession.wrapper}
+                onSave={handleNestedTaskSave}
+                onCancel={handleNestedTaskCancel}
+                onPreview={(): void => handleNestedTaskPreview(entry.entityId)}
+                onMutate={(): void => setTaskPreviewVersion((v) => v + 1)}
+              />
+            )
+          };
+        }
+
         const result = workspace.data.tasks.get(entry.entityId as TaskId);
         if (result.isFailure()) {
           return {
@@ -900,7 +936,27 @@ function FillingsTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [cascadeStack, workspace, squashAt]);
+  }, [
+    cascadeStack,
+    workspace,
+    squashAt,
+    availableTasks,
+    getOrCreateWrapper,
+    handleSaveProcedure,
+    handleSaveProcedureAs,
+    handleCancelProcedureEdit,
+    handleEditProcedure,
+    handlePreviewProcedure,
+    handleCloseProcedurePreview,
+    handleOpenStepTaskEditor,
+    handleNestedTaskSave,
+    handleNestedTaskCancel,
+    handleNestedTaskPreview,
+    handleCloseNestedTaskPreview,
+    nestedTaskSession,
+    previewVersion,
+    taskPreviewVersion
+  ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {
@@ -1917,8 +1973,57 @@ function ProceduresTabContent(): React.ReactElement {
   const startComparison = useNavigationStore((s) => s.startComparison);
   const exitComparison = useNavigationStore((s) => s.exitComparison);
 
+  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(undefined);
+  const [previewVersion, setPreviewVersion] = useState(0);
+  const [taskPreviewVersion, setTaskPreviewVersion] = useState(0);
+  const [editVersion, setEditVersion] = useState(0);
+
+  const [newProcedureName, setNewProcedureName] = useState('');
+
+  const [nestedTaskSession, setNestedTaskSession] = useState<
+    | {
+        readonly mode: 'inline' | 'library';
+        readonly stepOrder: number;
+        readonly taskEntityId: string;
+        readonly wrapper: LibraryRuntime.EditedTask;
+      }
+    | undefined
+  >(undefined);
+
+  const [stepParamsSession, setStepParamsSession] = useState<
+    | {
+        readonly procedureId: string;
+        readonly stepOrder: number;
+      }
+    | undefined
+  >(undefined);
+
+  const mutableProcedureCollectionId = useMemo<CollectionId | undefined>(() => {
+    const collections = workspace.data.entities.procedures.collections;
+    for (const [id, col] of collections.entries()) {
+      if (col.isMutable) {
+        return id as CollectionId;
+      }
+    }
+    return undefined;
+  }, [workspace, reactiveWorkspace.version]);
+
+  const mutableTaskCollectionId = useMemo<CollectionId | undefined>(() => {
+    const collections = workspace.data.entities.tasks.collections;
+    for (const [id, col] of collections.entries()) {
+      if (col.isMutable) {
+        return id as CollectionId;
+      }
+    }
+    return undefined;
+  }, [workspace, reactiveWorkspace.version]);
+
   const procedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
     return Array.from(workspace.data.procedures.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const availableTasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
+    return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
 
   const selectedId =
@@ -1934,6 +2039,362 @@ function ProceduresTabContent(): React.ReactElement {
     [squashCascade]
   );
 
+  const getOrCreateWrapper = useCallback(
+    (procedure: LibraryRuntime.IProcedure): LibraryRuntime.EditedProcedure | undefined => {
+      const id = procedure.id;
+      if (editingRef.current?.id === id) {
+        return editingRef.current.wrapper;
+      }
+      const result = LibraryRuntime.EditedProcedure.create(procedure.entity);
+      if (result.isFailure()) {
+        return undefined;
+      }
+      editingRef.current = { id, wrapper: result.value };
+      return result.value;
+    },
+    []
+  );
+
+  const handleEditProcedure = useCallback(
+    (entityId: string): void => {
+      const updated = cascadeStack.map((e) =>
+        e.entityId === entityId && e.entityType === 'procedure' ? { ...e, mode: 'edit' as const } : e
+      );
+      squashCascade(updated);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleCancelProcedureEdit = useCallback(
+    (entityId: string): void => {
+      if (editingRef.current?.id === entityId) {
+        editingRef.current = undefined;
+      }
+      setNestedTaskSession(undefined);
+      const updated = cascadeStack.map((e) =>
+        e.entityId === entityId && e.entityType === 'procedure' ? { ...e, mode: 'view' as const } : e
+      );
+      squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleSaveProcedureAs = useCallback(
+    (wrapper: LibraryRuntime.EditedProcedure): void => {
+      workspace.data.logger.info(
+        `Save to... requested for procedure '${wrapper.current.name}' — collection picker not yet implemented`
+      );
+    },
+    [workspace]
+  );
+
+  const handleSaveProcedure = useCallback(
+    (wrapper: LibraryRuntime.EditedProcedure): void => {
+      const entity = wrapper.current;
+      const compositeId = editingRef.current?.id;
+      if (!compositeId) {
+        workspace.data.logger.error('Save failed: no composite ID for procedure editing wrapper');
+        return;
+      }
+
+      const validationResult = Editing.Procedures.Validators.validateProcedureEntity(entity);
+      if (validationResult.isFailure()) {
+        workspace.data.logger.error(`Save failed: ${validationResult.message}`);
+        return;
+      }
+
+      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const baseId = entity.baseId as BaseProcedureId;
+
+      const collectionEntry = workspace.data.entities.procedures.collections.get(collectionId);
+      if (collectionEntry.isFailure()) {
+        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+        return;
+      }
+      if (!collectionEntry.value.isMutable) {
+        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
+        return;
+      }
+
+      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
+      if (inMemoryResult.isFailure()) {
+        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
+        return;
+      }
+
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(collectionId);
+      if (editableResult.isSuccess()) {
+        const editable = editableResult.value;
+        editable.set(baseId, entity);
+        if (editable.canSave()) {
+          const saveResult = editable.save();
+          if (saveResult.isFailure()) {
+            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
+          }
+        }
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+
+      if (editingRef.current?.id === compositeId) {
+        editingRef.current = undefined;
+      }
+      setNestedTaskSession(undefined);
+      const updated = cascadeStack.map((e) =>
+        e.entityId === compositeId && e.entityType === 'procedure' ? { ...e, mode: 'view' as const } : e
+      );
+      squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
+    },
+    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+  );
+
+  const handlePreviewProcedure = useCallback(
+    (entityId: string): void => {
+      const withoutAnyPreview = cascadeStack.filter(
+        (e) => !(e.mode === 'preview' && (e.entityType === 'procedure' || e.entityType === 'task'))
+      );
+      squashCascade([...withoutAnyPreview, { entityType: 'procedure', entityId, mode: 'preview' }]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleCloseProcedurePreview = useCallback(
+    (entityId: string): void => {
+      squashCascade(
+        cascadeStack.filter(
+          (e) => !(e.entityType === 'procedure' && e.entityId === entityId && e.mode === 'preview')
+        )
+      );
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleOpenStepTaskEditor = useCallback(
+    (stepOrder: number, mode: 'inline' | 'library', seed: string): void => {
+      const procId = editingRef.current?.id;
+      if (!procId) {
+        return;
+      }
+      const baseId = slugify(seed || `step-${stepOrder}`) as BaseTaskId;
+      const rawTask = createBlankRawTaskEntity(baseId, seed || `Step ${stepOrder}`);
+      const wrapperResult = LibraryRuntime.EditedTask.create(rawTask);
+      if (wrapperResult.isFailure()) {
+        workspace.data.logger.error(`Failed to create nested task wrapper: ${wrapperResult.message}`);
+        return;
+      }
+
+      const taskEntityId = `${procId}::__step_${stepOrder}_${mode}`;
+      setNestedTaskSession({
+        mode,
+        stepOrder,
+        taskEntityId,
+        wrapper: wrapperResult.value
+      });
+
+      const baseStack = cascadeStack.filter((e) => e.entityType !== 'task');
+      const ensuredProcedureEdit = baseStack.some(
+        (e) => e.entityType === 'procedure' && e.entityId === procId && e.mode === 'edit'
+      )
+        ? baseStack
+        : [{ entityType: 'procedure', entityId: procId, mode: 'edit' as const }, ...baseStack];
+      squashCascade([...ensuredProcedureEdit, { entityType: 'task', entityId: taskEntityId, mode: 'edit' }]);
+    },
+    [cascadeStack, squashCascade, workspace]
+  );
+
+  const handleNestedTaskCancel = useCallback((): void => {
+    const procId = editingRef.current?.id;
+    setNestedTaskSession(undefined);
+    if (procId) {
+      squashCascade([{ entityType: 'procedure', entityId: procId, mode: 'edit' }]);
+    }
+  }, [squashCascade]);
+
+  const handleNestedTaskSave = useCallback(
+    (wrapper: LibraryRuntime.EditedTask): void => {
+      const session = nestedTaskSession;
+      const procWrapper = editingRef.current?.wrapper;
+      const procId = editingRef.current?.id;
+      if (!session || !procWrapper || !procId) {
+        return;
+      }
+
+      const currentStep = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
+      const existingParams = currentStep
+        ? 'taskId' in currentStep.task
+          ? currentStep.task.params
+          : currentStep.task.params
+        : {};
+
+      if (session.mode === 'inline') {
+        if (currentStep) {
+          procWrapper.updateStep(session.stepOrder, {
+            task: {
+              task: wrapper.current,
+              params: { ...existingParams }
+            }
+          });
+        } else {
+          procWrapper.addStep({
+            task: {
+              task: wrapper.current,
+              params: {}
+            }
+          });
+        }
+      } else {
+        if (!mutableTaskCollectionId) {
+          workspace.data.logger.error('Cannot save nested library task: no mutable task collection');
+          return;
+        }
+        const baseId = wrapper.current.baseId as BaseTaskId;
+        const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
+        const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
+        if (colResult.isFailure() || !colResult.value.isMutable) {
+          workspace.data.logger.error('Cannot save nested library task: mutable collection not available');
+          return;
+        }
+
+        colResult.value.items.set(baseId, wrapper.current);
+
+        const editableResult =
+          workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
+        if (editableResult.isSuccess()) {
+          editableResult.value.set(baseId, wrapper.current);
+          if (editableResult.value.canSave()) {
+            editableResult.value.save();
+          }
+        }
+
+        if (currentStep) {
+          procWrapper.updateStep(session.stepOrder, {
+            task: {
+              taskId: compositeTaskId,
+              params: { ...existingParams }
+            }
+          });
+        } else {
+          procWrapper.addStep({
+            task: {
+              taskId: compositeTaskId,
+              params: {}
+            }
+          });
+        }
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+      setPreviewVersion((v) => v + 1);
+      setEditVersion((v) => v + 1);
+      setNestedTaskSession(undefined);
+      squashCascade([{ entityType: 'procedure', entityId: procId, mode: 'edit' }]);
+    },
+    [nestedTaskSession, mutableTaskCollectionId, workspace, reactiveWorkspace, squashCascade]
+  );
+
+  const handleNestedTaskPreview = useCallback(
+    (entityId: string): void => {
+      const withoutPreview = cascadeStack.filter(
+        (e) => !(e.entityType === 'task' && e.entityId === entityId && e.mode === 'preview')
+      );
+      squashCascade([...withoutPreview, { entityType: 'task', entityId, mode: 'preview' }]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleCloseNestedTaskPreview = useCallback(
+    (entityId: string): void => {
+      squashCascade(
+        cascadeStack.filter(
+          (e) => !(e.entityType === 'task' && e.entityId === entityId && e.mode === 'preview')
+        )
+      );
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleEditStepParams = useCallback(
+    (procedureId: string, stepOrder: number): void => {
+      setStepParamsSession({ procedureId, stepOrder });
+      const withoutPreviewOrStepParams = cascadeStack.filter(
+        (e) => e.mode !== 'preview' && e.entityType !== 'step-params'
+      );
+      squashCascade([
+        ...withoutPreviewOrStepParams,
+        { entityType: 'step-params', entityId: `${procedureId}:${stepOrder}`, mode: 'edit' }
+      ]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleSaveStepParams = useCallback(
+    (params: Record<string, unknown>): void => {
+      const session = stepParamsSession;
+      const procWrapper = editingRef.current?.wrapper;
+      if (!session || !procWrapper) {
+        return;
+      }
+
+      const step = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
+      if (!step) {
+        return;
+      }
+
+      procWrapper.updateStep(session.stepOrder, {
+        task: 'taskId' in step.task ? { taskId: step.task.taskId, params } : { task: step.task.task, params }
+      });
+
+      setStepParamsSession(undefined);
+      setEditVersion((v) => v + 1);
+      setPreviewVersion((v) => v + 1);
+      squashCascade([{ entityType: 'procedure', entityId: session.procedureId, mode: 'edit' }]);
+    },
+    [stepParamsSession, squashCascade]
+  );
+
+  const handleCancelStepParams = useCallback((): void => {
+    if (!stepParamsSession) {
+      return;
+    }
+    setStepParamsSession(undefined);
+    squashCascade([{ entityType: 'procedure', entityId: stepParamsSession.procedureId, mode: 'edit' }]);
+  }, [stepParamsSession, squashCascade]);
+
+  const handleCreateProcedure = useCallback((): void => {
+    const trimmed = newProcedureName.trim();
+    if (!trimmed || !mutableProcedureCollectionId) {
+      return;
+    }
+    const baseId = slugify(trimmed) as BaseProcedureId;
+    const entity = createBlankRawProcedureEntity(baseId, trimmed);
+    const compositeId = `${mutableProcedureCollectionId}.${baseId}` as ProcedureId;
+
+    const colResult = workspace.data.entities.procedures.collections.get(mutableProcedureCollectionId);
+    if (colResult.isFailure() || !colResult.value.isMutable) {
+      workspace.data.logger.error('Cannot create procedure: mutable collection not available');
+      return;
+    }
+    colResult.value.items.set(baseId, entity);
+
+    const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
+    if (wrapperResult.isFailure()) {
+      workspace.data.logger.error(`Failed to create procedure wrapper: ${wrapperResult.message}`);
+      return;
+    }
+    editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
+    workspace.data.clearCache();
+    reactiveWorkspace.notifyChange();
+    setNewProcedureName('');
+    squashCascade([{ entityType: 'procedure', entityId: compositeId, mode: 'edit' }]);
+  }, [newProcedureName, mutableProcedureCollectionId, workspace, reactiveWorkspace, squashCascade]);
+
+  const handleCreateProcedureCancel = useCallback((): void => {
+    setNewProcedureName('');
+    squashCascade([]);
+  }, [squashCascade]);
+
   // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
   const squashAt = useCallback(
     (depth: number, entry: ICascadeEntry): void => {
@@ -1948,6 +2409,57 @@ function ProceduresTabContent(): React.ReactElement {
         squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
       };
 
+      if (entry.entityType === 'procedure' && entry.mode === 'create') {
+        return {
+          key: '__new__procedure',
+          label: 'New Procedure',
+          content: (
+            <div className="p-4 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">New Procedure</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Procedure Name</label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Tempering"
+                  value={newProcedureName}
+                  onChange={(e): void => setNewProcedureName(e.target.value)}
+                  onKeyDown={(e): void => {
+                    if (e.key === 'Enter') {
+                      handleCreateProcedure();
+                    }
+                    if (e.key === 'Escape') {
+                      handleCreateProcedureCancel();
+                    }
+                  }}
+                  autoFocus
+                />
+                {newProcedureName.trim() && (
+                  <p className="text-xs text-gray-400 mt-1 font-mono">
+                    ID: {slugify(newProcedureName.trim())}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreateProcedure}
+                  disabled={!newProcedureName.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={handleCreateProcedureCancel}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )
+        };
+      }
+
       if (entry.entityType === 'procedure') {
         const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
         if (result.isFailure()) {
@@ -1957,13 +2469,176 @@ function ProceduresTabContent(): React.ReactElement {
             content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
           };
         }
+
+        if (entry.mode === 'preview') {
+          const draftEntity =
+            editingRef.current?.id === entry.entityId ? editingRef.current.wrapper.current : undefined;
+          return {
+            key: `${entry.entityId}:preview`,
+            label: `${result.value.name} (preview)`,
+            content: (
+              <ProcedurePreviewPanel
+                procedure={result.value}
+                draftEntity={draftEntity}
+                availableTasks={availableTasks}
+                onClose={(): void => handleCloseProcedurePreview(entry.entityId)}
+              />
+            )
+          };
+        }
+
+        if (entry.mode === 'edit') {
+          const wrapper = getOrCreateWrapper(result.value);
+          if (wrapper === undefined) {
+            return {
+              key: entry.entityId,
+              label: result.value.name,
+              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
+            };
+          }
+
+          const collectionId = entry.entityId.split('.')[0] as CollectionId;
+          const collectionEntry = workspace.data.entities.procedures.collections.get(collectionId);
+          const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
+
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `${result.value.name} (editing)`,
+            content: (
+              <ProcedureEditView
+                wrapper={wrapper}
+                availableTasks={availableTasks}
+                onSave={handleSaveProcedure}
+                onSaveAs={isReadOnly ? handleSaveProcedureAs : undefined}
+                onCancel={(): void => handleCancelProcedureEdit(entry.entityId)}
+                readOnly={isReadOnly}
+                onPreview={(): void => handlePreviewProcedure(entry.entityId)}
+                onMutate={(): void => setPreviewVersion((v) => v + 1)}
+                onEditStepTask={handleOpenStepTaskEditor}
+                onEditStepParams={(stepOrder): void => handleEditStepParams(entry.entityId, stepOrder)}
+              />
+            )
+          };
+        }
+
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
+          content: (
+            <ProcedureDetail
+              procedure={result.value}
+              onTaskClick={onTaskClick}
+              onEdit={(): void => handleEditProcedure(entry.entityId)}
+              onPreview={(): void => handlePreviewProcedure(entry.entityId)}
+            />
+          )
         };
       }
+
+      if (entry.entityType === 'step-params') {
+        const session = stepParamsSession;
+        if (!session) {
+          return {
+            key: entry.entityId,
+            label: 'Step Parameters',
+            content: <div className="p-4 text-red-500">No step parameter session</div>
+          };
+        }
+
+        const procWrapper = editingRef.current?.wrapper;
+        if (!procWrapper) {
+          return {
+            key: entry.entityId,
+            label: 'Step Parameters',
+            content: <div className="p-4 text-red-500">No procedure wrapper</div>
+          };
+        }
+
+        const step = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
+        if (!step) {
+          return {
+            key: entry.entityId,
+            label: 'Step Parameters',
+            content: <div className="p-4 text-red-500">Step not found</div>
+          };
+        }
+
+        let template: string;
+        let taskName: string;
+        let params: Record<string, unknown>;
+        let defaults: Readonly<Record<string, unknown>> | undefined;
+
+        const taskInvocation = step.task;
+        if ('taskId' in taskInvocation) {
+          const task = availableTasks.find((t) => t.id === taskInvocation.taskId);
+          if (!task) {
+            return {
+              key: entry.entityId,
+              label: 'Step Parameters',
+              content: <div className="p-4 text-red-500">Task not found</div>
+            };
+          }
+          template = task.template;
+          taskName = task.name;
+          params = taskInvocation.params;
+          defaults = task.defaults;
+        } else {
+          const inlineTask = taskInvocation.task;
+          template = inlineTask.template;
+          taskName = inlineTask.name;
+          params = taskInvocation.params;
+          defaults = inlineTask.defaults;
+        }
+
+        return {
+          key: entry.entityId,
+          label: `Step ${session.stepOrder} Parameters`,
+          content: (
+            <StepParameterEditor
+              template={template}
+              taskName={taskName}
+              stepOrder={session.stepOrder}
+              params={params}
+              defaults={defaults}
+              onSave={handleSaveStepParams}
+              onCancel={handleCancelStepParams}
+            />
+          )
+        };
+      }
+
       if (entry.entityType === 'task') {
+        if (nestedTaskSession && entry.entityId === nestedTaskSession.taskEntityId) {
+          if (entry.mode === 'preview') {
+            return {
+              key: `${entry.entityId}:preview`,
+              label: `${nestedTaskSession.wrapper.current.name} (preview)`,
+              content: (
+                <TaskPreviewPanel
+                  template={nestedTaskSession.wrapper.current.template}
+                  defaults={nestedTaskSession.wrapper.current.defaults}
+                  taskName={nestedTaskSession.wrapper.current.name}
+                  onClose={(): void => handleCloseNestedTaskPreview(entry.entityId)}
+                />
+              )
+            };
+          }
+
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `${nestedTaskSession.wrapper.current.name} (editing)`,
+            content: (
+              <TaskEditView
+                wrapper={nestedTaskSession.wrapper}
+                onSave={handleNestedTaskSave}
+                onCancel={handleNestedTaskCancel}
+                onPreview={(): void => handleNestedTaskPreview(entry.entityId)}
+                onMutate={(): void => setTaskPreviewVersion((v) => v + 1)}
+              />
+            )
+          };
+        }
+
         const result = workspace.data.tasks.get(entry.entityId as TaskId);
         if (result.isFailure()) {
           return {
@@ -1984,7 +2659,35 @@ function ProceduresTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [cascadeStack, workspace, squashAt]);
+  }, [
+    cascadeStack,
+    workspace,
+    squashAt,
+    newProcedureName,
+    availableTasks,
+    getOrCreateWrapper,
+    handleSaveProcedure,
+    handleSaveProcedureAs,
+    handleCancelProcedureEdit,
+    handleEditProcedure,
+    handlePreviewProcedure,
+    handleCloseProcedurePreview,
+    handleCreateProcedure,
+    handleCreateProcedureCancel,
+    handleOpenStepTaskEditor,
+    handleNestedTaskSave,
+    handleNestedTaskCancel,
+    handleNestedTaskPreview,
+    handleCloseNestedTaskPreview,
+    nestedTaskSession,
+    stepParamsSession,
+    handleEditStepParams,
+    handleSaveStepParams,
+    handleCancelStepParams,
+    previewVersion,
+    taskPreviewVersion,
+    editVersion
+  ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {
@@ -2003,23 +2706,43 @@ function ProceduresTabContent(): React.ReactElement {
   return (
     <EntityTabLayout
       list={
-        <EntityList<LibraryRuntime.IProcedure, ProcedureId>
-          entities={useFilteredEntities(procedures, PROCEDURE_FILTER_SPEC)}
-          descriptor={PROCEDURE_DESCRIPTOR}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onDrill={collapseList}
-          compareMode={compareMode}
-          checkedIds={compareIds}
-          onCheckedChange={toggleCompareId}
-          onToggleCompare={toggleCompareMode}
-          compareCount={compareIds.size}
-          onStartComparison={startComparison}
-          emptyState={{
-            title: 'No Procedures',
-            description: 'No procedures found in the library.'
-          }}
-        />
+        <div className="flex flex-col h-full">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+            <button
+              onClick={(): void =>
+                squashCascade([{ entityType: 'procedure', entityId: '__new__', mode: 'create' }])
+              }
+              disabled={mutableProcedureCollectionId === undefined}
+              title={
+                mutableProcedureCollectionId === undefined
+                  ? 'No mutable procedure collection available'
+                  : undefined
+              }
+              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              + New Procedure
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <EntityList<LibraryRuntime.IProcedure, ProcedureId>
+              entities={useFilteredEntities(procedures, PROCEDURE_FILTER_SPEC)}
+              descriptor={PROCEDURE_DESCRIPTOR}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              onDrill={collapseList}
+              compareMode={compareMode}
+              checkedIds={compareIds}
+              onCheckedChange={toggleCompareId}
+              onToggleCompare={toggleCompareMode}
+              compareCount={compareIds.size}
+              onStartComparison={startComparison}
+              emptyState={{
+                title: 'No Procedures',
+                description: 'No procedures found in the library.'
+              }}
+            />
+          </div>
+        </div>
       }
       cascadeColumns={cascadeColumns}
       onPopTo={popCascadeTo}

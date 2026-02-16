@@ -26,6 +26,7 @@
  */
 
 import React from 'react';
+import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import type { LibraryRuntime, Model, TaskId } from '@fgv/ts-chocolate';
 
@@ -42,6 +43,10 @@ export interface IProcedureDetailProps {
   readonly procedure: LibraryRuntime.IProcedure;
   /** Optional callback when a task reference is clicked (drill-down) */
   readonly onTaskClick?: (taskId: TaskId) => void;
+  /** Called when the user clicks the Edit button */
+  readonly onEdit?: () => void;
+  /** Called when the user clicks the Preview button */
+  readonly onPreview?: () => void;
 }
 
 // ============================================================================
@@ -285,7 +290,7 @@ function StepRow({
  * @public
  */
 export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElement {
-  const { procedure, onTaskClick } = props;
+  const { procedure, onTaskClick, onEdit, onPreview } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -294,6 +299,30 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
         <div className="flex items-center gap-2 mb-1">
           <h2 className="text-lg font-semibold text-gray-900">{procedure.name}</h2>
           {procedure.category && <CategoryBadge label={procedure.category} />}
+          <div className="ml-auto flex items-center gap-1">
+            {onPreview && (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Preview procedure"
+              >
+                <EyeIcon className="w-4 h-4" />
+                Preview
+              </button>
+            )}
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Edit procedure"
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+          </div>
         </div>
         {procedure.description && <p className="text-sm text-gray-600">{procedure.description}</p>}
         <p className="text-xs text-gray-400 mt-0.5 font-mono">{procedure.id}</p>

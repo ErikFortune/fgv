@@ -54,4 +54,7 @@ import * as Molds from './molds';
 // Task editing (specialized)
 import * as Tasks from './tasks';
 
-export { Ingredients, Molds, Tasks };
+// Procedure editing (specialized)
+import * as Procedures from './procedures';
+
+export { Ingredients, Molds, Tasks, Procedures };
