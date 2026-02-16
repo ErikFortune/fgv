@@ -87,3 +87,26 @@ Parameters for creating a DecorationsLibrary instance asynchronously with encryp
 
 </td></tr>
 </tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[createBlankDecorationEntity](./functions/createBlankDecorationEntity.md)
+
+</td><td>
+
+Creates a minimal blank decoration entity.
+
+</td></tr>
+</tbody></table>

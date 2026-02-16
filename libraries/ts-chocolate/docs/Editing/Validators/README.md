@@ -2,7 +2,7 @@
 
 # Namespace: Validators
 
-Semantic validators for procedure entities.
+Semantic validators for decoration entities.
 
 ## Functions
 
@@ -18,34 +18,34 @@ Description
 <tbody>
 <tr><td>
 
-[validateProcedureName](./functions/validateProcedureName.md)
+[validateDecorationName](./functions/validateDecorationName.md)
 
 </td><td>
 
-Validate that the procedure name is non-empty.
+Validate that the decoration name is non-empty.
 
 </td></tr>
 <tr><td>
 
-[validateStepOrder](./functions/validateStepOrder.md)
+[validateDecorationIngredients](./functions/validateDecorationIngredients.md)
 
 </td><td>
 
-Validate that step order values are contiguous and 1-based.
+Validate that each ingredient has at least one ID and a positive amount.
 
 </td></tr>
 <tr><td>
 
-[validateStepTaskContent](./functions/validateStepTaskContent.md)
+[validateDecorationRatings](./functions/validateDecorationRatings.md)
 
 </td><td>
 
-Validate that each step has a non-empty task reference/inline template.
+Validate that ratings have valid scores (1-5), categories, and no duplicates.
 
 </td></tr>
 <tr><td>
 
-[validateProcedureEntity](./functions/validateProcedureEntity.md)
+[validateDecorationEntity](./functions/validateDecorationEntity.md)
 
 </td><td>
 

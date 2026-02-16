@@ -56,6 +56,7 @@ import {
   StepParameterEditor,
   ConfectionDetail,
   DecorationDetail,
+  DecorationEditView,
   WorkspaceFilterOptionProvider,
   useFilteredEntities,
   useCollectionActions,
@@ -75,6 +76,7 @@ import type {
   TaskId,
   ProcedureId,
   ConfectionId,
+  BaseDecorationId,
   DecorationId
 } from '@fgv/ts-chocolate';
 
@@ -3175,8 +3177,19 @@ function DecorationsTabContent(): React.ReactElement {
   const startComparison = useNavigationStore((s) => s.startComparison);
   const exitComparison = useNavigationStore((s) => s.exitComparison);
 
+  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedDecoration } | undefined>(undefined);
+  const [editVersion, setEditVersion] = useState(0);
+
   const decorations = useMemo<ReadonlyArray<LibraryRuntime.IDecoration>>(() => {
     return Array.from(workspace.data.decorations.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
+    return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const availableProcedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
+    return Array.from(workspace.data.procedures.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
 
   const selectedId =
@@ -3200,6 +3213,113 @@ function DecorationsTabContent(): React.ReactElement {
     [squashCascade, cascadeStack]
   );
 
+  const getOrCreateWrapper = useCallback(
+    (decoration: LibraryRuntime.IDecoration): LibraryRuntime.EditedDecoration | undefined => {
+      const id = decoration.id;
+      if (editingRef.current?.id === id) {
+        return editingRef.current.wrapper;
+      }
+      const result = LibraryRuntime.EditedDecoration.create(decoration.entity);
+      if (result.isFailure()) {
+        return undefined;
+      }
+      editingRef.current = { id, wrapper: result.value };
+      return result.value;
+    },
+    []
+  );
+
+  const handleEditDecoration = useCallback(
+    (entityId: string): void => {
+      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'decoration');
+      if (idx < 0) return;
+      squashCascade([...cascadeStack.slice(0, idx), { ...cascadeStack[idx], mode: 'edit' as const }]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleCancelDecorationEdit = useCallback(
+    (entityId: string): void => {
+      if (editingRef.current?.id === entityId) {
+        editingRef.current = undefined;
+      }
+      const updated = cascadeStack.map((e) =>
+        e.entityId === entityId && e.entityType === 'decoration' ? { ...e, mode: 'view' as const } : e
+      );
+      squashCascade(updated);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleSaveDecorationAs = useCallback(
+    (wrapper: LibraryRuntime.EditedDecoration): void => {
+      workspace.data.logger.info(
+        `Save to... requested for decoration '${wrapper.current.name}' — collection picker not yet implemented`
+      );
+    },
+    [workspace]
+  );
+
+  const handleSaveDecoration = useCallback(
+    (wrapper: LibraryRuntime.EditedDecoration): void => {
+      const entity = wrapper.current;
+      const compositeId = editingRef.current?.id;
+      if (!compositeId) {
+        workspace.data.logger.error('Save failed: no composite ID for decoration editing wrapper');
+        return;
+      }
+
+      const validationResult = Editing.Decorations.Validators.validateDecorationEntity(entity);
+      if (validationResult.isFailure()) {
+        workspace.data.logger.error(`Save failed: ${validationResult.message}`);
+        return;
+      }
+
+      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const baseId = entity.baseId as BaseDecorationId;
+
+      const collectionEntry = workspace.data.entities.decorations.collections.get(collectionId);
+      if (collectionEntry.isFailure()) {
+        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+        return;
+      }
+      if (!collectionEntry.value.isMutable) {
+        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
+        return;
+      }
+
+      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
+      if (inMemoryResult.isFailure()) {
+        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
+        return;
+      }
+
+      const editableResult = workspace.data.entities.getEditableDecorationsEntityCollection(collectionId);
+      if (editableResult.isSuccess()) {
+        const editable = editableResult.value;
+        editable.set(baseId, entity);
+        if (editable.canSave()) {
+          const saveResult = editable.save();
+          if (saveResult.isFailure()) {
+            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
+          }
+        }
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+
+      if (editingRef.current?.id === compositeId) {
+        editingRef.current = undefined;
+      }
+      const updated = cascadeStack.map((e) =>
+        e.entityId === compositeId && e.entityType === 'decoration' ? { ...e, mode: 'view' as const } : e
+      );
+      squashCascade(updated);
+    },
+    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+  );
+
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
       const onIngredientClick = (id: IngredientId): void => {
@@ -3218,6 +3338,33 @@ function DecorationsTabContent(): React.ReactElement {
             content: <div className="p-4 text-red-500">Failed to load decoration: {entry.entityId}</div>
           };
         }
+
+        if (entry.mode === 'edit') {
+          const wrapper = getOrCreateWrapper(result.value);
+          if (!wrapper) {
+            return {
+              key: entry.entityId,
+              label: result.value.name,
+              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
+            };
+          }
+          return {
+            key: `${entry.entityId}-edit-${editVersion}`,
+            label: `Editing: ${result.value.name}`,
+            content: (
+              <DecorationEditView
+                wrapper={wrapper}
+                availableIngredients={availableIngredients}
+                availableProcedures={availableProcedures}
+                onSave={handleSaveDecoration}
+                onSaveAs={handleSaveDecorationAs}
+                onCancel={(): void => handleCancelDecorationEdit(entry.entityId)}
+                onMutate={(): void => setEditVersion((v) => v + 1)}
+              />
+            )
+          };
+        }
+
         return {
           key: entry.entityId,
           label: result.value.name,
@@ -3226,6 +3373,7 @@ function DecorationsTabContent(): React.ReactElement {
               decoration={result.value}
               onIngredientClick={onIngredientClick}
               onProcedureClick={onProcedureClick}
+              onEdit={(): void => handleEditDecoration(entry.entityId)}
             />
           )
         };
@@ -3266,7 +3414,19 @@ function DecorationsTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [cascadeStack, workspace, squashAt]);
+  }, [
+    cascadeStack,
+    workspace,
+    squashAt,
+    editVersion,
+    availableIngredients,
+    availableProcedures,
+    getOrCreateWrapper,
+    handleEditDecoration,
+    handleCancelDecorationEdit,
+    handleSaveDecoration,
+    handleSaveDecorationAs
+  ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {

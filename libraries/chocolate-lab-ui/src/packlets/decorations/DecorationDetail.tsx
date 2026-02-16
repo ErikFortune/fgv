@@ -26,6 +26,7 @@
  */
 
 import React from 'react';
+import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import type { IngredientId, ProcedureId } from '@fgv/ts-chocolate';
 import type { LibraryRuntime, Model, Entities } from '@fgv/ts-chocolate';
@@ -45,6 +46,10 @@ export interface IDecorationDetailProps {
   readonly onIngredientClick?: (id: IngredientId) => void;
   /** Optional callback when a procedure is clicked */
   readonly onProcedureClick?: (id: ProcedureId) => void;
+  /** Optional callback to enter edit mode */
+  readonly onEdit?: () => void;
+  /** Optional callback to open preview pane */
+  readonly onPreview?: () => void;
 }
 
 // ============================================================================
@@ -243,13 +248,39 @@ function RatingsSection({
  * @public
  */
 export function DecorationDetail(props: IDecorationDetailProps): React.ReactElement {
-  const { decoration, onIngredientClick, onProcedureClick } = props;
+  const { decoration, onIngredientClick, onProcedureClick, onEdit, onPreview } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">{decoration.name}</h2>
+        <div className="flex items-center gap-2 mb-1">
+          <h2 className="text-lg font-semibold text-gray-900">{decoration.name}</h2>
+          <div className="ml-auto flex items-center gap-1">
+            {onPreview && (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Preview decoration"
+              >
+                <EyeIcon className="w-4 h-4" />
+                Preview
+              </button>
+            )}
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Edit decoration"
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+          </div>
+        </div>
         <p className="text-xs text-gray-400 mt-0.5 font-mono">{decoration.id}</p>
         {decoration.description && <p className="text-sm text-gray-600 mt-1">{decoration.description}</p>}
       </div>

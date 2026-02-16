@@ -27,3 +27,4 @@ export * from './ingredientWrapper';
 export * from './moldWrapper';
 export * from './taskWrapper';
 export * from './procedureWrapper';
+export * from './decorationWrapper';

@@ -165,6 +165,15 @@ Mutable wrapper for IProcedureEntity with undo/redo support.
 </td></tr>
 <tr><td>
 
+[EditedDecoration](./classes/EditedDecoration.md)
+
+</td><td>
+
+Mutable wrapper for DecorationEntity with undo/redo support.
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
@@ -841,6 +850,15 @@ Structure describing what changed between two raw task entities
 </td><td>
 
 Structure describing what changed between two procedure entities.
+
+</td></tr>
+<tr><td>
+
+[IDecorationChanges](./interfaces/IDecorationChanges.md)
+
+</td><td>
+
+Structure describing what changed between two decoration entities
 
 </td></tr>
 <tr><td>

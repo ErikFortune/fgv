@@ -153,6 +153,25 @@ export interface IDecorationEntity {
 }
 
 // ============================================================================
+// Factory
+// ============================================================================
+
+/**
+ * Creates a minimal blank decoration entity.
+ * @param baseId - The base ID for the new decoration
+ * @param name - The display name
+ * @returns A minimal IDecorationEntity with required fields only
+ * @public
+ */
+export function createBlankDecorationEntity(baseId: BaseDecorationId, name: string): IDecorationEntity {
+  return {
+    baseId,
+    name,
+    ingredients: []
+  };
+}
+
+// ============================================================================
 // Decoration Reference (used in confection variations)
 // ============================================================================
 

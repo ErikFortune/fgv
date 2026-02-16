@@ -1390,6 +1390,9 @@ declare namespace Converters_8 {
 }
 
 // @public
+function createBlankDecorationEntity(baseId: BaseDecorationId, name: string): IDecorationEntity;
+
+// @public
 function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): IIngredientEntity;
 
 // @public
@@ -1532,6 +1535,7 @@ const decorationRefEntity: Converter<IDecorationRefEntity>;
 declare namespace Decorations {
     export {
         Converters_5 as Converters,
+        createBlankDecorationEntity,
         allDecorationRatingCategories,
         IDecorationIngredientEntity,
         IDecorationRating,
@@ -1546,6 +1550,12 @@ declare namespace Decorations {
         IDecorationsLibraryParams,
         IDecorationsLibraryAsyncParams,
         DecorationsLibrary
+    }
+}
+
+declare namespace Decorations_2 {
+    export {
+        Validators_6 as Validators
     }
 }
 
@@ -1651,6 +1661,42 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     update(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     updateMetadata(metadata: Partial<ICollectionSourceMetadata>): Result<void>;
     static validateStructure(data: unknown): Result<true>;
+}
+
+// @public
+class EditedDecoration {
+    addIngredient(ingredient: Decorations.IDecorationIngredientEntity): Result<void>;
+    addProcedureRef(ref: IProcedureRefEntity_2): Result<void>;
+    applyUpdate(update: Partial<Decorations.IDecorationEntity>): Result<void>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    static create(initial: Decorations.IDecorationEntity): Result<EditedDecoration>;
+    createSnapshot(): Decorations.IDecorationEntity;
+    get current(): Decorations.IDecorationEntity;
+    getChanges(original: Decorations.IDecorationEntity): IDecorationChanges;
+    getSerializedHistory(original: Decorations.IDecorationEntity): Session.ISerializedEditingHistoryEntity<Decorations.IDecorationEntity>;
+    hasChanges(original: Decorations.IDecorationEntity): boolean;
+    get name(): string;
+    redo(): Result<boolean>;
+    removeIngredient(index: number): Result<void>;
+    removeProcedureRef(id: ProcedureId): Result<void>;
+    removeRating(category: RatingCategory_2): Result<void>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Decorations.IDecorationEntity>): Result<EditedDecoration>;
+    restoreSnapshot(snapshot: Decorations.IDecorationEntity): Result<void>;
+    setDescription(description: string | undefined): Result<void>;
+    setIngredients(ingredients: ReadonlyArray<Decorations.IDecorationIngredientEntity>): Result<void>;
+    setName(name: string): Result<void>;
+    setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
+    setPreferredProcedure(id: ProcedureId | undefined): Result<void>;
+    // Warning: (ae-forgotten-export) The symbol "IProcedureRefEntity_2" needs to be exported by the entry point index.d.ts
+    setProcedures(procedures: Model.IOptionsWithPreferred<IProcedureRefEntity_2, ProcedureId> | undefined): Result<void>;
+    // Warning: (ae-forgotten-export) The symbol "RatingCategory_2" needs to be exported by the entry point index.d.ts
+    setRating(category: RatingCategory_2, score: RatingScore, notes?: ReadonlyArray<Model.ICategorizedNote>): Result<void>;
+    setRatings(ratings: ReadonlyArray<Decorations.IDecorationRating> | undefined): Result<void>;
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    get snapshot(): Decorations.IDecorationEntity;
+    undo(): Result<boolean>;
+    updateIngredient(index: number, update: Partial<Decorations.IDecorationIngredientEntity>): Result<void>;
 }
 
 // @public
@@ -1812,6 +1858,7 @@ declare namespace Editing {
         Molds_3 as Molds,
         Tasks_2 as Tasks,
         Procedures_3 as Procedures,
+        Decorations_2 as Decorations,
         IEditorContext,
         IEditorContextValidator,
         IValidatingEditorContext,
@@ -3171,6 +3218,18 @@ interface IDecoration {
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedDecorationProcedure, ProcedureId>;
     readonly ratings?: ReadonlyArray<Decorations.IDecorationRating>;
     readonly tags?: ReadonlyArray<string>;
+}
+
+// @public
+interface IDecorationChanges {
+    readonly descriptionChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly ingredientsChanged: boolean;
+    readonly nameChanged: boolean;
+    readonly notesChanged: boolean;
+    readonly proceduresChanged: boolean;
+    readonly ratingsChanged: boolean;
+    readonly tagsChanged: boolean;
 }
 
 // @internal
@@ -6168,7 +6227,9 @@ declare namespace LibraryRuntime {
         ITaskChanges,
         EditedTask,
         IProcedureChanges,
-        EditedProcedure
+        EditedProcedure,
+        IDecorationChanges,
+        EditedDecoration
     }
 }
 export { LibraryRuntime }
@@ -7822,6 +7883,20 @@ function validateChocolateFields(entity: IngredientEntity): Result<true>;
 // @public
 function validateDairyFields(entity: IngredientEntity): Result<true>;
 
+// Warning: (ae-forgotten-export) The symbol "IDecorationEntity_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateDecorationEntity(entity: IDecorationEntity_2): Result<IDecorationEntity_2>;
+
+// @public
+function validateDecorationIngredients(entity: IDecorationEntity_2): Result<true>;
+
+// @public
+function validateDecorationName(entity: IDecorationEntity_2): Result<true>;
+
+// @public
+function validateDecorationRatings(entity: IDecorationEntity_2): Result<true>;
+
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
 
@@ -8070,6 +8145,15 @@ declare namespace Validators_5 {
         validateStepOrder,
         validateStepTaskContent,
         validateProcedureEntity
+    }
+}
+
+declare namespace Validators_6 {
+    export {
+        validateDecorationName,
+        validateDecorationIngredients,
+        validateDecorationRatings,
+        validateDecorationEntity
     }
 }
 

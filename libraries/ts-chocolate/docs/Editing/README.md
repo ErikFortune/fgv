@@ -53,6 +53,15 @@ Task editing - specialized editing functionality for tasks
 Procedure editing - specialized editing functionality for procedures
 
 </td></tr>
+<tr><td>
+
+[Decorations](./Decorations/README.md)
+
+</td><td>
+
+Decoration editing - specialized editing functionality for decorations
+
+</td></tr>
 </tbody></table>
 
 ## Classes
