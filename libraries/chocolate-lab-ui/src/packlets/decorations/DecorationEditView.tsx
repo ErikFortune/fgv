@@ -25,11 +25,12 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { EyeIcon, StarIcon } from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ClipboardDocumentIcon, EyeIcon, StarIcon } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid, CheckIcon } from '@heroicons/react/24/solid';
+import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 
-import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
+import { EditField, EditSection, TextInput, TagsInput, MultiActionButton } from '@fgv/ts-app-shell';
 import type {
   Entities,
   IngredientId,
@@ -40,7 +41,7 @@ import type {
   RatingScore
 } from '@fgv/ts-chocolate';
 
-import { EditingToolbar, NotesEditor, useEditingContext } from '../editing';
+import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
 
 type EditedDecoration = LibraryRuntime.EditedDecoration;
 
@@ -54,6 +55,9 @@ export interface IDecorationEditViewProps {
   readonly readOnly?: boolean;
   readonly onPreview?: () => void;
   readonly onMutate?: () => void;
+  readonly onCreateIngredient?: (seed: string) => void;
+  readonly onCreateProcedure?: (seed: string) => void;
+  readonly onPasteIngredient?: () => void;
 }
 
 // ============================================================================
@@ -122,7 +126,10 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     onCancel,
     readOnly,
     onPreview,
-    onMutate
+    onMutate,
+    onCreateIngredient,
+    onCreateProcedure,
+    onPasteIngredient
   } = props;
 
   const ctx = useEditingContext<EditedDecoration>({ wrapper, onSave, onSaveAs, onCancel, readOnly });
@@ -134,6 +141,12 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
   const [newIngredientText, setNewIngredientText] = useState('');
   const [newProcedureText, setNewProcedureText] = useState('');
 
+  // Unresolved state for ingredients and procedures
+  const [unresolvedIngredients, setUnresolvedIngredients] = useState<Record<number, string>>({});
+  const [unresolvedProcedures, setUnresolvedProcedures] = useState<Record<number, string>>({});
+  const [unresolvedNewIngredient, setUnresolvedNewIngredient] = useState<string | undefined>(undefined);
+  const [unresolvedNewProcedure, setUnresolvedNewProcedure] = useState<string | undefined>(undefined);
+
   const ingredientSuggestions = useMemo(() => {
     return availableIngredients.map((ing) => ({ id: ing.id, name: ing.name }));
   }, [availableIngredients]);
@@ -141,6 +154,9 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
   const procedureSuggestions = useMemo(() => {
     return availableProcedures.map((proc) => ({ id: proc.id, name: proc.name }));
   }, [availableProcedures]);
+
+  const ingredientMatcher = useDatalistMatch(ingredientSuggestions);
+  const procedureMatcher = useDatalistMatch(procedureSuggestions);
 
   const notify = useCallback((): void => {
     ctx.notifyMutation();
@@ -183,20 +199,9 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
 
   // ---- Ingredient Handlers ----
 
-  const findIngredientMatch = useCallback(
-    (value: string): LibraryRuntime.AnyIngredient | undefined => {
-      const trimmed = value.trim();
-      if (!trimmed) return undefined;
-      return availableIngredients.find(
-        (ing) => ing.id === trimmed || ing.name.toLowerCase() === trimmed.toLowerCase()
-      );
-    },
-    [availableIngredients]
-  );
-
   const commitIngredientInput = useCallback(
     (index: number, input: string): void => {
-      const match = findIngredientMatch(input);
+      const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
         wrapper.updateIngredient(index, {
           ingredient: {
@@ -209,10 +214,17 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
           delete next[index];
           return next;
         });
+        setUnresolvedIngredients((prev) => {
+          const next = { ...prev };
+          delete next[index];
+          return next;
+        });
         notify();
+      } else if (input.trim()) {
+        setUnresolvedIngredients((prev) => ({ ...prev, [index]: input.trim() }));
       }
     },
-    [findIngredientMatch, notify, wrapper]
+    [ingredientMatcher, notify, wrapper]
   );
 
   const handleIngredientAmountChange = useCallback(
@@ -231,6 +243,11 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
         delete next[index];
         return next;
       });
+      setUnresolvedIngredients((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
       notify();
     },
     [notify, wrapper]
@@ -238,35 +255,27 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
 
   const commitNewIngredient = useCallback(
     (input: string): void => {
-      const match = findIngredientMatch(input);
+      const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
         wrapper.addIngredient({
           ingredient: { ids: [match.id], preferredId: undefined },
           amount: 0 as Measurement
         });
         setNewIngredientText('');
+        setUnresolvedNewIngredient(undefined);
         notify();
+      } else if (input.trim()) {
+        setUnresolvedNewIngredient(input.trim());
       }
     },
-    [findIngredientMatch, notify, wrapper]
+    [ingredientMatcher, notify, wrapper]
   );
 
   // ---- Procedure Handlers ----
 
-  const findProcedureMatch = useCallback(
-    (value: string): LibraryRuntime.IProcedure | undefined => {
-      const trimmed = value.trim();
-      if (!trimmed) return undefined;
-      return availableProcedures.find(
-        (proc) => proc.id === trimmed || proc.name.toLowerCase() === trimmed.toLowerCase()
-      );
-    },
-    [availableProcedures]
-  );
-
   const commitProcedureInput = useCallback(
     (index: number, input: string): void => {
-      const match = findProcedureMatch(input);
+      const match = procedureMatcher.resolveOnBlur(input);
       if (match) {
         const currentProcs = entity.procedures;
         if (currentProcs) {
@@ -278,11 +287,18 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             delete next[index];
             return next;
           });
+          setUnresolvedProcedures((prev) => {
+            const next = { ...prev };
+            delete next[index];
+            return next;
+          });
           notify();
         }
+      } else if (input.trim()) {
+        setUnresolvedProcedures((prev) => ({ ...prev, [index]: input.trim() }));
       }
     },
-    [entity.procedures, findProcedureMatch, notify, wrapper]
+    [entity.procedures, procedureMatcher, notify, wrapper]
   );
 
   const handleTogglePreferred = useCallback(
@@ -304,14 +320,17 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
 
   const commitNewProcedure = useCallback(
     (input: string): void => {
-      const match = findProcedureMatch(input);
+      const match = procedureMatcher.resolveOnBlur(input);
       if (match) {
         wrapper.addProcedureRef({ id: match.id });
         setNewProcedureText('');
+        setUnresolvedNewProcedure(undefined);
         notify();
+      } else if (input.trim()) {
+        setUnresolvedNewProcedure(input.trim());
       }
     },
-    [findProcedureMatch, notify, wrapper]
+    [procedureMatcher, notify, wrapper]
   );
 
   // ---- Rating Handlers ----
@@ -324,10 +343,71 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     [notify, wrapper]
   );
 
+  // ---- Clear resolved entries ----
+
+  useEffect(() => {
+    // Clear unresolved ingredients that now have matches
+    setUnresolvedIngredients((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const indexStr of Object.keys(next)) {
+        const match = ingredientMatcher.findExactMatch(next[Number(indexStr)]);
+        if (match) {
+          delete next[Number(indexStr)];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    if (unresolvedNewIngredient && ingredientMatcher.findExactMatch(unresolvedNewIngredient)) {
+      setUnresolvedNewIngredient(undefined);
+    }
+  }, [entity.ingredients, availableIngredients, ingredientMatcher, unresolvedNewIngredient]);
+
+  useEffect(() => {
+    // Clear unresolved procedures that now have matches
+    setUnresolvedProcedures((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const indexStr of Object.keys(next)) {
+        const match = procedureMatcher.findExactMatch(next[Number(indexStr)]);
+        if (match) {
+          delete next[Number(indexStr)];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    if (unresolvedNewProcedure && procedureMatcher.findExactMatch(unresolvedNewProcedure)) {
+      setUnresolvedNewProcedure(undefined);
+    }
+  }, [entity.procedures, availableProcedures, procedureMatcher, unresolvedNewProcedure]);
+
+  const customSaveButton = onSaveAs ? (
+    <MultiActionButton
+      primaryAction={{
+        id: 'save',
+        label: 'Save',
+        icon: <CheckIcon className="h-3.5 w-3.5" />,
+        onSelect: ctx.save
+      }}
+      alternativeActions={[
+        {
+          id: 'save-as',
+          label: 'Save to\u2026',
+          icon: <DocumentDuplicateIcon className="h-3.5 w-3.5" />,
+          onSelect: (): void => ctx.saveAs?.()
+        }
+      ]}
+      variant="primary"
+    />
+  ) : undefined;
+
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       <EditingToolbar
         context={ctx}
+        customSaveButton={customSaveButton}
         extraButtons={
           onPreview ? (
             <button
@@ -367,45 +447,61 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             const ingValue =
               ingredientInputDraft[index] ?? getIngredientDisplayName(ing, ingredientSuggestions);
             return (
-              <div key={index} className="flex items-center gap-2 rounded border border-gray-200 p-2">
-                <input
-                  type="text"
-                  className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                  value={ingValue}
-                  list="decoration-ingredient-suggestions"
-                  onChange={(e): void => {
-                    const nextValue = e.target.value;
-                    setIngredientInputDraft((prev) => ({ ...prev, [index]: nextValue }));
-                  }}
-                  onBlur={(): void => commitIngredientInput(index, ingValue)}
-                  onKeyDown={(e): void => {
-                    if (e.key === 'Enter' || e.key === 'Tab') {
-                      commitIngredientInput(index, ingValue);
-                    }
-                  }}
-                />
-                <input
-                  type="number"
-                  className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                  value={ing.amount}
-                  min={0}
-                  step={0.1}
-                  onChange={(e): void => {
-                    const num = parseFloat(e.target.value);
-                    if (!isNaN(num)) {
-                      handleIngredientAmountChange(index, num);
-                    }
-                  }}
-                  aria-label="Amount (grams)"
-                />
-                <span className="text-xs text-gray-500">g</span>
-                <button
-                  type="button"
-                  onClick={(): void => handleRemoveIngredient(index)}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-                >
-                  Remove
-                </button>
+              <div key={index} className="rounded border border-gray-200 p-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    value={ingValue}
+                    list="decoration-ingredient-suggestions"
+                    onChange={(e): void => {
+                      const nextValue = e.target.value;
+                      setIngredientInputDraft((prev) => ({ ...prev, [index]: nextValue }));
+                    }}
+                    onBlur={(): void => commitIngredientInput(index, ingValue)}
+                    onKeyDown={(e): void => {
+                      if (e.key === 'Enter' || e.key === 'Tab') {
+                        commitIngredientInput(index, ingValue);
+                      }
+                    }}
+                  />
+                  <input
+                    type="number"
+                    className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    value={ing.amount}
+                    min={0}
+                    step={0.1}
+                    onChange={(e): void => {
+                      const num = parseFloat(e.target.value);
+                      if (!isNaN(num)) {
+                        handleIngredientAmountChange(index, num);
+                      }
+                    }}
+                    aria-label="Amount (grams)"
+                  />
+                  <span className="text-xs text-gray-500">g</span>
+                  <button
+                    type="button"
+                    onClick={(): void => handleRemoveIngredient(index)}
+                    className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+                {unresolvedIngredients[index] && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-xs text-amber-700">
+                      No match for &quot;{unresolvedIngredients[index]}&quot;.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(): void => onCreateIngredient?.(unresolvedIngredients[index])}
+                      className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                    >
+                      Create Ingredient
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -432,7 +528,35 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             >
               Add
             </button>
+            {onPasteIngredient && (
+              <button
+                type="button"
+                onClick={onPasteIngredient}
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Paste ingredient from clipboard (AI-generated JSON)"
+              >
+                <ClipboardDocumentIcon className="w-4 h-4" />
+              </button>
+            )}
           </div>
+
+          {unresolvedNewIngredient && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-amber-700">
+                No match for &quot;{unresolvedNewIngredient}&quot;.
+              </span>
+              <button
+                type="button"
+                onClick={(): void => {
+                  onCreateIngredient?.(unresolvedNewIngredient);
+                  setUnresolvedNewIngredient(undefined);
+                }}
+                className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+              >
+                Create Ingredient
+              </button>
+            </div>
+          )}
 
           <datalist id="decoration-ingredient-suggestions">
             {ingredientSuggestions.map((s) => (
@@ -452,40 +576,56 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
               procedureInputDraft[index] ?? getProcedureDisplayName(ref.id, procedureSuggestions);
             const isPreferred = entity.procedures?.preferredId === ref.id;
             return (
-              <div key={ref.id} className="flex items-center gap-2 rounded border border-gray-200 p-2">
-                <button
-                  type="button"
-                  onClick={(): void => handleTogglePreferred(ref.id)}
-                  className={`p-0.5 transition-colors ${
-                    isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
-                  }`}
-                  title={isPreferred ? 'Preferred procedure' : 'Set as preferred'}
-                >
-                  {isPreferred ? <StarIconSolid className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
-                </button>
-                <input
-                  type="text"
-                  className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                  value={procValue}
-                  list="decoration-procedure-suggestions"
-                  onChange={(e): void => {
-                    const nextValue = e.target.value;
-                    setProcedureInputDraft((prev) => ({ ...prev, [index]: nextValue }));
-                  }}
-                  onBlur={(): void => commitProcedureInput(index, procValue)}
-                  onKeyDown={(e): void => {
-                    if (e.key === 'Enter' || e.key === 'Tab') {
-                      commitProcedureInput(index, procValue);
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={(): void => handleRemoveProcedure(ref.id)}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-                >
-                  Remove
-                </button>
+              <div key={ref.id} className="rounded border border-gray-200 p-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(): void => handleTogglePreferred(ref.id)}
+                    className={`p-0.5 transition-colors ${
+                      isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                    }`}
+                    title={isPreferred ? 'Preferred procedure' : 'Set as preferred'}
+                  >
+                    {isPreferred ? <StarIconSolid className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
+                  </button>
+                  <input
+                    type="text"
+                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    value={procValue}
+                    list="decoration-procedure-suggestions"
+                    onChange={(e): void => {
+                      const nextValue = e.target.value;
+                      setProcedureInputDraft((prev) => ({ ...prev, [index]: nextValue }));
+                    }}
+                    onBlur={(): void => commitProcedureInput(index, procValue)}
+                    onKeyDown={(e): void => {
+                      if (e.key === 'Enter' || e.key === 'Tab') {
+                        commitProcedureInput(index, procValue);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(): void => handleRemoveProcedure(ref.id)}
+                    className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+                {unresolvedProcedures[index] && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-xs text-amber-700">
+                      No match for &quot;{unresolvedProcedures[index]}&quot;.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(): void => onCreateProcedure?.(unresolvedProcedures[index])}
+                      className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                    >
+                      Create Procedure
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -513,6 +653,24 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
               Add
             </button>
           </div>
+
+          {unresolvedNewProcedure && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-amber-700">
+                No match for &quot;{unresolvedNewProcedure}&quot;.
+              </span>
+              <button
+                type="button"
+                onClick={(): void => {
+                  onCreateProcedure?.(unresolvedNewProcedure);
+                  setUnresolvedNewProcedure(undefined);
+                }}
+                className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+              >
+                Create Procedure
+              </button>
+            </div>
+          )}
 
           <datalist id="decoration-procedure-suggestions">
             {procedureSuggestions.map((s) => (

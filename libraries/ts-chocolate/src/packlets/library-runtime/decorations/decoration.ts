@@ -25,7 +25,7 @@
 
 import { Result, mapResults, succeed } from '@fgv/ts-utils';
 
-import { BaseDecorationId, DecorationId, Model as CommonModel, ProcedureId } from '../../common';
+import { BaseDecorationId, DecorationId, Helpers, Model as CommonModel, ProcedureId } from '../../common';
 import { Decorations, IDecorationEntity } from '../../entities';
 import {
   IDecoration,
@@ -138,6 +138,13 @@ export class Decoration implements IDecoration {
       this._resolvedProcedures = this._resolveProcedures().orThrow();
     }
     return this._resolvedProcedures;
+  }
+
+  /**
+   * The preferred procedure (or first if no preference is set), or undefined if no procedures.
+   */
+  public get preferredProcedure(): IResolvedDecorationProcedure | undefined {
+    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
   }
 
   /**

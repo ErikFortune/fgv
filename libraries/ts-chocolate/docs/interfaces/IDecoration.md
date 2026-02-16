@@ -134,6 +134,23 @@ Optional resolved procedures with preferred selection
 </td></tr>
 <tr><td>
 
+[preferredProcedure](./IDecoration.preferredProcedure.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+IResolvedDecorationProcedure | undefined
+
+</td><td>
+
+The preferred procedure (or first if no preference is set), or undefined if no procedures
+
+</td></tr>
+<tr><td>
+
 [ratings](./IDecoration.ratings.md)
 
 </td><td>

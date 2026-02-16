@@ -152,6 +152,9 @@ export interface IDecoration {
   /** Optional resolved procedures with preferred selection */
   readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedDecorationProcedure, ProcedureId>;
 
+  /** The preferred procedure (or first if no preference is set), or undefined if no procedures */
+  readonly preferredProcedure: IResolvedDecorationProcedure | undefined;
+
   /** Optional ratings */
   readonly ratings?: ReadonlyArray<Decorations.IDecorationRating>;
 

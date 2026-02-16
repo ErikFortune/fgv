@@ -90,6 +90,7 @@ function createDefaultPathToKeyMap(prefix: string): Record<string, string> {
     [`/${LibraryData.LibraryPaths.ingredients}`]: `${prefix}:ingredients:v1`,
     [`/${LibraryData.LibraryPaths.fillings}`]: `${prefix}:fillings:v1`,
     [`/${LibraryData.LibraryPaths.confections}`]: `${prefix}:confections:v1`,
+    [`/${LibraryData.LibraryPaths.decorations}`]: `${prefix}:decorations:v1`,
     [`/${LibraryData.LibraryPaths.molds}`]: `${prefix}:molds:v1`,
     [`/${LibraryData.LibraryPaths.procedures}`]: `${prefix}:procedures:v1`,
     [`/${LibraryData.LibraryPaths.tasks}`]: `${prefix}:tasks:v1`,

@@ -435,6 +435,7 @@ export type Certification =
   | 'fair-trade'
   | 'gluten-free'
   | 'halal'
+  | 'kosher'
   | 'kosher-dairy'
   | 'non-gmo'
   | 'organic'

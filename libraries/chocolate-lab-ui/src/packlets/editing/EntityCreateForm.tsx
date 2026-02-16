@@ -61,6 +61,8 @@ export interface IEntityCreateFormProps<TEntity> {
   readonly namePlaceholder?: string;
   /** Label for the entity type (e.g. "Ingredient") — used in UI text */
   readonly entityLabel?: string;
+  /** Initial value for the name field (e.g. from typeahead seed) */
+  readonly initialName?: string;
 }
 
 // ============================================================================
@@ -85,10 +87,11 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
     onCreate,
     onCancel,
     namePlaceholder = 'e.g. Callebaut 811 Dark',
-    entityLabel = 'Entity'
+    entityLabel = 'Entity',
+    initialName
   } = props;
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName ?? '');
   const [idOverride, setIdOverride] = useState('');
   const [pasteError, setPasteError] = useState<string | undefined>(undefined);
   const [promptCopied, setPromptCopied] = useState(false);
@@ -152,9 +155,15 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent): void => {
-      e.preventDefault();
       const text = e.clipboardData.getData('text/plain') || e.clipboardData.getData('text');
-      if (text) handleJsonInput(text);
+      if (!text) return;
+
+      // Only intercept if the pasted text looks like JSON (starts with { or [)
+      const trimmed = text.trim().replace(/^```(?:\w+)?\s*\n?/, '');
+      if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return;
+
+      e.preventDefault();
+      handleJsonInput(text);
     },
     [handleJsonInput]
   );

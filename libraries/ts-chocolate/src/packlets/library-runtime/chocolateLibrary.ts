@@ -536,6 +536,7 @@ export class ChocolateLibrary
     this._tasks = undefined;
     this._procedures = undefined;
     this._molds = undefined;
+    this._decorations = undefined;
     this._reverseIndex.invalidate();
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();

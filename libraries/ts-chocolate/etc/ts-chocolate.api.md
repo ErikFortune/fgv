@@ -575,7 +575,7 @@ export type Celsius = Brand<number, 'Celsius'>;
 const celsius: Converter<Celsius>;
 
 // @public
-export type Certification = 'all-natural' | 'cocoa-horizons' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
+export type Certification = 'all-natural' | 'cocoa-horizons' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
 
 // @public
 const certification: Converter<Certification>;
@@ -1485,6 +1485,7 @@ class Decoration implements IDecoration {
     get ingredients(): ReadonlyArray<IResolvedDecorationIngredient>;
     get name(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    get preferredProcedure(): IResolvedDecorationProcedure | undefined;
     // Warning: (ae-forgotten-export) The symbol "IResolvedDecorationProcedure" needs to be exported by the entry point index.d.ts
     get procedures(): Model.IOptionsWithPreferred<IResolvedDecorationProcedure, ProcedureId> | undefined;
     get ratings(): ReadonlyArray<Decorations.IDecorationRating> | undefined;
@@ -3215,6 +3216,7 @@ interface IDecoration {
     readonly ingredients: ReadonlyArray<IResolvedDecorationIngredient>;
     readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly preferredProcedure: IResolvedDecorationProcedure | undefined;
     readonly procedures?: Model.IOptionsWithPreferred<IResolvedDecorationProcedure, ProcedureId>;
     readonly ratings?: ReadonlyArray<Decorations.IDecorationRating>;
     readonly tags?: ReadonlyArray<string>;

@@ -31,7 +31,7 @@ import { EyeIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/outli
 import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
 import type { Entities, LibraryRuntime, Model, TaskId } from '@fgv/ts-chocolate';
 
-import { EditingToolbar, NotesEditor, useEditingContext } from '../editing';
+import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
 
 type EditedProcedure = LibraryRuntime.EditedProcedure;
 
@@ -94,18 +94,8 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
     return availableTasks.map((task) => ({ id: task.id, name: task.name }));
   }, [availableTasks]);
 
-  const findTaskMatch = useCallback(
-    (value: string): LibraryRuntime.ITask | undefined => {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return undefined;
-      }
-      return availableTasks.find(
-        (task) => task.id === trimmed || task.name.toLowerCase() === trimmed.toLowerCase()
-      );
-    },
-    [availableTasks]
-  );
+  const { findExactMatch: findTaskExactMatch, resolveOnBlur: resolveTaskOnBlur } =
+    useDatalistMatch(taskSuggestions);
 
   const notify = useCallback((): void => {
     ctx.notifyMutation();
@@ -146,7 +136,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
 
   const commitStepTaskInput = useCallback(
     (step: Entities.Procedures.IProcedureStepEntity, input: string) => {
-      const match = findTaskMatch(input);
+      const match = resolveTaskOnBlur(input);
       if (match) {
         const existingParams = 'taskId' in step.task ? step.task.params : step.task.params;
         wrapper.updateStep(step.order, {
@@ -162,13 +152,13 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
         setUnresolvedByStep((prev) => ({ ...prev, [step.order]: input.trim() }));
       }
     },
-    [findTaskMatch, notify, wrapper]
+    [resolveTaskOnBlur, notify, wrapper]
   );
 
   const handleAddStep = useCallback(() => {
     const seed = newStepText.trim();
     const nextOrder = entity.steps.length + 1;
-    const exactMatch = findTaskMatch(seed);
+    const exactMatch = findTaskExactMatch(seed);
     if (exactMatch) {
       // For library task exact match, go directly to parameter selector
       onEditStepParams?.(nextOrder);
@@ -179,18 +169,13 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
       return;
     }
 
-    // Check for partial matches in taskSuggestions
-    const partialMatches = taskSuggestions.filter(
-      (task) =>
-        task.name.toLowerCase().includes(seed.toLowerCase()) ||
-        task.id.toLowerCase().includes(seed.toLowerCase())
-    );
-
-    if (partialMatches.length === 1 && seed.length > 0) {
+    // Try partial match resolution (single partial match auto-selects)
+    const blurMatch = resolveTaskOnBlur(seed);
+    if (blurMatch) {
       // If exactly one partial match, auto-select it and go to parameter selector
       onEditStepParams?.(nextOrder);
       wrapper.addStep({
-        task: { taskId: partialMatches[0].id, params: {} }
+        task: { taskId: blurMatch.id, params: {} }
       });
       setNewStepText('');
       return;
@@ -201,9 +186,9 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
     setNewStepText('');
   }, [
     entity.steps.length,
-    findTaskMatch,
+    findTaskExactMatch,
+    resolveTaskOnBlur,
     newStepText,
-    taskSuggestions,
     onEditStepTask,
     onEditStepParams,
     wrapper

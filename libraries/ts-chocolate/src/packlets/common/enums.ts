@@ -154,6 +154,7 @@ export const allCertifications: Certification[] = [
   'fair-trade',
   'gluten-free',
   'halal',
+  'kosher',
   'kosher-dairy',
   'non-gmo',
   'organic',
