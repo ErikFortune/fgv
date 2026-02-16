@@ -28,7 +28,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { EyeIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
-import { EditField, EditSection, TextInput, TextAreaInput, NumberInput, TagsInput } from '@fgv/ts-app-shell';
+import {
+  EditField,
+  EditSection,
+  TextInput,
+  TextAreaInput,
+  NumberInput,
+  TagsInput,
+  MultiActionButton
+} from '@fgv/ts-app-shell';
 
 import { LibraryRuntime, Model as CommonModel, type Celsius, type Minutes } from '@fgv/ts-chocolate';
 
@@ -197,11 +205,48 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
     onMutate?.();
   }, [entity, onMutate]);
 
+  // Build custom save button for step context with mode selection
+  const customSaveButton =
+    isStepContext && onConvertMode && currentMode ? (
+      <MultiActionButton
+        primaryAction={{
+          id: 'save',
+          label: 'Save',
+          icon: <CheckIcon className="h-3.5 w-3.5" />,
+          onSelect: ctx.save
+        }}
+        alternativeActions={[
+          {
+            id: 'save-inline',
+            label: currentMode === 'inline' ? 'Save Inline (current)' : 'Save Inline',
+            onSelect: (): void => {
+              if (currentMode !== 'inline') {
+                onConvertMode('inline');
+              }
+              ctx.save();
+            }
+          },
+          {
+            id: 'save-library',
+            label: currentMode === 'library' ? 'Save to Library (current)' : 'Save to Library',
+            onSelect: (): void => {
+              if (currentMode !== 'library') {
+                onConvertMode('library');
+              }
+              ctx.save();
+            }
+          }
+        ]}
+        variant="primary"
+      />
+    ) : undefined;
+
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Toolbar */}
       <EditingToolbar
         context={ctx}
+        customSaveButton={customSaveButton}
         extraButtons={
           <>
             {onPreview && (
@@ -214,34 +259,6 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
                 <EyeIcon className="h-3.5 w-3.5" />
                 <span>Preview</span>
               </button>
-            )}
-            {isStepContext && onConvertMode && (
-              <div className="inline-flex items-center gap-1 px-1 py-0.5 bg-gray-100 rounded text-xs">
-                <button
-                  type="button"
-                  onClick={(): void => onConvertMode('inline')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
-                    currentMode === 'inline'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="Save as inline task (embedded in procedure)"
-                >
-                  Inline
-                </button>
-                <button
-                  type="button"
-                  onClick={(): void => onConvertMode('library')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
-                    currentMode === 'library'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title="Save to library (reusable task)"
-                >
-                  Library
-                </button>
-              </div>
             )}
           </>
         }

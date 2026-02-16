@@ -23,3 +23,9 @@ export {
   CheckboxInput,
   type ICheckboxInputProps
 } from './EditFieldHelpers';
+
+export {
+  MultiActionButton,
+  type IMultiActionButtonProps,
+  type IMultiActionButtonAction
+} from './MultiActionButton';

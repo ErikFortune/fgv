@@ -57,6 +57,8 @@ export interface IEditingToolbarProps<TWrapper extends IEditable> {
   readonly className?: string;
   /** Optional extra buttons to render in the toolbar (e.g. Preview). */
   readonly extraButtons?: React.ReactNode;
+  /** Optional custom save button to replace the default save/saveAs buttons. */
+  readonly customSaveButton?: React.ReactNode;
 }
 
 // ============================================================================
@@ -116,7 +118,7 @@ function ToolbarButton({
 export function EditingToolbar<TWrapper extends IEditable>(
   props: IEditingToolbarProps<TWrapper>
 ): React.ReactElement {
-  const { context, className, extraButtons } = props;
+  const { context, className, extraButtons, customSaveButton } = props;
 
   return (
     <div className={`flex flex-col border-b border-gray-200 bg-gray-50 ${className ?? ''}`}>
@@ -160,17 +162,23 @@ export function EditingToolbar<TWrapper extends IEditable>(
             <XMarkIcon className="h-3.5 w-3.5" />
             <span>Cancel</span>
           </ToolbarButton>
-          {!context.readOnly && (
-            <ToolbarButton onClick={context.save} title="Save changes" variant="primary">
-              <CheckIcon className="h-3.5 w-3.5" />
-              <span>Save</span>
-            </ToolbarButton>
-          )}
-          {context.saveAs !== undefined && (
-            <ToolbarButton onClick={context.saveAs} title="Save to another collection" variant="primary">
-              <DocumentDuplicateIcon className="h-3.5 w-3.5" />
-              <span>Save to&hellip;</span>
-            </ToolbarButton>
+          {customSaveButton ? (
+            customSaveButton
+          ) : (
+            <>
+              {!context.readOnly && (
+                <ToolbarButton onClick={context.save} title="Save changes" variant="primary">
+                  <CheckIcon className="h-3.5 w-3.5" />
+                  <span>Save</span>
+                </ToolbarButton>
+              )}
+              {context.saveAs !== undefined && (
+                <ToolbarButton onClick={context.saveAs} title="Save to another collection" variant="primary">
+                  <DocumentDuplicateIcon className="h-3.5 w-3.5" />
+                  <span>Save to&hellip;</span>
+                </ToolbarButton>
+              )}
+            </>
           )}
         </div>
       </div>
