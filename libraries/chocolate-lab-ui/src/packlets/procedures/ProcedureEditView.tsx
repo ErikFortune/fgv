@@ -168,16 +168,46 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
   const handleAddStep = useCallback(() => {
     const seed = newStepText.trim();
     const nextOrder = entity.steps.length + 1;
-    const match = findTaskMatch(seed);
-    if (match) {
-      onEditStepTask?.(nextOrder, 'library', match.id);
+    const exactMatch = findTaskMatch(seed);
+    if (exactMatch) {
+      // For library task exact match, go directly to parameter selector
+      onEditStepParams?.(nextOrder);
+      wrapper.addStep({
+        task: { taskId: exactMatch.id, params: {} }
+      });
       setNewStepText('');
       return;
     }
 
+    // Check for partial matches in taskSuggestions
+    const partialMatches = taskSuggestions.filter(
+      (task) =>
+        task.name.toLowerCase().includes(seed.toLowerCase()) ||
+        task.id.toLowerCase().includes(seed.toLowerCase())
+    );
+
+    if (partialMatches.length === 1 && seed.length > 0) {
+      // If exactly one partial match, auto-select it and go to parameter selector
+      onEditStepParams?.(nextOrder);
+      wrapper.addStep({
+        task: { taskId: partialMatches[0].id, params: {} }
+      });
+      setNewStepText('');
+      return;
+    }
+
+    // Default to inline task for no matches or multiple matches, route to editor
     onEditStepTask?.(nextOrder, 'inline', seed || `Step ${nextOrder}`);
     setNewStepText('');
-  }, [entity.steps.length, findTaskMatch, newStepText, onEditStepTask]);
+  }, [
+    entity.steps.length,
+    findTaskMatch,
+    newStepText,
+    taskSuggestions,
+    onEditStepTask,
+    onEditStepParams,
+    wrapper
+  ]);
 
   const handleRemoveStep = useCallback(
     (order: number): void => {

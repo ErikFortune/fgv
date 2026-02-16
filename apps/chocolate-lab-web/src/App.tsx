@@ -2057,10 +2057,10 @@ function ProceduresTabContent(): React.ReactElement {
 
   const handleEditProcedure = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'procedure' ? { ...e, mode: 'edit' as const } : e
-      );
-      squashCascade(updated);
+      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'procedure');
+      if (idx < 0) return;
+      // Truncate everything to the right of the procedure entry and switch to edit mode
+      squashCascade([...cascadeStack.slice(0, idx), { ...cascadeStack[idx], mode: 'edit' as const }]);
     },
     [cascadeStack, squashCascade]
   );
@@ -2228,7 +2228,7 @@ function ProceduresTabContent(): React.ReactElement {
         wrapper: wrapperResult.value
       });
 
-      // Filter out preview and task entities to squash them
+      // Filter out preview and task entities to squash them, closing any open browser
       const baseStack = cascadeStack.filter((e) => e.mode !== 'preview' && e.entityType !== 'task');
       const ensuredProcedureEdit = baseStack.some(
         (e) => e.entityType === 'procedure' && e.entityId === procId && e.mode === 'edit'
@@ -2285,6 +2285,7 @@ function ProceduresTabContent(): React.ReactElement {
           workspace.data.logger.error('Cannot save nested library task: no mutable task collection');
           return;
         }
+
         const baseId = wrapper.current.baseId as BaseTaskId;
         const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
         const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
@@ -2306,10 +2307,7 @@ function ProceduresTabContent(): React.ReactElement {
 
         if (currentStep) {
           procWrapper.updateStep(session.stepOrder, {
-            task: {
-              taskId: compositeTaskId,
-              params: { ...existingParams }
-            }
+            task: { taskId: compositeTaskId, params: { ...existingParams } }
           });
         } else {
           procWrapper.addStep({
@@ -2362,11 +2360,11 @@ function ProceduresTabContent(): React.ReactElement {
       }
 
       const currentStep = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
-      if (!currentStep) {
-        return;
-      }
-
-      const existingParams = 'taskId' in currentStep.task ? currentStep.task.params : currentStep.task.params;
+      const existingParams = currentStep
+        ? 'taskId' in currentStep.task
+          ? currentStep.task.params
+          : currentStep.task.params
+        : {};
 
       if (targetMode === 'library') {
         // Convert inline → library
@@ -2385,6 +2383,7 @@ function ProceduresTabContent(): React.ReactElement {
 
         // Save to library collection
         colResult.value.items.set(baseId, session.wrapper.current);
+
         const editableResult =
           workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
         if (editableResult.isSuccess()) {
@@ -2749,6 +2748,25 @@ function ProceduresTabContent(): React.ReactElement {
 
         const result = workspace.data.tasks.get(entry.entityId as TaskId);
         if (result.isFailure()) {
+          // Task not in library — check if it's an inline task from a parent procedure's steps
+          const parentProcEntry = cascadeStack
+            .slice(0, index)
+            .reverse()
+            .find((e) => e.entityType === 'procedure');
+          if (parentProcEntry) {
+            const proc = workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId);
+            const steps = proc.isSuccess() ? proc.value.getSteps() : undefined;
+            const inlineStep = steps?.isSuccess()
+              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
+              : undefined;
+            if (inlineStep) {
+              return {
+                key: entry.entityId,
+                label: `${inlineStep.resolvedTask.name} (inline)`,
+                content: <TaskDetail task={inlineStep.resolvedTask} />
+              };
+            }
+          }
           return {
             key: entry.entityId,
             label: entry.entityId,

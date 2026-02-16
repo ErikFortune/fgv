@@ -41,7 +41,7 @@ import type { LibraryRuntime, Model, TaskId } from '@fgv/ts-chocolate';
 export interface IProcedureDetailProps {
   /** The resolved procedure to display */
   readonly procedure: LibraryRuntime.IProcedure;
-  /** Optional callback when a task reference is clicked (drill-down) */
+  /** Optional callback when a task step is clicked (drill-down). Works for both library and inline tasks. */
   readonly onTaskClick?: (taskId: TaskId) => void;
   /** Called when the user clicks the Edit button */
   readonly onEdit?: () => void;
@@ -248,13 +248,31 @@ function StepRow({
   }
 
   // Inline task: show name + template directly
+  const clickable = onTaskClick !== undefined;
   return (
-    <div className="flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0">
+    <div
+      className={`flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0${
+        clickable ? ' cursor-pointer hover:bg-gray-50 rounded -mx-1 px-1' : ''
+      }`}
+      onClick={clickable ? (): void => onTaskClick(resolvedTask.id) : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e: React.KeyboardEvent): void => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onTaskClick(resolvedTask.id);
+              }
+            }
+          : undefined
+      }
+    >
       <span className="text-xs text-gray-400 font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
       <div className="flex-1 min-w-0">
         <div className="text-sm text-gray-800 flex items-center gap-1">
           <span>{resolvedTask.name}</span>
           <span className="text-[10px] text-gray-400 bg-gray-100 px-1 rounded">inline</span>
+          {clickable && <span className="text-gray-400 text-xs">→</span>}
         </div>
         <div className="text-xs text-gray-500 mt-0.5 font-mono whitespace-pre-wrap">
           {resolvedTask.template}
