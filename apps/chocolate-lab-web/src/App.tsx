@@ -53,7 +53,6 @@ import {
   ProcedureDetail,
   ProcedureEditView,
   ProcedurePreviewPanel,
-  StepParameterEditor,
   ConfectionDetail,
   DecorationDetail,
   DecorationEditView,
@@ -63,7 +62,8 @@ import {
   useCollectionActions,
   initializeBrowserPlatform,
   type IEntityFilterSpec,
-  EntityCreateForm
+  EntityCreateForm,
+  useProcedureEditSession
 } from '@fgv/chocolate-lab-ui';
 import type {
   BaseIngredientId,
@@ -889,39 +889,27 @@ function FillingsTabContent(): React.ReactElement {
         };
       }
       if (entry.entityType === 'task') {
-        if (nestedTaskSession && entry.entityId === nestedTaskSession.taskEntityId) {
-          if (entry.mode === 'preview') {
-            return {
-              key: `${entry.entityId}:preview`,
-              label: `${nestedTaskSession.wrapper.current.name} (preview)`,
-              content: (
-                <TaskPreviewPanel
-                  template={nestedTaskSession.wrapper.current.template}
-                  defaults={nestedTaskSession.wrapper.current.defaults}
-                  taskName={nestedTaskSession.wrapper.current.name}
-                  onClose={(): void => handleCloseNestedTaskPreview(entry.entityId)}
-                />
-              )
-            };
-          }
-
-          return {
-            key: `${entry.entityId}:edit`,
-            label: `${nestedTaskSession.wrapper.current.name} (editing)`,
-            content: (
-              <TaskEditView
-                wrapper={nestedTaskSession.wrapper}
-                onSave={handleNestedTaskSave}
-                onCancel={handleNestedTaskCancel}
-                onPreview={(): void => handleNestedTaskPreview(entry.entityId)}
-                onMutate={(): void => setTaskPreviewVersion((v) => v + 1)}
-              />
-            )
-          };
-        }
-
         const result = workspace.data.tasks.get(entry.entityId as TaskId);
         if (result.isFailure()) {
+          // Check for inline task from parent procedure
+          const parentProcEntry = cascadeStack
+            .slice(0, index)
+            .reverse()
+            .find((e) => e.entityType === 'procedure');
+          if (parentProcEntry) {
+            const proc = workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId);
+            const steps = proc.isSuccess() ? proc.value.getSteps() : undefined;
+            const inlineStep = steps?.isSuccess()
+              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
+              : undefined;
+            if (inlineStep) {
+              return {
+                key: entry.entityId,
+                label: `${inlineStep.resolvedTask.name} (inline)`,
+                content: <TaskDetail task={inlineStep.resolvedTask} />
+              };
+            }
+          }
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -940,27 +928,7 @@ function FillingsTabContent(): React.ReactElement {
         content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
       };
     });
-  }, [
-    cascadeStack,
-    workspace,
-    squashAt,
-    availableTasks,
-    getOrCreateWrapper,
-    handleSaveProcedure,
-    handleSaveProcedureAs,
-    handleCancelProcedureEdit,
-    handleEditProcedure,
-    handlePreviewProcedure,
-    handleCloseProcedurePreview,
-    handleOpenStepTaskEditor,
-    handleNestedTaskSave,
-    handleNestedTaskCancel,
-    handleNestedTaskPreview,
-    handleCloseNestedTaskPreview,
-    nestedTaskSession,
-    previewVersion,
-    taskPreviewVersion
-  ]);
+  }, [cascadeStack, workspace, squashAt]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
     return Array.from(compareIds).map((id) => {
@@ -1979,41 +1947,11 @@ function ProceduresTabContent(): React.ReactElement {
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(undefined);
   const [previewVersion, setPreviewVersion] = useState(0);
-  const [taskPreviewVersion, setTaskPreviewVersion] = useState(0);
-  const [editVersion, setEditVersion] = useState(0);
 
   const [newProcedureName, setNewProcedureName] = useState('');
 
-  const [nestedTaskSession, setNestedTaskSession] = useState<
-    | {
-        readonly mode: 'inline' | 'library';
-        readonly stepOrder: number;
-        readonly taskEntityId: string;
-        readonly wrapper: LibraryRuntime.EditedTask;
-      }
-    | undefined
-  >(undefined);
-
-  const [stepParamsSession, setStepParamsSession] = useState<
-    | {
-        readonly procedureId: string;
-        readonly stepOrder: number;
-      }
-    | undefined
-  >(undefined);
-
   const mutableProcedureCollectionId = useMemo<CollectionId | undefined>(() => {
     const collections = workspace.data.entities.procedures.collections;
-    for (const [id, col] of collections.entries()) {
-      if (col.isMutable) {
-        return id as CollectionId;
-      }
-    }
-    return undefined;
-  }, [workspace, reactiveWorkspace.version]);
-
-  const mutableTaskCollectionId = useMemo<CollectionId | undefined>(() => {
-    const collections = workspace.data.entities.tasks.collections;
     for (const [id, col] of collections.entries()) {
       if (col.isMutable) {
         return id as CollectionId;
@@ -2029,6 +1967,15 @@ function ProceduresTabContent(): React.ReactElement {
   const availableTasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
     return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
+
+  const procedureSession = useProcedureEditSession({
+    procedureRef: editingRef,
+    availableTasks,
+    cascadeStack,
+    squashCascade,
+    slugify,
+    onMutate: (): void => setPreviewVersion((v) => v + 1)
+  });
 
   const selectedId =
     cascadeStack.length > 0 && cascadeStack[0].entityType === 'procedure'
@@ -2074,13 +2021,13 @@ function ProceduresTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
-      setNestedTaskSession(undefined);
+      procedureSession.cleanup();
       const updated = cascadeStack.map((e) =>
         e.entityId === entityId && e.entityType === 'procedure' ? { ...e, mode: 'view' as const } : e
       );
       squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
     },
-    [cascadeStack, squashCascade]
+    [cascadeStack, squashCascade, procedureSession]
   );
 
   const handleSaveProcedureAs = useCallback(
@@ -2144,13 +2091,13 @@ function ProceduresTabContent(): React.ReactElement {
       if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
       }
-      setNestedTaskSession(undefined);
+      procedureSession.cleanup();
       const updated = cascadeStack.map((e) =>
         e.entityId === compositeId && e.entityType === 'procedure' ? { ...e, mode: 'view' as const } : e
       );
       squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, reactiveWorkspace, cascadeStack, squashCascade, procedureSession]
   );
 
   const handlePreviewProcedure = useCallback(
@@ -2173,302 +2120,6 @@ function ProceduresTabContent(): React.ReactElement {
     },
     [cascadeStack, squashCascade]
   );
-
-  const handleOpenStepTaskEditor = useCallback(
-    (stepOrder: number, mode: 'inline' | 'library', seed: string): void => {
-      const procId = editingRef.current?.id;
-      const procWrapper = editingRef.current?.wrapper;
-      if (!procId || !procWrapper) {
-        return;
-      }
-
-      // Check if editing existing step
-      const currentStep = procWrapper.current.steps.find((s) => s.order === stepOrder);
-      let wrapperResult: Result<LibraryRuntime.EditedTask>;
-
-      if (currentStep && 'taskId' in currentStep.task) {
-        // Editing existing library task reference
-        const taskResult = workspace.data.tasks.get(currentStep.task.taskId);
-        if (taskResult.isFailure()) {
-          workspace.data.logger.error(
-            `Failed to load library task ${currentStep.task.taskId}: ${taskResult.message}`
-          );
-          return;
-        }
-        wrapperResult = LibraryRuntime.EditedTask.create(taskResult.value.entity);
-      } else if (currentStep && 'task' in currentStep.task) {
-        // Editing existing inline task
-        wrapperResult = LibraryRuntime.EditedTask.create(currentStep.task.task);
-      } else if (mode === 'library') {
-        // Creating new step with library task
-        const taskResult = workspace.data.tasks.get(seed as TaskId);
-        if (taskResult.isFailure()) {
-          workspace.data.logger.error(`Failed to load library task ${seed}: ${taskResult.message}`);
-          return;
-        }
-        wrapperResult = LibraryRuntime.EditedTask.create(taskResult.value.entity);
-
-        // Create step with library task reference immediately
-        procWrapper.addStep({
-          task: { taskId: seed as TaskId, params: {} }
-        });
-      } else {
-        // Creating new inline task
-        const baseId = slugify(seed || `step-${stepOrder}`) as BaseTaskId;
-        const rawTask = createBlankRawTaskEntity(baseId, seed || `Step ${stepOrder}`);
-        wrapperResult = LibraryRuntime.EditedTask.create(rawTask);
-      }
-
-      if (wrapperResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create task wrapper: ${wrapperResult.message}`);
-        return;
-      }
-
-      const taskEntityId = `${procId}::__step_${stepOrder}_${mode}`;
-      setNestedTaskSession({
-        mode,
-        stepOrder,
-        taskEntityId,
-        wrapper: wrapperResult.value
-      });
-
-      // Filter out preview and task entities to squash them, closing any open browser
-      const baseStack = cascadeStack.filter((e) => e.mode !== 'preview' && e.entityType !== 'task');
-      const ensuredProcedureEdit = baseStack.some(
-        (e) => e.entityType === 'procedure' && e.entityId === procId && e.mode === 'edit'
-      )
-        ? baseStack
-        : [{ entityType: 'procedure', entityId: procId, mode: 'edit' as const }, ...baseStack];
-      squashCascade([...ensuredProcedureEdit, { entityType: 'task', entityId: taskEntityId, mode: 'edit' }]);
-    },
-    [cascadeStack, squashCascade, workspace]
-  );
-
-  const handleNestedTaskCancel = useCallback((): void => {
-    const procId = editingRef.current?.id;
-    setNestedTaskSession(undefined);
-    if (procId) {
-      squashCascade([{ entityType: 'procedure', entityId: procId, mode: 'edit' }]);
-    }
-  }, [squashCascade]);
-
-  const handleNestedTaskSave = useCallback(
-    (wrapper: LibraryRuntime.EditedTask): void => {
-      const session = nestedTaskSession;
-      const procWrapper = editingRef.current?.wrapper;
-      const procId = editingRef.current?.id;
-      if (!session || !procWrapper || !procId) {
-        return;
-      }
-
-      const currentStep = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
-      const existingParams = currentStep
-        ? 'taskId' in currentStep.task
-          ? currentStep.task.params
-          : currentStep.task.params
-        : {};
-
-      if (session.mode === 'inline') {
-        if (currentStep) {
-          procWrapper.updateStep(session.stepOrder, {
-            task: {
-              task: wrapper.current,
-              params: { ...existingParams }
-            }
-          });
-        } else {
-          procWrapper.addStep({
-            task: {
-              task: wrapper.current,
-              params: {}
-            }
-          });
-        }
-      } else {
-        if (!mutableTaskCollectionId) {
-          workspace.data.logger.error('Cannot save nested library task: no mutable task collection');
-          return;
-        }
-
-        const baseId = wrapper.current.baseId as BaseTaskId;
-        const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
-        const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Cannot save nested library task: mutable collection not available');
-          return;
-        }
-
-        colResult.value.items.set(baseId, wrapper.current);
-
-        const editableResult =
-          workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
-        if (editableResult.isSuccess()) {
-          editableResult.value.set(baseId, wrapper.current);
-          if (editableResult.value.canSave()) {
-            editableResult.value.save();
-          }
-        }
-
-        if (currentStep) {
-          procWrapper.updateStep(session.stepOrder, {
-            task: { taskId: compositeTaskId, params: { ...existingParams } }
-          });
-        } else {
-          procWrapper.addStep({
-            task: {
-              taskId: compositeTaskId,
-              params: {}
-            }
-          });
-        }
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
-      setPreviewVersion((v) => v + 1);
-      setEditVersion((v) => v + 1);
-      setNestedTaskSession(undefined);
-      squashCascade([{ entityType: 'procedure', entityId: procId, mode: 'edit' }]);
-    },
-    [nestedTaskSession, mutableTaskCollectionId, workspace, reactiveWorkspace, squashCascade]
-  );
-
-  const handleNestedTaskPreview = useCallback(
-    (entityId: string): void => {
-      const withoutPreview = cascadeStack.filter(
-        (e) => !(e.entityType === 'task' && e.entityId === entityId && e.mode === 'preview')
-      );
-      squashCascade([...withoutPreview, { entityType: 'task', entityId, mode: 'preview' }]);
-    },
-    [cascadeStack, squashCascade]
-  );
-
-  const handleCloseNestedTaskPreview = useCallback(
-    (entityId: string): void => {
-      squashCascade(
-        cascadeStack.filter(
-          (e) => !(e.entityType === 'task' && e.entityId === entityId && e.mode === 'preview')
-        )
-      );
-    },
-    [cascadeStack, squashCascade]
-  );
-
-  const handleNestedTaskConvertMode = useCallback(
-    (targetMode: 'inline' | 'library'): void => {
-      const session = nestedTaskSession;
-      const procWrapper = editingRef.current?.wrapper;
-      const procId = editingRef.current?.id;
-      if (!session || !procWrapper || !procId) {
-        return;
-      }
-
-      const currentStep = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
-      const existingParams = currentStep
-        ? 'taskId' in currentStep.task
-          ? currentStep.task.params
-          : currentStep.task.params
-        : {};
-
-      if (targetMode === 'library') {
-        // Convert inline → library
-        if (!mutableTaskCollectionId) {
-          workspace.data.logger.error('Cannot convert to library task: no mutable task collection');
-          return;
-        }
-
-        const baseId = session.wrapper.current.baseId as BaseTaskId;
-        const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
-        const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Cannot convert to library task: mutable collection not available');
-          return;
-        }
-
-        // Save to library collection
-        colResult.value.items.set(baseId, session.wrapper.current);
-
-        const editableResult =
-          workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
-        if (editableResult.isSuccess()) {
-          editableResult.value.set(baseId, session.wrapper.current);
-          if (editableResult.value.canSave()) {
-            editableResult.value.save();
-          }
-        }
-
-        // Update step to reference library task
-        procWrapper.updateStep(session.stepOrder, {
-          task: { taskId: compositeTaskId, params: { ...existingParams } }
-        });
-
-        // Update session mode
-        setNestedTaskSession({ ...session, mode: 'library' });
-      } else {
-        // Convert library → inline
-        // Copy task definition into step as inline
-        procWrapper.updateStep(session.stepOrder, {
-          task: { task: session.wrapper.current, params: { ...existingParams } }
-        });
-
-        // Update session mode
-        setNestedTaskSession({ ...session, mode: 'inline' });
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
-      setEditVersion((v) => v + 1);
-      setPreviewVersion((v) => v + 1);
-    },
-    [nestedTaskSession, mutableTaskCollectionId, workspace, reactiveWorkspace]
-  );
-
-  const handleEditStepParams = useCallback(
-    (procedureId: string, stepOrder: number): void => {
-      setStepParamsSession({ procedureId, stepOrder });
-      const withoutPreviewOrStepParams = cascadeStack.filter(
-        (e) => e.mode !== 'preview' && e.entityType !== 'step-params'
-      );
-      squashCascade([
-        ...withoutPreviewOrStepParams,
-        { entityType: 'step-params', entityId: `${procedureId}:${stepOrder}`, mode: 'edit' }
-      ]);
-    },
-    [cascadeStack, squashCascade]
-  );
-
-  const handleSaveStepParams = useCallback(
-    (params: Record<string, unknown>): void => {
-      const session = stepParamsSession;
-      const procWrapper = editingRef.current?.wrapper;
-      if (!session || !procWrapper) {
-        return;
-      }
-
-      const step = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
-      if (!step) {
-        return;
-      }
-
-      procWrapper.updateStep(session.stepOrder, {
-        task: 'taskId' in step.task ? { taskId: step.task.taskId, params } : { task: step.task.task, params }
-      });
-
-      setStepParamsSession(undefined);
-      setEditVersion((v) => v + 1);
-      setPreviewVersion((v) => v + 1);
-      squashCascade([{ entityType: 'procedure', entityId: session.procedureId, mode: 'edit' }]);
-    },
-    [stepParamsSession, squashCascade]
-  );
-
-  const handleCancelStepParams = useCallback((): void => {
-    if (!stepParamsSession) {
-      return;
-    }
-    setStepParamsSession(undefined);
-    squashCascade([{ entityType: 'procedure', entityId: stepParamsSession.procedureId, mode: 'edit' }]);
-  }, [stepParamsSession, squashCascade]);
 
   const handleCreateProcedure = useCallback((): void => {
     const trimmed = newProcedureName.trim();
@@ -2622,8 +2273,8 @@ function ProceduresTabContent(): React.ReactElement {
                 readOnly={isReadOnly}
                 onPreview={(): void => handlePreviewProcedure(entry.entityId)}
                 onMutate={(): void => setPreviewVersion((v) => v + 1)}
-                onEditStepTask={handleOpenStepTaskEditor}
-                onEditStepParams={(stepOrder): void => handleEditStepParams(entry.entityId, stepOrder)}
+                onEditStepTask={procedureSession.onEditStepTask}
+                onEditStepParams={procedureSession.onEditStepParams}
               />
             )
           };
@@ -2643,146 +2294,12 @@ function ProceduresTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'step-params') {
-        const session = stepParamsSession;
-        if (!session) {
-          return {
-            key: entry.entityId,
-            label: 'Step Parameters',
-            content: <div className="p-4 text-red-500">No step parameter session</div>
-          };
-        }
-
-        const procWrapper = editingRef.current?.wrapper;
-        if (!procWrapper) {
-          return {
-            key: entry.entityId,
-            label: 'Step Parameters',
-            content: <div className="p-4 text-red-500">No procedure wrapper</div>
-          };
-        }
-
-        const step = procWrapper.current.steps.find((s) => s.order === session.stepOrder);
-        if (!step) {
-          return {
-            key: entry.entityId,
-            label: 'Step Parameters',
-            content: <div className="p-4 text-red-500">Step not found</div>
-          };
-        }
-
-        let template: string;
-        let taskName: string;
-        let params: Record<string, unknown>;
-        let defaults: Readonly<Record<string, unknown>> | undefined;
-
-        const taskInvocation = step.task;
-        if ('taskId' in taskInvocation) {
-          const task = availableTasks.find((t) => t.id === taskInvocation.taskId);
-          if (!task) {
-            return {
-              key: entry.entityId,
-              label: 'Step Parameters',
-              content: <div className="p-4 text-red-500">Task not found</div>
-            };
-          }
-          template = task.template;
-          taskName = task.name;
-          params = taskInvocation.params;
-          defaults = task.defaults;
-        } else {
-          const inlineTask = taskInvocation.task;
-          template = inlineTask.template;
-          taskName = inlineTask.name;
-          params = taskInvocation.params;
-          defaults = inlineTask.defaults;
-        }
-
-        return {
-          key: entry.entityId,
-          label: `Step ${session.stepOrder} Parameters`,
-          content: (
-            <StepParameterEditor
-              template={template}
-              taskName={taskName}
-              stepOrder={session.stepOrder}
-              params={params}
-              defaults={defaults}
-              onSave={handleSaveStepParams}
-              onCancel={handleCancelStepParams}
-            />
-          )
-        };
+      // Delegate step-params and task entries to the procedure editing session hook
+      const hookColumn = procedureSession.renderCascadeEntry(entry, index);
+      if (hookColumn) {
+        return hookColumn;
       }
 
-      if (entry.entityType === 'task') {
-        if (nestedTaskSession && entry.entityId === nestedTaskSession.taskEntityId) {
-          if (entry.mode === 'preview') {
-            return {
-              key: `${entry.entityId}:preview`,
-              label: `${nestedTaskSession.wrapper.current.name} (preview)`,
-              content: (
-                <TaskPreviewPanel
-                  template={nestedTaskSession.wrapper.current.template}
-                  defaults={nestedTaskSession.wrapper.current.defaults}
-                  taskName={nestedTaskSession.wrapper.current.name}
-                  onClose={(): void => handleCloseNestedTaskPreview(entry.entityId)}
-                />
-              )
-            };
-          }
-
-          return {
-            key: `${entry.entityId}:edit`,
-            label: `${nestedTaskSession.wrapper.current.name} (editing)`,
-            content: (
-              <TaskEditView
-                wrapper={nestedTaskSession.wrapper}
-                onSave={handleNestedTaskSave}
-                onCancel={handleNestedTaskCancel}
-                onPreview={(): void => handleNestedTaskPreview(entry.entityId)}
-                onMutate={(): void => setTaskPreviewVersion((v) => v + 1)}
-                isStepContext={true}
-                currentMode={nestedTaskSession.mode}
-                onConvertMode={handleNestedTaskConvertMode}
-              />
-            )
-          };
-        }
-
-        const result = workspace.data.tasks.get(entry.entityId as TaskId);
-        if (result.isFailure()) {
-          // Task not in library — check if it's an inline task from a parent procedure's steps
-          const parentProcEntry = cascadeStack
-            .slice(0, index)
-            .reverse()
-            .find((e) => e.entityType === 'procedure');
-          if (parentProcEntry) {
-            const proc = workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId);
-            const steps = proc.isSuccess() ? proc.value.getSteps() : undefined;
-            const inlineStep = steps?.isSuccess()
-              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
-              : undefined;
-            if (inlineStep) {
-              return {
-                key: entry.entityId,
-                label: `${inlineStep.resolvedTask.name} (inline)`,
-                content: <TaskDetail task={inlineStep.resolvedTask} />
-              };
-            }
-          }
-          return {
-            key: entry.entityId,
-            label: entry.entityId,
-            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
-          };
-        }
-        return {
-          key: entry.entityId,
-          label: result.value.name,
-          content: <TaskDetail task={result.value} />
-        };
-      }
       return {
         key: entry.entityId,
         label: entry.entityId,
@@ -2804,19 +2321,8 @@ function ProceduresTabContent(): React.ReactElement {
     handleCloseProcedurePreview,
     handleCreateProcedure,
     handleCreateProcedureCancel,
-    handleOpenStepTaskEditor,
-    handleNestedTaskSave,
-    handleNestedTaskCancel,
-    handleNestedTaskPreview,
-    handleCloseNestedTaskPreview,
-    nestedTaskSession,
-    stepParamsSession,
-    handleEditStepParams,
-    handleSaveStepParams,
-    handleCancelStepParams,
-    previewVersion,
-    taskPreviewVersion,
-    editVersion
+    procedureSession,
+    previewVersion
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
@@ -2909,7 +2415,7 @@ function ConfectionsTabContent(): React.ReactElement {
     { id: ConfectionId; specs: ReadonlyArray<string> } | undefined
   >(undefined);
 
-  const confections = useMemo<ReadonlyArray<LibraryRuntime.AnyConfectionRecipe>>(() => {
+  const confections = useMemo<ReadonlyArray<LibraryRuntime.AnyConfection>>(() => {
     return Array.from(workspace.data.confections.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
 
@@ -3213,6 +2719,15 @@ function DecorationsTabContent(): React.ReactElement {
   const availableTasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
     return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
+
+  const procedureSession = useProcedureEditSession({
+    procedureRef: subProcedureRef,
+    availableTasks,
+    cascadeStack,
+    squashCascade,
+    slugify,
+    onMutate: undefined
+  });
 
   const selectedId =
     cascadeStack.length > 0 && cascadeStack[0].entityType === 'decoration'
@@ -4048,6 +3563,8 @@ function DecorationsTabContent(): React.ReactElement {
                 availableTasks={availableTasks}
                 onSave={handleSubProcedureSave}
                 onCancel={handleSubProcedureCancel}
+                onEditStepTask={procedureSession.onEditStepTask}
+                onEditStepParams={procedureSession.onEditStepParams}
               />
             )
           };
@@ -4070,40 +3587,12 @@ function DecorationsTabContent(): React.ReactElement {
           )
         };
       }
-      if (entry.entityType === 'task') {
-        const result = workspace.data.tasks.get(entry.entityId as TaskId);
-        if (result.isFailure()) {
-          // Check for inline task from a parent procedure
-          const parentProcEntry = cascadeStack
-            .slice(0, index)
-            .reverse()
-            .find((e) => e.entityType === 'procedure');
-          if (parentProcEntry) {
-            const proc = workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId);
-            const steps = proc.isSuccess() ? proc.value.getSteps() : undefined;
-            const inlineStep = steps?.isSuccess()
-              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
-              : undefined;
-            if (inlineStep) {
-              return {
-                key: entry.entityId,
-                label: `${inlineStep.resolvedTask.name} (inline)`,
-                content: <TaskDetail task={inlineStep.resolvedTask} />
-              };
-            }
-          }
-          return {
-            key: entry.entityId,
-            label: entry.entityId,
-            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
-          };
-        }
-        return {
-          key: entry.entityId,
-          label: result.value.name,
-          content: <TaskDetail task={result.value} />
-        };
+      // Delegate step-params and task entries to the procedure editing session hook
+      const hookColumn = procedureSession.renderCascadeEntry(entry, index);
+      if (hookColumn) {
+        return hookColumn;
       }
+
       return {
         key: entry.entityId,
         label: entry.entityId,
@@ -4137,7 +3626,8 @@ function DecorationsTabContent(): React.ReactElement {
     handleSubIngredientSave,
     handleSubIngredientCancel,
     handleSubProcedureSave,
-    handleSubProcedureCancel
+    handleSubProcedureCancel,
+    procedureSession
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
