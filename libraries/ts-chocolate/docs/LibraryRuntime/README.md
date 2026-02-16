@@ -921,7 +921,7 @@ A rendered procedure step with resolved template values.
 
 </td><td>
 
-A procedure step with resolved task reference.
+A procedure step with a fully materialized runtime Task.
 
 </td></tr>
 <tr><td>

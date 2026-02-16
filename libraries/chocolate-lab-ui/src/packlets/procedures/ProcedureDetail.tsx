@@ -28,7 +28,6 @@
 import React from 'react';
 
 import type { LibraryRuntime, Model, TaskId } from '@fgv/ts-chocolate';
-import { Entities } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Props
@@ -184,9 +183,7 @@ function StepRow({
   readonly step: LibraryRuntime.IResolvedProcedureStep;
   readonly onTaskClick?: (taskId: TaskId) => void;
 }): React.ReactElement {
-  const task = step.task;
-  const isRef = Entities.isTaskRefEntity(task);
-  const resolvedTaskName = step.resolvedTask?.name;
+  const { resolvedTask, params, isInline } = step;
   const timingParts: string[] = [];
   if (step.activeTime !== undefined) {
     timingParts.push(`${step.activeTime}min active`);
@@ -201,24 +198,23 @@ function StepRow({
     timingParts.push(`${step.temperature}°C`);
   }
 
-  const params = task.params;
   const hasParams = params && Object.keys(params).length > 0;
 
-  if (isRef) {
+  if (!isInline) {
     const clickable = onTaskClick !== undefined;
     return (
       <div
         className={`flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0${
           clickable ? ' cursor-pointer hover:bg-gray-50 rounded -mx-1 px-1' : ''
         }`}
-        onClick={clickable ? (): void => onTaskClick(task.taskId) : undefined}
+        onClick={clickable ? (): void => onTaskClick(resolvedTask.id) : undefined}
         role={clickable ? 'button' : undefined}
         tabIndex={clickable ? 0 : undefined}
         onKeyDown={
           clickable
             ? (e: React.KeyboardEvent): void => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  onTaskClick(task.taskId);
+                  onTaskClick(resolvedTask.id);
                 }
               }
             : undefined
@@ -227,10 +223,10 @@ function StepRow({
         <span className="text-xs text-gray-400 font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
         <div className="flex-1 min-w-0">
           <div className="text-sm text-gray-800 flex items-center gap-1">
-            <span>{resolvedTaskName ?? task.taskId}</span>
+            <span>{resolvedTask.name}</span>
             {clickable && <span className="text-gray-400 text-xs">→</span>}
           </div>
-          {resolvedTaskName && <div className="text-[10px] text-gray-400 font-mono">{task.taskId}</div>}
+          <div className="text-[10px] text-gray-400 font-mono">{resolvedTask.id}</div>
           {hasParams && (
             <div className="text-xs text-gray-400 mt-0.5">
               {Object.entries(params)
@@ -247,17 +243,16 @@ function StepRow({
   }
 
   // Inline task: show name + template directly
-  const inlineTask = task.task;
   return (
     <div className="flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0">
       <span className="text-xs text-gray-400 font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
       <div className="flex-1 min-w-0">
         <div className="text-sm text-gray-800 flex items-center gap-1">
-          <span>{inlineTask.name}</span>
+          <span>{resolvedTask.name}</span>
           <span className="text-[10px] text-gray-400 bg-gray-100 px-1 rounded">inline</span>
         </div>
         <div className="text-xs text-gray-500 mt-0.5 font-mono whitespace-pre-wrap">
-          {inlineTask.template}
+          {resolvedTask.template}
         </div>
         {hasParams && (
           <div className="text-xs text-gray-400 mt-0.5">
@@ -309,12 +304,23 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
 
       {/* Steps */}
       <DetailSection title={`Steps (${procedure.stepCount})`}>
-        <div>
-          {procedure.steps.map((step) => (
-            <StepRow key={step.order} step={step} onTaskClick={onTaskClick} />
-          ))}
-        </div>
-        {procedure.steps.length === 0 && <p className="text-xs text-gray-400 italic">No steps defined.</p>}
+        {procedure.getSteps().isSuccess() ? (
+          <>
+            <div>
+              {procedure
+                .getSteps()
+                .orThrow()
+                .map((step) => (
+                  <StepRow key={step.order} step={step} onTaskClick={onTaskClick} />
+                ))}
+            </div>
+            {procedure.getSteps().orThrow().length === 0 && (
+              <p className="text-xs text-gray-400 italic">No steps defined.</p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-red-500">Failed to resolve steps: {procedure.getSteps().message}</p>
+        )}
       </DetailSection>
 
       {/* Notes */}

@@ -121,23 +121,6 @@ Optional category this procedure applies to
 </td></tr>
 <tr><td>
 
-[steps](./Procedure.steps.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-readonly [IResolvedProcedureStep](../interfaces/IResolvedProcedureStep.md)[]
-
-</td><td>
-
-Steps of the procedure in order, with resolved task references.
-
-</td></tr>
-<tr><td>
-
 [tags](./Procedure.tags.md)
 
 </td><td>
@@ -322,7 +305,20 @@ Factory method for creating a Procedure.
 </td></tr>
 <tr><td>
 
-[render(renderContext)](./Procedure.render.md)
+[getSteps()](./Procedure.getSteps.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the procedure steps with fully materialized runtime tasks.
+
+</td></tr>
+<tr><td>
+
+[render(__renderContext)](./Procedure.render.md)
 
 </td><td>
 

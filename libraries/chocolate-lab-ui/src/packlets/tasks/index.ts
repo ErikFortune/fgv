@@ -5,3 +5,9 @@
 
 export { TaskDetail, type ITaskDetailProps } from './TaskDetail';
 export { TaskEditView, type ITaskEditViewProps } from './TaskEditView';
+export {
+  TaskPreviewPanel,
+  type ITaskPreviewPanelProps,
+  extractVariableNames,
+  renderPreview
+} from './TaskPreviewPanel';

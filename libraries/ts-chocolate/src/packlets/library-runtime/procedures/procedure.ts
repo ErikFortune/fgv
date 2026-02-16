@@ -65,7 +65,7 @@ export class Procedure implements IProcedure {
   private readonly _context: IProcedureContext;
   private readonly _id: ProcedureId;
   private readonly _procedure: IProcedureEntity;
-  private _resolvedSteps: ReadonlyArray<IResolvedProcedureStep> | undefined;
+  private _resolvedSteps: Result<ReadonlyArray<IResolvedProcedureStep>> | undefined;
 
   private constructor(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity) {
     this._context = context;
@@ -132,12 +132,13 @@ export class Procedure implements IProcedure {
   }
 
   /**
-   * Steps of the procedure in order, with resolved task references.
-   * Lazily resolved on first access and cached.
+   * Gets the procedure steps with fully materialized runtime tasks.
+   * Resolution is lazy (on first call) and cached.
+   * @returns Success with resolved steps, or Failure if task materialization fails
    */
-  public get steps(): ReadonlyArray<IResolvedProcedureStep> {
+  public getSteps(): Result<ReadonlyArray<IResolvedProcedureStep>> {
     if (this._resolvedSteps === undefined) {
-      this._resolvedSteps = this._procedure.steps.map((step) => this._resolveStep(step));
+      this._resolvedSteps = mapResults(this._procedure.steps.map((step) => this._resolveStep(step)));
     }
     return this._resolvedSteps;
   }
@@ -224,9 +225,10 @@ export class Procedure implements IProcedure {
    * @param renderContext - The render context with recipe and library access
    * @returns Success with rendered procedure, or Failure if rendering fails
    */
-  public render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure> {
-    return mapResults(this._procedure.steps.map((step) => this._renderStep(renderContext, step))).onSuccess(
-      (renderedSteps) => {
+  public render(__renderContext: IProcedureRenderContext): Result<IRenderedProcedure> {
+    return this.getSteps()
+      .onSuccess((resolvedSteps) => mapResults(resolvedSteps.map((step) => this._renderResolvedStep(step))))
+      .onSuccess((renderedSteps) => {
         return succeed({
           name: this.name,
           description: this.description,
@@ -235,81 +237,75 @@ export class Procedure implements IProcedure {
           totalWaitTime: this.totalWaitTime,
           totalHoldTime: this.totalHoldTime
         });
-      }
-    );
+      });
   }
 
   /**
-   * Resolves a single step's task reference (without rendering templates).
-   * For task refs, looks up the runtime Task and attaches it.
-   * For inline tasks, returns the step as-is (no resolvedTask).
+   * Resolves a single step's task invocation into a materialized step.
+   * For task refs, looks up the runtime Task from the context.
+   * For inline tasks, creates a runtime Task from the raw entity.
    *
-   * @param step - The procedure step to resolve
-   * @returns The resolved step with optional resolvedTask
+   * @param step - The procedure step entity to resolve
+   * @returns Success with resolved step, or Failure if task resolution fails
    */
-  private _resolveStep(step: IProcedureStepEntity): IResolvedProcedureStep {
+  private _resolveStep(step: IProcedureStepEntity): Result<IResolvedProcedureStep> {
     const invocation = step.task;
+    const stepFields = {
+      order: step.order,
+      activeTime: step.activeTime,
+      waitTime: step.waitTime,
+      holdTime: step.holdTime,
+      temperature: step.temperature,
+      notes: step.notes
+    };
 
     if (Tasks.isTaskRefEntity(invocation)) {
-      const taskResult = this._context.tasks.get(invocation.taskId as TaskId);
-      if (taskResult.isSuccess()) {
-        return { ...step, resolvedTask: taskResult.value };
-      }
-      // If task resolution fails, return step without resolvedTask
-      return { ...step };
-    }
-
-    // Inline tasks: no resolvedTask
-    return { ...step };
-  }
-
-  /**
-   * Renders a single step's task to produce the description.
-   * Unlike the data-layer, this actually resolves task references.
-   *
-   * @param renderContext - The render context
-   * @param step - The procedure step to render
-   * @returns Success with rendered step, or Failure if rendering fails
-   */
-  private _renderStep(
-    renderContext: IProcedureRenderContext,
-    step: IProcedureStepEntity
-  ): Result<IRenderedStep> {
-    const invocation = step.task;
-
-    if (Tasks.isTaskRefEntity(invocation)) {
-      // KEY FIX: Actually resolve the task reference using the context
-      // This is what the data-layer couldn't do (returned placeholder instead)
-      return renderContext.context.tasks
+      return this._context.tasks
         .get(invocation.taskId as TaskId)
-        .asResult.onSuccess((runtimeTask) => {
-          return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
-            return succeed({
-              ...step,
-              renderedDescription,
-              resolvedTask: runtimeTask
-            });
-          });
-        })
-        .onFailure((msg) => fail(`${invocation.taskId}: ${msg}`));
-    }
-
-    // TODO: can we lazy initialize and cache this task
-    if (Tasks.isInlineTaskEntity(invocation)) {
-      // For inline tasks, create a RuntimeTask with a synthetic ID
-      const syntheticId = `${this._id}.inline-${step.order}` as TaskId;
-      return Task.create(renderContext.context, syntheticId, invocation.task).onSuccess((runtimeTask) => {
-        return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
+        .asResult.withErrorFormat((msg) => `step ${step.order}: task ${invocation.taskId}: ${msg}`)
+        .onSuccess((resolvedTask) => {
           return succeed({
-            ...step,
-            renderedDescription
-            // No resolvedTask for inline tasks
+            ...stepFields,
+            resolvedTask,
+            params: invocation.params,
+            isInline: false
           });
         });
-      });
+    }
+
+    if (Tasks.isInlineTaskEntity(invocation)) {
+      const syntheticId = `${this._id}.inline-${step.order}` as TaskId;
+      return Task.create(this._context, syntheticId, invocation.task)
+        .withErrorFormat((msg) => `step ${step.order}: inline task: ${msg}`)
+        .onSuccess((resolvedTask) => {
+          return succeed({
+            ...stepFields,
+            resolvedTask,
+            params: invocation.params,
+            isInline: true
+          });
+        });
     }
     /* c8 ignore next 2 - defensive code: type system prevents this path */
-    return fail('Step has invalid task structure');
+    return fail(`step ${step.order}: invalid task structure`);
+  }
+
+  /**
+   * Renders a single resolved step by rendering its task template.
+   *
+   * @param resolvedStep - The resolved step with materialized task
+   * @returns Success with rendered step, or Failure if rendering fails
+   */
+  private _renderResolvedStep(resolvedStep: IResolvedProcedureStep): Result<IRenderedStep> {
+    return resolvedStep.resolvedTask
+      .render(resolvedStep.params)
+      .withErrorFormat((msg) => `step ${resolvedStep.order}: ${msg}`)
+      .onSuccess((renderedDescription) => {
+        return succeed({
+          ...resolvedStep,
+          renderedDescription
+        });
+      });
   }
 
   /**

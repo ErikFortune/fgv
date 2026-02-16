@@ -26,7 +26,7 @@
  */
 
 import React from 'react';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import type { LibraryRuntime, Model } from '@fgv/ts-chocolate';
 
@@ -43,6 +43,8 @@ export interface ITaskDetailProps {
   readonly task: LibraryRuntime.ITask;
   /** Called when the user clicks the Edit button */
   readonly onEdit?: () => void;
+  /** Called when the user clicks the Preview button */
+  readonly onPreview?: () => void;
 }
 
 // ============================================================================
@@ -222,7 +224,7 @@ function VariablesSection({
  * @public
  */
 export function TaskDetail(props: ITaskDetailProps): React.ReactElement {
-  const { task, onEdit } = props;
+  const { task, onEdit, onPreview } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -230,16 +232,28 @@ export function TaskDetail(props: ITaskDetailProps): React.ReactElement {
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <h2 className="text-lg font-semibold text-gray-900">{task.name}</h2>
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="ml-auto flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-              title="Edit task"
-            >
-              <PencilSquareIcon className="w-4 h-4" />
-              Edit
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            {onPreview && (
+              <button
+                onClick={onPreview}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Preview template"
+              >
+                <EyeIcon className="w-4 h-4" />
+                Preview
+              </button>
+            )}
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Edit task"
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-gray-400 mt-0.5 font-mono">{task.id}</p>
       </div>

@@ -4593,13 +4593,13 @@ interface IProcedure {
     readonly category?: ProcedureType;
     readonly description?: string;
     readonly entity: IProcedureEntity;
+    getSteps(): Result<ReadonlyArray<IResolvedProcedureStep>>;
     readonly id: ProcedureId;
     readonly isCategorySpecific: boolean;
     readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
     readonly stepCount: number;
-    readonly steps: ReadonlyArray<IResolvedProcedureStep>;
     readonly tags?: ReadonlyArray<string>;
     readonly totalActiveTime: Minutes | undefined;
     readonly totalHoldTime: Minutes | undefined;
@@ -4784,9 +4784,8 @@ interface IRenderedProcedure {
 }
 
 // @public
-interface IRenderedStep extends IProcedureStepEntity {
+interface IRenderedStep extends IResolvedProcedureStep {
     readonly renderedDescription: string;
-    readonly resolvedTask?: Task;
 }
 
 // @public
@@ -4935,9 +4934,20 @@ interface IResolvedProcedures {
     readonly recommendedProcedure?: IProcedure;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IProcedureStepEntity"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Task"
+//
 // @public
-interface IResolvedProcedureStep extends IProcedureStepEntity {
-    readonly resolvedTask?: Task;
+interface IResolvedProcedureStep {
+    readonly activeTime?: Minutes;
+    readonly holdTime?: Minutes;
+    readonly isInline: boolean;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly order: number;
+    readonly params: Record<string, unknown>;
+    readonly resolvedTask: Task;
+    readonly temperature?: Celsius;
+    readonly waitTime?: Minutes;
 }
 
 // @public
@@ -6613,13 +6623,13 @@ class Procedure implements IProcedure {
     static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedureEntity): Result<Procedure>;
     get description(): string | undefined;
     get entity(): IProcedureEntity;
+    getSteps(): Result<ReadonlyArray<IResolvedProcedureStep>>;
     get id(): ProcedureId;
     get isCategorySpecific(): boolean;
     get name(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
+    render(__renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
     get stepCount(): number;
-    get steps(): ReadonlyArray<IResolvedProcedureStep>;
     get tags(): ReadonlyArray<string> | undefined;
     get totalActiveTime(): Minutes | undefined;
     get totalHoldTime(): Minutes | undefined;

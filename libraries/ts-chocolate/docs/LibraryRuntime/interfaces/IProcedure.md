@@ -116,23 +116,6 @@ Optional category this procedure applies to
 </td></tr>
 <tr><td>
 
-[steps](./IProcedure.steps.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-readonly [IResolvedProcedureStep](../../interfaces/IResolvedProcedureStep.md)[]
-
-</td><td>
-
-Steps of the procedure in order, with resolved task references
-
-</td></tr>
-<tr><td>
-
 [tags](./IProcedure.tags.md)
 
 </td><td>
@@ -302,6 +285,19 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[getSteps()](./IProcedure.getSteps.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the procedure steps with fully materialized runtime tasks.
+
+</td></tr>
 <tr><td>
 
 [render(context)](./IProcedure.render.md)

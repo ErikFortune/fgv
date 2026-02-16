@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
+import { LibraryRuntime } from '@fgv/ts-chocolate';
 
 import { formatCategorizedNotes } from '../../shared/outputFormatter';
 import { IRenderResult } from './rendererTypes';
@@ -36,16 +36,11 @@ export function renderProcedureSummary(procedure: LibraryRuntime.IProcedure): st
 /**
  * Formats a single procedure step for display.
  */
-function formatStep(step: Entities.Procedures.IProcedureStepEntity): string[] {
+function formatStep(step: LibraryRuntime.IResolvedProcedureStep): string[] {
   const lines: string[] = [];
 
-  // Get task description
-  let description: string;
-  if (Entities.Tasks.isTaskRefEntity(step.task)) {
-    description = `Task: ${step.task.taskId}`;
-  } else {
-    description = step.task.task.template;
-  }
+  // Get task description from the materialized task
+  const description = step.isInline ? step.resolvedTask.template : `Task: ${step.resolvedTask.id}`;
 
   lines.push(`  ${step.order}. ${description}`);
 
@@ -99,8 +94,13 @@ export function renderProcedureDetail(procedure: LibraryRuntime.IProcedure): IRe
   // Steps
   lines.push('');
   lines.push(`Steps (${procedure.stepCount}):`);
-  for (const step of procedure.steps) {
-    lines.push(...formatStep(step));
+  const stepsResult = procedure.getSteps();
+  if (stepsResult.isSuccess()) {
+    for (const step of stepsResult.value) {
+      lines.push(...formatStep(step));
+    }
+  } else {
+    lines.push(`  (failed to resolve steps: ${stepsResult.message})`);
   }
 
   // Timing summary

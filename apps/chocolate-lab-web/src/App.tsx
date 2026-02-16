@@ -49,6 +49,7 @@ import {
   MoldEditView,
   TaskDetail,
   TaskEditView,
+  TaskPreviewPanel,
   ProcedureDetail,
   ConfectionDetail,
   DecorationDetail,
@@ -1440,6 +1441,9 @@ function TasksTabContent(): React.ReactElement {
   // Editing wrapper ref — persists the EditedTask across re-renders while editing.
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedTask } | undefined>(undefined);
 
+  // Counter that increments on each edit mutation — forces the preview column to re-render with live data.
+  const [previewVersion, setPreviewVersion] = useState(0);
+
   // Find the first mutable collection ID (memoized)
   const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
     const collections = workspace.data.entities.tasks.collections;
@@ -1651,6 +1655,26 @@ function TasksTabContent(): React.ReactElement {
     []
   );
 
+  // Open the cascade in 'preview' mode for a task.
+  // Strips any existing preview entry first to avoid stacking duplicate panels.
+  const handlePreview = useCallback(
+    (entityId: string): void => {
+      const withoutPreview = cascadeStack.filter(
+        (e) => !(e.entityType === 'task' && e.entityId === entityId && e.mode === 'preview')
+      );
+      squashCascade([...withoutPreview, { entityType: 'task', entityId, mode: 'preview' }]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  // Close the preview pane by removing preview entries from the cascade
+  const handleClosePreview = useCallback(
+    (entityId: string): void => {
+      squashCascade(cascadeStack.filter((e) => !(e.entityId === entityId && e.mode === 'preview')));
+    },
+    [cascadeStack, squashCascade]
+  );
+
   // Open the cascade in 'create' mode for a new task
   const handleNewTask = useCallback((): void => {
     const entry: ICascadeEntry = { entityType: 'task', entityId: '__new__', mode: 'create' };
@@ -1733,6 +1757,27 @@ function TasksTabContent(): React.ReactElement {
           };
         }
 
+        // Preview mode: render TaskPreviewPanel
+        if (entry.mode === 'preview') {
+          // If we're editing, show live preview from the wrapper
+          const wrapper = editingRef.current?.id === entry.entityId ? editingRef.current.wrapper : undefined;
+          const template = wrapper?.current.template ?? result.value.template;
+          const defaults = wrapper?.current.defaults ?? result.value.defaults;
+          const taskName = wrapper?.current.name ?? result.value.name;
+          return {
+            key: `${entry.entityId}:preview`,
+            label: `${taskName} (preview)`,
+            content: (
+              <TaskPreviewPanel
+                template={template}
+                defaults={defaults}
+                taskName={taskName}
+                onClose={(): void => handleClosePreview(entry.entityId)}
+              />
+            )
+          };
+        }
+
         // Edit mode: render TaskEditView
         if (entry.mode === 'edit') {
           const wrapper = getOrCreateWrapper(result.value);
@@ -1759,16 +1804,24 @@ function TasksTabContent(): React.ReactElement {
                 onSaveAs={isReadOnly ? handleSaveAs : undefined}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
                 readOnly={isReadOnly}
+                onPreview={(): void => handlePreview(entry.entityId)}
+                onMutate={(): void => setPreviewVersion((v) => v + 1)}
               />
             )
           };
         }
 
-        // View mode: render TaskDetail with Edit button
+        // View mode: render TaskDetail with Edit and Preview buttons
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <TaskDetail task={result.value} onEdit={(): void => handleEdit(entry.entityId)} />
+          content: (
+            <TaskDetail
+              task={result.value}
+              onEdit={(): void => handleEdit(entry.entityId)}
+              onPreview={(): void => handlePreview(entry.entityId)}
+            />
+          )
         };
       });
   }, [
@@ -1780,8 +1833,11 @@ function TasksTabContent(): React.ReactElement {
     handleSaveAs,
     handleCancelEdit,
     handleEdit,
+    handlePreview,
+    handleClosePreview,
     handleCreateFormSubmit,
-    handleCreateFormCancel
+    handleCreateFormCancel,
+    previewVersion
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {

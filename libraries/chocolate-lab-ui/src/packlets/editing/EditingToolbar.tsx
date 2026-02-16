@@ -55,6 +55,8 @@ export interface IEditingToolbarProps<TWrapper extends IEditable> {
   readonly context: IEditingContext<TWrapper>;
   /** Optional extra class name for the toolbar container. */
   readonly className?: string;
+  /** Optional extra buttons to render in the toolbar (e.g. Preview). */
+  readonly extraButtons?: React.ReactNode;
 }
 
 // ============================================================================
@@ -114,7 +116,7 @@ function ToolbarButton({
 export function EditingToolbar<TWrapper extends IEditable>(
   props: IEditingToolbarProps<TWrapper>
 ): React.ReactElement {
-  const { context, className } = props;
+  const { context, className, extraButtons } = props;
 
   return (
     <div className={`flex flex-col border-b border-gray-200 bg-gray-50 ${className ?? ''}`}>
@@ -125,7 +127,7 @@ export function EditingToolbar<TWrapper extends IEditable>(
         </div>
       )}
 
-      <div className="flex items-center gap-1 px-3 py-1.5">
+      <div className="flex flex-wrap items-center gap-1 px-3 py-1.5">
         {/* Undo / Redo group */}
         <div className="flex items-center gap-0.5">
           <ToolbarButton
@@ -150,6 +152,9 @@ export function EditingToolbar<TWrapper extends IEditable>(
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Extra buttons (e.g. Preview) */}
+        {extraButtons}
 
         {/* Save / Cancel group */}
         <div className="flex items-center gap-1">

@@ -270,27 +270,34 @@ describe('Procedure', () => {
       expect(proc.category).toBeUndefined();
     });
 
-    test('returns steps array with correct order', () => {
+    test('getSteps returns steps array with correct order', () => {
       const id = 'test.multi-step' as ProcedureId;
       const proc = Procedure.create(stubContext, id, multiStepProcedure).orThrow();
-      expect(proc.steps).toHaveLength(3);
-      expect(proc.steps[0].order).toBe(1);
-      expect(proc.steps[1].order).toBe(2);
-      expect(proc.steps[2].order).toBe(3);
+      expect(proc.getSteps()).toSucceedAndSatisfy((steps) => {
+        expect(steps).toHaveLength(3);
+        expect(steps[0].order).toBe(1);
+        expect(steps[1].order).toBe(2);
+        expect(steps[2].order).toBe(3);
+      });
     });
 
-    test('steps for inline tasks have no resolvedTask', () => {
+    test('getSteps materializes inline tasks with resolvedTask', () => {
       const id = 'test.simple' as ProcedureId;
       const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
-      expect(proc.steps).toHaveLength(1);
-      expect(proc.steps[0].resolvedTask).toBeUndefined();
+      expect(proc.getSteps()).toSucceedAndSatisfy((steps) => {
+        expect(steps).toHaveLength(1);
+        expect(steps[0].resolvedTask).toBeDefined();
+        expect(steps[0].resolvedTask.name).toBe('Inline Task');
+        expect(steps[0].isInline).toBe(true);
+        expect(steps[0].params).toEqual({ temp: 45 });
+      });
     });
 
-    test('steps are cached after first access', () => {
+    test('getSteps result is cached after first access', () => {
       const id = 'test.simple' as ProcedureId;
       const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
-      const first = proc.steps;
-      const second = proc.steps;
+      const first = proc.getSteps();
+      const second = proc.getSteps();
       expect(first).toBe(second);
     });
 
@@ -462,7 +469,8 @@ describe('Procedure', () => {
         expect(rendered.name).toBe('Simple Procedure');
         expect(rendered.steps).toHaveLength(1);
         expect(rendered.steps[0].renderedDescription).toBe('Heat to 45C');
-        expect(rendered.steps[0].resolvedTask).toBeUndefined(); // Inline tasks don't have resolvedTask
+        expect(rendered.steps[0].resolvedTask).toBeDefined();
+        expect(rendered.steps[0].isInline).toBe(true);
       });
     });
 
@@ -539,7 +547,7 @@ describe('Procedure', () => {
       context = library;
     });
 
-    test('steps resolves task ref to resolvedTask', () => {
+    test('getSteps resolves task ref to resolvedTask', () => {
       const procedureWithTaskRef: IProcedureEntity = {
         baseId: 'with-task-ref' as BaseProcedureId,
         name: 'Procedure With Task Ref',
@@ -557,12 +565,16 @@ describe('Procedure', () => {
 
       const id = 'test.with-task-ref' as ProcedureId;
       const proc = Procedure.create(context, id, procedureWithTaskRef).orThrow();
-      expect(proc.steps).toHaveLength(1);
-      expect(proc.steps[0].resolvedTask).toBeDefined();
-      expect(proc.steps[0].resolvedTask!.name).toBe('Test Task');
+      expect(proc.getSteps()).toSucceedAndSatisfy((steps) => {
+        expect(steps).toHaveLength(1);
+        expect(steps[0].resolvedTask).toBeDefined();
+        expect(steps[0].resolvedTask.name).toBe('Test Task');
+        expect(steps[0].isInline).toBe(false);
+        expect(steps[0].params).toEqual({ ingredient: 'chocolate', temp: 50 });
+      });
     });
 
-    test('steps returns step without resolvedTask when task ref not found', () => {
+    test('getSteps fails when task ref not found', () => {
       const procedureWithBadRef: IProcedureEntity = {
         baseId: 'bad-ref' as BaseProcedureId,
         name: 'Procedure With Bad Ref',
@@ -579,9 +591,7 @@ describe('Procedure', () => {
 
       const id = 'test.bad-ref' as ProcedureId;
       const proc = Procedure.create(context, id, procedureWithBadRef).orThrow();
-      expect(proc.steps).toHaveLength(1);
-      expect(proc.steps[0].resolvedTask).toBeUndefined();
-      expect(proc.steps[0].order).toBe(1);
+      expect(proc.getSteps()).toFailWith(/test\.nonexistent/);
     });
   });
 

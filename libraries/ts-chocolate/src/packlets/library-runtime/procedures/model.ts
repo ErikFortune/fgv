@@ -29,6 +29,7 @@ import { Result } from '@fgv/ts-utils';
 
 import {
   BaseProcedureId,
+  Celsius,
   Minutes,
   Model as CommonModel,
   ProcedureId,
@@ -36,7 +37,7 @@ import {
   TaskId
 } from '../../common';
 import { IMoldEntity } from '../../entities';
-import { Fillings, IProcedureEntity, IProcedureStepEntity } from '../../entities';
+import { Fillings, IProcedureEntity } from '../../entities';
 import { IRawTaskEntity } from '../../entities';
 import { Task } from '../tasks';
 import type { MaterializedLibrary } from '../materializedLibrary';
@@ -92,17 +93,41 @@ export interface IProcedureRenderContext {
 // ============================================================================
 
 /**
- * A procedure step with resolved task reference.
- * For task ref steps, includes the resolved runtime Task object.
- * For inline tasks, resolvedTask is undefined.
+ * A procedure step with a fully materialized runtime Task.
+ *
+ * Unlike the entity-layer {@link IProcedureStepEntity}, this interface does not
+ * expose raw task entities. Both task-ref and inline tasks are materialized into
+ * a runtime {@link Task} object.
+ *
  * @public
  */
-export interface IResolvedProcedureStep extends IProcedureStepEntity {
-  /**
-   * The resolved task (if a task ref was used).
-   * Undefined for inline tasks.
-   */
-  readonly resolvedTask?: Task;
+export interface IResolvedProcedureStep {
+  /** Step order number (1-based) */
+  readonly order: number;
+
+  /** The materialized runtime task (always present for both refs and inline) */
+  readonly resolvedTask: Task;
+
+  /** Parameter values for template rendering */
+  readonly params: Record<string, unknown>;
+
+  /** True if this step uses an inline task definition (not a library reference) */
+  readonly isInline: boolean;
+
+  /** Time actively working on this step (overrides task default) */
+  readonly activeTime?: Minutes;
+
+  /** Passive waiting time (overrides task default) */
+  readonly waitTime?: Minutes;
+
+  /** Time to hold at a temperature (overrides task default) */
+  readonly holdTime?: Minutes;
+
+  /** Target temperature for this step (overrides task default) */
+  readonly temperature?: Celsius;
+
+  /** Optional categorized notes for this step */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }
 
 // ============================================================================
@@ -113,18 +138,12 @@ export interface IResolvedProcedureStep extends IProcedureStepEntity {
  * A rendered procedure step with resolved template values.
  * @public
  */
-export interface IRenderedStep extends IProcedureStepEntity {
+export interface IRenderedStep extends IResolvedProcedureStep {
   /**
    * The rendered description with all template values resolved.
    * Unlike the data-layer placeholder, this contains actual rendered content.
    */
   readonly renderedDescription: string;
-
-  /**
-   * The resolved task that was used for rendering (if a task ref was used).
-   * Undefined for inline tasks.
-   */
-  readonly resolvedTask?: Task;
 }
 
 // ============================================================================
@@ -206,8 +225,12 @@ export interface IProcedure {
   /** Optional category this procedure applies to */
   readonly category?: ProcedureType;
 
-  /** Steps of the procedure in order, with resolved task references */
-  readonly steps: ReadonlyArray<IResolvedProcedureStep>;
+  /**
+   * Gets the procedure steps with fully materialized runtime tasks.
+   * Resolution is lazy (on first call) and cached.
+   * @returns Success with resolved steps, or Failure if task materialization fails
+   */
+  getSteps(): Result<ReadonlyArray<IResolvedProcedureStep>>;
 
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;

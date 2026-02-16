@@ -25,7 +25,8 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
+import { EyeIcon } from '@heroicons/react/24/outline';
 
 import { EditField, EditSection, TextInput, TextAreaInput, NumberInput, TagsInput } from '@fgv/ts-app-shell';
 
@@ -54,113 +55,10 @@ export interface ITaskEditViewProps {
   readonly onCancel: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). */
   readonly readOnly?: boolean;
-}
-
-// ============================================================================
-// Template Preview
-// ============================================================================
-
-/**
- * Extracts Mustache variable names from a template string.
- * Handles simple variable patterns (not sections/partials).
- */
-function extractVariableNames(template: string): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  const regex = /\{\{([#^/!>]?)([^}]+)\}\}/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(template)) !== null) {
-    const prefix = match[1];
-    const name = match[2].trim();
-    // Skip section/partial/comment markers
-    if (!prefix && name && !seen.has(name)) {
-      seen.add(name);
-      result.push(name);
-    }
-  }
-  return result;
-}
-
-/**
- * Simple Mustache-like rendering for preview purposes.
- * Replaces variable placeholders with provided values, leaves unresolved vars as-is.
- */
-function renderPreview(template: string, params: Record<string, string>): string {
-  return template.replace(/\{\{([^}]+)\}\}/g, (__match, name: string) => {
-    const trimmed = name.trim();
-    return trimmed in params && params[trimmed] !== '' ? params[trimmed] : `{{${trimmed}}}`;
-  });
-}
-
-function TemplatePreview({
-  template,
-  defaults
-}: {
-  readonly template: string;
-  readonly defaults?: Readonly<Record<string, unknown>>;
-}): React.ReactElement {
-  const variables = useMemo(() => extractVariableNames(template), [template]);
-  const [params, setParams] = useState<Record<string, string>>({});
-
-  const handleParamChange = useCallback((name: string, value: string) => {
-    setParams((prev) => ({ ...prev, [name]: value }));
-  }, []);
-
-  // Merge defaults with user-entered params for preview
-  const mergedParams = useMemo(() => {
-    const merged: Record<string, string> = {};
-    if (defaults) {
-      for (const [key, val] of Object.entries(defaults)) {
-        merged[key] = String(val);
-      }
-    }
-    for (const [key, val] of Object.entries(params)) {
-      if (val !== '') {
-        merged[key] = val;
-      }
-    }
-    return merged;
-  }, [defaults, params]);
-
-  const rendered = useMemo(() => renderPreview(template, mergedParams), [template, mergedParams]);
-
-  if (variables.length === 0 && template.trim().length === 0) {
-    return (
-      <EditSection title="Preview">
-        <p className="text-sm text-gray-400 italic">Enter a template above to see a preview.</p>
-      </EditSection>
-    );
-  }
-
-  return (
-    <EditSection title="Preview">
-      {variables.length > 0 && (
-        <div className="mb-3 space-y-1.5">
-          <p className="text-xs text-gray-500 mb-1">Enter values for template variables:</p>
-          {variables.map((v) => {
-            const defaultValue = defaults?.[v];
-            return (
-              <div key={v} className="flex items-center gap-2">
-                <span className="text-sm font-mono text-gray-600 shrink-0 w-32 truncate" title={v}>
-                  {v}
-                </span>
-                <input
-                  type="text"
-                  className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  value={params[v] ?? ''}
-                  onChange={(e): void => handleParamChange(v, e.target.value)}
-                  placeholder={defaultValue !== undefined ? `default: ${String(defaultValue)}` : `{{${v}}}`}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <div className="bg-gray-50 rounded-md p-2.5 text-sm text-gray-800 whitespace-pre-wrap border border-gray-200">
-        {rendered || <span className="text-gray-400 italic">Empty template</span>}
-      </div>
-    </EditSection>
-  );
+  /** Called when the user clicks the Preview button to open a preview pane. */
+  readonly onPreview?: () => void;
+  /** Called on every edit mutation (e.g. to invalidate a live preview). */
+  readonly onMutate?: () => void;
 }
 
 // ============================================================================
@@ -182,7 +80,7 @@ function TemplatePreview({
  * @public
  */
 export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
-  const { wrapper, onSave, onSaveAs, onCancel, readOnly } = props;
+  const { wrapper, onSave, onSaveAs, onCancel, readOnly, onPreview, onMutate } = props;
 
   const ctx = useEditingContext<EditedTask>({ wrapper, onSave, onSaveAs, onCancel, readOnly });
   const entity = wrapper.current;
@@ -253,10 +151,31 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
     [wrapper, ctx]
   );
 
+  // Notify parent of mutations so live preview can update.
+  // `entity` is a new object reference after each mutation, so this fires on every edit.
+  useEffect(() => {
+    onMutate?.();
+  }, [entity, onMutate]);
+
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Toolbar */}
-      <EditingToolbar context={ctx} />
+      <EditingToolbar
+        context={ctx}
+        extraButtons={
+          onPreview ? (
+            <button
+              type="button"
+              onClick={onPreview}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+              title="Open preview pane"
+            >
+              <EyeIcon className="h-3.5 w-3.5" />
+              <span>Preview</span>
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Identity Section */}
       <EditSection title="Identity">
@@ -278,9 +197,6 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
           />
         </EditField>
       </EditSection>
-
-      {/* Preview Section */}
-      <TemplatePreview template={entity.template} defaults={entity.defaults} />
 
       {/* Default Timing */}
       <EditSection title="Default Timing">

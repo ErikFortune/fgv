@@ -4,7 +4,7 @@
 
 A rendered procedure step with resolved template values.
 
-**Extends:** [`IProcedureStepEntity`](IProcedureStepEntity.md)
+**Extends:** [`IResolvedProcedureStep`](IResolvedProcedureStep.md)
 
 ## Properties
 
@@ -45,24 +45,7 @@ The rendered description with all template values resolved.
 </td></tr>
 <tr><td>
 
-[resolvedTask](./IRenderedStep.resolvedTask.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[Task](../classes/Task.md)
-
-</td><td>
-
-The resolved task that was used for rendering (if a task ref was used).
-
-</td></tr>
-<tr><td>
-
-[order](./IProcedureStepEntity.order.md)
+[order](./IResolvedProcedureStep.order.md)
 
 </td><td>
 
@@ -74,12 +57,12 @@ number
 
 </td><td>
 
-Order number of this step (1-based)
+Step order number (1-based)
 
 </td></tr>
 <tr><td>
 
-[task](./IProcedureStepEntity.task.md)
+[resolvedTask](./IResolvedProcedureStep.resolvedTask.md)
 
 </td><td>
 
@@ -87,16 +70,50 @@ Order number of this step (1-based)
 
 </td><td>
 
-[ITaskEntityInvocation](../type-aliases/ITaskEntityInvocation.md)
+[Task](../classes/Task.md)
 
 </td><td>
 
-The task for this step - either a reference to a public task or an inline task definition
+The materialized runtime task (always present for both refs and inline)
 
 </td></tr>
 <tr><td>
 
-[activeTime](./IProcedureStepEntity.activeTime.md)
+[params](./IResolvedProcedureStep.params.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Record&lt;string, unknown&gt;
+
+</td><td>
+
+Parameter values for template rendering
+
+</td></tr>
+<tr><td>
+
+[isInline](./IResolvedProcedureStep.isInline.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+True if this step uses an inline task definition (not a library reference)
+
+</td></tr>
+<tr><td>
+
+[activeTime](./IResolvedProcedureStep.activeTime.md)
 
 </td><td>
 
@@ -113,7 +130,7 @@ Time actively working on this step (overrides task default)
 </td></tr>
 <tr><td>
 
-[waitTime](./IProcedureStepEntity.waitTime.md)
+[waitTime](./IResolvedProcedureStep.waitTime.md)
 
 </td><td>
 
@@ -130,7 +147,7 @@ Passive waiting time (overrides task default)
 </td></tr>
 <tr><td>
 
-[holdTime](./IProcedureStepEntity.holdTime.md)
+[holdTime](./IResolvedProcedureStep.holdTime.md)
 
 </td><td>
 
@@ -147,7 +164,7 @@ Time to hold at a temperature (overrides task default)
 </td></tr>
 <tr><td>
 
-[temperature](./IProcedureStepEntity.temperature.md)
+[temperature](./IResolvedProcedureStep.temperature.md)
 
 </td><td>
 
@@ -164,7 +181,7 @@ Target temperature for this step (overrides task default)
 </td></tr>
 <tr><td>
 
-[notes](./IProcedureStepEntity.notes.md)
+[notes](./IResolvedProcedureStep.notes.md)
 
 </td><td>
 

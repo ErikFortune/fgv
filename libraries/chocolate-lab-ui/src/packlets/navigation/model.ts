@@ -132,7 +132,7 @@ export type CascadeEntityType =
  * Mode for a cascade column (view-only, editing, or creating a new entity).
  * @public
  */
-export type CascadeColumnMode = 'view' | 'edit' | 'create';
+export type CascadeColumnMode = 'view' | 'edit' | 'create' | 'preview';
 
 /**
  * A single entry in the column cascade stack.

@@ -277,7 +277,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
 
           // Procedure should be entity (data layer), not materialized
           expect(firstProcedure.procedure).toHaveProperty('name');
-          expect(firstProcedure.procedure).toHaveProperty('steps');
+          expect(firstProcedure.procedure).toHaveProperty('getSteps');
         }
       });
     });
