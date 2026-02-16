@@ -12,9 +12,8 @@ import type {
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
   IngredientDetail,
   FillingDetail,
   MoldDetail,
@@ -28,32 +27,33 @@ import {
 import { CONFECTION_DESCRIPTOR, CONFECTION_FILTER_SPEC } from '../shared';
 
 export function ConfectionsTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
   const [variationCompare, setVariationCompare] = useState<
     { id: ConfectionId; specs: ReadonlyArray<string> } | undefined
   >(undefined);
 
-  const confections = useMemo<ReadonlyArray<LibraryRuntime.AnyConfection>>(() => {
-    return Array.from(workspace.data.confections.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [workspace, reactiveWorkspace.version]);
-
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'confection'
-      ? (cascadeStack[0].entityId as ConfectionId)
-      : undefined;
+  const { entities: confections, selectedId } = useEntityList<LibraryRuntime.AnyConfection, ConfectionId>({
+    getAll: () => workspace.data.confections.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'confection',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   const handleSelect = useCallback(
     (id: ConfectionId): void => {

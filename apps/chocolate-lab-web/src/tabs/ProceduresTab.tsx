@@ -4,9 +4,9 @@ import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseProcedureId, CollectionId, TaskId, ProcedureId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
+  useMutableCollection,
   ProcedureDetail,
   ProcedureEditView,
   ProcedurePreviewPanel,
@@ -22,39 +22,40 @@ import {
 } from '../shared';
 
 export function ProceduresTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(undefined);
   const [previewVersion, setPreviewVersion] = useState(0);
 
   const [newProcedureName, setNewProcedureName] = useState('');
 
-  const mutableProcedureCollectionId = useMemo<CollectionId | undefined>(() => {
-    const collections = workspace.data.entities.procedures.collections;
-    for (const [id, col] of collections.entries()) {
-      if (col.isMutable) {
-        return id as CollectionId;
-      }
-    }
-    return undefined;
-  }, [workspace, reactiveWorkspace.version]);
+  const mutableProcedureCollectionId = useMutableCollection(workspace.data.entities.procedures.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
-  const procedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
-    return Array.from(workspace.data.procedures.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [workspace, reactiveWorkspace.version]);
+  const { entities: procedures, selectedId } = useEntityList<LibraryRuntime.IProcedure, ProcedureId>({
+    getAll: () => workspace.data.procedures.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'procedure',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   const availableTasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
     return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -68,11 +69,6 @@ export function ProceduresTabContent(): React.ReactElement {
     slugify,
     onMutate: (): void => setPreviewVersion((v) => v + 1)
   });
-
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'procedure'
-      ? (cascadeStack[0].entityId as ProcedureId)
-      : undefined;
 
   const handleSelect = useCallback(
     (id: ProcedureId): void => {

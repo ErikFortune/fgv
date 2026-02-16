@@ -4,9 +4,8 @@ import { LibraryRuntime } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingId, TaskId, ProcedureId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
   IngredientDetail,
   FillingDetail,
   ProcedureDetail,
@@ -17,34 +16,33 @@ import {
 import { FILLING_DESCRIPTOR, FILLING_FILTER_SPEC } from '../shared';
 
 export function FillingsTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
   const [variationCompare, setVariationCompare] = useState<
     { id: FillingId; specs: ReadonlyArray<string> } | undefined
   >(undefined);
 
-  // Collect all fillings into a sorted array (memoized on workspace version)
-  const fillings = useMemo<ReadonlyArray<LibraryRuntime.FillingRecipe>>(() => {
-    return Array.from(workspace.data.fillings.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [workspace, reactiveWorkspace.version]);
-
-  // Selected filling ID = first cascade entry of type 'filling'
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'filling'
-      ? (cascadeStack[0].entityId as FillingId)
-      : undefined;
+  const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
+    getAll: () => workspace.data.fillings.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'filling',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   const handleSelect = useCallback(
     (id: FillingId): void => {

@@ -4,9 +4,9 @@ import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseTaskId, CollectionId, TaskId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
+  useMutableCollection,
   TaskDetail,
   TaskEditView,
   TaskPreviewPanel,
@@ -16,35 +16,32 @@ import {
 import { TASK_DESCRIPTOR, TASK_FILTER_SPEC, slugify, createBlankRawTaskEntity } from '../shared';
 
 export function TasksTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedTask } | undefined>(undefined);
 
   // Counter that increments on each edit mutation — forces the preview column to re-render with live data.
   const [previewVersion, setPreviewVersion] = useState(0);
 
-  const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
-    const collections = workspace.data.entities.tasks.collections;
-    for (const [id, col] of collections.entries()) {
-      if (col.isMutable) {
-        return id as CollectionId;
-      }
-    }
-    return undefined;
-  }, [workspace, reactiveWorkspace.version]);
+  const mutableCollectionId = useMutableCollection(workspace.data.entities.tasks.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const handleCreateTask = useCallback(
     (entity: Entities.Tasks.IRawTaskEntity, source: 'manual'): void => {
@@ -97,14 +94,13 @@ export function TasksTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
   );
 
-  const tasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
-    return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [workspace, reactiveWorkspace.version]);
-
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'task'
-      ? (cascadeStack[0].entityId as TaskId)
-      : undefined;
+  const { entities: tasks, selectedId } = useEntityList<LibraryRuntime.ITask, TaskId>({
+    getAll: () => workspace.data.tasks.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'task',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   const handleSelect = useCallback(
     (id: TaskId): void => {

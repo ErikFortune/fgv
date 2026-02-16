@@ -13,9 +13,9 @@ import type {
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
+  useMutableCollection,
   IngredientDetail,
   IngredientEditView,
   ProcedureDetail,
@@ -38,20 +38,22 @@ import {
 } from '../shared';
 
 export function DecorationsTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedDecoration } | undefined>(undefined);
   const subIngredientRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
@@ -62,19 +64,18 @@ export function DecorationsTabContent(): React.ReactElement {
   );
   const [subEntitySeed, setSubEntitySeed] = useState('');
 
-  const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
-    const collections = workspace.data.entities.decorations.collections;
-    for (const [id, col] of collections.entries()) {
-      if (col.isMutable) {
-        return id as CollectionId;
-      }
-    }
-    return undefined;
-  }, [workspace, reactiveWorkspace.version]);
+  const mutableCollectionId = useMutableCollection(workspace.data.entities.decorations.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
-  const decorations = useMemo<ReadonlyArray<LibraryRuntime.IDecoration>>(() => {
-    return Array.from(workspace.data.decorations.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [workspace, reactiveWorkspace.version]);
+  const { entities: decorations, selectedId } = useEntityList<LibraryRuntime.IDecoration, DecorationId>({
+    getAll: () => workspace.data.decorations.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'decoration',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
     return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -96,11 +97,6 @@ export function DecorationsTabContent(): React.ReactElement {
     slugify,
     onMutate: undefined
   });
-
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'decoration'
-      ? (cascadeStack[0].entityId as DecorationId)
-      : undefined;
 
   const handleSelect = useCallback(
     (id: DecorationId): void => {

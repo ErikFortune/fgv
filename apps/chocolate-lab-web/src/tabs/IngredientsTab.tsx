@@ -5,9 +5,9 @@ import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
+  useMutableCollection,
   IngredientDetail,
   IngredientEditView,
   EntityCreateForm,
@@ -22,35 +22,37 @@ import {
 } from '../shared';
 
 export function IngredientsTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
 
-  // Editing wrapper ref — persists the EditedIngredient across re-renders while editing.
-  // Keyed by entity ID so switching ingredients creates a fresh wrapper.
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(undefined);
 
-  // Find the first mutable collection ID (memoized)
-  const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
-    const collections = workspace.data.entities.ingredients.collections;
-    for (const [id, col] of collections.entries()) {
-      if (col.isMutable) {
-        return id as CollectionId;
-      }
-    }
-    return undefined;
-  }, [workspace, reactiveWorkspace.version]);
+  const mutableCollectionId = useMutableCollection(workspace.data.entities.ingredients.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
+
+  const { entities: ingredients, selectedId } = useEntityList<LibraryRuntime.AnyIngredient, IngredientId>({
+    getAll: () => workspace.data.ingredients.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'ingredient',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   // Create a new ingredient from an entity, add to mutable collection, and open in edit mode
   const handleCreateIngredient = useCallback(
@@ -86,7 +88,6 @@ export function IngredientsTabContent(): React.ReactElement {
         return;
       }
 
-      // Invalidate caches so the new ingredient appears in the list
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
 
@@ -117,7 +118,6 @@ export function IngredientsTabContent(): React.ReactElement {
           return;
         }
 
-        // Strip markdown code fences
         const stripped = text
           .trim()
           .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
@@ -147,27 +147,13 @@ export function IngredientsTabContent(): React.ReactElement {
     );
   }, [workspace, handleCreateIngredient]);
 
-  // Collect all ingredients into a sorted array (memoized on workspace version)
-  const ingredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
-    return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [workspace, reactiveWorkspace.version]);
-
-  // Selected ingredient ID = first cascade entry of type 'ingredient'
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'ingredient'
-      ? (cascadeStack[0].entityId as IngredientId)
-      : undefined;
-
   const handleSelect = useCallback(
     (id: IngredientId): void => {
-      const entry: ICascadeEntry = { entityType: 'ingredient', entityId: id, mode: 'view' };
-      // Replace the cascade with just this ingredient
-      squashCascade([entry]);
+      squashCascade([{ entityType: 'ingredient', entityId: id, mode: 'view' }]);
     },
     [squashCascade]
   );
 
-  // Switch a cascade entry from view → edit mode
   const handleEdit = useCallback(
     (entityId: string): void => {
       const updated = cascadeStack.map((e) =>
@@ -178,10 +164,8 @@ export function IngredientsTabContent(): React.ReactElement {
     [cascadeStack, squashCascade]
   );
 
-  // Switch a cascade entry from edit → view mode (cancel editing)
   const handleCancelEdit = useCallback(
     (entityId: string): void => {
-      // Discard the editing wrapper
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
@@ -193,7 +177,6 @@ export function IngredientsTabContent(): React.ReactElement {
     [cascadeStack, squashCascade]
   );
 
-  // "Save to..." handler — triggered when editing a read-only ingredient.
   const handleSaveAs = useCallback(
     (wrapper: LibraryRuntime.EditedIngredient): void => {
       const entity = wrapper.current;
@@ -204,7 +187,6 @@ export function IngredientsTabContent(): React.ReactElement {
     [workspace]
   );
 
-  // Save handler — persists the edited entity back to its collection via EditableCollection
   const handleSave = useCallback(
     (wrapper: LibraryRuntime.EditedIngredient): void => {
       const entity = wrapper.current;
@@ -214,18 +196,15 @@ export function IngredientsTabContent(): React.ReactElement {
         return;
       }
 
-      // Semantic validation before persisting
       const validationResult = Editing.Ingredients.Validators.validateIngredientEntity(entity);
       if (validationResult.isFailure()) {
         workspace.data.logger.error(`Save failed: ${validationResult.message}`);
         return;
       }
 
-      // Derive collection ID from composite ID (prefix before '.')
       const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseIngredientId;
 
-      // 1. Update the underlying library collection in-memory so the data is immediately consistent
       const collectionEntry = workspace.data.entities.ingredients.collections.get(collectionId);
       if (collectionEntry.isFailure()) {
         workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
@@ -241,7 +220,6 @@ export function IngredientsTabContent(): React.ReactElement {
         return;
       }
 
-      // 2. Persist to disk via EditableCollection (snapshot + sourceItem for YAML write)
       const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(collectionId);
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
@@ -264,24 +242,20 @@ export function IngredientsTabContent(): React.ReactElement {
         );
       }
 
-      // 3. Invalidate caches and notify React so the UI reflects the saved data
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
 
-      // 4. Discard wrapper and switch back to view mode
-      const entityId = compositeId;
-      if (editingRef.current?.id === entityId) {
+      if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
       }
       const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'ingredient' ? { ...e, mode: 'view' as const } : e
+        e.entityId === compositeId && e.entityType === 'ingredient' ? { ...e, mode: 'view' as const } : e
       );
       squashCascade(updated);
     },
     [workspace, reactiveWorkspace, cascadeStack, squashCascade]
   );
 
-  // Get or create an EditedIngredient wrapper for the given entity
   const getOrCreateWrapper = useCallback(
     (ingredient: LibraryRuntime.AnyIngredient): LibraryRuntime.EditedIngredient | undefined => {
       const id = ingredient.id;
@@ -298,13 +272,10 @@ export function IngredientsTabContent(): React.ReactElement {
     []
   );
 
-  // Open the cascade in 'create' mode for a new ingredient
   const handleNewIngredient = useCallback((): void => {
-    const entry: ICascadeEntry = { entityType: 'ingredient', entityId: '__new__', mode: 'create' };
-    squashCascade([entry]);
+    squashCascade([{ entityType: 'ingredient', entityId: '__new__', mode: 'create' }]);
   }, [squashCascade]);
 
-  // EntityCreateForm onCreate callback — wraps handleCreateIngredient with the blank entity builder
   const handleCreateFormSubmit = useCallback(
     (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): void => {
       handleCreateIngredient(entity, source);
@@ -312,17 +283,14 @@ export function IngredientsTabContent(): React.ReactElement {
     [handleCreateIngredient]
   );
 
-  // Cancel the create form — clear the cascade
   const handleCreateFormCancel = useCallback((): void => {
     squashCascade([]);
   }, [squashCascade]);
 
-  // Build cascade columns from the cascade stack
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack
       .filter((e) => e.entityType === 'ingredient')
       .map((entry) => {
-        // Create mode: render EntityCreateForm
         if (entry.mode === 'create') {
           return {
             key: '__new__',
@@ -353,7 +321,6 @@ export function IngredientsTabContent(): React.ReactElement {
           };
         }
 
-        // Edit mode: render IngredientEditView
         if (entry.mode === 'edit') {
           const wrapper = getOrCreateWrapper(result.value);
           if (wrapper === undefined) {
@@ -364,7 +331,6 @@ export function IngredientsTabContent(): React.ReactElement {
             };
           }
 
-          // Detect whether the source collection is immutable
           const collectionId = entry.entityId.split('.')[0] as CollectionId;
           const collectionEntry = workspace.data.entities.ingredients.collections.get(collectionId);
           const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
@@ -384,7 +350,6 @@ export function IngredientsTabContent(): React.ReactElement {
           };
         }
 
-        // View mode: render IngredientDetail with Edit button
         return {
           key: entry.entityId,
           label: result.value.name,

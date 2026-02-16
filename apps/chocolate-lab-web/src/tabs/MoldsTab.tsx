@@ -5,9 +5,9 @@ import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  useNavigationStore,
-  useWorkspace,
-  useReactiveWorkspace,
+  useTabNavigation,
+  useEntityList,
+  useMutableCollection,
   MoldDetail,
   MoldEditView,
   EntityCreateForm,
@@ -17,32 +17,29 @@ import {
 import { MOLD_DESCRIPTOR, MOLD_FILTER_SPEC, slugify, createBlankMoldEntity } from '../shared';
 
 export function MoldsTabContent(): React.ReactElement {
-  const workspace = useWorkspace();
-  const reactiveWorkspace = useReactiveWorkspace();
-  const squashCascade = useNavigationStore((s) => s.squashCascade);
-  const popCascadeTo = useNavigationStore((s) => s.popCascadeTo);
-  const cascadeStack = useNavigationStore((s) => s.cascadeStack);
-  const listCollapsed = useNavigationStore((s) => s.listCollapsed);
-  const collapseList = useNavigationStore((s) => s.collapseList);
-  const compareMode = useNavigationStore((s) => s.compareMode);
-  const compareIds = useNavigationStore((s) => s.compareIds);
-  const toggleCompareMode = useNavigationStore((s) => s.toggleCompareMode);
-  const toggleCompareId = useNavigationStore((s) => s.toggleCompareId);
-  const showingComparison = useNavigationStore((s) => s.showingComparison);
-  const startComparison = useNavigationStore((s) => s.startComparison);
-  const exitComparison = useNavigationStore((s) => s.exitComparison);
+  const {
+    workspace,
+    reactiveWorkspace,
+    squashCascade,
+    popCascadeTo,
+    cascadeStack,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
 
-  const mutableCollectionId = useMemo<CollectionId | undefined>(() => {
-    const collections = workspace.data.entities.molds.collections;
-    for (const [id, col] of collections.entries()) {
-      if (col.isMutable) {
-        return id as CollectionId;
-      }
-    }
-    return undefined;
-  }, [workspace, reactiveWorkspace.version]);
+  const mutableCollectionId = useMutableCollection(workspace.data.entities.molds.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const handleCreateMold = useCallback(
     (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): void => {
@@ -136,14 +133,13 @@ export function MoldsTabContent(): React.ReactElement {
     );
   }, [workspace, handleCreateMold]);
 
-  const molds = useMemo<ReadonlyArray<LibraryRuntime.IMold>>(() => {
-    return Array.from(workspace.data.molds.values()).sort((a, b) => a.id.localeCompare(b.id));
-  }, [workspace, reactiveWorkspace.version]);
-
-  const selectedId =
-    cascadeStack.length > 0 && cascadeStack[0].entityType === 'mold'
-      ? (cascadeStack[0].entityId as MoldId)
-      : undefined;
+  const { entities: molds, selectedId } = useEntityList<LibraryRuntime.IMold, MoldId>({
+    getAll: () => workspace.data.molds.values(),
+    compare: (a, b) => a.id.localeCompare(b.id),
+    entityType: 'mold',
+    cascadeStack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
 
   const handleSelect = useCallback(
     (id: MoldId): void => {
