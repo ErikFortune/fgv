@@ -167,19 +167,11 @@ function ProceduresSection({
   readonly onProcedureClick?: (id: ProcedureId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
-    const mapped = procedures.procedures.map((p) => ({
+    return procedures.procedures.map((p) => ({
       id: p.id,
       label: p.procedure.name,
       sublabel: p.procedure.category
     }));
-    // DEBUG: trace items passed to EntityRow
-    console.log('[DEBUG ProceduresSection] items:', JSON.stringify(mapped));
-    console.log(
-      '[DEBUG ProceduresSection] recommendedProcedure:',
-      procedures.recommendedProcedure?.id,
-      procedures.recommendedProcedure?.name
-    );
-    return mapped;
   }, [procedures]);
 
   const preferredId = procedures.recommendedProcedure?.id;
@@ -246,8 +238,6 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
   const selectedVariation = useMemo<LibraryRuntime.FillingRecipeVariation>(() => {
     const result = filling.getVariation(selectedSpec);
     if (result.isSuccess()) {
-      // DEBUG: dump the runtime entity
-      console.log('[DEBUG FillingDetail] selectedVariation entity:', JSON.stringify(result.value.entity));
       return result.value;
     }
     // Fall back to golden if selected variation not found

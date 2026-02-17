@@ -380,8 +380,6 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
    */
   private _resolveProcedures(): Result<IResolvedProcedures | null> {
     const procedureEntities = this._entity.procedures;
-    // DEBUG: trace procedure resolution
-    console.log('[DEBUG _resolveProcedures] entity procedures:', JSON.stringify(procedureEntities));
     if (!procedureEntities || procedureEntities.options.length === 0) {
       return Success.with(null);
     }
@@ -419,19 +417,6 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
     // Return null if all procedures failed to resolve
     if (resolvedProcedures.length === 0 && !recommendedProcedure) {
       return errors.returnOrReport(Success.with(null));
-    }
-
-    // DEBUG: trace resolution result
-    console.log(
-      '[DEBUG _resolveProcedures] resolved:',
-      resolvedProcedures.length,
-      'of',
-      procedureEntities.options.length,
-      'errors:',
-      errors.hasMessages
-    );
-    for (const rp of resolvedProcedures) {
-      console.log('[DEBUG _resolveProcedures]   resolved procedure:', rp.id, rp.procedure.name);
     }
 
     return errors.returnOrReport(

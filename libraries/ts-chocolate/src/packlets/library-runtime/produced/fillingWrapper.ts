@@ -327,9 +327,6 @@ export class ProducedFilling {
       procedures: mergedProcedures
     };
 
-    // DEBUG: trace merged alternatives output
-    console.log('[DEBUG mergeAsAlternatives] merged procedures:', JSON.stringify(mergedProcedures));
-
     return succeed(merged);
   }
 

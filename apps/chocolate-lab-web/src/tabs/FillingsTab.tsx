@@ -284,24 +284,12 @@ export function FillingsTabContent(): React.ReactElement {
           workspace.data.logger.error(`Save failed (session): ${saveResult.message}`);
           return;
         }
-        // DEBUG: trace saved entity
-        console.log(
-          '[DEBUG FillingsTab alternatives] variationEntity procedures:',
-          JSON.stringify(saveResult.value.variationEntity?.procedures)
-        );
         if (saveResult.value.variationEntity) {
           const replaceResult = state.wrapper.replaceVariation(spec, saveResult.value.variationEntity);
           if (replaceResult.isFailure()) {
             workspace.data.logger.error(`Save failed (replace variation): ${replaceResult.message}`);
             return;
           }
-          // DEBUG: trace wrapper entity after replace
-          const wrapperEntity = state.wrapper.entity;
-          const replacedVar = wrapperEntity.variations.find((v) => v.variationSpec === spec);
-          console.log(
-            '[DEBUG FillingsTab alternatives] entity after replace, variation procedures:',
-            JSON.stringify(replacedVar?.procedures)
-          );
         }
       } else if (mode === 'new-recipe') {
         // Create an entirely new recipe derived from this one
