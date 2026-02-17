@@ -104,16 +104,13 @@ export function DecorationPreviewPanel(props: IDecorationPreviewPanelProps): Rea
           </div>
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
             {decoration.ingredients.map((ing, i) => {
-              const alternateCount = ing.ingredientIds.ids.length - 1;
-              const displayName = ing.ingredient.name;
-
               return (
                 <div key={i} className="px-4 py-2.5 flex items-baseline justify-between hover:bg-gray-50">
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-900">{displayName}</span>
-                    {alternateCount > 0 && (
+                    <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
+                    {ing.alternates.length > 0 && (
                       <span className="ml-2 text-xs text-amber-600">
-                        +{alternateCount} alternate{alternateCount > 1 ? 's' : ''}
+                        or {ing.alternates.map((alt) => alt.name).join(', ')}
                       </span>
                     )}
                   </div>

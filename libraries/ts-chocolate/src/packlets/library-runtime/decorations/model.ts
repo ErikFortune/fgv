@@ -76,6 +76,11 @@ export interface IResolvedDecorationIngredient {
   readonly ingredient: AnyIngredient;
 
   /**
+   * Resolved alternate ingredients (all IDs except preferred, skipping missing).
+   */
+  readonly alternates: ReadonlyArray<AnyIngredient>;
+
+  /**
    * All ingredient IDs (including alternates).
    */
   readonly ingredientIds: CommonModel.IIdsWithPreferred<IngredientId>;

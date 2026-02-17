@@ -43,6 +43,23 @@ The resolved preferred ingredient.
 </td></tr>
 <tr><td>
 
+[alternates](./IResolvedDecorationIngredient.alternates.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [AnyIngredient](../type-aliases/AnyIngredient.md)[]
+
+</td><td>
+
+Resolved alternate ingredients (all IDs except preferred, skipping missing).
+
+</td></tr>
+<tr><td>
+
 [ingredientIds](./IResolvedDecorationIngredient.ingredientIds.md)
 
 </td><td>

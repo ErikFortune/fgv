@@ -4990,6 +4990,7 @@ interface IResolvedConfectionProcedure {
 
 // @public
 interface IResolvedDecorationIngredient {
+    readonly alternates: ReadonlyArray<AnyIngredient>;
     readonly amount: Measurement;
     readonly ingredient: AnyIngredient;
     readonly ingredientIds: Model.IIdsWithPreferred<IngredientId>;

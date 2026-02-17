@@ -25,9 +25,10 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
+import { EntityRow } from '@fgv/ts-app-shell';
 import type { IngredientId, ProcedureId } from '@fgv/ts-chocolate';
 import type { LibraryRuntime, Model, Entities } from '@fgv/ts-chocolate';
 
@@ -109,59 +110,31 @@ function NotesSection({
 }
 
 // ============================================================================
-// Ingredients Section
+// Ingredient Row (clickable for drill-down with alternate swap)
 // ============================================================================
 
-function IngredientsSection({
-  ingredients,
-  onIngredientClick
+function IngredientRow({
+  resolved,
+  onClick
 }: {
-  readonly ingredients: ReadonlyArray<LibraryRuntime.IResolvedDecorationIngredient>;
-  readonly onIngredientClick?: (id: IngredientId) => void;
-}): React.ReactElement | null {
-  if (ingredients.length === 0) {
-    return null;
-  }
+  readonly resolved: LibraryRuntime.IResolvedDecorationIngredient;
+  readonly onClick?: (ingredientId: IngredientId) => void;
+}): React.ReactElement {
+  const items = useMemo(() => {
+    const result = [{ id: resolved.ingredient.id, label: resolved.ingredient.name }];
+    for (const alt of resolved.alternates) {
+      result.push({ id: alt.id, label: alt.name });
+    }
+    return result;
+  }, [resolved]);
+
   return (
-    <DetailSection title="Ingredients">
-      <div className="space-y-2">
-        {ingredients.map((ing, i) => {
-          const preferredId = ing.ingredientIds.preferredId ?? ing.ingredientIds.ids[0];
-          const alternateCount = ing.ingredientIds.ids.length - 1;
-          return (
-            <div key={i} className="bg-gray-50 rounded-md p-2.5 border border-gray-200">
-              <div className="flex items-baseline justify-between">
-                {onIngredientClick ? (
-                  <button
-                    className="text-sm font-medium text-choco-primary hover:underline text-left"
-                    onClick={(): void => onIngredientClick(preferredId)}
-                  >
-                    {ing.ingredient.name}
-                  </button>
-                ) : (
-                  <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
-                )}
-                <span className="text-xs text-gray-500 ml-2">{ing.amount}g</span>
-              </div>
-              {alternateCount > 0 && (
-                <div className="text-xs text-gray-400 mt-0.5">
-                  +{alternateCount} alternate{alternateCount > 1 ? 's' : ''}
-                </div>
-              )}
-              {ing.notes && ing.notes.length > 0 && (
-                <div className="mt-1">
-                  {ing.notes.map((note, j) => (
-                    <div key={j} className="text-xs text-gray-500">
-                      <span className="text-gray-400">[{note.category}]</span> {note.note}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </DetailSection>
+    <EntityRow<IngredientId>
+      items={items}
+      preferredId={resolved.ingredient.id}
+      onClick={onClick}
+      rightContent={<span className="text-xs text-gray-500 tabular-nums shrink-0">{resolved.amount}g</span>}
+    />
   );
 }
 
@@ -176,28 +149,16 @@ function ProceduresSection({
   readonly procedures: LibraryRuntime.IDecoration['procedures'] & {};
   readonly onProcedureClick?: (id: ProcedureId) => void;
 }): React.ReactElement {
+  const items = useMemo(() => {
+    return procedures.options.map((opt) => ({
+      id: opt.id,
+      label: opt.procedure.name
+    }));
+  }, [procedures]);
+
   return (
     <DetailSection title="Procedures">
-      <div className="space-y-1">
-        {procedures.options.map((opt) => {
-          const isPreferred = opt.id === procedures.preferredId;
-          return (
-            <div key={opt.id} className="flex items-center gap-1.5 text-sm">
-              {isPreferred && <span className="text-amber-500 text-xs">★</span>}
-              {onProcedureClick ? (
-                <button
-                  className="text-choco-primary hover:underline text-left"
-                  onClick={(): void => onProcedureClick(opt.id)}
-                >
-                  {opt.procedure.name}
-                </button>
-              ) : (
-                <span className="text-gray-900">{opt.procedure.name}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <EntityRow<ProcedureId> items={items} preferredId={procedures.preferredId} onClick={onProcedureClick} />
     </DetailSection>
   );
 }
@@ -286,7 +247,15 @@ export function DecorationDetail(props: IDecorationDetailProps): React.ReactElem
       </div>
 
       {/* Ingredients */}
-      <IngredientsSection ingredients={decoration.ingredients} onIngredientClick={onIngredientClick} />
+      {decoration.ingredients.length > 0 && (
+        <DetailSection title={`Ingredients (${decoration.ingredients.length})`}>
+          <div className="divide-y divide-gray-100">
+            {decoration.ingredients.map((ri) => (
+              <IngredientRow key={ri.ingredient.id} resolved={ri} onClick={onIngredientClick} />
+            ))}
+          </div>
+        </DetailSection>
+      )}
 
       {/* Procedures */}
       {decoration.procedures && (

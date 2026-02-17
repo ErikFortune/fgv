@@ -27,6 +27,7 @@ import { Result, mapResults, succeed } from '@fgv/ts-utils';
 
 import { BaseDecorationId, DecorationId, Helpers, Model as CommonModel, ProcedureId } from '../../common';
 import { Decorations, IDecorationEntity } from '../../entities';
+import type { AnyIngredient } from '../ingredients/ingredient';
 import {
   IDecoration,
   IDecorationContext,
@@ -198,14 +199,26 @@ export class Decoration implements IDecoration {
     return this._context
       ._getIngredient(preferredId)
       .withErrorFormat((msg) => `decoration '${this._id}' ingredient '${preferredId}': ${msg}`)
-      .onSuccess((ingredient) =>
-        succeed({
+      .onSuccess((ingredient) => {
+        // Resolve alternates (all ids except preferred, skip missing ones)
+        const alternates: AnyIngredient[] = [];
+        for (const altId of ingredientEntity.ingredient.ids) {
+          if (altId !== preferredId) {
+            const altResult = this._context._getIngredient(altId);
+            if (altResult.isSuccess()) {
+              alternates.push(altResult.value);
+            }
+            // Silently skip missing alternates - they're optional
+          }
+        }
+        return succeed({
           ingredient,
+          alternates,
           ingredientIds: ingredientEntity.ingredient,
           amount: ingredientEntity.amount,
           notes: ingredientEntity.notes
-        })
-      );
+        });
+      });
   }
 
   /**
