@@ -80,6 +80,7 @@ export interface ISaveAnalysis {
     readonly ingredientsAdded: boolean;
     readonly ingredientsRemoved: boolean;
     readonly ingredientsChanged: boolean;
+    readonly procedureChanged: boolean;
     readonly weightChanged: boolean;
     readonly notesChanged: boolean;
   };
@@ -94,11 +95,6 @@ export interface ISaveAnalysis {
  * @public
  */
 export interface ISaveVariationOptions {
-  /**
-   * Base weight for the new variation
-   */
-  readonly baseWeight: Measurement;
-
   /**
    * Variation spec for the new variation
    */
@@ -135,11 +131,6 @@ export interface ISaveNewRecipeOptions {
    * ID for the new recipe
    */
   readonly newId: FillingId;
-
-  /**
-   * Base weight for the new recipe
-   */
-  readonly baseWeight: Measurement;
 
   /**
    * Variation spec for the new recipe's first variation

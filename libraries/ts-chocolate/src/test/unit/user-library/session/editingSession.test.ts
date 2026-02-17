@@ -439,8 +439,7 @@ describe('EditingSession', () => {
 
       expect(
         session.saveAsNewVariation({
-          variationSpec: '2026-01-02-01' as FillingRecipeVariationSpec,
-          baseWeight: 600 as Measurement
+          variationSpec: '2026-01-02-01' as FillingRecipeVariationSpec
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();
@@ -467,8 +466,7 @@ describe('EditingSession', () => {
 
       expect(
         session.saveAsNewVariation({
-          variationSpec: '2026-01-03-01' as FillingRecipeVariationSpec,
-          baseWeight: 300 as Measurement
+          variationSpec: '2026-01-03-01' as FillingRecipeVariationSpec
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.variationEntity).toBeDefined();
@@ -541,8 +539,7 @@ describe('EditingSession', () => {
 
       expect(
         session.saveAsNewVariation({
-          variationSpec: '2026-01-02-01' as FillingRecipeVariationSpec,
-          baseWeight: 600 as Measurement
+          variationSpec: '2026-01-02-01' as FillingRecipeVariationSpec
         })
       ).toFailWith(/collection is immutable/i);
     });
@@ -648,8 +645,7 @@ describe('EditingSession', () => {
       expect(
         session.saveAsNewRecipe({
           newId: 'test.new-ganache' as FillingId,
-          variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
-          baseWeight: 600 as Measurement
+          variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec
         })
       ).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBeDefined();

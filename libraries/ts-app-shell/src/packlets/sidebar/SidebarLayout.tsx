@@ -53,8 +53,8 @@ export function SidebarLayout(props: ISidebarLayoutProps): React.ReactElement {
         {sidebar}
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">{children}</div>
+      {/* Main content — overflow-hidden so flex-1 constrains height down the chain */}
+      <div className="flex flex-col flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }

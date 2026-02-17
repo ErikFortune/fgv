@@ -60,4 +60,7 @@ import * as Procedures from './procedures';
 // Decoration editing (specialized)
 import * as Decorations from './decorations';
 
-export { Ingredients, Molds, Tasks, Procedures, Decorations };
+// Filling editing (specialized)
+import * as Fillings from './fillings';
+
+export { Ingredients, Molds, Tasks, Procedures, Decorations, Fillings };

@@ -316,16 +316,20 @@ describe('ProducedFilling', () => {
       expect(chocolate?.amount).toBe(250 as Measurement);
     });
 
-    test('setIngredient() fails with non-positive amount', () => {
+    test('setIngredient() allows zero amount', () => {
       const wrapper = ProducedFilling.create(baseProducedFilling).orThrow();
 
       expect(
         wrapper.setIngredient('test.butter' as IngredientId, 0 as Measurement, 'g' as MeasurementUnit)
-      ).toFailWith(/amount must be positive/i);
+      ).toSucceed();
+    });
+
+    test('setIngredient() fails with negative amount', () => {
+      const wrapper = ProducedFilling.create(baseProducedFilling).orThrow();
 
       expect(
         wrapper.setIngredient('test.butter' as IngredientId, -10 as Measurement, 'g' as MeasurementUnit)
-      ).toFailWith(/amount must be positive/i);
+      ).toFailWith(/amount must be non-negative/i);
     });
 
     test('setIngredient() supports modifiers', () => {

@@ -26,6 +26,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
@@ -50,6 +51,8 @@ export interface IFillingDetailProps {
   readonly onCompareVariations?: (specs: ReadonlyArray<FillingRecipeVariationSpec>) => void;
   /** Override the initially selected variation (defaults to golden) */
   readonly defaultVariationSpec?: FillingRecipeVariationSpec;
+  /** Optional callback to enter edit mode for the currently viewed variation */
+  readonly onEdit?: (variationSpec: FillingRecipeVariationSpec) => void;
 }
 
 // ============================================================================
@@ -164,11 +167,19 @@ function ProceduresSection({
   readonly onProcedureClick?: (id: ProcedureId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
-    return procedures.procedures.map((p) => ({
+    const mapped = procedures.procedures.map((p) => ({
       id: p.id,
       label: p.procedure.name,
       sublabel: p.procedure.category
     }));
+    // DEBUG: trace items passed to EntityRow
+    console.log('[DEBUG ProceduresSection] items:', JSON.stringify(mapped));
+    console.log(
+      '[DEBUG ProceduresSection] recommendedProcedure:',
+      procedures.recommendedProcedure?.id,
+      procedures.recommendedProcedure?.name
+    );
+    return mapped;
   }, [procedures]);
 
   const preferredId = procedures.recommendedProcedure?.id;
@@ -223,7 +234,8 @@ function RatingsSection({
  * @public
  */
 export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
-  const { filling, onIngredientClick, onProcedureClick, onCompareVariations, defaultVariationSpec } = props;
+  const { filling, onIngredientClick, onProcedureClick, onCompareVariations, defaultVariationSpec, onEdit } =
+    props;
 
   // Track selected variation (default to golden or override)
   const [selectedSpec, setSelectedSpec] = useState<FillingRecipeVariationSpec>(
@@ -234,6 +246,8 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
   const selectedVariation = useMemo<LibraryRuntime.FillingRecipeVariation>(() => {
     const result = filling.getVariation(selectedSpec);
     if (result.isSuccess()) {
+      // DEBUG: dump the runtime entity
+      console.log('[DEBUG FillingDetail] selectedVariation entity:', JSON.stringify(result.value.entity));
       return result.value;
     }
     // Fall back to golden if selected variation not found
@@ -262,8 +276,19 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-lg font-semibold text-choco-primary">{filling.name}</h3>
+          <h3 className="text-lg font-semibold text-choco-primary flex-1">{filling.name}</h3>
           <CategoryBadge category={filling.entity.category} />
+          {onEdit && (
+            <button
+              type="button"
+              onClick={(): void => onEdit(selectedSpec)}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              title="Edit filling"
+            >
+              <PencilSquareIcon className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
         {filling.description && <p className="text-sm text-gray-600 mt-1">{filling.description}</p>}
         <p className="text-xs text-gray-400 mt-1 font-mono">{filling.id}</p>

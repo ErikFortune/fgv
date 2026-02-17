@@ -205,10 +205,13 @@ export class ProducedFilling {
     return CommonConverters.fillingRecipeVariationSpec
       .convert(newVariationSpec)
       .onSuccess((variationSpec) => {
-        // Use targetWeight as the base weight (it represents the current recipe state)
-        // The snapshot.scaleFactor is relative to the original source, but the user
-        // may have scaled the recipe further during editing via scaleToTargetWeight().
-        return CommonConverters.measurement.convert(snapshot.targetWeight).onSuccess((baseWeight) => {
+        // Use targetWeight as the base weight. If targetWeight is 0 (unscaled recipe),
+        // compute the effective weight from ingredient amounts instead.
+        const computedWeight =
+          snapshot.targetWeight > 0
+            ? snapshot.targetWeight
+            : ProducedFilling._calculateWeightFromIngredients(snapshot.ingredients);
+        return CommonConverters.measurement.convert(computedWeight).onSuccess((baseWeight) => {
           // Convert ingredients back to source format (no scaling needed - use as-is)
           const ingredients = snapshot.ingredients.map((ing) =>
             ProducedFilling._convertIngredientToSourceUnscaled(ing)
@@ -323,6 +326,9 @@ export class ProducedFilling {
       ratings: original.ratings,
       procedures: mergedProcedures
     };
+
+    // DEBUG: trace merged alternatives output
+    console.log('[DEBUG mergeAsAlternatives] merged procedures:', JSON.stringify(mergedProcedures));
 
     return succeed(merged);
   }
@@ -521,8 +527,8 @@ export class ProducedFilling {
     unit?: MeasurementUnit,
     modifiers?: Fillings.IIngredientModifiers
   ): Result<void> {
-    if (amount <= 0) {
-      return fail(`Ingredient amount must be positive: ${amount}`);
+    if (amount < 0) {
+      return fail(`Ingredient amount must be non-negative: ${amount}`);
     }
 
     this._pushUndo();
@@ -616,7 +622,7 @@ export class ProducedFilling {
     });
 
     // Recalculate actual achieved weight
-    const actualWeight = this._calculateWeightFromIngredients(scaledIngredients);
+    const actualWeight = ProducedFilling._calculateWeightFromIngredients(scaledIngredients);
 
     this._current = {
       ...this._current,
@@ -757,14 +763,14 @@ export class ProducedFilling {
    * Calculates total weight from current weight-contributing ingredients.
    */
   private _calculateTotalWeight(): Measurement {
-    return this._calculateWeightFromIngredients(this._current.ingredients);
+    return ProducedFilling._calculateWeightFromIngredients(this._current.ingredients);
   }
 
   /**
    * Calculates total weight from a list of ingredients.
    * Only includes weight-contributing units (g, mL).
    */
-  private _calculateWeightFromIngredients(
+  private static _calculateWeightFromIngredients(
     ingredients: ReadonlyArray<Fillings.IProducedFillingIngredientEntity>
   ): Measurement {
     const total = ingredients.reduce((sum, ing) => {

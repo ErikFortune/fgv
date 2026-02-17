@@ -1393,6 +1393,9 @@ declare namespace Converters_8 {
 function createBlankDecorationEntity(baseId: BaseDecorationId, name: string): IDecorationEntity;
 
 // @public
+function createBlankFillingRecipeEntity(baseId: BaseFillingId, name: string, variationLabel?: string): IFillingRecipeEntity;
+
+// @public
 function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): IIngredientEntity;
 
 // @public
@@ -1701,6 +1704,36 @@ class EditedDecoration {
 }
 
 // @public
+class EditedFillingRecipe {
+    addVariation(variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
+    canRedo(): boolean;
+    canUndo(): boolean;
+    static create(initial: Fillings.IFillingRecipeEntity): Result<EditedFillingRecipe>;
+    createSnapshot(): Fillings.IFillingRecipeEntity;
+    get current(): Fillings.IFillingRecipeEntity;
+    getChanges(original: Fillings.IFillingRecipeEntity): IFillingRecipeChanges;
+    getSerializedHistory(original: Fillings.IFillingRecipeEntity): Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>;
+    get goldenVariationSpec(): FillingRecipeVariationSpec;
+    hasChanges(original: Fillings.IFillingRecipeEntity): boolean;
+    get name(): FillingName;
+    redo(): Result<boolean>;
+    removeVariation(spec: FillingRecipeVariationSpec): Result<void>;
+    replaceVariation(spec: FillingRecipeVariationSpec, variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>): Result<EditedFillingRecipe>;
+    restoreSnapshot(snapshot: Fillings.IFillingRecipeEntity): Result<void>;
+    // Warning: (ae-forgotten-export) The symbol "FillingCategory_3" needs to be exported by the entry point index.d.ts
+    setCategory(category: FillingCategory_3): Result<void>;
+    setDescription(description: string | undefined): Result<void>;
+    setGoldenVariationSpec(spec: FillingRecipeVariationSpec): Result<void>;
+    setName(name: FillingName): Result<void>;
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
+    get snapshot(): Fillings.IFillingRecipeEntity;
+    undo(): Result<boolean>;
+    get variations(): ReadonlyArray<Fillings.IFillingRecipeVariationEntity>;
+}
+
+// @public
 class EditedIngredient {
     applyUpdate(update: Partial<Ingredients.IngredientEntity>): Result<void>;
     canRedo(): boolean;
@@ -1860,6 +1893,7 @@ declare namespace Editing {
         Tasks_2 as Tasks,
         Procedures_3 as Procedures,
         Decorations_2 as Decorations,
+        Fillings_2 as Fillings,
         IEditorContext,
         IEditorContextValidator,
         IValidatingEditorContext,
@@ -2456,6 +2490,7 @@ const fillingRecipeVariationSpec_2: Validator<FillingRecipeVariationSpec>;
 declare namespace Fillings {
     export {
         Converters_3 as Converters,
+        createBlankFillingRecipeEntity,
         IIngredientModifiers,
         IFillingIngredientEntity,
         RatingCategory,
@@ -2481,6 +2516,12 @@ declare namespace Fillings {
         IFillingsLibraryParams,
         IFillingsLibraryAsyncParams,
         FillingsLibrary
+    }
+}
+
+declare namespace Fillings_2 {
+    export {
+        Validators_7 as Validators
     }
 }
 
@@ -3536,6 +3577,18 @@ interface IFillingRecipe {
     usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
     readonly variationCount: number;
     readonly variations: ReadonlyArray<IFillingRecipeVariation>;
+}
+
+// @public
+interface IFillingRecipeChanges {
+    readonly categoryChanged: boolean;
+    readonly descriptionChanged: boolean;
+    readonly goldenVariationSpecChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly nameChanged: boolean;
+    readonly tagsChanged: boolean;
+    readonly urlsChanged: boolean;
+    readonly variationsChanged: boolean;
 }
 
 // @public
@@ -5168,6 +5221,7 @@ interface ISaveAnalysis {
         readonly ingredientsAdded: boolean;
         readonly ingredientsRemoved: boolean;
         readonly ingredientsChanged: boolean;
+        readonly procedureChanged: boolean;
         readonly weightChanged: boolean;
         readonly notesChanged: boolean;
     };
@@ -5190,7 +5244,6 @@ interface ISaveNewConfectionOptions {
 
 // @public
 interface ISaveNewRecipeOptions {
-    readonly baseWeight: Measurement;
     readonly includeSessionNotes?: boolean;
     readonly newId: FillingId;
     readonly variationSpec: FillingRecipeVariationSpec;
@@ -5214,7 +5267,6 @@ interface ISaveResult {
 
 // @public
 interface ISaveVariationOptions {
-    readonly baseWeight: Measurement;
     readonly includeSessionNotes?: boolean;
     readonly variationSpec: FillingRecipeVariationSpec;
 }
@@ -6232,7 +6284,9 @@ declare namespace LibraryRuntime {
         IProcedureChanges,
         EditedProcedure,
         IDecorationChanges,
-        EditedDecoration
+        EditedDecoration,
+        IFillingRecipeChanges,
+        EditedFillingRecipe
     }
 }
 export { LibraryRuntime }
@@ -7900,6 +7954,26 @@ function validateDecorationName(entity: IDecorationEntity_2): Result<true>;
 // @public
 function validateDecorationRatings(entity: IDecorationEntity_2): Result<true>;
 
+// Warning: (ae-forgotten-export) The symbol "IFillingRecipeEntity_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateFillingCategory(entity: IFillingRecipeEntity_2): Result<true>;
+
+// @public
+function validateFillingIngredients(entity: IFillingRecipeEntity_2): Result<true>;
+
+// @public
+function validateFillingName(entity: IFillingRecipeEntity_2): Result<true>;
+
+// @public
+function validateFillingRatings(entity: IFillingRecipeEntity_2): Result<true>;
+
+// @public
+function validateFillingRecipeEntity(entity: IFillingRecipeEntity_2): Result<IFillingRecipeEntity_2>;
+
+// @public
+function validateFillingVariations(entity: IFillingRecipeEntity_2): Result<true>;
+
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
 
@@ -8157,6 +8231,17 @@ declare namespace Validators_6 {
         validateDecorationIngredients,
         validateDecorationRatings,
         validateDecorationEntity
+    }
+}
+
+declare namespace Validators_7 {
+    export {
+        validateFillingName,
+        validateFillingCategory,
+        validateFillingVariations,
+        validateFillingIngredients,
+        validateFillingRatings,
+        validateFillingRecipeEntity
     }
 }
 

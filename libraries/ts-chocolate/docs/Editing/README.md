@@ -62,6 +62,15 @@ Procedure editing - specialized editing functionality for procedures
 Decoration editing - specialized editing functionality for decorations
 
 </td></tr>
+<tr><td>
+
+[Fillings](./Fillings/README.md)
+
+</td><td>
+
+Filling editing - specialized editing functionality for filling recipes
+
+</td></tr>
 </tbody></table>
 
 ## Classes

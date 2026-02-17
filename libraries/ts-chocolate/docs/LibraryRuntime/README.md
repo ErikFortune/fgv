@@ -174,6 +174,15 @@ Mutable wrapper for DecorationEntity with undo/redo support.
 </td></tr>
 <tr><td>
 
+[EditedFillingRecipe](./classes/EditedFillingRecipe.md)
+
+</td><td>
+
+Mutable wrapper for IFillingRecipeEntity with undo/redo support.
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
@@ -859,6 +868,15 @@ Structure describing what changed between two procedure entities.
 </td><td>
 
 Structure describing what changed between two decoration entities
+
+</td></tr>
+<tr><td>
+
+[IFillingRecipeChanges](./interfaces/IFillingRecipeChanges.md)
+
+</td><td>
+
+Structure describing what changed between two filling recipe entities at the recipe level
 
 </td></tr>
 <tr><td>

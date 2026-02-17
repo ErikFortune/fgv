@@ -183,3 +183,4 @@ export const { createBlankMoldEntity } = Entities.Molds;
 export const { createBlankRawTaskEntity } = Entities.Tasks;
 export const { createBlankRawProcedureEntity } = Entities.Procedures;
 export const { createBlankDecorationEntity } = Entities.Decorations;
+export const { createBlankFillingRecipeEntity } = Entities.Fillings;

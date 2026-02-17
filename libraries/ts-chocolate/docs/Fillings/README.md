@@ -183,6 +183,29 @@ Parameters for creating a FillingsLibrary instance asynchronously with encryptio
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[createBlankFillingRecipeEntity](./functions/createBlankFillingRecipeEntity.md)
+
+</td><td>
+
+Creates a minimal blank filling recipe entity suitable for the "new filling" create flow.
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

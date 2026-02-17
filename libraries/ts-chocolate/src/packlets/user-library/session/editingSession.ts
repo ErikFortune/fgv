@@ -235,13 +235,18 @@ export class EditingSession {
 
     return {
       canCreateVariation: isMutable,
-      canAddAlternatives: isMutable && changes.ingredientsChanged,
+      canAddAlternatives: isMutable && (changes.ingredientsChanged || changes.procedureChanged),
       mustCreateNew: !isMutable,
-      recommendedOption: !isMutable ? 'new' : changes.ingredientsChanged ? 'alternatives' : 'variation',
+      recommendedOption: !isMutable
+        ? 'new'
+        : changes.ingredientsChanged || changes.procedureChanged
+        ? 'alternatives'
+        : 'variation',
       changes: {
         ingredientsAdded: changes.ingredientsChanged,
         ingredientsRemoved: changes.ingredientsChanged,
         ingredientsChanged: changes.ingredientsChanged,
+        procedureChanged: changes.procedureChanged,
         weightChanged: changes.targetWeightChanged,
         notesChanged: changes.notesChanged
       }

@@ -28,6 +28,7 @@ import {
   FillingName,
   FillingRecipeVariationId,
   FillingRecipeVariationSpec,
+  Helpers,
   IngredientId,
   Measurement,
   MeasurementUnit,
@@ -333,6 +334,42 @@ export interface IFillingRecipeEntity {
    * Optional categorized URLs for external resources (tutorials, videos, etc.)
    */
   readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
+}
+
+/**
+ * Creates a minimal blank filling recipe entity suitable for the "new filling" create flow.
+ * @param baseId - The base filling ID
+ * @param name - The human-readable name
+ * @param variationLabel - Optional human-readable label for the initial variation
+ *   (kebab-cased and appended to the variationSpec)
+ * @returns A blank filling recipe with one empty variation
+ * @public
+ */
+export function createBlankFillingRecipeEntity(
+  baseId: BaseFillingId,
+  name: string,
+  variationLabel?: string
+): IFillingRecipeEntity {
+  const today = new Date().toISOString().split('T')[0];
+  const labelSuffix = variationLabel ? Helpers.toKebabCase(variationLabel) : undefined;
+  const variationSpec = (
+    labelSuffix ? `${today}-01-${labelSuffix}` : `${today}-01`
+  ) as FillingRecipeVariationSpec;
+  return {
+    baseId,
+    name: name as FillingName,
+    category: 'ganache',
+    variations: [
+      {
+        variationSpec,
+        name: variationLabel?.trim() || undefined,
+        createdDate: today,
+        ingredients: [],
+        baseWeight: 0 as Measurement
+      }
+    ],
+    goldenVariationSpec: variationSpec
+  };
 }
 
 /**

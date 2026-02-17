@@ -43,23 +43,6 @@ ID for the new recipe
 </td></tr>
 <tr><td>
 
-[baseWeight](./ISaveNewRecipeOptions.baseWeight.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[Measurement](../../../type-aliases/Measurement.md)
-
-</td><td>
-
-Base weight for the new recipe
-
-</td></tr>
-<tr><td>
-
 [variationSpec](./ISaveNewRecipeOptions.variationSpec.md)
 
 </td><td>

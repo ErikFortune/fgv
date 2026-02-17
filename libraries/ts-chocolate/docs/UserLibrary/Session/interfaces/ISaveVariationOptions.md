@@ -26,23 +26,6 @@ Description
 <tbody>
 <tr><td>
 
-[baseWeight](./ISaveVariationOptions.baseWeight.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[Measurement](../../../type-aliases/Measurement.md)
-
-</td><td>
-
-Base weight for the new variation
-
-</td></tr>
-<tr><td>
-
 [variationSpec](./ISaveVariationOptions.variationSpec.md)
 
 </td><td>

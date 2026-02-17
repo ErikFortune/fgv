@@ -102,7 +102,7 @@ Recommended save option based on changes
 
 </td><td>
 
-{ ingredientsAdded: boolean; ingredientsRemoved: boolean; ingredientsChanged: boolean; weightChanged: boolean; notesChanged: boolean }
+{ ingredientsAdded: boolean; ingredientsRemoved: boolean; ingredientsChanged: boolean; procedureChanged: boolean; weightChanged: boolean; notesChanged: boolean }
 
 </td><td>
 

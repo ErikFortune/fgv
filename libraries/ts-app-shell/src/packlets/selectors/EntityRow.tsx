@@ -33,6 +33,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 
 import type { ISelectableItem } from './PreferredSelector';
 
@@ -84,6 +85,12 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const pickerBtnRef = useRef<HTMLButtonElement>(null);
+  const [pickerPos, setPickerPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  // Reset displayed item when items or preferred change (e.g. variation switch)
+  useEffect(() => {
+    setInternalId(preferredId ?? items[0]?.id ?? ('' as TId));
+  }, [preferredId, items]);
 
   const displayedItem = useMemo(
     () => items.find((i) => i.id === displayedId) ?? items[0],
@@ -91,7 +98,15 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
   );
   const isPreferred = displayedId === preferredId;
 
-  // Close picker on outside click
+  // Position the portal popover relative to the swap button
+  useEffect(() => {
+    if (pickerOpen && pickerBtnRef.current) {
+      const rect = pickerBtnRef.current.getBoundingClientRect();
+      setPickerPos({ top: rect.bottom + 2, left: rect.left });
+    }
+  }, [pickerOpen]);
+
+  // Close picker on outside click or scroll
   useEffect(() => {
     if (!pickerOpen) {
       return;
@@ -106,9 +121,15 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
         setPickerOpen(false);
       }
     };
+    const handleScroll = (): void => {
+      setPickerOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
+    // Close on any scroll so the popover doesn't float away from the button
+    document.addEventListener('scroll', handleScroll, true);
     return (): void => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, true);
     };
   }, [pickerOpen]);
 
@@ -151,62 +172,13 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
     setPickerOpen(false);
   }, [onCompare, items]);
 
-  return (
-    <div className="relative">
-      {label && (
-        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</div>
-      )}
-      <div
-        className={`flex items-center gap-1.5 py-1.5 pl-0 pr-2 rounded-md ${
-          onClick ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
-        }`}
-        onClick={handleRowClick}
-        role={onClick ? 'button' : undefined}
-        tabIndex={onClick ? 0 : undefined}
-        onKeyDown={handleRowKeyDown}
-      >
-        {/* Fixed-width left slot for swap icon — keeps names aligned */}
-        <span className="w-4 shrink-0 flex items-center justify-center">
-          {hasAlternates ? (
-            <button
-              ref={pickerBtnRef}
-              onClick={handlePickerToggle}
-              className="text-gray-400 hover:text-choco-accent p-0 transition-colors"
-              aria-label="Switch alternate"
-              tabIndex={-1}
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                />
-              </svg>
-            </button>
-          ) : null}
-        </span>
-        <span className="text-sm text-gray-800 flex-1 truncate">
-          {displayedItem?.label ?? ''}
-          {hasAlternates && isPreferred && <span className="ml-1 text-xs text-amber-500">★</span>}
-          {displayedItem?.sublabel && (
-            <span className="ml-1.5 text-xs text-gray-400">{displayedItem.sublabel}</span>
-          )}
-        </span>
-        {rightContent}
-        {onClick && <span className="text-gray-300 text-xs shrink-0">›</span>}
-      </div>
-
-      {/* Alternate picker popover */}
-      {pickerOpen && (
+  // Render the picker popover via portal so it escapes ancestor overflow clipping
+  const pickerPopover = pickerOpen
+    ? ReactDOM.createPortal(
         <div
           ref={pickerRef}
-          className="absolute left-0 z-50 mt-0.5 min-w-[180px] max-h-[200px] bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col overflow-hidden"
+          style={{ position: 'fixed', top: pickerPos.top, left: pickerPos.left }}
+          className="z-50 min-w-[180px] max-h-[200px] bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col overflow-hidden"
         >
           <div className="flex items-center justify-between px-2.5 py-1 border-b border-gray-100 shrink-0">
             <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
@@ -263,8 +235,62 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <div>
+      {label && (
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</div>
       )}
+      <div
+        className={`flex items-center gap-1.5 py-1.5 pl-0 pr-2 rounded-md ${
+          onClick ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
+        }`}
+        onClick={handleRowClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={handleRowKeyDown}
+      >
+        {/* Fixed-width left slot for swap icon — keeps names aligned */}
+        <span className="w-4 shrink-0 flex items-center justify-center">
+          {hasAlternates ? (
+            <button
+              ref={pickerBtnRef}
+              onClick={handlePickerToggle}
+              className="text-gray-400 hover:text-choco-accent p-0 transition-colors"
+              aria-label="Switch alternate"
+              tabIndex={-1}
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                />
+              </svg>
+            </button>
+          ) : null}
+        </span>
+        <span className="text-sm text-gray-800 flex-1 truncate">
+          {displayedItem?.label ?? ''}
+          {hasAlternates && isPreferred && <span className="ml-1 text-xs text-amber-500">★</span>}
+          {displayedItem?.sublabel && (
+            <span className="ml-1.5 text-xs text-gray-400">{displayedItem.sublabel}</span>
+          )}
+        </span>
+        {rightContent}
+        {onClick && <span className="text-gray-300 text-xs shrink-0">›</span>}
+      </div>
+      {pickerPopover}
     </div>
   );
 }

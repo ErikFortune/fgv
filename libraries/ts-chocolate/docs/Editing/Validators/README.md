@@ -2,7 +2,7 @@
 
 # Namespace: Validators
 
-Semantic validators for decoration entities.
+Semantic validators for filling recipe entities.
 
 ## Functions
 
@@ -18,34 +18,52 @@ Description
 <tbody>
 <tr><td>
 
-[validateDecorationName](./functions/validateDecorationName.md)
+[validateFillingName](./functions/validateFillingName.md)
 
 </td><td>
 
-Validate that the decoration name is non-empty.
+Validate that the filling recipe name is non-empty.
 
 </td></tr>
 <tr><td>
 
-[validateDecorationIngredients](./functions/validateDecorationIngredients.md)
+[validateFillingCategory](./functions/validateFillingCategory.md)
 
 </td><td>
 
-Validate that each ingredient has at least one ID and a positive amount.
+Validate that the filling recipe category is a known value.
 
 </td></tr>
 <tr><td>
 
-[validateDecorationRatings](./functions/validateDecorationRatings.md)
+[validateFillingVariations](./functions/validateFillingVariations.md)
 
 </td><td>
 
-Validate that ratings have valid scores (1-5), categories, and no duplicates.
+Validate that the filling recipe has at least one variation and the golden spec exists.
 
 </td></tr>
 <tr><td>
 
-[validateDecorationEntity](./functions/validateDecorationEntity.md)
+[validateFillingIngredients](./functions/validateFillingIngredients.md)
+
+</td><td>
+
+Validate that each variation's ingredients have at least one ID and non-negative amounts.
+
+</td></tr>
+<tr><td>
+
+[validateFillingRatings](./functions/validateFillingRatings.md)
+
+</td><td>
+
+Validate that each variation's ratings have valid scores (1-5), categories, and no duplicates.
+
+</td></tr>
+<tr><td>
+
+[validateFillingRecipeEntity](./functions/validateFillingRecipeEntity.md)
 
 </td><td>
 
