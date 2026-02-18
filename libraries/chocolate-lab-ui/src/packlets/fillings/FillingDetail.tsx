@@ -30,6 +30,7 @@ import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
+import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
 
 // ============================================================================
@@ -55,6 +56,10 @@ export interface IFillingDetailProps {
   readonly onEdit?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Optional callback to open the preview pane */
   readonly onPreview?: () => void;
+  /** Target yield in grams for scaling ingredient quantities */
+  readonly targetYield?: number;
+  /** Callback when the user changes the target yield */
+  readonly onTargetYieldChange?: (grams: number | undefined) => void;
 }
 
 // ============================================================================
@@ -129,15 +134,28 @@ function CategoryBadge({ category }: { readonly category: string }): React.React
 }
 
 // ============================================================================
+// Amount Formatting
+// ============================================================================
+
+function formatAmount(grams: number): string {
+  if (grams >= 10) return `${Math.round(grams)}g`;
+  if (grams >= 1) return `${Math.round(grams * 10) / 10}g`;
+  const rounded = Math.round(grams * 100) / 100;
+  return `${Math.max(rounded, 0.01)}g`;
+}
+
+// ============================================================================
 // Ingredient Row (clickable for drill-down)
 // ============================================================================
 
 function IngredientRow({
   resolved,
-  onClick
+  onClick,
+  scaleFactor
 }: {
   readonly resolved: LibraryRuntime.IResolvedFillingIngredient;
   readonly onClick?: (ingredientId: IngredientId) => void;
+  readonly scaleFactor?: number;
 }): React.ReactElement {
   const items = useMemo(() => {
     const result = [{ id: resolved.ingredient.id, label: resolved.ingredient.name }];
@@ -152,7 +170,11 @@ function IngredientRow({
       items={items}
       preferredId={resolved.ingredient.id}
       onClick={onClick}
-      rightContent={<span className="text-xs text-gray-500 tabular-nums shrink-0">{resolved.amount}g</span>}
+      rightContent={
+        <span className="text-xs text-gray-500 tabular-nums shrink-0">
+          {scaleFactor !== undefined ? formatAmount(resolved.amount * scaleFactor) : `${resolved.amount}g`}
+        </span>
+      }
     />
   );
 }
@@ -235,7 +257,9 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     onCompareVariations,
     defaultVariationSpec,
     onEdit,
-    onPreview
+    onPreview,
+    targetYield,
+    onTargetYieldChange
   } = props;
 
   // Track selected variation (default to golden or override)
@@ -269,6 +293,38 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     }
     return [];
   }, [selectedVariation]);
+
+  // Compute scale factor and ProducedFilling-based scaled amounts
+  const scaleFactor = useMemo<number | undefined>(() => {
+    if (targetYield === undefined || selectedVariation.baseWeight <= 0) return undefined;
+    const factor = targetYield / selectedVariation.baseWeight;
+    return Math.abs(factor - 1.0) < 0.001 ? undefined : factor;
+  }, [targetYield, selectedVariation]);
+
+  const scaledAmounts = useMemo<ReadonlyArray<number> | undefined>(() => {
+    if (scaleFactor === undefined) return undefined;
+    const result = LR.ProducedFilling.fromSource(selectedVariation, scaleFactor);
+    if (!result.isSuccess()) return undefined;
+    return result.value.ingredients.map((ing) => ing.amount);
+  }, [selectedVariation, scaleFactor]);
+
+  // Per-ingredient scale factor for display (uses ProducedFilling amounts when available)
+  const ingredientScaleFactors = useMemo<ReadonlyArray<number | undefined>>(() => {
+    if (scaledAmounts === undefined || scaleFactor === undefined) {
+      return ingredients.map(() => undefined);
+    }
+    return ingredients.map((ing, i) => {
+      const scaledAmount = scaledAmounts[i];
+      if (scaledAmount === undefined) return scaleFactor;
+      // Detect non-scaling units: if scaled == original, pass undefined (no scaling indicator)
+      return Math.abs(scaledAmount - ing.amount) < 0.001 ? undefined : scaledAmount / ing.amount;
+    });
+  }, [ingredients, scaledAmounts, scaleFactor]);
+
+  // Local state for the yield input string
+  const [yieldInputValue, setYieldInputValue] = useState<string>(
+    targetYield !== undefined ? String(targetYield) : ''
+  );
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
@@ -331,11 +387,66 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
         </DetailSection>
       )}
 
+      {/* Target Yield Scaler */}
+      {onTargetYieldChange && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-xs text-gray-500 shrink-0">Scale to</span>
+          <input
+            type="number"
+            min={1}
+            step={10}
+            className="w-24 text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-choco-primary tabular-nums"
+            value={yieldInputValue}
+            placeholder={String(selectedVariation.baseWeight)}
+            onChange={(e): void => setYieldInputValue(e.target.value)}
+            onBlur={(): void => {
+              const num = parseFloat(yieldInputValue);
+              if (!isNaN(num) && num > 0) {
+                onTargetYieldChange(num);
+              } else {
+                setYieldInputValue('');
+                onTargetYieldChange(undefined);
+              }
+            }}
+            onKeyDown={(e): void => {
+              if (e.key === 'Enter') {
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === 'Escape') {
+                setYieldInputValue(targetYield !== undefined ? String(targetYield) : '');
+                onTargetYieldChange(undefined);
+              }
+            }}
+          />
+          <span className="text-xs text-gray-500">g</span>
+          {scaleFactor !== undefined && (
+            <span className="text-xs text-amber-600 font-medium">×{scaleFactor.toFixed(2)}</span>
+          )}
+          {yieldInputValue && (
+            <button
+              type="button"
+              onClick={(): void => {
+                setYieldInputValue('');
+                onTargetYieldChange(undefined);
+              }}
+              className="text-xs text-gray-400 hover:text-gray-600"
+              title="Reset to base weight"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Ingredients */}
       <DetailSection title={`Ingredients (${ingredients.length})`}>
         <div className="divide-y divide-gray-100">
-          {ingredients.map((ri) => (
-            <IngredientRow key={ri.ingredient.id} resolved={ri} onClick={onIngredientClick} />
+          {ingredients.map((ri, i) => (
+            <IngredientRow
+              key={ri.ingredient.id}
+              resolved={ri}
+              onClick={onIngredientClick}
+              scaleFactor={ingredientScaleFactors[i]}
+            />
           ))}
         </div>
         {ingredients.length === 0 && <p className="text-xs text-gray-400 italic">No ingredients resolved.</p>}

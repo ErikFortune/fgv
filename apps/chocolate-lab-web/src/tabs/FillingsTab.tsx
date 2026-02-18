@@ -67,6 +67,19 @@ export function FillingsTabContent(): React.ReactElement {
   const [variationCompare, setVariationCompare] = useState<
     { id: FillingId; specs: ReadonlyArray<string> } | undefined
   >(undefined);
+  const [targetYieldMap, setTargetYieldMap] = useState<Map<string, number>>(() => new Map());
+
+  const handleTargetYieldChange = useCallback((fillingId: string, grams: number | undefined): void => {
+    setTargetYieldMap((prev) => {
+      const next = new Map(prev);
+      if (grams === undefined) {
+        next.delete(fillingId);
+      } else {
+        next.set(fillingId, grams);
+      }
+      return next;
+    });
+  }, []);
 
   const editingRef = useRef<IFillingEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<FillingRecipeVariationSpec | undefined>(undefined);
@@ -970,6 +983,7 @@ export function FillingsTabContent(): React.ReactElement {
               <FillingPreviewPanel
                 filling={result.value}
                 draftEntity={draftEntity}
+                targetYield={targetYieldMap.get(entry.entityId)}
                 onClose={(): void => handleCloseFillingPreview(entry.entityId)}
               />
             )
@@ -992,6 +1006,8 @@ export function FillingsTabContent(): React.ReactElement {
               onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
               onEdit={(spec): void => handleEditFilling(entry.entityId, spec)}
               onPreview={(): void => handlePreviewFilling(entry.entityId)}
+              targetYield={targetYieldMap.get(entry.entityId)}
+              onTargetYieldChange={(g): void => handleTargetYieldChange(entry.entityId, g)}
             />
           )
         };
@@ -1205,6 +1221,8 @@ export function FillingsTabContent(): React.ReactElement {
     handleEditFilling,
     handlePreviewFilling,
     handleCloseFillingPreview,
+    handleTargetYieldChange,
+    targetYieldMap,
     handleCancelFillingEdit,
     handleSaveFilling,
     handleVariationChange,

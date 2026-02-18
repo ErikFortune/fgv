@@ -25,10 +25,11 @@
  * @packageDocumentation
  */
 
-import React from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useMemo } from 'react';
+import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
 import type { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
+import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
 
@@ -39,12 +40,20 @@ import { renderPreview } from '../tasks';
 export interface IFillingPreviewPanelProps {
   readonly filling: LibraryRuntime.FillingRecipe;
   readonly draftEntity?: Entities.Fillings.IFillingRecipeEntity;
+  readonly targetYield?: number;
   readonly onClose?: () => void;
 }
 
 // ============================================================================
 // Helpers
 // ============================================================================
+
+function formatAmount(grams: number): string {
+  if (grams >= 10) return `${Math.round(grams)}g`;
+  if (grams >= 1) return `${Math.round(grams * 10) / 10}g`;
+  const rounded = Math.round(grams * 100) / 100;
+  return `${Math.max(rounded, 0.01)}g`;
+}
 
 function formatResolvedStepTiming(step: LibraryRuntime.IResolvedProcedureStep): string | undefined {
   const parts: string[] = [];
@@ -68,7 +77,7 @@ function formatResolvedStepTiming(step: LibraryRuntime.IResolvedProcedureStep): 
 // ============================================================================
 
 export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.ReactElement {
-  const { filling, draftEntity, onClose } = props;
+  const { filling, draftEntity, targetYield, onClose } = props;
 
   const entity = draftEntity ?? filling.entity;
 
@@ -85,6 +94,20 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
   const ratings = goldenVariationEntity?.ratings ?? [];
   const notes = goldenVariationEntity?.notes ?? [];
 
+  // Compute scaling via ProducedFilling (handles non-scaling units correctly)
+  const scaleFactor = useMemo<number | undefined>(() => {
+    if (targetYield === undefined || goldenVariation.baseWeight <= 0) return undefined;
+    const factor = targetYield / goldenVariation.baseWeight;
+    return Math.abs(factor - 1.0) < 0.001 ? undefined : factor;
+  }, [targetYield, goldenVariation]);
+
+  const scaledAmounts = useMemo<ReadonlyArray<number> | undefined>(() => {
+    if (scaleFactor === undefined) return undefined;
+    const result = LR.ProducedFilling.fromSource(goldenVariation, scaleFactor);
+    if (!result.isSuccess()) return undefined;
+    return result.value.ingredients.map((ing) => ing.amount);
+  }, [goldenVariation, scaleFactor]);
+
   return (
     <div className="p-4 overflow-y-auto h-full bg-gray-50">
       {/* Header */}
@@ -98,16 +121,26 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
             </span>
           </div>
         </div>
-        {onClose && (
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={onClose}
+            onClick={(): void => window.print()}
             className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            title="Close preview"
+            title="Print recipe"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <PrinterIcon className="w-5 h-5" />
           </button>
-        )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="Close preview"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {entity.description && (
@@ -129,6 +162,13 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
               <span className="text-lg font-semibold text-gray-900">{goldenVariationEntity.yield}</span>
             </div>
           )}
+          {scaleFactor !== undefined && targetYield !== undefined && (
+            <div className="ml-auto">
+              <span className="text-xs text-gray-500 uppercase tracking-wide block">Scaled To</span>
+              <span className="text-lg font-semibold text-amber-700">{targetYield}g</span>
+              <span className="text-xs text-amber-600 ml-1">×{scaleFactor.toFixed(2)}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -140,22 +180,39 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
             <span className="text-xs text-gray-500">{ingredients.length} items</span>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-            {ingredients.map((ing) => (
-              <div
-                key={ing.ingredient.id}
-                className="px-4 py-2.5 flex items-baseline justify-between hover:bg-gray-50"
-              >
-                <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
-                  {ing.alternates.length > 0 && (
-                    <span className="ml-2 text-xs text-amber-600">
-                      or {ing.alternates.map((alt) => alt.name).join(', ')}
-                    </span>
-                  )}
+            {ingredients.map((ing, i) => {
+              const rawScaled = scaledAmounts?.[i];
+              const displayAmount =
+                rawScaled !== undefined && Math.abs(rawScaled - ing.amount) >= 0.001
+                  ? formatAmount(rawScaled)
+                  : `${ing.amount}g`;
+              return (
+                <div
+                  key={ing.ingredient.id}
+                  className="px-4 py-2.5 flex items-baseline justify-between hover:bg-gray-50"
+                >
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
+                    {ing.alternates.length > 0 && (
+                      <span className="ml-2 text-xs text-amber-600">
+                        or {ing.alternates.map((alt) => alt.name).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`text-sm font-mono ml-4 ${
+                      scaleFactor !== undefined &&
+                      rawScaled !== undefined &&
+                      Math.abs(rawScaled - ing.amount) >= 0.001
+                        ? 'text-amber-700 font-semibold'
+                        : 'text-gray-600'
+                    }`}
+                  >
+                    {displayAmount}
+                  </span>
                 </div>
-                <span className="text-sm text-gray-600 font-mono ml-4">{ing.amount}g</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
