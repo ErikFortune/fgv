@@ -26,7 +26,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
@@ -53,6 +53,8 @@ export interface IFillingDetailProps {
   readonly defaultVariationSpec?: FillingRecipeVariationSpec;
   /** Optional callback to enter edit mode for the currently viewed variation */
   readonly onEdit?: (variationSpec: FillingRecipeVariationSpec) => void;
+  /** Optional callback to open the preview pane */
+  readonly onPreview?: () => void;
 }
 
 // ============================================================================
@@ -226,8 +228,15 @@ function RatingsSection({
  * @public
  */
 export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
-  const { filling, onIngredientClick, onProcedureClick, onCompareVariations, defaultVariationSpec, onEdit } =
-    props;
+  const {
+    filling,
+    onIngredientClick,
+    onProcedureClick,
+    onCompareVariations,
+    defaultVariationSpec,
+    onEdit,
+    onPreview
+  } = props;
 
   // Track selected variation (default to golden or override)
   const [selectedSpec, setSelectedSpec] = useState<FillingRecipeVariationSpec>(
@@ -262,12 +271,23 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
   }, [selectedVariation]);
 
   return (
-    <div className="flex flex-col p-4 overflow-y-auto">
+    <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <h3 className="text-lg font-semibold text-choco-primary flex-1">{filling.name}</h3>
           <CategoryBadge category={filling.entity.category} />
+          {onPreview && (
+            <button
+              type="button"
+              onClick={onPreview}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              title="Preview filling"
+            >
+              <EyeIcon className="w-4 h-4" />
+              Preview
+            </button>
+          )}
           {onEdit && (
             <button
               type="button"
@@ -329,19 +349,23 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       {/* Ratings */}
       <RatingsSection ratings={selectedVariation.ratings} />
 
+      {/* Notes */}
+      {selectedVariation.notes && selectedVariation.notes.length > 0 && (
+        <DetailSection title="Notes">
+          {selectedVariation.notes.map((note, i) => (
+            <div key={i} className="text-sm text-gray-700 mb-1">
+              <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
+              {note.note}
+            </div>
+          ))}
+        </DetailSection>
+      )}
+
       {/* Tags */}
       {filling.tags.length > 0 && (
         <DetailSection title="Tags">
           <TagList tags={filling.tags} />
         </DetailSection>
-      )}
-
-      {/* Variation count summary */}
-      {filling.variationCount > 1 && (
-        <p className="text-xs text-gray-400 mt-2">
-          {filling.variationCount} variation{filling.variationCount > 1 ? 's' : ''} · golden:{' '}
-          {filling.goldenVariationSpec}
-        </p>
       )}
     </div>
   );

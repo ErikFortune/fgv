@@ -27,7 +27,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { StarIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid, CheckIcon } from '@heroicons/react/24/solid';
 import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
 
@@ -78,6 +78,8 @@ export interface IFillingEditViewProps {
   readonly readOnly?: boolean;
   /** Callback after any mutation for parent state tracking */
   readonly onMutate?: () => void;
+  /** Optional callback to open the preview pane */
+  readonly onPreview?: () => void;
   /** Callback to create a new ingredient from an unresolved name */
   readonly onCreateIngredient?: (seed: string) => void;
   /** Callback to create a new procedure from an unresolved name */
@@ -162,6 +164,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     onCancel,
     readOnly,
     onMutate,
+    onPreview,
     onCreateIngredient,
     onCreateProcedure
   } = props;
@@ -474,7 +477,23 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
-      <EditingToolbar context={ctx} customSaveButton={customSaveButton} />
+      <EditingToolbar
+        context={ctx}
+        customSaveButton={customSaveButton}
+        extraButtons={
+          onPreview ? (
+            <button
+              type="button"
+              onClick={onPreview}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+              title="Open filling preview pane"
+            >
+              <EyeIcon className="h-3.5 w-3.5" />
+              <span>Preview</span>
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Identity Section */}
       <EditSection title="Identity">

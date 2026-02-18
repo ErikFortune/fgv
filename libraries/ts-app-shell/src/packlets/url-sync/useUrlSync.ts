@@ -200,7 +200,6 @@ export function useUrlSync<TMode extends string, TTab extends string>(
     }
     // Intentionally empty: this effect must run exactly once on mount.
     // All values are accessed via refs to avoid stale closures.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---- Store → URL: push history on navigation changes ----

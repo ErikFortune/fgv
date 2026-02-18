@@ -113,7 +113,7 @@ export function useKeyboardShortcuts(shortcuts: ReadonlyArray<IShortcut>): void 
     // Register stable wrapper shortcuts that delegate to the current ref entries.
     // This means the effect only runs when the registry changes or the number of
     // shortcuts changes — not on every render when the array identity changes.
-    const registrations = shortcutsRef.current.map((_, index) =>
+    const registrations = shortcutsRef.current.map((__item, index) =>
       registry.register({
         get binding() {
           return shortcutsRef.current[index]?.binding ?? { key: '' };
@@ -136,6 +136,5 @@ export function useKeyboardShortcuts(shortcuts: ReadonlyArray<IShortcut>): void 
     };
     // Re-register only when the registry instance or the number of shortcuts changes.
     // Handler/binding updates are picked up via the ref without re-registration.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registry, shortcuts.length]);
 }

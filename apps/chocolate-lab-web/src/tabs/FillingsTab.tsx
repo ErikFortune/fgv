@@ -22,6 +22,7 @@ import {
   IngredientEditView,
   FillingDetail,
   FillingEditView,
+  FillingPreviewPanel,
   ProcedureDetail,
   ProcedureEditView,
   TaskDetail,
@@ -213,6 +214,29 @@ export function FillingsTabContent(): React.ReactElement {
       if (idx < 0) return;
       editVariationSpecRef.current = variationSpec;
       squashCascade([...cascadeStack.slice(0, idx), { ...cascadeStack[idx], mode: 'edit' as const }]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handlePreviewFilling = useCallback(
+    (entityId: string): void => {
+      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'filling');
+      if (idx < 0) return;
+      squashCascade([
+        ...cascadeStack.slice(0, idx + 1),
+        { entityType: 'filling', entityId, mode: 'preview' }
+      ]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleCloseFillingPreview = useCallback(
+    (entityId: string): void => {
+      squashCascade(
+        cascadeStack.filter(
+          (e) => !(e.entityType === 'filling' && e.entityId === entityId && e.mode === 'preview')
+        )
+      );
     },
     [cascadeStack, squashCascade]
   );
@@ -927,8 +951,26 @@ export function FillingsTabContent(): React.ReactElement {
                 availableProcedures={availableProcedures}
                 onSave={handleSaveFilling}
                 onCancel={(): void => handleCancelFillingEdit(entry.entityId)}
+                onPreview={(): void => handlePreviewFilling(entry.entityId)}
                 onCreateIngredient={handleCreateIngredientFromFilling}
                 onCreateProcedure={handleCreateProcedureFromFilling}
+              />
+            )
+          };
+        }
+
+        // Preview mode
+        if (entry.mode === 'preview') {
+          const draftEntity =
+            editingRef.current?.id === entry.entityId ? editingRef.current.wrapper.current : undefined;
+          return {
+            key: `${entry.entityId}:preview`,
+            label: `Preview: ${result.value.name}`,
+            content: (
+              <FillingPreviewPanel
+                filling={result.value}
+                draftEntity={draftEntity}
+                onClose={(): void => handleCloseFillingPreview(entry.entityId)}
               />
             )
           };
@@ -949,6 +991,7 @@ export function FillingsTabContent(): React.ReactElement {
               onProcedureClick={onProcedureClick}
               onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
               onEdit={(spec): void => handleEditFilling(entry.entityId, spec)}
+              onPreview={(): void => handlePreviewFilling(entry.entityId)}
             />
           )
         };
@@ -1160,6 +1203,8 @@ export function FillingsTabContent(): React.ReactElement {
     getOrCreateSubIngredientWrapper,
     getOrCreateSubProcedureWrapper,
     handleEditFilling,
+    handlePreviewFilling,
+    handleCloseFillingPreview,
     handleCancelFillingEdit,
     handleSaveFilling,
     handleVariationChange,
