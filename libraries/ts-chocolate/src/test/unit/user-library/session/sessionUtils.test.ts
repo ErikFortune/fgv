@@ -79,6 +79,20 @@ describe('Session Utils', () => {
       // Due to random component, IDs should be different
       expect(id1).not.toBe(id2);
     });
+
+    test('generates session base ID without date parameter', () => {
+      expect(generateSessionBaseId()).toSucceedAndSatisfy((sessionBaseId) => {
+        expect(typeof sessionBaseId).toBe('string');
+        expect(sessionBaseId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      });
+    });
+
+    test('generates session base ID with explicit date parameter', () => {
+      const specificDate = new Date('2026-02-17T12:00:00Z');
+      expect(generateSessionBaseId(specificDate)).toSucceedAndSatisfy((sessionBaseId) => {
+        expect(sessionBaseId).toMatch(/^2026-02-17-/);
+      });
+    });
   });
 
   describe('getCurrentDateString', () => {

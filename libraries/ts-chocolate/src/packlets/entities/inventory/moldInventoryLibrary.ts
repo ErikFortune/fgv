@@ -143,7 +143,9 @@ export class MoldInventoryLibrary extends SubLibraryBase<
   public static async createAsync(
     params?: IMoldInventoryLibraryAsyncParams
   ): Promise<Result<MoldInventoryLibrary>> {
-    const logger = params?.logger ?? new Logging.LogReporter<unknown>();
+    /* c8 ignore next 1 - default fallback to empty params */
+    params = params ?? {};
+    const logger = Logging.LogReporter.createDefault(params.logger).orThrow();
 
     const createParams: ISubLibraryCreateParams<
       MoldInventoryLibrary,
@@ -159,19 +161,14 @@ export class MoldInventoryLibrary extends SubLibraryBase<
     };
 
     const loadResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
-    if (loadResult.isFailure()) {
-      return fail(loadResult.message);
-    }
-
-    return captureResult(
-      () =>
-        new MoldInventoryLibrary({
-          ...params,
-          builtin: false,
-          fileSources: undefined,
-          collections: loadResult.value.collections,
-          protectedCollections: loadResult.value.protectedCollections
-        })
+    return loadResult.onSuccess((loaded) =>
+      MoldInventoryLibrary.create({
+        ...params,
+        builtin: false,
+        fileSources: undefined,
+        collections: loaded.collections,
+        protectedCollections: loaded.protectedCollections
+      })
     );
   }
 

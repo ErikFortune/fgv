@@ -42,6 +42,7 @@ import {
   SlotId,
   DecorationId,
   BaseDecorationId,
+  NoteCategory,
   ProcedureId,
   BaseProcedureId
 } from '../../../../packlets/common';
@@ -61,7 +62,11 @@ import {
   IDecorationEntity,
   DecorationsLibrary
 } from '../../../../packlets/entities';
-import { ChocolateEntityLibrary, ChocolateLibrary } from '../../../../packlets/library-runtime';
+import {
+  ChocolateEntityLibrary,
+  ChocolateLibrary,
+  ConfectionRecipeVariationBase
+} from '../../../../packlets/library-runtime';
 
 describe('Confection Recipes', () => {
   // ============================================================================
@@ -167,6 +172,20 @@ describe('Confection Recipes', () => {
     steps: []
   };
 
+  const altProcedure: IProcedureEntity = {
+    baseId: 'alternate-procedure' as BaseProcedureId,
+    name: 'Alternate Tempering',
+    description: 'Alternate tempering procedure',
+    steps: []
+  };
+
+  const altDecoration: IDecorationEntity = {
+    baseId: 'cocoa-powder-finish' as BaseDecorationId,
+    name: 'Cocoa Powder Finish',
+    description: 'A cocoa powder finish',
+    ingredients: []
+  };
+
   const moldedBonBonEntity: Confections.MoldedBonBonRecipeEntity = {
     baseId: 'test-molded-bonbon' as BaseConfectionId,
     confectionType: 'molded-bonbon',
@@ -184,8 +203,15 @@ describe('Confection Recipes', () => {
         additionalUrls: [
           { category: 'video', url: 'https://example.com/video' }
         ] as CommonModel.ICategorizedUrl[],
+        notes: [{ category: 'general' as NoteCategory, note: 'Test variation note' }],
         decorations: {
-          options: [{ id: 'test.gold-leaf-accent' as DecorationId }],
+          options: [
+            { id: 'test.gold-leaf-accent' as DecorationId },
+            {
+              id: 'test.cocoa-powder-finish' as DecorationId,
+              notes: [{ category: 'general' as NoteCategory, note: 'alternate decoration' }]
+            }
+          ],
           preferredId: 'test.gold-leaf-accent' as DecorationId
         },
         yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
@@ -220,7 +246,13 @@ describe('Confection Recipes', () => {
           }
         ],
         procedures: {
-          options: [{ id: 'test.tempering-procedure' as ProcedureId }],
+          options: [
+            { id: 'test.tempering-procedure' as ProcedureId },
+            {
+              id: 'test.alternate-procedure' as ProcedureId,
+              notes: [{ category: 'general' as NoteCategory, note: 'alternate procedure' }]
+            }
+          ],
           preferredId: 'test.tempering-procedure' as ProcedureId
         }
       },
@@ -281,22 +313,8 @@ describe('Confection Recipes', () => {
         variationSpec: '2026-01-02-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-02',
         yield: { count: 60, unit: 'pieces', weightPerPiece: 8 as Measurement },
-        fillings: [
-          {
-            slotId: 'center' as SlotId,
-            name: 'Ganache Center',
-            filling: {
-              options: [{ type: 'recipe' as const, id: 'test.test-ganache' as FillingId }],
-              preferredId: 'test.test-ganache' as FillingId
-            }
-          }
-        ],
         frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 6 as Millimeters },
-        singleBonBonDimensions: { width: 20 as Millimeters, height: 20 as Millimeters },
-        enrobingChocolate: {
-          ids: ['test.dark-chocolate' as IngredientId],
-          preferredId: 'test.dark-chocolate' as IngredientId
-        }
+        singleBonBonDimensions: { width: 20 as Millimeters, height: 20 as Millimeters }
       }
     ]
   };
@@ -455,7 +473,8 @@ describe('Confection Recipes', () => {
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
-            'tempering-procedure': testProcedure
+            'tempering-procedure': testProcedure,
+            'alternate-procedure': altProcedure
             /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
@@ -477,7 +496,8 @@ describe('Confection Recipes', () => {
           isMutable: false,
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
-            'gold-leaf-accent': testDecoration
+            'gold-leaf-accent': testDecoration,
+            'cocoa-powder-finish': altDecoration
             /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
@@ -876,15 +896,18 @@ describe('Confection Recipes', () => {
       );
     });
 
-    test('variation decorations accessor', () => {
+    test('variation decorations accessor with alternates', () => {
       expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
         (confection) => {
           const variation = confection.goldenVariation;
 
           expect(variation.decorations).toBeDefined();
-          expect(variation.decorations?.options).toHaveLength(1);
+          expect(variation.decorations?.options).toHaveLength(2);
           expect(variation.decorations?.options[0].id).toBe('test.gold-leaf-accent');
           expect(variation.decorations?.options[0].decoration.name).toBe('Gold Leaf Accent');
+          expect(variation.decorations?.options[1].id).toBe('test.cocoa-powder-finish');
+          expect(variation.decorations?.options[1].decoration.name).toBe('Cocoa Powder Finish');
+          expect(variation.decorations?.options[1].notes).toHaveLength(1);
           expect(variation.decorations?.preferredId).toBe('test.gold-leaf-accent');
         }
       );
@@ -904,14 +927,18 @@ describe('Confection Recipes', () => {
   });
 
   describe('Variation procedures', () => {
-    test('procedures accessor resolves procedure references', () => {
+    test('procedures accessor resolves procedure references with alternates', () => {
       expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
         (confection) => {
           const variation = confection.goldenVariation;
 
           const procedures = variation.procedures;
           expect(procedures).toBeDefined();
+          expect(procedures!.options).toHaveLength(2);
           expect(procedures!.options[0].procedure.name).toBe('Standard Tempering');
+          expect(procedures!.options[1].procedure.name).toBe('Alternate Tempering');
+          expect(procedures!.options[1].notes).toHaveLength(1);
+          expect(procedures!.preferredId).toBe('test.tempering-procedure');
         }
       );
     });
@@ -1163,6 +1190,319 @@ describe('Confection Recipes', () => {
             // Accessing enrobingChocolate will throw because cream is not a chocolate
             expect(() => variation.enrobingChocolate).toThrow(/not a chocolate/i);
           });
+        }
+      );
+    });
+
+    test('preferredProcedure returns undefined when no procedures', () => {
+      expect(ctx.confections.get('test.test-rolled-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+          if (!variation.isRolledTruffleVariation()) {
+            throw new Error('Expected rolled truffle variation');
+          }
+
+          expect(variation.preferredProcedure).toBeUndefined();
+        }
+      );
+    });
+  });
+
+  // ============================================================================
+  // Recipe-level delegating getters
+  // ============================================================================
+
+  describe('Recipe-level delegating getters', () => {
+    test('MoldedBonBonRecipe.procedures delegates to golden variation', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isMoldedBonBon()) {
+            throw new Error('Expected molded bonbon');
+          }
+
+          expect(confection.procedures).toBeDefined();
+          expect(confection.procedures!.options).toHaveLength(2);
+          expect(confection.procedures!.options[0].procedure.name).toBe('Standard Tempering');
+        }
+      );
+    });
+
+    test('MoldedBonBonRecipe.additionalChocolates delegates to golden variation', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isMoldedBonBon()) {
+            throw new Error('Expected molded bonbon');
+          }
+
+          expect(confection.additionalChocolates).toHaveLength(1);
+          expect(confection.additionalChocolates![0].purpose).toBe('decoration');
+        }
+      );
+    });
+
+    test('BarTruffleRecipe.procedures returns undefined when golden has no procedures', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isBarTruffle()) {
+            throw new Error('Expected bar truffle');
+          }
+
+          expect(confection.procedures).toBeUndefined();
+        }
+      );
+    });
+
+    test('RolledTruffleRecipe.procedures returns undefined when golden has no procedures', () => {
+      expect(ctx.confections.get('test.test-rolled-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isRolledTruffle()) {
+            throw new Error('Expected rolled truffle');
+          }
+
+          expect(confection.procedures).toBeUndefined();
+        }
+      );
+    });
+
+    test('RolledTruffleRecipe.coatings delegates to golden variation', () => {
+      expect(ctx.confections.get('test.test-rolled-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isRolledTruffle()) {
+            throw new Error('Expected rolled truffle');
+          }
+
+          expect(confection.coatings).toBeDefined();
+          expect(confection.coatings!.options[0].id).toBe('test.cocoa-powder');
+        }
+      );
+    });
+
+    test('RolledTruffleRecipe.entity returns original entity', () => {
+      expect(ctx.confections.get('test.test-rolled-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isRolledTruffle()) {
+            throw new Error('Expected rolled truffle');
+          }
+
+          expect(confection.entity.baseId).toBe('test-rolled-truffle');
+          expect(confection.entity.confectionType).toBe('rolled-truffle');
+        }
+      );
+    });
+  });
+
+  // ============================================================================
+  // getEffectiveTags / getEffectiveUrls with default variation
+  // ============================================================================
+
+  describe('getEffectiveTags and getEffectiveUrls with default variation', () => {
+    test('getEffectiveTags() without argument defaults to golden variation', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const tags = confection.getEffectiveTags();
+          expect(tags).toEqual(['chocolate', 'bonbon', 'dark-chocolate']);
+        }
+      );
+    });
+
+    test('getEffectiveUrls() without argument defaults to golden variation', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const urls = confection.getEffectiveUrls();
+          expect(urls).toHaveLength(2);
+          expect(urls[0].category).toBe('recipe');
+          expect(urls[1].category).toBe('video');
+        }
+      );
+    });
+
+    test('getEffectiveTags() on confection without base tags uses empty array', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const tags = confection.getEffectiveTags();
+          expect(tags).toEqual([]);
+        }
+      );
+    });
+
+    test('getEffectiveUrls() on confection without base urls uses empty array', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const urls = confection.getEffectiveUrls();
+          expect(urls).toEqual([]);
+        }
+      );
+    });
+  });
+
+  // ============================================================================
+  // Variation base class property accessors
+  // ============================================================================
+
+  describe('Variation base class property accessors', () => {
+    test('variation.notes returns entity notes', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+
+          expect(variation.notes).toBeDefined();
+          expect(variation.notes).toHaveLength(1);
+          expect(variation.notes![0].note).toBe('Test variation note');
+        }
+      );
+    });
+
+    test('variation.notes returns undefined when no notes', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+
+          expect(variation.notes).toBeUndefined();
+        }
+      );
+    });
+
+    test('variation.effectiveTags merges base and variation tags', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+
+          expect(variation.effectiveTags).toEqual(['chocolate', 'bonbon', 'dark-chocolate']);
+        }
+      );
+    });
+
+    test('variation.effectiveUrls merges base and variation urls', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+
+          expect(variation.effectiveUrls).toHaveLength(2);
+          expect(variation.effectiveUrls[0].category).toBe('recipe');
+          expect(variation.effectiveUrls[1].category).toBe('video');
+        }
+      );
+    });
+
+    test('variation.context returns the confection context', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+
+          if (!variation.isMoldedBonBonVariation()) {
+            throw new Error('Expected molded bonbon variation');
+          }
+
+          // context is on the concrete class, not the variation interface
+          expect(variation).toBeInstanceOf(ConfectionRecipeVariationBase);
+          const { context } = variation as unknown as {
+            context: { ingredients: unknown; procedures: unknown };
+          };
+          expect(context).toBeDefined();
+          expect(context.ingredients).toBeDefined();
+          expect(context.procedures).toBeDefined();
+        }
+      );
+    });
+
+    test('variation.preferredProcedure returns preferred procedure', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+
+          if (!variation.isMoldedBonBonVariation()) {
+            throw new Error('Expected molded bonbon variation');
+          }
+
+          expect(variation.preferredProcedure).toBeDefined();
+          expect(variation.preferredProcedure!.procedure.name).toBe('Standard Tempering');
+        }
+      );
+    });
+  });
+
+  // ============================================================================
+  // Bar truffle variation without enrobing chocolate
+  // ============================================================================
+
+  describe('BarTruffleVariation optional fields', () => {
+    test('enrobingChocolate returns undefined when not specified', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          expect(
+            confection.getVariation('2026-01-02-01' as ConfectionRecipeVariationSpec)
+          ).toSucceedAndSatisfy((variation) => {
+            if (!variation.isBarTruffleVariation()) {
+              throw new Error('Expected bar truffle variation');
+            }
+
+            expect(variation.enrobingChocolate).toBeUndefined();
+            // Second access exercises the cached null path
+            expect(variation.enrobingChocolate).toBeUndefined();
+          });
+        }
+      );
+    });
+
+    test('preferredProcedure returns undefined when no procedures', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+          if (!variation.isBarTruffleVariation()) {
+            throw new Error('Expected bar truffle variation');
+          }
+
+          expect(variation.preferredProcedure).toBeUndefined();
+        }
+      );
+    });
+
+    test('fillings returns undefined when variation has no fillings', () => {
+      expect(ctx.confections.get('test.test-bar-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          expect(
+            confection.getVariation('2026-01-02-01' as ConfectionRecipeVariationSpec)
+          ).toSucceedAndSatisfy((variation) => {
+            expect(variation.fillings).toBeUndefined();
+          });
+        }
+      );
+    });
+  });
+
+  // ============================================================================
+  // Rolled truffle cached resolution paths
+  // ============================================================================
+
+  describe('RolledTruffleVariation cached resolution', () => {
+    test('getEnrobingChocolate caches result on second call', () => {
+      expect(ctx.confections.get('test.test-rolled-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+          if (!variation.isRolledTruffleVariation()) {
+            throw new Error('Expected rolled truffle variation');
+          }
+
+          // First call resolves
+          expect(variation.enrobingChocolate).toBeDefined();
+          // Second call uses cache
+          expect(variation.enrobingChocolate?.chocolate.id).toBe('test.dark-chocolate');
+        }
+      );
+    });
+
+    test('getCoatings caches result on second call', () => {
+      expect(ctx.confections.get('test.test-rolled-truffle' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+          if (!variation.isRolledTruffleVariation()) {
+            throw new Error('Expected rolled truffle variation');
+          }
+
+          // First call resolves
+          expect(variation.coatings).toBeDefined();
+          // Second call uses cache
+          expect(variation.coatings!.options[0].id).toBe('test.cocoa-powder');
         }
       );
     });

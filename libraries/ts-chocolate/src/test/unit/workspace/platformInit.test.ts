@@ -363,4 +363,71 @@ describe('workspace platformInit helpers', () => {
       expect(ensureWorkspaceDirectoriesInTree(root)).toFailWith(/Failed to ensure workspace directory/);
     });
   });
+
+  // ============================================================================
+  // createWorkspaceFromPlatform - additionalFileSources and keyStoreConfig
+  // ============================================================================
+
+  describe('createWorkspaceFromPlatform with keystore', () => {
+    const testDeviceId = 'test-device' as unknown as DeviceId;
+
+    function createPlatformInitResult(overrides?: Partial<IPlatformInitResult>): IPlatformInitResult {
+      const commonSettings: ICommonSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION
+      };
+      const deviceSettings: IDeviceSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        deviceId: testDeviceId
+      };
+      const resolved = resolveSettings(commonSettings, deviceSettings);
+
+      // The user library tree needs settings files for SettingsManager.create
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/settings/common.json', contents: commonSettings },
+        { path: '/library/data/settings/device-test-device.json', contents: deviceSettings }
+      ];
+      const tree = FileTree.inMemory(files).orThrow();
+      const userLibraryTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      return {
+        cryptoProvider: CryptoUtils.nodeCryptoProvider,
+        userLibraryTree,
+        externalLibraries: [],
+        commonSettings,
+        deviceSettings,
+        resolvedSettings: resolved,
+        deviceId: testDeviceId,
+        ...overrides
+      };
+    }
+
+    test('creates workspace with keystore file', async () => {
+      const keyStore = CryptoUtils.KeyStore.KeyStore.create({
+        cryptoProvider: CryptoUtils.nodeCryptoProvider
+      }).orThrow();
+      await keyStore.initialize('test-password');
+      const keystoreFile = (await keyStore.save('test-password')).orThrow();
+
+      const platformInit = createPlatformInitResult({ keyStoreFile: keystoreFile });
+      expect(createWorkspaceFromPlatform({ platformInit, builtin: false })).toSucceedAndSatisfy((ws) => {
+        expect(ws.keyStore).toBeDefined();
+        expect(ws.state).toBe('locked');
+      });
+    });
+
+    test('creates workspace with additional file sources', () => {
+      const platformInit = createPlatformInitResult();
+      const extTree = createInMemoryTree();
+      const additionalFileSources = [
+        {
+          directory: extTree,
+          load: false
+        }
+      ];
+
+      expect(
+        createWorkspaceFromPlatform({ platformInit, builtin: false, additionalFileSources })
+      ).toSucceed();
+    });
+  });
 });

@@ -55,6 +55,7 @@ const {
   isValidBaseMoldId,
   isValidBaseProcedureId,
   isValidBaseFillingId,
+  isValidBaseDecorationId,
   isValidFillingName,
   isValidFillingRecipeVariationSpec,
   isValidSessionSpec,
@@ -70,6 +71,7 @@ const {
   toBaseProcedureId,
   toBaseTaskId,
   toBaseFillingId,
+  toBaseDecorationId,
   toFillingName,
   toFillingRecipeVariationSpec,
   toSessionSpec,
@@ -149,7 +151,8 @@ describe('Common validation', () => {
       ['isValidBaseIngredientId', isValidBaseIngredientId],
       ['isValidBaseMoldId', isValidBaseMoldId],
       ['isValidBaseProcedureId', isValidBaseProcedureId],
-      ['isValidBaseFillingId', isValidBaseFillingId]
+      ['isValidBaseFillingId', isValidBaseFillingId],
+      ['isValidBaseDecorationId', isValidBaseDecorationId]
     ])('%s', (_name, fn) => {
       test.each(validBaseIds)('returns true for %s', (_desc, input) => {
         expect(fn(input)).toBe(true);
@@ -284,7 +287,8 @@ describe('Common validation', () => {
       ['toBaseMoldId', toBaseMoldId, 'cw-2227', 'mold.id', /Invalid BaseMoldId/],
       ['toBaseProcedureId', toBaseProcedureId, 'ganache-cold', 'proc.id', /Invalid BaseProcedureId/],
       ['toBaseTaskId', toBaseTaskId, 'melt-chocolate', 'task.id', /Invalid BaseTaskId/],
-      ['toBaseFillingId', toBaseFillingId, 'classic-ganache', 'recipe.id', /Invalid BaseFillingId/]
+      ['toBaseFillingId', toBaseFillingId, 'classic-ganache', 'recipe.id', /Invalid BaseFillingId/],
+      ['toBaseDecorationId', toBaseDecorationId, 'gold-leaf', 'dec.id', /Invalid BaseDecorationId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {
         expect(fn(validInput)).toSucceedAndSatisfy((result) => {

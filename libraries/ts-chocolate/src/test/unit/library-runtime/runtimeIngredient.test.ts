@@ -366,6 +366,11 @@ describe('RuntimeIngredient', () => {
       expect(ingredient.traceAllergens).toContain('milk');
     });
 
+    test('returns empty array when traceAllergens is undefined', () => {
+      const ingredient = ctx.ingredients.get('test.milk-chocolate' as IngredientId).orThrow();
+      expect(ingredient.traceAllergens).toEqual([]);
+    });
+
     test('provides certifications', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
       expect(ingredient.certifications).toContain('organic');
@@ -375,6 +380,12 @@ describe('RuntimeIngredient', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
       // vegan: true is set in the test fixture
       expect(ingredient.vegan).toBe(true);
+    });
+
+    test('provides notes', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      // notes getter returns empty array when not set
+      expect(ingredient.notes).toEqual(expect.arrayContaining([]));
     });
   });
 

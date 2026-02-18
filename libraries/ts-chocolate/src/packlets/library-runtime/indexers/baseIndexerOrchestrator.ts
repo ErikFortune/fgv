@@ -47,9 +47,6 @@ export abstract class BaseIndexerOrchestrator<TEntity, TId> {
    */
   protected readonly _resolver: IEntityResolver<TEntity, TId>;
 
-  /**
-   * Logger for reporting indexer or orchestrator operations.
-   */
   protected get _logger(): Logging.LogReporter<unknown> {
     return this.library.logger;
   }

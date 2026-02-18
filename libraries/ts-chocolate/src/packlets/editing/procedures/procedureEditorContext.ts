@@ -57,8 +57,6 @@ export class ProcedureEditorContext extends ValidatingEditorContext<
       keyConverter: CommonConverters.baseProcedureId,
       semanticValidator: validateProcedureEntity,
       createId: CommonConverters.procedureId,
-      /* c8 ignore next 1 - getBaseId reserved for future use by EditorContext but not yet called */
-      getBaseId: (procedure: IProcedureEntity) => procedure.baseId,
       getName: (procedure: IProcedureEntity) => procedure.name
     }).onSuccess((baseContext) => {
       return Success.with(

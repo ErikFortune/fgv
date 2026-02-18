@@ -651,6 +651,82 @@ describe('CollectionLoader', () => {
       });
     });
 
+    test('captures encrypted collection with array mutability spec', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret Item', value: 42 }
+      };
+      const key = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
+      const encrypted = (
+        await CryptoUtils.createEncryptedFile({
+          content: collectionData,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          // Collection is in mutable array
+          expect(loader.loadFromFileTree(dir, { mutable: ['encrypted'] })).toSucceedAndSatisfy((result) => {
+            expect(result.protectedCollections).toHaveLength(1);
+            expect(result.protectedCollections[0].ref.isMutable).toBe(true);
+          });
+
+          // Collection is NOT in mutable array
+          expect(loader.loadFromFileTree(dir, { mutable: ['other'] })).toSucceedAndSatisfy((result) => {
+            expect(result.protectedCollections).toHaveLength(1);
+            expect(result.protectedCollections[0].ref.isMutable).toBe(false);
+          });
+        });
+      });
+    });
+
+    test('captures encrypted collection with immutable object spec', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret Item', value: 42 }
+      };
+      const key = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
+      const encrypted = (
+        await CryptoUtils.createEncryptedFile({
+          content: collectionData,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          // Collection is in immutable list
+          expect(loader.loadFromFileTree(dir, { mutable: { immutable: ['encrypted'] } })).toSucceedAndSatisfy(
+            (result) => {
+              expect(result.protectedCollections).toHaveLength(1);
+              expect(result.protectedCollections[0].ref.isMutable).toBe(false);
+            }
+          );
+
+          // Collection is NOT in immutable list
+          expect(loader.loadFromFileTree(dir, { mutable: { immutable: ['other'] } })).toSucceedAndSatisfy(
+            (result) => {
+              expect(result.protectedCollections).toHaveLength(1);
+              expect(result.protectedCollections[0].ref.isMutable).toBe(true);
+            }
+          );
+        });
+      });
+    });
+
     // ============================================================================
     // Parse Fallback Tests
     // ============================================================================
@@ -1531,7 +1607,7 @@ describe('CollectionLoader', () => {
     // ============================================================================
 
     describe('mutability with encrypted collections', () => {
-      test('respects mutable option for encrypted collections', async () => {
+      test('respects mutable option for encrypted collections (boolean true)', async () => {
         const collectionData = {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           'item-1': { name: 'Secret', value: 42 }
@@ -1561,6 +1637,108 @@ describe('CollectionLoader', () => {
         });
 
         expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].isMutable).toBe(true);
+        });
+      });
+
+      test('respects mutable option for encrypted collections (array form)', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await CryptoUtils.createEncryptedFile({
+            content: collectionData,
+            secretName: 'my-secret',
+            key: testKey,
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        // Test when collection is in mutable list
+        const resultMutable = await loader.loadFromFileTreeAsync(dir, {
+          mutable: ['encrypted'],
+          encryption: {
+            secrets: [{ name: 'my-secret', key: testKey }],
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          }
+        });
+
+        expect(resultMutable).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].isMutable).toBe(true);
+        });
+
+        // Test when collection is NOT in mutable list
+        const resultImmutable = await loader.loadFromFileTreeAsync(dir, {
+          mutable: ['other-collection'],
+          encryption: {
+            secrets: [{ name: 'my-secret', key: testKey }],
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          }
+        });
+
+        expect(resultImmutable).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].isMutable).toBe(false);
+        });
+      });
+
+      test('respects mutable option for encrypted collections (immutable object form)', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await CryptoUtils.createEncryptedFile({
+            content: collectionData,
+            secretName: 'my-secret',
+            key: testKey,
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        // Test when collection is in immutable list (should be immutable)
+        const resultImmutable = await loader.loadFromFileTreeAsync(dir, {
+          mutable: { immutable: ['encrypted'] },
+          encryption: {
+            secrets: [{ name: 'my-secret', key: testKey }],
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          }
+        });
+
+        expect(resultImmutable).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].isMutable).toBe(false);
+        });
+
+        // Test when collection is NOT in immutable list (should be mutable)
+        const resultMutable = await loader.loadFromFileTreeAsync(dir, {
+          mutable: { immutable: ['other-collection'] },
+          encryption: {
+            secrets: [{ name: 'my-secret', key: testKey }],
+            cryptoProvider: CryptoUtils.nodeCryptoProvider
+          }
+        });
+
+        expect(resultMutable).toSucceedAndSatisfy((r) => {
           expect(r.collections).toHaveLength(1);
           expect(r.collections[0].isMutable).toBe(true);
         });

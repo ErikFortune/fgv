@@ -175,6 +175,21 @@ describe('EditingSession', () => {
       });
     });
 
+    test('auto-generates session ID when not provided', () => {
+      const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+      const session1 = Session.EditingSession.create(variation).orThrow();
+      const session2 = Session.EditingSession.create(variation).orThrow();
+
+      // Both should have valid session IDs
+      expect(session1.sessionId).toBeDefined();
+      expect(session2.sessionId).toBeDefined();
+      // Session IDs format: YYYY-MM-DD-HHMMSS-xxxxxxxx
+      expect(session1.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      expect(session2.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      // Should be different due to random component
+      expect(session1.sessionId).not.toBe(session2.sessionId);
+    });
+
     test('creates session with initial scale factor', () => {
       const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       expect(Session.EditingSession.create(variation, 2.0)).toSucceedAndSatisfy((session) => {
@@ -346,6 +361,22 @@ describe('EditingSession', () => {
       expect(analysis.changes.weightChanged).toBe(true);
     });
 
+    test('recommends variation for notes-only changes', () => {
+      const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      // Only change notes (no ingredients or procedure changed)
+      const notes = [{ category: 'session' as NoteCategory, note: 'Updated notes only' }];
+      session.setNotes(notes).orThrow();
+      const analysis = session.analyzeSaveOptions();
+
+      expect(analysis.canCreateVariation).toBe(true);
+      expect(analysis.recommendedOption).toBe('variation');
+      expect(analysis.changes.notesChanged).toBe(true);
+      expect(analysis.changes.ingredientsChanged).toBe(false);
+      expect(analysis.changes.procedureChanged).toBe(false);
+    });
+
     test('recommends alternatives for ingredient changes', () => {
       const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
       const session = Session.EditingSession.create(variation).orThrow();
@@ -454,6 +485,77 @@ describe('EditingSession', () => {
         expect(result.variationEntity?.ingredients[0].ingredient.ids).toHaveLength(1);
         expect(result.variationEntity?.ingredients[0].amount).toBe(400); // 200 * 2
         expect(result.variationEntity?.ingredients[1].amount).toBe(200); // 100 * 2
+      });
+    });
+
+    test('handles session with undefined notes', () => {
+      // Create a recipe without notes to test the undefined branch
+      const recipeWithoutNotes: IFillingRecipeEntity = {
+        ...testRecipe,
+        baseId: 'test-ganache-no-notes' as BaseFillingId,
+        variations: [
+          {
+            ...testRecipe.variations[0],
+            notes: undefined
+          }
+        ]
+      };
+
+      const fillingsNoNotes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test-no-notes' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache-no-notes': recipeWithoutNotes
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const ingredientsLib = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': darkChocolate,
+              cream,
+              butter
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const libraryNoNotes = ChocolateEntityLibrary.create({
+        libraries: { ingredients: ingredientsLib, fillings: fillingsNoNotes }
+      }).orThrow();
+
+      const ctxNoNotes = ChocolateLibrary.fromChocolateEntityLibrary(libraryNoNotes).orThrow();
+      const variation = ctxNoNotes.fillings
+        .get('test-no-notes.test-ganache-no-notes' as FillingId)
+        .orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      // Make a change but don't set notes (notes will be undefined)
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
+
+      expect(
+        session.saveAsNewVariation({
+          variationSpec: '2026-01-02-02' as FillingRecipeVariationSpec
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.journalEntry).toBeDefined();
+        // Journal entry should not have notes field or it should be undefined
+        if (result.journalEntry) {
+          expect(result.journalEntry.notes).toBeUndefined();
+        }
       });
     });
 
@@ -567,6 +669,77 @@ describe('EditingSession', () => {
       });
     });
 
+    test('handles session with undefined notes', () => {
+      // Use the same recipe without notes from the previous test
+      const recipeWithoutNotes: IFillingRecipeEntity = {
+        ...testRecipe,
+        baseId: 'test-ganache-no-notes-alt' as BaseFillingId,
+        variations: [
+          {
+            ...testRecipe.variations[0],
+            notes: undefined
+          }
+        ]
+      };
+
+      const fillingsNoNotes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test-no-notes-alt' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache-no-notes-alt': recipeWithoutNotes
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const ingredientsLib = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': darkChocolate,
+              cream,
+              butter
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const libraryNoNotes = ChocolateEntityLibrary.create({
+        libraries: { ingredients: ingredientsLib, fillings: fillingsNoNotes }
+      }).orThrow();
+
+      const ctxNoNotes = ChocolateLibrary.fromChocolateEntityLibrary(libraryNoNotes).orThrow();
+      const variation = ctxNoNotes.fillings
+        .get('test-no-notes-alt.test-ganache-no-notes-alt' as FillingId)
+        .orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      // Make a change but don't set notes (notes will be undefined)
+      session.setIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
+
+      expect(
+        session.saveAsAlternatives({
+          variationSpec: '2026-01-01-02' as FillingRecipeVariationSpec
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.journalEntry).toBeDefined();
+        // Journal entry should not have notes field or it should be undefined
+        if (result.journalEntry) {
+          expect(result.journalEntry.notes).toBeUndefined();
+        }
+      });
+    });
+
     test('fails for immutable collection', () => {
       // Create a context with an immutable collection
       const immutableIngredients = IngredientsLibrary.create({
@@ -659,6 +832,78 @@ describe('EditingSession', () => {
         expect(result.variationEntity?.ingredients[0].ingredient.ids).toHaveLength(1);
         expect(result.variationEntity?.ingredients[0].amount).toBe(400); // 200 * 2
         expect(result.variationEntity?.ingredients[1].amount).toBe(200); // 100 * 2
+      });
+    });
+
+    test('handles session with undefined notes', () => {
+      // Use the same recipe without notes pattern
+      const recipeWithoutNotes: IFillingRecipeEntity = {
+        ...testRecipe,
+        baseId: 'test-ganache-no-notes-new' as BaseFillingId,
+        variations: [
+          {
+            ...testRecipe.variations[0],
+            notes: undefined
+          }
+        ]
+      };
+
+      const fillingsNoNotes = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test-no-notes-new' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache-no-notes-new': recipeWithoutNotes
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const ingredientsLib = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': darkChocolate,
+              cream,
+              butter
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const libraryNoNotes = ChocolateEntityLibrary.create({
+        libraries: { ingredients: ingredientsLib, fillings: fillingsNoNotes }
+      }).orThrow();
+
+      const ctxNoNotes = ChocolateLibrary.fromChocolateEntityLibrary(libraryNoNotes).orThrow();
+      const variation = ctxNoNotes.fillings
+        .get('test-no-notes-new.test-ganache-no-notes-new' as FillingId)
+        .orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      // Make a change but don't set notes (notes will be undefined)
+      session.scaleToTargetWeight(600 as Measurement).orThrow();
+
+      expect(
+        session.saveAsNewRecipe({
+          newId: 'test.new-ganache-2' as FillingId,
+          variationSpec: '2026-01-01-02' as FillingRecipeVariationSpec
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.journalEntry).toBeDefined();
+        // Journal entry should not have notes field or it should be undefined
+        if (result.journalEntry) {
+          expect(result.journalEntry.notes).toBeUndefined();
+        }
       });
     });
   });

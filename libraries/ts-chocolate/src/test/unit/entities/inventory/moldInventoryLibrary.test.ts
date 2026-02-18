@@ -416,3 +416,17 @@ describe('MoldInventoryLibrary', () => {
     });
   });
 });
+
+// ============================================================================
+// createAsync Tests (with encryption support)
+// ============================================================================
+
+describe('MoldInventoryLibrary.createAsync', () => {
+  test('creates empty library with builtin: false', async () => {
+    const result = await MoldInventoryLibrary.createAsync({ builtin: false });
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.size).toBe(0);
+      expect(lib.size).toBe(0);
+    });
+  });
+});

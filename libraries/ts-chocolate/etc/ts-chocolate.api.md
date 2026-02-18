@@ -408,6 +408,7 @@ abstract class BaseIndexerOrchestrator<TEntity, TId> {
     protected constructor(library: ChocolateEntityLibrary, resolver: IEntityResolver<TEntity, TId>);
     protected _intersect(sets: Array<Set<TId>>): Set<TId>;
     readonly library: ChocolateEntityLibrary;
+    // (undocumented)
     protected get _logger(): Logging.LogReporter<unknown>;
     protected readonly _resolver: IEntityResolver<TEntity, TId>;
     protected _resolveToEntities(ids: Set<TId>): Result<ReadonlyArray<TEntity>>;
@@ -2551,6 +2552,9 @@ type FilterPattern = string | RegExp;
 type FilterPredicate<T> = (item: T) => boolean;
 
 // @public
+function findById<TOption extends IHasId<TId>, TId extends string>(id: TId, items: ReadonlyArray<TOption> | undefined): TOption | undefined;
+
+// @public
 export type FluidityStars = 1 | 2 | 3 | 4 | 5;
 
 // @public
@@ -2640,13 +2644,16 @@ function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTr
 function getPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
 
 // @public
-function getPreferredId<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
+function getPreferredId<TId extends string>(collection?: IIdsWithPreferred<TId>): TId | undefined;
 
 // @public
-function getPreferredIdOrFirst<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
+function getPreferredIdOrFirst<TId extends string>(collection?: IIdsWithPreferred<TId>): TId | undefined;
 
 // @public
-function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
+function getPreferredOptionIdOrFirst<TOption extends IHasId<TId>, TId extends string>(collection?: IOptionsWithPreferred<TOption, TId>): TId | undefined;
+
+// @public
+function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(collection?: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
 
 // @public
 function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -2715,6 +2722,9 @@ declare namespace Helpers {
         getPreferredOrFirst,
         getPreferredId,
         getPreferredIdOrFirst,
+        getPreferredOptionIdOrFirst,
+        nonEmpty,
+        findById,
         toKebabCase,
         nameToBaseId,
         generateUniqueBaseId,
@@ -3421,7 +3431,6 @@ interface IEditorContext<T, TBaseId extends string = string, TId extends string 
 interface IEditorContextParams<T, TBaseId extends string = string, TId extends string = string> {
     readonly collection: EditableCollection<T, TBaseId>;
     readonly createId: Converter<TId>;
-    readonly getBaseId: (entity: T) => TBaseId | undefined;
     readonly getName: (entity: T) => string;
     readonly semanticValidator?: (entity: T) => Result<T>;
 }
@@ -6626,6 +6635,9 @@ function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<
 
 // @public
 function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function nonEmpty<T>(arr: ReadonlyArray<T>): ReadonlyArray<T> | undefined;
 
 // @public
 const nonEmptyString: Converter<string>;

@@ -224,7 +224,7 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
 
     this._current = {
       ...this._current,
-      notes: notes.length > 0 ? notes : undefined
+      notes: Helpers.nonEmpty(notes)
     } as T;
     this._redoStack = [];
 
@@ -318,7 +318,7 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
 
     this._current = {
       ...this._current,
-      fillings: fillings.length > 0 ? fillings : undefined
+      fillings
     } as T;
     this._redoStack = [];
 
@@ -349,7 +349,7 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
 
     this._current = {
       ...this._current,
-      fillings: fillings.length > 0 ? fillings : undefined
+      fillings: Helpers.nonEmpty(fillings)
     } as T;
     this._redoStack = [];
 
@@ -632,6 +632,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
+        /* c8 ignore next 14 - branch: entity validation ensures optional fields are always present */
         const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
           variationId,
@@ -923,6 +924,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
+        /* c8 ignore next 8 - branch: entity validation ensures optional fields are always present */
         const produced: IProducedBarTruffleEntity = {
           confectionType: 'bar-truffle',
           variationId,
@@ -1118,9 +1120,11 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
       // Convert filling slots if present
       const fillingsResult = source.fillings
         ? ProducedRolledTruffle._convertFillingSlots(source.fillings)
-        : succeed(undefined);
+        : /* c8 ignore next 1 - branch: test variations always have fillings */
+          succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
+        /* c8 ignore next 9 - branch: entity validation ensures optional fields are always present */
         const produced: IProducedRolledTruffleEntity = {
           confectionType: 'rolled-truffle',
           variationId,

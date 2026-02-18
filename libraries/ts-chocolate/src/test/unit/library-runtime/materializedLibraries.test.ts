@@ -381,6 +381,14 @@ describe('MaterializedLibrary Functionality Tests', () => {
       });
     });
 
+    test('getWithAlternates fails when no IDs provided', () => {
+      const spec = {
+        ids: []
+      };
+
+      expect(ctx.ingredients.getWithAlternates(spec)).toFailWith(/no ids provided/i);
+    });
+
     test('getWithAlternates fails when primary ID does not exist', () => {
       const spec = {
         ids: ['common.nonexistent' as IngredientId, 'common.chocolate-dark-64' as IngredientId],
@@ -515,6 +523,41 @@ describe('MaterializedLibrary Functionality Tests', () => {
       });
     });
 
+    test('getRefsWithAlternates fails when no options provided', () => {
+      const spec = {
+        options: []
+      };
+
+      expect(ctx.ingredients.getRefsWithAlternates(spec)).toFailWith(/no options provided/i);
+    });
+
+    test('getRefsWithAlternates fails when preferred ID not in options', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 2)
+        .map((i) => i.id);
+      const spec = {
+        options: [{ id: allIds[0] }],
+        preferredId: allIds[1]
+      };
+
+      expect(ctx.ingredients.getRefsWithAlternates(spec)).toFailWith(/preferred id.*not found in options/i);
+    });
+
+    test('getRefsWithAlternates uses first option when no preferredId specified', () => {
+      const allIds = Array.from(ctx.ingredients.values())
+        .slice(0, 3)
+        .map((i) => i.id);
+      const spec = {
+        options: [{ id: allIds[0] }, { id: allIds[1] }, { id: allIds[2] }]
+      };
+
+      expect(ctx.ingredients.getRefsWithAlternates(spec)).toSucceedAndSatisfy((result) => {
+        expect(result.primary.id).toBe(allIds[0]);
+        expect(result.primaryId).toBe(allIds[0]);
+        expect(result.alternates.length).toBe(2);
+      });
+    });
+
     test('getRefsWithAlternates skips invalid alternate IDs', () => {
       const allIds = Array.from(ctx.ingredients.values())
         .slice(0, 2)
@@ -622,6 +665,12 @@ describe('MaterializedLibrary Functionality Tests', () => {
         ctx.entities.getEditableConfectionsEntityCollection('common' as unknown as CollectionId)
       ).toSucceed();
     });
+
+    test('getEditableDecorationsEntityCollection returns editable collection', () => {
+      expect(
+        ctx.entities.getEditableDecorationsEntityCollection('common' as unknown as CollectionId)
+      ).toSucceed();
+    });
   });
 
   // ============================================================================
@@ -722,6 +771,18 @@ describe('MaterializedLibrary Functionality Tests', () => {
 
     test('create with preWarm=false succeeds', () => {
       expect(ChocolateLibrary.create({ entityLibraryParams: { builtin: true }, preWarm: false })).toSucceed();
+    });
+
+    test('fromChocolateEntityLibrary wraps existing library', () => {
+      const entityLib = ctx.entities;
+      expect(ChocolateLibrary.fromChocolateEntityLibrary(entityLib)).toSucceedAndSatisfy((lib) => {
+        expect(lib.entities).toBe(entityLib);
+      });
+    });
+
+    test('fromChocolateEntityLibrary with preWarm', () => {
+      const entityLib = ctx.entities;
+      expect(ChocolateLibrary.fromChocolateEntityLibrary(entityLib, true)).toSucceed();
     });
   });
 

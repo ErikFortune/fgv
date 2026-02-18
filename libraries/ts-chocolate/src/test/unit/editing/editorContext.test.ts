@@ -93,7 +93,7 @@ describe('EditorContext', () => {
       collection,
       semanticValidator,
       createId: testEntityIdConverter,
-      getBaseId: (entity) => entity.name.toLowerCase().replace(/\s+/g, '-') as TestBaseId,
+
       getName: (entity) => entity.name
     });
   };
@@ -111,10 +111,22 @@ describe('EditorContext', () => {
         EditorContext.create({
           collection: null as unknown as EditableCollection<TestEntity, TestBaseId>,
           createId: testEntityIdConverter,
-          getBaseId: () => 'test' as TestBaseId,
+
           getName: (e: TestEntity) => e.name
         })
       ).toFailWith(/collection is required/i);
+    });
+
+    test('should fail for missing createId converter', () => {
+      const collection = createTestCollection();
+      expect(
+        EditorContext.create({
+          collection,
+          createId: null as unknown as Converter<TestEntityId>,
+
+          getName: (e: TestEntity) => e.name
+        })
+      ).toFailWith(/createId converter is required/i);
     });
 
     test('should fail for immutable collection', () => {
@@ -227,7 +239,6 @@ describe('EditorContext', () => {
       const context = EditorContext.create<TestEntity, TestBaseId, TestEntityId>({
         collection,
         createId: testEntityIdConverter,
-        getBaseId: () => 'test' as TestBaseId,
         getName: (e: TestEntity) => e.name
       }).orThrow();
 
@@ -252,7 +263,7 @@ describe('EditorContext', () => {
         EditorContext.create<TestEntity, TestBaseId, TestEntityId>({
           collection: immutableCollection,
           createId: testEntityIdConverter,
-          getBaseId: () => 'test' as TestBaseId,
+
           getName: (e: TestEntity) => e.name
         })
       ).toFailWith(/immutable.*cannot be edited/i);

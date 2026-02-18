@@ -345,6 +345,36 @@ describe('NodePlatformInitializer', () => {
       });
     });
 
+    test('resolves mutable external libraries', async () => {
+      // Create an external library directory with minimal structure
+      const extLibPath = mkDir('ext-library-mutable');
+
+      const userLibPath = mkDir('user-library');
+      const commonWithExtLib: ICommonSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        externalLibraries: [
+          {
+            name: 'Mutable External',
+            ref: extLibPath as unknown as ExternalLibraryRef,
+            load: false,
+            mutable: true
+          }
+        ]
+      };
+      writeJsonFile('user-library/data/settings/common.json', commonWithExtLib);
+      writeJsonFile(`user-library/data/settings/device-${testDeviceId}.json`, validDeviceSettings);
+
+      const result = await initializeNodePlatform({
+        userLibraryPath: userLibPath,
+        deviceId: testDeviceId
+      });
+
+      expect(result).toSucceedAndSatisfy((init) => {
+        expect(init.externalLibraries).toHaveLength(1);
+        expect(init.externalLibraries[0].mutable).toBe(true);
+      });
+    });
+
     test('fails when external library path does not exist', async () => {
       const userLibPath = mkDir('user-library');
       const commonWithBadExtLib: ICommonSettings = {

@@ -25,7 +25,7 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { Model as CommonModel, ProcedureId, RatingScore } from '../../common';
+import { Helpers, Model as CommonModel, ProcedureId, RatingScore } from '../../common';
 import { Decorations, Fillings, Session } from '../../entities';
 
 type IProcedureRefEntity = Fillings.IProcedureRefEntity;
@@ -512,7 +512,7 @@ export class EditedDecoration {
     const ratings = this._current.ratings.filter((r) => r.category !== category);
     this._current = {
       ...this._current,
-      ratings: ratings.length > 0 ? ratings : undefined
+      ratings: Helpers.nonEmpty(ratings)
     };
     this._redoStack = [];
     return succeed(undefined);

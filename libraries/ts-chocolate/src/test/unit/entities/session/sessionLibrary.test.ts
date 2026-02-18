@@ -20,7 +20,10 @@
 
 import '@fgv/ts-utils-jest';
 
+import { FileTree } from '@fgv/ts-json-base';
 import { SessionLibrary, Session } from '../../../../packlets/entities';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { ISessionFileTreeSource } from '../../../../packlets/entities/session/library';
 import {
   BaseSessionId,
   CollectionId,
@@ -797,5 +800,51 @@ describe('SessionLibrary', () => {
 
       expect(lib.createCollection(testCollectionId)).toFailWith(/already exists/i);
     });
+  });
+});
+
+// ============================================================================
+// createAsync Tests (with encryption support)
+// ============================================================================
+
+describe('SessionLibrary.createAsync', () => {
+  test('creates empty library with builtin: false', async () => {
+    const result = await SessionLibrary.createAsync({ builtin: false });
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.size).toBe(0);
+      expect(lib.size).toBe(0);
+    });
+  });
+
+  test('fails when collection contains invalid session data', async () => {
+    const files: FileTree.IInMemoryFile[] = [
+      {
+        path: '/data/sessions/invalid.yaml',
+        contents: {
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'invalid-session': {
+              // Missing required fields like baseId, sessionType, status
+              someField: 'invalid'
+            }
+          }
+        }
+      }
+    ];
+
+    const tree = FileTree.inMemory(files).orThrow();
+    const rootDir = tree.getItem('/').orThrow();
+
+    const fileSource: ISessionFileTreeSource = {
+      directory: rootDir as FileTree.IFileTreeDirectoryItem,
+      mutable: true
+    };
+
+    const result = await SessionLibrary.createAsync({
+      builtin: false,
+      fileSources: fileSource
+    });
+
+    expect(result).toFailWith(/discriminator property sessionType not present/i);
   });
 });

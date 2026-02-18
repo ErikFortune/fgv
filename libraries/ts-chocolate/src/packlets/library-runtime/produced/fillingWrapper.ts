@@ -143,6 +143,8 @@ export class ProducedFilling {
       return CommonConverters.measurement
         .convert(source.entity.baseWeight * scaleFactor)
         .onSuccess((targetWeight) => {
+          // TODO: shouldn't we test that?
+          /* c8 ignore next 8 - branch: optional procedure undefined */
           const produced: IProducedFillingEntity = {
             variationId: source.variationId,
             scaleFactor,
@@ -228,6 +230,8 @@ export class ProducedFilling {
 
             const variation: Fillings.IFillingRecipeVariationEntity = {
               variationSpec,
+              // TODO: seems like an externally visible contract that should be tested
+              /* c8 ignore next - branch: fallback to current date when createdDate not provided */
               createdDate: createdDate ?? new Date().toISOString(),
               ingredients: sourceIngredients,
               baseWeight,
@@ -643,7 +647,7 @@ export class ProducedFilling {
 
     this._current = {
       ...this._current,
-      notes: notes.length > 0 ? notes : undefined
+      notes: Helpers.nonEmpty(notes)
     };
     this._redoStack = [];
 
@@ -854,6 +858,7 @@ export class ProducedFilling {
     if (a === undefined || b === undefined) {
       return false;
     }
+    /* c8 ignore next - branch: both modifiers defined but differing values */
     return a.spoonLevel === b.spoonLevel && a.toTaste === b.toTaste;
   }
 

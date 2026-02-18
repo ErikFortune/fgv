@@ -357,7 +357,7 @@ export function getPreferred<TOption extends IHasId<TId>, TId extends string>(
   if (collection.preferredId === undefined) {
     return undefined;
   }
-  return collection.options.find((opt) => opt.id === collection.preferredId);
+  return findById(collection.preferredId, collection.options);
 }
 
 /**
@@ -370,8 +370,11 @@ export function getPreferred<TOption extends IHasId<TId>, TId extends string>(
  * @public
  */
 export function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(
-  collection: IOptionsWithPreferred<TOption, TId>
+  collection?: IOptionsWithPreferred<TOption, TId>
 ): TOption | undefined {
+  if (collection === undefined) {
+    return undefined;
+  }
   return getPreferred(collection) ?? collection.options[0];
 }
 
@@ -383,8 +386,8 @@ export function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends str
  * @returns The preferred ID if it exists in the collection, otherwise undefined
  * @public
  */
-export function getPreferredId<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined {
-  if (collection.preferredId === undefined) {
+export function getPreferredId<TId extends string>(collection?: IIdsWithPreferred<TId>): TId | undefined {
+  if (collection === undefined || collection.preferredId === undefined) {
     return undefined;
   }
   return collection.ids.includes(collection.preferredId) ? collection.preferredId : undefined;
@@ -399,9 +402,59 @@ export function getPreferredId<TId extends string>(collection: IIdsWithPreferred
  * @public
  */
 export function getPreferredIdOrFirst<TId extends string>(
-  collection: IIdsWithPreferred<TId>
+  collection?: IIdsWithPreferred<TId>
 ): TId | undefined {
+  if (collection === undefined) {
+    return undefined;
+  }
   return getPreferredId(collection) ?? collection.ids[0];
+}
+
+/**
+ * Gets the preferred ID from an options collection, falling back to the first option's ID.
+ *
+ * @typeParam TOption - The option object type
+ * @typeParam TId - The ID type
+ * @param collection - The options collection
+ * @returns The preferred ID, or the first option's ID, or undefined if empty
+ * @public
+ */
+export function getPreferredOptionIdOrFirst<TOption extends IHasId<TId>, TId extends string>(
+  collection?: IOptionsWithPreferred<TOption, TId>
+): TId | undefined {
+  if (collection === undefined) {
+    return undefined;
+  }
+  return collection.preferredId ?? collection.options[0]?.id;
+}
+
+// ============================================================================
+// Array Utilities
+// ============================================================================
+
+/**
+ * Returns undefined if the array is empty, otherwise returns the array.
+ * Useful for converting empty arrays to undefined in entity representations.
+ * @param arr - The array to check
+ * @returns The array if non-empty, undefined otherwise
+ * @public
+ */
+export function nonEmpty<T>(arr: ReadonlyArray<T>): ReadonlyArray<T> | undefined {
+  return arr.length > 0 ? arr : undefined;
+}
+
+/**
+ * Finds an item by ID in an optional array of items with IDs.
+ * @param id - The ID to search for
+ * @param items - The array to search (may be undefined)
+ * @returns The matching item, or undefined if not found or items is undefined
+ * @public
+ */
+export function findById<TOption extends IHasId<TId>, TId extends string>(
+  id: TId,
+  items: ReadonlyArray<TOption> | undefined
+): TOption | undefined {
+  return items?.find((item) => item.id === id);
 }
 
 // ============================================================================

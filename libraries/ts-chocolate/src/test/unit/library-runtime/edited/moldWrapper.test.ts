@@ -600,6 +600,15 @@ describe('EditedMold', () => {
       expect(changes.cavitiesChanged).toBe(false);
     });
 
+    test('getChanges() no change when count cavities are equal', () => {
+      const moldWithCount: Molds.IMoldEntity = { ...baseMold, cavities: countCavities };
+      const wrapper = EditedMold.create(moldWithCount).orThrow();
+      wrapper.setCavities({ ...countCavities }).orThrow();
+      const changes = wrapper.getChanges(moldWithCount);
+
+      expect(changes.cavitiesChanged).toBe(false);
+    });
+
     test('getChanges() detects cavities change — cavity info weight', () => {
       const wrapper = EditedMold.create(baseMold).orThrow();
       wrapper

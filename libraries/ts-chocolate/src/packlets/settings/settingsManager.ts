@@ -447,6 +447,7 @@ export class SettingsManager implements ISettingsManager {
     };
 
     return this.updateCommonSettings({ defaultTargets: merged }).onSuccess((updated) => {
+      /* c8 ignore next - branch: defensive fallback when updated settings lack field */
       return succeed(updated.defaultTargets ?? {});
     });
   }
@@ -607,6 +608,7 @@ export class SettingsManager implements ISettingsManager {
     };
 
     return this.updateCommonSettings({ tools: merged }).onSuccess((updated) => {
+      /* c8 ignore next - branch: defensive fallback when updated settings lack field */
       return succeed(updated.tools ?? {});
     });
   }
@@ -631,6 +633,7 @@ export class SettingsManager implements ISettingsManager {
     };
 
     return this.updateDeviceSettings({ toolsOverride: merged }).onSuccess((updated) => {
+      /* c8 ignore next - branch: defensive fallback when updated settings lack field */
       return succeed(updated.toolsOverride ?? {});
     });
   }

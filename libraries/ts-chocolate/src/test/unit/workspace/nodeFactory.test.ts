@@ -213,6 +213,57 @@ describe('createNodeWorkspace', () => {
     }
   });
 
+  test('creates workspace without additional file sources (single-root)', async () => {
+    const deviceId = 'test-device' as DeviceId;
+    initializeWorkspace({ workspacePath: tempDir, deviceId }).orThrow();
+
+    const result = await createNodeWorkspace({
+      layout: { mode: 'single-root', rootPath: tempDir }
+    });
+    expect(result).toSucceedAndSatisfy((workspace) => {
+      expect(workspace.state).toBe('no-keystore');
+      expect(workspace.isReady).toBe(true);
+    });
+  });
+
+  test('creates workspace with additional file sources from dual-root layout', async () => {
+    const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-dual-'));
+    const libDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-lib-dual-'));
+    try {
+      const deviceId = `test-device-dual-${Date.now()}` as DeviceId;
+
+      // Initialize both directories
+      expect(initializeWorkspace({ workspacePath: installDir, deviceId })).toSucceed();
+      expect(createWorkspaceDirectories(libDir)).toSucceed();
+
+      // Verify directories were created (they're under data/ subdirectory)
+      expect(fs.existsSync(path.join(libDir, 'data', 'ingredients'))).toBe(true);
+      expect(fs.existsSync(path.join(libDir, 'data', 'fillings'))).toBe(true);
+
+      // This test explicitly exercises the additionalFileSources.length > 0 branch (line 274)
+      // by using dual-root layout which adds the library path to additionalFileSources
+      const result = await createNodeWorkspace({
+        layout: {
+          mode: 'dual-root',
+          installationPath: installDir,
+          libraryPath: libDir
+        },
+        builtin: true
+      });
+
+      expect(result).toSucceedAndSatisfy((workspace) => {
+        // Workspace should be created successfully with additional sources
+        expect(workspace.state).toBe('no-keystore');
+        expect(workspace.isReady).toBe(true);
+        expect(workspace.settings).toBeDefined();
+        expect(workspace.data).toBeDefined();
+      });
+    } finally {
+      fs.rmSync(installDir, { recursive: true, force: true });
+      fs.rmSync(libDir, { recursive: true, force: true });
+    }
+  });
+
   test('dual-root fails when library directory is empty (no data structure)', async () => {
     const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-install-'));
     const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choco-empty-'));

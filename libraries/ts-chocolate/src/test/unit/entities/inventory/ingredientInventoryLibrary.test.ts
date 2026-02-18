@@ -423,3 +423,17 @@ describe('IngredientInventoryLibrary', () => {
     });
   });
 });
+
+// ============================================================================
+// createAsync Tests (with encryption support)
+// ============================================================================
+
+describe('IngredientInventoryLibrary.createAsync', () => {
+  test('creates empty library with builtin: false', async () => {
+    const result = await IngredientInventoryLibrary.createAsync({ builtin: false });
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.size).toBe(0);
+      expect(lib.size).toBe(0);
+    });
+  });
+});

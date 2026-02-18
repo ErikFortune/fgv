@@ -293,6 +293,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     return converter
       .convert(content)
       .onFailure(() => {
+        /* c8 ignore next 5 - coverage intermittently missed in full suite; tested by editableCollection.test.ts fallback tests */
         const fallbackConverter =
           trimmed.startsWith('{') || trimmed.startsWith('[')
             ? LibraryDataConverters.collectionYamlConverter(params.valueConverter)

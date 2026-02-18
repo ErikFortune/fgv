@@ -45,7 +45,8 @@ import {
   IFillingRecipeEntity,
   FillingsLibrary,
   ConfectionsLibrary,
-  Confections
+  Confections,
+  Session as SessionEntities
 } from '../../../../packlets/entities';
 import {
   ChocolateEntityLibrary,
@@ -241,6 +242,22 @@ describe('RolledTruffleEditingSession', () => {
       );
     });
 
+    test('auto-generates session ID when not provided', () => {
+      const confection = ctx.confections.get('test.test-rolled-truffle' as ConfectionId).orThrow();
+      if (!confection.isRolledTruffle()) throw new Error('Expected rolled truffle');
+      const session1 = Session.RolledTruffleEditingSession.create(confection, sessionContext).orThrow();
+      const session2 = Session.RolledTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      // Both should have valid session IDs
+      expect(session1.sessionId).toBeDefined();
+      expect(session2.sessionId).toBeDefined();
+      // Session IDs format: YYYY-MM-DD-HHMMSS-xxxxxxxx
+      expect(session1.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      expect(session2.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      // Should be different due to random component
+      expect(session1.sessionId).not.toBe(session2.sessionId);
+    });
+
     test('creates filling sessions', () => {
       const confection = ctx.confections.get('test.test-rolled-truffle' as ConfectionId).orThrow();
       if (!confection.isRolledTruffle()) throw new Error('Expected rolled truffle');
@@ -345,6 +362,34 @@ describe('RolledTruffleEditingSession', () => {
       const session = Session.RolledTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       expect(session.fillingSessions).toBeInstanceOf(Map);
+    });
+  });
+
+  // ============================================================================
+  // Persistence Tests
+  // ============================================================================
+
+  describe('fromPersistedState', () => {
+    test('restores session from persisted state', () => {
+      const confection = ctx.confections.get('test.test-rolled-truffle' as ConfectionId).orThrow();
+      if (!confection.isRolledTruffle()) throw new Error('Expected rolled truffle');
+      const session = Session.RolledTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      // Scale to a different yield
+      session.scaleToYield({ count: 96, unit: 'pieces' }).orThrow();
+
+      // Persist
+      const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();
+
+      // Restore - history must be cast to specific confection type
+      const history =
+        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<Confections.IProducedRolledTruffleEntity>;
+      expect(
+        Session.RolledTruffleEditingSession.fromPersistedState(confection, history, sessionContext)
+      ).toSucceedAndSatisfy((restored) => {
+        expect(restored.baseConfection).toBe(confection);
+        expect(restored.produced.yield.count).toBe(96);
+      });
     });
   });
 });

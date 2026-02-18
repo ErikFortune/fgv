@@ -3,7 +3,6 @@
 ## UserLibrary.procedures property
 
 Gets the materialized procedures library from the confection context.
-Required by IVariationContext.
 
 **Signature:**
 

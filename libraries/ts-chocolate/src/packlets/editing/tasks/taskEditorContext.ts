@@ -58,8 +58,6 @@ export class TaskEditorContext extends ValidatingEditorContext<IRawTaskEntity, B
       keyConverter: CommonConverters.baseTaskId,
       semanticValidator: validateRawTaskEntity,
       createId: CommonConverters.taskId,
-      /* c8 ignore next 1 - getBaseId reserved for future use by EditorContext but not yet called */
-      getBaseId: (task: IRawTaskEntity) => task.baseId,
       getName: (task: IRawTaskEntity) => task.name
     }).onSuccess((baseContext) => {
       return Success.with(

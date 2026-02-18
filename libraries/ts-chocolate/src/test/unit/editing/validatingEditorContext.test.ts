@@ -93,7 +93,7 @@ describe('ValidatingEditorContext', () => {
           entityConverter: testEntityConverter,
           keyConverter: testKeyConverter,
           createId: testEntityIdConverter,
-          getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
           getName: (e) => e.name
         })
       ).toSucceedAndSatisfy((context) => {
@@ -109,7 +109,7 @@ describe('ValidatingEditorContext', () => {
           entityConverter: testEntityConverter,
           keyConverter: testKeyConverter,
           createId: testEntityIdConverter,
-          getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
           getName: (e) => e.name
         })
       ).toFailWith(/collection is required/i);
@@ -123,7 +123,7 @@ describe('ValidatingEditorContext', () => {
           entityConverter: testEntityConverter,
           keyConverter: testKeyConverter,
           createId: testEntityIdConverter,
-          getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
           getName: (e) => e.name
         })
       ).toFailWith(/immutable.*cannot be edited/i);
@@ -138,7 +138,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -156,7 +156,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -174,7 +174,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -192,7 +192,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -211,7 +211,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: invalidKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -229,7 +229,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -246,7 +246,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -265,7 +265,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -282,7 +282,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -301,7 +301,7 @@ describe('ValidatingEditorContext', () => {
         keyConverter: testKeyConverter,
         semanticValidator: testEntitySemanticValidator,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -322,7 +322,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 
@@ -340,7 +340,7 @@ describe('ValidatingEditorContext', () => {
         entityConverter: testEntityConverter,
         keyConverter: testKeyConverter,
         createId: testEntityIdConverter,
-        getBaseId: (e) => e.name.toLowerCase() as TestBaseId,
+
         getName: (e) => e.name
       }).orThrow();
 

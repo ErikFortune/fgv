@@ -96,13 +96,15 @@ export class MoldedBonBonRecipeVariation
               id: resolved.primaryId,
               mold: resolved.primary,
               notes: resolved.primaryNotes,
-              entity: moldRefs.options.find((r) => r.id === resolved.primaryId)!
+              // safe: getRefsWithAlternates derives IDs from the same options array
+              entity: Helpers.findById(resolved.primaryId, moldRefs.options)!
             },
             ...resolved.alternates.map((alt) => ({
               id: alt.id,
               mold: alt.item,
               notes: alt.notes,
-              entity: moldRefs.options.find((r) => r.id === alt.id)!
+              // safe: getRefsWithAlternates derives IDs from the same options array
+              entity: Helpers.findById(alt.id, moldRefs.options)!
             }))
           ];
           this._resolvedMolds = { options, preferredId: moldRefs.preferredId };
@@ -213,7 +215,7 @@ export class MoldedBonBonRecipeVariation
    */
   public get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined {
     const result = this.getAdditionalChocolates().orThrow();
-    return result.length > 0 ? result : undefined;
+    return Helpers.nonEmpty(result);
   }
 
   // ============================================================================
@@ -233,7 +235,7 @@ export class MoldedBonBonRecipeVariation
    * @public
    */
   public get preferredProcedure(): IResolvedConfectionProcedure | undefined {
-    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
+    return Helpers.getPreferredOrFirst(this.procedures);
   }
 
   /**

@@ -2,7 +2,7 @@
 
 ## IngredientBase.traceAllergens property
 
-Trace allergens (possible contamination)
+Trace allergens (may be present in traces)
 
 **Signature:**
 

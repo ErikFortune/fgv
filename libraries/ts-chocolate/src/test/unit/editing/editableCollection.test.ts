@@ -396,6 +396,28 @@ items:
         })
       ).toFail();
     });
+
+    test('should fail when key conversion fails', () => {
+      const yaml = `
+items:
+  '':
+    name: Invalid Key
+    value: 10
+`;
+      const strictKeyConverter = Converters.string.withConstraint((s) => s.length > 0, {
+        description: 'must not be empty'
+      });
+
+      expect(
+        EditableCollection.fromYaml(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: strictKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFailWith(/invalid key ""/i);
+    });
   });
 
   describe('fromJson', () => {
@@ -425,6 +447,27 @@ items:
       });
     });
 
+    test('should use params metadata when sourceFile has no metadata', () => {
+      const json = JSON.stringify({
+        items: {
+          item1: { name: 'Item 1', value: 10 }
+        }
+      });
+
+      expect(
+        EditableCollection.fromJson(json, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.metadata.name).toBe('Test Collection');
+        expect(collection.metadata.description).toBe('A test collection');
+      });
+    });
+
     test('should fail on invalid JSON', () => {
       const json = '{invalid json}';
 
@@ -437,6 +480,28 @@ items:
           valueConverter: testValueConverter
         })
       ).toFail();
+    });
+
+    test('should fail when key conversion fails', () => {
+      const json = JSON.stringify({
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          '': { name: 'Invalid Key', value: 10 }
+        }
+      });
+      const strictKeyConverter = Converters.string.withConstraint((s) => s.length > 0, {
+        description: 'must not be empty'
+      });
+
+      expect(
+        EditableCollection.fromJson(json, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: strictKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFailWith(/invalid key ""/i);
     });
   });
 
@@ -520,6 +585,101 @@ items:
       ).toSucceedAndSatisfy((collection) => {
         expect(collection.size).toBe(1);
       });
+    });
+
+    test('should fallback from YAML to JSON when content looks like JSON but YAML fails', () => {
+      const json = JSON.stringify({
+        items: {
+          item1: { name: 'Item 1', value: 10 }
+        }
+      });
+
+      expect(
+        EditableCollection.parse(json, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(1);
+      });
+    });
+
+    test('should fallback from JSON to YAML when content starts with brace but is not valid JSON', () => {
+      // YAML flow mapping syntax starts with { but is not valid JSON
+      const yamlFlowMapping = `{metadata: {name: YAML flow}, items: {item1: {name: Item 1, value: 10}}}`;
+
+      expect(
+        EditableCollection.parse(yamlFlowMapping, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.size).toBe(1);
+      });
+    });
+
+    test('should use params metadata when parsed file has no metadata', () => {
+      const yaml = `
+items:
+  item1:
+    name: Item 1
+    value: 10
+`;
+
+      expect(
+        EditableCollection.parse(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.metadata.name).toBe('Test Collection');
+        expect(collection.metadata.description).toBe('A test collection');
+      });
+    });
+
+    test('should fail when both converters fail during fallback', () => {
+      const invalidContent = '{not: valid, yaml: or, json}';
+
+      expect(
+        EditableCollection.parse(invalidContent, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFail();
+    });
+
+    test('should fail when key conversion fails after successful parse', () => {
+      const yaml = `
+items:
+  '':
+    name: Invalid Key
+    value: 10
+`;
+      const strictKeyConverter = Converters.string.withConstraint((s) => s.length > 0, {
+        description: 'must not be empty'
+      });
+
+      expect(
+        EditableCollection.parse(yaml, {
+          collectionId: TEST_SOURCE_ID,
+          metadata: testMetadata,
+          isMutable: true,
+          keyConverter: strictKeyConverter,
+          valueConverter: testValueConverter
+        })
+      ).toFailWith(/invalid key ""/i);
     });
   });
 
@@ -738,6 +898,31 @@ items:
       expect(collection.save()).toFailWith(/not mutable/i);
     });
 
+    test('should fail when getIsMutable returns failure', () => {
+      const mockSourceItem = {
+        name: 'test',
+        getIsMutable: () => {
+          return {
+            isSuccess: () => false,
+            isFailure: () => true,
+            message: 'Failed to check mutability'
+          } as unknown as import('@fgv/ts-utils').Result<boolean>;
+        }
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: testMetadata,
+        isMutable: true,
+        initialItems: new Map(),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(collection.save()).toFailWith(/not mutable.*Failed to check mutability/i);
+    });
+
     test('should save successfully when sourceItem is mutable file', () => {
       const mockSourceItem = {
         name: 'test',
@@ -773,6 +958,112 @@ items:
       }).orThrow();
 
       expect(collection.isDirty()).toBe(false);
+    });
+  });
+
+  describe('fromLibrary', () => {
+    test('should create editable collection from library with metadata', () => {
+      const mockLibrary = {
+        collections: {
+          get: (id: CollectionId) => {
+            if (id === TEST_SOURCE_ID) {
+              return {
+                asResult: succeed({
+                  metadata: { name: 'Library Collection', description: 'From library' },
+                  isMutable: true,
+                  items: new Map([['item1', { name: 'Item 1', value: 10 }]])
+                }),
+                isSuccess: () => true
+              };
+            }
+            return {
+              asResult: { isFailure: () => true, message: 'Not found' },
+              isSuccess: () => false
+            };
+          }
+        },
+        getCollectionSourceItem: (_id: CollectionId) => undefined
+      };
+
+      expect(
+        EditableCollection.fromLibrary(
+          mockLibrary as unknown as import('../../../packlets/library-data').SubLibraryBase<
+            string,
+            string,
+            TestItem
+          >,
+          TEST_SOURCE_ID,
+          testKeyConverter,
+          testValueConverter
+        )
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.metadata.name).toBe('Library Collection');
+        expect(collection.size).toBe(1);
+      });
+    });
+
+    test('should use empty metadata when library collection has no metadata', () => {
+      const mockLibrary = {
+        collections: {
+          get: (id: CollectionId) => {
+            if (id === TEST_SOURCE_ID) {
+              return {
+                asResult: succeed({
+                  metadata: undefined,
+                  isMutable: true,
+                  items: new Map([['item1', { name: 'Item 1', value: 10 }]])
+                }),
+                isSuccess: () => true
+              };
+            }
+            return {
+              asResult: { isFailure: () => true, message: 'Not found' },
+              isSuccess: () => false
+            };
+          }
+        },
+        getCollectionSourceItem: (_id: CollectionId) => undefined
+      };
+
+      expect(
+        EditableCollection.fromLibrary(
+          mockLibrary as unknown as import('../../../packlets/library-data').SubLibraryBase<
+            string,
+            string,
+            TestItem
+          >,
+          TEST_SOURCE_ID,
+          testKeyConverter,
+          testValueConverter
+        )
+      ).toSucceedAndSatisfy((collection) => {
+        expect(collection.metadata).toEqual({});
+      });
+    });
+
+    test('should fail when collection not found in library', () => {
+      const mockLibrary = {
+        collections: {
+          get: (_id: CollectionId) => ({
+            asResult: { isFailure: () => true, message: 'Not found' },
+            isSuccess: () => false
+          })
+        },
+        getCollectionSourceItem: (_id: CollectionId) => undefined
+      };
+
+      expect(
+        EditableCollection.fromLibrary(
+          mockLibrary as unknown as import('../../../packlets/library-data').SubLibraryBase<
+            string,
+            string,
+            TestItem
+          >,
+          TEST_SOURCE_ID,
+          testKeyConverter,
+          testValueConverter
+        )
+      ).toFailWith(/not found/i);
     });
   });
 });

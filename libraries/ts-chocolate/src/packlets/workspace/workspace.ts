@@ -96,7 +96,7 @@ export class Workspace implements IWorkspace {
     params = params ?? {};
 
     // Set up logger
-    const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
+    const logger = Logging.LogReporter.createDefault(params.logger).orThrow();
 
     // Create key store if configured
     let keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
@@ -168,7 +168,7 @@ export class Workspace implements IWorkspace {
    */
   public static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace> {
     // Set up logger
-    const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
+    const logger = Logging.LogReporter.createDefault(params.logger).orThrow();
 
     // Create key store if configured
     let keyStore: CryptoUtils.KeyStore.KeyStore | undefined;

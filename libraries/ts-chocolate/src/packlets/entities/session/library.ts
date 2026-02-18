@@ -190,7 +190,9 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    * @public
    */
   public static async createAsync(params?: ISessionLibraryAsyncParams): Promise<Result<SessionLibrary>> {
-    const logger = params?.logger ?? new Logging.LogReporter<unknown>();
+    /* c8 ignore next 1 - default fallback to empty params */
+    params = params ?? {};
+    const logger = Logging.LogReporter.createDefault(params.logger).orThrow();
 
     const createParams: ISubLibraryCreateParams<SessionLibrary, BaseSessionId, AnySessionEntity> = {
       itemIdConverter: CommonConverters.baseSessionId,
@@ -202,21 +204,16 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
     };
 
     const loadResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
-    if (loadResult.isFailure()) {
-      return fail(loadResult.message);
-    }
 
-    return captureResult(() => {
-      const lib = new SessionLibrary({
+    return loadResult.onSuccess((loaded) =>
+      SessionLibrary.create({
         ...params,
         builtin: false,
         fileSources: undefined,
-        collections: loadResult.value.collections,
-        protectedCollections: loadResult.value.protectedCollections
-      });
-      lib._invalidateIndices();
-      return lib;
-    });
+        collections: loaded.collections,
+        protectedCollections: loaded.protectedCollections
+      })
+    );
   }
 
   // ============================================================================

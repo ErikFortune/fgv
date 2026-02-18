@@ -46,7 +46,8 @@ import {
   IFillingRecipeEntity,
   FillingsLibrary,
   ConfectionsLibrary,
-  Confections
+  Confections,
+  Session as SessionEntities
 } from '../../../../packlets/entities';
 import {
   ChocolateEntityLibrary,
@@ -252,6 +253,22 @@ describe('BarTruffleEditingSession', () => {
       );
     });
 
+    test('auto-generates session ID when not provided', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session1 = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+      const session2 = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      // Both should have valid session IDs
+      expect(session1.sessionId).toBeDefined();
+      expect(session2.sessionId).toBeDefined();
+      // Session IDs format: YYYY-MM-DD-HHMMSS-xxxxxxxx
+      expect(session1.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      expect(session2.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+      // Should be different due to random component
+      expect(session1.sessionId).not.toBe(session2.sessionId);
+    });
+
     test('creates filling sessions', () => {
       const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
       if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
@@ -282,6 +299,94 @@ describe('BarTruffleEditingSession', () => {
       ).toSucceedAndSatisfy((session) => {
         expect(session.produced.yield.count).toBe(96);
       });
+    });
+  });
+
+  // ============================================================================
+  // Edge Cases
+  // ============================================================================
+
+  describe('edge cases', () => {
+    test('handles confection with empty fillings array gracefully', () => {
+      // Create a bar truffle entity without fillings
+      const emptyBarTruffle: Confections.BarTruffleRecipeEntity = {
+        ...barTruffleEntity,
+        variations: [
+          {
+            ...barTruffleEntity.variations[0],
+            fillings: []
+          }
+        ]
+      };
+
+      const emptyConfections = ConfectionsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test-empty' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'empty-bar-truffle': emptyBarTruffle
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const emptyIngredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': darkChocolate,
+              cream
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const emptyFillings = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache': testRecipe
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const emptyLibrary = ChocolateEntityLibrary.create({
+        builtin: false,
+        libraries: { ingredients: emptyIngredients, fillings: emptyFillings, confections: emptyConfections }
+      }).orThrow();
+
+      const emptyCtx = ChocolateLibrary.fromChocolateEntityLibrary(emptyLibrary).orThrow();
+      const emptySessionContext = {
+        ...sessionContext,
+        get confections() {
+          return emptyCtx.confections;
+        }
+      };
+
+      const confection = emptyCtx.confections.get('test-empty.empty-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+
+      expect(Session.BarTruffleEditingSession.create(confection, emptySessionContext)).toSucceedAndSatisfy(
+        (session) => {
+          expect(session.sessionId).toBeDefined();
+          expect(session.fillingSessions.size).toBe(0);
+        }
+      );
     });
   });
 
@@ -365,6 +470,34 @@ describe('BarTruffleEditingSession', () => {
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       expect(session.fillingSessions).toBeInstanceOf(Map);
+    });
+  });
+
+  // ============================================================================
+  // Persistence Tests
+  // ============================================================================
+
+  describe('fromPersistedState', () => {
+    test('restores session from persisted state', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      // Scale to a different yield
+      session.scaleToYield({ count: 96, unit: 'pieces' }).orThrow();
+
+      // Persist
+      const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();
+
+      // Restore - history must be cast to specific confection type
+      const history =
+        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<Confections.IProducedBarTruffleEntity>;
+      expect(
+        Session.BarTruffleEditingSession.fromPersistedState(confection, history, sessionContext)
+      ).toSucceedAndSatisfy((restored) => {
+        expect(restored.baseConfection).toBe(confection);
+        expect(restored.produced.yield.count).toBe(96);
+      });
     });
   });
 });

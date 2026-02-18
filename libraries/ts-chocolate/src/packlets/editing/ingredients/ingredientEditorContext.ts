@@ -60,8 +60,6 @@ export class IngredientEditorContext extends ValidatingEditorContext<
       keyConverter: CommonConverters.baseIngredientId,
       semanticValidator: validateIngredientEntity,
       createId: CommonConverters.ingredientId,
-      /* c8 ignore next 1 - getBaseId reserved for future use by EditorContext but not yet called */
-      getBaseId: (ingredient: IngredientEntity) => ingredient.baseId,
       getName: (ingredient: IngredientEntity) => ingredient.name
     }).onSuccess((baseContext) => {
       // Wrap in ingredient-specific context

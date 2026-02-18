@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
+import { captureResult, Logging, Result } from '@fgv/ts-utils';
 
 import {
   ConfectionId,
@@ -221,8 +221,9 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
    * @public
    */
   public static async createAsync(params?: IJournalLibraryAsyncParams): Promise<Result<JournalLibrary>> {
-    const logger = params?.logger ?? new Logging.LogReporter<unknown>();
-
+    /* c8 ignore next 1 - default fallback to empty params */
+    params = params ?? {};
+    const logger = Logging.LogReporter.createDefault(params.logger).orThrow();
     const createParams: ISubLibraryCreateParams<JournalLibrary, BaseJournalId, AnyJournalEntryEntity> = {
       itemIdConverter: CommonConverters.baseJournalId,
       itemConverter: anyJournalEntryConverter,
@@ -233,21 +234,15 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
     };
 
     const loadResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
-    if (loadResult.isFailure()) {
-      return fail(loadResult.message);
-    }
-
-    return captureResult(() => {
-      const lib = new JournalLibrary({
+    return loadResult.onSuccess((loaded) =>
+      JournalLibrary.create({
         ...params,
         builtin: false,
         fileSources: undefined,
-        collections: loadResult.value.collections,
-        protectedCollections: loadResult.value.protectedCollections
-      });
-      lib._invalidateIndices();
-      return lib;
-    });
+        collections: loaded.collections,
+        protectedCollections: loaded.protectedCollections
+      })
+    );
   }
 
   // ============================================================================

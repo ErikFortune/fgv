@@ -233,6 +233,12 @@ describe('Workspace', () => {
         expect(ws.data).toBeDefined();
       });
     });
+
+    test('creates default logger when not provided', () => {
+      expect(Workspace.create({ builtin: false })).toSucceedAndSatisfy((ws) => {
+        expect(ws).toBeDefined();
+      });
+    });
   });
 
   // ============================================================================
@@ -450,6 +456,21 @@ describe('Workspace', () => {
         expect(ws.state).toBe('locked');
         expect(ws.settings).toBe(settings);
         expect(ws.keyStore).toBeDefined();
+      });
+    });
+
+    test('createWithSettings creates default logger when not provided', () => {
+      const fileTree = createSettingsFileTree();
+      const testDeviceId = 'test-device' as unknown as DeviceId;
+      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+
+      expect(
+        Workspace.createWithSettings({
+          builtin: false,
+          settings
+        })
+      ).toSucceedAndSatisfy((ws) => {
+        expect(ws).toBeDefined();
       });
     });
   });

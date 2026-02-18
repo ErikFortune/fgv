@@ -455,4 +455,27 @@ describe('BuiltInData', () => {
       });
     });
   });
+
+  // ============================================================================
+  // getDecorationsDirectory Tests
+  // ============================================================================
+
+  describe('getDecorationsDirectory', () => {
+    test('returns the decorations directory', () => {
+      expect(BuiltInData.getDecorationsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.type).toBe('directory');
+        expect(dir.name).toBe('decorations');
+      });
+    });
+
+    test('decorations directory contains expected files', () => {
+      expect(BuiltInData.getDecorationsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          // Should contain common.json
+          const names = children.map((c) => c.name);
+          expect(names).toContain('common.json');
+        });
+      });
+    });
+  });
 });

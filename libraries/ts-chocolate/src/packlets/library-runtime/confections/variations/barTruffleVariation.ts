@@ -109,6 +109,7 @@ export class BarTruffleRecipeVariation
           (msg) => `confection ${this._confectionId}: failed to resolve enrobing chocolate: ${msg}`
         )
         .onSuccess((resolved) => {
+          /* c8 ignore next 5 - defensive: library data guarantees enrobing chocolate IS chocolate */
           if (!resolved.primary.isChocolate()) {
             return fail(
               `confection ${this._confectionId}: primary ingredient for enrobing chocolate is not a chocolate`
@@ -142,7 +143,7 @@ export class BarTruffleRecipeVariation
    * @public
    */
   public get preferredProcedure(): IResolvedConfectionProcedure | undefined {
-    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
+    return Helpers.getPreferredOrFirst(this.procedures);
   }
 
   /**

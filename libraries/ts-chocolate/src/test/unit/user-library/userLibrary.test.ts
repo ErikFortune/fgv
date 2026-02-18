@@ -550,8 +550,11 @@ describe('UserLibrary', () => {
     });
 
     test('procedures delegates to context', () => {
-      // Just verify the getter returns a MaterializedLibrary
       expect(userLib.procedures).toBeDefined();
+    });
+
+    test('decorations delegates to context', () => {
+      expect(userLib.decorations).toBeDefined();
     });
 
     test('isCollectionMutable delegates to confection context', () => {

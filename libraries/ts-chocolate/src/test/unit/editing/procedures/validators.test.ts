@@ -80,6 +80,28 @@ describe('procedure validators', () => {
     ).toFailWith(/contiguous/i);
   });
 
+  test('validateStepTaskContent succeeds for task ref with taskId', () => {
+    expect(validateStepTaskContent(baseProcedure())).toSucceed();
+  });
+
+  test('validateStepTaskContent fails for empty taskId', () => {
+    expect(
+      validateStepTaskContent(
+        baseProcedure({
+          steps: [
+            {
+              order: 1,
+              task: {
+                taskId: '  ' as TaskId,
+                params: {}
+              }
+            }
+          ]
+        })
+      )
+    ).toFailWith(/taskId must not be empty/i);
+  });
+
   test('validateStepTaskContent succeeds for inline task with template', () => {
     expect(
       validateStepTaskContent(
@@ -100,6 +122,28 @@ describe('procedure validators', () => {
         })
       )
     ).toSucceed();
+  });
+
+  test('validateStepTaskContent fails for empty inline task name', () => {
+    expect(
+      validateStepTaskContent(
+        baseProcedure({
+          steps: [
+            {
+              order: 1,
+              task: {
+                task: {
+                  baseId: 'inline' as never,
+                  name: '  ',
+                  template: 'Do something'
+                },
+                params: {}
+              }
+            }
+          ]
+        })
+      )
+    ).toFailWith(/inline task name must not be empty/i);
   });
 
   test('validateStepTaskContent fails for empty inline task template', () => {

@@ -84,7 +84,7 @@ export abstract class Confection {
         return BarTruffleRecipe.create(context, id, confection);
       case 'rolled-truffle':
         return RolledTruffleRecipe.create(context, id, confection);
-      /* c8 ignore next 2 - defensive coding: ConfectionData union type ensures all types are handled */
+      /* c8 ignore next 4 - defensive coding: ConfectionData union type ensures all types are handled */
       default:
         return Failure.with(
           `Unknown confection type: ${(confection as Confections.AnyConfectionRecipeEntity).confectionType}`

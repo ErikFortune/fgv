@@ -69,14 +69,6 @@ export interface IEditorContextParams<T, TBaseId extends string = string, TId ex
   readonly createId: Converter<TId>;
 
   /**
-   * Function to extract base ID from entity.
-   * Required to support ID generation and uniqueness checking.
-   * @param entity - Entity to extract base ID from
-   * @returns Base ID or undefined if not set
-   */
-  readonly getBaseId: (entity: T) => TBaseId | undefined;
-
-  /**
    * Function to extract name from entity.
    * Used for auto-generating base IDs from names.
    * @param entity - Entity to extract name from

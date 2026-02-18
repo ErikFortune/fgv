@@ -92,6 +92,7 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<AnyIn
   public constructor(library: ChocolateEntityLibrary, resolver: IngredientResolver) {
     super(library, {
       resolve: resolver,
+      /* c8 ignore next 1 - isId reserved for future use, not currently called */
       isId: (value): value is IngredientId => typeof value === 'string'
     });
 

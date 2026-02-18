@@ -691,6 +691,84 @@ describe('ProducedMoldedBonBon', () => {
       expect(changes.notesChanged).toBe(false);
     });
   });
+
+  describe('optional fields - fillings undefined', () => {
+    test('setFillingSlot() on confection with no fillings creates new array', () => {
+      const noFillings = { ...moldedBonBonProduced, fillings: undefined };
+      const wrapper = ProducedMoldedBonBon.create(noFillings).orThrow();
+
+      expect(wrapper.fillings).toBeUndefined();
+
+      expect(
+        wrapper.setFillingSlot('center' as SlotId, {
+          type: 'recipe',
+          fillingId: 'test.test-ganache' as FillingId
+        })
+      ).toSucceed();
+
+      expect(wrapper.fillings).toHaveLength(1);
+      expect(wrapper.fillings![0].slotId).toBe('center' as SlotId);
+    });
+
+    test('removeFillingSlot() on last slot sets fillings to undefined', () => {
+      const oneSlot: IProducedMoldedBonBonEntity = {
+        ...moldedBonBonProduced,
+        fillings: [
+          {
+            slotType: 'recipe' as const,
+            slotId: 'only-slot' as SlotId,
+            fillingId: 'test.test-ganache' as FillingId
+          }
+        ]
+      };
+      const wrapper = ProducedMoldedBonBon.create(oneSlot).orThrow();
+
+      expect(wrapper.removeFillingSlot('only-slot' as SlotId)).toSucceed();
+      expect(wrapper.fillings).toBeUndefined();
+    });
+  });
+
+  describe('optional fields - undo/redo with no fillings/notes', () => {
+    test('undo/redo on confection with no fillings exercises _deepCopy', () => {
+      const minimal: IProducedMoldedBonBonEntity = {
+        ...moldedBonBonProduced,
+        fillings: undefined,
+        notes: undefined
+      };
+      const wrapper = ProducedMoldedBonBon.create(minimal).orThrow();
+
+      wrapper.setMold('test.mold-b' as MoldId).orThrow();
+      expect(wrapper.moldId).toBe('test.mold-b' as MoldId);
+
+      wrapper.undo().orThrow();
+      expect(wrapper.moldId).toBe('test.mold-a' as MoldId);
+
+      wrapper.redo().orThrow();
+      expect(wrapper.moldId).toBe('test.mold-b' as MoldId);
+    });
+  });
+
+  describe('optional fields - fromSource without optional chocolates/fillings', () => {
+    test('fromSource() with no fillings and no additionalChocolates', () => {
+      const minimal: IProducedMoldedBonBonEntity = {
+        confectionType: 'molded-bonbon',
+        variationId: 'test.minimal-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
+        yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        moldId: 'test.mold-a' as MoldId,
+        shellChocolateId: 'test.dark-chocolate' as IngredientId
+      };
+
+      const wrapper = ProducedMoldedBonBon.create(minimal).orThrow();
+      expect(wrapper.fillings).toBeUndefined();
+      expect(wrapper.sealChocolateId).toBeUndefined();
+      expect(wrapper.decorationChocolateId).toBeUndefined();
+
+      // Exercise undo/redo to trigger _deepCopy
+      wrapper.setMold('test.mold-b' as MoldId).orThrow();
+      wrapper.undo().orThrow();
+      expect(wrapper.fillings).toBeUndefined();
+    });
+  });
 });
 
 // ============================================================================
@@ -726,6 +804,61 @@ describe('ProducedBarTruffle', () => {
     expect(changes.moldChanged).toBe(false);
     expect(changes.shellChocolateChanged).toBe(false);
     expect(changes.coatingChanged).toBe(false);
+  });
+
+  describe('optional fields - no fillings/enrobing/procedure', () => {
+    test('undo/redo on bar truffle with no fillings/notes exercises _deepCopy', () => {
+      const minimal: IProducedBarTruffleEntity = {
+        confectionType: 'bar-truffle',
+        variationId: 'test.minimal-bar@2026-01-01-01' as ConfectionRecipeVariationId,
+        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement }
+      };
+
+      const wrapper = ProducedBarTruffle.create(minimal).orThrow();
+      expect(wrapper.fillings).toBeUndefined();
+      expect(wrapper.enrobingChocolateId).toBeUndefined();
+      expect(wrapper.notes).toBeUndefined();
+
+      wrapper.setEnrobingChocolate('test.dark-chocolate' as IngredientId).orThrow();
+      wrapper.undo().orThrow();
+      expect(wrapper.enrobingChocolateId).toBeUndefined();
+
+      wrapper.redo().orThrow();
+      expect(wrapper.enrobingChocolateId).toBe('test.dark-chocolate' as IngredientId);
+    });
+
+    test('create() with all optional fields undefined', () => {
+      const minimal: IProducedBarTruffleEntity = {
+        confectionType: 'bar-truffle',
+        variationId: 'test.minimal-bar-2@2026-01-01-02' as ConfectionRecipeVariationId,
+        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        fillings: undefined,
+        enrobingChocolateId: undefined,
+        procedureId: undefined,
+        notes: undefined
+      };
+
+      expect(ProducedBarTruffle.create(minimal)).toSucceedAndSatisfy((wrapper) => {
+        expect(wrapper.fillings).toBeUndefined();
+        expect(wrapper.enrobingChocolateId).toBeUndefined();
+        expect(wrapper.procedureId).toBeUndefined();
+        expect(wrapper.notes).toBeUndefined();
+      });
+    });
+  });
+
+  test('undo/redo with notes exercises _deepCopy notes branch', () => {
+    const withNotes: IProducedBarTruffleEntity = {
+      ...barTruffleProduced,
+      notes: [{ category: 'general' as NoteCategory, note: 'Bar note' }]
+    };
+    const wrapper = ProducedBarTruffle.create(withNotes).orThrow();
+    expect(wrapper.notes).toHaveLength(1);
+
+    wrapper.setEnrobingChocolate('test.milk-chocolate' as IngredientId).orThrow();
+    wrapper.undo().orThrow();
+    expect(wrapper.notes).toHaveLength(1);
+    expect(wrapper.notes![0].note).toBe('Bar note');
   });
 });
 
@@ -781,6 +914,64 @@ describe('ProducedRolledTruffle', () => {
     expect(changes.hasChanges).toBe(true);
     expect(changes.coatingChanged).toBe(true);
     expect(changes.enrobingChocolateChanged).toBe(false);
+  });
+
+  describe('optional fields - no fillings/enrobing/coating', () => {
+    test('undo/redo on rolled truffle with no fillings/notes exercises _deepCopy', () => {
+      const minimal: IProducedRolledTruffleEntity = {
+        confectionType: 'rolled-truffle',
+        variationId: 'test.minimal-rolled@2026-01-01-01' as ConfectionRecipeVariationId,
+        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement }
+      };
+
+      const wrapper = ProducedRolledTruffle.create(minimal).orThrow();
+      expect(wrapper.fillings).toBeUndefined();
+      expect(wrapper.enrobingChocolateId).toBeUndefined();
+      expect(wrapper.coatingId).toBeUndefined();
+      expect(wrapper.notes).toBeUndefined();
+
+      wrapper.setCoating('test.cocoa-powder' as IngredientId).orThrow();
+      wrapper.undo().orThrow();
+      expect(wrapper.coatingId).toBeUndefined();
+
+      wrapper.redo().orThrow();
+      expect(wrapper.coatingId).toBe('test.cocoa-powder' as IngredientId);
+    });
+
+    test('create() with all optional fields undefined', () => {
+      const minimal: IProducedRolledTruffleEntity = {
+        confectionType: 'rolled-truffle',
+        variationId: 'test.minimal-rolled-2@2026-01-01-02' as ConfectionRecipeVariationId,
+        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        fillings: undefined,
+        enrobingChocolateId: undefined,
+        coatingId: undefined,
+        procedureId: undefined,
+        notes: undefined
+      };
+
+      expect(ProducedRolledTruffle.create(minimal)).toSucceedAndSatisfy((wrapper) => {
+        expect(wrapper.fillings).toBeUndefined();
+        expect(wrapper.enrobingChocolateId).toBeUndefined();
+        expect(wrapper.coatingId).toBeUndefined();
+        expect(wrapper.procedureId).toBeUndefined();
+        expect(wrapper.notes).toBeUndefined();
+      });
+    });
+  });
+
+  test('undo/redo with notes exercises _deepCopy notes branch', () => {
+    const withNotes: IProducedRolledTruffleEntity = {
+      ...rolledTruffleProduced,
+      notes: [{ category: 'general' as NoteCategory, note: 'Rolled note' }]
+    };
+    const wrapper = ProducedRolledTruffle.create(withNotes).orThrow();
+    expect(wrapper.notes).toHaveLength(1);
+
+    wrapper.setCoating('test.powdered-sugar' as IngredientId).orThrow();
+    wrapper.undo().orThrow();
+    expect(wrapper.notes).toHaveLength(1);
+    expect(wrapper.notes![0].note).toBe('Rolled note');
   });
 });
 

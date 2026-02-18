@@ -211,7 +211,7 @@ readonly [Allergen](../../type-aliases/Allergen.md)[]
 
 </td><td>
 
-Trace allergens (possible contamination)
+Trace allergens (may be present in traces)
 
 </td></tr>
 <tr><td>

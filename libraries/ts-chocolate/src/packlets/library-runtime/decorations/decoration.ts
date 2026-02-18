@@ -195,7 +195,7 @@ export class Decoration implements IDecoration {
   private _resolveIngredient(
     ingredientEntity: Decorations.IDecorationIngredientEntity
   ): Result<IResolvedDecorationIngredient> {
-    const preferredId = ingredientEntity.ingredient.preferredId ?? ingredientEntity.ingredient.ids[0];
+    const preferredId = Helpers.getPreferredIdOrFirst(ingredientEntity.ingredient)!;
     return this._context
       ._getIngredient(preferredId)
       .withErrorFormat((msg) => `decoration '${this._id}' ingredient '${preferredId}': ${msg}`)

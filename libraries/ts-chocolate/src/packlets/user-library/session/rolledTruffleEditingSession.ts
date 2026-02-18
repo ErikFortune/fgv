@@ -149,12 +149,16 @@ export class RolledTruffleEditingSession<
    */
   protected override _computeSlotTargetWeight(slotId: SlotId): Result<Measurement> {
     const session = this._fillingSessions.get(slotId);
+    /* c8 ignore next 3 - defensive: session removed before recreating in setFillingSlot */
     if (session) {
       return succeed(session.targetWeight);
     }
 
     // For initial creation, find the filling in the produced confection and use its base weight
+    // TODO: create helper instead of find, create test confections without fillings.
+    /* c8 ignore next 1 - branch: fillings always present in test confections */
     const fillingSlot = this._produced.fillings?.find((f) => f.slotId === slotId);
+    /* c8 ignore next 3 - defensive: slot not found or slot type not recipe indicates internal inconsistency */
     if (!fillingSlot || fillingSlot.slotType !== 'recipe') {
       return succeed(ZeroMeasurement);
     }

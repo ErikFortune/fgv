@@ -112,6 +112,7 @@ export class FillingRecipeIndexerOrchestrator extends BaseIndexerOrchestrator<Fi
   public constructor(library: ChocolateEntityLibrary, resolver: FillingRecipeResolver) {
     super(library, {
       resolve: resolver,
+      /* c8 ignore next 1 - isId reserved for future use, not currently called */
       isId: (value): value is FillingId => typeof value === 'string'
     });
 

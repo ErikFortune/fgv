@@ -24,7 +24,7 @@
  */
 
 import { Collections, DetailedResult, Logging, Result, fail, succeed } from '@fgv/ts-utils';
-import { Model } from '../common';
+import { Helpers, Model } from '../common';
 import { IFindOptions } from './indexers';
 import { IFindOrchestrator } from './validatingLibrary';
 
@@ -119,6 +119,7 @@ export class MaterializedLibrary<
     super({
       inner: params.inner,
       converter: params.converter,
+      /* c8 ignore next 1 - defensive: onConversionError defaults to 'warn' */
       onConversionError: params.onConversionError ?? 'warn',
       logger: params.logger
     });
@@ -215,12 +216,12 @@ export class MaterializedLibrary<
     readonly id: TId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
   }> {
-    const primaryId = spec.preferredId ?? spec.options[0]?.id;
+    const primaryId = Helpers.getPreferredOptionIdOrFirst(spec);
     if (!primaryId) {
       return fail('No options provided in specification');
     }
 
-    const primaryRef = spec.options.find((opt) => opt.id === primaryId);
+    const primaryRef = Helpers.findById(primaryId, spec.options);
     if (!primaryRef) {
       return fail(`Preferred ID ${primaryId} not found in options`);
     }
@@ -246,12 +247,12 @@ export class MaterializedLibrary<
   public getRefsWithAlternates(
     spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>
   ): Result<IResolvedRefWithAlternates<TId, TMaterialized>> {
-    const primaryId = spec.preferredId ?? spec.options[0]?.id;
+    const primaryId = Helpers.getPreferredOptionIdOrFirst(spec);
     if (!primaryId) {
       return fail('No options provided in specification');
     }
 
-    const primaryRef = spec.options.find((opt) => opt.id === primaryId);
+    const primaryRef = Helpers.findById(primaryId, spec.options);
     if (!primaryRef) {
       return fail(`Preferred ID ${primaryId} not found in options`);
     }

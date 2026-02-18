@@ -158,8 +158,11 @@ export class ChocolateLibrary
    * @returns Success with ChocolateLibrary, or Failure if library creation fails
    */
   public static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary> {
-    return ChocolateEntityLibrary.create(params?.entityLibraryParams).onSuccess((library) => {
-      return Success.with(new ChocolateLibrary(library, params?.preWarm ?? false));
+    /* c8 ignore next 2 - defensive: optional param branches tested implicitly */
+    params = params ?? {};
+    const preWarm = params.preWarm ?? false;
+    return ChocolateEntityLibrary.create(params.entityLibraryParams).onSuccess((library) => {
+      return Success.with(new ChocolateLibrary(library, preWarm));
     });
   }
 
@@ -585,6 +588,7 @@ export class ChocolateLibrary
       getIngredientDensity: (id: IngredientId): number => {
         const result = this._entities.ingredients.get(id);
         if (result.isSuccess()) {
+          /* c8 ignore next 1 - all built-in ingredients have density; fallback only reachable with custom entity data */
           return result.value.density ?? 1.0;
         }
         // Default to 1.0 g/mL if ingredient not found

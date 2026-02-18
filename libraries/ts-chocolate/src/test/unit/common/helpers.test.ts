@@ -368,6 +368,59 @@ describe('helpers', () => {
   });
 
   // ============================================================================
+  // Preferred ID helpers
+  // ============================================================================
+
+  describe('getPreferredIdOrFirst', () => {
+    test('returns undefined for undefined collection', () => {
+      expect(Helpers.getPreferredIdOrFirst(undefined)).toBeUndefined();
+    });
+
+    test('returns preferred ID when set', () => {
+      const collection = { ids: ['a', 'b', 'c'], preferredId: 'b' };
+      expect(Helpers.getPreferredIdOrFirst(collection)).toBe('b');
+    });
+
+    test('returns first ID when no preferred', () => {
+      const collection = { ids: ['a', 'b', 'c'] };
+      expect(Helpers.getPreferredIdOrFirst(collection)).toBe('a');
+    });
+
+    test('returns first ID when preferred is undefined', () => {
+      const collection = { ids: ['a', 'b', 'c'], preferredId: undefined };
+      expect(Helpers.getPreferredIdOrFirst(collection)).toBe('a');
+    });
+  });
+
+  describe('getPreferredOptionIdOrFirst', () => {
+    type TestId = string & { __brand: 'TestId' };
+    const options = [
+      { id: 'a' as TestId, value: 1 },
+      { id: 'b' as TestId, value: 2 },
+      { id: 'c' as TestId, value: 3 }
+    ];
+
+    test('returns preferredId when set', () => {
+      const collection = { options, preferredId: 'b' as TestId };
+      expect(Helpers.getPreferredOptionIdOrFirst(collection)).toBe('b');
+    });
+
+    test('falls back to first option ID when no preferred', () => {
+      const collection = { options };
+      expect(Helpers.getPreferredOptionIdOrFirst(collection)).toBe('a');
+    });
+
+    test('returns undefined for empty options', () => {
+      const collection = { options: [] as Array<{ id: TestId; value: number }> };
+      expect(Helpers.getPreferredOptionIdOrFirst(collection)).toBeUndefined();
+    });
+
+    test('returns undefined for undefined collection', () => {
+      expect(Helpers.getPreferredOptionIdOrFirst(undefined)).toBeUndefined();
+    });
+  });
+
+  // ============================================================================
   // Serialization helpers
   // ============================================================================
 
@@ -438,6 +491,63 @@ describe('helpers', () => {
       const circular: Record<string, unknown> = {};
       circular.self = circular;
       expect(Helpers.serializeToJson(circular)).toFailWith(/serialize to JSON/i);
+    });
+  });
+
+  // ============================================================================
+  // Array utilities
+  // ============================================================================
+
+  describe('nonEmpty', () => {
+    test('returns undefined for empty array', () => {
+      expect(Helpers.nonEmpty([])).toBeUndefined();
+    });
+
+    test('returns the array for non-empty array', () => {
+      const arr = [1, 2, 3];
+      expect(Helpers.nonEmpty(arr)).toBe(arr);
+    });
+
+    test('returns the array for single-element array', () => {
+      const arr = ['single'];
+      expect(Helpers.nonEmpty(arr)).toBe(arr);
+    });
+  });
+
+  describe('findById', () => {
+    type TestId = string & { __brand: 'TestId' };
+    interface ITestOption {
+      readonly id: TestId;
+      readonly value: number;
+    }
+    const items: ReadonlyArray<ITestOption> = [
+      { id: 'a' as TestId, value: 1 },
+      { id: 'b' as TestId, value: 2 },
+      { id: 'c' as TestId, value: 3 }
+    ];
+
+    test('returns the matching item when found', () => {
+      expect(Helpers.findById('b' as TestId, items)).toEqual({ id: 'b', value: 2 });
+    });
+
+    test('returns undefined when id is not found', () => {
+      expect(Helpers.findById('z' as TestId, items)).toBeUndefined();
+    });
+
+    test('returns undefined when items is undefined', () => {
+      expect(Helpers.findById('a' as TestId, undefined)).toBeUndefined();
+    });
+
+    test('returns undefined for empty array', () => {
+      expect(Helpers.findById('a' as TestId, [] as ReadonlyArray<ITestOption>)).toBeUndefined();
+    });
+
+    test('returns first match when duplicates exist', () => {
+      const dupes: ReadonlyArray<ITestOption> = [
+        { id: 'x' as TestId, value: 10 },
+        { id: 'x' as TestId, value: 20 }
+      ];
+      expect(Helpers.findById('x' as TestId, dupes)).toEqual({ id: 'x', value: 10 });
     });
   });
 });

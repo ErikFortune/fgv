@@ -104,6 +104,7 @@ export class EditedProcedure {
     }
 
     const previous = this._undoStack.pop();
+    /* c8 ignore next 3 - defensive: pop after length check cannot return undefined */
     if (previous === undefined) {
       return succeed(false);
     }
@@ -118,6 +119,7 @@ export class EditedProcedure {
     }
 
     const future = this._redoStack.pop();
+    /* c8 ignore next 3 - defensive: pop after length check cannot return undefined */
     if (future === undefined) {
       return succeed(false);
     }
@@ -243,6 +245,7 @@ export class EditedProcedure {
     }
     const boundedNewIndex = Math.max(0, Math.min(newIndex, steps.length - 1));
     const [step] = steps.splice(currentIndex, 1);
+    /* c8 ignore next 3 - defensive: splice after successful findIndex cannot return undefined */
     if (step === undefined) {
       return succeed(undefined);
     }

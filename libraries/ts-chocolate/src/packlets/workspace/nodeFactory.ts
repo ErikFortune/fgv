@@ -271,6 +271,7 @@ export async function createNodeWorkspace(params: ICreateNodeWorkspaceParams): P
     platformInit: platformResult.value,
     builtin,
     preWarm,
+    /* c8 ignore next 1 - branch: additionalFileSources always populated after successful platform init */
     additionalFileSources: additionalFileSources.length > 0 ? additionalFileSources : undefined
   });
 }

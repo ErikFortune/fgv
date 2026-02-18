@@ -623,3 +623,17 @@ describe('JournalLibrary (Collection-Based)', () => {
     });
   });
 });
+
+// ============================================================================
+// createAsync Tests (with encryption support)
+// ============================================================================
+
+describe('JournalLibrary.createAsync', () => {
+  test('creates empty library with builtin: false', async () => {
+    const result = await JournalLibrary.createAsync({ builtin: false });
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.size).toBe(0);
+      expect(lib.size).toBe(0);
+    });
+  });
+});

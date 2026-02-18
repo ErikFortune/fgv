@@ -36,7 +36,9 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionRecipeVariationSpec,
-  SlotId
+  SlotId,
+  BaseSessionId,
+  SessionSpec
 } from '../../../../packlets/common';
 import {
   IGanacheCharacteristics,
@@ -353,6 +355,36 @@ describe('ConfectionEditingSessionBase', () => {
       expect(typeof session.sessionId).toBe('string');
     });
 
+    test('sessionId is auto-generated when not provided', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      expect(session.sessionId).toBeDefined();
+      expect(session.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+    });
+
+    test('sessionId is auto-generated when params object does not include sessionId', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext, {}).orThrow();
+
+      expect(session.sessionId).toBeDefined();
+      expect(typeof session.sessionId).toBe('string');
+      expect(session.sessionId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/);
+    });
+
+    test('uses provided sessionId when specified in params', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const customSessionId = '2026-01-15-120000-abcd1234' as SessionSpec;
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext, {
+        sessionId: customSessionId
+      }).orThrow();
+
+      expect(session.sessionId).toBe(customSessionId);
+    });
+
     test('baseConfection returns the recipe', () => {
       const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
       if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
@@ -383,6 +415,48 @@ describe('ConfectionEditingSessionBase', () => {
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       expect(session.fillingSessions).toBeInstanceOf(Map);
+    });
+  });
+
+  // ============================================================================
+  // Persistence Tests
+  // ============================================================================
+
+  describe('toPersistedState', () => {
+    test('creates persisted state with auto-generated baseId', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      expect(
+        session.toPersistedState({
+          collectionId: 'test' as CollectionId,
+          status: 'active',
+          label: 'Test Session'
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        expect(persisted.baseId).toBeDefined();
+        expect(persisted.sessionType).toBe('confection');
+        expect(persisted.confectionType).toBe('bar-truffle');
+        expect(persisted.status).toBe('active');
+        expect(persisted.label).toBe('Test Session');
+      });
+    });
+
+    test('creates persisted state with provided baseId', () => {
+      const confection = ctx.confections.get('test.test-bar-truffle' as ConfectionId).orThrow();
+      if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
+      const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
+
+      const baseId = '2026-02-17-120000-abc12345' as BaseSessionId;
+      expect(
+        session.toPersistedState({
+          collectionId: 'test' as CollectionId,
+          baseId
+        })
+      ).toSucceedAndSatisfy((persisted) => {
+        expect(persisted.baseId).toBe(baseId);
+      });
     });
   });
 });

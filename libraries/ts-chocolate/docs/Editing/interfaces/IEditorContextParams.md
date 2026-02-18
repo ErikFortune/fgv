@@ -79,23 +79,6 @@ Converter used to create a composite ID from a `{ collectionId, itemId }` object
 </td></tr>
 <tr><td>
 
-[getBaseId](./IEditorContextParams.getBaseId.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-(entity: T) =&gt; TBaseId | undefined
-
-</td><td>
-
-Function to extract base ID from entity.
-
-</td></tr>
-<tr><td>
-
 [getName](./IEditorContextParams.getName.md)
 
 </td><td>

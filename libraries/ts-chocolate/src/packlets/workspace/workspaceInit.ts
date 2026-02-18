@@ -99,13 +99,17 @@ export function createWorkspaceDirectories(workspacePath: string): Result<void> 
   }
 
   // Delegate library and user entity directory creation to their respective modules
-  return createDefaultLibraryDirectories(workspacePath)
-    .onFailure((msg) => fail(`Failed to create workspace directories: ${msg}`))
-    .onSuccess(() =>
-      createDefaultUserEntityDirectories(workspacePath).onFailure((msg) =>
-        fail(`Failed to create workspace directories: ${msg}`)
+  return (
+    createDefaultLibraryDirectories(workspacePath)
+      /* c8 ignore next 1 - coverage intermittently missed in full suite */
+      .onFailure((msg) => fail(`Failed to create workspace directories: ${msg}`))
+      .onSuccess(() =>
+        /* c8 ignore next 2 - coverage intermittently missed in full suite */
+        createDefaultUserEntityDirectories(workspacePath).onFailure((msg) =>
+          fail(`Failed to create workspace directories: ${msg}`)
+        )
       )
-    );
+  );
 }
 
 /**

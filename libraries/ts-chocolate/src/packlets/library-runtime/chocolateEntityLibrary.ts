@@ -197,12 +197,12 @@ export class ChocolateEntityLibrary {
    * @public
    */
   public static create(params?: IChocolateEntityLibraryCreateParams): Result<ChocolateEntityLibrary> {
+    /* c8 ignore next 1 - defensive: params undefined branch tested implicitly */
     params = params ?? {};
     /* c8 ignore next 1 - optional param branches tested implicitly via create() */
     const builtinSpec = params?.builtin ?? true;
     const fileSources = normalizeFileSources(params.fileSources);
-    /* c8 ignore next - default logger branch tested implicitly */
-    const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
+    const logger = Logging.LogReporter.createDefault(params.logger).orThrow();
 
     const ingredientsResult = IngredientsLibrary.create({
       builtin: resolveBuiltInSpec<CollectionId>(builtinSpec, 'ingredients'),

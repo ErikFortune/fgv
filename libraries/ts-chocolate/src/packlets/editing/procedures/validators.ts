@@ -51,7 +51,7 @@ export function validateProcedureName(entity: IProcedureEntity): Result<true> {
 export function validateStepOrder(entity: IProcedureEntity): Result<true> {
   for (let i = 0; i < entity.steps.length; i += 1) {
     const expected = i + 1;
-    const actual = entity.steps[i]?.order;
+    const actual = entity.steps[i].order;
     if (actual !== expected) {
       return Failure.with(
         `step order must be contiguous and 1-based (expected ${expected}, got ${String(actual)})`

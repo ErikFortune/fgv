@@ -284,6 +284,33 @@ Gets the preferred ID from a simple ID collection, falling back to the first ID.
 </td></tr>
 <tr><td>
 
+[getPreferredOptionIdOrFirst](./functions/getPreferredOptionIdOrFirst.md)
+
+</td><td>
+
+Gets the preferred ID from an options collection, falling back to the first option's ID.
+
+</td></tr>
+<tr><td>
+
+[nonEmpty](./functions/nonEmpty.md)
+
+</td><td>
+
+Returns undefined if the array is empty, otherwise returns the array.
+
+</td></tr>
+<tr><td>
+
+[findById](./functions/findById.md)
+
+</td><td>
+
+Finds an item by ID in an optional array of items with IDs.
+
+</td></tr>
+<tr><td>
+
 [toKebabCase](./functions/toKebabCase.md)
 
 </td><td>

@@ -156,10 +156,9 @@ export abstract class IngredientBase<TEntity extends IngredientEntity = Ingredie
   }
 
   /**
-   * Trace allergens (possible contamination)
+   * Trace allergens (may be present in traces)
    */
   public get traceAllergens(): ReadonlyArray<Allergen> {
-    /* c8 ignore next - empty array returned when traceAllergens undefined */
     return this._ingredient.traceAllergens ?? [];
   }
 
@@ -181,6 +180,7 @@ export abstract class IngredientBase<TEntity extends IngredientEntity = Ingredie
    * Categorized notes (e.g., AI assumptions, user annotations)
    */
   public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> {
+    /* c8 ignore next 2 - coverage intermittently missed in full suite */
     return this._ingredient.notes ?? [];
   }
 

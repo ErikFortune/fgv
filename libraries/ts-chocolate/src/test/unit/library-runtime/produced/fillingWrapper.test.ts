@@ -977,4 +977,86 @@ describe('ProducedFilling', () => {
       });
     });
   });
+
+  describe('toSourceVariation', () => {
+    test('toSourceVariation() with targetWeight = 0 computes from ingredients', () => {
+      const zeroWeight: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 0 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate' as IngredientId,
+            amount: 200 as Measurement,
+            unit: 'g' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.cream' as IngredientId,
+            amount: 100 as Measurement,
+            unit: 'mL' as MeasurementUnit
+          }
+        ]
+      };
+
+      expect(ProducedFilling.toSourceVariation(zeroWeight, '2026-01-01-02')).toSucceedAndSatisfy(
+        (variation) => {
+          expect(variation.baseWeight).toBe(300 as Measurement);
+        }
+      );
+    });
+
+    test('toSourceVariation() without createdDate uses current date', () => {
+      const before = new Date().toISOString();
+
+      expect(ProducedFilling.toSourceVariation(baseProducedFilling, '2026-01-01-02')).toSucceedAndSatisfy(
+        (variation) => {
+          expect(variation.createdDate).toBeDefined();
+          const created = new Date(variation.createdDate);
+          const beforeDate = new Date(before);
+          expect(created.getTime()).toBeGreaterThanOrEqual(beforeDate.getTime());
+        }
+      );
+    });
+  });
+
+  describe('optional fields - _deepCopy with modifiers', () => {
+    test('undo/redo with modifiers exercises _deepCopy modifier branch', () => {
+      const wrapper = ProducedFilling.create(fillingWithModifiers).orThrow();
+
+      wrapper
+        .setIngredient('test.butter' as IngredientId, 50 as Measurement, 'g' as MeasurementUnit)
+        .orThrow();
+
+      wrapper.undo().orThrow();
+
+      const vanilla = wrapper.ingredients.find((i) => i.ingredientId === ('test.vanilla' as IngredientId));
+      expect(vanilla?.modifiers).toEqual({ spoonLevel: 'level' });
+
+      const salt = wrapper.ingredients.find((i) => i.ingredientId === ('test.salt' as IngredientId));
+      expect(salt?.modifiers).toEqual({ toTaste: true });
+    });
+  });
+
+  describe('_modifiersEqual with both defined but different values', () => {
+    test('getChanges() detects modifier value differences when both have modifiers', () => {
+      const wrapper1 = ProducedFilling.create(baseProducedFilling).orThrow();
+      wrapper1
+        .setIngredient('test.vanilla' as IngredientId, 1 as Measurement, 'tsp' as MeasurementUnit, {
+          spoonLevel: 'level',
+          toTaste: false
+        })
+        .orThrow();
+
+      const wrapper2 = ProducedFilling.create(baseProducedFilling).orThrow();
+      wrapper2
+        .setIngredient('test.vanilla' as IngredientId, 1 as Measurement, 'tsp' as MeasurementUnit, {
+          spoonLevel: 'heaping',
+          toTaste: true
+        })
+        .orThrow();
+
+      const changes = wrapper1.getChanges(wrapper2.snapshot);
+      expect(changes.ingredientsChanged).toBe(true);
+    });
+  });
 });

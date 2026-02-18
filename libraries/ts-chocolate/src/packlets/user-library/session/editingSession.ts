@@ -95,6 +95,8 @@ export class EditingSession {
     this._baseRecipe = baseRecipe;
     this._produced = produced;
     this._originalSnapshot = originalSnapshot ?? produced.createSnapshot();
+    // TODO: this is an observable external contract (id generated if not supplied) that should be tested.
+    /* c8 ignore next 1 - branch: sessionId param exists for future restore-with-id but is not yet wired */
     this._sessionId = sessionId ?? generateSessionId().orThrow();
   }
 

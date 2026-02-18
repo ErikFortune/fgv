@@ -97,6 +97,7 @@ export class RolledTruffleRecipeVariation
           (msg) => `confection ${this._confectionId}: failed to resolve enrobing chocolate: ${msg}`
         )
         .onSuccess((resolved) => {
+          /* c8 ignore next 5 - defensive: library data guarantees enrobing chocolate IS chocolate */
           if (!resolved.primary.isChocolate()) {
             return fail(
               `confection ${this._confectionId}: primary ingredient for enrobing chocolate is not a chocolate`
@@ -138,10 +139,10 @@ export class RolledTruffleRecipeVariation
         .getWithAlternates(coatings)
         .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve coatings: ${msg}`)
         .onSuccess((resolved) => {
-          const primaryId = coatings.preferredId ?? coatings.ids[0];
+          const primaryId = Helpers.getPreferredIdOrFirst(coatings)!;
           const resolvedOptions: IResolvedCoatingOption[] = [
             { id: primaryId, ingredient: resolved.primary },
-            /* c8 ignore next 4 - only reached with alternate coating ingredients in test data */
+            /* c8 ignore next 4 - branch: only reached with alternate coating ingredients in test data */
             ...resolved.alternates.map((ingredient, idx) => ({
               id: coatings.ids.filter((id) => id !== primaryId)[idx],
               ingredient
@@ -171,7 +172,7 @@ export class RolledTruffleRecipeVariation
    * @public
    */
   public get preferredProcedure(): IResolvedConfectionProcedure | undefined {
-    return this.procedures ? Helpers.getPreferredOrFirst(this.procedures) : undefined;
+    return Helpers.getPreferredOrFirst(this.procedures);
   }
 
   /**
