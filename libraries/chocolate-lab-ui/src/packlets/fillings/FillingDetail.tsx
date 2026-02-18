@@ -195,16 +195,35 @@ function IngredientRow({
     resolved.entity.modifiers
   );
 
+  const processNote = resolved.entity.modifiers?.processNote;
+  const yieldFactor = resolved.entity.modifiers?.yieldFactor;
+  const unit = resolved.entity.unit ?? 'g';
+  const hasYield = yieldFactor !== undefined && yieldFactor !== 1.0 && (unit === 'g' || unit === 'mL');
+  const contributedAmount = hasYield
+    ? formatIngredientAmount(resolved.amount * (yieldFactor ?? 1), unit)
+    : undefined;
+
   return (
     <EntityRow<IngredientId>
       items={items}
       preferredId={resolved.ingredient.id}
       onClick={onClick}
       rightContent={
-        <span className="text-xs text-gray-500 tabular-nums shrink-0">
-          {displayAmount}
+        <span className="tabular-nums shrink-0 text-right">
+          <span className="text-xs text-gray-500">{displayAmount}</span>
           {!scaleFactor && resolved.entity.modifiers?.toTaste && (
-            <span className="ml-1 text-gray-400 italic">to taste</span>
+            <span className="ml-1 text-xs text-gray-400 italic">to taste</span>
+          )}
+          {hasYield && (
+            <span className="flex items-baseline justify-end gap-1 text-xs text-gray-400 italic mt-0.5">
+              <span>
+                {processNote ? `${processNote} (×${yieldFactor!.toFixed(2)})` : `×${yieldFactor!.toFixed(2)}`}
+              </span>
+              <span className="not-italic text-gray-400 tabular-nums">{contributedAmount}</span>
+            </span>
+          )}
+          {!hasYield && processNote && (
+            <span className="block text-xs text-gray-400 italic mt-0.5">{processNote}</span>
           )}
         </span>
       }
@@ -405,7 +424,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             label="Variations"
           />
           <div className="pl-[22px] mt-1 text-sm text-gray-600">
-            Yield: {selectedVariation.baseWeight}g
+            Yield: {formatIngredientAmount(selectedVariation.baseWeight, 'g')}
             {selectedVariation.yield && <span className="text-gray-400"> ({selectedVariation.yield})</span>}
           </div>
         </div>
@@ -414,8 +433,15 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       {/* Variation Info (single-variation fallback) */}
       {filling.variations.length <= 1 && (
         <DetailSection title="Recipe">
-          <DetailRow label="Created" value={selectedVariation.createdDate} />
-          <DetailRow label="Base Weight" value={`${selectedVariation.baseWeight}g`} />
+          <DetailRow
+            label="Created"
+            value={new Date(selectedVariation.createdDate).toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          />
+          <DetailRow label="Base Weight" value={formatIngredientAmount(selectedVariation.baseWeight, 'g')} />
           {selectedVariation.yield && <DetailRow label="Yield" value={selectedVariation.yield} />}
         </DetailSection>
       )}
@@ -430,7 +456,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             step={10}
             className="w-24 text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-choco-primary tabular-nums"
             value={yieldInputValue}
-            placeholder={String(selectedVariation.baseWeight)}
+            placeholder={String(Math.round(selectedVariation.baseWeight))}
             onChange={(e): void => setYieldInputValue(e.target.value)}
             onBlur={(): void => {
               const num = parseFloat(yieldInputValue);

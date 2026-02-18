@@ -195,12 +195,9 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     return CommonConverters.fillingRecipeVariationSpec
       .convert(newVariationSpec)
       .onSuccess((variationSpec) => {
-        // Use targetWeight as the base weight. If targetWeight is 0 (unscaled recipe),
-        // compute the effective weight from ingredient amounts instead.
-        const computedWeight =
-          snapshot.targetWeight > 0
-            ? snapshot.targetWeight
-            : ProducedFilling._calculateWeightFromIngredients(snapshot.ingredients);
+        // Always compute baseWeight from current ingredients (applies yieldFactor).
+        // targetWeight is a scaling target and may be stale if ingredients were added/removed.
+        const computedWeight = ProducedFilling._calculateWeightFromIngredients(snapshot.ingredients);
         return CommonConverters.measurement.convert(computedWeight).onSuccess((baseWeight) => {
           // Convert ingredients back to source format (no scaling needed - use as-is)
           const ingredients = snapshot.ingredients.map((ing) =>

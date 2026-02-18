@@ -309,7 +309,23 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     (index: number, unit: MeasurementUnit): void => {
       const existing = producedIngredients[index];
       const newAmount = unit === 'pinch' ? (1 as Measurement) : existing.amount;
-      const newModifiers = unit === 'tsp' || unit === 'Tbsp' ? existing.modifiers : undefined;
+      let newModifiers: Entities.Fillings.IIngredientModifiers | undefined;
+      if (unit === 'tsp' || unit === 'Tbsp') {
+        // Spoon units: keep spoon-specific modifiers, drop weight-specific ones
+        newModifiers =
+          existing.modifiers?.spoonLevel !== undefined || existing.modifiers?.toTaste !== undefined
+            ? { spoonLevel: existing.modifiers?.spoonLevel, toTaste: existing.modifiers?.toTaste }
+            : undefined;
+      } else if (unit === 'g' || unit === 'mL') {
+        // Weight units: keep weight-specific modifiers, drop spoon-specific ones
+        newModifiers =
+          existing.modifiers?.yieldFactor !== undefined || existing.modifiers?.processNote !== undefined
+            ? { yieldFactor: existing.modifiers?.yieldFactor, processNote: existing.modifiers?.processNote }
+            : undefined;
+      } else {
+        // pinch, seeds, pods: no modifiers
+        newModifiers = undefined;
+      }
       session.setIngredient(existing.ingredientId, newAmount, unit, newModifiers);
       notifySession();
     },
@@ -684,6 +700,51 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       />
                       to taste
                     </label>
+                  </div>
+                )}
+                {(ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined) && (
+                  <div className="flex items-center gap-3 mt-1.5 pl-1">
+                    <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                      yield factor
+                    </label>
+                    <input
+                      type="number"
+                      className="w-20 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                      value={ing.modifiers?.yieldFactor ?? 1}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      onChange={(e): void => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val) && val >= 0 && val <= 1) {
+                          handleIngredientModifiersChange(index, {
+                            ...ing.modifiers,
+                            yieldFactor: val === 1 ? undefined : val
+                          });
+                        }
+                      }}
+                    />
+                    <input
+                      type="text"
+                      className="flex-1 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                      value={ing.modifiers?.processNote ?? ''}
+                      placeholder="process note (e.g. steeped and strained)"
+                      onChange={(e): void => {
+                        handleIngredientModifiersChange(index, {
+                          ...ing.modifiers,
+                          processNote: e.target.value || undefined
+                        });
+                      }}
+                      onBlur={(e): void => {
+                        const val = e.target.value.trim();
+                        if (val !== (ing.modifiers?.processNote ?? '')) {
+                          handleIngredientModifiersChange(index, {
+                            ...ing.modifiers,
+                            processNote: val || undefined
+                          });
+                        }
+                      }}
+                    />
                   </div>
                 )}
                 {unresolvedIngredients[index] && (

@@ -979,8 +979,8 @@ describe('ProducedFilling', () => {
   });
 
   describe('toSourceVariation', () => {
-    test('toSourceVariation() with targetWeight = 0 computes from ingredients', () => {
-      const zeroWeight: IProducedFillingEntity = {
+    test('toSourceVariation() computes baseWeight from ingredients', () => {
+      const snapshot: IProducedFillingEntity = {
         variationId: testVariationId,
         scaleFactor: 1.0,
         targetWeight: 0 as Measurement,
@@ -998,9 +998,42 @@ describe('ProducedFilling', () => {
         ]
       };
 
-      expect(ProducedFilling.toSourceVariation(zeroWeight, '2026-01-01-02')).toSucceedAndSatisfy(
+      expect(ProducedFilling.toSourceVariation(snapshot, '2026-01-01-02')).toSucceedAndSatisfy(
         (variation) => {
           expect(variation.baseWeight).toBe(300 as Measurement);
+        }
+      );
+    });
+
+    test('toSourceVariation() ignores stale targetWeight when ingredients have changed', () => {
+      // Regression: targetWeight was stale (from earlier save with fewer ingredients);
+      // baseWeight must always reflect the current ingredient list.
+      const staleTargetWeight: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 175 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate' as IngredientId,
+            amount: 200 as Measurement,
+            unit: 'g' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.cream' as IngredientId,
+            amount: 100 as Measurement,
+            unit: 'g' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.butter' as IngredientId,
+            amount: 50 as Measurement,
+            unit: 'g' as MeasurementUnit
+          }
+        ]
+      };
+
+      expect(ProducedFilling.toSourceVariation(staleTargetWeight, '2026-01-01-02')).toSucceedAndSatisfy(
+        (variation) => {
+          expect(variation.baseWeight).toBe(350 as Measurement);
         }
       );
     });
@@ -1127,13 +1160,7 @@ describe('ProducedFilling', () => {
     });
 
     test('toSourceVariation() with yieldFactor computes weight from contributed amounts', () => {
-      // targetWeight is 0 → should compute from ingredients with yieldFactor
-      const zeroTargetWeight: IProducedFillingEntity = {
-        ...fillingWithYieldFactors,
-        targetWeight: 0 as Measurement
-      };
-
-      expect(ProducedFilling.toSourceVariation(zeroTargetWeight, '2026-01-01-02')).toSucceedAndSatisfy(
+      expect(ProducedFilling.toSourceVariation(fillingWithYieldFactors, '2026-01-01-02')).toSucceedAndSatisfy(
         (variation) => {
           // 200*1.0 + 300*(200/300) + 50*0.0 = 400
           expect(variation.baseWeight).toBeCloseTo(400, 0);
