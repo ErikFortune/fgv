@@ -12,14 +12,14 @@ This is the main difference from the data-layer Procedure.render():
 **Signature:**
 
 ```typescript
-render(__renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
+render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>__renderContext</td><td>IProcedureRenderContext</td><td></td></tr>
+<tr><td>renderContext</td><td>IProcedureRenderContext</td><td>The render context with recipe and library access</td></tr>
 </tbody></table>
 
 **Returns:**

@@ -318,7 +318,7 @@ Gets the procedure steps with fully materialized runtime tasks.
 </td></tr>
 <tr><td>
 
-[render(__renderContext)](./Procedure.render.md)
+[render(renderContext)](./Procedure.render.md)
 
 </td><td>
 

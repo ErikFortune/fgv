@@ -78,4 +78,21 @@ The specific produced filling this procedure is being rendered for
 Optional mold being used for this recipe
 
 </td></tr>
+<tr><td>
+
+[params](./IProcedureRenderContext.params.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Readonly&lt;Record&lt;string, unknown&gt;&gt;
+
+</td><td>
+
+Optional parameter overrides for rendering.
+
+</td></tr>
 </tbody></table>
