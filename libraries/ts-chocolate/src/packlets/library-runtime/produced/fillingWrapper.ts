@@ -37,11 +37,7 @@ import {
 } from '../../common';
 import { Fillings, IProducedFillingEntity, Session } from '../../entities';
 import type { IFillingRecipeVariation } from '../model';
-
-/**
- * Maximum number of undo snapshots to retain
- */
-const MAX_HISTORY_SIZE: number = 50;
+import { EditableWrapper } from '../editableWrapper';
 
 /**
  * Structure describing what changed between two produced fillings
@@ -65,20 +61,14 @@ export interface IFillingChanges {
  * Provides editing methods that maintain history for undo/redo operations.
  * @public
  */
-export class ProducedFilling {
-  private _current: IProducedFillingEntity;
-  private _undoStack: IProducedFillingEntity[];
-  private _redoStack: IProducedFillingEntity[];
-
+export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
   /**
    * Creates a ProducedFilling.
    * Use static factory methods instead of calling this directly.
    * @internal
    */
   private constructor(initial: IProducedFillingEntity) {
-    this._current = initial;
-    this._undoStack = [];
-    this._redoStack = [];
+    super(initial);
   }
 
   /**
@@ -118,9 +108,7 @@ export class ProducedFilling {
     history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>
   ): Result<ProducedFilling> {
     const instance = new ProducedFilling(history.current);
-    // Restore undo/redo stacks
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
   }
 
@@ -408,107 +396,6 @@ export class ProducedFilling {
   }
 
   // ============================================================================
-  // Snapshot Management
-  // ============================================================================
-
-  /**
-   * Creates an immutable snapshot of the current state.
-   * @returns Immutable copy of current produced filling
-   * @public
-   */
-  public createSnapshot(): IProducedFillingEntity {
-    return this._deepCopy(this._current);
-  }
-
-  /**
-   * Restores state from a snapshot.
-   * Pushes current state to undo stack and clears redo stack.
-   * @param snapshot - Snapshot to restore
-   * @returns Success or failure
-   * @public
-   */
-  public restoreSnapshot(snapshot: IProducedFillingEntity): Result<void> {
-    this._pushUndo();
-    this._current = this._deepCopy(snapshot);
-    this._redoStack = [];
-    return succeed(undefined);
-  }
-
-  /**
-   * Serializes the complete editing history for persistence.
-   * Includes current state, original state, and undo/redo stacks.
-   * @param original - Original state when editing started (for change detection on restore)
-   * @returns Serialized editing history
-   * @public
-   */
-  public getSerializedHistory(
-    original: IProducedFillingEntity
-  ): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity> {
-    return {
-      current: this._deepCopy(this._current),
-      original: this._deepCopy(original),
-      undoStack: this._undoStack.map((state) => this._deepCopy(state)),
-      redoStack: this._redoStack.map((state) => this._deepCopy(state))
-    };
-  }
-
-  // ============================================================================
-  // Undo/Redo
-  // ============================================================================
-
-  /**
-   * Undoes the last change.
-   * Pops from undo stack, pushes current to redo, and restores previous state.
-   * @returns Success with true if undo succeeded, Success with false if no history
-   * @public
-   */
-  public undo(): Result<boolean> {
-    if (this._undoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const previous = this._undoStack.pop()!;
-    this._redoStack.push(this._deepCopy(this._current));
-    this._current = previous;
-    return succeed(true);
-  }
-
-  /**
-   * Redoes the last undone change.
-   * Pops from redo stack, pushes current to undo, and restores future state.
-   * @returns Success with true if redo succeeded, Success with false if no future
-   * @public
-   */
-  public redo(): Result<boolean> {
-    if (this._redoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const future = this._redoStack.pop()!;
-    this._undoStack.push(this._deepCopy(this._current));
-    this._current = future;
-    return succeed(true);
-  }
-
-  /**
-   * Checks if undo is available.
-   * @returns True if undo stack is not empty
-   * @public
-   */
-  public canUndo(): boolean {
-    return this._undoStack.length > 0;
-  }
-
-  /**
-   * Checks if redo is available.
-   * @returns True if redo stack is not empty
-   * @public
-   */
-  public canRedo(): boolean {
-    return this._redoStack.length > 0;
-  }
-
-  // ============================================================================
   // Editing Methods
   // ============================================================================
 
@@ -554,7 +441,6 @@ export class ProducedFilling {
       ...this._current,
       ingredients
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -579,7 +465,6 @@ export class ProducedFilling {
       ...this._current,
       ingredients: this._current.ingredients.filter((ing) => ing.ingredientId !== id)
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -630,7 +515,6 @@ export class ProducedFilling {
       ingredients: scaledIngredients,
       targetWeight: actualWeight
     };
-    this._redoStack = [];
 
     return succeed(actualWeight);
   }
@@ -649,7 +533,6 @@ export class ProducedFilling {
       ...this._current,
       notes: Helpers.nonEmpty(notes)
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -668,7 +551,6 @@ export class ProducedFilling {
       ...this._current,
       procedureId: id
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -676,14 +558,6 @@ export class ProducedFilling {
   // ============================================================================
   // Read-only Access
   // ============================================================================
-
-  /**
-   * Gets the current state as an immutable snapshot.
-   * @public
-   */
-  public get snapshot(): IProducedFillingEntity {
-    return this.createSnapshot();
-  }
 
   /**
    * Gets the variation ID.
@@ -750,17 +624,6 @@ export class ProducedFilling {
   // ============================================================================
 
   /**
-   * Pushes current state to undo stack, maintaining max size.
-   */
-  private _pushUndo(): void {
-    this._undoStack.push(this._deepCopy(this._current));
-
-    if (this._undoStack.length > MAX_HISTORY_SIZE) {
-      this._undoStack.shift();
-    }
-  }
-
-  /**
    * Calculates total weight from current weight-contributing ingredients.
    */
   private _calculateTotalWeight(): Measurement {
@@ -785,10 +648,7 @@ export class ProducedFilling {
     return total as Measurement;
   }
 
-  /**
-   * Creates a deep copy of a produced filling.
-   */
-  private _deepCopy(filling: IProducedFillingEntity): IProducedFillingEntity {
+  protected _deepCopy(filling: IProducedFillingEntity): IProducedFillingEntity {
     return {
       variationId: filling.variationId,
       scaleFactor: filling.scaleFactor,

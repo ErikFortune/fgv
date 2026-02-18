@@ -157,7 +157,7 @@ export class BarTruffleEditingSession<
     // For initial creation, find the filling in the produced confection and use its base weight
     /* c8 ignore next 1 - branch: fillings always present in test confections */
     const fillingSlot = this._produced.fillings?.find((f) => f.slotId === slotId);
-    /* c8 ignore next 3 - defensive: slot not found or slot type not recipe indicates internal inconsistency */
+    /* c8 ignore next 4 - defensive: slot not found or slot type not recipe indicates internal inconsistency */
     if (!fillingSlot || fillingSlot.slotType !== 'recipe') {
       // TODO: this is an error. treat it like one.
       return succeed(ZeroMeasurement);

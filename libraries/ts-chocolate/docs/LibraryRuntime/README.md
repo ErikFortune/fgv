@@ -406,6 +406,15 @@ A resolved view of a mold with computed properties.
 A resolved view of a decoration with materialized ingredient references.
 
 </td></tr>
+<tr><td>
+
+[EditableWrapper](./classes/EditableWrapper.md)
+
+</td><td>
+
+Generic base class for mutable entity wrappers with undo/redo support.
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

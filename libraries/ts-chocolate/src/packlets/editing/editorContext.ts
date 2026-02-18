@@ -26,7 +26,7 @@ import {
   Validation as CommonValidation,
   CollectionId
 } from '../common';
-import { IEditorContext, IValidationReport } from './model';
+import { IEditorContext, ISnapshotProvider, IValidationReport } from './model';
 import { EditableCollection } from './editableCollection';
 import { ValidationReportBuilder } from './validation';
 
@@ -191,6 +191,17 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
           return this._createIdFromBaseId(finalBaseId);
         });
       });
+  }
+
+  /**
+   * Update existing entity from a snapshot provider (e.g. an EditableWrapper).
+   * Convenience method that calls wrapper.snapshot and delegates to update().
+   * @param id - Entity ID
+   * @param wrapper - Any ISnapshotProvider whose current snapshot will be saved
+   * @returns Result indicating success or failure
+   */
+  public updateFromWrapper(id: TId, wrapper: ISnapshotProvider<T>): Result<T> {
+    return this.update(id, wrapper.snapshot);
   }
 
   /**

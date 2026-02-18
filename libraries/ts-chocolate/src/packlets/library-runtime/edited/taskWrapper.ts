@@ -27,13 +27,9 @@ import { Result, succeed } from '@fgv/ts-utils';
 
 import { Celsius, Minutes, Model as CommonModel } from '../../common';
 import { Tasks, Session } from '../../entities';
+import { EditableWrapper } from '../editableWrapper';
 
 type IRawTaskEntity = Tasks.IRawTaskEntity;
-
-/**
- * Maximum number of undo snapshots to retain
- */
-const MAX_HISTORY_SIZE: number = 50;
 
 /**
  * Structure describing what changed between two raw task entities
@@ -67,20 +63,14 @@ export interface ITaskChanges {
  * Provides editing methods that maintain history for undo/redo operations.
  * @public
  */
-export class EditedTask {
-  private _current: IRawTaskEntity;
-  private _undoStack: IRawTaskEntity[];
-  private _redoStack: IRawTaskEntity[];
-
+export class EditedTask extends EditableWrapper<IRawTaskEntity> {
   /**
    * Creates an EditedTask.
    * Use static factory methods instead of calling this directly.
    * @internal
    */
   private constructor(initial: IRawTaskEntity) {
-    this._current = initial;
-    this._undoStack = [];
-    this._redoStack = [];
+    super(initial);
   }
 
   /**
@@ -90,7 +80,7 @@ export class EditedTask {
    * @public
    */
   public static create(initial: IRawTaskEntity): Result<EditedTask> {
-    return succeed(new EditedTask(EditedTask._deepCopy(initial)));
+    return succeed(new EditedTask(EditedTask._copyEntity(initial)));
   }
 
   /**
@@ -104,110 +94,8 @@ export class EditedTask {
     history: Session.ISerializedEditingHistoryEntity<IRawTaskEntity>
   ): Result<EditedTask> {
     const instance = new EditedTask(history.current);
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
-  }
-
-  // ============================================================================
-  // Snapshot Management
-  // ============================================================================
-
-  /**
-   * Creates an immutable snapshot of the current state.
-   * @returns Immutable copy of current raw task entity
-   * @public
-   */
-  public createSnapshot(): IRawTaskEntity {
-    return EditedTask._deepCopy(this._current);
-  }
-
-  /**
-   * Restores state from a snapshot.
-   * Pushes current state to undo stack and clears redo stack.
-   * @param snapshot - Snapshot to restore
-   * @returns Success or failure
-   * @public
-   */
-  public restoreSnapshot(snapshot: IRawTaskEntity): Result<void> {
-    this._pushUndo();
-    this._current = EditedTask._deepCopy(snapshot);
-    this._redoStack = [];
-    return succeed(undefined);
-  }
-
-  /**
-   * Serializes the complete editing history for persistence.
-   * Includes current state, original state, and undo/redo stacks.
-   * @param original - Original state when editing started (for change detection on restore)
-   * @returns Serialized editing history
-   * @public
-   */
-  public getSerializedHistory(
-    original: IRawTaskEntity
-  ): Session.ISerializedEditingHistoryEntity<IRawTaskEntity> {
-    return {
-      current: EditedTask._deepCopy(this._current),
-      original: EditedTask._deepCopy(original),
-      undoStack: this._undoStack.map((state) => EditedTask._deepCopy(state)),
-      redoStack: this._redoStack.map((state) => EditedTask._deepCopy(state))
-    };
-  }
-
-  // ============================================================================
-  // Undo/Redo
-  // ============================================================================
-
-  /**
-   * Undoes the last change.
-   * Pops from undo stack, pushes current to redo, and restores previous state.
-   * @returns Success with true if undo succeeded, Success with false if no history
-   * @public
-   */
-  public undo(): Result<boolean> {
-    if (this._undoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const previous = this._undoStack.pop()!;
-    this._redoStack.push(EditedTask._deepCopy(this._current));
-    this._current = previous;
-    return succeed(true);
-  }
-
-  /**
-   * Redoes the last undone change.
-   * Pops from redo stack, pushes current to undo, and restores future state.
-   * @returns Success with true if redo succeeded, Success with false if no future
-   * @public
-   */
-  public redo(): Result<boolean> {
-    if (this._redoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const future = this._redoStack.pop()!;
-    this._undoStack.push(EditedTask._deepCopy(this._current));
-    this._current = future;
-    return succeed(true);
-  }
-
-  /**
-   * Checks if undo is available.
-   * @returns True if undo stack is not empty
-   * @public
-   */
-  public canUndo(): boolean {
-    return this._undoStack.length > 0;
-  }
-
-  /**
-   * Checks if redo is available.
-   * @returns True if redo stack is not empty
-   * @public
-   */
-  public canRedo(): boolean {
-    return this._redoStack.length > 0;
   }
 
   // ============================================================================
@@ -223,7 +111,6 @@ export class EditedTask {
   public setName(name: string): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, name };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -236,7 +123,6 @@ export class EditedTask {
   public setTemplate(template: string): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, template };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -249,7 +135,6 @@ export class EditedTask {
   public setDefaultActiveTime(defaultActiveTime: Minutes | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, defaultActiveTime };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -262,7 +147,6 @@ export class EditedTask {
   public setDefaultWaitTime(defaultWaitTime: Minutes | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, defaultWaitTime };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -275,7 +159,6 @@ export class EditedTask {
   public setDefaultHoldTime(defaultHoldTime: Minutes | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, defaultHoldTime };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -288,7 +171,6 @@ export class EditedTask {
   public setDefaultTemperature(defaultTemperature: Celsius | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, defaultTemperature };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -304,7 +186,6 @@ export class EditedTask {
       ...this._current,
       notes: notes ? notes.map((n) => ({ ...n })) : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -320,7 +201,6 @@ export class EditedTask {
       ...this._current,
       tags: tags ? [...tags] : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -336,7 +216,6 @@ export class EditedTask {
       ...this._current,
       defaults: defaults ? { ...defaults } : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -351,29 +230,12 @@ export class EditedTask {
   public applyUpdate(update: Partial<IRawTaskEntity>): Result<void> {
     this._pushUndo();
     this._current = Object.assign({}, this._current, update);
-    this._redoStack = [];
     return succeed(undefined);
   }
 
   // ============================================================================
   // Read-only Access
   // ============================================================================
-
-  /**
-   * Gets the current state as an immutable snapshot.
-   * @public
-   */
-  public get snapshot(): IRawTaskEntity {
-    return this.createSnapshot();
-  }
-
-  /**
-   * Gets the current entity (direct reference — callers should not mutate).
-   * @public
-   */
-  public get current(): IRawTaskEntity {
-    return this._current;
-  }
 
   /**
    * Gets the task name.
@@ -449,21 +311,11 @@ export class EditedTask {
   // Private Helpers
   // ============================================================================
 
-  /**
-   * Pushes current state to undo stack, maintaining max size.
-   */
-  private _pushUndo(): void {
-    this._undoStack.push(EditedTask._deepCopy(this._current));
-
-    if (this._undoStack.length > MAX_HISTORY_SIZE) {
-      this._undoStack.shift();
-    }
+  protected _deepCopy(entity: IRawTaskEntity): IRawTaskEntity {
+    return EditedTask._copyEntity(entity);
   }
 
-  /**
-   * Creates a deep copy of a raw task entity.
-   */
-  private static _deepCopy(entity: IRawTaskEntity): IRawTaskEntity {
+  private static _copyEntity(entity: IRawTaskEntity): IRawTaskEntity {
     return {
       ...entity,
       notes: entity.notes ? entity.notes.map((n) => ({ ...n })) : undefined,

@@ -141,6 +141,19 @@ Create new entity with specified base ID.
 </td></tr>
 <tr><td>
 
+[updateFromWrapper(id, wrapper)](./ValidatingEditorContext.updateFromWrapper.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Update existing entity from a snapshot provider (e.g.
+
+</td></tr>
+<tr><td>
+
 [update(id, entity)](./ValidatingEditorContext.update.md)
 
 </td><td>

@@ -306,6 +306,29 @@ describe('EditorContext', () => {
     });
   });
 
+  describe('updateFromWrapper', () => {
+    test('should update entity from a snapshot provider', () => {
+      const collection = createTestCollection(
+        new Map([['item1' as TestBaseId, { name: 'Original', value: 10 }]])
+      );
+      const context = createTestContext(collection).orThrow();
+
+      const wrapper = { snapshot: { name: 'FromWrapper', value: 99 } as TestEntity };
+      expect(context.updateFromWrapper('test-collection.item1' as TestEntityId, wrapper)).toSucceed();
+      expect(context.get('test-collection.item1' as TestEntityId)).toSucceedWith(wrapper.snapshot);
+    });
+
+    test('should fail for non-existing entity', () => {
+      const collection = createTestCollection();
+      const context = createTestContext(collection).orThrow();
+
+      const wrapper = { snapshot: { name: 'Test', value: 10 } as TestEntity };
+      expect(context.updateFromWrapper('test-collection.nonexistent' as TestEntityId, wrapper)).toFailWith(
+        /not found/i
+      );
+    });
+  });
+
   describe('delete', () => {
     test('should delete existing entity', () => {
       const collection = createTestCollection(

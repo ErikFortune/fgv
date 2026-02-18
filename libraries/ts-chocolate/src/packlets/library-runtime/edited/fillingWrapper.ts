@@ -28,15 +28,11 @@ import { Result, fail, succeed } from '@fgv/ts-utils';
 
 import { Model as CommonModel } from '../../common';
 import { Fillings, Session } from '../../entities';
+import { EditableWrapper } from '../editableWrapper';
 
 import type { FillingName, FillingRecipeVariationSpec } from '../../common';
 
 type FillingCategory = Fillings.FillingCategory;
-
-/**
- * Maximum number of undo snapshots to retain
- */
-const MAX_HISTORY_SIZE: number = 50;
 
 /**
  * Structure describing what changed between two filling recipe entities at the recipe level
@@ -69,20 +65,14 @@ export interface IFillingRecipeChanges {
  * to integrate it back into this wrapper.
  * @public
  */
-export class EditedFillingRecipe {
-  private _current: Fillings.IFillingRecipeEntity;
-  private _undoStack: Fillings.IFillingRecipeEntity[];
-  private _redoStack: Fillings.IFillingRecipeEntity[];
-
+export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity> {
   /**
    * Creates an EditedFillingRecipe.
    * Use static factory methods instead of calling this directly.
    * @internal
    */
   private constructor(initial: Fillings.IFillingRecipeEntity) {
-    this._current = initial;
-    this._undoStack = [];
-    this._redoStack = [];
+    super(initial);
   }
 
   /**
@@ -92,7 +82,7 @@ export class EditedFillingRecipe {
    * @public
    */
   public static create(initial: Fillings.IFillingRecipeEntity): Result<EditedFillingRecipe> {
-    return succeed(new EditedFillingRecipe(EditedFillingRecipe._deepCopy(initial)));
+    return succeed(new EditedFillingRecipe(EditedFillingRecipe._copyEntity(initial)));
   }
 
   /**
@@ -106,105 +96,8 @@ export class EditedFillingRecipe {
     history: Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>
   ): Result<EditedFillingRecipe> {
     const instance = new EditedFillingRecipe(history.current);
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
-  }
-
-  // ============================================================================
-  // Snapshot Management
-  // ============================================================================
-
-  /**
-   * Creates an immutable snapshot of the current state.
-   * @returns Immutable copy of current filling recipe entity
-   * @public
-   */
-  public createSnapshot(): Fillings.IFillingRecipeEntity {
-    return EditedFillingRecipe._deepCopy(this._current);
-  }
-
-  /**
-   * Restores state from a snapshot.
-   * Pushes current state to undo stack and clears redo stack.
-   * @param snapshot - Snapshot to restore
-   * @returns Success or failure
-   * @public
-   */
-  public restoreSnapshot(snapshot: Fillings.IFillingRecipeEntity): Result<void> {
-    this._pushUndo();
-    this._current = EditedFillingRecipe._deepCopy(snapshot);
-    this._redoStack = [];
-    return succeed(undefined);
-  }
-
-  /**
-   * Serializes the complete editing history for persistence.
-   * @param original - Original state when editing started (for change detection on restore)
-   * @returns Serialized editing history
-   * @public
-   */
-  public getSerializedHistory(
-    original: Fillings.IFillingRecipeEntity
-  ): Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity> {
-    return {
-      current: EditedFillingRecipe._deepCopy(this._current),
-      original: EditedFillingRecipe._deepCopy(original),
-      undoStack: this._undoStack.map((state) => EditedFillingRecipe._deepCopy(state)),
-      redoStack: this._redoStack.map((state) => EditedFillingRecipe._deepCopy(state))
-    };
-  }
-
-  // ============================================================================
-  // Undo/Redo
-  // ============================================================================
-
-  /**
-   * Undoes the last change.
-   * @returns Success with true if undo succeeded, Success with false if no history
-   * @public
-   */
-  public undo(): Result<boolean> {
-    if (this._undoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const previous = this._undoStack.pop()!;
-    this._redoStack.push(EditedFillingRecipe._deepCopy(this._current));
-    this._current = previous;
-    return succeed(true);
-  }
-
-  /**
-   * Redoes the last undone change.
-   * @returns Success with true if redo succeeded, Success with false if no future
-   * @public
-   */
-  public redo(): Result<boolean> {
-    if (this._redoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const future = this._redoStack.pop()!;
-    this._undoStack.push(EditedFillingRecipe._deepCopy(this._current));
-    this._current = future;
-    return succeed(true);
-  }
-
-  /**
-   * Checks if undo is available.
-   * @public
-   */
-  public canUndo(): boolean {
-    return this._undoStack.length > 0;
-  }
-
-  /**
-   * Checks if redo is available.
-   * @public
-   */
-  public canRedo(): boolean {
-    return this._redoStack.length > 0;
   }
 
   // ============================================================================
@@ -220,7 +113,6 @@ export class EditedFillingRecipe {
   public setName(name: FillingName): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, name };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -233,7 +125,6 @@ export class EditedFillingRecipe {
   public setCategory(category: FillingCategory): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, category };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -246,7 +137,6 @@ export class EditedFillingRecipe {
   public setDescription(description: string | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, description };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -262,7 +152,6 @@ export class EditedFillingRecipe {
       ...this._current,
       tags: tags ? [...tags] : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -278,7 +167,6 @@ export class EditedFillingRecipe {
       ...this._current,
       urls: urls ? urls.map((u) => ({ ...u })) : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -294,7 +182,6 @@ export class EditedFillingRecipe {
     }
     this._pushUndo();
     this._current = { ...this._current, goldenVariationSpec: spec };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -321,7 +208,6 @@ export class EditedFillingRecipe {
     const variations = [...this._current.variations];
     variations[index] = EditedFillingRecipe._deepCopyVariation(variation);
     this._current = { ...this._current, variations };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -338,7 +224,6 @@ export class EditedFillingRecipe {
     this._pushUndo();
     const variations = [...this._current.variations, EditedFillingRecipe._deepCopyVariation(variation)];
     this._current = { ...this._current, variations };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -364,29 +249,12 @@ export class EditedFillingRecipe {
     const variations = [...this._current.variations];
     variations.splice(index, 1);
     this._current = { ...this._current, variations };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
   // ============================================================================
   // Read-only Access
   // ============================================================================
-
-  /**
-   * Gets the current state as an immutable snapshot.
-   * @public
-   */
-  public get snapshot(): Fillings.IFillingRecipeEntity {
-    return this.createSnapshot();
-  }
-
-  /**
-   * Gets the current entity (direct reference - callers should not mutate).
-   * @public
-   */
-  public get current(): Fillings.IFillingRecipeEntity {
-    return this._current;
-  }
 
   /**
    * Gets the filling recipe name.
@@ -465,15 +333,8 @@ export class EditedFillingRecipe {
   // Private Helpers
   // ============================================================================
 
-  /**
-   * Pushes current state to undo stack, maintaining max size.
-   */
-  private _pushUndo(): void {
-    this._undoStack.push(EditedFillingRecipe._deepCopy(this._current));
-
-    if (this._undoStack.length > MAX_HISTORY_SIZE) {
-      this._undoStack.shift();
-    }
+  protected _deepCopy(entity: Fillings.IFillingRecipeEntity): Fillings.IFillingRecipeEntity {
+    return EditedFillingRecipe._copyEntity(entity);
   }
 
   /**
@@ -512,10 +373,7 @@ export class EditedFillingRecipe {
     };
   }
 
-  /**
-   * Creates a deep copy of a filling recipe entity.
-   */
-  private static _deepCopy(entity: Fillings.IFillingRecipeEntity): Fillings.IFillingRecipeEntity {
+  private static _copyEntity(entity: Fillings.IFillingRecipeEntity): Fillings.IFillingRecipeEntity {
     return {
       ...entity,
       variations: entity.variations.map((v) => EditedFillingRecipe._deepCopyVariation(v)),

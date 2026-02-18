@@ -5,6 +5,8 @@
 Mutable wrapper for DecorationEntity with undo/redo support.
 Provides editing methods that maintain history for undo/redo operations.
 
+**Extends:** [`EditableWrapper<IDecorationEntity>`](../../classes/EditableWrapper.md)
+
 ## Properties
 
 <table><thead><tr><th>
@@ -27,40 +29,6 @@ Description
 <tbody>
 <tr><td>
 
-[snapshot](./EditedDecoration.snapshot.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IDecorationEntity](../../interfaces/IDecorationEntity.md)
-
-</td><td>
-
-Gets the current state as an immutable snapshot.
-
-</td></tr>
-<tr><td>
-
-[current](./EditedDecoration.current.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IDecorationEntity](../../interfaces/IDecorationEntity.md)
-
-</td><td>
-
-Gets the current entity (direct reference — callers should not mutate).
-
-</td></tr>
-<tr><td>
-
 [name](./EditedDecoration.name.md)
 
 </td><td>
@@ -74,6 +42,40 @@ string
 </td><td>
 
 Gets the decoration name.
+
+</td></tr>
+<tr><td>
+
+[snapshot](./EditableWrapper.snapshot.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current state as an immutable snapshot.
+
+</td></tr>
+<tr><td>
+
+[current](./EditableWrapper.current.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current entity (direct reference — callers should not mutate).
 
 </td></tr>
 </tbody></table>
@@ -118,97 +120,6 @@ Factory method for creating an EditedDecoration from an existing entity.
 </td><td>
 
 Factory method for restoring an EditedDecoration from serialized history.
-
-</td></tr>
-<tr><td>
-
-[createSnapshot()](./EditedDecoration.createSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Creates an immutable snapshot of the current state.
-
-</td></tr>
-<tr><td>
-
-[restoreSnapshot(snapshot)](./EditedDecoration.restoreSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Restores state from a snapshot.
-
-</td></tr>
-<tr><td>
-
-[getSerializedHistory(original)](./EditedDecoration.getSerializedHistory.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Serializes the complete editing history for persistence.
-
-</td></tr>
-<tr><td>
-
-[undo()](./EditedDecoration.undo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Undoes the last change.
-
-</td></tr>
-<tr><td>
-
-[redo()](./EditedDecoration.redo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Redoes the last undone change.
-
-</td></tr>
-<tr><td>
-
-[canUndo()](./EditedDecoration.canUndo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Checks if undo is available.
-
-</td></tr>
-<tr><td>
-
-[canRedo()](./EditedDecoration.canRedo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Checks if redo is available.
 
 </td></tr>
 <tr><td>
@@ -443,6 +354,97 @@ Checks if current state differs from original.
 </td><td>
 
 Gets detailed changes between current state and original.
+
+</td></tr>
+<tr><td>
+
+[createSnapshot()](./EditableWrapper.createSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates an immutable snapshot of the current state.
+
+</td></tr>
+<tr><td>
+
+[restoreSnapshot(snapshot)](./EditableWrapper.restoreSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Restores state from a snapshot.
+
+</td></tr>
+<tr><td>
+
+[getSerializedHistory(original)](./EditableWrapper.getSerializedHistory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Serializes the complete editing history for persistence.
+
+</td></tr>
+<tr><td>
+
+[undo()](./EditableWrapper.undo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Undoes the last change.
+
+</td></tr>
+<tr><td>
+
+[redo()](./EditableWrapper.redo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Redoes the last undone change.
+
+</td></tr>
+<tr><td>
+
+[canUndo()](./EditableWrapper.canUndo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if undo is available.
+
+</td></tr>
+<tr><td>
+
+[canRedo()](./EditableWrapper.canRedo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if redo is available.
 
 </td></tr>
 </tbody></table>

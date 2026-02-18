@@ -23,6 +23,25 @@ import { ICollectionSourceFile, ICollectionSourceMetadata } from '../library-dat
 import { CollectionId } from '../common';
 
 // ============================================================================
+// Snapshot Provider Interface
+// ============================================================================
+
+/**
+ * Implemented by any mutable wrapper that can produce an immutable snapshot of its current state.
+ * Used by {@link EditorContext.updateFromWrapper} to persist editable wrapper state without
+ * coupling the editor context to a specific wrapper implementation.
+ *
+ * @typeParam T - The entity type being wrapped
+ * @public
+ */
+export interface ISnapshotProvider<T> {
+  /**
+   * Gets an immutable snapshot of the current entity state.
+   */
+  readonly snapshot: T;
+}
+
+// ============================================================================
 // Core Editing Interfaces
 // ============================================================================
 

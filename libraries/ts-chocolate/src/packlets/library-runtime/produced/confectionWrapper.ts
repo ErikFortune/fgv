@@ -35,6 +35,7 @@ import {
   SlotId,
   Helpers
 } from '../../common';
+import { EditableWrapper } from '../editableWrapper';
 import {
   Confections,
   Session,
@@ -49,11 +50,6 @@ import type {
   IRolledTruffleRecipeVariation,
   IResolvedFillingSlot
 } from '../model';
-
-/**
- * Maximum number of undo snapshots to retain
- */
-const MAX_HISTORY_SIZE: number = 50;
 
 /**
  * Structure describing what changed between two produced confections
@@ -89,123 +85,16 @@ export interface IConfectionChanges {
  * Provides common editing methods and history management.
  * @public
  */
-export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
-  protected _current: T;
-  protected _undoStack: T[];
-  protected _redoStack: T[];
-
+export abstract class ProducedConfectionBase<
+  T extends AnyProducedConfectionEntity
+> extends EditableWrapper<T> {
   /**
    * Creates a ProducedConfectionBase.
    * Use static factory methods on derived classes instead of calling this directly.
    * @internal
    */
   protected constructor(initial: T) {
-    this._current = initial;
-    this._undoStack = [];
-    this._redoStack = [];
-  }
-
-  // ============================================================================
-  // Snapshot Management
-  // ============================================================================
-
-  /**
-   * Creates an immutable snapshot of the current state.
-   * @returns Immutable copy of current produced confection
-   * @public
-   */
-  public createSnapshot(): T {
-    return this._deepCopy(this._current);
-  }
-
-  /**
-   * Restores state from a snapshot.
-   * Pushes current state to undo stack and clears redo stack.
-   * @param snapshot - Snapshot to restore
-   * @returns Success or failure
-   * @public
-   */
-  public restoreSnapshot(snapshot: T): Result<void> {
-    this._pushUndo();
-    this._current = this._deepCopy(snapshot);
-    this._redoStack = [];
-    return succeed(undefined);
-  }
-
-  // ============================================================================
-  // Undo/Redo
-  // ============================================================================
-
-  /**
-   * Undoes the last change.
-   * Pops from undo stack, pushes current to redo, and restores previous state.
-   * @returns Success with true if undo succeeded, Success with false if no history
-   * @public
-   */
-  public undo(): Result<boolean> {
-    if (this._undoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const previous = this._undoStack.pop()!;
-    this._redoStack.push(this._deepCopy(this._current));
-    this._current = previous;
-    return succeed(true);
-  }
-
-  /**
-   * Redoes the last undone change.
-   * Pops from redo stack, pushes current to undo, and restores future state.
-   * @returns Success with true if redo succeeded, Success with false if no future
-   * @public
-   */
-  public redo(): Result<boolean> {
-    if (this._redoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const future = this._redoStack.pop()!;
-    this._undoStack.push(this._deepCopy(this._current));
-    this._current = future;
-    return succeed(true);
-  }
-
-  /**
-   * Checks if undo is available.
-   * @returns True if undo stack is not empty
-   * @public
-   */
-  public canUndo(): boolean {
-    return this._undoStack.length > 0;
-  }
-
-  /**
-   * Checks if redo is available.
-   * @returns True if redo stack is not empty
-   * @public
-   */
-  public canRedo(): boolean {
-    return this._redoStack.length > 0;
-  }
-
-  // ============================================================================
-  // Serialization
-  // ============================================================================
-
-  /**
-   * Gets the serialized editing history for persistence.
-   * Captures current state, original state, and undo/redo stacks.
-   * @param original - The original state when session started
-   * @returns Serialized editing history
-   * @public
-   */
-  public getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T> {
-    return {
-      current: this._deepCopy(this._current),
-      original: this._deepCopy(original),
-      undoStack: this._undoStack.map((state) => this._deepCopy(state)),
-      redoStack: this._redoStack.map((state) => this._deepCopy(state))
-    };
+    super(initial);
   }
 
   // ============================================================================
@@ -226,7 +115,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
       ...this._current,
       notes: Helpers.nonEmpty(notes)
     } as T;
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -245,7 +133,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
       ...this._current,
       procedureId: id
     } as T;
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -275,7 +162,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
       ...this._current,
       yield: yieldSpec
     } as T;
-    this._redoStack = [];
 
     return succeed(yieldSpec);
   }
@@ -320,7 +206,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
       ...this._current,
       fillings
     } as T;
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -351,7 +236,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
       ...this._current,
       fillings: Helpers.nonEmpty(fillings)
     } as T;
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -359,14 +243,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
   // ============================================================================
   // Read-only Access
   // ============================================================================
-
-  /**
-   * Gets the current state as an immutable snapshot.
-   * @public
-   */
-  public get snapshot(): T {
-    return this.createSnapshot();
-  }
 
   /**
    * Gets the variation ID.
@@ -442,17 +318,6 @@ export abstract class ProducedConfectionBase<T extends AnyProducedConfectionEnti
   // ============================================================================
   // Protected Helpers
   // ============================================================================
-
-  /**
-   * Pushes current state to undo stack, maintaining max size.
-   */
-  protected _pushUndo(): void {
-    this._undoStack.push(this._deepCopy(this._current));
-
-    if (this._undoStack.length > MAX_HISTORY_SIZE) {
-      this._undoStack.shift();
-    }
-  }
 
   /**
    * Creates a deep copy of a produced confection.
@@ -608,8 +473,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
     history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>
   ): Result<ProducedMoldedBonBon> {
     const instance = new ProducedMoldedBonBon(history.current);
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
   }
 
@@ -710,7 +574,6 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       ...this._current,
       moldId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -729,7 +592,6 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       ...this._current,
       shellChocolateId: chocolateId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -748,7 +610,6 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       ...this._current,
       sealChocolateId: chocolateId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -767,7 +628,6 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       ...this._current,
       decorationChocolateId: chocolateId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -902,8 +762,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
     history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>
   ): Result<ProducedBarTruffle> {
     const instance = new ProducedBarTruffle(history.current);
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
   }
 
@@ -997,7 +856,6 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
       ...this._current,
       enrobingChocolateId: chocolateId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -1099,8 +957,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
     history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>
   ): Result<ProducedRolledTruffle> {
     const instance = new ProducedRolledTruffle(history.current);
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
   }
 
@@ -1198,7 +1055,6 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
       ...this._current,
       enrobingChocolateId: chocolateId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }
@@ -1217,7 +1073,6 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
       ...this._current,
       coatingId
     };
-    this._redoStack = [];
 
     return succeed(undefined);
   }

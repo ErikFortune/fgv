@@ -165,6 +165,15 @@ Description
 <tbody>
 <tr><td>
 
+[ISnapshotProvider](./interfaces/ISnapshotProvider.md)
+
+</td><td>
+
+Implemented by any mutable wrapper that can produce an immutable snapshot of its current state.
+
+</td></tr>
+<tr><td>
+
 [IEditorContext](./interfaces/IEditorContext.md)
 
 </td><td>

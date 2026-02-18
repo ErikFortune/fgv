@@ -110,6 +110,9 @@ export { IMoldContext, IMold, Mold } from './molds';
 // Decorations
 export { IDecorationContext, IDecoration, IResolvedDecorationIngredient, Decoration } from './decorations';
 
+// EditableWrapper base class for mutable entity wrappers with undo/redo
+export { EditableWrapper } from './editableWrapper';
+
 // Produced wrappers (mutable editing containers for recipes)
 export * from './produced';
 

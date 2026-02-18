@@ -27,8 +27,7 @@ import { Result, succeed } from '@fgv/ts-utils';
 
 import { Model as CommonModel, ProcedureType } from '../../common';
 import { Procedures, Session, Tasks } from '../../entities';
-
-const MAX_HISTORY_SIZE: number = 50;
+import { EditableWrapper } from '../editableWrapper';
 
 type IProcedureEntity = Procedures.IProcedureEntity;
 type IProcedureStepEntity = Procedures.IProcedureStepEntity;
@@ -52,108 +51,38 @@ export interface IProcedureChanges {
  * Mutable wrapper for IProcedureEntity with undo/redo support.
  * @public
  */
-export class EditedProcedure {
-  private _current: IProcedureEntity;
-  private _undoStack: IProcedureEntity[];
-  private _redoStack: IProcedureEntity[];
-
+export class EditedProcedure extends EditableWrapper<IProcedureEntity> {
   private constructor(initial: IProcedureEntity) {
-    this._current = initial;
-    this._undoStack = [];
-    this._redoStack = [];
+    super(initial);
   }
 
   public static create(initial: IProcedureEntity): Result<EditedProcedure> {
-    return succeed(new EditedProcedure(EditedProcedure._deepCopy(initial)));
+    return succeed(new EditedProcedure(EditedProcedure._copyEntity(initial)));
   }
 
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProcedureEntity>
   ): Result<EditedProcedure> {
     const instance = new EditedProcedure(history.current);
-    instance._undoStack = [...history.undoStack];
-    instance._redoStack = [...history.redoStack];
+    instance._restoreHistory(history);
     return succeed(instance);
-  }
-
-  public createSnapshot(): IProcedureEntity {
-    return EditedProcedure._deepCopy(this._current);
-  }
-
-  public restoreSnapshot(snapshot: IProcedureEntity): Result<void> {
-    this._pushUndo();
-    this._current = EditedProcedure._deepCopy(snapshot);
-    this._redoStack = [];
-    return succeed(undefined);
-  }
-
-  public getSerializedHistory(
-    original: IProcedureEntity
-  ): Session.ISerializedEditingHistoryEntity<IProcedureEntity> {
-    return {
-      current: EditedProcedure._deepCopy(this._current),
-      original: EditedProcedure._deepCopy(original),
-      undoStack: this._undoStack.map((state) => EditedProcedure._deepCopy(state)),
-      redoStack: this._redoStack.map((state) => EditedProcedure._deepCopy(state))
-    };
-  }
-
-  public undo(): Result<boolean> {
-    if (this._undoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const previous = this._undoStack.pop();
-    /* c8 ignore next 3 - defensive: pop after length check cannot return undefined */
-    if (previous === undefined) {
-      return succeed(false);
-    }
-    this._redoStack.push(EditedProcedure._deepCopy(this._current));
-    this._current = previous;
-    return succeed(true);
-  }
-
-  public redo(): Result<boolean> {
-    if (this._redoStack.length === 0) {
-      return succeed(false);
-    }
-
-    const future = this._redoStack.pop();
-    /* c8 ignore next 3 - defensive: pop after length check cannot return undefined */
-    if (future === undefined) {
-      return succeed(false);
-    }
-    this._undoStack.push(EditedProcedure._deepCopy(this._current));
-    this._current = future;
-    return succeed(true);
-  }
-
-  public canUndo(): boolean {
-    return this._undoStack.length > 0;
-  }
-
-  public canRedo(): boolean {
-    return this._redoStack.length > 0;
   }
 
   public setName(name: string): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, name };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
   public setDescription(description: string | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, description };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
   public setCategory(category: ProcedureType | undefined): Result<void> {
     this._pushUndo();
     this._current = { ...this._current, category };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -163,7 +92,6 @@ export class EditedProcedure {
       ...this._current,
       tags: tags ? [...tags] : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -173,7 +101,6 @@ export class EditedProcedure {
       ...this._current,
       notes: notes ? notes.map((n) => ({ ...n })) : undefined
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -183,7 +110,6 @@ export class EditedProcedure {
       ...this._current,
       steps: EditedProcedure._normalizeStepOrder(EditedProcedure._copySteps(steps))
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -197,7 +123,6 @@ export class EditedProcedure {
       ...this._current,
       steps: [...this._current.steps, nextStep]
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -221,7 +146,6 @@ export class EditedProcedure {
       ...this._current,
       steps: EditedProcedure._normalizeStepOrder(updated)
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -232,7 +156,6 @@ export class EditedProcedure {
       ...this._current,
       steps: EditedProcedure._normalizeStepOrder(remaining)
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -254,7 +177,6 @@ export class EditedProcedure {
       ...this._current,
       steps: EditedProcedure._normalizeStepOrder(steps)
     };
-    this._redoStack = [];
     return succeed(undefined);
   }
 
@@ -269,16 +191,7 @@ export class EditedProcedure {
       notes: update.notes ? update.notes.map((note) => ({ ...note })) : update.notes,
       tags: update.tags ? [...update.tags] : update.tags
     };
-    this._redoStack = [];
     return succeed(undefined);
-  }
-
-  public get snapshot(): IProcedureEntity {
-    return this.createSnapshot();
-  }
-
-  public get current(): IProcedureEntity {
-    return this._current;
   }
 
   public get name(): string {
@@ -309,14 +222,11 @@ export class EditedProcedure {
     };
   }
 
-  private _pushUndo(): void {
-    this._undoStack.push(EditedProcedure._deepCopy(this._current));
-    if (this._undoStack.length > MAX_HISTORY_SIZE) {
-      this._undoStack.shift();
-    }
+  protected _deepCopy(entity: IProcedureEntity): IProcedureEntity {
+    return EditedProcedure._copyEntity(entity);
   }
 
-  private static _deepCopy(entity: IProcedureEntity): IProcedureEntity {
+  private static _copyEntity(entity: IProcedureEntity): IProcedureEntity {
     return {
       ...entity,
       steps: EditedProcedure._copySteps(entity.steps),

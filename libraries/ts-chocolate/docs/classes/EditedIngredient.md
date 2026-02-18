@@ -6,6 +6,8 @@ Mutable wrapper for IngredientEntity with undo/redo support.
 Provides editing methods that maintain history for undo/redo operations.
 Named "Edited" rather than "Produced" since ingredients are not produced.
 
+**Extends:** [`EditableWrapper<IngredientEntity>`](EditableWrapper.md)
+
 ## Properties
 
 <table><thead><tr><th>
@@ -26,40 +28,6 @@ Description
 
 </th></tr></thead>
 <tbody>
-<tr><td>
-
-[snapshot](./EditedIngredient.snapshot.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IngredientEntity](../type-aliases/IngredientEntity.md)
-
-</td><td>
-
-Gets the current state as an immutable snapshot.
-
-</td></tr>
-<tr><td>
-
-[current](./EditedIngredient.current.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IngredientEntity](../type-aliases/IngredientEntity.md)
-
-</td><td>
-
-Gets the current entity (direct reference — callers should not mutate).
-
-</td></tr>
 <tr><td>
 
 [name](./EditedIngredient.name.md)
@@ -111,6 +79,40 @@ Gets the ingredient category.
 Gets the ganache characteristics.
 
 </td></tr>
+<tr><td>
+
+[snapshot](./EditableWrapper.snapshot.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current state as an immutable snapshot.
+
+</td></tr>
+<tr><td>
+
+[current](./EditableWrapper.current.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current entity (direct reference — callers should not mutate).
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -153,97 +155,6 @@ Factory method for creating an EditedIngredient from an existing entity.
 </td><td>
 
 Factory method for restoring an EditedIngredient from serialized history.
-
-</td></tr>
-<tr><td>
-
-[createSnapshot()](./EditedIngredient.createSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Creates an immutable snapshot of the current state.
-
-</td></tr>
-<tr><td>
-
-[restoreSnapshot(snapshot)](./EditedIngredient.restoreSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Restores state from a snapshot.
-
-</td></tr>
-<tr><td>
-
-[getSerializedHistory(original)](./EditedIngredient.getSerializedHistory.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Serializes the complete editing history for persistence.
-
-</td></tr>
-<tr><td>
-
-[undo()](./EditedIngredient.undo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Undoes the last change.
-
-</td></tr>
-<tr><td>
-
-[redo()](./EditedIngredient.redo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Redoes the last undone change.
-
-</td></tr>
-<tr><td>
-
-[canUndo()](./EditedIngredient.canUndo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Checks if undo is available.
-
-</td></tr>
-<tr><td>
-
-[canRedo()](./EditedIngredient.canRedo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Checks if redo is available.
 
 </td></tr>
 <tr><td>
@@ -465,6 +376,97 @@ Checks if current state differs from original.
 </td><td>
 
 Gets detailed changes between current state and original.
+
+</td></tr>
+<tr><td>
+
+[createSnapshot()](./EditableWrapper.createSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates an immutable snapshot of the current state.
+
+</td></tr>
+<tr><td>
+
+[restoreSnapshot(snapshot)](./EditableWrapper.restoreSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Restores state from a snapshot.
+
+</td></tr>
+<tr><td>
+
+[getSerializedHistory(original)](./EditableWrapper.getSerializedHistory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Serializes the complete editing history for persistence.
+
+</td></tr>
+<tr><td>
+
+[undo()](./EditableWrapper.undo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Undoes the last change.
+
+</td></tr>
+<tr><td>
+
+[redo()](./EditableWrapper.redo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Redoes the last undone change.
+
+</td></tr>
+<tr><td>
+
+[canUndo()](./EditableWrapper.canUndo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if undo is available.
+
+</td></tr>
+<tr><td>
+
+[canRedo()](./EditableWrapper.canRedo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if redo is available.
 
 </td></tr>
 </tbody></table>

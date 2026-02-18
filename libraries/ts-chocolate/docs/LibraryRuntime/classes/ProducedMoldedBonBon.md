@@ -97,23 +97,6 @@ Gets the decoration chocolate ID.
 </td></tr>
 <tr><td>
 
-[snapshot](./ProducedConfectionBase.snapshot.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-T
-
-</td><td>
-
-Gets the current state as an immutable snapshot.
-
-</td></tr>
-<tr><td>
-
 [variationId](./ProducedConfectionBase.variationId.md)
 
 </td><td>
@@ -212,6 +195,23 @@ Gets the current produced confection.
 </td><td>
 
 Gets the procedure ID.
+
+</td></tr>
+<tr><td>
+
+[snapshot](./ProducedConfectionBase.snapshot.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current state as an immutable snapshot.
 
 </td></tr>
 </tbody></table>
@@ -338,97 +338,6 @@ Gets detailed changes between current state and original.
 </td></tr>
 <tr><td>
 
-[createSnapshot()](./ProducedConfectionBase.createSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Creates an immutable snapshot of the current state.
-
-</td></tr>
-<tr><td>
-
-[restoreSnapshot(snapshot)](./ProducedConfectionBase.restoreSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Restores state from a snapshot.
-
-</td></tr>
-<tr><td>
-
-[undo()](./ProducedConfectionBase.undo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Undoes the last change.
-
-</td></tr>
-<tr><td>
-
-[redo()](./ProducedConfectionBase.redo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Redoes the last undone change.
-
-</td></tr>
-<tr><td>
-
-[canUndo()](./ProducedConfectionBase.canUndo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Checks if undo is available.
-
-</td></tr>
-<tr><td>
-
-[canRedo()](./ProducedConfectionBase.canRedo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Checks if redo is available.
-
-</td></tr>
-<tr><td>
-
-[getSerializedHistory(original)](./ProducedConfectionBase.getSerializedHistory.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Gets the serialized editing history for persistence.
-
-</td></tr>
-<tr><td>
-
 [setNotes(notes)](./ProducedConfectionBase.setNotes.md)
 
 </td><td>
@@ -503,6 +412,97 @@ Removes a filling slot.
 </td><td>
 
 Checks if current state differs from original.
+
+</td></tr>
+<tr><td>
+
+[createSnapshot()](./ProducedConfectionBase.createSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates an immutable snapshot of the current state.
+
+</td></tr>
+<tr><td>
+
+[restoreSnapshot(snapshot)](./ProducedConfectionBase.restoreSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Restores state from a snapshot.
+
+</td></tr>
+<tr><td>
+
+[getSerializedHistory(original)](./ProducedConfectionBase.getSerializedHistory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Serializes the complete editing history for persistence.
+
+</td></tr>
+<tr><td>
+
+[undo()](./ProducedConfectionBase.undo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Undoes the last change.
+
+</td></tr>
+<tr><td>
+
+[redo()](./ProducedConfectionBase.redo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Redoes the last undone change.
+
+</td></tr>
+<tr><td>
+
+[canUndo()](./ProducedConfectionBase.canUndo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if undo is available.
+
+</td></tr>
+<tr><td>
+
+[canRedo()](./ProducedConfectionBase.canRedo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if redo is available.
 
 </td></tr>
 </tbody></table>

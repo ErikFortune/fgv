@@ -4,6 +4,8 @@
 
 Mutable wrapper for IProcedureEntity with undo/redo support.
 
+**Extends:** [`EditableWrapper<IProcedureEntity>`](EditableWrapper.md)
+
 ## Properties
 
 <table><thead><tr><th>
@@ -26,40 +28,6 @@ Description
 <tbody>
 <tr><td>
 
-[snapshot](./EditedProcedure.snapshot.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IProcedureEntity](../interfaces/IProcedureEntity.md)
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[current](./EditedProcedure.current.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IProcedureEntity](../interfaces/IProcedureEntity.md)
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [name](./EditedProcedure.name.md)
 
 </td><td>
@@ -73,6 +41,40 @@ string
 </td><td>
 
 
+
+</td></tr>
+<tr><td>
+
+[snapshot](./EditableWrapper.snapshot.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current state as an immutable snapshot.
+
+</td></tr>
+<tr><td>
+
+[current](./EditableWrapper.current.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the current entity (direct reference — callers should not mutate).
 
 </td></tr>
 </tbody></table>
@@ -113,97 +115,6 @@ Description
 </td><td>
 
 `static`
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[createSnapshot()](./EditedProcedure.createSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[restoreSnapshot(snapshot)](./EditedProcedure.restoreSnapshot.md)
-
-</td><td>
-
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[getSerializedHistory(original)](./EditedProcedure.getSerializedHistory.md)
-
-</td><td>
-
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[undo()](./EditedProcedure.undo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[redo()](./EditedProcedure.redo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[canUndo()](./EditedProcedure.canUndo.md)
-
-</td><td>
-
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[canRedo()](./EditedProcedure.canRedo.md)
-
-</td><td>
-
-
 
 </td><td>
 
@@ -377,6 +288,97 @@ Description
 </td><td>
 
 
+
+</td></tr>
+<tr><td>
+
+[createSnapshot()](./EditableWrapper.createSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates an immutable snapshot of the current state.
+
+</td></tr>
+<tr><td>
+
+[restoreSnapshot(snapshot)](./EditableWrapper.restoreSnapshot.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Restores state from a snapshot.
+
+</td></tr>
+<tr><td>
+
+[getSerializedHistory(original)](./EditableWrapper.getSerializedHistory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Serializes the complete editing history for persistence.
+
+</td></tr>
+<tr><td>
+
+[undo()](./EditableWrapper.undo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Undoes the last change.
+
+</td></tr>
+<tr><td>
+
+[redo()](./EditableWrapper.redo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Redoes the last undone change.
+
+</td></tr>
+<tr><td>
+
+[canUndo()](./EditableWrapper.canUndo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if undo is available.
+
+</td></tr>
+<tr><td>
+
+[canRedo()](./EditableWrapper.canRedo.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if redo is available.
 
 </td></tr>
 </tbody></table>

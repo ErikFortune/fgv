@@ -1669,25 +1669,43 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
 }
 
 // @public
-class EditedDecoration {
+abstract class EditableWrapper<T> implements ISnapshotProvider<T> {
+    // @internal
+    protected constructor(initial: T);
+    canRedo(): boolean;
+    canUndo(): boolean;
+    createSnapshot(): T;
+    get current(): T;
+    // (undocumented)
+    protected _current: T;
+    // @internal
+    protected abstract _deepCopy(entity: T): T;
+    getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T>;
+    // @internal
+    protected _pushUndo(): void;
+    redo(): Result<boolean>;
+    // @internal
+    protected _restoreHistory(history: Session.ISerializedEditingHistoryEntity<T>): void;
+    restoreSnapshot(snapshot: T): Result<void>;
+    get snapshot(): T;
+    undo(): Result<boolean>;
+}
+
+// @public
+class EditedDecoration extends EditableWrapper<Decorations.IDecorationEntity> {
     addIngredient(ingredient: Decorations.IDecorationIngredientEntity): Result<void>;
     addProcedureRef(ref: IProcedureRefEntity_2): Result<void>;
     applyUpdate(update: Partial<Decorations.IDecorationEntity>): Result<void>;
-    canRedo(): boolean;
-    canUndo(): boolean;
     static create(initial: Decorations.IDecorationEntity): Result<EditedDecoration>;
-    createSnapshot(): Decorations.IDecorationEntity;
-    get current(): Decorations.IDecorationEntity;
+    // (undocumented)
+    protected _deepCopy(entity: Decorations.IDecorationEntity): Decorations.IDecorationEntity;
     getChanges(original: Decorations.IDecorationEntity): IDecorationChanges;
-    getSerializedHistory(original: Decorations.IDecorationEntity): Session.ISerializedEditingHistoryEntity<Decorations.IDecorationEntity>;
     hasChanges(original: Decorations.IDecorationEntity): boolean;
     get name(): string;
-    redo(): Result<boolean>;
     removeIngredient(index: number): Result<void>;
     removeProcedureRef(id: ProcedureId): Result<void>;
     removeRating(category: RatingCategory_2): Result<void>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Decorations.IDecorationEntity>): Result<EditedDecoration>;
-    restoreSnapshot(snapshot: Decorations.IDecorationEntity): Result<void>;
     setDescription(description: string | undefined): Result<void>;
     setIngredients(ingredients: ReadonlyArray<Decorations.IDecorationIngredientEntity>): Result<void>;
     setName(name: string): Result<void>;
@@ -1699,29 +1717,22 @@ class EditedDecoration {
     setRating(category: RatingCategory_2, score: RatingScore, notes?: ReadonlyArray<Model.ICategorizedNote>): Result<void>;
     setRatings(ratings: ReadonlyArray<Decorations.IDecorationRating> | undefined): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
-    get snapshot(): Decorations.IDecorationEntity;
-    undo(): Result<boolean>;
     updateIngredient(index: number, update: Partial<Decorations.IDecorationIngredientEntity>): Result<void>;
 }
 
 // @public
-class EditedFillingRecipe {
+class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity> {
     addVariation(variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
-    canRedo(): boolean;
-    canUndo(): boolean;
     static create(initial: Fillings.IFillingRecipeEntity): Result<EditedFillingRecipe>;
-    createSnapshot(): Fillings.IFillingRecipeEntity;
-    get current(): Fillings.IFillingRecipeEntity;
+    // (undocumented)
+    protected _deepCopy(entity: Fillings.IFillingRecipeEntity): Fillings.IFillingRecipeEntity;
     getChanges(original: Fillings.IFillingRecipeEntity): IFillingRecipeChanges;
-    getSerializedHistory(original: Fillings.IFillingRecipeEntity): Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>;
     get goldenVariationSpec(): FillingRecipeVariationSpec;
     hasChanges(original: Fillings.IFillingRecipeEntity): boolean;
     get name(): FillingName;
-    redo(): Result<boolean>;
     removeVariation(spec: FillingRecipeVariationSpec): Result<void>;
     replaceVariation(spec: FillingRecipeVariationSpec, variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>): Result<EditedFillingRecipe>;
-    restoreSnapshot(snapshot: Fillings.IFillingRecipeEntity): Result<void>;
     // Warning: (ae-forgotten-export) The symbol "FillingCategory_3" needs to be exported by the entry point index.d.ts
     setCategory(category: FillingCategory_3): Result<void>;
     setDescription(description: string | undefined): Result<void>;
@@ -1729,28 +1740,20 @@ class EditedFillingRecipe {
     setName(name: FillingName): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
-    get snapshot(): Fillings.IFillingRecipeEntity;
-    undo(): Result<boolean>;
     get variations(): ReadonlyArray<Fillings.IFillingRecipeVariationEntity>;
 }
 
 // @public
-class EditedIngredient {
+class EditedIngredient extends EditableWrapper<Ingredients.IngredientEntity> {
     applyUpdate(update: Partial<Ingredients.IngredientEntity>): Result<void>;
-    canRedo(): boolean;
-    canUndo(): boolean;
     get category(): IngredientCategory;
     static create(initial: Ingredients.IngredientEntity): Result<EditedIngredient>;
-    createSnapshot(): Ingredients.IngredientEntity;
-    get current(): Ingredients.IngredientEntity;
+    protected _deepCopy(entity: Ingredients.IngredientEntity): Ingredients.IngredientEntity;
     get ganacheCharacteristics(): Ingredients.IGanacheCharacteristics;
     getChanges(original: Ingredients.IngredientEntity): IIngredientChanges;
-    getSerializedHistory(original: Ingredients.IngredientEntity): Session.ISerializedEditingHistoryEntity<Ingredients.IngredientEntity>;
     hasChanges(original: Ingredients.IngredientEntity): boolean;
     get name(): string;
-    redo(): Result<boolean>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Ingredients.IngredientEntity>): Result<EditedIngredient>;
-    restoreSnapshot(snapshot: Ingredients.IngredientEntity): Result<void>;
     setAllergens(allergens: ReadonlyArray<Allergen> | undefined): Result<void>;
     setCertifications(certifications: ReadonlyArray<Certification> | undefined): Result<void>;
     setDensity(density: number | undefined): Result<void>;
@@ -1765,27 +1768,20 @@ class EditedIngredient {
     setTraceAllergens(traceAllergens: ReadonlyArray<Allergen> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
     setVegan(vegan: boolean | undefined): Result<void>;
-    get snapshot(): Ingredients.IngredientEntity;
-    undo(): Result<boolean>;
 }
 
 // @public
-class EditedMold {
+class EditedMold extends EditableWrapper<Molds_2.IMoldEntity> {
     applyUpdate(update: Partial<Molds_2.IMoldEntity>): Result<void>;
-    canRedo(): boolean;
-    canUndo(): boolean;
     static create(initial: Molds_2.IMoldEntity): Result<EditedMold>;
-    createSnapshot(): Molds_2.IMoldEntity;
-    get current(): Molds_2.IMoldEntity;
+    // (undocumented)
+    protected _deepCopy(entity: Molds_2.IMoldEntity): Molds_2.IMoldEntity;
     get format(): MoldFormat;
     getChanges(original: Molds_2.IMoldEntity): IMoldChanges;
-    getSerializedHistory(original: Molds_2.IMoldEntity): Session.ISerializedEditingHistoryEntity<Molds_2.IMoldEntity>;
     hasChanges(original: Molds_2.IMoldEntity): boolean;
     get manufacturer(): string;
     get productNumber(): string;
-    redo(): Result<boolean>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Molds_2.IMoldEntity>): Result<EditedMold>;
-    restoreSnapshot(snapshot: Molds_2.IMoldEntity): Result<void>;
     setCavities(cavities: Molds_2.ICavities): Result<void>;
     setDescription(description: string | undefined): Result<void>;
     setFormat(format: MoldFormat): Result<void>;
@@ -1795,32 +1791,22 @@ class EditedMold {
     setRelated(related: ReadonlyArray<MoldId> | undefined): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
-    get snapshot(): Molds_2.IMoldEntity;
-    undo(): Result<boolean>;
 }
 
+// Warning: (ae-forgotten-export) The symbol "IProcedureEntity_4" needs to be exported by the entry point index.d.ts
+//
 // @public
-class EditedProcedure {
+class EditedProcedure extends EditableWrapper<IProcedureEntity_4> {
     // (undocumented)
     addStep(step: Omit<IProcedureStepEntity_2, 'order'>): Result<void>;
     // (undocumented)
     applyUpdate(update: Partial<IProcedureEntity_4>): Result<void>;
     // (undocumented)
-    canRedo(): boolean;
-    // (undocumented)
-    canUndo(): boolean;
-    // Warning: (ae-forgotten-export) The symbol "IProcedureEntity_4" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     static create(initial: IProcedureEntity_4): Result<EditedProcedure>;
     // (undocumented)
-    createSnapshot(): IProcedureEntity_4;
-    // (undocumented)
-    get current(): IProcedureEntity_4;
+    protected _deepCopy(entity: IProcedureEntity_4): IProcedureEntity_4;
     // (undocumented)
     getChanges(original: IProcedureEntity_4): IProcedureChanges;
-    // (undocumented)
-    getSerializedHistory(original: IProcedureEntity_4): Session.ISerializedEditingHistoryEntity<IProcedureEntity_4>;
     // (undocumented)
     hasChanges(original: IProcedureEntity_4): boolean;
     // (undocumented)
@@ -1828,13 +1814,9 @@ class EditedProcedure {
     // (undocumented)
     get name(): string;
     // (undocumented)
-    redo(): Result<boolean>;
-    // (undocumented)
     removeStep(order: number): Result<void>;
     // (undocumented)
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProcedureEntity_4>): Result<EditedProcedure>;
-    // (undocumented)
-    restoreSnapshot(snapshot: IProcedureEntity_4): Result<void>;
     // (undocumented)
     setCategory(category: ProcedureType | undefined): Result<void>;
     // (undocumented)
@@ -1850,29 +1832,21 @@ class EditedProcedure {
     // (undocumented)
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     // (undocumented)
-    get snapshot(): IProcedureEntity_4;
-    // (undocumented)
-    undo(): Result<boolean>;
-    // (undocumented)
     updateStep(order: number, update: Partial<IProcedureStepEntity_2>): Result<void>;
 }
 
+// Warning: (ae-forgotten-export) The symbol "IRawTaskEntity_4" needs to be exported by the entry point index.d.ts
+//
 // @public
-class EditedTask {
+class EditedTask extends EditableWrapper<IRawTaskEntity_4> {
     applyUpdate(update: Partial<IRawTaskEntity_4>): Result<void>;
-    canRedo(): boolean;
-    canUndo(): boolean;
-    // Warning: (ae-forgotten-export) The symbol "IRawTaskEntity_4" needs to be exported by the entry point index.d.ts
     static create(initial: IRawTaskEntity_4): Result<EditedTask>;
-    createSnapshot(): IRawTaskEntity_4;
-    get current(): IRawTaskEntity_4;
+    // (undocumented)
+    protected _deepCopy(entity: IRawTaskEntity_4): IRawTaskEntity_4;
     getChanges(original: IRawTaskEntity_4): ITaskChanges;
-    getSerializedHistory(original: IRawTaskEntity_4): Session.ISerializedEditingHistoryEntity<IRawTaskEntity_4>;
     hasChanges(original: IRawTaskEntity_4): boolean;
     get name(): string;
-    redo(): Result<boolean>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IRawTaskEntity_4>): Result<EditedTask>;
-    restoreSnapshot(snapshot: IRawTaskEntity_4): Result<void>;
     setDefaultActiveTime(defaultActiveTime: Minutes | undefined): Result<void>;
     setDefaultHoldTime(defaultHoldTime: Minutes | undefined): Result<void>;
     setDefaults(defaults: Readonly<Record<string, unknown>> | undefined): Result<void>;
@@ -1882,9 +1856,7 @@ class EditedTask {
     setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setTemplate(template: string): Result<void>;
-    get snapshot(): IRawTaskEntity_4;
     get template(): string;
-    undo(): Result<boolean>;
 }
 
 declare namespace Editing {
@@ -1895,6 +1867,7 @@ declare namespace Editing {
         Procedures_3 as Procedures,
         Decorations_2 as Decorations,
         Fillings_2 as Fillings,
+        ISnapshotProvider,
         IEditorContext,
         IEditorContextValidator,
         IValidatingEditorContext,
@@ -1977,6 +1950,7 @@ class EditorContext<T, TBaseId extends string = string, TId extends string = str
     getAll(): ReadonlyArray<[TId, T]>;
     hasUnsavedChanges(): boolean;
     update(id: TId, entity: T): Result<T>;
+    updateFromWrapper(id: TId, wrapper: ISnapshotProvider<T>): Result<T>;
     validate(entity: T): Result<IValidationReport>;
 }
 
@@ -5514,6 +5488,13 @@ function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMolde
 // @public
 function isMoldInventoryEntryEntity(entry: AnyInventoryEntryEntity): entry is IMoldInventoryEntryEntity;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditorContext"
+//
+// @public
+interface ISnapshotProvider<T> {
+    readonly snapshot: T;
+}
+
 // @public
 interface ISpoonScalerOptions {
     readonly maxTeaspoons?: number;
@@ -6204,6 +6185,7 @@ declare namespace LibraryRuntime {
         IDecoration,
         IResolvedDecorationIngredient,
         Decoration,
+        EditableWrapper,
         Internal,
         IInstantiatedEntityLibrarySources,
         IChocolateEntityLibraryCreateParams,
@@ -6966,29 +6948,18 @@ class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruffleEntit
 const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity>;
 
 // @public
-abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
+abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> extends EditableWrapper<T> {
     // @internal
     protected constructor(initial: T);
     protected _baseChanges(original: T): Partial<IConfectionChanges>;
-    canRedo(): boolean;
-    canUndo(): boolean;
-    createSnapshot(): T;
     get current(): T;
-    // (undocumented)
-    protected _current: T;
     protected abstract _deepCopy(confection: T): T;
     get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlotEntity> | undefined;
     abstract getChanges(original: T): IConfectionChanges;
-    getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T>;
     hasChanges(original: T): boolean;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedureId(): ProcedureId | undefined;
-    protected _pushUndo(): void;
-    redo(): Result<boolean>;
-    // (undocumented)
-    protected _redoStack: T[];
     removeFillingSlot(slotId: SlotId): Result<void>;
-    restoreSnapshot(snapshot: T): Result<void>;
     scaleToYield(yieldSpec: Confections.IConfectionYield): Result<Confections.IConfectionYield>;
     setFillingSlot(slotId: SlotId, choice: {
         type: 'recipe';
@@ -6999,38 +6970,28 @@ abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> {
     }): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
-    get snapshot(): T;
-    undo(): Result<boolean>;
-    // (undocumented)
-    protected _undoStack: T[];
     get variationId(): ConfectionRecipeVariationId;
     get yield(): Confections.IConfectionYield;
 }
 
 // @public
-class ProducedFilling {
-    canRedo(): boolean;
-    canUndo(): boolean;
+class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     static create(initial: IProducedFillingEntity): Result<ProducedFilling>;
-    createSnapshot(): IProducedFillingEntity;
+    // (undocumented)
+    protected _deepCopy(filling: IProducedFillingEntity): IProducedFillingEntity;
     static fromSource(source: IFillingRecipeVariation, scaleFactor?: number): Result<ProducedFilling>;
     getChanges(original: IProducedFillingEntity): IFillingChanges;
-    getSerializedHistory(original: IProducedFillingEntity): Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>;
     hasChanges(original: IProducedFillingEntity): boolean;
     get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredientEntity>;
     static mergeAsAlternatives(produced: IProducedFillingEntity, original: Fillings.IFillingRecipeVariationEntity): Result<Fillings.IFillingRecipeVariationEntity>;
-    redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>): Result<ProducedFilling>;
-    restoreSnapshot(snapshot: IProducedFillingEntity): Result<void>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
-    get snapshot(): IProducedFillingEntity;
     get targetWeight(): Measurement;
     static toSourceVariation(snapshot: IProducedFillingEntity, newVariationSpec: string, createdDate?: string): Result<Fillings.IFillingRecipeVariationEntity>;
-    undo(): Result<boolean>;
     get variationId(): FillingRecipeVariationId;
 }
 
