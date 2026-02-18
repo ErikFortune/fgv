@@ -28,7 +28,7 @@
 import React, { useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
-import type { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { Entities, LibraryRuntime, Measurement, MeasurementUnit } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
@@ -48,11 +48,34 @@ export interface IFillingPreviewPanelProps {
 // Helpers
 // ============================================================================
 
-function formatAmount(grams: number): string {
-  if (grams >= 10) return `${Math.round(grams)}g`;
-  if (grams >= 1) return `${Math.round(grams * 10) / 10}g`;
-  const rounded = Math.round(grams * 100) / 100;
-  return `${Math.max(rounded, 0.01)}g`;
+function formatIngredientAmount(
+  amount: number,
+  unit?: MeasurementUnit,
+  modifiers?: Entities.Fillings.IIngredientModifiers
+): string {
+  const u = unit ?? 'g';
+  const result = LR.Internal.scaleAmount(amount as Measurement, u, 1.0);
+  const base = result.isSuccess() ? result.value.displayValue : `${amount}${u}`;
+  if (modifiers?.toTaste) return `${base}, to taste`;
+  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
+  return base;
+}
+
+function formatScaledIngredientAmount(
+  amount: number,
+  unit?: MeasurementUnit,
+  scaleFactor?: number,
+  modifiers?: Entities.Fillings.IIngredientModifiers
+): string {
+  if (scaleFactor === undefined) return formatIngredientAmount(amount, unit, modifiers);
+  const u = unit ?? 'g';
+  const result = LR.Internal.scaleAmount(amount as Measurement, u, scaleFactor);
+  const base = result.isSuccess()
+    ? result.value.displayValue
+    : formatIngredientAmount(amount * scaleFactor, u);
+  if (modifiers?.toTaste) return `${base}, to taste`;
+  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
+  return base;
 }
 
 function formatResolvedStepTiming(step: LibraryRuntime.IResolvedProcedureStep): string | undefined {
@@ -181,11 +204,16 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
           </div>
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
             {ingredients.map((ing, i) => {
+              const unit = ing.entity.unit;
+              const modifiers = ing.entity.modifiers;
               const rawScaled = scaledAmounts?.[i];
-              const displayAmount =
-                rawScaled !== undefined && Math.abs(rawScaled - ing.amount) >= 0.001
-                  ? formatAmount(rawScaled)
-                  : `${ing.amount}g`;
+              const isScaled =
+                scaleFactor !== undefined &&
+                rawScaled !== undefined &&
+                Math.abs(rawScaled - ing.amount) >= 0.001;
+              const displayAmount = isScaled
+                ? formatScaledIngredientAmount(ing.amount, unit, scaleFactor, modifiers)
+                : formatIngredientAmount(ing.amount, unit, modifiers);
               return (
                 <div
                   key={ing.ingredient.id}
@@ -201,11 +229,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
                   </div>
                   <span
                     className={`text-sm font-mono ml-4 ${
-                      scaleFactor !== undefined &&
-                      rawScaled !== undefined &&
-                      Math.abs(rawScaled - ing.amount) >= 0.001
-                        ? 'text-amber-700 font-semibold'
-                        : 'text-gray-600'
+                      isScaled ? 'text-amber-700 font-semibold' : 'text-gray-600'
                     }`}
                   >
                     {displayAmount}

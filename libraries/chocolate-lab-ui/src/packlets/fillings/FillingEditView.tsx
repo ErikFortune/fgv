@@ -38,14 +38,27 @@ import type {
   IngredientId,
   LibraryRuntime,
   Measurement,
+  MeasurementUnit,
   Model,
   ProcedureId,
   RatingScore,
+  SpoonLevel,
   FillingRecipeVariationSpec,
   UserLibrary
 } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+
+const ALL_MEASUREMENT_UNITS: ReadonlyArray<MeasurementUnit> = [
+  'g',
+  'mL',
+  'tsp',
+  'Tbsp',
+  'pinch',
+  'seeds',
+  'pods'
+];
+const ALL_SPOON_LEVELS: ReadonlyArray<SpoonLevel> = ['level', 'heaping'];
 
 type EditedFillingRecipe = LibraryRuntime.EditedFillingRecipe;
 type EditingSession = UserLibrary.Session.EditingSession;
@@ -287,6 +300,26 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     (index: number, amount: number): void => {
       const existing = producedIngredients[index];
       session.setIngredient(existing.ingredientId, amount as Measurement, existing.unit, existing.modifiers);
+      notifySession();
+    },
+    [notifySession, session, producedIngredients]
+  );
+
+  const handleIngredientUnitChange = useCallback(
+    (index: number, unit: MeasurementUnit): void => {
+      const existing = producedIngredients[index];
+      const newAmount = unit === 'pinch' ? (1 as Measurement) : existing.amount;
+      const newModifiers = unit === 'tsp' || unit === 'Tbsp' ? existing.modifiers : undefined;
+      session.setIngredient(existing.ingredientId, newAmount, unit, newModifiers);
+      notifySession();
+    },
+    [notifySession, session, producedIngredients]
+  );
+
+  const handleIngredientModifiersChange = useCallback(
+    (index: number, modifiers: Entities.Fillings.IIngredientModifiers | undefined): void => {
+      const existing = producedIngredients[index];
+      session.setIngredient(existing.ingredientId, existing.amount, existing.unit, modifiers);
       notifySession();
     },
     [notifySession, session, producedIngredients]
@@ -563,6 +596,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             const ingValue =
               ingredientInputDraft[index] ??
               getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
+            const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
             return (
               <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
                 <div className="flex items-center gap-2">
@@ -583,19 +617,32 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   />
                   <input
                     type="number"
-                    className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
                     value={ing.amount}
                     min={0}
-                    step={0.1}
+                    step={isSpoonUnit ? 0.25 : 0.1}
+                    disabled={ing.unit === 'pinch'}
                     onChange={(e): void => {
                       const num = parseFloat(e.target.value);
                       if (!isNaN(num)) {
                         handleIngredientAmountChange(index, num);
                       }
                     }}
-                    aria-label="Amount (grams)"
+                    aria-label={`Amount (${ing.unit ?? 'g'})`}
                   />
-                  <span className="text-xs text-gray-500">{ing.unit ?? 'g'}</span>
+                  <select
+                    className="text-sm border border-gray-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    value={ing.unit ?? 'g'}
+                    onChange={(e): void =>
+                      handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
+                    }
+                  >
+                    {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     onClick={(): void => handleRemoveIngredient(index)}
@@ -604,6 +651,41 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     Remove
                   </button>
                 </div>
+                {isSpoonUnit && (
+                  <div className="flex items-center gap-3 mt-1.5 pl-1">
+                    <select
+                      className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                      value={ing.modifiers?.spoonLevel ?? ''}
+                      onChange={(e): void => {
+                        const val = e.target.value;
+                        handleIngredientModifiersChange(index, {
+                          ...ing.modifiers,
+                          spoonLevel: val ? (val as SpoonLevel) : undefined
+                        });
+                      }}
+                    >
+                      <option value="">level (default)</option>
+                      {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
+                        <option key={sl} value={sl}>
+                          {sl}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={ing.modifiers?.toTaste ?? false}
+                        onChange={(e): void => {
+                          handleIngredientModifiersChange(index, {
+                            ...ing.modifiers,
+                            toTaste: e.target.checked ? true : undefined
+                          });
+                        }}
+                      />
+                      to taste
+                    </label>
+                  </div>
+                )}
                 {unresolvedIngredients[index] && (
                   <div className="mt-1.5 flex items-center gap-2">
                     <span className="text-xs text-amber-700">

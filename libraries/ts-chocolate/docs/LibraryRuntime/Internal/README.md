@@ -27,6 +27,15 @@ Generic linear scaler for units like grams and milliliters.
 </td></tr>
 <tr><td>
 
+[GramScaler](./classes/GramScaler.md)
+
+</td><td>
+
+Contextual scaler for gram measurements.
+
+</td></tr>
+<tr><td>
+
 [PinchScaler](./classes/PinchScaler.md)
 
 </td><td>

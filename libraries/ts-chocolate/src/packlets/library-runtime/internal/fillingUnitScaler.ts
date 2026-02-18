@@ -152,6 +152,47 @@ export class LinearScaler implements IUnitScaler {
 }
 
 // ============================================================================
+// Gram Scaler
+// ============================================================================
+
+/**
+ * Contextual scaler for gram measurements.
+ * Rounds to the nearest gram for large amounts (\>= 10g), to 1 decimal place
+ * for smaller amounts, and never rounds down to zero.
+ * @public
+ */
+export class GramScaler implements IUnitScaler {
+  public readonly supportsScaling: boolean = true;
+
+  public scale(amount: Measurement, factor: number): Result<IScaledAmount> {
+    if (factor <= 0) {
+      return Failure.with('Scale factor must be greater than zero');
+    }
+
+    const raw = amount * factor;
+    let scaledValue: number;
+
+    if (raw >= 10) {
+      scaledValue = Math.round(raw);
+    } else {
+      scaledValue = Math.round(raw * 10) / 10;
+    }
+
+    // Never round down to zero
+    if (scaledValue === 0 && raw > 0) {
+      scaledValue = 0.1;
+    }
+
+    return Success.with({
+      value: scaledValue as Measurement,
+      unit: 'g',
+      displayValue: `${scaledValue}g`,
+      scalable: true
+    });
+  }
+}
+
+// ============================================================================
 // Pinch Scaler
 // ============================================================================
 
@@ -329,7 +370,7 @@ export class UnitScalerRegistry {
     this._defaultScaler = new LinearScaler({ unit: 'g', decimalPlaces: 1 });
 
     // Register default scalers
-    this._scalers.set('g', new LinearScaler({ unit: 'g', decimalPlaces: 1 }));
+    this._scalers.set('g', new GramScaler());
     this._scalers.set('mL', new LinearScaler({ unit: 'mL', decimalPlaces: 0, displaySuffix: ' mL' }));
     this._scalers.set('tsp', new SpoonScaler('tsp'));
     this._scalers.set('Tbsp', new SpoonScaler('Tbsp'));

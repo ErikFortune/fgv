@@ -2648,6 +2648,14 @@ function getSubLibraryPath(subLibraryId: SubLibraryId): string;
 function getTasksDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
+class GramScaler implements IUnitScaler {
+    // (undocumented)
+    scale(amount: Measurement, factor: number): Result<IScaledAmount>;
+    // (undocumented)
+    readonly supportsScaling: boolean;
+}
+
+// @public
 export type GroupName = Brand<string, 'GroupName'>;
 
 // @public
@@ -4643,6 +4651,7 @@ declare namespace Internal {
         IUnitScaler,
         ILinearScalerOptions,
         LinearScaler,
+        GramScaler,
         PinchScaler,
         ISpoonScalerOptions,
         SpoonScaler,

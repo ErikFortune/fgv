@@ -29,7 +29,7 @@ import React, { useMemo, useState } from 'react';
 import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow } from '@fgv/ts-app-shell';
-import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
+import type { LibraryRuntime, Entities, Measurement, MeasurementUnit } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
 
@@ -137,11 +137,34 @@ function CategoryBadge({ category }: { readonly category: string }): React.React
 // Amount Formatting
 // ============================================================================
 
-function formatAmount(grams: number): string {
-  if (grams >= 10) return `${Math.round(grams)}g`;
-  if (grams >= 1) return `${Math.round(grams * 10) / 10}g`;
-  const rounded = Math.round(grams * 100) / 100;
-  return `${Math.max(rounded, 0.01)}g`;
+function formatIngredientAmount(
+  amount: number,
+  unit?: MeasurementUnit,
+  modifiers?: Entities.Fillings.IIngredientModifiers
+): string {
+  const u = unit ?? 'g';
+  const result = LR.Internal.scaleAmount(amount as Measurement, u, 1.0);
+  const base = result.isSuccess() ? result.value.displayValue : `${amount}${u}`;
+  if (modifiers?.toTaste) return `${base}, to taste`;
+  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
+  return base;
+}
+
+function formatScaledIngredientAmount(
+  amount: number,
+  unit?: MeasurementUnit,
+  scaleFactor?: number,
+  modifiers?: Entities.Fillings.IIngredientModifiers
+): string {
+  if (scaleFactor === undefined) return formatIngredientAmount(amount, unit, modifiers);
+  const u = unit ?? 'g';
+  const result = LR.Internal.scaleAmount(amount as Measurement, u, scaleFactor);
+  const base = result.isSuccess()
+    ? result.value.displayValue
+    : formatIngredientAmount(amount * scaleFactor, u);
+  if (modifiers?.toTaste) return `${base}, to taste`;
+  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
+  return base;
 }
 
 // ============================================================================
@@ -165,6 +188,13 @@ function IngredientRow({
     return result;
   }, [resolved]);
 
+  const displayAmount = formatScaledIngredientAmount(
+    resolved.amount,
+    resolved.entity.unit,
+    scaleFactor,
+    resolved.entity.modifiers
+  );
+
   return (
     <EntityRow<IngredientId>
       items={items}
@@ -172,7 +202,10 @@ function IngredientRow({
       onClick={onClick}
       rightContent={
         <span className="text-xs text-gray-500 tabular-nums shrink-0">
-          {scaleFactor !== undefined ? formatAmount(resolved.amount * scaleFactor) : `${resolved.amount}g`}
+          {displayAmount}
+          {!scaleFactor && resolved.entity.modifiers?.toTaste && (
+            <span className="ml-1 text-gray-400 italic">to taste</span>
+          )}
         </span>
       }
     />
