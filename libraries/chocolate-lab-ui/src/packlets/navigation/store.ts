@@ -175,6 +175,7 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
         const mode = state.mode;
         const validTabs = MODE_TABS[mode];
         if (!validTabs.includes(tab)) {
+          console.error(`[NavigationStore] setTab: tab "${tab}" is not valid for mode "${mode}"`);
           return state;
         }
         return {

@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-import React, { useContext, useEffect, useMemo } from 'react';
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
 
 import { KeyboardShortcutRegistry, type IShortcut } from './registry';
 
@@ -106,13 +106,36 @@ export function useKeyboardRegistry(): KeyboardShortcutRegistry {
  */
 export function useKeyboardShortcuts(shortcuts: ReadonlyArray<IShortcut>): void {
   const registry = useKeyboardRegistry();
+  const shortcutsRef = useRef(shortcuts);
+  shortcutsRef.current = shortcuts;
 
   useEffect(() => {
-    const registrations = shortcuts.map((s) => registry.register(s));
+    // Register stable wrapper shortcuts that delegate to the current ref entries.
+    // This means the effect only runs when the registry changes or the number of
+    // shortcuts changes — not on every render when the array identity changes.
+    const registrations = shortcutsRef.current.map((_, index) =>
+      registry.register({
+        get binding() {
+          return shortcutsRef.current[index]?.binding ?? { key: '' };
+        },
+        get description() {
+          return shortcutsRef.current[index]?.description ?? '';
+        },
+        get priority() {
+          return shortcutsRef.current[index]?.priority;
+        },
+        handler: (): boolean | void => {
+          return shortcutsRef.current[index]?.handler();
+        }
+      })
+    );
     return (): void => {
       for (const reg of registrations) {
         reg.unregister();
       }
     };
-  }, [registry, shortcuts]);
+    // Re-register only when the registry instance or the number of shortcuts changes.
+    // Handler/binding updates are picked up via the ref without re-registration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registry, shortcuts.length]);
 }

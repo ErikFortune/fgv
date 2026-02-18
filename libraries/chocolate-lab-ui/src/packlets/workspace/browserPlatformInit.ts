@@ -212,18 +212,21 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
     if (resolvedStorage) {
       const existing = resolvedStorage.getItem(storageKey);
       if (existing) {
-        return existing as unknown as Settings.DeviceId;
+        const validated = Settings.Converters.deviceId.convert(existing);
+        if (validated.isSuccess()) {
+          return validated.value;
+        }
+        // Existing ID is invalid — fall through to generate a new one
       }
 
       const id = `browser-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
       resolvedStorage.setItem(storageKey, id);
-      return id as unknown as Settings.DeviceId;
+      return Settings.Converters.deviceId.convert(id).orThrow();
     }
 
     // No storage available — generate a transient ID
-    return `browser-${Date.now().toString(36)}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}` as unknown as Settings.DeviceId;
+    const id = `browser-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    return Settings.Converters.deviceId.convert(id).orThrow();
   }
 
   /**

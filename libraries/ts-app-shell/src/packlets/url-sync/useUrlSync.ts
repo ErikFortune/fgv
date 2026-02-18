@@ -167,6 +167,19 @@ export function useUrlSync<TMode extends string, TTab extends string>(
   // Track whether we've done the initial load
   const initialized = useRef(false);
 
+  // Keep refs to the latest values so the mount effect captures them without
+  // needing them in its dependency array (the effect must only run once).
+  const configRef = useRef(config);
+  configRef.current = config;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const setModeRef = useRef(setMode);
+  setModeRef.current = setMode;
+  const setTabRef = useRef(setTab);
+  setTabRef.current = setTab;
+
   // ---- Initial load: URL → store ----
   useEffect(() => {
     if (initialized.current) {
@@ -174,18 +187,20 @@ export function useUrlSync<TMode extends string, TTab extends string>(
     }
     initialized.current = true;
 
-    const parsed = parseUrlHash(window.location.hash, config);
+    const parsed = parseUrlHash(window.location.hash, configRef.current);
     if (parsed) {
       isApplyingUrl.current = true;
-      setMode(parsed.mode);
-      setTab(parsed.tab);
+      setModeRef.current(parsed.mode);
+      setTabRef.current(parsed.tab);
       isApplyingUrl.current = false;
     } else {
       // No valid hash — write current state to URL
-      const hash = encodeUrlHash(mode, activeTab);
+      const hash = encodeUrlHash(modeRef.current, activeTabRef.current);
       window.history.replaceState(null, '', hash);
     }
-    // Only run on mount
+    // Intentionally empty: this effect must run exactly once on mount.
+    // All values are accessed via refs to avoid stale closures.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---- Store → URL: push history on navigation changes ----
