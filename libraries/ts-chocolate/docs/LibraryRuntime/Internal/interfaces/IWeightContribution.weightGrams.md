@@ -2,7 +2,7 @@
 
 ## IWeightContribution.weightGrams property
 
-Weight contribution in grams (0 if excluded)
+Weight contribution in grams after applying yieldFactor (0 if excluded)
 
 **Signature:**
 

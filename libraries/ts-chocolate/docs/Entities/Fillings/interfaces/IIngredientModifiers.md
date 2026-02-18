@@ -59,4 +59,38 @@ boolean
 Indicates this ingredient is "to taste" - the amount is a suggestion.
 
 </td></tr>
+<tr><td>
+
+[yieldFactor](./IIngredientModifiers.yieldFactor.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Fraction of ingredient contributing to final recipe weight after processing.
+
+</td></tr>
+<tr><td>
+
+[processNote](./IIngredientModifiers.processNote.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Human-readable description of the processing applied to this ingredient.
+
+</td></tr>
 </tbody></table>

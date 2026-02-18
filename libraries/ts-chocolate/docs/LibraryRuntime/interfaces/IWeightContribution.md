@@ -89,7 +89,7 @@ Original unit in filling recipe
 
 </td><td>
 
-Weight contribution in grams (0 if excluded)
+Weight contribution in grams after applying yieldFactor (0 if excluded)
 
 </td></tr>
 <tr><td>
@@ -107,6 +107,40 @@ boolean
 </td><td>
 
 Whether this ingredient contributes to total weight
+
+</td></tr>
+<tr><td>
+
+[yieldFactor](./IWeightContribution.yieldFactor.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Yield factor applied (1.0 if not specified)
+
+</td></tr>
+<tr><td>
+
+[processNote](./IWeightContribution.processNote.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Human-readable process note, if any
 
 </td></tr>
 </tbody></table>
