@@ -60,6 +60,21 @@ describe('WeightCalculator', () => {
     unit
   });
 
+  const makeIngredientWithModifiers = (
+    baseId: string,
+    amount: number,
+    unit: 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods' | undefined,
+    modifiers: Fillings.IIngredientModifiers
+  ): Fillings.IFillingIngredientEntity => ({
+    ingredient: {
+      ids: [`common.${baseId}` as IngredientId],
+      preferredId: `common.${baseId}` as IngredientId
+    },
+    amount: amount as Measurement,
+    unit,
+    modifiers
+  });
+
   // ============================================================================
   // contributesToWeight Tests
   // ============================================================================
@@ -364,7 +379,9 @@ describe('WeightCalculator', () => {
         amount: 200 as Measurement,
         unit: 'g',
         weightGrams: 200 as Measurement,
-        contributesToWeight: true
+        contributesToWeight: true,
+        yieldFactor: 1.0,
+        processNote: undefined
       });
 
       expect(contributions[1].ingredientId).toBe('common.heavy-cream');
@@ -376,13 +393,149 @@ describe('WeightCalculator', () => {
         amount: 1 as Measurement,
         unit: 'pinch',
         weightGrams: 0 as Measurement,
-        contributesToWeight: false
+        contributesToWeight: false,
+        yieldFactor: 1.0,
+        processNote: undefined
       });
     });
 
     test('returns empty array for empty ingredients', () => {
       const contributions = RuntimeInternal.calculateWeightContributions([], mockContext);
       expect(contributions).toEqual([]);
+    });
+  });
+
+  // ============================================================================
+  // yieldFactor Tests
+  // ============================================================================
+
+  describe('yieldFactor', () => {
+    describe('calculateIngredientWeight with yieldFactor', () => {
+      test('defaults to 1.0 when no modifiers', () => {
+        const ingredient = makeIngredient('chocolate', 100, 'g');
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.yieldFactor).toBe(1.0);
+        expect(result.weightGrams).toBe(100);
+      });
+
+      test('defaults to 1.0 when modifiers omit yieldFactor', () => {
+        const ingredient = makeIngredientWithModifiers('chocolate', 100, 'g', { toTaste: true });
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.yieldFactor).toBe(1.0);
+        expect(result.weightGrams).toBe(100);
+      });
+
+      test('applies yieldFactor 0.0 for non-contributing grams ingredient', () => {
+        const ingredient = makeIngredientWithModifiers('coffee-beans', 50, 'g', {
+          yieldFactor: 0.0,
+          processNote: 'steeped and strained'
+        });
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.amount).toBe(50);
+        expect(result.weightGrams).toBe(0);
+        expect(result.contributesToWeight).toBe(true);
+        expect(result.yieldFactor).toBe(0.0);
+        expect(result.processNote).toBe('steeped and strained');
+      });
+
+      test('applies partial yieldFactor for grams ingredient', () => {
+        const ingredient = makeIngredientWithModifiers('heavy-cream', 300, 'g', {
+          yieldFactor: 200 / 300,
+          processNote: 'strained after steeping'
+        });
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.amount).toBe(300);
+        expect(result.weightGrams).toBeCloseTo(200, 1);
+        expect(result.contributesToWeight).toBe(true);
+        expect(result.yieldFactor).toBeCloseTo(0.667, 2);
+        expect(result.processNote).toBe('strained after steeping');
+      });
+
+      test('applies yieldFactor with mL unit and density', () => {
+        // 100mL cream * 1.032 density * 0.5 yieldFactor = 51.6g
+        const ingredient = makeIngredientWithModifiers('heavy-cream', 100, 'mL', {
+          yieldFactor: 0.5
+        });
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.weightGrams).toBeCloseTo(51.6, 1);
+        expect(result.contributesToWeight).toBe(true);
+        expect(result.yieldFactor).toBe(0.5);
+      });
+
+      test('yieldFactor has no effect on excluded units', () => {
+        const ingredient = makeIngredientWithModifiers('vanilla', 1, 'tsp', {
+          yieldFactor: 0.5
+        });
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.weightGrams).toBe(0);
+        expect(result.contributesToWeight).toBe(false);
+        expect(result.yieldFactor).toBe(0.5);
+      });
+
+      test('preserves processNote on excluded units', () => {
+        const ingredient = makeIngredientWithModifiers('vanilla', 1, 'tsp', {
+          processNote: 'to taste'
+        });
+        const result = RuntimeInternal.calculateIngredientWeight(ingredient, mockContext);
+
+        expect(result.processNote).toBe('to taste');
+      });
+    });
+
+    describe('calculateTotalWeight with yieldFactor', () => {
+      test('applies yieldFactor to total weight calculation', () => {
+        const ingredients = [
+          makeIngredient('chocolate', 200, 'g'), // 200g (yieldFactor 1.0)
+          makeIngredientWithModifiers('heavy-cream', 300, 'g', {
+            yieldFactor: 200 / 300 // yields 200g
+          }),
+          makeIngredientWithModifiers('coffee-beans', 50, 'g', {
+            yieldFactor: 0.0 // strained out
+          })
+        ];
+
+        const total = RuntimeInternal.calculateTotalWeight(ingredients, mockContext);
+        // 200 + 200 + 0 = 400
+        expect(total).toBeCloseTo(400, 1);
+      });
+
+      test('applies yieldFactor with mixed units', () => {
+        const ingredients = [
+          makeIngredient('chocolate', 200, 'g'), // 200g
+          makeIngredientWithModifiers('heavy-cream', 100, 'mL', {
+            yieldFactor: 0.5 // 100 * 1.032 * 0.5 = 51.6g
+          }),
+          makeIngredient('vanilla', 1, 'tsp') // excluded
+        ];
+
+        const total = RuntimeInternal.calculateTotalWeight(ingredients, mockContext);
+        // 200 + 51.6 = 251.6
+        expect(total).toBeCloseTo(251.6, 1);
+      });
+    });
+
+    describe('calculateWeightContributions with yieldFactor', () => {
+      test('includes yieldFactor and processNote in contributions', () => {
+        const ingredients = [
+          makeIngredientWithModifiers('heavy-cream', 300, 'g', {
+            yieldFactor: 0.67,
+            processNote: 'reduced by simmering'
+          })
+        ];
+
+        const contributions = RuntimeInternal.calculateWeightContributions(ingredients, mockContext);
+
+        expect(contributions).toHaveLength(1);
+        expect(contributions[0].yieldFactor).toBe(0.67);
+        expect(contributions[0].processNote).toBe('reduced by simmering');
+        expect(contributions[0].weightGrams).toBeCloseTo(201, 0);
+      });
     });
   });
 });

@@ -1059,4 +1059,86 @@ describe('ProducedFilling', () => {
       expect(changes.ingredientsChanged).toBe(true);
     });
   });
+
+  describe('yieldFactor in weight calculations', () => {
+    const fillingWithYieldFactors: IProducedFillingEntity = {
+      variationId: testVariationId,
+      scaleFactor: 1.0,
+      targetWeight: 400 as Measurement,
+      ingredients: [
+        {
+          ingredientId: 'test.dark-chocolate' as IngredientId,
+          amount: 200 as Measurement,
+          unit: 'g' as MeasurementUnit
+        },
+        {
+          ingredientId: 'test.cream' as IngredientId,
+          amount: 300 as Measurement,
+          unit: 'g' as MeasurementUnit,
+          modifiers: { yieldFactor: 200 / 300, processNote: 'strained after steeping' }
+        },
+        {
+          ingredientId: 'test.coffee-beans' as IngredientId,
+          amount: 50 as Measurement,
+          unit: 'g' as MeasurementUnit,
+          modifiers: { yieldFactor: 0.0, processNote: 'steeped and strained' }
+        }
+      ]
+    };
+
+    test('scaleToTargetWeight() accounts for yieldFactor in weight calculation', () => {
+      const wrapper = ProducedFilling.create(fillingWithYieldFactors).orThrow();
+
+      // Current contributed weight: 200*1.0 + 300*(200/300) + 50*0.0 = 200 + 200 + 0 = 400
+      // Scale to 800: factor is 2.0
+      expect(wrapper.scaleToTargetWeight(800 as Measurement)).toSucceedWith(800 as Measurement);
+
+      const chocolate = wrapper.ingredients.find(
+        (i) => i.ingredientId === ('test.dark-chocolate' as IngredientId)
+      );
+      const cream = wrapper.ingredients.find((i) => i.ingredientId === ('test.cream' as IngredientId));
+      const coffee = wrapper.ingredients.find(
+        (i) => i.ingredientId === ('test.coffee-beans' as IngredientId)
+      );
+
+      // All weight-contributing units (g, mL) scale by 2.0
+      expect(chocolate?.amount).toBe(400 as Measurement);
+      expect(cream?.amount).toBe(600 as Measurement);
+      expect(coffee?.amount).toBe(100 as Measurement);
+
+      // Target weight reflects yieldFactor: 400*1.0 + 600*(200/300) + 100*0.0 = 400 + 400 + 0 = 800
+      expect(wrapper.targetWeight).toBe(800 as Measurement);
+    });
+
+    test('scaleToTargetWeight() preserves modifiers on ingredients', () => {
+      const wrapper = ProducedFilling.create(fillingWithYieldFactors).orThrow();
+
+      wrapper.scaleToTargetWeight(800 as Measurement).orThrow();
+
+      const cream = wrapper.ingredients.find((i) => i.ingredientId === ('test.cream' as IngredientId));
+      expect(cream?.modifiers?.yieldFactor).toBeCloseTo(200 / 300, 2);
+      expect(cream?.modifiers?.processNote).toBe('strained after steeping');
+
+      const coffee = wrapper.ingredients.find(
+        (i) => i.ingredientId === ('test.coffee-beans' as IngredientId)
+      );
+      expect(coffee?.modifiers?.yieldFactor).toBe(0.0);
+      expect(coffee?.modifiers?.processNote).toBe('steeped and strained');
+    });
+
+    test('toSourceVariation() with yieldFactor computes weight from contributed amounts', () => {
+      // targetWeight is 0 → should compute from ingredients with yieldFactor
+      const zeroTargetWeight: IProducedFillingEntity = {
+        ...fillingWithYieldFactors,
+        targetWeight: 0 as Measurement
+      };
+
+      expect(ProducedFilling.toSourceVariation(zeroTargetWeight, '2026-01-01-02')).toSucceedAndSatisfy(
+        (variation) => {
+          // 200*1.0 + 300*(200/300) + 50*0.0 = 400
+          expect(variation.baseWeight).toBeCloseTo(400, 0);
+        }
+      );
+    });
+  });
 });

@@ -48,7 +48,13 @@ import {
  */
 export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.object<IIngredientModifiers>({
   spoonLevel: CommonConverters.spoonLevel.optional(),
-  toTaste: Converters.boolean.optional()
+  toTaste: Converters.boolean.optional(),
+  yieldFactor: Converters.number
+    .withConstraint((n) => n >= 0.0 && n <= 5.0, { description: 'must be between 0.0 and 5.0' })
+    .optional(),
+  processNote: Converters.string
+    .withConstraint((s) => s.length <= 200, { description: 'must be at most 200 characters' })
+    .optional()
 });
 
 /**

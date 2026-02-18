@@ -3929,8 +3929,10 @@ type IIngredientInventoryLibraryParams = ISubLibraryParams<IngredientInventoryLi
 
 // @public
 interface IIngredientModifiers {
+    readonly processNote?: string;
     readonly spoonLevel?: SpoonLevel;
     readonly toTaste?: boolean;
+    readonly yieldFactor?: number;
 }
 
 // @public
@@ -5860,8 +5862,10 @@ interface IWeightContribution {
     readonly amount: Measurement;
     readonly contributesToWeight: boolean;
     readonly ingredientId: IngredientId;
+    readonly processNote?: string;
     readonly unit: MeasurementUnit;
     readonly weightGrams: Measurement;
+    readonly yieldFactor: number;
 }
 
 // @public

@@ -59,10 +59,14 @@ export interface IWeightContribution {
   readonly amount: Measurement;
   /** Original unit in filling recipe */
   readonly unit: MeasurementUnit;
-  /** Weight contribution in grams (0 if excluded) */
+  /** Weight contribution in grams after applying yieldFactor (0 if excluded) */
   readonly weightGrams: Measurement;
   /** Whether this ingredient contributes to total weight */
   readonly contributesToWeight: boolean;
+  /** Yield factor applied (1.0 if not specified) */
+  readonly yieldFactor: number;
+  /** Human-readable process note, if any */
+  readonly processNote?: string;
 }
 
 // ============================================================================
@@ -123,9 +127,12 @@ export const defaultWeightContext: IWeightCalculationContext = {
  * Calculate the weight contribution for a single ingredient.
  *
  * Weight rules:
- * - 'g': Added directly (amount in grams)
- * - 'mL': Converted to grams via density (amount * density)
- * - 'tsp', 'Tbsp', 'pinch': Excluded (returns 0)
+ * - 'g': amount × yieldFactor
+ * - 'mL': amount × density × yieldFactor
+ * - 'tsp', 'Tbsp', 'pinch', 'seeds', 'pods': Excluded (returns 0)
+ *
+ * The yieldFactor (from ingredient modifiers) represents the fraction of the
+ * ingredient that ends up in the final recipe after processing. Defaults to 1.0.
  *
  * @param ingredient - The filling recipe ingredient to calculate weight for
  * @param context - Context for looking up ingredient density
@@ -138,36 +145,45 @@ export function calculateIngredientWeight(
 ): IWeightContribution {
   const unit = ingredient.unit ?? 'g';
   const ingredientId = ingredient.ingredient.preferredId ?? ingredient.ingredient.ids[0];
+  const yieldFactor = ingredient.modifiers?.yieldFactor ?? 1.0;
+  const processNote = ingredient.modifiers?.processNote;
 
   if (unit === 'g') {
-    return {
-      ingredientId,
-      amount: ingredient.amount,
-      unit,
-      weightGrams: ingredient.amount,
-      contributesToWeight: true
-    };
-  }
-
-  if (unit === 'mL') {
-    const density = context.getIngredientDensity(ingredientId);
-    const weightGrams = (ingredient.amount * density) as Measurement;
+    const weightGrams = (ingredient.amount * yieldFactor) as Measurement;
     return {
       ingredientId,
       amount: ingredient.amount,
       unit,
       weightGrams,
-      contributesToWeight: true
+      contributesToWeight: true,
+      yieldFactor,
+      processNote
     };
   }
 
-  // tsp, Tbsp, pinch - excluded from weight
+  if (unit === 'mL') {
+    const density = context.getIngredientDensity(ingredientId);
+    const weightGrams = (ingredient.amount * density * yieldFactor) as Measurement;
+    return {
+      ingredientId,
+      amount: ingredient.amount,
+      unit,
+      weightGrams,
+      contributesToWeight: true,
+      yieldFactor,
+      processNote
+    };
+  }
+
+  // tsp, Tbsp, pinch, seeds, pods - excluded from weight
   return {
     ingredientId,
     amount: ingredient.amount,
     unit,
     weightGrams: 0 as Measurement,
-    contributesToWeight: false
+    contributesToWeight: false,
+    yieldFactor,
+    processNote
   };
 }
 

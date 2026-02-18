@@ -25,12 +25,72 @@ import {
   fillingIngredientEntity,
   fillingRecipeVariationEntity,
   fillingRecipeEntity,
+  ingredientModifiers,
   scalingRefEntity,
   procedureRefEntity,
   procedureEntities
 } from '../../../packlets/entities/fillings/converters';
 
 describe('Recipe Converters', () => {
+  // ============================================================================
+  // ingredientModifiers Converter
+  // ============================================================================
+
+  describe('ingredientModifiers', () => {
+    test('converts with yieldFactor', () => {
+      expect(ingredientModifiers.convert({ yieldFactor: 0.67 })).toSucceedAndSatisfy((result) => {
+        expect(result.yieldFactor).toBeCloseTo(0.67, 2);
+      });
+    });
+
+    test('converts with processNote', () => {
+      expect(ingredientModifiers.convert({ processNote: 'steeped and strained' })).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.processNote).toBe('steeped and strained');
+        }
+      );
+    });
+
+    test('converts with yieldFactor 0.0', () => {
+      expect(ingredientModifiers.convert({ yieldFactor: 0.0 })).toSucceedAndSatisfy((result) => {
+        expect(result.yieldFactor).toBe(0.0);
+      });
+    });
+
+    test('converts with yieldFactor 1.0', () => {
+      expect(ingredientModifiers.convert({ yieldFactor: 1.0 })).toSucceedAndSatisfy((result) => {
+        expect(result.yieldFactor).toBe(1.0);
+      });
+    });
+
+    test('fails for yieldFactor below 0.0', () => {
+      expect(ingredientModifiers.convert({ yieldFactor: -0.1 })).toFail();
+    });
+
+    test('fails for yieldFactor above 5.0', () => {
+      expect(ingredientModifiers.convert({ yieldFactor: 5.1 })).toFail();
+    });
+
+    test('fails for processNote exceeding 200 characters', () => {
+      expect(ingredientModifiers.convert({ processNote: 'x'.repeat(201) })).toFail();
+    });
+
+    test('converts with all fields', () => {
+      const input = {
+        spoonLevel: 'level',
+        toTaste: true,
+        yieldFactor: 0.5,
+        processNote: 'reduced by simmering'
+      };
+      expect(ingredientModifiers.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.spoonLevel).toBe('level');
+        expect(result.toTaste).toBe(true);
+        expect(result.yieldFactor).toBe(0.5);
+        expect(result.processNote).toBe('reduced by simmering');
+      });
+    });
+  });
+
   // ============================================================================
   // fillingIngredient Converter
   // ============================================================================

@@ -497,6 +497,45 @@ describe('UnitScaler', () => {
     });
   });
 
+  // ============================================================================
+  // GramScaler Tests
+  // ============================================================================
+
+  describe('GramScaler', () => {
+    const scaler = new RuntimeInternal.GramScaler();
+
+    test('rounds to nearest gram for amounts >= 10g', () => {
+      expect(scaler.scale(15 as Measurement, 1.33)).toSucceedAndSatisfy((result) => {
+        // 15 * 1.33 = 19.95 → rounds to 20
+        expect(result.value).toBe(20);
+        expect(result.unit).toBe('g');
+      });
+    });
+
+    test('rounds to 1 decimal place for amounts < 10g', () => {
+      expect(scaler.scale(3 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
+        expect(result.value).toBe(3);
+      });
+
+      expect(scaler.scale(1 as Measurement, 0.55)).toSucceedAndSatisfy((result) => {
+        // 1 * 0.55 = 0.55 → rounds to 0.6
+        expect(result.value).toBe(0.6);
+      });
+    });
+
+    test('never rounds down to zero', () => {
+      expect(scaler.scale(1 as Measurement, 0.01)).toSucceedAndSatisfy((result) => {
+        // 1 * 0.01 = 0.01 → rounds to 0.0, but clamped to 0.1
+        expect(result.value).toBe(0.1);
+      });
+    });
+
+    test('fails with non-positive scale factor', () => {
+      expect(scaler.scale(10 as Measurement, 0)).toFailWith(/greater than zero/);
+      expect(scaler.scale(10 as Measurement, -1)).toFailWith(/greater than zero/);
+    });
+  });
+
   describe('scaleAmount helper', () => {
     test('scales grams correctly', () => {
       expect(RuntimeInternal.scaleAmount(100 as Measurement, 'g', 2.0)).toSucceedAndSatisfy((result) => {

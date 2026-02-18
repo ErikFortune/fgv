@@ -59,6 +59,22 @@ export interface IIngredientModifiers {
    * Display format: "1/4 tsp salt, to taste"
    */
   readonly toTaste?: boolean;
+
+  /**
+   * Fraction of ingredient contributing to final recipe weight after processing.
+   * - 1.0 (default when omitted): Full contribution
+   * - 0.0: No contribution (e.g., coffee beans steeped in cream and strained out)
+   * - Between 0 and 1: Partial contribution (e.g., 300g cream reduced to 200g is 0.67)
+   * Applied after scaling: weightContribution = scaledAmount * yieldFactor * density
+   */
+  readonly yieldFactor?: number;
+
+  /**
+   * Human-readable description of the processing applied to this ingredient.
+   * Displayed in UI alongside the ingredient amount.
+   * Examples: "steeped and strained", "reduced by simmering", "bloomed and squeezed"
+   */
+  readonly processNote?: string;
 }
 
 // ============================================================================

@@ -633,15 +633,17 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
   /**
    * Calculates total weight from a list of ingredients.
    * Only includes weight-contributing units (g, mL).
+   * Applies yieldFactor from modifiers (defaults to 1.0).
    */
   private static _calculateWeightFromIngredients(
     ingredients: ReadonlyArray<Fillings.IProducedFillingIngredientEntity>
   ): Measurement {
     const total = ingredients.reduce((sum, ing) => {
       const unit = ing.unit ?? 'g';
+      const yieldFactor = ing.modifiers?.yieldFactor ?? 1.0;
       // Only count weight-contributing units
       if (unit === 'g' || unit === 'mL') {
-        return sum + ing.amount;
+        return sum + ing.amount * yieldFactor;
       }
       return sum;
     }, 0);
