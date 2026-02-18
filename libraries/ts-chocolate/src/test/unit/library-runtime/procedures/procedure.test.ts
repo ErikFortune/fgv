@@ -737,4 +737,104 @@ describe('Procedure', () => {
       });
     });
   });
+
+  // ============================================================================
+  // Tests - render with supplied params override
+  // ============================================================================
+
+  describe('render - supplied params override', () => {
+    test('supplied params override step params', () => {
+      const id = 'test.simple' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
+
+      const renderContext: IProcedureRenderContext = {
+        context: stubContext,
+        recipe: {} as unknown as Fillings.IProducedFillingEntity,
+        params: { temp: 52 }
+      };
+
+      expect(proc.render(renderContext)).toSucceedAndSatisfy((rendered) => {
+        expect(rendered.steps[0].renderedDescription).toBe('Heat to 52C');
+      });
+    });
+
+    test('step params used when no supplied params', () => {
+      const id = 'test.simple' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
+
+      const renderContext: IProcedureRenderContext = {
+        context: stubContext,
+        recipe: {} as unknown as Fillings.IProducedFillingEntity
+      };
+
+      expect(proc.render(renderContext)).toSucceedAndSatisfy((rendered) => {
+        expect(rendered.steps[0].renderedDescription).toBe('Heat to 45C');
+      });
+    });
+
+    test('supplied params fill in missing step params', () => {
+      const procedureWithMissingParam: IProcedureEntity = {
+        baseId: 'missing-param' as BaseProcedureId,
+        name: 'Procedure With Missing Param',
+        steps: [
+          {
+            order: 1,
+            task: {
+              task: {
+                baseId: 'step-missing' as BaseTaskId,
+                name: 'Step Missing',
+                template: 'Heat {{ingredient}} to {{temp}}C'
+              },
+              params: { temp: 45 }
+            }
+          }
+        ]
+      };
+
+      const id = 'test.missing-param' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, procedureWithMissingParam).orThrow();
+
+      const renderContext: IProcedureRenderContext = {
+        context: stubContext,
+        recipe: {} as unknown as Fillings.IProducedFillingEntity,
+        params: { ingredient: 'chocolate' }
+      };
+
+      expect(proc.render(renderContext)).toSucceedAndSatisfy((rendered) => {
+        expect(rendered.steps[0].renderedDescription).toBe('Heat chocolate to 45C');
+      });
+    });
+
+    test('supplied params override multiple steps', () => {
+      const id = 'test.multi-step' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, multiStepProcedure).orThrow();
+
+      const renderContext: IProcedureRenderContext = {
+        context: stubContext,
+        recipe: {} as unknown as Fillings.IProducedFillingEntity,
+        params: { temp: 99 }
+      };
+
+      expect(proc.render(renderContext)).toSucceedAndSatisfy((rendered) => {
+        expect(rendered.steps[0].renderedDescription).toBe('Heat to 99C');
+        expect(rendered.steps[1].renderedDescription).toBe('Cool to 99C');
+        expect(rendered.steps[2].renderedDescription).toBe('Hold at 99C');
+      });
+    });
+
+    test('empty supplied params object does not affect step params', () => {
+      const id = 'test.simple' as ProcedureId;
+      const proc = Procedure.create(stubContext, id, simpleProcedure).orThrow();
+
+      const renderContext: IProcedureRenderContext = {
+        context: stubContext,
+        recipe: {} as unknown as Fillings.IProducedFillingEntity,
+        params: {}
+      };
+
+      expect(proc.render(renderContext)).toSucceedAndSatisfy((rendered) => {
+        expect(rendered.steps[0].renderedDescription).toBe('Heat to 45C');
+      });
+    });
+  });
 });

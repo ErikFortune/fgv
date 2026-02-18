@@ -4812,6 +4812,7 @@ interface IProcedureRenderContext {
     // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     readonly context: IProcedureContext;
     readonly mold?: IMoldEntity;
+    readonly params?: Readonly<Record<string, unknown>>;
     readonly recipe: Fillings.IProducedFillingEntity;
 }
 
@@ -6822,7 +6823,7 @@ class Procedure implements IProcedure {
     get isCategorySpecific(): boolean;
     get name(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
-    render(__renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
+    render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure>;
     get stepCount(): number;
     get tags(): ReadonlyArray<string> | undefined;
     get totalActiveTime(): Minutes | undefined;

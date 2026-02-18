@@ -225,9 +225,12 @@ export class Procedure implements IProcedure {
    * @param renderContext - The render context with recipe and library access
    * @returns Success with rendered procedure, or Failure if rendering fails
    */
-  public render(__renderContext: IProcedureRenderContext): Result<IRenderedProcedure> {
+  public render(renderContext: IProcedureRenderContext): Result<IRenderedProcedure> {
+    const suppliedParams = renderContext.params ?? {};
     return this.getSteps()
-      .onSuccess((resolvedSteps) => mapResults(resolvedSteps.map((step) => this._renderResolvedStep(step))))
+      .onSuccess((resolvedSteps) =>
+        mapResults(resolvedSteps.map((step) => this._renderResolvedStep(step, suppliedParams)))
+      )
       .onSuccess((renderedSteps) => {
         return succeed({
           name: this.name,
@@ -296,9 +299,17 @@ export class Procedure implements IProcedure {
    * @param resolvedStep - The resolved step with materialized task
    * @returns Success with rendered step, or Failure if rendering fails
    */
-  private _renderResolvedStep(resolvedStep: IResolvedProcedureStep): Result<IRenderedStep> {
+  private _renderResolvedStep(
+    resolvedStep: IResolvedProcedureStep,
+    suppliedParams: Readonly<Record<string, unknown>>
+  ): Result<IRenderedStep> {
+    const mergedParams: Record<string, unknown> = {
+      ...resolvedStep.params,
+      ...suppliedParams
+    };
+
     return resolvedStep.resolvedTask
-      .render(resolvedStep.params)
+      .render(mergedParams)
       .withErrorFormat((msg) => `step ${resolvedStep.order}: ${msg}`)
       .onSuccess((renderedDescription) => {
         return succeed({

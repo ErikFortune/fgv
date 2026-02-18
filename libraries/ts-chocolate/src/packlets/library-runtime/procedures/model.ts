@@ -86,6 +86,12 @@ export interface IProcedureRenderContext {
    * Optional mold being used for this recipe
    */
   readonly mold?: IMoldEntity;
+
+  /**
+   * Optional parameter overrides for rendering.
+   * These override any params configured in the procedure steps or tasks.
+   */
+  readonly params?: Readonly<Record<string, unknown>>;
 }
 
 // ============================================================================
