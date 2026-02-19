@@ -292,6 +292,45 @@ Updates the procedure options and preferred selection for a specific variation.
 </td></tr>
 <tr><td>
 
+[createBlankVariation(options)](./EditedFillingRecipe.createBlankVariation.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a new blank variation and adds it to the recipe.
+
+</td></tr>
+<tr><td>
+
+[duplicateVariation(sourceSpec, options)](./EditedFillingRecipe.duplicateVariation.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Duplicates an existing variation, creating a new one with a unique spec.
+
+</td></tr>
+<tr><td>
+
+[setVariationName(spec, name)](./EditedFillingRecipe.setVariationName.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets or clears the display name on a variation.
+
+</td></tr>
+<tr><td>
+
 [removeVariation(spec)](./EditedFillingRecipe.removeVariation.md)
 
 </td><td>

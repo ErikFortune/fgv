@@ -228,6 +228,19 @@ export class FillingRecipe implements IFillingRecipe {
   }
 
   /**
+   * Wraps an arbitrary variation entity using this recipe's context.
+   * Useful for creating a runtime variation from an entity that is not yet persisted
+   * (e.g., a newly added variation that exists only in the wrapper's in-memory state).
+   * @param entity - The variation entity to wrap
+   * @returns Success with FillingRecipeVariation
+   */
+  public getVariationFromEntity(
+    entity: import('../../entities').Fillings.IFillingRecipeVariationEntity
+  ): Result<FillingRecipeVariation> {
+    return FillingRecipeVariation.create(this._context, this._id, entity);
+  }
+
+  /**
    * Gets a specific variation by ID.
    * @param variationSpec - The variation ID to find
    * @returns Success with FillingRecipeVariation, or Failure if not found

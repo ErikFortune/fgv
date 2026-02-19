@@ -1724,8 +1724,10 @@ class EditedDecoration extends EditableWrapper<Decorations.IDecorationEntity> {
 class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity> {
     addVariation(variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
     static create(initial: Fillings.IFillingRecipeEntity): Result<EditedFillingRecipe>;
+    createBlankVariation(options?: Helpers.IGenerateVariationSpecOptions): Result<FillingRecipeVariationSpec>;
     // (undocumented)
     protected _deepCopy(entity: Fillings.IFillingRecipeEntity): Fillings.IFillingRecipeEntity;
+    duplicateVariation(sourceSpec: FillingRecipeVariationSpec, options?: Helpers.IGenerateVariationSpecOptions): Result<FillingRecipeVariationSpec>;
     getChanges(original: Fillings.IFillingRecipeEntity): IFillingRecipeChanges;
     get goldenVariationSpec(): FillingRecipeVariationSpec;
     hasChanges(original: Fillings.IFillingRecipeEntity): boolean;
@@ -1741,6 +1743,7 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
     setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: ReadonlyArray<IngredientId>, preferredId: IngredientId): Result<void>;
+    setVariationName(spec: FillingRecipeVariationSpec, name: string | undefined): Result<void>;
     setVariationProcedureAlternates(spec: FillingRecipeVariationSpec, options: ReadonlyArray<Fillings.IProcedureRefEntity>, preferredId: ProcedureId | undefined): Result<void>;
     get variations(): ReadonlyArray<Fillings.IFillingRecipeVariationEntity>;
 }
@@ -2238,6 +2241,7 @@ class FillingRecipe implements IFillingRecipe {
     getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
     getLatestVariation(): Result<FillingRecipeVariation>;
     getVariation(variationSpec: FillingRecipeVariationSpec): Result<FillingRecipeVariation>;
+    getVariationFromEntity(entity: IFillingRecipeVariationEntity): Result<FillingRecipeVariation>;
     getVariations(): Result<ReadonlyArray<FillingRecipeVariation>>;
     get goldenVariation(): FillingRecipeVariation;
     get goldenVariationSpec(): FillingRecipeVariationSpec;
@@ -2560,6 +2564,9 @@ function generateUniqueBaseId(baseId: string, existingIds: ReadonlySet<string> |
 function generateUniqueBaseIdFromName(name: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
 
 // @public
+function generateVariationSpec(existingSpecs: ReadonlyArray<FillingRecipeVariationSpec>, options?: IGenerateVariationSpecOptions): Result<FillingRecipeVariationSpec>;
+
+// @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -2702,6 +2709,7 @@ declare namespace Helpers {
         createConfectionRecipeVariationId,
         parseConfectionRecipeVariationId,
         createFillingRecipeVariationIdValidated,
+        generateVariationSpec,
         getPreferred,
         getPreferredOrFirst,
         getPreferredId,
@@ -2715,6 +2723,7 @@ declare namespace Helpers {
         generateUniqueBaseIdFromName,
         serializeToYaml,
         serializeToJson,
+        IGenerateVariationSpecOptions,
         ISerializationOptions
     }
 }
@@ -3779,6 +3788,13 @@ interface IGanacheValidation {
     readonly errors: ReadonlyArray<string>;
     readonly isValid: boolean;
     readonly warnings: ReadonlyArray<string>;
+}
+
+// @public
+interface IGenerateVariationSpecOptions {
+    readonly date?: string;
+    readonly index?: number;
+    readonly name?: string;
 }
 
 // @public

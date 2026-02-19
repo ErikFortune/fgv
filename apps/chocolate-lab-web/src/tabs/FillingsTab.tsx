@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
-import { Editing, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
+import { AiAssist, Editing, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   BaseFillingId,
   BaseIngredientId,
@@ -193,11 +193,20 @@ export function FillingsTabContent(): React.ReactElement {
       const state = editingRef.current;
       if (!state) return;
 
-      // Get the runtime filling to access the variation
+      // Try the runtime filling first; fall back to the wrapper's current entity
+      // (needed when a new variation was just added to the wrapper but not yet saved)
       const fillingResult = workspace.data.fillings.get(state.id as FillingId);
       if (fillingResult.isFailure()) return;
 
-      const variationResult = fillingResult.value.getVariation(spec);
+      const filling = fillingResult.value;
+      const fromRuntime = filling.getVariation(spec);
+      const variationResult = fromRuntime.isSuccess()
+        ? fromRuntime
+        : (() => {
+            const entity = state.wrapper.current.variations.find((v) => v.variationSpec === spec);
+            return entity ? filling.getVariationFromEntity(entity) : fromRuntime;
+          })();
+
       if (variationResult.isFailure()) {
         workspace.data.logger.error(`Failed to switch to variation '${spec}': ${variationResult.message}`);
         return;
@@ -1022,7 +1031,7 @@ export function FillingsTabContent(): React.ReactElement {
             content: (
               <EntityCreateForm<Entities.Ingredients.IngredientEntity>
                 slugify={slugify}
-                buildPrompt={(name: string): string => name}
+                buildPrompt={AiAssist.buildIngredientAiPrompt}
                 convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
                 makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
                   createBlankIngredientEntity(id as BaseIngredientId, name)

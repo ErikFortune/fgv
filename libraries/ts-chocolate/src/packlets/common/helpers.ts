@@ -338,6 +338,68 @@ export function createFillingRecipeVariationIdValidated(parts: {
   return fillingRecipeVariationId.convert(formatted);
 }
 
+/**
+ * Options for generating a filling recipe variation spec.
+ * @public
+ */
+export interface IGenerateVariationSpecOptions {
+  /**
+   * Date for the variation spec in YYYY-MM-DD format. Defaults to today.
+   */
+  readonly date?: string;
+  /**
+   * Explicit two-digit index (01-99). If omitted, auto-increments from existing specs.
+   */
+  readonly index?: number;
+  /**
+   * Optional human-readable name. Kebab-cased and appended as suffix.
+   */
+  readonly name?: string;
+}
+
+/**
+ * Generates a unique {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec} from
+ * the given options, auto-selecting the next available index for the date if not specified.
+ * @param existingSpecs - Existing variation specs to avoid collisions
+ * @param options - Optional date, index, and name
+ * @returns Result with a valid FillingRecipeVariationSpec or failure
+ * @public
+ */
+export function generateVariationSpec(
+  existingSpecs: ReadonlyArray<FillingRecipeVariationSpec>,
+  options?: IGenerateVariationSpecOptions
+): Result<FillingRecipeVariationSpec> {
+  const date = options?.date ?? new Date().toISOString().split('T')[0];
+  const nameSuffix = options?.name ? `-${toKebabCase(options.name)}` : '';
+
+  if (options?.index !== undefined) {
+    const spec = `${date}-${String(options.index).padStart(
+      2,
+      '0'
+    )}${nameSuffix}` as FillingRecipeVariationSpec;
+    if (existingSpecs.includes(spec)) {
+      return fail(`variation spec '${spec}' already exists`);
+    }
+    return succeed(spec);
+  }
+
+  // Auto-increment: find the highest NN used for this date and add 1
+  const datePrefix = `${date}-`;
+  const usedIndices = existingSpecs
+    .filter((s) => s.startsWith(datePrefix))
+    .map((s) => {
+      const rest = s.slice(datePrefix.length);
+      const match = /^(\d{2})/.exec(rest);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+  const nextIndex = usedIndices.length > 0 ? Math.max(...usedIndices) + 1 : 1;
+  if (nextIndex > 99) {
+    return fail(`no available index for date '${date}' (all 01-99 are taken)`);
+  }
+  const spec = `${date}-${String(nextIndex).padStart(2, '0')}${nameSuffix}` as FillingRecipeVariationSpec;
+  return succeed(spec);
+}
+
 // ============================================================================
 // Options with Preferred Helpers
 // ============================================================================

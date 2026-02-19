@@ -550,4 +550,73 @@ describe('helpers', () => {
       expect(Helpers.findById('x' as TestId, dupes)).toEqual({ id: 'x', value: 10 });
     });
   });
+
+  describe('generateVariationSpec', () => {
+    const date = '2026-02-18';
+
+    test('generates 01 index when no existing specs', () => {
+      expect(Helpers.generateVariationSpec([], { date })).toSucceedWith(
+        `${date}-01` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('auto-increments past existing specs for the same date', () => {
+      const existing = [`${date}-01`, `${date}-02`] as FillingRecipeVariationSpec[];
+      expect(Helpers.generateVariationSpec(existing, { date })).toSucceedWith(
+        `${date}-03` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('ignores specs from other dates when auto-incrementing', () => {
+      const existing = ['2026-01-01-01', '2026-01-01-02'] as FillingRecipeVariationSpec[];
+      expect(Helpers.generateVariationSpec(existing, { date })).toSucceedWith(
+        `${date}-01` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('appends kebab-cased name as suffix', () => {
+      expect(Helpers.generateVariationSpec([], { date, name: 'Less Sugar' })).toSucceedWith(
+        `${date}-01-less-sugar` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('uses explicit index when provided', () => {
+      expect(Helpers.generateVariationSpec([], { date, index: 5 })).toSucceedWith(
+        `${date}-05` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('fails when explicit index collides with existing spec', () => {
+      const existing = [`${date}-05`] as FillingRecipeVariationSpec[];
+      expect(Helpers.generateVariationSpec(existing, { date, index: 5 })).toFailWith(/already exists/);
+    });
+
+    test('explicit index with name produces correct spec', () => {
+      expect(Helpers.generateVariationSpec([], { date, index: 3, name: 'Extra Dark' })).toSucceedWith(
+        `${date}-03-extra-dark` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('defaults date to today when not provided', () => {
+      const today = new Date().toISOString().split('T')[0];
+      expect(Helpers.generateVariationSpec([])).toSucceedAndSatisfy((spec) => {
+        expect(spec).toBe(`${today}-01`);
+      });
+    });
+
+    test('fails when all indices 01-99 are taken for the date', () => {
+      const existing = Array.from(
+        { length: 99 },
+        (__, i) => `${date}-${String(i + 1).padStart(2, '0')}` as FillingRecipeVariationSpec
+      );
+      expect(Helpers.generateVariationSpec(existing, { date })).toFailWith(/no available index/);
+    });
+
+    test('treats spec with non-numeric suffix after date as index 0 when auto-incrementing', () => {
+      const existing = [`${date}-ab-some-label`] as FillingRecipeVariationSpec[];
+      expect(Helpers.generateVariationSpec(existing, { date })).toSucceedWith(
+        `${date}-01` as FillingRecipeVariationSpec
+      );
+    });
+  });
 });

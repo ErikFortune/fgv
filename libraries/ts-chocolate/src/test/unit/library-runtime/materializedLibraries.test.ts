@@ -104,6 +104,24 @@ describe('MaterializedLibrary Functionality Tests', () => {
       });
     });
 
+    test('getVariationFromEntity() wraps an entity using the recipe context', () => {
+      const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
+
+      expect(result).toSucceedAndSatisfy((filling) => {
+        const goldenSpec = filling.goldenVariationSpec;
+        const goldenVariation = filling.goldenVariation;
+        const fakeEntity: import('../../../packlets/entities').Fillings.IFillingRecipeVariationEntity = {
+          variationSpec: goldenSpec,
+          createdDate: goldenVariation.createdDate,
+          ingredients: [],
+          baseWeight: 0 as import('../../../packlets/common').Measurement
+        };
+        expect(filling.getVariationFromEntity(fakeEntity)).toSucceedAndSatisfy((v) => {
+          expect(v.variationSpec).toBe(goldenSpec);
+        });
+      });
+    });
+
     test('filling has materialized ingredients (not just IDs)', () => {
       const result = ctx.fillings.get('common.dark-ganache-classic' as FillingId);
 

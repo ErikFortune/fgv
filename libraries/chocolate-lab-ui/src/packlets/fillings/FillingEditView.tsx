@@ -298,6 +298,11 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     undefined
   );
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
+  const [showAddVariationForm, setShowAddVariationForm] = useState(false);
+  const [newVariationDate, setNewVariationDate] = useState('');
+  const [newVariationName, setNewVariationName] = useState('');
+  const [editingVariationName, setEditingVariationName] = useState<FillingRecipeVariationSpec | null>(null);
+  const [editingVariationNameValue, setEditingVariationNameValue] = useState('');
 
   const toggleIngredientExpanded = useCallback((index: number): void => {
     setExpandedIngredients((prev) => {
@@ -644,6 +649,60 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     [wrapper, selectedVariationSpec, getSourceVariationProcedures, notifyWrapper]
   );
 
+  // ---- Variation Management Handlers (library mode, wrapper-level) ----
+
+  const handleSetGoldenVariation = useCallback(
+    (spec: FillingRecipeVariationSpec): void => {
+      wrapper.setGoldenVariationSpec(spec);
+      notifyWrapper();
+    },
+    [wrapper, notifyWrapper]
+  );
+
+  const handleRemoveVariation = useCallback(
+    (spec: FillingRecipeVariationSpec): void => {
+      wrapper.removeVariation(spec);
+      notifyWrapper();
+    },
+    [wrapper, notifyWrapper]
+  );
+
+  const handleCommitVariationName = useCallback(
+    (spec: FillingRecipeVariationSpec, name: string): void => {
+      wrapper.setVariationName(spec, name || undefined);
+      notifyWrapper();
+      setEditingVariationName(null);
+      setEditingVariationNameValue('');
+    },
+    [wrapper, notifyWrapper]
+  );
+
+  const handleCreateBlankVariation = useCallback((): void => {
+    const date = newVariationDate || undefined;
+    const name = newVariationName.trim() || undefined;
+    const result = wrapper.createBlankVariation({ date, name });
+    if (result.isSuccess()) {
+      notifyWrapper();
+      onVariationChange(result.value);
+      setShowAddVariationForm(false);
+      setNewVariationDate('');
+      setNewVariationName('');
+    }
+  }, [wrapper, newVariationDate, newVariationName, notifyWrapper, onVariationChange]);
+
+  const handleDuplicateVariation = useCallback((): void => {
+    const date = newVariationDate || undefined;
+    const name = newVariationName.trim() || undefined;
+    const result = wrapper.duplicateVariation(selectedVariationSpec, { date, name });
+    if (result.isSuccess()) {
+      notifyWrapper();
+      onVariationChange(result.value);
+      setShowAddVariationForm(false);
+      setNewVariationDate('');
+      setNewVariationName('');
+    }
+  }, [wrapper, selectedVariationSpec, newVariationDate, newVariationName, notifyWrapper, onVariationChange]);
+
   // ---- Rating Handlers (on variation entity via wrapper) ----
 
   const handleRatingChange = useCallback(
@@ -839,29 +898,176 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         </EditField>
       </EditSection>
 
-      {/* Variation Selector */}
-      {wrapper.variations.length > 1 && (
+      {/* Variation Selector / Curation */}
+      {(wrapper.variations.length > 1 || isLibraryMode) && (
         <EditSection title="Variations">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-start">
             {wrapper.variations.map((v) => {
               const isSelected = v.variationSpec === selectedVariationSpec;
               const isGolden = v.variationSpec === wrapper.goldenVariationSpec;
+              const canRemove = isLibraryMode && !readOnly && !isGolden && wrapper.variations.length > 1;
+              const isEditingName = editingVariationName === v.variationSpec;
+
               return (
-                <button
+                <div
                   key={v.variationSpec}
-                  type="button"
-                  onClick={(): void => onVariationChange(v.variationSpec)}
-                  className={`px-2.5 py-1 text-xs rounded border transition-colors ${
+                  className={`inline-flex items-center gap-0.5 rounded border text-xs transition-colors ${
                     isSelected
                       ? 'bg-choco-primary text-white border-choco-primary'
-                      : 'bg-white text-gray-600 border-gray-300 hover:border-choco-primary'
+                      : 'bg-white text-gray-600 border-gray-300'
                   }`}
                 >
-                  {v.name ?? v.variationSpec}
-                  {isGolden && ' \u2605'}
-                </button>
+                  {/* Golden star toggle (library mode) */}
+                  {isLibraryMode && !readOnly && (
+                    <button
+                      type="button"
+                      title={isGolden ? 'Golden variation' : 'Set as golden'}
+                      onClick={(): void => handleSetGoldenVariation(v.variationSpec)}
+                      className={`pl-1.5 py-1 shrink-0 ${
+                        isGolden
+                          ? isSelected
+                            ? 'text-amber-300'
+                            : 'text-amber-500'
+                          : isSelected
+                          ? 'text-white/40 hover:text-amber-300'
+                          : 'text-gray-300 hover:text-amber-400'
+                      }`}
+                    >
+                      ★
+                    </button>
+                  )}
+                  {/* Golden star display (production/read-only) */}
+                  {(!isLibraryMode || readOnly) && isGolden && (
+                    <span
+                      className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-amber-300' : 'text-amber-500'}`}
+                    >
+                      ★
+                    </span>
+                  )}
+
+                  {/* Variation label — click to select, double-click to edit name (library mode) */}
+                  {isEditingName ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      className="text-xs px-1 py-0.5 w-28 bg-white text-gray-800 border-0 outline-none rounded"
+                      value={editingVariationNameValue}
+                      onChange={(e): void => setEditingVariationNameValue(e.target.value)}
+                      onBlur={(): void =>
+                        handleCommitVariationName(v.variationSpec, editingVariationNameValue)
+                      }
+                      onKeyDown={(e): void => {
+                        if (e.key === 'Enter')
+                          handleCommitVariationName(v.variationSpec, editingVariationNameValue);
+                        if (e.key === 'Escape') {
+                          setEditingVariationName(null);
+                          setEditingVariationNameValue('');
+                        }
+                      }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(): void => onVariationChange(v.variationSpec)}
+                      onDoubleClick={(): void => {
+                        if (isLibraryMode && !readOnly) {
+                          setEditingVariationName(v.variationSpec);
+                          setEditingVariationNameValue(v.name ?? '');
+                        }
+                      }}
+                      className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-choco-primary'}`}
+                      title={
+                        isLibraryMode && !readOnly ? 'Click to select, double-click to rename' : undefined
+                      }
+                    >
+                      {v.name ?? v.variationSpec}
+                    </button>
+                  )}
+
+                  {/* Remove button (library mode, non-golden) */}
+                  {canRemove && (
+                    <button
+                      type="button"
+                      title="Remove variation"
+                      onClick={(): void => handleRemoveVariation(v.variationSpec)}
+                      className={`pr-1 py-1 shrink-0 ${
+                        isSelected ? 'text-white/60 hover:text-white' : 'text-gray-300 hover:text-red-400'
+                      }`}
+                    >
+                      ✕
+                    </button>
+                  )}
+                  {/* Spacer for non-removable chips to keep consistent height */}
+                  {!canRemove && !isEditingName && <span className="pr-1" />}
+                </div>
               );
             })}
+
+            {/* Add Variation button / form (library mode) */}
+            {isLibraryMode && !readOnly && (
+              <>
+                {!showAddVariationForm ? (
+                  <button
+                    type="button"
+                    onClick={(): void => setShowAddVariationForm(true)}
+                    className="px-2.5 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-400 hover:border-choco-primary hover:text-choco-primary transition-colors"
+                  >
+                    + New
+                  </button>
+                ) : (
+                  <div className="w-full mt-1 p-2 rounded border border-gray-200 bg-gray-50 space-y-2">
+                    <div className="flex gap-2 items-center">
+                      <label className="text-xs text-gray-500 shrink-0 w-10">Date</label>
+                      <input
+                        type="text"
+                        placeholder={new Date().toISOString().split('T')[0]}
+                        pattern="\d{4}-\d{2}-\d{2}"
+                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        value={newVariationDate}
+                        onChange={(e): void => setNewVariationDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <label className="text-xs text-gray-500 shrink-0 w-10">Name</label>
+                      <input
+                        type="text"
+                        placeholder="optional label"
+                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        value={newVariationName}
+                        onChange={(e): void => setNewVariationName(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-1.5 justify-end">
+                      <button
+                        type="button"
+                        onClick={(): void => {
+                          setShowAddVariationForm(false);
+                          setNewVariationDate('');
+                          setNewVariationName('');
+                        }}
+                        className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCreateBlankVariation}
+                        className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      >
+                        Create Blank
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDuplicateVariation}
+                        className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                      >
+                        Duplicate Current
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </EditSection>
       )}

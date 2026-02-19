@@ -26,11 +26,17 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { Model as CommonModel } from '../../common';
+import { Helpers, Model as CommonModel } from '../../common';
 import { Fillings, Session } from '../../entities';
 import { EditableWrapper } from '../editableWrapper';
 
-import type { FillingName, FillingRecipeVariationSpec, IngredientId, ProcedureId } from '../../common';
+import type {
+  FillingName,
+  FillingRecipeVariationSpec,
+  IngredientId,
+  Measurement,
+  ProcedureId
+} from '../../common';
 
 type FillingCategory = Fillings.FillingCategory;
 
@@ -295,6 +301,78 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
       | CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId>
       | undefined = options.length > 0 ? { options: [...options], preferredId } : undefined;
     variations[varIndex] = { ...variations[varIndex], procedures };
+    this._current = { ...this._current, variations };
+    return succeed(undefined);
+  }
+
+  /**
+   * Creates a new blank variation and adds it to the recipe.
+   * Auto-generates a unique spec from the given date (default today) and optional name.
+   * @param options - Optional date, index, and name for spec generation
+   * @returns Result with the new variation's spec, or failure
+   * @public
+   */
+  public createBlankVariation(
+    options?: Helpers.IGenerateVariationSpecOptions
+  ): Result<FillingRecipeVariationSpec> {
+    const existingSpecs = this._current.variations.map((v) => v.variationSpec);
+    return Helpers.generateVariationSpec(existingSpecs, options).onSuccess((spec) => {
+      const today = options?.date ?? new Date().toISOString().split('T')[0];
+      const variation: Fillings.IFillingRecipeVariationEntity = {
+        variationSpec: spec,
+        name: options?.name?.trim() || undefined,
+        createdDate: today,
+        ingredients: [],
+        baseWeight: 0 as Measurement
+      };
+      return this.addVariation(variation).onSuccess(() => succeed(spec));
+    });
+  }
+
+  /**
+   * Duplicates an existing variation, creating a new one with a unique spec.
+   * Copies ingredients, procedures, ratings, and notes from the source.
+   * @param sourceSpec - The variation spec to copy from
+   * @param options - Optional date, index, and name for the new spec
+   * @returns Result with the new variation's spec, or failure
+   * @public
+   */
+  public duplicateVariation(
+    sourceSpec: FillingRecipeVariationSpec,
+    options?: Helpers.IGenerateVariationSpecOptions
+  ): Result<FillingRecipeVariationSpec> {
+    const source = this._current.variations.find((v) => v.variationSpec === sourceSpec);
+    if (!source) {
+      return fail(`variation '${sourceSpec}' does not exist in this recipe`);
+    }
+    const existingSpecs = this._current.variations.map((v) => v.variationSpec);
+    return Helpers.generateVariationSpec(existingSpecs, options).onSuccess((spec) => {
+      const today = options?.date ?? new Date().toISOString().split('T')[0];
+      const variation: Fillings.IFillingRecipeVariationEntity = {
+        ...EditedFillingRecipe._deepCopyVariation(source),
+        variationSpec: spec,
+        name: options?.name?.trim() || undefined,
+        createdDate: today
+      };
+      return this.addVariation(variation).onSuccess(() => succeed(spec));
+    });
+  }
+
+  /**
+   * Sets or clears the display name on a variation.
+   * @param spec - Variation spec to update
+   * @param name - New display name, or undefined to clear
+   * @returns Success or failure if spec not found
+   * @public
+   */
+  public setVariationName(spec: FillingRecipeVariationSpec, name: string | undefined): Result<void> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    this._pushUndo();
+    const variations = [...this._current.variations];
+    variations[varIndex] = { ...variations[varIndex], name: name?.trim() || undefined };
     this._current = { ...this._current, variations };
     return succeed(undefined);
   }

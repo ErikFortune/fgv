@@ -1128,6 +1128,196 @@ describe('EditedFillingRecipe', () => {
     });
   });
 
+  describe('createBlankVariation()', () => {
+    const date = '2026-02-18';
+
+    test('creates a blank variation with auto-generated spec', () => {
+      const entity = makeEntity({ variations: [makeVariation(`${date}-01`)] });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(wrapper.createBlankVariation({ date })).toSucceedWith(
+        `${date}-02` as FillingRecipeVariationSpec
+      );
+
+      expect(wrapper.variations).toHaveLength(2);
+      const newVar = wrapper.variations[1];
+      expect(newVar.variationSpec).toBe(`${date}-02`);
+      expect(newVar.ingredients).toHaveLength(0);
+      expect(newVar.createdDate).toBe(date);
+      expect(newVar.name).toBeUndefined();
+    });
+
+    test('sets name on the new variation when provided', () => {
+      const entity = makeEntity({ variations: [makeVariation(`${date}-01`)] });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.createBlankVariation({ date, name: 'Less Sugar' }).orThrow();
+
+      const newVar = wrapper.variations[1];
+      expect(newVar.variationSpec).toBe(`${date}-02-less-sugar`);
+      expect(newVar.name).toBe('Less Sugar');
+    });
+
+    test('auto-increments index past existing specs for the same date', () => {
+      const entity = makeEntity({
+        variations: [makeVariation(`${date}-01`), makeVariation(`${date}-02`)]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(wrapper.createBlankVariation({ date })).toSucceedWith(
+        `${date}-03` as FillingRecipeVariationSpec
+      );
+    });
+
+    test('pushes undo and restores on undo', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      wrapper.createBlankVariation({ date }).orThrow();
+
+      expect(wrapper.variations).toHaveLength(2);
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations).toHaveLength(1);
+    });
+
+    test('uses today as date when no options provided', () => {
+      const today = new Date().toISOString().split('T')[0];
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      const spec = wrapper.createBlankVariation().orThrow();
+
+      expect(spec).toMatch(`${today}-`);
+      expect(wrapper.variations[1].createdDate).toBe(today);
+    });
+  });
+
+  describe('duplicateVariation()', () => {
+    const date = '2026-02-18';
+
+    test('duplicates a variation with a new spec', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [basicIngredient],
+            notes: [{ category: 'general' as NoteCategory, note: 'Test note' }]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(wrapper.duplicateVariation('v1' as FillingRecipeVariationSpec, { date })).toSucceedWith(
+        `${date}-01` as FillingRecipeVariationSpec
+      );
+
+      expect(wrapper.variations).toHaveLength(2);
+      const dup = wrapper.variations[1];
+      expect(dup.ingredients).toHaveLength(1);
+      expect(dup.notes).toHaveLength(1);
+      expect(dup.createdDate).toBe(date);
+    });
+
+    test('sets name on the duplicate when provided', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      wrapper.duplicateVariation('v1' as FillingRecipeVariationSpec, { date, name: 'Tweaked' }).orThrow();
+
+      const dup = wrapper.variations[1];
+      expect(dup.variationSpec).toBe(`${date}-01-tweaked`);
+      expect(dup.name).toBe('Tweaked');
+    });
+
+    test('fails when source spec does not exist', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      expect(wrapper.duplicateVariation('v99' as FillingRecipeVariationSpec, { date })).toFailWith(
+        /does not exist/
+      );
+    });
+
+    test('pushes undo and restores on undo', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      wrapper.duplicateVariation('v1' as FillingRecipeVariationSpec, { date }).orThrow();
+
+      expect(wrapper.variations).toHaveLength(2);
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations).toHaveLength(1);
+    });
+
+    test('does not push undo on failure', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      expect(wrapper.canUndo()).toBe(false);
+
+      wrapper.duplicateVariation('v99' as FillingRecipeVariationSpec, { date });
+      expect(wrapper.canUndo()).toBe(false);
+    });
+
+    test('uses today as date when no options provided', () => {
+      const today = new Date().toISOString().split('T')[0];
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      const spec = wrapper.duplicateVariation('v1' as FillingRecipeVariationSpec).orThrow();
+
+      expect(spec).toMatch(`${today}-`);
+      expect(wrapper.variations[1].createdDate).toBe(today);
+    });
+  });
+
+  describe('setVariationName()', () => {
+    test('sets the name on a variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      expect(wrapper.setVariationName('v1' as FillingRecipeVariationSpec, 'Golden Batch')).toSucceed();
+
+      expect(wrapper.variations[0].name).toBe('Golden Batch');
+    });
+
+    test('clears the name when undefined is passed', () => {
+      const entity = makeEntity({
+        variations: [makeVariation('v1', { name: 'Old Name' })]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.setVariationName('v1' as FillingRecipeVariationSpec, undefined).orThrow();
+
+      expect(wrapper.variations[0].name).toBeUndefined();
+    });
+
+    test('trims whitespace from name', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      wrapper.setVariationName('v1' as FillingRecipeVariationSpec, '  Trimmed  ').orThrow();
+
+      expect(wrapper.variations[0].name).toBe('Trimmed');
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      expect(wrapper.setVariationName('v99' as FillingRecipeVariationSpec, 'Name')).toFailWith(
+        /does not exist/
+      );
+    });
+
+    test('pushes undo and restores on undo', () => {
+      const entity = makeEntity({
+        variations: [makeVariation('v1', { name: 'Original' })]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.setVariationName('v1' as FillingRecipeVariationSpec, 'Updated').orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].name).toBe('Original');
+    });
+
+    test('does not push undo on failure', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      expect(wrapper.canUndo()).toBe(false);
+
+      wrapper.setVariationName('v99' as FillingRecipeVariationSpec, 'Name');
+      expect(wrapper.canUndo()).toBe(false);
+    });
+  });
+
   describe('change detection', () => {
     test('hasChanges() returns false when unchanged', () => {
       const entity = makeEntity();

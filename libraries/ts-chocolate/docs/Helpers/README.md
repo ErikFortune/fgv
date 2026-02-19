@@ -18,6 +18,15 @@ Description
 <tbody>
 <tr><td>
 
+[IGenerateVariationSpecOptions](./interfaces/IGenerateVariationSpecOptions.md)
+
+</td><td>
+
+Options for generating a filling recipe variation spec.
+
+</td></tr>
+<tr><td>
+
 [ISerializationOptions](./interfaces/ISerializationOptions.md)
 
 </td><td>
@@ -244,6 +253,15 @@ Parses a composite ConfectionRecipeVariationId | ConfectionRecipeVariationId int
 </td><td>
 
 Creates and validates a FillingRecipeVariationId | filling variation ID from component parts.
+
+</td></tr>
+<tr><td>
+
+[generateVariationSpec](./functions/generateVariationSpec.md)
+
+</td><td>
+
+Generates a unique FillingRecipeVariationSpec | FillingRecipeVariationSpec from
 
 </td></tr>
 <tr><td>

@@ -307,6 +307,19 @@ Gets all variations - resolved.
 </td></tr>
 <tr><td>
 
+[getVariationFromEntity(entity)](./FillingRecipe.getVariationFromEntity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Wraps an arbitrary variation entity using this recipe's context.
+
+</td></tr>
+<tr><td>
+
 [getVariation(variationSpec)](./FillingRecipe.getVariation.md)
 
 </td><td>

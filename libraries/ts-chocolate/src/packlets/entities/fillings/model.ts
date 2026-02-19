@@ -367,10 +367,10 @@ export function createBlankFillingRecipeEntity(
   variationLabel?: string
 ): IFillingRecipeEntity {
   const today = new Date().toISOString().split('T')[0];
-  const labelSuffix = variationLabel ? Helpers.toKebabCase(variationLabel) : undefined;
-  const variationSpec = (
-    labelSuffix ? `${today}-01-${labelSuffix}` : `${today}-01`
-  ) as FillingRecipeVariationSpec;
+  const variationSpec = Helpers.generateVariationSpec([], {
+    date: today,
+    name: variationLabel
+  }).orThrow();
   return {
     baseId,
     name: name as FillingName,
