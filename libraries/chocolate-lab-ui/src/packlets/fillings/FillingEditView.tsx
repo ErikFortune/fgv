@@ -211,6 +211,44 @@ function AlternateAddInput({
 }
 
 // ============================================================================
+// ProcedureAlternateAddInput Component
+// ============================================================================
+
+function ProcedureAlternateAddInput({
+  onAdd,
+  datalistId
+}: {
+  readonly onAdd: (input: string) => void;
+  readonly datalistId: string;
+}): React.ReactElement {
+  const [value, setValue] = useState('');
+
+  const commit = (v: string): void => {
+    if (v.trim()) {
+      onAdd(v);
+      setValue('');
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      className="text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 w-32 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      value={value}
+      list={datalistId}
+      placeholder="+ add alternate"
+      onChange={(e): void => setValue(e.target.value)}
+      onBlur={(): void => commit(value)}
+      onKeyDown={(e): void => {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          commit(value);
+        }
+      }}
+    />
+  );
+}
+
+// ============================================================================
 // FillingEditView Component
 // ============================================================================
 
@@ -256,6 +294,9 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const [unresolvedNewIngredient, setUnresolvedNewIngredient] = useState<string | undefined>(undefined);
   const [unresolvedNewProcedure, setUnresolvedNewProcedure] = useState<string | undefined>(undefined);
   const [unresolvedAlternates, setUnresolvedAlternates] = useState<Record<IngredientId, string>>({});
+  const [unresolvedProcedureAlternate, setUnresolvedProcedureAlternate] = useState<string | undefined>(
+    undefined
+  );
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
 
   const toggleIngredientExpanded = useCallback((index: number): void => {
@@ -554,6 +595,55 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     [wrapper, selectedVariationSpec, getSourceIngredient, notifyWrapper]
   );
 
+  // ---- Alternate Procedure Handlers (wrapper-level, source model) ----
+
+  const getSourceVariationProcedures = useCallback(() => {
+    return wrapper.current.variations.find((v) => v.variationSpec === selectedVariationSpec)?.procedures;
+  }, [wrapper, selectedVariationSpec]);
+
+  const handleAddProcedureAlternate = useCallback(
+    (input: string): void => {
+      const match = procedureMatcher.resolveOnBlur(input);
+      if (!match) {
+        if (input.trim()) {
+          setUnresolvedProcedureAlternate(input.trim());
+        }
+        return;
+      }
+      setUnresolvedProcedureAlternate(undefined);
+      const current = getSourceVariationProcedures();
+      const currentOptions = current?.options ?? [];
+      if (currentOptions.some((o) => o.id === match.id)) return;
+      const newOptions = [...currentOptions, { id: match.id as ProcedureId }];
+      const preferredId = current?.preferredId ?? (match.id as ProcedureId);
+      wrapper.setVariationProcedureAlternates(selectedVariationSpec, newOptions, preferredId);
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, procedureMatcher, getSourceVariationProcedures, notifyWrapper]
+  );
+
+  const handleRemoveProcedureAlternate = useCallback(
+    (removeId: ProcedureId): void => {
+      const current = getSourceVariationProcedures();
+      if (!current) return;
+      const newOptions = current.options.filter((o) => o.id !== removeId);
+      const newPreferred = current.preferredId === removeId ? newOptions[0]?.id : current.preferredId;
+      wrapper.setVariationProcedureAlternates(selectedVariationSpec, newOptions, newPreferred);
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, getSourceVariationProcedures, notifyWrapper]
+  );
+
+  const handleSetPreferredProcedure = useCallback(
+    (preferredId: ProcedureId): void => {
+      const current = getSourceVariationProcedures();
+      if (!current) return;
+      wrapper.setVariationProcedureAlternates(selectedVariationSpec, current.options, preferredId);
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, getSourceVariationProcedures, notifyWrapper]
+  );
+
   // ---- Rating Handlers (on variation entity via wrapper) ----
 
   const handleRatingChange = useCallback(
@@ -629,7 +719,10 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     if (unresolvedNewProcedure && procedureMatcher.findExactMatch(unresolvedNewProcedure)) {
       setUnresolvedNewProcedure(undefined);
     }
-  }, [availableProcedures, procedureMatcher, unresolvedNewProcedure]);
+    if (unresolvedProcedureAlternate && procedureMatcher.findExactMatch(unresolvedProcedureAlternate)) {
+      setUnresolvedProcedureAlternate(undefined);
+    }
+  }, [availableProcedures, procedureMatcher, unresolvedNewProcedure, unresolvedProcedureAlternate]);
 
   // ---- Variation selector ----
 
@@ -1149,6 +1242,86 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               )}
             </div>
           )}
+
+          {/* Procedure alternates row (source model, library mode editing) */}
+          {((): React.ReactElement | null => {
+            const sourceProcedures = getSourceVariationProcedures();
+            const procOptions = sourceProcedures?.options ?? [];
+            const procPreferredId = sourceProcedures?.preferredId;
+            const hasProcAlternates = procOptions.length > 1;
+            if (!hasProcAlternates && !isLibraryMode) return null;
+            return (
+              <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
+                <span className="text-xs text-gray-400 shrink-0">also:</span>
+                {procOptions.map((opt) => {
+                  const name = getProcedureDisplayName(opt.id, procedureSuggestions);
+                  const isPreferred = opt.id === procPreferredId;
+                  const canEdit = isLibraryMode && !readOnly;
+                  return (
+                    <span
+                      key={opt.id}
+                      className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
+                        isPreferred ? 'bg-choco-primary/10 text-choco-primary' : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {canEdit && (
+                        <button
+                          type="button"
+                          title={isPreferred ? 'Preferred' : 'Set as preferred'}
+                          onClick={(): void => handleSetPreferredProcedure(opt.id)}
+                          className={`shrink-0 ${
+                            isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                          }`}
+                        >
+                          ★
+                        </button>
+                      )}
+                      {isPreferred && !canEdit && <span className="text-amber-500">★</span>}
+                      <span>{name}</span>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          title="Remove procedure alternate"
+                          onClick={(): void => handleRemoveProcedureAlternate(opt.id)}
+                          className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </span>
+                  );
+                })}
+                {isLibraryMode && !readOnly && (
+                  <ProcedureAlternateAddInput
+                    onAdd={handleAddProcedureAlternate}
+                    datalistId="filling-procedure-suggestions"
+                  />
+                )}
+                {!hasProcAlternates && (isProductionMode || readOnly) && (
+                  <span className="text-xs text-gray-300 italic">none</span>
+                )}
+                {unresolvedProcedureAlternate && (
+                  <>
+                    <span className="text-xs text-amber-700">
+                      No match for &quot;{unresolvedProcedureAlternate}&quot;.
+                    </span>
+                    {onCreateProcedure && (
+                      <button
+                        type="button"
+                        onClick={(): void => {
+                          onCreateProcedure(unresolvedProcedureAlternate);
+                          setUnresolvedProcedureAlternate(undefined);
+                        }}
+                        className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90 shrink-0"
+                      >
+                        Create Procedure
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           <datalist id="filling-procedure-suggestions">
             {procedureSuggestions.map((s) => (

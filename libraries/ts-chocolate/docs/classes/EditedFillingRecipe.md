@@ -265,6 +265,33 @@ Adds a new variation entity (from EditingSession saveAsNewVariation).
 </td></tr>
 <tr><td>
 
+[setVariationIngredientAlternates(spec, currentPrimaryId, ids, preferredId)](./EditedFillingRecipe.setVariationIngredientAlternates.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the alternate ingredient IDs and preferred selection for a specific ingredient
+in a variation.
+
+</td></tr>
+<tr><td>
+
+[setVariationProcedureAlternates(spec, options, preferredId)](./EditedFillingRecipe.setVariationProcedureAlternates.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the procedure options and preferred selection for a specific variation.
+
+</td></tr>
+<tr><td>
+
 [removeVariation(spec)](./EditedFillingRecipe.removeVariation.md)
 
 </td><td>

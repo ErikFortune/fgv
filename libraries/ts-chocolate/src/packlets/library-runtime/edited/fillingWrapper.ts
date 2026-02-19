@@ -30,7 +30,7 @@ import { Model as CommonModel } from '../../common';
 import { Fillings, Session } from '../../entities';
 import { EditableWrapper } from '../editableWrapper';
 
-import type { FillingName, FillingRecipeVariationSpec, IngredientId } from '../../common';
+import type { FillingName, FillingRecipeVariationSpec, IngredientId, ProcedureId } from '../../common';
 
 type FillingCategory = Fillings.FillingCategory;
 
@@ -264,6 +264,37 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     };
     const variations = [...this._current.variations];
     variations[varIndex] = { ...variation, ingredients };
+    this._current = { ...this._current, variations };
+    return succeed(undefined);
+  }
+
+  /**
+   * Updates the procedure options and preferred selection for a specific variation.
+   * Pass an empty options array to clear all procedures.
+   * @param spec - Variation spec to update
+   * @param options - New full list of procedure ref entities
+   * @param preferredId - Which procedure ID to mark as preferred (must be in options, or undefined)
+   * @returns Success or failure if spec not found or preferredId not in options
+   * @public
+   */
+  public setVariationProcedureAlternates(
+    spec: FillingRecipeVariationSpec,
+    options: ReadonlyArray<Fillings.IProcedureRefEntity>,
+    preferredId: ProcedureId | undefined
+  ): Result<void> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    if (preferredId !== undefined && !options.some((o) => o.id === preferredId)) {
+      return fail(`preferredId '${preferredId}' not found in options`);
+    }
+    this._pushUndo();
+    const variations = [...this._current.variations];
+    const procedures:
+      | CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId>
+      | undefined = options.length > 0 ? { options: [...options], preferredId } : undefined;
+    variations[varIndex] = { ...variations[varIndex], procedures };
     this._current = { ...this._current, variations };
     return succeed(undefined);
   }

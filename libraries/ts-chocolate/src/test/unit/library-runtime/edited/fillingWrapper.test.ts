@@ -1013,6 +1013,121 @@ describe('EditedFillingRecipe', () => {
     });
   });
 
+  describe('setVariationProcedureAlternates()', () => {
+    const proc1 = 'proc-a' as unknown as ProcedureId;
+    const proc2 = 'proc-b' as unknown as ProcedureId;
+
+    function makeEntityWithProcedure(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            procedures: { options: [{ id: proc1 }], preferredId: proc1 }
+          })
+        ]
+      });
+    }
+
+    test('sets procedure options and preferred', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+
+      expect(
+        wrapper.setVariationProcedureAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          [{ id: proc1 }, { id: proc2 }],
+          proc2
+        )
+      ).toSucceed();
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs?.options.map((o) => o.id)).toEqual([proc1, proc2]);
+      expect(procs?.preferredId).toBe(proc2);
+    });
+
+    test('clears procedures when options array is empty', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+
+      expect(
+        wrapper.setVariationProcedureAlternates('v1' as FillingRecipeVariationSpec, [], undefined)
+      ).toSucceed();
+
+      expect(wrapper.variations[0].procedures).toBeUndefined();
+    });
+
+    test('allows preferredId to be undefined', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+
+      expect(
+        wrapper.setVariationProcedureAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          [{ id: proc1 }, { id: proc2 }],
+          undefined
+        )
+      ).toSucceed();
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs?.options).toHaveLength(2);
+      expect(procs?.preferredId).toBeUndefined();
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+
+      expect(
+        wrapper.setVariationProcedureAlternates('v99' as FillingRecipeVariationSpec, [{ id: proc1 }], proc1)
+      ).toFailWith(/does not exist/);
+    });
+
+    test('fails when preferredId not in options', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+
+      expect(
+        wrapper.setVariationProcedureAlternates('v1' as FillingRecipeVariationSpec, [{ id: proc1 }], proc2)
+      ).toFailWith(/not found in options/);
+    });
+
+    test('pushes undo and restores on undo', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+
+      wrapper
+        .setVariationProcedureAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          [{ id: proc1 }, { id: proc2 }],
+          proc2
+        )
+        .orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs?.options.map((o) => o.id)).toEqual([proc1]);
+      expect(procs?.preferredId).toBe(proc1);
+    });
+
+    test('does not push undo on failure', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithProcedure()).orThrow();
+      expect(wrapper.canUndo()).toBe(false);
+
+      wrapper.setVariationProcedureAlternates('v99' as FillingRecipeVariationSpec, [{ id: proc1 }], proc1);
+      expect(wrapper.canUndo()).toBe(false);
+    });
+
+    test('preserves procedure notes on options', () => {
+      const optionWithNotes: Fillings.IProcedureRefEntity = {
+        id: proc1,
+        notes: [{ category: 'timing' as NoteCategory, note: 'Do this first' }]
+      };
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      wrapper
+        .setVariationProcedureAlternates('v1' as FillingRecipeVariationSpec, [optionWithNotes], proc1)
+        .orThrow();
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs?.options[0].notes).toEqual(optionWithNotes.notes);
+    });
+  });
+
   describe('change detection', () => {
     test('hasChanges() returns false when unchanged', () => {
       const entity = makeEntity();
