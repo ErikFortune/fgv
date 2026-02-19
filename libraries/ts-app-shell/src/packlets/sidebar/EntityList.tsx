@@ -257,6 +257,8 @@ export function EntityList<TEntity, TId extends string = string>(
               onClick={(): void => {
                 if (compareMode && onCheckedChange) {
                   onCheckedChange(id);
+                } else if (isSelected && onDrill) {
+                  onDrill();
                 } else {
                   onSelect(id);
                 }
