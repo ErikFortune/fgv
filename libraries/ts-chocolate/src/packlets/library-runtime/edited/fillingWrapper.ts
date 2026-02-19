@@ -30,7 +30,7 @@ import { Model as CommonModel } from '../../common';
 import { Fillings, Session } from '../../entities';
 import { EditableWrapper } from '../editableWrapper';
 
-import type { FillingName, FillingRecipeVariationSpec } from '../../common';
+import type { FillingName, FillingRecipeVariationSpec, IngredientId } from '../../common';
 
 type FillingCategory = Fillings.FillingCategory;
 
@@ -223,6 +223,47 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     }
     this._pushUndo();
     const variations = [...this._current.variations, EditedFillingRecipe._deepCopyVariation(variation)];
+    this._current = { ...this._current, variations };
+    return succeed(undefined);
+  }
+
+  /**
+   * Updates the alternate ingredient IDs and preferred selection for a specific ingredient
+   * in a variation. Matched by finding the ingredient whose ids array contains currentPrimaryId.
+   * @param spec - Variation spec to update
+   * @param currentPrimaryId - The ingredient ID currently used to identify the slot
+   * @param ids - New full list of ingredient IDs (primary + alternates)
+   * @param preferredId - Which ID to mark as preferred
+   * @returns Success or failure if spec or ingredient not found
+   * @public
+   */
+  public setVariationIngredientAlternates(
+    spec: FillingRecipeVariationSpec,
+    currentPrimaryId: IngredientId,
+    ids: ReadonlyArray<IngredientId>,
+    preferredId: IngredientId
+  ): Result<void> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    const variation = this._current.variations[varIndex];
+    const ingIndex = variation.ingredients.findIndex((ing) => ing.ingredient.ids.includes(currentPrimaryId));
+    if (ingIndex < 0) {
+      return fail(`ingredient '${currentPrimaryId}' not found in variation '${spec}'`);
+    }
+    this._pushUndo();
+    const ingredients = [...variation.ingredients];
+    ingredients[ingIndex] = {
+      ...ingredients[ingIndex],
+      ingredient: {
+        ...ingredients[ingIndex].ingredient,
+        ids: [...ids],
+        preferredId
+      }
+    };
+    const variations = [...this._current.variations];
+    variations[varIndex] = { ...variation, ingredients };
     this._current = { ...this._current, variations };
     return succeed(undefined);
   }

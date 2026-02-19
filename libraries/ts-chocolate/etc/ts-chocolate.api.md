@@ -1740,6 +1740,7 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     setName(name: FillingName): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
+    setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: ReadonlyArray<IngredientId>, preferredId: IngredientId): Result<void>;
     get variations(): ReadonlyArray<Fillings.IFillingRecipeVariationEntity>;
 }
 

@@ -70,6 +70,13 @@ type ISaveAnalysis = UserLibrary.Session.ISaveAnalysis;
 
 export type FillingSaveMode = 'update' | 'new-variation' | 'alternatives' | 'new-recipe';
 
+/**
+ * Controls which editing affordances are available:
+ * - 'library': direct alternate editing in collapsible; no 'Save as Alternatives'
+ * - 'production': 'Save as Alternatives' available; alternates shown read-only
+ */
+export type FillingEditMode = 'library' | 'production';
+
 export interface IFillingEditViewProps {
   /** Recipe-level wrapper with undo/redo */
   readonly wrapper: EditedFillingRecipe;
@@ -97,6 +104,8 @@ export interface IFillingEditViewProps {
   readonly onCreateIngredient?: (seed: string) => void;
   /** Callback to create a new procedure from an unresolved name */
   readonly onCreateProcedure?: (seed: string) => void;
+  /** Controls which editing affordances are shown; defaults to 'library' */
+  readonly editMode?: FillingEditMode;
 }
 
 // ============================================================================
@@ -162,6 +171,46 @@ function getProcedureDisplayName(
 }
 
 // ============================================================================
+// AlternateAddInput Component
+// ============================================================================
+
+function AlternateAddInput({
+  ingredientId,
+  onAdd,
+  datalistId
+}: {
+  readonly ingredientId: IngredientId;
+  readonly onAdd: (producedId: IngredientId, input: string) => void;
+  readonly datalistId: string;
+}): React.ReactElement {
+  const [value, setValue] = useState('');
+
+  const commit = (v: string): void => {
+    if (v.trim()) {
+      onAdd(ingredientId, v);
+      setValue('');
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      className="text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 w-32 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      value={value}
+      list={datalistId}
+      placeholder="+ add alternate"
+      onChange={(e): void => setValue(e.target.value)}
+      onBlur={(): void => commit(value)}
+      onKeyDown={(e): void => {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          commit(value);
+        }
+      }}
+    />
+  );
+}
+
+// ============================================================================
 // FillingEditView Component
 // ============================================================================
 
@@ -179,8 +228,12 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     onMutate,
     onPreview,
     onCreateIngredient,
-    onCreateProcedure
+    onCreateProcedure,
+    editMode = 'library'
   } = props;
+
+  const isLibraryMode = editMode === 'library';
+  const isProductionMode = editMode === 'production';
 
   // Recipe-level editing context (undo/redo for wrapper)
   const ctx = useEditingContext<EditedFillingRecipe>({
@@ -202,6 +255,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const [unresolvedIngredients, setUnresolvedIngredients] = useState<Record<number, string>>({});
   const [unresolvedNewIngredient, setUnresolvedNewIngredient] = useState<string | undefined>(undefined);
   const [unresolvedNewProcedure, setUnresolvedNewProcedure] = useState<string | undefined>(undefined);
+  const [unresolvedAlternates, setUnresolvedAlternates] = useState<Record<IngredientId, string>>({});
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
 
   const toggleIngredientExpanded = useCallback((index: number): void => {
@@ -289,7 +343,28 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
           // Replace: remove old then add new (preserves amount/modifiers)
           session.removeIngredient(existing.ingredientId);
           session.setIngredient(match.id, existing.amount, existing.unit, existing.modifiers);
+          // Also update preferredId in source variation if this ingredient exists there
+          if (!readOnly) {
+            const sourceVariation = wrapper.current.variations.find(
+              (v) => v.variationSpec === selectedVariationSpec
+            );
+            const sourceIng = sourceVariation?.ingredients.find((ing) =>
+              ing.ingredient.ids.includes(existing.ingredientId)
+            );
+            if (sourceIng) {
+              const currentIds = sourceIng.ingredient.ids;
+              const newId = match.id as IngredientId;
+              const newIds = currentIds.includes(newId) ? currentIds : [...currentIds, newId];
+              wrapper.setVariationIngredientAlternates(
+                selectedVariationSpec,
+                existing.ingredientId,
+                newIds,
+                newId
+              );
+            }
+          }
           notifySession();
+          notifyWrapper();
         }
         // Same ingredient — no-op (just clear draft state)
         setIngredientInputDraft((prev) => {
@@ -410,6 +485,75 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     notifySession();
   }, [session, notifySession]);
 
+  // ---- Alternate Ingredient Handlers (wrapper-level, source model) ----
+
+  const getSourceIngredient = useCallback(
+    (producedId: IngredientId) => {
+      const variation = wrapper.current.variations.find((v) => v.variationSpec === selectedVariationSpec);
+      return variation?.ingredients.find((ing) => ing.ingredient.ids.includes(producedId));
+    },
+    [wrapper, selectedVariationSpec]
+  );
+
+  const handleAddAlternate = useCallback(
+    (producedId: IngredientId, input: string): void => {
+      const match = ingredientMatcher.resolveOnBlur(input);
+      if (!match) {
+        if (input.trim()) {
+          setUnresolvedAlternates((prev) => ({ ...prev, [producedId]: input.trim() }));
+        }
+        return;
+      }
+      setUnresolvedAlternates((prev) => {
+        const next = { ...prev };
+        delete next[producedId];
+        return next;
+      });
+      const sourceIng = getSourceIngredient(producedId);
+      if (!sourceIng) return;
+      const currentIds = sourceIng.ingredient.ids;
+      if (currentIds.includes(match.id as IngredientId)) return;
+      const newIds = [...currentIds, match.id as IngredientId];
+      wrapper.setVariationIngredientAlternates(
+        selectedVariationSpec,
+        producedId,
+        newIds,
+        sourceIng.ingredient.preferredId ?? producedId
+      );
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, ingredientMatcher, getSourceIngredient, notifyWrapper]
+  );
+
+  const handleRemoveAlternate = useCallback(
+    (producedId: IngredientId, removeId: IngredientId): void => {
+      const sourceIng = getSourceIngredient(producedId);
+      if (!sourceIng) return;
+      const newIds = sourceIng.ingredient.ids.filter((id) => id !== removeId);
+      if (newIds.length === 0) return;
+      const currentPreferred = sourceIng.ingredient.preferredId ?? producedId;
+      const newPreferred = currentPreferred === removeId ? (newIds[0] as IngredientId) : currentPreferred;
+      wrapper.setVariationIngredientAlternates(selectedVariationSpec, producedId, newIds, newPreferred);
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, getSourceIngredient, notifyWrapper]
+  );
+
+  const handleSetPreferredAlternate = useCallback(
+    (producedId: IngredientId, preferredId: IngredientId): void => {
+      const sourceIng = getSourceIngredient(producedId);
+      if (!sourceIng) return;
+      wrapper.setVariationIngredientAlternates(
+        selectedVariationSpec,
+        producedId,
+        sourceIng.ingredient.ids,
+        preferredId
+      );
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, getSourceIngredient, notifyWrapper]
+  );
+
   // ---- Rating Handlers (on variation entity via wrapper) ----
 
   const handleRatingChange = useCallback(
@@ -468,6 +612,17 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     if (unresolvedNewIngredient && ingredientMatcher.findExactMatch(unresolvedNewIngredient)) {
       setUnresolvedNewIngredient(undefined);
     }
+    setUnresolvedAlternates((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const key of Object.keys(next) as IngredientId[]) {
+        if (ingredientMatcher.findExactMatch(next[key])) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
   }, [producedIngredients, availableIngredients, ingredientMatcher, unresolvedNewIngredient]);
 
   useEffect(() => {
@@ -508,7 +663,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       });
     }
 
-    if (saveAnalysis.canAddAlternatives) {
+    if (isProductionMode && saveAnalysis.canAddAlternatives) {
       actions.push({
         id: 'alternatives',
         label: 'Save as Alternatives',
@@ -627,12 +782,16 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
             const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
             const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
+            const sourceIng = getSourceIngredient(ing.ingredientId);
+            const sourceIds = sourceIng?.ingredient.ids ?? [];
+            const sourcePreferredId = sourceIng?.ingredient.preferredId ?? ing.ingredientId;
+            const hasAlternates = sourceIds.length > 1;
             const hasNonDefaultModifiers =
               (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
               !!ing.modifiers?.processNote ||
               !!ing.modifiers?.spoonLevel ||
               !!ing.modifiers?.toTaste;
-            const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers;
+            const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers || hasAlternates;
             return (
               <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
                 <div className="flex items-center gap-1.5">
@@ -778,6 +937,85 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           }}
                         />
                       </>
+                    )}
+                    {/* Alternates row */}
+                    {(hasAlternates || isLibraryMode) && (
+                      <div className="w-full flex flex-wrap items-center gap-1 mt-1 pt-1 border-t border-gray-100">
+                        <span className="text-xs text-gray-400 shrink-0">also:</span>
+                        {sourceIds.map((altId) => {
+                          const altName = getIngredientDisplayName(altId, ingredientSuggestions);
+                          const isPreferred = altId === sourcePreferredId;
+                          const canEdit = isLibraryMode && !readOnly;
+                          return (
+                            <span
+                              key={altId}
+                              className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
+                                isPreferred
+                                  ? 'bg-choco-primary/10 text-choco-primary'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  title={isPreferred ? 'Preferred' : 'Set as preferred'}
+                                  onClick={(): void => handleSetPreferredAlternate(ing.ingredientId, altId)}
+                                  className={`shrink-0 ${
+                                    isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                                  }`}
+                                >
+                                  ★
+                                </button>
+                              )}
+                              {isPreferred && !canEdit && <span className="text-amber-500">★</span>}
+                              <span>{altName}</span>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  title="Remove alternate"
+                                  onClick={(): void => handleRemoveAlternate(ing.ingredientId, altId)}
+                                  className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </span>
+                          );
+                        })}
+                        {isLibraryMode && !readOnly && (
+                          <AlternateAddInput
+                            ingredientId={ing.ingredientId}
+                            onAdd={handleAddAlternate}
+                            datalistId="filling-ingredient-suggestions"
+                          />
+                        )}
+                        {!hasAlternates && (isProductionMode || readOnly) && (
+                          <span className="text-xs text-gray-300 italic">none</span>
+                        )}
+                        {unresolvedAlternates[ing.ingredientId] && (
+                          <>
+                            <span className="text-xs text-amber-700">
+                              No match for &quot;{unresolvedAlternates[ing.ingredientId]}&quot;.
+                            </span>
+                            {onCreateIngredient && (
+                              <button
+                                type="button"
+                                onClick={(): void => {
+                                  onCreateIngredient(unresolvedAlternates[ing.ingredientId]);
+                                  setUnresolvedAlternates((prev) => {
+                                    const next = { ...prev };
+                                    delete next[ing.ingredientId];
+                                    return next;
+                                  });
+                                }}
+                                className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90 shrink-0"
+                              >
+                                Create Ingredient
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}

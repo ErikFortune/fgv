@@ -826,6 +826,193 @@ describe('EditedFillingRecipe', () => {
     });
   });
 
+  describe('setVariationIngredientAlternates()', () => {
+    const primaryId = 'dark-chocolate' as unknown as IngredientId;
+    const altId = 'milk-chocolate' as unknown as IngredientId;
+    const altId2 = 'white-chocolate' as unknown as IngredientId;
+
+    function makeEntityWithIngredient(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [primaryId], preferredId: primaryId },
+                amount: 100 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+    }
+
+    test('sets alternates and preferred on existing ingredient', () => {
+      const entity = makeEntityWithIngredient();
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          primaryId,
+          [primaryId, altId],
+          altId
+        )
+      ).toSucceed();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.ingredient.ids).toEqual([primaryId, altId]);
+      expect(ing.ingredient.preferredId).toBe(altId);
+    });
+
+    test('preserves other ingredient fields (amount, unit, modifiers)', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [primaryId], preferredId: primaryId },
+                amount: 150 as Measurement,
+                unit: 'mL',
+                modifiers: { yieldFactor: 0.8 }
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .setVariationIngredientAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          primaryId,
+          [primaryId, altId],
+          altId
+        )
+        .orThrow();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.amount).toBe(150);
+      expect(ing.unit).toBe('mL');
+      expect(ing.modifiers?.yieldFactor).toBe(0.8);
+    });
+
+    test('can remove all alternates (single id)', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [primaryId, altId, altId2], preferredId: altId },
+                amount: 100 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .setVariationIngredientAlternates('v1' as FillingRecipeVariationSpec, altId, [primaryId], primaryId)
+        .orThrow();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.ingredient.ids).toEqual([primaryId]);
+      expect(ing.ingredient.preferredId).toBe(primaryId);
+    });
+
+    test('fails when variation does not exist', () => {
+      const entity = makeEntityWithIngredient();
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientAlternates(
+          'v99' as FillingRecipeVariationSpec,
+          primaryId,
+          [primaryId, altId],
+          altId
+        )
+      ).toFailWith(/variation 'v99' does not exist/i);
+    });
+
+    test('fails when ingredient not found in variation', () => {
+      const entity = makeEntityWithIngredient();
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          'unknown-ingredient' as unknown as IngredientId,
+          ['unknown-ingredient' as unknown as IngredientId],
+          'unknown-ingredient' as unknown as IngredientId
+        )
+      ).toFailWith(/ingredient 'unknown-ingredient' not found/i);
+    });
+
+    test('pushes undo on success', () => {
+      const entity = makeEntityWithIngredient();
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .setVariationIngredientAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          primaryId,
+          [primaryId, altId],
+          altId
+        )
+        .orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.ingredient.ids).toEqual([primaryId]);
+      expect(ing.ingredient.preferredId).toBe(primaryId);
+    });
+
+    test('does not push undo on failure', () => {
+      const entity = makeEntityWithIngredient();
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+      expect(wrapper.canUndo()).toBe(false);
+
+      wrapper.setVariationIngredientAlternates(
+        'v99' as FillingRecipeVariationSpec,
+        primaryId,
+        [primaryId, altId],
+        altId
+      );
+      expect(wrapper.canUndo()).toBe(false);
+    });
+
+    test('matched by any id in the ids array (not just preferred)', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [primaryId, altId], preferredId: primaryId },
+                amount: 100 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientAlternates(
+          'v1' as FillingRecipeVariationSpec,
+          altId,
+          [primaryId, altId, altId2],
+          altId2
+        )
+      ).toSucceed();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.ingredient.ids).toContain(altId2);
+      expect(ing.ingredient.preferredId).toBe(altId2);
+    });
+  });
+
   describe('change detection', () => {
     test('hasChanges() returns false when unchanged', () => {
       const entity = makeEntity();
