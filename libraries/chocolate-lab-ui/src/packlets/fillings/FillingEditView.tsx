@@ -202,6 +202,19 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const [unresolvedIngredients, setUnresolvedIngredients] = useState<Record<number, string>>({});
   const [unresolvedNewIngredient, setUnresolvedNewIngredient] = useState<string | undefined>(undefined);
   const [unresolvedNewProcedure, setUnresolvedNewProcedure] = useState<string | undefined>(undefined);
+  const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
+
+  const toggleIngredientExpanded = useCallback((index: number): void => {
+    setExpandedIngredients((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  }, []);
 
   const ingredientSuggestions = useMemo(() => {
     return availableIngredients.map((ing) => ({ id: ing.id, name: ing.name }));
@@ -613,12 +626,19 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               ingredientInputDraft[index] ??
               getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
             const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
+            const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
+            const hasNonDefaultModifiers =
+              (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
+              !!ing.modifiers?.processNote ||
+              !!ing.modifiers?.spoonLevel ||
+              !!ing.modifiers?.toTaste;
+            const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers;
             return (
               <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <input
                     type="text"
-                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
                     value={ingValue}
                     list="filling-ingredient-suggestions"
                     onChange={(e): void => {
@@ -646,105 +666,119 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     }}
                     aria-label={`Amount (${ing.unit ?? 'g'})`}
                   />
-                  <select
-                    className="text-sm border border-gray-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                    value={ing.unit ?? 'g'}
-                    onChange={(e): void =>
-                      handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
-                    }
+                  <button
+                    type="button"
+                    onClick={(): void => toggleIngredientExpanded(index)}
+                    className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
+                    title="Click to show/hide details"
                   >
-                    {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
+                    {ing.unit ?? 'g'}
+                    {isExpanded ? '▾' : '▸'}
+                  </button>
                   <button
                     type="button"
                     onClick={(): void => handleRemoveIngredient(index)}
-                    className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                    className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                    aria-label="Remove ingredient"
                   >
-                    Remove
+                    ✕
                   </button>
                 </div>
-                {isSpoonUnit && (
-                  <div className="flex items-center gap-3 mt-1.5 pl-1">
+                {isExpanded && (
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
                     <select
-                      className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                      value={ing.modifiers?.spoonLevel ?? ''}
-                      onChange={(e): void => {
-                        const val = e.target.value;
-                        handleIngredientModifiersChange(index, {
-                          ...ing.modifiers,
-                          spoonLevel: val ? (val as SpoonLevel) : undefined
-                        });
-                      }}
+                      className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
+                      value={ing.unit ?? 'g'}
+                      onChange={(e): void =>
+                        handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
+                      }
                     >
-                      <option value="">level (default)</option>
-                      {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
-                        <option key={sl} value={sl}>
-                          {sl}
+                      {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
+                        <option key={u} value={u}>
+                          {u}
                         </option>
                       ))}
                     </select>
-                    <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={ing.modifiers?.toTaste ?? false}
-                        onChange={(e): void => {
-                          handleIngredientModifiersChange(index, {
-                            ...ing.modifiers,
-                            toTaste: e.target.checked ? true : undefined
-                          });
-                        }}
-                      />
-                      to taste
-                    </label>
-                  </div>
-                )}
-                {(ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined) && (
-                  <div className="flex items-center gap-3 mt-1.5 pl-1">
-                    <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
-                      yield factor
-                    </label>
-                    <input
-                      type="number"
-                      className="w-20 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                      value={ing.modifiers?.yieldFactor ?? 1}
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      onChange={(e): void => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val) && val >= 0 && val <= 1) {
-                          handleIngredientModifiersChange(index, {
-                            ...ing.modifiers,
-                            yieldFactor: val === 1 ? undefined : val
-                          });
-                        }
-                      }}
-                    />
-                    <input
-                      type="text"
-                      className="flex-1 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                      value={ing.modifiers?.processNote ?? ''}
-                      placeholder="process note (e.g. steeped and strained)"
-                      onChange={(e): void => {
-                        handleIngredientModifiersChange(index, {
-                          ...ing.modifiers,
-                          processNote: e.target.value || undefined
-                        });
-                      }}
-                      onBlur={(e): void => {
-                        const val = e.target.value.trim();
-                        if (val !== (ing.modifiers?.processNote ?? '')) {
-                          handleIngredientModifiersChange(index, {
-                            ...ing.modifiers,
-                            processNote: val || undefined
-                          });
-                        }
-                      }}
-                    />
+                    {isSpoonUnit && (
+                      <>
+                        <select
+                          className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                          value={ing.modifiers?.spoonLevel ?? ''}
+                          onChange={(e): void => {
+                            const val = e.target.value;
+                            handleIngredientModifiersChange(index, {
+                              ...ing.modifiers,
+                              spoonLevel: val ? (val as SpoonLevel) : undefined
+                            });
+                          }}
+                        >
+                          <option value="">level (default)</option>
+                          {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
+                            <option key={sl} value={sl}>
+                              {sl}
+                            </option>
+                          ))}
+                        </select>
+                        <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={ing.modifiers?.toTaste ?? false}
+                            onChange={(e): void => {
+                              handleIngredientModifiersChange(index, {
+                                ...ing.modifiers,
+                                toTaste: e.target.checked ? true : undefined
+                              });
+                            }}
+                          />
+                          to taste
+                        </label>
+                      </>
+                    )}
+                    {isWeightUnit && (
+                      <>
+                        <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                          yield
+                        </label>
+                        <input
+                          type="number"
+                          className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                          value={ing.modifiers?.yieldFactor ?? 1}
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          onChange={(e): void => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val) && val >= 0 && val <= 1) {
+                              handleIngredientModifiersChange(index, {
+                                ...ing.modifiers,
+                                yieldFactor: val === 1 ? undefined : val
+                              });
+                            }
+                          }}
+                        />
+                        <input
+                          type="text"
+                          className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                          value={ing.modifiers?.processNote ?? ''}
+                          placeholder="process note (e.g. steeped and strained)"
+                          onChange={(e): void => {
+                            handleIngredientModifiersChange(index, {
+                              ...ing.modifiers,
+                              processNote: e.target.value || undefined
+                            });
+                          }}
+                          onBlur={(e): void => {
+                            const val = e.target.value.trim();
+                            if (val !== (ing.modifiers?.processNote ?? '')) {
+                              handleIngredientModifiersChange(index, {
+                                ...ing.modifiers,
+                                processNote: val || undefined
+                              });
+                            }
+                          }}
+                        />
+                      </>
+                    )}
                   </div>
                 )}
                 {unresolvedIngredients[index] && (

@@ -178,7 +178,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
           <div>
             <span className="text-xs text-gray-500 uppercase tracking-wide block">Base Weight</span>
             <span className="text-lg font-semibold text-gray-900">
-              {formatIngredientAmount(goldenVariationEntity.baseWeight, 'g')}g
+              {formatIngredientAmount(goldenVariationEntity.baseWeight, 'g')}
             </span>
           </div>
           {goldenVariationEntity.yield && (
@@ -218,34 +218,44 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
                 : formatIngredientAmount(ing.amount, unit, modifiers);
               const processNote = ing.entity.modifiers?.processNote;
               const yieldFactor = ing.entity.modifiers?.yieldFactor;
+              const ingUnit = ing.entity.unit ?? 'g';
+              const hasYield =
+                yieldFactor !== undefined && yieldFactor !== 1.0 && (ingUnit === 'g' || ingUnit === 'mL');
+              const contributedAmount = hasYield
+                ? formatIngredientAmount(ing.amount * (yieldFactor ?? 1), ingUnit)
+                : undefined;
               return (
-                <div
-                  key={ing.ingredient.id}
-                  className="px-4 py-2.5 flex items-start justify-between hover:bg-gray-50"
-                >
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
-                    {ing.alternates.length > 0 && (
-                      <span className="ml-2 text-xs text-amber-600">
-                        or {ing.alternates.map((alt) => alt.name).join(', ')}
-                      </span>
-                    )}
-                    {processNote && <p className="text-xs text-gray-400 italic mt-0.5">{processNote}</p>}
-                  </div>
-                  <div className="text-right ml-4 shrink-0">
+                <div key={ing.ingredient.id} className="hover:bg-gray-50">
+                  <div className="px-4 py-2.5 flex items-start justify-between">
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
+                      {ing.alternates.length > 0 && (
+                        <span className="ml-2 text-xs text-amber-600">
+                          or {ing.alternates.map((alt) => alt.name).join(', ')}
+                        </span>
+                      )}
+                      {!hasYield && processNote && (
+                        <p className="text-xs text-gray-400 italic mt-0.5">{processNote}</p>
+                      )}
+                    </div>
                     <span
-                      className={`text-sm font-mono ${
+                      className={`text-sm font-mono ml-4 shrink-0 ${
                         isScaled ? 'text-amber-700 font-semibold' : 'text-gray-600'
                       }`}
                     >
                       {displayAmount}
                     </span>
-                    {yieldFactor !== undefined && yieldFactor !== 1.0 && (
-                      <span className="block text-xs text-amber-600" title={`yield factor: ${yieldFactor}`}>
-                        ×{yieldFactor.toFixed(2)} yield
-                      </span>
-                    )}
                   </div>
+                  {hasYield && (
+                    <div className="flex items-baseline justify-between px-4 -mt-1.5 pb-2">
+                      <span className="text-xs text-gray-400 italic">
+                        {processNote
+                          ? `${processNote} (×${yieldFactor!.toFixed(2)})`
+                          : `×${yieldFactor!.toFixed(2)}`}
+                      </span>
+                      <span className="text-xs text-gray-400 tabular-nums">{contributedAmount}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

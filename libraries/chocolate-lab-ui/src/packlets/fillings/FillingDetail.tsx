@@ -204,30 +204,27 @@ function IngredientRow({
     : undefined;
 
   return (
-    <EntityRow<IngredientId>
-      items={items}
-      preferredId={resolved.ingredient.id}
-      onClick={onClick}
-      rightContent={
-        <span className="tabular-nums shrink-0 text-right">
-          <span className="text-xs text-gray-500">{displayAmount}</span>
-          {!scaleFactor && resolved.entity.modifiers?.toTaste && (
-            <span className="ml-1 text-xs text-gray-400 italic">to taste</span>
-          )}
-          {hasYield && (
-            <span className="flex items-baseline justify-end gap-1 text-xs text-gray-400 italic mt-0.5">
-              <span>
-                {processNote ? `${processNote} (×${yieldFactor!.toFixed(2)})` : `×${yieldFactor!.toFixed(2)}`}
-              </span>
-              <span className="not-italic text-gray-400 tabular-nums">{contributedAmount}</span>
-            </span>
-          )}
-          {!hasYield && processNote && (
-            <span className="block text-xs text-gray-400 italic mt-0.5">{processNote}</span>
-          )}
-        </span>
-      }
-    />
+    <div>
+      <EntityRow<IngredientId>
+        items={items}
+        preferredId={resolved.ingredient.id}
+        onClick={onClick}
+        rightContent={<span className="text-xs text-gray-500 tabular-nums shrink-0">{displayAmount}</span>}
+      />
+      {hasYield && (
+        <div className="flex items-baseline justify-between pl-[22px] pr-2 -mt-1 mb-1">
+          <span className="text-xs text-gray-400 italic">
+            {processNote ? `${processNote} (×${yieldFactor!.toFixed(2)})` : `×${yieldFactor!.toFixed(2)}`}
+          </span>
+          <span className="text-xs text-gray-400 tabular-nums">{contributedAmount}</span>
+        </div>
+      )}
+      {!hasYield && processNote && (
+        <div className="pl-[22px] pr-2 -mt-1 mb-1">
+          <span className="text-xs text-gray-400 italic">{processNote}</span>
+        </div>
+      )}
+    </div>
   );
 }
 
