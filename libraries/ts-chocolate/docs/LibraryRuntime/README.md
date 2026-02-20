@@ -953,6 +953,42 @@ Parameters for constructing a MaterializedLibrary.
 </td></tr>
 <tr><td>
 
+[IConfectionScalingTarget](./interfaces/IConfectionScalingTarget.md)
+
+</td><td>
+
+Scaling target for a confection preview.
+
+</td></tr>
+<tr><td>
+
+[IScaledRecipeSlot](./interfaces/IScaledRecipeSlot.md)
+
+</td><td>
+
+A scaled recipe filling slot — the selected filling's golden variation
+
+</td></tr>
+<tr><td>
+
+[IScaledIngredientSlot](./interfaces/IScaledIngredientSlot.md)
+
+</td><td>
+
+A scaled ingredient filling slot — the required amount of the ingredient
+
+</td></tr>
+<tr><td>
+
+[IConfectionScalingResult](./interfaces/IConfectionScalingResult.md)
+
+</td><td>
+
+Result of scaling a confection variation to a target yield.
+
+</td></tr>
+<tr><td>
+
 [ITask](./interfaces/ITask.md)
 
 </td><td>
@@ -1145,6 +1181,15 @@ Union type of all concrete runtime ingredient classes.
 Union type of all concrete confection classes.
 
 </td></tr>
+<tr><td>
+
+[AnyScaledSlot](./type-aliases/AnyScaledSlot.md)
+
+</td><td>
+
+Discriminated union of scaled slot types.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -1283,6 +1328,24 @@ Creates a filter for exact equality.
 </td><td>
 
 Creates a filter that checks if value is one of the allowed values.
+
+</td></tr>
+<tr><td>
+
+[computeScaledFillings](./functions/computeScaledFillings.md)
+
+</td><td>
+
+Computes scaled filling amounts for a confection variation given a scaling target.
+
+</td></tr>
+<tr><td>
+
+[canScale](./functions/canScale.md)
+
+</td><td>
+
+Returns true if the given view settings contain enough information to scale
 
 </td></tr>
 </tbody></table>

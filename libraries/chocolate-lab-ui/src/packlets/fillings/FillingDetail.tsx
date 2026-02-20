@@ -29,9 +29,10 @@ import React, { useMemo, useState } from 'react';
 import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow, DetailSection, DetailRow, TagList, StatusBadge, DetailHeader } from '@fgv/ts-app-shell';
-import type { LibraryRuntime, Entities, Measurement, MeasurementUnit } from '@fgv/ts-chocolate';
+import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
+import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
 
 // ============================================================================
 // Props
@@ -71,40 +72,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   caramel: 'bg-orange-100 text-orange-800',
   gianduja: 'bg-emerald-100 text-emerald-800'
 };
-
-// ============================================================================
-// Amount Formatting
-// ============================================================================
-
-function formatIngredientAmount(
-  amount: number,
-  unit?: MeasurementUnit,
-  modifiers?: Entities.Fillings.IIngredientModifiers
-): string {
-  const u = unit ?? 'g';
-  const result = LR.Internal.scaleAmount(amount as Measurement, u, 1.0);
-  const base = result.isSuccess() ? result.value.displayValue : `${amount}${u}`;
-  if (modifiers?.toTaste) return `${base}, to taste`;
-  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
-  return base;
-}
-
-function formatScaledIngredientAmount(
-  amount: number,
-  unit?: MeasurementUnit,
-  scaleFactor?: number,
-  modifiers?: Entities.Fillings.IIngredientModifiers
-): string {
-  if (scaleFactor === undefined) return formatIngredientAmount(amount, unit, modifiers);
-  const u = unit ?? 'g';
-  const result = LR.Internal.scaleAmount(amount as Measurement, u, scaleFactor);
-  const base = result.isSuccess()
-    ? result.value.displayValue
-    : formatIngredientAmount(amount * scaleFactor, u);
-  if (modifiers?.toTaste) return `${base}, to taste`;
-  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
-  return base;
-}
 
 // ============================================================================
 // Ingredient Row (clickable for drill-down)

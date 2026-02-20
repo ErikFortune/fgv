@@ -25,12 +25,14 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
 import type { Entities, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
+import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import type { IConfectionViewSettings } from './viewSettings';
+import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
 
 import { renderPreview } from '../tasks';
 
@@ -112,6 +114,55 @@ function FillingSlotSection({
           {!isPreferred ? ' (alternate)' : ''}
         </span>
         <span className="text-sm font-medium text-gray-900">{displayedName ?? '—'}</span>
+      </div>
+    </div>
+  );
+}
+
+function ScaledFillingSlotSection({
+  scaledSlot
+}: {
+  readonly scaledSlot: LR.AnyScaledSlot;
+}): React.ReactElement {
+  const slotLabel = scaledSlot.name ?? scaledSlot.slotId;
+
+  if (scaledSlot.type === 'ingredient') {
+    return (
+      <div className="px-4 py-3">
+        <span className="text-xs text-gray-400 block mb-1">{slotLabel}</span>
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-medium text-gray-900">{scaledSlot.ingredient.name}</span>
+          <span className="text-sm font-semibold text-choco-primary">
+            {formatIngredientAmount(scaledSlot.targetWeight, 'g')}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const producedIngredients = scaledSlot.produced.ingredients;
+  const resolvedIngredients = scaledSlot.resolvedIngredients;
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-xs text-gray-400">{slotLabel}</span>
+        <span className="text-xs text-gray-400">
+          {formatIngredientAmount(scaledSlot.targetWeight, 'g')} total
+        </span>
+      </div>
+      <div className="space-y-1">
+        {producedIngredients.map((ing, i) => {
+          const resolved = resolvedIngredients[i];
+          const name = resolved?.ingredient.name ?? ing.ingredientId;
+          return (
+            <div key={i} className="flex items-baseline justify-between">
+              <span className="text-sm text-gray-800">{name}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {formatScaledIngredientAmount(ing.amount, ing.unit, undefined, ing.modifiers)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -347,6 +398,23 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
   const goldenVariation = confection.goldenVariation;
   const goldenVariationEntity = entity.variations.find((v) => v.variationSpec === entity.goldenVariationSpec);
 
+  const scalingTarget = useMemo((): LR.IConfectionScalingTarget | undefined => {
+    if (!viewSettings) return undefined;
+    return {
+      targetFrames: viewSettings.targetFrames,
+      bufferPercentage: viewSettings.bufferPercentage,
+      targetCount: viewSettings.targetCount,
+      selectedMoldId: viewSettings.moldId,
+      fillingSelections: viewSettings.fillingSelections
+    };
+  }, [viewSettings]);
+
+  const scalingResult = useMemo(() => {
+    if (!scalingTarget || !LR.canScale(goldenVariation, scalingTarget)) return undefined;
+    const result = LR.computeScaledFillings(goldenVariation, scalingTarget);
+    return result.isSuccess() ? result.value : undefined;
+  }, [goldenVariation, scalingTarget]);
+
   const fillings = goldenVariation.fillings ?? [];
   const decorations = goldenVariation.decorations;
   const notes = goldenVariationEntity?.notes ?? [];
@@ -417,17 +485,30 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
         </div>
       )}
 
-      {/* Filling Slots */}
+      {/* Filling Slots — scaled if scaling target is set, otherwise simple display */}
       {fillings.length > 0 && (
         <PreviewSection title={`Fillings (${fillings.length} slot${fillings.length !== 1 ? 's' : ''})`}>
+          {scalingResult && (
+            <div className="mb-2 px-1 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+              {scalingResult.effectiveFrames !== undefined
+                ? `${scalingResult.effectiveFrames} frames × ${Math.round(
+                    scalingResult.effectiveCount / scalingResult.effectiveFrames
+                  )} = ${scalingResult.effectiveCount} pieces`
+                : `Target: ${scalingResult.effectiveCount} pieces (×${scalingResult.scaleFactor.toFixed(2)})`}
+            </div>
+          )}
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-            {fillings.map((slot) => (
-              <FillingSlotSection
-                key={slot.slotId}
-                slot={slot}
-                selectedOptionId={viewSettings?.fillingSelections?.[slot.slotId]}
-              />
-            ))}
+            {scalingResult
+              ? scalingResult.slots.map((scaledSlot) => (
+                  <ScaledFillingSlotSection key={scaledSlot.slotId} scaledSlot={scaledSlot} />
+                ))
+              : fillings.map((slot) => (
+                  <FillingSlotSection
+                    key={slot.slotId}
+                    slot={slot}
+                    selectedOptionId={viewSettings?.fillingSelections?.[slot.slotId]}
+                  />
+                ))}
           </div>
         </PreviewSection>
       )}

@@ -28,10 +28,11 @@
 import React, { useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
-import type { Entities, LibraryRuntime, Measurement, MeasurementUnit } from '@fgv/ts-chocolate';
+import type { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
+import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
 
 // ============================================================================
 // Props
@@ -47,36 +48,6 @@ export interface IFillingPreviewPanelProps {
 // ============================================================================
 // Helpers
 // ============================================================================
-
-function formatIngredientAmount(
-  amount: number,
-  unit?: MeasurementUnit,
-  modifiers?: Entities.Fillings.IIngredientModifiers
-): string {
-  const u = unit ?? 'g';
-  const result = LR.Internal.scaleAmount(amount as Measurement, u, 1.0);
-  const base = result.isSuccess() ? result.value.displayValue : `${amount}${u}`;
-  if (modifiers?.toTaste) return `${base}, to taste`;
-  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
-  return base;
-}
-
-function formatScaledIngredientAmount(
-  amount: number,
-  unit?: MeasurementUnit,
-  scaleFactor?: number,
-  modifiers?: Entities.Fillings.IIngredientModifiers
-): string {
-  if (scaleFactor === undefined) return formatIngredientAmount(amount, unit, modifiers);
-  const u = unit ?? 'g';
-  const result = LR.Internal.scaleAmount(amount as Measurement, u, scaleFactor);
-  const base = result.isSuccess()
-    ? result.value.displayValue
-    : formatIngredientAmount(amount * scaleFactor, u);
-  if (modifiers?.toTaste) return `${base}, to taste`;
-  if (modifiers?.spoonLevel) return `${base} (${modifiers.spoonLevel})`;
-  return base;
-}
 
 function formatResolvedStepTiming(step: LibraryRuntime.IResolvedProcedureStep): string | undefined {
   const parts: string[] = [];

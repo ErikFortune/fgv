@@ -12,3 +12,5 @@ export {
   type IEntityDetailHeaderProps,
   type IEntityDetailHeaderBadge
 } from './DetailCommon';
+
+export { formatIngredientAmount, formatScaledIngredientAmount } from './formatHelpers';

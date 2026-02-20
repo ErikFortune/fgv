@@ -53,6 +53,10 @@ export interface IConfectionViewSettings {
   readonly decorationId?: DecorationId;
   /** Procedure selection */
   readonly procedureId?: ProcedureId;
-  /** Target piece count for scaling (future) */
+  /** Target piece count for scaling (bar/rolled truffle) */
   readonly targetCount?: number;
+  /** Target frame count for scaling (molded bonbon) */
+  readonly targetFrames?: number;
+  /** Buffer overfill percentage for molded bonbon scaling (default 0.1 = 10%) */
+  readonly bufferPercentage?: number;
 }

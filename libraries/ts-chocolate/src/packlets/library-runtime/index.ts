@@ -80,7 +80,14 @@ export {
   ConfectionRecipeVariationBase,
   MoldedBonBonRecipeVariation,
   BarTruffleRecipeVariation,
-  RolledTruffleRecipeVariation
+  RolledTruffleRecipeVariation,
+  computeScaledFillings,
+  canScale,
+  type IConfectionScalingTarget,
+  type IScaledRecipeSlot,
+  type IScaledIngredientSlot,
+  type AnyScaledSlot,
+  type IConfectionScalingResult
 } from './confections';
 
 // Query builders

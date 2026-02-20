@@ -264,6 +264,9 @@ type AnyResolvedFillingSlotEntity = IResolvedFillingSlotEntity | IResolvedIngred
 const anyResolvedFillingSlotEntity: Converter<AnyResolvedFillingSlotEntity>;
 
 // @public
+type AnyScaledSlot = IScaledRecipeSlot | IScaledIngredientSlot;
+
+// @public
 type AnySessionEntity = IFillingSessionEntity | IConfectionSessionEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -556,6 +559,9 @@ function calculateTotalWeight(ingredients: ReadonlyArray<Fillings.IFillingIngred
 // @public
 function calculateWeightContributions(ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>, context?: IWeightCalculationContext): IWeightContribution[];
 
+// @public
+function canScale(variation: AnyConfectionRecipeVariation, target: IConfectionScalingTarget): boolean;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -818,6 +824,9 @@ type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 
 // @public
 const COMPOSITE_ID_PATTERN: RegExp;
+
+// @public
+function computeScaledFillings(variation: AnyConfectionRecipeVariation, target: IConfectionScalingTarget): Result<IConfectionScalingResult>;
 
 // @public
 abstract class Confection {
@@ -3242,6 +3251,23 @@ interface IConfectionSaveResult {
 }
 
 // @public
+interface IConfectionScalingResult {
+    readonly effectiveCount: number;
+    readonly effectiveFrames?: number;
+    readonly scaleFactor: number;
+    readonly slots: ReadonlyArray<AnyScaledSlot>;
+}
+
+// @public
+interface IConfectionScalingTarget {
+    readonly bufferPercentage?: number;
+    readonly fillingSelections?: Readonly<Record<string, string>>;
+    readonly selectedMoldId?: MoldId;
+    readonly targetCount?: number;
+    readonly targetFrames?: number;
+}
+
+// @public
 interface IConfectionSessionEntity extends ISessionEntityBase {
     readonly childSessionIds: Readonly<Record<SlotId, SessionId>>;
     readonly confectionType: ConfectionType;
@@ -5370,6 +5396,32 @@ interface IScaledAmount {
 }
 
 // @public
+interface IScaledIngredientSlot {
+    readonly ingredient: IIngredient;
+    // (undocumented)
+    readonly name?: string;
+    // (undocumented)
+    readonly slotId: SlotId;
+    readonly targetWeight: Measurement;
+    // (undocumented)
+    readonly type: 'ingredient';
+}
+
+// @public
+interface IScaledRecipeSlot {
+    // (undocumented)
+    readonly name?: string;
+    readonly produced: ProducedFilling;
+    readonly resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient>;
+    readonly scaleFactor: number;
+    // (undocumented)
+    readonly slotId: SlotId;
+    readonly targetWeight: Measurement;
+    // (undocumented)
+    readonly type: 'recipe';
+}
+
+// @public
 interface IScalingDefaults {
     readonly batchMultiplier?: number;
     readonly bufferPercentage?: number;
@@ -6266,6 +6318,13 @@ declare namespace LibraryRuntime {
         MoldedBonBonRecipeVariation,
         BarTruffleRecipeVariation,
         RolledTruffleRecipeVariation,
+        computeScaledFillings,
+        canScale,
+        IConfectionScalingTarget,
+        IScaledRecipeSlot,
+        IScaledIngredientSlot,
+        AnyScaledSlot,
+        IConfectionScalingResult,
         Indexers,
         ITaskContext,
         ITask,

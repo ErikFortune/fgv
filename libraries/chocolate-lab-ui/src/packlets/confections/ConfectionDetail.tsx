@@ -378,6 +378,84 @@ function DimensionsSection({
 }
 
 // ============================================================================
+// Scaling Section
+// ============================================================================
+
+function ScalingSection({
+  variation,
+  viewSettings,
+  onSettingChange
+}: {
+  readonly variation: LibraryRuntime.AnyConfectionRecipeVariation;
+  readonly viewSettings?: IConfectionViewSettings;
+  readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
+}): React.ReactElement | null {
+  if (!onSettingChange) return null;
+
+  if (variation.isMoldedBonBonVariation()) {
+    const frames = viewSettings?.targetFrames;
+    const buffer = viewSettings?.bufferPercentage ?? 0.1;
+    const cavityCount = variation.preferredMold?.mold.cavityCount;
+    const effectiveCount =
+      frames !== undefined && cavityCount !== undefined ? frames * cavityCount : undefined;
+    return (
+      <DetailSection title="Scale to Yield">
+        <div className="flex items-center gap-3 px-1 py-1">
+          <label className="text-xs text-gray-500 w-16 shrink-0">Frames</label>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={frames ?? ''}
+            placeholder="—"
+            onChange={(e): void => {
+              const v = parseInt(e.target.value, 10);
+              onSettingChange({ targetFrames: isNaN(v) || v <= 0 ? undefined : v });
+            }}
+            className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          />
+          <label className="text-xs text-gray-500 w-16 shrink-0">Buffer %</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={5}
+            value={Math.round(buffer * 100)}
+            onChange={(e): void => {
+              const v = parseInt(e.target.value, 10);
+              onSettingChange({ bufferPercentage: isNaN(v) ? 0.1 : v / 100 });
+            }}
+            className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          />
+        </div>
+        {effectiveCount !== undefined && <DetailRow label="Pieces" value={`${effectiveCount} pieces`} />}
+      </DetailSection>
+    );
+  }
+
+  const count = viewSettings?.targetCount;
+  return (
+    <DetailSection title="Scale to Yield">
+      <div className="flex items-center gap-3 px-1 py-1">
+        <label className="text-xs text-gray-500 w-16 shrink-0">Pieces</label>
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={count ?? ''}
+          placeholder="—"
+          onChange={(e): void => {
+            const v = parseInt(e.target.value, 10);
+            onSettingChange({ targetCount: isNaN(v) || v <= 0 ? undefined : v });
+          }}
+          className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+        />
+      </div>
+    </DetailSection>
+  );
+}
+
+// ============================================================================
 // Coatings Section (Rolled Truffle)
 // ============================================================================
 
@@ -629,6 +707,13 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
 
       {/* Yield */}
       <YieldSection yieldSpec={selectedVariation.yield} />
+
+      {/* Scale to Yield */}
+      <ScalingSection
+        variation={selectedVariation}
+        viewSettings={viewSettings}
+        onSettingChange={onViewSettingsChange ? handleSettingChange : undefined}
+      />
 
       {/* Filling slots */}
       {selectedVariation.fillings && selectedVariation.fillings.length > 0 && (

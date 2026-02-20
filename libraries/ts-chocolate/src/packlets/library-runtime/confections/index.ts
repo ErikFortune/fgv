@@ -45,3 +45,14 @@ export {
   BarTruffleRecipeVariation,
   RolledTruffleRecipeVariation
 } from './variations';
+
+// Stateless scaling utility
+export {
+  computeScaledFillings,
+  canScale,
+  type IConfectionScalingTarget,
+  type IScaledRecipeSlot,
+  type IScaledIngredientSlot,
+  type AnyScaledSlot,
+  type IConfectionScalingResult
+} from './confectionScaling';
