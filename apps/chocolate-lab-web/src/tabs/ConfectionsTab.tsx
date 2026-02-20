@@ -18,6 +18,7 @@ import type {
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
+  type CascadeEntityType,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
@@ -655,56 +656,29 @@ export function ConfectionsTabContent(): React.ReactElement {
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
       // Per-pane drill-down callbacks that squash to the right of this pane
-      const onIngredientClick = (id: IngredientId): void => {
+      const toggleDrillDown = (
+        entityType: CascadeEntityType,
+        entityId: string,
+        extra?: Partial<ICascadeEntry>
+      ): void => {
         const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === 'ingredient' && nextEntry.entityId === id) {
+        if (nextEntry?.entityType === entityType && nextEntry.entityId === entityId) {
           squashCascade(cascadeStack.slice(0, index + 1));
         } else {
-          squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+          squashAt(index, { entityType, entityId, mode: 'view', ...extra });
         }
       };
+      const onIngredientClick = (id: IngredientId): void => toggleDrillDown('ingredient', id);
       const onFillingClick = (
         id: FillingId,
         targetWeight?: number,
         sourceConfectionId?: string,
         sourceSlotId?: string
-      ): void => {
-        const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === 'filling' && nextEntry.entityId === id) {
-          squashCascade(cascadeStack.slice(0, index + 1));
-        } else {
-          squashAt(index, {
-            entityType: 'filling',
-            entityId: id,
-            mode: 'view',
-            targetWeight,
-            sourceConfectionId,
-            sourceSlotId
-          });
-        }
-      };
-      const onMoldClick = (id: MoldId): void => {
-        const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === 'mold' && nextEntry.entityId === id) {
-          squashCascade(cascadeStack.slice(0, index + 1));
-        } else {
-          squashAt(index, { entityType: 'mold', entityId: id, mode: 'view' });
-        }
-      };
-      const onProcedureClick = (id: ProcedureId): void => {
-        const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === 'procedure' && nextEntry.entityId === id) {
-          squashCascade(cascadeStack.slice(0, index + 1));
-        } else {
-          squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
-        }
-      };
-      const onDecorationClick = (id: DecorationId): void => {
-        squashAt(index, { entityType: 'decoration', entityId: id, mode: 'view' });
-      };
-      const onTaskClick = (id: TaskId): void => {
-        squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
-      };
+      ): void => toggleDrillDown('filling', id, { targetWeight, sourceConfectionId, sourceSlotId });
+      const onMoldClick = (id: MoldId): void => toggleDrillDown('mold', id);
+      const onProcedureClick = (id: ProcedureId): void => toggleDrillDown('procedure', id);
+      const onDecorationClick = (id: DecorationId): void => toggleDrillDown('decoration', id);
+      const onTaskClick = (id: TaskId): void => toggleDrillDown('task', id);
 
       if (entry.entityType === 'confection') {
         const result = workspace.data.confections.get(entry.entityId as ConfectionId);
