@@ -205,6 +205,10 @@ function AppShell(): React.ReactElement {
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
 
+  // NOTE: Guard fires whenever an edit/create pane is open, regardless of whether the user
+  // has actually made changes. A finer-grained check (wrapper.hasChanges()) would require
+  // threading editingRef up from each tab — a future refinement if the false-positive rate
+  // becomes annoying.
   const hasActiveEdit = cascadeStack.some((e) => e.mode === 'edit' || e.mode === 'create');
 
   const guardedSetTab = useCallback(
