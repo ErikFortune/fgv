@@ -32,7 +32,8 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
-import { ZipFileTree } from '@fgv/ts-extras';
+
+import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
 import { type CollectionId, Helpers, LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
 import {
   FileApiTreeAccessors,
@@ -108,6 +109,15 @@ function getSubLibraryPathForTab(tab: string): string | undefined {
 // ============================================================================
 
 /**
+ * Pending secret setup state when a new secret password is needed during collection creation.
+ * @public
+ */
+export interface IPendingSecretSetup {
+  /** The secret name being set up */
+  readonly secretName: string;
+}
+
+/**
  * Pending import state when a collection ID collision is detected.
  * @public
  */
@@ -128,13 +138,13 @@ export interface ICollectionActions {
   /** Open a directory picker and load collections from the selected directory */
   readonly addDirectory: () => Promise<void>;
   /** Create a new empty mutable collection from dialog data */
-  readonly createCollection: (data: ICreateCollectionData) => void;
+  readonly createCollection: (data: ICreateCollectionData) => Promise<void>;
   /** Delete a mutable collection by ID */
   readonly deleteCollection: (collectionId: string) => void;
-  /** Export a mutable collection to a YAML file download */
-  readonly exportCollection: (collectionId: string) => void;
-  /** Export all mutable collections for the active tab as a zip download */
-  readonly exportAllAsZip: () => void;
+  /** Export a mutable collection to a YAML file download (encrypted if the collection has a secretName and the key is available) */
+  readonly exportCollection: (collectionId: string) => Promise<void>;
+  /** Export all mutable collections for the active tab as a zip download (encrypted per-collection where keys are available) */
+  readonly exportAllAsZip: () => Promise<void>;
   /** Import a collection from a YAML/JSON file (opens file picker, in-memory only) */
   readonly importCollection: () => Promise<void>;
   /** Open a collection YAML/JSON file for in-place editing via File System Access API */
@@ -147,6 +157,14 @@ export interface ICollectionActions {
   readonly pendingImport: IPendingImport | null;
   /** Resolve a pending import collision with the user's chosen strategy */
   readonly resolveImportCollision: (resolution: ImportCollisionResolution) => void;
+  /** Secret names available from the keystore (empty when locked or no keystore) */
+  readonly existingSecretNames: ReadonlyArray<string>;
+  /** Non-null when a new secret password is needed during collection creation */
+  readonly pendingSecretSetup: IPendingSecretSetup | null;
+  /** Called by the password dialog: sets the password and completes collection creation. Returns error message on failure. */
+  readonly resolveSecretSetup: (password: string) => Promise<string | undefined>;
+  /** Called when the user skips encryption during collection creation */
+  readonly skipSecretSetup: () => void;
 }
 
 // ============================================================================
@@ -166,10 +184,21 @@ export function useCollectionActions(): ICollectionActions {
   const reactiveWorkspace = useReactiveWorkspace();
   const activeTab = useNavigationStore(selectActiveTab);
 
+  const existingSecretNames: ReadonlyArray<string> = (() => {
+    const ks = workspace.keyStore;
+    if (!ks) return [];
+    const result = ks.listSecrets();
+    return result.isSuccess() ? result.value : [];
+  })();
+
   const canAddDirectory = typeof window !== 'undefined' && supportsFileSystemAccess(window);
 
   const [pendingImport, setPendingImport] = useState<IPendingImport | null>(null);
   const collisionResolverRef = useRef<((resolution: ImportCollisionResolution) => void) | null>(null);
+
+  const [pendingSecretSetup, setPendingSecretSetup] = useState<IPendingSecretSetup | null>(null);
+  const secretSetupResolverRef = useRef<((password: string) => Promise<string | undefined>) | null>(null);
+  const secretSetupSkipRef = useRef<(() => void) | null>(null);
 
   const resolveImportCollision = useCallback((resolution: ImportCollisionResolution): void => {
     collisionResolverRef.current?.(resolution);
@@ -248,8 +277,22 @@ export function useCollectionActions(): ICollectionActions {
     reactiveWorkspace.notifyChange();
   }, [canAddDirectory, workspace, reactiveWorkspace, activeTab]);
 
+  const resolveSecretSetup = useCallback(async (password: string): Promise<string | undefined> => {
+    if (secretSetupResolverRef.current) {
+      return secretSetupResolverRef.current(password);
+    }
+    return undefined;
+  }, []);
+
+  const skipSecretSetup = useCallback((): void => {
+    secretSetupSkipRef.current?.();
+    secretSetupSkipRef.current = null;
+    secretSetupResolverRef.current = null;
+    setPendingSecretSetup(null);
+  }, []);
+
   const createCollection = useCallback(
-    (data: ICreateCollectionData): void => {
+    async (data: ICreateCollectionData): Promise<void> => {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
@@ -259,7 +302,8 @@ export function useCollectionActions(): ICollectionActions {
       const metadata: LibraryData.ICollectionSourceMetadata = {
         name: data.name,
         ...(data.description ? { description: data.description } : {}),
-        ...(data.tags && data.tags.length > 0 ? { tags: data.tags } : {})
+        ...(data.tags && data.tags.length > 0 ? { tags: data.tags } : {}),
+        ...(data.secretName ? { secretName: data.secretName } : {})
       };
 
       const result = subLibrary.addCollectionWithItems(data.id, undefined, { metadata });
@@ -268,9 +312,91 @@ export function useCollectionActions(): ICollectionActions {
         return;
       }
 
-      // Build YAML content with metadata block
+      const collectionId = result.value as CollectionId;
+
+      // Try to encrypt the file if a secretName is provided
+      const keyStore = workspace.keyStore;
+      if (data.secretName && keyStore) {
+        const hasSecretResult = keyStore.hasSecret(data.secretName);
+        const hasSecret = hasSecretResult.isSuccess() && hasSecretResult.value;
+
+        // If the secret doesn't exist yet, prompt for a password
+        if (!hasSecret) {
+          const errorMsg = await new Promise<string | undefined>((resolve) => {
+            secretSetupResolverRef.current = async (password: string): Promise<string | undefined> => {
+              secretSetupResolverRef.current = null;
+              secretSetupSkipRef.current = null;
+              setPendingSecretSetup(null);
+              try {
+                if (keyStore.state === 'locked') {
+                  // Try initialize first (new keystore); fall back to unlock (existing keystore)
+                  const initResult = await keyStore.initialize(password);
+                  if (initResult.isFailure()) {
+                    const unlockResult = await keyStore.unlock(password);
+                    if (unlockResult.isFailure()) {
+                      resolve(unlockResult.message);
+                      return unlockResult.message;
+                    }
+                  }
+                }
+                const addResult = await keyStore.addSecret(data.secretName!);
+                if (addResult.isFailure()) {
+                  resolve(addResult.message);
+                  return addResult.message;
+                }
+                resolve(undefined);
+                return undefined;
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                resolve(msg);
+                return msg;
+              }
+            };
+            secretSetupSkipRef.current = (): void => resolve(undefined);
+            setPendingSecretSetup({ secretName: data.secretName! });
+          });
+
+          if (errorMsg) {
+            workspace.data.logger.warn(
+              `Failed to set up secret '${data.secretName}': ${errorMsg}. Collection created without encryption.`
+            );
+          }
+        }
+
+        // Now try to encrypt if the secret is available
+        const secretResult = keyStore.getSecret(data.secretName);
+        const encConfigResult = keyStore.getEncryptionConfig();
+        if (secretResult.isSuccess() && encConfigResult.isSuccess()) {
+          const contentResult = JsonConverters.jsonValue.convert({});
+          if (contentResult.isSuccess()) {
+            const encryptedResult = await CryptoUtils.createEncryptedFile({
+              content: contentResult.value,
+              secretName: data.secretName,
+              key: secretResult.value.key,
+              metadata: { collectionId, itemCount: 0 },
+              cryptoProvider: encConfigResult.value.cryptoProvider
+            });
+            if (encryptedResult.isSuccess()) {
+              const jsonContent = JSON.stringify(encryptedResult.value, null, 2);
+              const fileResult = subLibrary.createCollectionFile(collectionId, jsonContent, 'json');
+              if (fileResult.isFailure()) {
+                workspace.data.logger.info(
+                  `Collection '${data.id}' created in-memory (persistence failed: ${fileResult.message})`
+                );
+              } else {
+                workspace.data.logger.info(`Collection '${data.id}' created with encrypted backing file`);
+              }
+              workspace.data.clearCache();
+              reactiveWorkspace.notifyChange();
+              return;
+            }
+          }
+        }
+      }
+
+      // Fallback: write plain YAML
       const yamlContent = buildCollectionYaml(data);
-      const fileResult = subLibrary.createCollectionFile(result.value as CollectionId, yamlContent);
+      const fileResult = subLibrary.createCollectionFile(collectionId, yamlContent, 'yaml');
       if (fileResult.isFailure()) {
         workspace.data.logger.info(
           `Collection '${data.id}' created in-memory (persistence failed: ${fileResult.message})`
@@ -319,7 +445,7 @@ export function useCollectionActions(): ICollectionActions {
   );
 
   const exportCollection = useCallback(
-    (collectionId: string): void => {
+    async (collectionId: string): Promise<void> => {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
@@ -333,9 +459,50 @@ export function useCollectionActions(): ICollectionActions {
       }
 
       const collection = collectionResult.value;
+      const secretName = collection.metadata?.secretName;
+      const items = Object.fromEntries(collection.items.entries());
+
+      // Attempt encrypted export if the collection has a secretName and the key is available
+      if (secretName && workspace.keyStore) {
+        const secretResult = workspace.keyStore.getSecret(secretName);
+        const encConfigResult = workspace.keyStore.getEncryptionConfig();
+        if (secretResult.isSuccess() && encConfigResult.isSuccess()) {
+          const contentResult = JsonConverters.jsonValue.convert(items);
+          const encryptedResult = contentResult.isSuccess()
+            ? await CryptoUtils.createEncryptedFile({
+                content: contentResult.value,
+                secretName,
+                key: secretResult.value.key,
+                metadata: {
+                  collectionId,
+                  itemCount: collection.items.size
+                },
+                cryptoProvider: encConfigResult.value.cryptoProvider
+              })
+            : contentResult;
+          if (encryptedResult.isSuccess()) {
+            const blob = new Blob([JSON.stringify(encryptedResult.value, null, 2)], {
+              type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${collectionId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            workspace.data.logger.info(`Exported collection '${collectionId}' (encrypted)`);
+            return;
+          }
+          workspace.data.logger.warn(
+            `Encryption failed for '${collectionId}', falling back to plain YAML: ${encryptedResult.message}`
+          );
+        }
+      }
+
+      // Plain YAML export
       const yamlResult = Helpers.serializeToYaml({
         metadata: collection.metadata ?? {},
-        items: Object.fromEntries(collection.items.entries())
+        items
       });
 
       if (yamlResult.isFailure()) {
@@ -357,19 +524,56 @@ export function useCollectionActions(): ICollectionActions {
     [workspace, activeTab]
   );
 
-  const exportAllAsZip = useCallback((): void => {
+  const exportAllAsZip = useCallback(async (): Promise<void> => {
     const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
     if (!subLibrary) {
       workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
       return;
     }
 
+    const encConfigResult = workspace.keyStore?.getEncryptionConfig();
+    const encConfig = encConfigResult?.isSuccess() ? encConfigResult.value : undefined;
+
     const files: Array<{ path: string; contents: string }> = [];
     for (const [id, collection] of subLibrary.collections.entries()) {
       if (!collection.isMutable) continue;
+      const items = Object.fromEntries(collection.items.entries());
+      const secretName = collection.metadata?.secretName;
+
+      // Attempt encrypted export if collection has a secretName and key is available
+      if (secretName && encConfig && workspace.keyStore) {
+        const secretResult = workspace.keyStore.getSecret(secretName);
+        if (secretResult.isSuccess()) {
+          const contentResult = JsonConverters.jsonValue.convert(items);
+          const encryptedResult = contentResult.isSuccess()
+            ? await CryptoUtils.createEncryptedFile({
+                content: contentResult.value,
+                secretName,
+                key: secretResult.value.key,
+                metadata: {
+                  collectionId: id,
+                  itemCount: collection.items.size
+                },
+                cryptoProvider: encConfig.cryptoProvider
+              })
+            : contentResult;
+          if (encryptedResult.isSuccess()) {
+            files.push({
+              path: `${id}.json`,
+              contents: JSON.stringify(encryptedResult.value, null, 2)
+            });
+            continue;
+          }
+          workspace.data.logger.warn(
+            `Encryption failed for '${id}', falling back to plain YAML: ${encryptedResult.message}`
+          );
+        }
+      }
+
+      // Plain YAML fallback
       const yamlResult = Helpers.serializeToYaml({
         metadata: collection.metadata ?? {},
-        items: Object.fromEntries(collection.items.entries())
+        items
       });
       if (yamlResult.isSuccess()) {
         files.push({ path: `${id}.yaml`, contents: yamlResult.value });
@@ -563,7 +767,11 @@ export function useCollectionActions(): ICollectionActions {
     saveAll,
     hasDirtyTrees: reactiveWorkspace.hasDirtyTrees,
     pendingImport,
-    resolveImportCollision
+    resolveImportCollision,
+    existingSecretNames,
+    pendingSecretSetup,
+    resolveSecretSetup,
+    skipSecretSetup
   };
 }
 
@@ -579,7 +787,7 @@ function buildCollectionYaml(data: ICreateCollectionData): string {
   const lines: string[] = [];
 
   // Metadata block
-  const hasMetadata = data.name || data.description || (data.tags && data.tags.length > 0);
+  const hasMetadata = data.name || data.description || (data.tags && data.tags.length > 0) || data.secretName;
   if (hasMetadata) {
     lines.push('metadata:');
     if (data.name) {
@@ -593,6 +801,9 @@ function buildCollectionYaml(data: ICreateCollectionData): string {
       for (const tag of data.tags) {
         lines.push(`    - ${yamlQuote(tag)}`);
       }
+    }
+    if (data.secretName) {
+      lines.push(`  secretName: ${yamlQuote(data.secretName)}`);
     }
     lines.push('');
   }

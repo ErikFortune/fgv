@@ -25,11 +25,11 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, TaskId } from '@fgv/ts-chocolate';
-import { EntityDetailHeader, NotesSection } from '../common';
+import { EntityDetailHeader, NotesSection, copyJsonToClipboard } from '../common';
 
 // ============================================================================
 // Props
@@ -238,6 +238,10 @@ function StepRow({
 export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElement {
   const { procedure, onTaskClick, onEdit, onPreview, onClose } = props;
 
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard(procedure.entity);
+  }, [procedure]);
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
@@ -250,6 +254,7 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
             : undefined
         }
         subtitle={procedure.id}
+        onCopyJson={handleCopyJson}
         onPreview={onPreview}
         onEdit={onEdit}
         onClose={onClose}

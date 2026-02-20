@@ -50,6 +50,8 @@ import {
 import { useCollectionInfo } from './collectionInfo';
 import { CreateCollectionDialog, type ICreateCollectionData } from './CreateCollectionDialog';
 import { ImportCollisionDialog, type ImportCollisionResolution } from './ImportCollisionDialog';
+import { SetSecretPasswordDialog } from './SetSecretPasswordDialog';
+import { type IPendingSecretSetup } from './useCollectionActions';
 
 import { TAB_FILTER_DEFINITIONS, type IFilterDefinition } from './filterConfigs';
 
@@ -109,6 +111,14 @@ export interface ITabSidebarProps {
   readonly pendingImport?: { collectionId: string; itemCount: number } | null;
   /** Resolve a pending import collision */
   readonly onResolveImportCollision?: (resolution: ImportCollisionResolution) => void;
+  /** Secret names available from the keystore for typeahead in the create dialog */
+  readonly existingSecretNames?: ReadonlyArray<string>;
+  /** Non-null when a new secret password is needed during collection creation */
+  readonly pendingSecretSetup?: IPendingSecretSetup | null;
+  /** Called by the password dialog with the entered password */
+  readonly onResolveSecretSetup?: (password: string) => Promise<string | undefined>;
+  /** Called when the user skips encryption during collection creation */
+  readonly onSkipSecretSetup?: () => void;
 }
 
 // ============================================================================
@@ -136,7 +146,11 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     onImportCollection,
     onOpenCollectionFromFile,
     pendingImport,
-    onResolveImportCollision
+    onResolveImportCollision,
+    existingSecretNames,
+    pendingSecretSetup,
+    onResolveSecretSetup,
+    onSkipSecretSetup
   } = props;
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -254,6 +268,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
           onClose={handleCloseCreateDialog}
           onCreate={handleCreateCollection}
           existingIds={existingCollectionIds}
+          existingSecretNames={existingSecretNames}
         />
       )}
 
@@ -277,6 +292,15 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
           collectionId={pendingImport.collectionId}
           itemCount={pendingImport.itemCount}
           onResolve={onResolveImportCollision}
+        />
+      )}
+
+      {onResolveSecretSetup && onSkipSecretSetup && (
+        <SetSecretPasswordDialog
+          isOpen={!!pendingSecretSetup}
+          secretName={pendingSecretSetup?.secretName ?? ''}
+          onSetPassword={onResolveSecretSetup}
+          onSkip={onSkipSecretSetup}
         />
       )}
     </div>

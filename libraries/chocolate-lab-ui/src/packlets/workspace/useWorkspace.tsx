@@ -31,9 +31,9 @@
  * @packageDocumentation
  */
 
-import React, { createContext, useContext, useSyncExternalStore } from 'react';
+import React, { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 
-import type { IWorkspace } from '@fgv/ts-chocolate';
+import type { IWorkspace, WorkspaceState } from '@fgv/ts-chocolate';
 
 import { ReactiveWorkspace } from './reactiveWorkspace';
 
@@ -108,4 +108,68 @@ export function useReactiveWorkspace(): ReactiveWorkspace {
     throw new Error('useReactiveWorkspace must be used within a WorkspaceProvider');
   }
   return reactive;
+}
+
+// ============================================================================
+// Workspace State Hook
+// ============================================================================
+
+/**
+ * Result returned by useWorkspaceState.
+ * @public
+ */
+export interface IWorkspaceStateActions {
+  /** Current workspace lock state */
+  readonly state: WorkspaceState;
+  /** Unlock the workspace with a password. Returns an error message on failure, undefined on success. */
+  readonly unlock: (password: string) => Promise<string | undefined>;
+  /** Lock the workspace. Returns an error message on failure, undefined on success. */
+  readonly lock: () => string | undefined;
+}
+
+/**
+ * Returns the current workspace lock state and unlock/lock callbacks.
+ *
+ * Subscribes to the ReactiveWorkspace so the component re-renders
+ * whenever the workspace state changes.
+ *
+ * @throws Error if called outside a WorkspaceProvider.
+ * @public
+ */
+export function useWorkspaceState(): IWorkspaceStateActions {
+  const reactive = useContext(WorkspaceContext);
+  if (!reactive) {
+    throw new Error('useWorkspaceState must be used within a WorkspaceProvider');
+  }
+
+  useSyncExternalStore(reactive.subscribe, reactive.getSnapshot);
+
+  const unlock = useCallback(
+    async (password: string): Promise<string | undefined> => {
+      const result = await reactive.workspace.unlock(password);
+      if (result.isFailure()) {
+        return result.message;
+      }
+      reactive.workspace.data.clearCache();
+      reactive.notifyChange();
+      return undefined;
+    },
+    [reactive]
+  );
+
+  const lock = useCallback((): string | undefined => {
+    const result = reactive.workspace.lock();
+    if (result.isFailure()) {
+      return result.message;
+    }
+    reactive.workspace.data.clearCache();
+    reactive.notifyChange();
+    return undefined;
+  }, [reactive]);
+
+  return {
+    state: reactive.workspace.state,
+    unlock,
+    lock
+  };
 }

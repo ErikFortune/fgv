@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
 import {
   ConfirmDialog,
   EntityList,
@@ -191,6 +192,89 @@ export function ConfectionsTabContent(): React.ReactElement {
   const handleCancelDelete = useCallback((): void => {
     setConfectionToDelete(null);
   }, []);
+
+  // Handle creating a confection from a pasted entity (add to mutable collection, open in edit mode)
+  const handleCreateConfection = useCallback(
+    (entity: Entities.Confections.AnyConfectionRecipeEntity): void => {
+      if (!mutableCollectionId) {
+        workspace.data.logger.error('Cannot add confection: no mutable collection available');
+        return;
+      }
+
+      const baseId = entity.baseId as BaseConfectionId;
+      const compositeId = `${mutableCollectionId}.${baseId}` as ConfectionId;
+
+      // Check for duplicate
+      const existing = workspace.data.confections.get(compositeId);
+      if (existing.isSuccess()) {
+        workspace.data.logger.error(`Confection '${compositeId}' already exists`);
+        return;
+      }
+
+      // Add to in-memory collection
+      const colResult = workspace.data.entities.confections.collections.get(mutableCollectionId);
+      if (colResult.isFailure()) {
+        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
+        return;
+      }
+      if (!colResult.value.isMutable) {
+        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
+        return;
+      }
+      const setResult = colResult.value.items.set(baseId, entity);
+      if (setResult.isFailure()) {
+        workspace.data.logger.error(`Failed to add confection: ${setResult.message}`);
+        return;
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+
+      // Open in edit mode
+      editVariationSpecRef.current = entity.goldenVariationSpec as ConfectionRecipeVariationSpec;
+      squashCascade([{ entityType: 'confection', entityId: compositeId, mode: 'edit' as const }]);
+    },
+    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+  );
+
+  // Handle paste from the list header drop target button
+  const handleListHeaderPaste = useCallback((): void => {
+    navigator.clipboard.readText().then(
+      (text) => {
+        if (!text.trim()) {
+          workspace.data.logger.info('Clipboard is empty');
+          return;
+        }
+
+        const stripped = text
+          .trim()
+          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
+          .trim();
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(stripped);
+        } catch (err: unknown) {
+          const detail = err instanceof Error ? err.message : String(err);
+          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
+          return;
+        }
+
+        const result = Entities.Confections.Converters.anyConfectionEntity.convert(parsed);
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Confection validation failed: ${result.message}`);
+          return;
+        }
+
+        handleCreateConfection(result.value);
+        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
+      },
+      (err: unknown) => {
+        const detail = err instanceof Error ? err.message : String(err);
+        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
+      }
+    );
+  }, [workspace, handleCreateConfection]);
 
   // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
   const squashAt = useCallback(
@@ -1199,27 +1283,42 @@ export function ConfectionsTabContent(): React.ReactElement {
       />
       <EntityTabLayout
         list={
-          <EntityList<LibraryRuntime.IConfectionBase, ConfectionId>
-            entities={useFilteredEntities(confections, CONFECTION_FILTER_SPEC)}
-            descriptor={CONFECTION_DESCRIPTOR}
-            selectedId={selectedId}
-            onSelect={handleSelect}
-            onDrill={collapseList}
-            compareMode={compareMode}
-            checkedIds={compareIds}
-            onCheckedChange={toggleCompareId}
-            onToggleCompare={toggleCompareMode}
-            compareCount={compareIds.size}
-            onStartComparison={startComparison}
-            onDelete={handleRequestDelete}
-            canDelete={(id): boolean =>
-              mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-            }
-            emptyState={{
-              title: 'No Confections',
-              description: 'No confections found in the library.'
-            }}
-          />
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <div className="flex-1" />
+              <button
+                onClick={handleListHeaderPaste}
+                disabled={mutableCollectionId === undefined}
+                title="Paste confection from clipboard (JSON)"
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CursorArrowRaysIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.IConfectionBase, ConfectionId>
+                entities={useFilteredEntities(confections, CONFECTION_FILTER_SPEC)}
+                descriptor={CONFECTION_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={(id): boolean =>
+                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
+                }
+                emptyState={{
+                  title: 'No Confections',
+                  description: 'No confections found in the library.'
+                }}
+              />
+            </div>
+          </div>
         }
         cascadeColumns={cascadeColumns}
         onPopTo={popCascadeTo}

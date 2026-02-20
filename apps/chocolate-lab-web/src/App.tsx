@@ -36,6 +36,8 @@ import {
   WorkspaceProvider,
   useWorkspace,
   useReactiveWorkspace,
+  useWorkspaceState,
+  UnlockDialog,
   WorkspaceFilterOptionProvider,
   useCollectionActions,
   initializeBrowserPlatform
@@ -81,6 +83,55 @@ function SettingsButton({ onOpen }: { readonly onOpen: () => void }): React.Reac
       title="Settings"
     >
       <Cog6ToothIcon className="w-5 h-5" />
+    </button>
+  );
+}
+
+// ============================================================================
+// Lock Button
+// ============================================================================
+
+function LockButton({
+  isLocked,
+  onLock,
+  onUnlock
+}: {
+  readonly isLocked: boolean;
+  readonly onLock: () => void;
+  readonly onUnlock: () => void;
+}): React.ReactElement {
+  if (isLocked) {
+    return (
+      <button
+        onClick={onUnlock}
+        className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+        aria-label="Unlock workspace"
+        title="Unlock workspace"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+          />
+        </svg>
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onLock}
+      className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+      aria-label="Lock workspace"
+      title="Lock workspace"
+    >
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M13.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75M3.75 21.75h16.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+        />
+      </svg>
     </button>
   );
 }
@@ -184,7 +235,11 @@ function TabSidebarWithActions(props: {
     importCollection,
     openCollectionFromFile,
     pendingImport,
-    resolveImportCollision
+    resolveImportCollision,
+    existingSecretNames,
+    pendingSecretSetup,
+    resolveSecretSetup,
+    skipSecretSetup
   } = props.actions;
 
   return (
@@ -199,6 +254,10 @@ function TabSidebarWithActions(props: {
       onOpenCollectionFromFile={openCollectionFromFile}
       pendingImport={pendingImport}
       onResolveImportCollision={resolveImportCollision}
+      existingSecretNames={existingSecretNames}
+      pendingSecretSetup={pendingSecretSetup}
+      onResolveSecretSetup={resolveSecretSetup}
+      onSkipSecretSetup={skipSecretSetup}
     />
   );
 }
@@ -210,6 +269,7 @@ function TabSidebarWithActions(props: {
 function AppShell(): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
+  const { state: workspaceState, unlock, lock } = useWorkspaceState();
   const mode = useNavigationStore((s) => s.mode);
   const activeTab = useNavigationStore(selectActiveTab);
   const modeTabs = useNavigationStore(selectModeTabs);
@@ -219,6 +279,7 @@ function AppShell(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
   const collectionActions = useCollectionActions();
@@ -314,13 +375,34 @@ function AppShell(): React.ReactElement {
         onCancel={handleNavCancel}
       />
 
+      <UnlockDialog
+        isOpen={unlockOpen}
+        onUnlock={async (password: string): Promise<string | undefined> => {
+          const err = await unlock(password);
+          if (!err) setUnlockOpen(false);
+          return err;
+        }}
+        onCancel={(): void => setUnlockOpen(false)}
+      />
+
       {/* Top bar: mode selector */}
       <ModeSelector<AppMode>
         title="Chocolate Lab"
         modes={MODES}
         activeMode={mode}
         onModeChange={guardedSetMode}
-        rightContent={<SettingsButton onOpen={(): void => setSettingsOpen(true)} />}
+        rightContent={
+          <div className="flex items-center gap-2">
+            {workspaceState !== 'no-keystore' && (
+              <LockButton
+                isLocked={workspaceState === 'locked'}
+                onLock={lock}
+                onUnlock={(): void => setUnlockOpen(true)}
+              />
+            )}
+            <SettingsButton onOpen={(): void => setSettingsOpen(true)} />
+          </div>
+        }
       />
 
       {/* Second bar: tab selector */}

@@ -29,7 +29,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { EntityRow, DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { ISelectableItem } from '@fgv/ts-app-shell';
-import { EntityDetailHeader, NotesSection, UrlsSection } from '../common';
+import { EntityDetailHeader, NotesSection, UrlsSection, copyJsonToClipboard } from '../common';
 import type {
   LibraryRuntime,
   Model,
@@ -701,6 +701,15 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     [viewSettings, handleSettingChange]
   );
 
+  // Copy JSON: recipe metadata + selected variation only
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard({
+      ...confection.entity,
+      variations: [selectedVariation.entity],
+      goldenVariationSpec: selectedSpec
+    });
+  }, [confection, selectedVariation, selectedSpec]);
+
   const scaledSlotWeights = useMemo((): Readonly<Record<string, number>> | undefined => {
     if (!viewSettings) return undefined;
     const target: LR.IConfectionScalingTarget = {
@@ -728,6 +737,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
         description={confection.description}
         badge={{ label: confection.confectionType, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
         subtitle={confection.id}
+        onCopyJson={handleCopyJson}
         onPreview={onPreview}
         onEdit={onEdit ? (): void => onEdit(selectedSpec) : undefined}
       />

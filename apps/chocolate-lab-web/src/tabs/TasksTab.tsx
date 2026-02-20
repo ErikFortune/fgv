@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
 import {
   ConfirmDialog,
   EntityList,
@@ -282,6 +283,45 @@ export function TasksTabContent(): React.ReactElement {
     [cascadeStack, squashCascade]
   );
 
+  // Handle paste from the list header drop target button
+  const handleListHeaderPaste = useCallback((): void => {
+    navigator.clipboard.readText().then(
+      (text) => {
+        if (!text.trim()) {
+          workspace.data.logger.info('Clipboard is empty');
+          return;
+        }
+
+        const stripped = text
+          .trim()
+          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
+          .trim();
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(stripped);
+        } catch (err: unknown) {
+          const detail = err instanceof Error ? err.message : String(err);
+          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
+          return;
+        }
+
+        const result = Entities.Tasks.Converters.rawTaskEntity.convert(parsed);
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Task validation failed: ${result.message}`);
+          return;
+        }
+
+        handleCreateTask(result.value, 'manual');
+        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
+      },
+      (err: unknown) => {
+        const detail = err instanceof Error ? err.message : String(err);
+        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
+      }
+    );
+  }, [workspace, handleCreateTask]);
+
   const handleNewTask = useCallback((): void => {
     const entry: ICascadeEntry = { entityType: 'task', entityId: '__new__', mode: 'create' };
     squashCascade([entry]);
@@ -490,6 +530,14 @@ export function TasksTabContent(): React.ReactElement {
                 className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 + New Task
+              </button>
+              <button
+                onClick={handleListHeaderPaste}
+                disabled={mutableCollectionId === undefined}
+                title="Paste task from clipboard (JSON)"
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CursorArrowRaysIcon className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">

@@ -25,11 +25,11 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { LibraryRuntime } from '@fgv/ts-chocolate';
-import { EntityDetailHeader, NotesSection } from '../common';
+import { EntityDetailHeader, NotesSection, copyJsonToClipboard } from '../common';
 
 // ============================================================================
 // Props
@@ -136,9 +136,11 @@ function ChocolateSection({
  * @public
  */
 export function IngredientDetail(props: IIngredientDetailProps): React.ReactElement {
-  const { ingredient } = props;
+  const { ingredient, onEdit, onClose } = props;
 
-  const { onEdit, onClose } = props;
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard(ingredient.entity);
+  }, [ingredient]);
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto">
@@ -156,6 +158,7 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
             <span className="text-xs text-gray-500">{ingredient.manufacturer}</span>
           ) : undefined
         }
+        onCopyJson={handleCopyJson}
         onEdit={onEdit}
         onClose={onClose}
       />

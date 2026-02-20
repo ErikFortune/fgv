@@ -25,12 +25,12 @@
  * @packageDocumentation
  */
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { EntityRow, DetailSection, TagList } from '@fgv/ts-app-shell';
 import type { IngredientId, ProcedureId } from '@fgv/ts-chocolate';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
-import { EntityDetailHeader, NotesSection } from '../common';
+import { EntityDetailHeader, NotesSection, copyJsonToClipboard } from '../common';
 
 // ============================================================================
 // Props
@@ -155,6 +155,10 @@ function RatingsSection({
 export function DecorationDetail(props: IDecorationDetailProps): React.ReactElement {
   const { decoration, onIngredientClick, onProcedureClick, onEdit, onPreview } = props;
 
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard(decoration.entity);
+  }, [decoration]);
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
@@ -162,6 +166,7 @@ export function DecorationDetail(props: IDecorationDetailProps): React.ReactElem
         title={decoration.name}
         description={decoration.description}
         subtitle={decoration.id}
+        onCopyJson={handleCopyJson}
         onPreview={onPreview}
         onEdit={onEdit}
       />

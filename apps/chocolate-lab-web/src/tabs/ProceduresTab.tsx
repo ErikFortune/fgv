@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
 import {
   ConfirmDialog,
   EntityList,
@@ -280,6 +281,80 @@ export function ProceduresTabContent(): React.ReactElement {
     squashCascade([]);
   }, [squashCascade]);
 
+  // Handle paste from the list header drop target button
+  const handleListHeaderPaste = useCallback((): void => {
+    navigator.clipboard.readText().then(
+      (text) => {
+        if (!text.trim()) {
+          workspace.data.logger.info('Clipboard is empty');
+          return;
+        }
+
+        const stripped = text
+          .trim()
+          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
+          .trim();
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(stripped);
+        } catch (err: unknown) {
+          const detail = err instanceof Error ? err.message : String(err);
+          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
+          return;
+        }
+
+        const result = Entities.Procedures.Converters.procedureEntity.convert(parsed);
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Procedure validation failed: ${result.message}`);
+          return;
+        }
+
+        if (!mutableProcedureCollectionId) {
+          workspace.data.logger.error('Cannot add procedure: no mutable collection available');
+          return;
+        }
+
+        const entity = result.value;
+        const baseId = entity.baseId as BaseProcedureId;
+        const compositeId = `${mutableProcedureCollectionId}.${baseId}` as ProcedureId;
+
+        const existing = workspace.data.procedures.get(compositeId);
+        if (existing.isSuccess()) {
+          workspace.data.logger.error(`Procedure '${compositeId}' already exists`);
+          return;
+        }
+
+        const colResult = workspace.data.entities.procedures.collections.get(mutableProcedureCollectionId);
+        if (colResult.isFailure() || !colResult.value.isMutable) {
+          workspace.data.logger.error('Cannot create procedure: mutable collection not available');
+          return;
+        }
+        const setResult = colResult.value.items.set(baseId, entity);
+        if (setResult.isFailure()) {
+          workspace.data.logger.error(`Failed to add procedure: ${setResult.message}`);
+          return;
+        }
+
+        const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
+        if (wrapperResult.isFailure()) {
+          workspace.data.logger.error(`Failed to create procedure wrapper: ${wrapperResult.message}`);
+          return;
+        }
+        editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
+
+        workspace.data.clearCache();
+        reactiveWorkspace.notifyChange();
+        squashCascade([{ entityType: 'procedure', entityId: compositeId, mode: 'edit' }]);
+        workspace.data.logger.info(`Opened '${entity.name}' for review — save when ready`);
+      },
+      (err: unknown) => {
+        const detail = err instanceof Error ? err.message : String(err);
+        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
+      }
+    );
+  }, [workspace, reactiveWorkspace, mutableProcedureCollectionId, squashCascade]);
+
   // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
   const squashAt = useCallback(
     (depth: number, entry: ICascadeEntry): void => {
@@ -513,6 +588,14 @@ export function ProceduresTabContent(): React.ReactElement {
                 className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 + New Procedure
+              </button>
+              <button
+                onClick={handleListHeaderPaste}
+                disabled={mutableProcedureCollectionId === undefined}
+                title="Paste procedure from clipboard (JSON)"
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CursorArrowRaysIcon className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">

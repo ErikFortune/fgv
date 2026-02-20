@@ -10,7 +10,9 @@ export {
   type IUrlsSectionProps,
   EntityDetailHeader,
   type IEntityDetailHeaderProps,
-  type IEntityDetailHeaderBadge
+  type IEntityDetailHeaderBadge,
+  type ICopyJsonOptions,
+  copyJsonToClipboard
 } from './DetailCommon';
 
 export { formatIngredientAmount, formatScaledIngredientAmount } from './formatHelpers';

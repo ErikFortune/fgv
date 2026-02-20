@@ -22,5 +22,7 @@ export {
   WorkspaceProvider,
   useWorkspace,
   useReactiveWorkspace,
-  type IWorkspaceProviderProps
+  useWorkspaceState,
+  type IWorkspaceProviderProps,
+  type IWorkspaceStateActions
 } from './useWorkspace';

@@ -29,10 +29,11 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Helpers } from '@fgv/ts-chocolate';
 import { Modal } from '@fgv/ts-app-shell';
+import { useDatalistMatch } from '../editing';
 
 // ============================================================================
 // Types
@@ -51,6 +52,8 @@ export interface ICreateCollectionData {
   readonly description?: string;
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;
+  /** Optional secret name for encryption (protection) */
+  readonly secretName?: string;
 }
 
 /**
@@ -66,6 +69,8 @@ export interface ICreateCollectionDialogProps {
   readonly onCreate: (data: ICreateCollectionData) => void;
   /** Set of existing collection IDs (for duplicate detection) */
   readonly existingIds?: ReadonlySet<string>;
+  /** Existing secret names for typeahead (only available when workspace is unlocked) */
+  readonly existingSecretNames?: ReadonlyArray<string>;
 }
 
 // ============================================================================
@@ -82,13 +87,15 @@ export interface ICreateCollectionDialogProps {
  * @public
  */
 export function CreateCollectionDialog(props: ICreateCollectionDialogProps): React.ReactElement | null {
-  const { isOpen, onClose, onCreate, existingIds } = props;
+  const { isOpen, onClose, onCreate, existingIds, existingSecretNames } = props;
 
   const [name, setName] = useState('');
   const [idOverride, setIdOverride] = useState('');
   const [idManuallyEdited, setIdManuallyEdited] = useState(false);
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [secretInput, setSecretInput] = useState('');
+  const secretInputRef = useRef<HTMLInputElement>(null);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -98,8 +105,15 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
       setIdManuallyEdited(false);
       setDescription('');
       setTagsInput('');
+      setSecretInput('');
     }
   }, [isOpen]);
+
+  const secretSuggestions = useMemo(
+    () => (existingSecretNames ?? []).map((n) => ({ id: n, name: n })),
+    [existingSecretNames]
+  );
+  const secretMatcher = useDatalistMatch(secretSuggestions);
 
   // Auto-generate ID from name (unless manually edited)
   const generatedId = useMemo(() => {
@@ -157,11 +171,16 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
 
+      const trimmedSecret = secretInput.trim();
+      const resolvedSecret = secretMatcher.resolveOnBlur(trimmedSecret);
+      const effectiveSecret = resolvedSecret ? resolvedSecret.id : trimmedSecret || undefined;
+
       const data: ICreateCollectionData = {
         id: effectiveId,
         name: trimmedName,
         ...(trimmedDescription.length > 0 ? { description: trimmedDescription } : {}),
-        ...(tags.length > 0 ? { tags } : {})
+        ...(tags.length > 0 ? { tags } : {}),
+        ...(effectiveSecret ? { secretName: effectiveSecret } : {})
       };
 
       onCreate(data);
@@ -238,6 +257,35 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             placeholder="comma-separated, e.g. seasonal, premium"
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
           />
+        </div>
+
+        {/* Secret name field (protection) */}
+        <div className="flex flex-col gap-1">
+          <label htmlFor="cc-secret" className="text-sm font-medium text-gray-700">
+            Protect with secret
+            <span className="ml-1 text-xs text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input
+            ref={secretInputRef}
+            id="cc-secret"
+            type="text"
+            value={secretInput}
+            onChange={(e): void => setSecretInput(e.target.value)}
+            onBlur={(e): void => {
+              const resolved = secretMatcher.resolveOnBlur(e.target.value);
+              if (resolved) setSecretInput(resolved.id);
+            }}
+            list="cc-secret-suggestions"
+            placeholder={existingSecretNames?.length ? 'Secret name or type a new one…' : 'Secret name…'}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+          />
+          {secretSuggestions.length > 0 && (
+            <datalist id="cc-secret-suggestions">
+              {secretSuggestions.map((s) => (
+                <option key={s.id} value={s.id} />
+              ))}
+            </datalist>
+          )}
         </div>
 
         {/* Action buttons */}

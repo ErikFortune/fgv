@@ -13,7 +13,11 @@ export { useFilteredEntities, type IEntityFilterSpec } from './useFilteredEntiti
 
 export { useCollectionInfo, type ICollectionInfo } from './collectionInfo';
 
-export { useCollectionActions, type ICollectionActions } from './useCollectionActions';
+export {
+  useCollectionActions,
+  type ICollectionActions,
+  type IPendingSecretSetup
+} from './useCollectionActions';
 
 export { useEntityActions, type IEntityActions } from './useEntityActions';
 
@@ -28,3 +32,7 @@ export {
   type IImportCollisionDialogProps,
   type ImportCollisionResolution
 } from './ImportCollisionDialog';
+
+export { UnlockDialog, type IUnlockDialogProps } from './UnlockDialog';
+
+export { SetSecretPasswordDialog, type ISetSecretPasswordDialogProps } from './SetSecretPasswordDialog';

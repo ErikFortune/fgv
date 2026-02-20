@@ -31,8 +31,9 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentIcon } from '@heroicons/react/20/solid';
 import { DetailHeader, DetailSection, StatusBadge } from '@fgv/ts-app-shell';
 import type { Model } from '@fgv/ts-chocolate';
 
@@ -105,9 +106,26 @@ export function UrlsSection({ urls }: IUrlsSectionProps): React.ReactElement | n
 // EntityDetailHeader
 // ============================================================================
 
+/**
+ * Writes JSON text to the clipboard. Intended for use in `onCopyJson` handlers.
+ * @public
+ */
+export function copyJsonToClipboard(entity: object): void {
+  navigator.clipboard.writeText(JSON.stringify(entity, null, 2)).catch(() => undefined);
+}
+
 export interface IEntityDetailHeaderBadge {
   readonly label: string;
   readonly colorClass: string;
+}
+
+/**
+ * Options for the copy-to-clipboard action.
+ * @public
+ */
+export interface ICopyJsonOptions {
+  /** For recipe entities: 'selected' copies only the current variation, 'all' copies every variation */
+  readonly scope?: 'selected' | 'all';
 }
 
 export interface IEntityDetailHeaderProps {
@@ -121,6 +139,8 @@ export interface IEntityDetailHeaderProps {
   readonly badge?: IEntityDetailHeaderBadge;
   /** Additional indicator content rendered after badge and subtitle */
   readonly extraIndicators?: React.ReactNode;
+  /** If provided, renders a clipboard icon button that calls this handler */
+  readonly onCopyJson?: (options?: ICopyJsonOptions) => void;
   /** If provided, renders a Preview button in the actions slot */
   readonly onPreview?: () => void;
   /** If provided, renders an Edit button in the actions slot */
@@ -148,11 +168,21 @@ export function EntityDetailHeader({
   subtitle,
   badge,
   extraIndicators,
+  onCopyJson,
   onPreview,
   onEdit,
   extraActions,
   onClose
 }: IEntityDetailHeaderProps): React.ReactElement {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyJson = useCallback((): void => {
+    if (!onCopyJson) return;
+    onCopyJson();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [onCopyJson]);
+
   const indicators = (
     <>
       {badge && <StatusBadge label={badge.label} colorClass={badge.colorClass} />}
@@ -162,6 +192,16 @@ export function EntityDetailHeader({
 
   const actions = (
     <>
+      {onCopyJson && (
+        <button
+          type="button"
+          onClick={handleCopyJson}
+          className="p-1 text-gray-400 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+          title={copied ? 'Copied!' : 'Copy JSON to clipboard'}
+        >
+          <ClipboardDocumentIcon className="w-4 h-4" />
+        </button>
+      )}
       {onPreview && (
         <button
           type="button"

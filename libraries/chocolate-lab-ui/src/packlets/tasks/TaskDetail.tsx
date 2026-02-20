@@ -25,11 +25,11 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { LibraryRuntime } from '@fgv/ts-chocolate';
-import { EntityDetailHeader, NotesSection } from '../common';
+import { EntityDetailHeader, NotesSection, copyJsonToClipboard } from '../common';
 
 // ============================================================================
 // Props
@@ -160,10 +160,20 @@ function VariablesSection({
 export function TaskDetail(props: ITaskDetailProps): React.ReactElement {
   const { task, onEdit, onPreview } = props;
 
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard(task.entity);
+  }, [task]);
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
-      <EntityDetailHeader title={task.name} subtitle={task.id} onPreview={onPreview} onEdit={onEdit} />
+      <EntityDetailHeader
+        title={task.name}
+        subtitle={task.id}
+        onCopyJson={handleCopyJson}
+        onPreview={onPreview}
+        onEdit={onEdit}
+      />
 
       {/* Template */}
       <TemplateSection template={task.template} />

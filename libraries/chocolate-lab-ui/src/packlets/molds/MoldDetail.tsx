@@ -25,11 +25,11 @@
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
-import { EntityDetailHeader, NotesSection, UrlsSection } from '../common';
+import { EntityDetailHeader, NotesSection, UrlsSection, copyJsonToClipboard } from '../common';
 
 // ============================================================================
 // Props
@@ -107,6 +107,10 @@ function DimensionsSection({
 export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
   const { mold, onEdit, onClose } = props;
 
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard(mold.entity);
+  }, [mold]);
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
@@ -115,6 +119,7 @@ export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
         description={mold.description}
         badge={{ label: mold.format, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
         subtitle={mold.id}
+        onCopyJson={handleCopyJson}
         onEdit={onEdit}
         onClose={onClose}
       />

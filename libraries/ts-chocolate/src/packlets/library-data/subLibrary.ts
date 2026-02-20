@@ -1248,27 +1248,29 @@ export abstract class SubLibraryBase<
   }
 
   /**
-   * Creates a YAML file for a collection in the mutable data directory and
+   * Creates a file for a collection in the mutable data directory and
    * registers it as a source item for persistence.
    *
    * @param collectionId - ID of the collection
-   * @param yamlContent - The YAML content to write
+   * @param content - The file content to write
+   * @param extension - File extension to use (default: 'yaml')
    * @returns Success with the created file item, or Failure if no writable directory or file creation fails
    * @public
    */
   public createCollectionFile(
     collectionId: CollectionId,
-    yamlContent: string
+    content: string,
+    extension: 'yaml' | 'json' = 'yaml'
   ): Result<FileTree.FileTreeItem> {
     return this._ensureMutableDataDirectory().onSuccess((dataDir) => {
       /* c8 ignore next 1 - coverage intermittently missed in full suite */
-      const fileName = `${collectionId}.yaml`;
+      const fileName = `${collectionId}.${extension}`;
       /* c8 ignore next 3 - defensive: createChildFile always available on DirectoryItem */
       if (dataDir.createChildFile === undefined) {
         return fail(`${dataDir.absolutePath}: file creation not supported`);
       }
       /* c8 ignore next 4 - success path tested but coverage intermittently missed */
-      return dataDir.createChildFile(fileName, yamlContent).onSuccess((fileItem) => {
+      return dataDir.createChildFile(fileName, content).onSuccess((fileItem) => {
         this._sourceItems.set(collectionId, fileItem);
         return succeed(fileItem as FileTree.FileTreeItem);
       });

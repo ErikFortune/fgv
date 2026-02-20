@@ -25,14 +25,15 @@
  * @packageDocumentation
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentIcon } from '@heroicons/react/20/solid';
 
 import { EntityRow, DetailSection, DetailRow, TagList, StatusBadge, DetailHeader } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
-import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
+import { formatIngredientAmount, formatScaledIngredientAmount, copyJsonToClipboard } from '../common';
 
 // ============================================================================
 // Props
@@ -284,23 +285,41 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     targetYield !== undefined ? String(targetYield) : ''
   );
 
+  // Copy JSON: recipe metadata + selected variation only
+  const [copied, setCopied] = useState(false);
+  const handleCopyJson = useCallback((): void => {
+    copyJsonToClipboard({
+      ...filling.entity,
+      variations: [selectedVariation.entity],
+      goldenVariationSpec: selectedSpec
+    });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [filling, selectedVariation, selectedSpec]);
+
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Header */}
       <DetailHeader
         title={filling.name}
+        subtitle={filling.id}
         description={filling.description}
         indicators={
-          <>
-            <StatusBadge
-              label={filling.entity.category}
-              colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-gray-100 text-gray-800'}
-            />
-            <span className="text-xs text-gray-400 font-mono">{filling.id}</span>
-          </>
+          <StatusBadge
+            label={filling.entity.category}
+            colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-gray-100 text-gray-800'}
+          />
         }
         actions={
           <>
+            <button
+              type="button"
+              onClick={handleCopyJson}
+              className="p-1 text-gray-400 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              title={copied ? 'Copied!' : 'Copy JSON to clipboard'}
+            >
+              <ClipboardDocumentIcon className="w-4 h-4" />
+            </button>
             {onPreview && (
               <button
                 type="button"
