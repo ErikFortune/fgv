@@ -15,6 +15,8 @@ export { useCollectionInfo, type ICollectionInfo } from './collectionInfo';
 
 export { useCollectionActions, type ICollectionActions } from './useCollectionActions';
 
+export { useEntityActions, type IEntityActions } from './useEntityActions';
+
 export {
   CreateCollectionDialog,
   type ICreateCollectionDialogProps,

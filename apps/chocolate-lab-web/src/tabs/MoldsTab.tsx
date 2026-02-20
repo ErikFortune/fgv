@@ -1,13 +1,21 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
-import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
+import {
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
+  type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useEntityActions,
   MoldDetail,
   MoldEditView,
   EntityCreateForm,
@@ -35,6 +43,12 @@ export function MoldsTabContent(): React.ReactElement {
   } = useTabNavigation();
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
+  const [moldToDelete, setMoldToDelete] = useState<{
+    id: MoldId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
 
   const mutableCollectionId = useMutableCollection(workspace.data.entities.molds.collections, [
     workspace,
@@ -148,6 +162,30 @@ export function MoldsTabContent(): React.ReactElement {
     },
     [squashCascade]
   );
+
+  const handleRequestDelete = useCallback(
+    (id: MoldId): void => {
+      const result = workspace.data.molds.get(id);
+      const name = result.isSuccess() ? result.value.displayName : id;
+      const references = entityActions.scanReferences(id);
+      setMoldToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (moldToDelete) {
+      entityActions.deleteEntity(moldToDelete.id);
+      if (cascadeStack.some((e) => e.entityId === moldToDelete.id)) {
+        squashCascade([]);
+      }
+    }
+    setMoldToDelete(null);
+  }, [moldToDelete, entityActions, cascadeStack, squashCascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setMoldToDelete(null);
+  }, []);
 
   const handleEdit = useCallback(
     (entityId: string): void => {
@@ -384,56 +422,90 @@ export function MoldsTabContent(): React.ReactElement {
   }, [compareIds, workspace]);
 
   return (
-    <EntityTabLayout
-      list={
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
-            <button
-              onClick={handleNewMold}
-              disabled={mutableCollectionId === undefined}
-              title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
-              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + New Mold
-            </button>
-            <button
-              onClick={handleListHeaderPaste}
-              disabled={mutableCollectionId === undefined}
-              title="Paste mold from clipboard (AI-generated JSON)"
-              className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <CursorArrowRaysIcon className="w-5 h-5" />
-            </button>
+    <>
+      <ConfirmDialog
+        isOpen={moldToDelete !== null}
+        title="Delete Mold"
+        message={
+          <>
+            Delete <strong>{moldToDelete?.name}</strong>? This cannot be undone.
+            {moldToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {moldToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={handleNewMold}
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Mold
+              </button>
+              <button
+                onClick={handleListHeaderPaste}
+                disabled={mutableCollectionId === undefined}
+                title="Paste mold from clipboard (AI-generated JSON)"
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CursorArrowRaysIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.IMold, MoldId>
+                entities={useFilteredEntities(molds, MOLD_FILTER_SPEC)}
+                descriptor={MOLD_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={(id): boolean =>
+                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
+                }
+                emptyState={{
+                  title: 'No Molds',
+                  description: 'No molds found in the library.'
+                }}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <EntityList<LibraryRuntime.IMold, MoldId>
-              entities={useFilteredEntities(molds, MOLD_FILTER_SPEC)}
-              descriptor={MOLD_DESCRIPTOR}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDrill={collapseList}
-              compareMode={compareMode}
-              checkedIds={compareIds}
-              onCheckedChange={toggleCompareId}
-              onToggleCompare={toggleCompareMode}
-              compareCount={compareIds.size}
-              onStartComparison={startComparison}
-              emptyState={{
-                title: 'No Molds',
-                description: 'No molds found in the library.'
-              }}
-            />
-          </div>
-        </div>
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-      compareMode={compareMode}
-      comparisonColumns={comparisonColumns}
-      showingComparison={showingComparison}
-      onExitComparison={exitComparison}
-    />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+      />
+    </>
   );
 }

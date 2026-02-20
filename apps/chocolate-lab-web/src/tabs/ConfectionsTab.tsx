@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
+import {
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
 import { AiAssist, Entities, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   BaseConfectionId,
@@ -19,9 +25,11 @@ import type {
 import {
   type ICascadeEntry,
   type CascadeEntityType,
+  type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useEntityActions,
   IngredientDetail,
   IngredientEditView,
   FillingDetail,
@@ -111,6 +119,12 @@ export function ConfectionsTabContent(): React.ReactElement {
     undefined
   );
   const [subEntitySeed, setSubEntitySeed] = useState('');
+  const [confectionToDelete, setConfectionToDelete] = useState<{
+    id: ConfectionId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
 
   const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
     return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -153,6 +167,30 @@ export function ConfectionsTabContent(): React.ReactElement {
     },
     [squashCascade]
   );
+
+  const handleRequestDelete = useCallback(
+    (id: ConfectionId): void => {
+      const result = workspace.data.confections.get(id);
+      const name = result.isSuccess() ? result.value.name : id;
+      const references = entityActions.scanReferences(id);
+      setConfectionToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (confectionToDelete) {
+      entityActions.deleteEntity(confectionToDelete.id);
+      if (cascadeStack.some((e) => e.entityId === confectionToDelete.id)) {
+        squashCascade([]);
+      }
+    }
+    setConfectionToDelete(null);
+  }, [confectionToDelete, entityActions, cascadeStack, squashCascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setConfectionToDelete(null);
+  }, []);
 
   // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
   const squashAt = useCallback(
@@ -1130,36 +1168,70 @@ export function ConfectionsTabContent(): React.ReactElement {
   }, [variationCompare, workspace]);
 
   return (
-    <EntityTabLayout
-      list={
-        <EntityList<LibraryRuntime.IConfectionBase, ConfectionId>
-          entities={useFilteredEntities(confections, CONFECTION_FILTER_SPEC)}
-          descriptor={CONFECTION_DESCRIPTOR}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onDrill={collapseList}
-          compareMode={compareMode}
-          checkedIds={compareIds}
-          onCheckedChange={toggleCompareId}
-          onToggleCompare={toggleCompareMode}
-          compareCount={compareIds.size}
-          onStartComparison={startComparison}
-          emptyState={{
-            title: 'No Confections',
-            description: 'No confections found in the library.'
-          }}
-        />
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-      compareMode={compareMode}
-      comparisonColumns={comparisonColumns}
-      showingComparison={showingComparison}
-      onExitComparison={exitComparison}
-      variationCompareColumns={variationCompareColumns}
-      onExitVariationCompare={(): void => setVariationCompare(undefined)}
-    />
+    <>
+      <ConfirmDialog
+        isOpen={confectionToDelete !== null}
+        title="Delete Confection"
+        message={
+          <>
+            Delete <strong>{confectionToDelete?.name}</strong>? This cannot be undone.
+            {confectionToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {confectionToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <EntityList<LibraryRuntime.IConfectionBase, ConfectionId>
+            entities={useFilteredEntities(confections, CONFECTION_FILTER_SPEC)}
+            descriptor={CONFECTION_DESCRIPTOR}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            onDrill={collapseList}
+            compareMode={compareMode}
+            checkedIds={compareIds}
+            onCheckedChange={toggleCompareId}
+            onToggleCompare={toggleCompareMode}
+            compareCount={compareIds.size}
+            onStartComparison={startComparison}
+            onDelete={handleRequestDelete}
+            canDelete={(id): boolean =>
+              mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
+            }
+            emptyState={{
+              title: 'No Confections',
+              description: 'No confections found in the library.'
+            }}
+          />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+        variationCompareColumns={variationCompareColumns}
+        onExitVariationCompare={(): void => setVariationCompare(undefined)}
+      />
+    </>
   );
 }

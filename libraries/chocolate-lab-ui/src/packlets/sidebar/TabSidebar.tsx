@@ -30,7 +30,13 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { CollectionSection, FilterBar, FilterRow, type IFilterOption } from '@fgv/ts-app-shell';
+import {
+  CollectionSection,
+  ConfirmDialog,
+  FilterBar,
+  FilterRow,
+  type IFilterOption
+} from '@fgv/ts-app-shell';
 
 import {
   type AppTab,
@@ -115,6 +121,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
   } = props;
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [collectionToDelete, setCollectionToDelete] = useState<string | null>(null);
 
   const activeTab = useNavigationStore(selectActiveTab);
   const filterState = useNavigationStore(selectCurrentFilter);
@@ -152,6 +159,21 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     },
     [activeTab, toggleCollectionVisibility]
   );
+
+  const handleRequestDeleteCollection = useCallback((collectionId: string): void => {
+    setCollectionToDelete(collectionId);
+  }, []);
+
+  const handleConfirmDeleteCollection = useCallback((): void => {
+    if (collectionToDelete) {
+      onDeleteCollection?.(collectionToDelete);
+    }
+    setCollectionToDelete(null);
+  }, [collectionToDelete, onDeleteCollection]);
+
+  const handleCancelDeleteCollection = useCallback((): void => {
+    setCollectionToDelete(null);
+  }, []);
 
   const handleOpenCreateDialog = useCallback((): void => {
     setIsCreateDialogOpen(true);
@@ -200,7 +222,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onToggleVisibility={handleToggleCollectionVisibility}
         onAddDirectory={onAddDirectory}
         onCreateCollection={onCreateCollection ? handleOpenCreateDialog : undefined}
-        onDeleteCollection={onDeleteCollection}
+        onDeleteCollection={onDeleteCollection ? handleRequestDeleteCollection : undefined}
       />
 
       {onCreateCollection && (
@@ -211,6 +233,20 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
           existingIds={existingCollectionIds}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={collectionToDelete !== null}
+        title="Delete Collection"
+        message={
+          <>
+            Delete <strong>{collectionToDelete}</strong>? This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDeleteCollection}
+        onCancel={handleCancelDeleteCollection}
+      />
     </div>
   );
 }

@@ -792,13 +792,16 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 // @public
 class CollectionManager<TCompositeId extends string, TBaseId extends string, TItem> implements ICollectionManager {
     constructor(library: SubLibraryBase<TCompositeId, TBaseId, TItem>);
+    copyEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
     create(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
     createWithFile(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
     delete(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    deleteEntity(compositeId: string): Result<unknown>;
     exists(collectionId: CollectionId): boolean;
     get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
     getAll(): ReadonlyArray<CollectionId>;
     isMutable(collectionId: CollectionId): Result<boolean>;
+    moveEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
     updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
 }
 
@@ -3026,12 +3029,15 @@ interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = s
 
 // @public
 interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
+    readonly copyEntity: (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string) => Result<string>;
     readonly create: (collectionId: CollectionId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
     readonly delete: (collectionId: CollectionId) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    readonly deleteEntity: (compositeId: string) => Result<unknown>;
     readonly exists: (collectionId: CollectionId) => boolean;
     readonly get: (collectionId: CollectionId) => Result<ICollectionSourceMetadata>;
     readonly getAll: () => ReadonlyArray<CollectionId>;
     readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
+    readonly moveEntity: (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string) => Result<string>;
     readonly updateMetadata: (collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>) => Result<ICollectionSourceMetadata>;
 }
 

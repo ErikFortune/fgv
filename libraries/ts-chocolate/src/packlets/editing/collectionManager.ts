@@ -228,9 +228,101 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   }
 
   /**
+   * Delete an entity from its owning collection.
+   * @param compositeId - Composite entity ID (collectionId.baseId)
+   * @returns Result containing the deleted entity or failure
+   */
+  public deleteEntity(compositeId: string): Result<unknown> {
+    return this._splitCompositeId(compositeId).onSuccess(({ collectionId, baseId }) =>
+      this._library.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Collection "${collectionId}" not found: ${msg}`)
+        .onSuccess((collection) => {
+          if (!collection.isMutable) {
+            return fail(`Cannot delete from immutable collection "${collectionId}"`);
+          }
+          return collection.items
+            .delete(baseId as TBaseId)
+            .asResult.withErrorFormat((msg: string) => `Failed to delete "${compositeId}": ${msg}`);
+        })
+    );
+  }
+
+  /**
+   * Copy an entity to another collection.
+   * @param compositeId - Source composite entity ID (collectionId.baseId)
+   * @param targetCollectionId - Target collection ID
+   * @param newBaseId - Optional new base ID; defaults to source base ID
+   * @returns Result containing the new composite ID or failure
+   */
+  public copyEntity(
+    compositeId: string,
+    targetCollectionId: CollectionId,
+    newBaseId?: string
+  ): Result<string> {
+    return this._splitCompositeId(compositeId).onSuccess(({ collectionId, baseId }) =>
+      this._library.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Source collection "${collectionId}" not found: ${msg}`)
+        .onSuccess((sourceCollection) =>
+          sourceCollection.items.get(baseId as TBaseId).asResult.onSuccess((entity: TItem) =>
+            this._library.collections
+              .get(targetCollectionId)
+              .asResult.withErrorFormat(
+                (msg) => `Target collection "${targetCollectionId}" not found: ${msg}`
+              )
+              .onSuccess((targetCollection) => {
+                if (!targetCollection.isMutable) {
+                  return fail(`Cannot copy to immutable collection "${targetCollectionId}"`);
+                }
+                const destBaseId = (newBaseId ?? baseId) as TBaseId;
+                if (targetCollection.items.has(destBaseId)) {
+                  return fail(`Entity "${destBaseId}" already exists in collection "${targetCollectionId}"`);
+                }
+                return targetCollection.items
+                  .set(destBaseId, entity)
+                  .asResult.onSuccess(() => succeed(`${targetCollectionId}.${destBaseId}`));
+              })
+          )
+        )
+    );
+  }
+
+  /**
+   * Move an entity to another collection (copy + delete).
+   * Does NOT update cross-entity references — callers must handle that separately.
+   * @param compositeId - Source composite entity ID (collectionId.baseId)
+   * @param targetCollectionId - Target collection ID
+   * @param newBaseId - Optional new base ID; defaults to source base ID
+   * @returns Result containing the new composite ID or failure
+   */
+  public moveEntity(
+    compositeId: string,
+    targetCollectionId: CollectionId,
+    newBaseId?: string
+  ): Result<string> {
+    return this.copyEntity(compositeId, targetCollectionId, newBaseId).onSuccess((newCompositeId) =>
+      this.deleteEntity(compositeId).onSuccess(() => succeed(newCompositeId))
+    );
+  }
+
+  /**
    * Validate collection metadata for creation.
    */
   private _validateMetadata(metadata: ICollectionSourceMetadata): Result<ICollectionSourceMetadata> {
     return validatedMetadataConverter.convert(metadata).onFailure((msg) => fail(`Invalid metadata: ${msg}`));
+  }
+
+  /**
+   * Split a composite ID into collectionId and baseId parts.
+   */
+  private _splitCompositeId(compositeId: string): Result<{ collectionId: CollectionId; baseId: string }> {
+    const dotIndex = compositeId.indexOf('.');
+    if (dotIndex < 1 || dotIndex === compositeId.length - 1) {
+      return fail(`Invalid composite ID "${compositeId}": expected "collectionId.baseId" format`);
+    }
+    const collectionId = compositeId.slice(0, dotIndex) as CollectionId;
+    const baseId = compositeId.slice(dotIndex + 1);
+    return succeed({ collectionId, baseId });
   }
 }

@@ -25,3 +25,9 @@ export { NotesEditor, type INotesEditorProps } from './NotesEditor';
 export { UrlsEditor, type IUrlsEditorProps } from './UrlsEditor';
 
 export { useDatalistMatch, type IDatalistSuggestion, type IDatalistMatchResult } from './useDatalistMatch';
+
+export {
+  EntityReferenceScanner,
+  type IEntityReferenceHit,
+  type IReferenceScanResult
+} from './referenceScanner';

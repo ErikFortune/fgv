@@ -1,13 +1,21 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
-import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
+import {
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
+  type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useEntityActions,
   IngredientDetail,
   IngredientEditView,
   EntityCreateForm,
@@ -40,6 +48,12 @@ export function IngredientsTabContent(): React.ReactElement {
   } = useTabNavigation();
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(undefined);
+  const [ingredientToDelete, setIngredientToDelete] = useState<{
+    id: IngredientId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
 
   const mutableCollectionId = useMutableCollection(workspace.data.entities.ingredients.collections, [
     workspace,
@@ -153,6 +167,31 @@ export function IngredientsTabContent(): React.ReactElement {
     },
     [squashCascade]
   );
+
+  const handleRequestDelete = useCallback(
+    (id: IngredientId): void => {
+      const result = workspace.data.ingredients.get(id);
+      const name = result.isSuccess() ? result.value.name : id;
+      const references = entityActions.scanReferences(id);
+      setIngredientToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (ingredientToDelete) {
+      entityActions.deleteEntity(ingredientToDelete.id);
+      // If the deleted entity is currently selected, clear the cascade
+      if (cascadeStack.some((e) => e.entityId === ingredientToDelete.id)) {
+        squashCascade([]);
+      }
+    }
+    setIngredientToDelete(null);
+  }, [ingredientToDelete, entityActions, cascadeStack, squashCascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setIngredientToDelete(null);
+  }, []);
 
   const handleEdit = useCallback(
     (entityId: string): void => {
@@ -385,56 +424,90 @@ export function IngredientsTabContent(): React.ReactElement {
   }, [compareIds, workspace]);
 
   return (
-    <EntityTabLayout
-      list={
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
-            <button
-              onClick={handleNewIngredient}
-              disabled={mutableCollectionId === undefined}
-              title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
-              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + New Ingredient
-            </button>
-            <button
-              onClick={handleListHeaderPaste}
-              disabled={mutableCollectionId === undefined}
-              title="Paste ingredient from clipboard (AI-generated JSON)"
-              className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <CursorArrowRaysIcon className="w-5 h-5" />
-            </button>
+    <>
+      <ConfirmDialog
+        isOpen={ingredientToDelete !== null}
+        title="Delete Ingredient"
+        message={
+          <>
+            Delete <strong>{ingredientToDelete?.name}</strong>? This cannot be undone.
+            {ingredientToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {ingredientToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={handleNewIngredient}
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Ingredient
+              </button>
+              <button
+                onClick={handleListHeaderPaste}
+                disabled={mutableCollectionId === undefined}
+                title="Paste ingredient from clipboard (AI-generated JSON)"
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CursorArrowRaysIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.AnyIngredient, IngredientId>
+                entities={useFilteredEntities(ingredients, INGREDIENT_FILTER_SPEC)}
+                descriptor={INGREDIENT_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={(id): boolean =>
+                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
+                }
+                emptyState={{
+                  title: 'No Ingredients',
+                  description: 'No ingredients found in the library.'
+                }}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <EntityList<LibraryRuntime.AnyIngredient, IngredientId>
-              entities={useFilteredEntities(ingredients, INGREDIENT_FILTER_SPEC)}
-              descriptor={INGREDIENT_DESCRIPTOR}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDrill={collapseList}
-              compareMode={compareMode}
-              checkedIds={compareIds}
-              onCheckedChange={toggleCompareId}
-              onToggleCompare={toggleCompareMode}
-              compareCount={compareIds.size}
-              onStartComparison={startComparison}
-              emptyState={{
-                title: 'No Ingredients',
-                description: 'No ingredients found in the library.'
-              }}
-            />
-          </div>
-        </div>
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-      compareMode={compareMode}
-      comparisonColumns={comparisonColumns}
-      showingComparison={showingComparison}
-      onExitComparison={exitComparison}
-    />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+      />
+    </>
   );
 }

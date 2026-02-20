@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
+import {
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   BaseFillingId,
@@ -16,9 +22,11 @@ import {
   type ICascadeEntry,
   type CascadeEntityType,
   type FillingSaveMode,
+  type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useEntityActions,
   IngredientDetail,
   IngredientEditView,
   FillingDetail,
@@ -92,6 +100,12 @@ export function FillingsTabContent(): React.ReactElement {
     undefined
   );
   const [subEntitySeed, setSubEntitySeed] = useState('');
+  const [fillingToDelete, setFillingToDelete] = useState<{
+    id: FillingId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
 
   const mutableCollectionId = useMutableCollection(workspace.data.entities.fillings.collections, [
     workspace,
@@ -134,6 +148,30 @@ export function FillingsTabContent(): React.ReactElement {
     },
     [squashCascade]
   );
+
+  const handleRequestDelete = useCallback(
+    (id: FillingId): void => {
+      const result = workspace.data.fillings.get(id);
+      const name = result.isSuccess() ? result.value.name : id;
+      const references = entityActions.scanReferences(id);
+      setFillingToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (fillingToDelete) {
+      entityActions.deleteEntity(fillingToDelete.id);
+      if (cascadeStack.some((e) => e.entityId === fillingToDelete.id)) {
+        squashCascade([]);
+      }
+    }
+    setFillingToDelete(null);
+  }, [fillingToDelete, entityActions, cascadeStack, squashCascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setFillingToDelete(null);
+  }, []);
 
   const squashAt = useCallback(
     (depth: number, entry: ICascadeEntry): void => {
@@ -1285,50 +1323,84 @@ export function FillingsTabContent(): React.ReactElement {
   }, [variationCompare, workspace]);
 
   return (
-    <EntityTabLayout
-      list={
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
-            <button
-              onClick={handleNewFilling}
-              disabled={mutableCollectionId === undefined}
-              title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
-              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + New Filling
-            </button>
+    <>
+      <ConfirmDialog
+        isOpen={fillingToDelete !== null}
+        title="Delete Filling"
+        message={
+          <>
+            Delete <strong>{fillingToDelete?.name}</strong>? This cannot be undone.
+            {fillingToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {fillingToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={handleNewFilling}
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Filling
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.FillingRecipe, FillingId>
+                entities={useFilteredEntities(fillings, FILLING_FILTER_SPEC)}
+                descriptor={FILLING_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={(id): boolean =>
+                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
+                }
+                emptyState={{
+                  title: 'No Fillings',
+                  description: 'No filling recipes found in the library.'
+                }}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <EntityList<LibraryRuntime.FillingRecipe, FillingId>
-              entities={useFilteredEntities(fillings, FILLING_FILTER_SPEC)}
-              descriptor={FILLING_DESCRIPTOR}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDrill={collapseList}
-              compareMode={compareMode}
-              checkedIds={compareIds}
-              onCheckedChange={toggleCompareId}
-              onToggleCompare={toggleCompareMode}
-              compareCount={compareIds.size}
-              onStartComparison={startComparison}
-              emptyState={{
-                title: 'No Fillings',
-                description: 'No filling recipes found in the library.'
-              }}
-            />
-          </div>
-        </div>
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-      compareMode={compareMode}
-      comparisonColumns={comparisonColumns}
-      showingComparison={showingComparison}
-      onExitComparison={exitComparison}
-      variationCompareColumns={variationCompareColumns}
-      onExitVariationCompare={(): void => setVariationCompare(undefined)}
-    />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+        variationCompareColumns={variationCompareColumns}
+        onExitVariationCompare={(): void => setVariationCompare(undefined)}
+      />
+    </>
   );
 }

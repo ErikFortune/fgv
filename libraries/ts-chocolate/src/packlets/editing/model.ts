@@ -337,6 +337,40 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @returns Result containing true if mutable, failure if not found
    */
   readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
+
+  /**
+   * Delete an entity from its collection.
+   * @param compositeId - Composite entity ID (collectionId.baseId)
+   * @returns Result containing the deleted entity or failure
+   */
+  readonly deleteEntity: (compositeId: string) => Result<unknown>;
+
+  /**
+   * Copy an entity to another collection.
+   * @param compositeId - Source composite entity ID (collectionId.baseId)
+   * @param targetCollectionId - Target collection ID
+   * @param newBaseId - Optional new base ID in target collection; defaults to source base ID
+   * @returns Result containing the new composite ID or failure
+   */
+  readonly copyEntity: (
+    compositeId: string,
+    targetCollectionId: CollectionId,
+    newBaseId?: string
+  ) => Result<string>;
+
+  /**
+   * Move an entity to another collection (copy + delete).
+   * Does NOT update cross-entity references — callers must handle that separately.
+   * @param compositeId - Source composite entity ID (collectionId.baseId)
+   * @param targetCollectionId - Target collection ID
+   * @param newBaseId - Optional new base ID in target collection; defaults to source base ID
+   * @returns Result containing the new composite ID or failure
+   */
+  readonly moveEntity: (
+    compositeId: string,
+    targetCollectionId: CollectionId,
+    newBaseId?: string
+  ) => Result<string>;
 }
 
 // ============================================================================

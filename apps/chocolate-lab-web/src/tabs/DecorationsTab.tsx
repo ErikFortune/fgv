@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
+import {
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type {
   BaseIngredientId,
@@ -14,9 +20,11 @@ import type {
 import {
   type ICascadeEntry,
   type CascadeEntityType,
+  type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useEntityActions,
   IngredientDetail,
   IngredientEditView,
   ProcedureDetail,
@@ -64,6 +72,12 @@ export function DecorationsTabContent(): React.ReactElement {
     undefined
   );
   const [subEntitySeed, setSubEntitySeed] = useState('');
+  const [decorationToDelete, setDecorationToDelete] = useState<{
+    id: DecorationId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
 
   const mutableCollectionId = useMutableCollection(workspace.data.entities.decorations.collections, [
     workspace,
@@ -106,6 +120,30 @@ export function DecorationsTabContent(): React.ReactElement {
     },
     [squashCascade]
   );
+
+  const handleRequestDelete = useCallback(
+    (id: DecorationId): void => {
+      const result = workspace.data.decorations.get(id);
+      const name = result.isSuccess() ? result.value.name : id;
+      const references = entityActions.scanReferences(id);
+      setDecorationToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (decorationToDelete) {
+      entityActions.deleteEntity(decorationToDelete.id);
+      if (cascadeStack.some((e) => e.entityId === decorationToDelete.id)) {
+        squashCascade([]);
+      }
+    }
+    setDecorationToDelete(null);
+  }, [decorationToDelete, entityActions, cascadeStack, squashCascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setDecorationToDelete(null);
+  }, []);
 
   // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
   const squashAt = useCallback(
@@ -1022,48 +1060,82 @@ export function DecorationsTabContent(): React.ReactElement {
   }, [compareIds, workspace]);
 
   return (
-    <EntityTabLayout
-      list={
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
-            <button
-              onClick={handleNewDecoration}
-              disabled={mutableCollectionId === undefined}
-              title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
-              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + New Decoration
-            </button>
+    <>
+      <ConfirmDialog
+        isOpen={decorationToDelete !== null}
+        title="Delete Decoration"
+        message={
+          <>
+            Delete <strong>{decorationToDelete?.name}</strong>? This cannot be undone.
+            {decorationToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {decorationToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={handleNewDecoration}
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Decoration
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.IDecoration, DecorationId>
+                entities={useFilteredEntities(decorations, DECORATION_FILTER_SPEC)}
+                descriptor={DECORATION_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={(id): boolean =>
+                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
+                }
+                emptyState={{
+                  title: 'No Decorations',
+                  description: 'No decorations found in the library.'
+                }}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <EntityList<LibraryRuntime.IDecoration, DecorationId>
-              entities={useFilteredEntities(decorations, DECORATION_FILTER_SPEC)}
-              descriptor={DECORATION_DESCRIPTOR}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDrill={collapseList}
-              compareMode={compareMode}
-              checkedIds={compareIds}
-              onCheckedChange={toggleCompareId}
-              onToggleCompare={toggleCompareMode}
-              compareCount={compareIds.size}
-              onStartComparison={startComparison}
-              emptyState={{
-                title: 'No Decorations',
-                description: 'No decorations found in the library.'
-              }}
-            />
-          </div>
-        </div>
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-      compareMode={compareMode}
-      comparisonColumns={comparisonColumns}
-      showingComparison={showingComparison}
-      onExitComparison={exitComparison}
-    />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+      />
+    </>
   );
 }

@@ -158,4 +158,43 @@ Check if a collection exists.
 Check if a collection is mutable.
 
 </td></tr>
+<tr><td>
+
+[deleteEntity(compositeId)](./CollectionManager.deleteEntity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Delete an entity from its owning collection.
+
+</td></tr>
+<tr><td>
+
+[copyEntity(compositeId, targetCollectionId, newBaseId)](./CollectionManager.copyEntity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Copy an entity to another collection.
+
+</td></tr>
+<tr><td>
+
+[moveEntity(compositeId, targetCollectionId, newBaseId)](./CollectionManager.moveEntity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Move an entity to another collection (copy + delete).
+
+</td></tr>
 </tbody></table>

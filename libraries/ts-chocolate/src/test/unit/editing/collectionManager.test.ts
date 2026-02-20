@@ -616,6 +616,194 @@ describe('CollectionManager', () => {
   });
 
   // ============================================================================
+  // deleteEntity()
+  // ============================================================================
+
+  describe('deleteEntity', () => {
+    beforeEach(() => {
+      manager.create('src' as CollectionId, { name: 'Source' }).orThrow();
+      const srcEntry = library.collections.get('src' as CollectionId).orThrow();
+      if (srcEntry.isMutable) {
+        srcEntry.items.set('item1' as never, { name: 'Item 1' } as never);
+      }
+    });
+
+    test('deletes an existing entity from a mutable collection', () => {
+      expect(manager.deleteEntity('src.item1')).toSucceed();
+      expect(
+        library.collections
+          .get('src' as CollectionId)
+          .orThrow()
+          .items.has('item1' as never)
+      ).toBe(false);
+    });
+
+    test('fails for invalid composite ID format (no dot)', () => {
+      expect(manager.deleteEntity('nodot')).toFailWith(/invalid composite id/i);
+    });
+
+    test('fails for invalid composite ID format (dot at start)', () => {
+      expect(manager.deleteEntity('.item1')).toFailWith(/invalid composite id/i);
+    });
+
+    test('fails for invalid composite ID format (dot at end)', () => {
+      expect(manager.deleteEntity('src.')).toFailWith(/invalid composite id/i);
+    });
+
+    test('fails when collection does not exist', () => {
+      expect(manager.deleteEntity('missing.item1')).toFailWith(/not found/i);
+    });
+
+    test('fails when deleting from an immutable collection', () => {
+      library.addCollectionEntry({
+        id: 'immutable' as CollectionId,
+        isMutable: false,
+        items: {}
+      });
+      expect(manager.deleteEntity('immutable.anything')).toFailWith(/immutable/i);
+    });
+
+    test('fails when entity does not exist in collection', () => {
+      expect(manager.deleteEntity('src.nonexistent')).toFailWith(/not found|failed to delete/i);
+    });
+  });
+
+  // ============================================================================
+  // copyEntity()
+  // ============================================================================
+
+  describe('copyEntity', () => {
+    beforeEach(() => {
+      manager.create('src' as CollectionId, { name: 'Source' }).orThrow();
+      manager.create('dst' as CollectionId, { name: 'Destination' }).orThrow();
+      const srcEntry = library.collections.get('src' as CollectionId).orThrow();
+      if (srcEntry.isMutable) {
+        srcEntry.items.set('item1' as never, { name: 'Item 1' } as never);
+      }
+    });
+
+    test('copies an entity to another collection using same base ID', () => {
+      expect(manager.copyEntity('src.item1', 'dst' as CollectionId)).toSucceedWith('dst.item1');
+      expect(
+        library.collections
+          .get('dst' as CollectionId)
+          .orThrow()
+          .items.has('item1' as never)
+      ).toBe(true);
+    });
+
+    test('copies an entity to another collection with a new base ID', () => {
+      expect(manager.copyEntity('src.item1', 'dst' as CollectionId, 'item2')).toSucceedWith('dst.item2');
+      expect(
+        library.collections
+          .get('dst' as CollectionId)
+          .orThrow()
+          .items.has('item2' as never)
+      ).toBe(true);
+    });
+
+    test('fails for invalid composite ID format', () => {
+      expect(manager.copyEntity('nodot', 'dst' as CollectionId)).toFailWith(/invalid composite id/i);
+    });
+
+    test('fails when source collection does not exist', () => {
+      expect(manager.copyEntity('missing.item1', 'dst' as CollectionId)).toFailWith(/not found/i);
+    });
+
+    test('fails when source entity does not exist', () => {
+      expect(manager.copyEntity('src.nonexistent', 'dst' as CollectionId)).toFailWith(/not found/i);
+    });
+
+    test('fails when target collection does not exist', () => {
+      expect(manager.copyEntity('src.item1', 'missing' as CollectionId)).toFailWith(/not found/i);
+    });
+
+    test('fails when copying to an immutable target collection', () => {
+      library.addCollectionEntry({
+        id: 'immutable' as CollectionId,
+        isMutable: false,
+        items: {}
+      });
+      expect(manager.copyEntity('src.item1', 'immutable' as CollectionId)).toFailWith(/immutable/i);
+    });
+
+    test('fails when entity already exists in target collection', () => {
+      const dstEntry = library.collections.get('dst' as CollectionId).orThrow();
+      if (dstEntry.isMutable) {
+        dstEntry.items.set('item1' as never, { name: 'Existing' } as never);
+      }
+      expect(manager.copyEntity('src.item1', 'dst' as CollectionId)).toFailWith(/already exists/i);
+    });
+  });
+
+  // ============================================================================
+  // moveEntity()
+  // ============================================================================
+
+  describe('moveEntity', () => {
+    beforeEach(() => {
+      manager.create('src' as CollectionId, { name: 'Source' }).orThrow();
+      manager.create('dst' as CollectionId, { name: 'Destination' }).orThrow();
+      const srcEntry = library.collections.get('src' as CollectionId).orThrow();
+      if (srcEntry.isMutable) {
+        srcEntry.items.set('item1' as never, { name: 'Item 1' } as never);
+      }
+    });
+
+    test('moves an entity to another collection', () => {
+      expect(manager.moveEntity('src.item1', 'dst' as CollectionId)).toSucceedWith('dst.item1');
+      expect(
+        library.collections
+          .get('dst' as CollectionId)
+          .orThrow()
+          .items.has('item1' as never)
+      ).toBe(true);
+      expect(
+        library.collections
+          .get('src' as CollectionId)
+          .orThrow()
+          .items.has('item1' as never)
+      ).toBe(false);
+    });
+
+    test('moves an entity with a new base ID', () => {
+      expect(manager.moveEntity('src.item1', 'dst' as CollectionId, 'item2')).toSucceedWith('dst.item2');
+      expect(
+        library.collections
+          .get('dst' as CollectionId)
+          .orThrow()
+          .items.has('item2' as never)
+      ).toBe(true);
+      expect(
+        library.collections
+          .get('src' as CollectionId)
+          .orThrow()
+          .items.has('item1' as never)
+      ).toBe(false);
+    });
+
+    test('fails when copy step fails (source not found)', () => {
+      expect(manager.moveEntity('src.nonexistent', 'dst' as CollectionId)).toFailWith(/not found/i);
+    });
+
+    test('fails when copy step fails (target immutable)', () => {
+      library.addCollectionEntry({
+        id: 'immutable' as CollectionId,
+        isMutable: false,
+        items: {}
+      });
+      expect(manager.moveEntity('src.item1', 'immutable' as CollectionId)).toFailWith(/immutable/i);
+      // Source should still exist since copy failed
+      expect(
+        library.collections
+          .get('src' as CollectionId)
+          .orThrow()
+          .items.has('item1' as never)
+      ).toBe(true);
+    });
+  });
+
+  // ============================================================================
   // Integration Tests
   // ============================================================================
 

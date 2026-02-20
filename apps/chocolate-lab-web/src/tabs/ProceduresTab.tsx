@@ -1,12 +1,20 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { EntityList, type ICascadeColumn, EntityTabLayout, type IComparisonColumn } from '@fgv/ts-app-shell';
+import {
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
 import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseProcedureId, CollectionId, TaskId, ProcedureId } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
+  type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useEntityActions,
   ProcedureDetail,
   ProcedureEditView,
   ProcedurePreviewPanel,
@@ -41,6 +49,12 @@ export function ProceduresTabContent(): React.ReactElement {
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(undefined);
   const [previewVersion, setPreviewVersion] = useState(0);
+  const [procedureToDelete, setProcedureToDelete] = useState<{
+    id: ProcedureId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
 
   const [newProcedureName, setNewProcedureName] = useState('');
 
@@ -77,6 +91,30 @@ export function ProceduresTabContent(): React.ReactElement {
     },
     [squashCascade]
   );
+
+  const handleRequestDelete = useCallback(
+    (id: ProcedureId): void => {
+      const result = workspace.data.procedures.get(id);
+      const name = result.isSuccess() ? result.value.name : id;
+      const references = entityActions.scanReferences(id);
+      setProcedureToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (procedureToDelete) {
+      entityActions.deleteEntity(procedureToDelete.id);
+      if (cascadeStack.some((e) => e.entityId === procedureToDelete.id)) {
+        squashCascade([]);
+      }
+    }
+    setProcedureToDelete(null);
+  }, [procedureToDelete, entityActions, cascadeStack, squashCascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setProcedureToDelete(null);
+  }, []);
 
   const getOrCreateWrapper = useCallback(
     (procedure: LibraryRuntime.IProcedure): LibraryRuntime.EditedProcedure | undefined => {
@@ -429,54 +467,89 @@ export function ProceduresTabContent(): React.ReactElement {
   }, [compareIds, workspace]);
 
   return (
-    <EntityTabLayout
-      list={
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
-            <button
-              onClick={(): void =>
-                squashCascade([{ entityType: 'procedure', entityId: '__new__', mode: 'create' }])
-              }
-              disabled={mutableProcedureCollectionId === undefined}
-              title={
-                mutableProcedureCollectionId === undefined
-                  ? 'No mutable procedure collection available'
-                  : undefined
-              }
-              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + New Procedure
-            </button>
+    <>
+      <ConfirmDialog
+        isOpen={procedureToDelete !== null}
+        title="Delete Procedure"
+        message={
+          <>
+            Delete <strong>{procedureToDelete?.name}</strong>? This cannot be undone.
+            {procedureToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {procedureToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={(): void =>
+                  squashCascade([{ entityType: 'procedure', entityId: '__new__', mode: 'create' }])
+                }
+                disabled={mutableProcedureCollectionId === undefined}
+                title={
+                  mutableProcedureCollectionId === undefined
+                    ? 'No mutable procedure collection available'
+                    : undefined
+                }
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Procedure
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.IProcedure, ProcedureId>
+                entities={useFilteredEntities(procedures, PROCEDURE_FILTER_SPEC)}
+                descriptor={PROCEDURE_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={(id): boolean =>
+                  mutableProcedureCollectionId !== undefined &&
+                  id.startsWith(`${mutableProcedureCollectionId}.`)
+                }
+                emptyState={{
+                  title: 'No Procedures',
+                  description: 'No procedures found in the library.'
+                }}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <EntityList<LibraryRuntime.IProcedure, ProcedureId>
-              entities={useFilteredEntities(procedures, PROCEDURE_FILTER_SPEC)}
-              descriptor={PROCEDURE_DESCRIPTOR}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDrill={collapseList}
-              compareMode={compareMode}
-              checkedIds={compareIds}
-              onCheckedChange={toggleCompareId}
-              onToggleCompare={toggleCompareMode}
-              compareCount={compareIds.size}
-              onStartComparison={startComparison}
-              emptyState={{
-                title: 'No Procedures',
-                description: 'No procedures found in the library.'
-              }}
-            />
-          </div>
-        </div>
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-      compareMode={compareMode}
-      comparisonColumns={comparisonColumns}
-      showingComparison={showingComparison}
-      onExitComparison={exitComparison}
-    />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+      />
+    </>
   );
 }

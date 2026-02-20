@@ -88,6 +88,18 @@ export interface IEntityListProps<TEntity, TId extends string = string> {
   readonly compareCount?: number;
   /** Callback to start the comparison view (user clicks 'Compare Now') */
   readonly onStartComparison?: () => void;
+  /**
+   * Optional callback to delete an entity.
+   * When provided, a delete button appears on each row (visible on hover/selection).
+   * The consumer is responsible for showing a confirmation dialog before calling this.
+   */
+  readonly onDelete?: (id: TId) => void;
+  /**
+   * Optional predicate to control per-entity delete button visibility.
+   * When `onDelete` is provided but `canDelete` is not, all rows show the delete button.
+   * When both are provided, only rows where `canDelete(id)` returns true show the button.
+   */
+  readonly canDelete?: (id: TId) => boolean;
 }
 
 /**
@@ -142,7 +154,9 @@ export function EntityList<TEntity, TId extends string = string>(
     checkedIds,
     onCheckedChange,
     emptyState,
-    header
+    header,
+    onDelete,
+    canDelete
   } = props;
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -251,19 +265,9 @@ export function EntityList<TEntity, TId extends string = string>(
           const isChecked = compareMode === true && checkedIds !== undefined && checkedIds.has(id);
 
           return (
-            <button
+            <div
               key={id}
-              data-entity-id={id}
-              onClick={(): void => {
-                if (compareMode && onCheckedChange) {
-                  onCheckedChange(id);
-                } else if (isSelected && onDrill) {
-                  onDrill();
-                } else {
-                  onSelect(id);
-                }
-              }}
-              className={`flex items-center gap-2 w-full px-3 py-2 text-left border-b border-gray-50 transition-colors ${
+              className={`group flex items-center gap-2 w-full border-b border-gray-50 transition-colors ${
                 isChecked
                   ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
                   : isSelected && !compareMode
@@ -271,44 +275,86 @@ export function EntityList<TEntity, TId extends string = string>(
                   : 'hover:bg-gray-50 border-l-2 border-l-transparent'
               }`}
             >
-              {compareMode && (
-                <span
-                  className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors ${
-                    isChecked ? 'bg-choco-accent border-choco-accent text-white' : 'border-gray-300 bg-white'
-                  }`}
-                >
-                  {isChecked && (
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div
-                  className={`text-sm truncate ${
-                    (isSelected && !compareMode) || isChecked
-                      ? 'font-medium text-choco-primary'
-                      : 'text-gray-800'
-                  }`}
-                >
-                  {label}
+              <button
+                data-entity-id={id}
+                onClick={(): void => {
+                  if (compareMode && onCheckedChange) {
+                    onCheckedChange(id);
+                  } else if (isSelected && onDrill) {
+                    onDrill();
+                  } else {
+                    onSelect(id);
+                  }
+                }}
+                className="flex items-center gap-2 flex-1 min-w-0 px-3 py-2 text-left"
+              >
+                {compareMode && (
+                  <span
+                    className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors ${
+                      isChecked
+                        ? 'bg-choco-accent border-choco-accent text-white'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                  >
+                    {isChecked && (
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div
+                    className={`text-sm truncate ${
+                      (isSelected && !compareMode) || isChecked
+                        ? 'font-medium text-choco-primary'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    {label}
+                  </div>
+                  {sublabel && <div className="text-xs text-gray-500 truncate mt-0.5">{sublabel}</div>}
                 </div>
-                {sublabel && <div className="text-xs text-gray-500 truncate mt-0.5">{sublabel}</div>}
-              </div>
-              {status && (
-                <span className="flex items-center gap-1 shrink-0 mt-0.5">
-                  <span className={`w-2 h-2 rounded-full ${status.colorClass}`} />
-                  <span className="text-xs text-gray-500">{status.label}</span>
-                </span>
+                {status && (
+                  <span className="flex items-center gap-1 shrink-0 mt-0.5">
+                    <span className={`w-2 h-2 rounded-full ${status.colorClass}`} />
+                    <span className="text-xs text-gray-500">{status.label}</span>
+                  </span>
+                )}
+              </button>
+
+              {onDelete && !compareMode && (!canDelete || canDelete(id)) && (
+                <button
+                  onClick={(e): void => {
+                    e.stopPropagation();
+                    onDelete(id);
+                  }}
+                  className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
+                  title={`Delete ${label}`}
+                  aria-label={`Delete ${label}`}
+                >
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
