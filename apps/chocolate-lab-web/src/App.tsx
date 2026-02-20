@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
+  ConfirmDialog,
   ModeSelector,
   type IModeConfig,
   TabBar,
@@ -201,7 +202,43 @@ function AppShell(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
+
+  const hasActiveEdit = cascadeStack.some((e) => e.mode === 'edit' || e.mode === 'create');
+
+  const guardedSetTab = useCallback(
+    (tab: AppTab): void => {
+      if (hasActiveEdit) {
+        setPendingNavigation(() => (): void => setTab(tab));
+      } else {
+        setTab(tab);
+      }
+    },
+    [hasActiveEdit, setTab]
+  );
+
+  const guardedSetMode = useCallback(
+    (newMode: AppMode): void => {
+      if (hasActiveEdit) {
+        setPendingNavigation(() => (): void => setMode(newMode));
+      } else {
+        setMode(newMode);
+      }
+    },
+    [hasActiveEdit, setMode]
+  );
+
+  const handleNavConfirm = useCallback((): void => {
+    if (pendingNavigation) {
+      pendingNavigation();
+    }
+    setPendingNavigation(null);
+  }, [pendingNavigation]);
+
+  const handleNavCancel = useCallback((): void => {
+    setPendingNavigation(null);
+  }, []);
 
   const filterOptionProvider = useMemo(
     () => new WorkspaceFilterOptionProvider(workspace.data),
@@ -209,7 +246,7 @@ function AppShell(): React.ReactElement {
   );
 
   // Sync navigation state ↔ URL hash
-  useUrlSync(URL_SYNC_CONFIG, { mode, activeTab }, { setMode, setTab });
+  useUrlSync(URL_SYNC_CONFIG, { mode, activeTab }, { setMode: guardedSetMode, setTab: guardedSetTab });
 
   // Global keyboard shortcuts
   const shortcuts = useMemo<ReadonlyArray<IShortcut>>(
@@ -232,17 +269,28 @@ function AppShell(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-screen bg-choco-surface">
+      <ConfirmDialog
+        isOpen={pendingNavigation !== null}
+        title="Unsaved Changes"
+        message="You have unsaved edits. Discard them and navigate away?"
+        confirmLabel="Discard"
+        cancelLabel="Stay"
+        severity="warning"
+        onConfirm={handleNavConfirm}
+        onCancel={handleNavCancel}
+      />
+
       {/* Top bar: mode selector */}
       <ModeSelector<AppMode>
         title="Chocolate Lab"
         modes={MODES}
         activeMode={mode}
-        onModeChange={setMode}
+        onModeChange={guardedSetMode}
         rightContent={<SettingsButton onOpen={(): void => setSettingsOpen(true)} />}
       />
 
       {/* Second bar: tab selector */}
-      <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={setTab} />
+      <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={guardedSetTab} />
 
       {/* Main content area: sidebar + tab content */}
       <SidebarLayout sidebar={<TabSidebarWithActions optionProvider={filterOptionProvider} />}>
