@@ -22,3 +22,9 @@ export {
   type ICreateCollectionDialogProps,
   type ICreateCollectionData
 } from './CreateCollectionDialog';
+
+export {
+  ImportCollisionDialog,
+  type IImportCollisionDialogProps,
+  type ImportCollisionResolution
+} from './ImportCollisionDialog';

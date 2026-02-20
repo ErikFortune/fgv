@@ -31,7 +31,13 @@
 
 import { useCallback } from 'react';
 
-import { type CollectionId, type LibraryData, type LibraryRuntime, Editing } from '@fgv/ts-chocolate';
+import {
+  type CollectionId,
+  Helpers,
+  type LibraryData,
+  type LibraryRuntime,
+  Editing
+} from '@fgv/ts-chocolate';
 
 import { selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -119,6 +125,12 @@ export interface IEntityActions {
    * @returns Scan result with all referencing entities
    */
   readonly scanReferences: (compositeId: string) => IReferenceScanResult;
+
+  /**
+   * Export a single entity as a YAML file download.
+   * @param compositeId - Composite entity ID (collectionId.baseId)
+   */
+  readonly exportEntity: (compositeId: string) => void;
 }
 
 // ============================================================================
@@ -215,10 +227,50 @@ export function useEntityActions(): IEntityActions {
     [workspace]
   );
 
+  const exportEntity = useCallback(
+    (compositeId: string): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      if (!subLibrary) {
+        workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+        return;
+      }
+
+      const [collectionId, baseId] = compositeId.split('.') as [CollectionId, string];
+      const collectionResult = subLibrary.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        workspace.data.logger.error(`Collection '${collectionId}' not found`);
+        return;
+      }
+
+      const item = collectionResult.value.items.get(baseId);
+      if (item === undefined) {
+        workspace.data.logger.error(`Entity '${compositeId}' not found`);
+        return;
+      }
+
+      const yamlResult = Helpers.serializeToYaml({ [baseId]: item });
+      if (yamlResult.isFailure()) {
+        workspace.data.logger.error(`Failed to serialize '${compositeId}': ${yamlResult.message}`);
+        return;
+      }
+
+      const blob = new Blob([yamlResult.value], { type: 'text/yaml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${compositeId}.yaml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      workspace.data.logger.info(`Exported entity '${compositeId}'`);
+    },
+    [workspace, activeTab]
+  );
+
   return {
     deleteEntity,
     copyEntity,
     moveEntity,
-    scanReferences
+    scanReferences,
+    exportEntity
   };
 }

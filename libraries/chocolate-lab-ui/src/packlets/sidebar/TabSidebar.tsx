@@ -49,6 +49,7 @@ import {
 
 import { useCollectionInfo } from './collectionInfo';
 import { CreateCollectionDialog, type ICreateCollectionData } from './CreateCollectionDialog';
+import { ImportCollisionDialog, type ImportCollisionResolution } from './ImportCollisionDialog';
 
 import { TAB_FILTER_DEFINITIONS, type IFilterDefinition } from './filterConfigs';
 
@@ -104,6 +105,10 @@ export interface ITabSidebarProps {
   readonly onImportCollection?: () => void;
   /** Callback when "Open from File" is clicked (File System Access API, write-back) */
   readonly onOpenCollectionFromFile?: () => void;
+  /** Non-null when an import collision is awaiting resolution */
+  readonly pendingImport?: { collectionId: string; itemCount: number } | null;
+  /** Resolve a pending import collision */
+  readonly onResolveImportCollision?: (resolution: ImportCollisionResolution) => void;
 }
 
 // ============================================================================
@@ -129,7 +134,9 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     onExportCollection,
     onExportAllAsZip,
     onImportCollection,
-    onOpenCollectionFromFile
+    onOpenCollectionFromFile,
+    pendingImport,
+    onResolveImportCollision
   } = props;
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -263,6 +270,15 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onConfirm={handleConfirmDeleteCollection}
         onCancel={handleCancelDeleteCollection}
       />
+
+      {onResolveImportCollision && pendingImport && (
+        <ImportCollisionDialog
+          isOpen={true}
+          collectionId={pendingImport.collectionId}
+          itemCount={pendingImport.itemCount}
+          onResolve={onResolveImportCollision}
+        />
+      )}
     </div>
   );
 }

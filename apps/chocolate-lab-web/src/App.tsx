@@ -173,6 +173,7 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
 
 function TabSidebarWithActions(props: {
   readonly optionProvider: WorkspaceFilterOptionProvider;
+  readonly actions: ReturnType<typeof useCollectionActions>;
 }): React.ReactElement {
   const {
     addDirectory,
@@ -181,8 +182,10 @@ function TabSidebarWithActions(props: {
     exportCollection,
     exportAllAsZip,
     importCollection,
-    openCollectionFromFile
-  } = useCollectionActions();
+    openCollectionFromFile,
+    pendingImport,
+    resolveImportCollision
+  } = props.actions;
 
   return (
     <TabSidebar
@@ -194,6 +197,8 @@ function TabSidebarWithActions(props: {
       onExportAllAsZip={exportAllAsZip}
       onImportCollection={importCollection}
       onOpenCollectionFromFile={openCollectionFromFile}
+      pendingImport={pendingImport}
+      onResolveImportCollision={resolveImportCollision}
     />
   );
 }
@@ -216,33 +221,46 @@ function AppShell(): React.ReactElement {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
+  const collectionActions = useCollectionActions();
 
   // NOTE: Guard fires whenever an edit/create pane is open, regardless of whether the user
   // has actually made changes. A finer-grained check (wrapper.hasChanges()) would require
   // threading editingRef up from each tab — a future refinement if the false-positive rate
   // becomes annoying.
   const hasActiveEdit = cascadeStack.some((e) => e.mode === 'edit' || e.mode === 'create');
+  const hasUnsavedChanges = hasActiveEdit || collectionActions.hasDirtyTrees;
+
+  // Warn on browser close/refresh when there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return (): void => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const guardedSetTab = useCallback(
     (tab: AppTab): void => {
-      if (hasActiveEdit) {
+      if (hasUnsavedChanges) {
         setPendingNavigation(() => (): void => setTab(tab));
       } else {
         setTab(tab);
       }
     },
-    [hasActiveEdit, setTab]
+    [hasUnsavedChanges, setTab]
   );
 
   const guardedSetMode = useCallback(
     (newMode: AppMode): void => {
-      if (hasActiveEdit) {
+      if (hasUnsavedChanges) {
         setPendingNavigation(() => (): void => setMode(newMode));
       } else {
         setMode(newMode);
       }
     },
-    [hasActiveEdit, setMode]
+    [hasUnsavedChanges, setMode]
   );
 
   const handleNavConfirm = useCallback((): void => {
@@ -288,7 +306,7 @@ function AppShell(): React.ReactElement {
       <ConfirmDialog
         isOpen={pendingNavigation !== null}
         title="Unsaved Changes"
-        message="You have unsaved edits. Discard them and navigate away?"
+        message="You have unsaved changes. Discard them and navigate away?"
         confirmLabel="Discard"
         cancelLabel="Stay"
         severity="warning"
@@ -309,7 +327,9 @@ function AppShell(): React.ReactElement {
       <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={guardedSetTab} />
 
       {/* Main content area: sidebar + tab content */}
-      <SidebarLayout sidebar={<TabSidebarWithActions optionProvider={filterOptionProvider} />}>
+      <SidebarLayout
+        sidebar={<TabSidebarWithActions optionProvider={filterOptionProvider} actions={collectionActions} />}
+      >
         <TabContent tab={activeTab} />
       </SidebarLayout>
 

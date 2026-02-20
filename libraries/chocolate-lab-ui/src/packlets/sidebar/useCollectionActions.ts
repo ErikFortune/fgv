@@ -29,7 +29,7 @@
  * @packageDocumentation
  */
 
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
 import { ZipFileTree } from '@fgv/ts-extras';
@@ -44,6 +44,7 @@ import {
 import { selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type ICreateCollectionData } from './CreateCollectionDialog';
+import { type ImportCollisionResolution } from './ImportCollisionDialog';
 
 // ============================================================================
 // Sub-Library Accessor (maps tab → entity sub-library)
@@ -107,6 +108,17 @@ function getSubLibraryPathForTab(tab: string): string | undefined {
 // ============================================================================
 
 /**
+ * Pending import state when a collection ID collision is detected.
+ * @public
+ */
+export interface IPendingImport {
+  /** The collection ID that collided */
+  readonly collectionId: string;
+  /** Number of items in the incoming collection */
+  readonly itemCount: number;
+}
+
+/**
  * Collection management action callbacks returned by useCollectionActions.
  * @public
  */
@@ -131,6 +143,10 @@ export interface ICollectionActions {
   readonly saveAll: () => Promise<void>;
   /** Whether any persistent trees have unsaved changes */
   readonly hasDirtyTrees: boolean;
+  /** Non-null when a collection ID collision is awaiting user resolution */
+  readonly pendingImport: IPendingImport | null;
+  /** Resolve a pending import collision with the user's chosen strategy */
+  readonly resolveImportCollision: (resolution: ImportCollisionResolution) => void;
 }
 
 // ============================================================================
@@ -151,6 +167,15 @@ export function useCollectionActions(): ICollectionActions {
   const activeTab = useNavigationStore(selectActiveTab);
 
   const canAddDirectory = typeof window !== 'undefined' && supportsFileSystemAccess(window);
+
+  const [pendingImport, setPendingImport] = useState<IPendingImport | null>(null);
+  const collisionResolverRef = useRef<((resolution: ImportCollisionResolution) => void) | null>(null);
+
+  const resolveImportCollision = useCallback((resolution: ImportCollisionResolution): void => {
+    collisionResolverRef.current?.(resolution);
+    collisionResolverRef.current = null;
+    setPendingImport(null);
+  }, []);
 
   const addDirectory = useCallback(async (): Promise<void> => {
     if (!canAddDirectory) {
@@ -396,11 +421,6 @@ export function useCollectionActions(): ICollectionActions {
     const text = await file.text();
     const collectionId = file.name.replace(/\.(yaml|yml|json)$/i, '') as CollectionId;
 
-    if (subLibrary.collections.has(collectionId)) {
-      workspace.data.logger.error(`Collection '${collectionId}' already exists`);
-      return;
-    }
-
     const parseResult = LibraryData.Converters.collectionYamlConverter(JsonConverters.jsonObject).convert(
       text
     );
@@ -410,23 +430,45 @@ export function useCollectionActions(): ICollectionActions {
     }
 
     const sourceFile = parseResult.value;
+    const itemCount = Object.keys(sourceFile.items).length;
+
+    let targetId = collectionId;
+
+    if (subLibrary.collections.has(collectionId)) {
+      const resolution = await new Promise<ImportCollisionResolution>((resolve) => {
+        collisionResolverRef.current = resolve;
+        setPendingImport({ collectionId, itemCount });
+      });
+
+      if (resolution === 'skip') {
+        workspace.data.logger.info(`Skipped import of '${collectionId}' (already exists)`);
+        return;
+      } else if (resolution === 'overwrite') {
+        const deleteResult = subLibrary.removeCollection(collectionId);
+        if (deleteResult.isFailure()) {
+          workspace.data.logger.error(`Cannot overwrite '${collectionId}': ${deleteResult.message}`);
+          return;
+        }
+      } else {
+        targetId = resolution.rename as CollectionId;
+      }
+    }
+
     const addResult = subLibrary.addCollectionWithItems(
-      collectionId,
+      targetId,
       Array.from(Object.entries(sourceFile.items)),
       { metadata: sourceFile.metadata }
     );
 
     if (addResult.isFailure()) {
       workspace.data.logger.errorWithDetail(
-        `Failed to import '${collectionId}' into ${activeTab} — is this the right tab?`,
+        `Failed to import '${targetId}' into ${activeTab} — is this the right tab?`,
         addResult.message
       );
       return;
     }
 
-    workspace.data.logger.info(
-      `Imported collection '${collectionId}' with ${Object.keys(sourceFile.items).length} items`
-    );
+    workspace.data.logger.info(`Imported collection '${targetId}' with ${itemCount} items`);
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();
   }, [workspace, reactiveWorkspace, activeTab]);
@@ -519,7 +561,9 @@ export function useCollectionActions(): ICollectionActions {
     importCollection,
     openCollectionFromFile,
     saveAll,
-    hasDirtyTrees: reactiveWorkspace.hasDirtyTrees
+    hasDirtyTrees: reactiveWorkspace.hasDirtyTrees,
+    pendingImport,
+    resolveImportCollision
   };
 }
 
