@@ -174,7 +174,14 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
 function TabSidebarWithActions(props: {
   readonly optionProvider: WorkspaceFilterOptionProvider;
 }): React.ReactElement {
-  const { addDirectory, createCollection, deleteCollection } = useCollectionActions();
+  const {
+    addDirectory,
+    createCollection,
+    deleteCollection,
+    exportCollection,
+    exportAllAsZip,
+    importCollection
+  } = useCollectionActions();
 
   return (
     <TabSidebar
@@ -182,6 +189,9 @@ function TabSidebarWithActions(props: {
       onAddDirectory={addDirectory}
       onCreateCollection={createCollection}
       onDeleteCollection={deleteCollection}
+      onExportCollection={exportCollection}
+      onExportAllAsZip={exportAllAsZip}
+      onImportCollection={importCollection}
     />
   );
 }

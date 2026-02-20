@@ -96,6 +96,12 @@ export interface ITabSidebarProps {
   readonly onCreateCollection?: (data: ICreateCollectionData) => void;
   /** Callback when delete is clicked for a mutable collection */
   readonly onDeleteCollection?: (collectionId: string) => void;
+  /** Callback when export is clicked for a mutable collection */
+  readonly onExportCollection?: (collectionId: string) => void;
+  /** Callback when "Export All" zip is clicked in the collection section header */
+  readonly onExportAllAsZip?: () => void;
+  /** Callback when "Import Collection" is clicked in the collection section header */
+  readonly onImportCollection?: () => void;
 }
 
 // ============================================================================
@@ -117,7 +123,10 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     optionProvider = PLACEHOLDER_PROVIDER,
     onAddDirectory,
     onCreateCollection,
-    onDeleteCollection
+    onDeleteCollection,
+    onExportCollection,
+    onExportAllAsZip,
+    onImportCollection
   } = props;
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -223,6 +232,9 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onAddDirectory={onAddDirectory}
         onCreateCollection={onCreateCollection ? handleOpenCreateDialog : undefined}
         onDeleteCollection={onDeleteCollection ? handleRequestDeleteCollection : undefined}
+        onExportCollection={onExportCollection}
+        onExportAllAsZip={onExportAllAsZip}
+        onImportCollection={onImportCollection}
       />
 
       {onCreateCollection && (

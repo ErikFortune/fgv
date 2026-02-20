@@ -75,6 +75,12 @@ export interface ICollectionSectionProps {
   readonly onCreateCollection?: () => void;
   /** Callback when delete is clicked for a mutable collection */
   readonly onDeleteCollection?: (collectionId: string) => void;
+  /** Callback when export is clicked for a mutable collection */
+  readonly onExportCollection?: (collectionId: string) => void;
+  /** Callback when "Export All as Zip" is clicked (header-level) */
+  readonly onExportAllAsZip?: () => void;
+  /** Callback when "Import Collection" is clicked (header-level) */
+  readonly onImportCollection?: () => void;
   /** Whether the section starts collapsed */
   readonly defaultCollapsed?: boolean;
 }
@@ -87,8 +93,9 @@ function CollectionRow(props: {
   readonly collection: ICollectionRowItem;
   readonly onToggleVisibility: (id: string) => void;
   readonly onDelete?: (id: string) => void;
+  readonly onExport?: (id: string) => void;
 }): React.ReactElement {
-  const { collection, onToggleVisibility, onDelete } = props;
+  const { collection, onToggleVisibility, onDelete, onExport } = props;
   const displayName = collection.name ?? collection.id;
 
   return (
@@ -128,6 +135,18 @@ function CollectionRow(props: {
       </span>
       <span className="shrink-0 text-xs text-gray-400">{collection.itemCount}</span>
 
+      {/* Export button (mutable only) */}
+      {collection.isMutable && onExport && (
+        <button
+          onClick={(): void => onExport(collection.id)}
+          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-gray-300 hover:text-choco-accent transition-colors"
+          title={`Export ${displayName}`}
+          aria-label={`Export ${displayName}`}
+        >
+          ↓
+        </button>
+      )}
+
       {/* Delete button (mutable only) */}
       {collection.isMutable && onDelete && (
         <button
@@ -136,7 +155,7 @@ function CollectionRow(props: {
           title={`Remove ${displayName}`}
           aria-label={`Remove ${displayName}`}
         >
-          {'\u00D7'}
+          {'×'}
         </button>
       )}
     </div>
@@ -162,6 +181,9 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
     onAddDirectory,
     onCreateCollection,
     onDeleteCollection,
+    onExportCollection,
+    onExportAllAsZip,
+    onImportCollection,
     defaultCollapsed = false
   } = props;
 
@@ -198,6 +220,26 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
               +{'\uD83D\uDCC1'}
             </button>
           )}
+          {onExportAllAsZip && (
+            <button
+              onClick={onExportAllAsZip}
+              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              title="Export all mutable collections as zip"
+              aria-label="Export all as zip"
+            >
+              ↓{'🗂'}
+            </button>
+          )}
+          {onImportCollection && (
+            <button
+              onClick={onImportCollection}
+              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              title="Import collection from file"
+              aria-label="Import collection from file"
+            >
+              ↑
+            </button>
+          )}
           {onCreateCollection && (
             <button
               onClick={onCreateCollection}
@@ -223,6 +265,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
                 collection={collection}
                 onToggleVisibility={onToggleVisibility}
                 onDelete={onDeleteCollection}
+                onExport={onExportCollection}
               />
             ))
           )}

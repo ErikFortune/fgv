@@ -31,8 +31,9 @@
 
 import { useCallback } from 'react';
 
-import { type FileTree } from '@fgv/ts-json-base';
-import { type CollectionId, LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
+import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
+import { ZipFileTree } from '@fgv/ts-extras';
+import { type CollectionId, Helpers, LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
 import { FileApiTreeAccessors, safeShowDirectoryPicker, supportsFileSystemAccess } from '@fgv/ts-web-extras';
 
 import { selectActiveTab, useNavigationStore } from '../navigation';
@@ -113,6 +114,12 @@ export interface ICollectionActions {
   readonly createCollection: (data: ICreateCollectionData) => void;
   /** Delete a mutable collection by ID */
   readonly deleteCollection: (collectionId: string) => void;
+  /** Export a mutable collection to a YAML file download */
+  readonly exportCollection: (collectionId: string) => void;
+  /** Export all mutable collections for the active tab as a zip download */
+  readonly exportAllAsZip: () => void;
+  /** Import a collection from a YAML/JSON file (opens file picker) */
+  readonly importCollection: () => Promise<void>;
   /** Save all dirty persistent trees to disk */
   readonly saveAll: () => Promise<void>;
   /** Whether any persistent trees have unsaved changes */
@@ -279,6 +286,141 @@ export function useCollectionActions(): ICollectionActions {
     [workspace, reactiveWorkspace, activeTab]
   );
 
+  const exportCollection = useCallback(
+    (collectionId: string): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      if (!subLibrary) {
+        workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+        return;
+      }
+
+      const collectionResult = subLibrary.collections.get(collectionId as CollectionId).asResult;
+      if (collectionResult.isFailure()) {
+        workspace.data.logger.error(`Collection '${collectionId}' not found`);
+        return;
+      }
+
+      const collection = collectionResult.value;
+      const yamlResult = Helpers.serializeToYaml({
+        metadata: collection.metadata ?? {},
+        items: Object.fromEntries(collection.items.entries())
+      });
+
+      if (yamlResult.isFailure()) {
+        workspace.data.logger.error(
+          `Failed to serialize collection '${collectionId}': ${yamlResult.message}`
+        );
+        return;
+      }
+
+      const blob = new Blob([yamlResult.value], { type: 'text/yaml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${collectionId}.yaml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      workspace.data.logger.info(`Exported collection '${collectionId}'`);
+    },
+    [workspace, activeTab]
+  );
+
+  const exportAllAsZip = useCallback((): void => {
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    if (!subLibrary) {
+      workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+      return;
+    }
+
+    const files: Array<{ path: string; contents: string }> = [];
+    for (const [id, collection] of subLibrary.collections.entries()) {
+      if (!collection.isMutable) continue;
+      const yamlResult = Helpers.serializeToYaml({
+        metadata: collection.metadata ?? {},
+        items: Object.fromEntries(collection.items.entries())
+      });
+      if (yamlResult.isSuccess()) {
+        files.push({ path: `${id}.yaml`, contents: yamlResult.value });
+      } else {
+        workspace.data.logger.warn(`Skipping collection '${id}': ${yamlResult.message}`);
+      }
+    }
+
+    if (files.length === 0) {
+      workspace.data.logger.warn('No mutable collections to export');
+      return;
+    }
+
+    const zipResult = ZipFileTree.createZipFromTextFiles(files);
+    if (zipResult.isFailure()) {
+      workspace.data.logger.error(`Failed to create zip: ${zipResult.message}`);
+      return;
+    }
+
+    const blob = new Blob([zipResult.value.buffer as ArrayBuffer], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeTab}-collections.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    workspace.data.logger.info(`Exported ${files.length} collection(s) as zip`);
+  }, [workspace, activeTab]);
+
+  const importCollection = useCallback(async (): Promise<void> => {
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    if (!subLibrary) {
+      workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.yaml,.yml,.json';
+
+    const file = await new Promise<File | null>((resolve) => {
+      input.onchange = (): void => resolve(input.files?.[0] ?? null);
+      input.oncancel = (): void => resolve(null);
+      input.click();
+    });
+
+    if (!file) return;
+
+    const text = await file.text();
+    const collectionId = file.name.replace(/\.(yaml|yml|json)$/i, '') as CollectionId;
+
+    if (subLibrary.collections.has(collectionId)) {
+      workspace.data.logger.error(`Collection '${collectionId}' already exists`);
+      return;
+    }
+
+    const parseResult = LibraryData.Converters.collectionYamlConverter(JsonConverters.jsonObject).convert(
+      text
+    );
+    if (parseResult.isFailure()) {
+      workspace.data.logger.error(`Failed to parse '${file.name}': ${parseResult.message}`);
+      return;
+    }
+
+    const sourceFile = parseResult.value;
+    const addResult = subLibrary.addCollectionWithItems(
+      collectionId,
+      Array.from(Object.entries(sourceFile.items)),
+      { metadata: sourceFile.metadata }
+    );
+
+    if (addResult.isFailure()) {
+      workspace.data.logger.error(`Failed to import '${collectionId}': ${addResult.message}`);
+      return;
+    }
+
+    workspace.data.logger.info(
+      `Imported collection '${collectionId}' with ${Object.keys(sourceFile.items).length} items`
+    );
+    workspace.data.clearCache();
+    reactiveWorkspace.notifyChange();
+  }, [workspace, reactiveWorkspace, activeTab]);
+
   const saveAll = useCallback(async (): Promise<void> => {
     const result = await reactiveWorkspace.syncAllToDisk();
     if (result.isFailure()) {
@@ -294,6 +436,9 @@ export function useCollectionActions(): ICollectionActions {
     addDirectory,
     createCollection,
     deleteCollection,
+    exportCollection,
+    exportAllAsZip,
+    importCollection,
     saveAll,
     hasDirtyTrees: reactiveWorkspace.hasDirtyTrees
   };
