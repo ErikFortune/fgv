@@ -243,7 +243,7 @@ type BooleanValidatorConstructorParams<TC = unknown> = GenericValidatorConstruct
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "BootLogger"
 //
 // @public
-class BootLogger implements ILogger {
+class BootLogger implements IDetailLogger {
     constructor(logLevel?: ReporterLogLevel);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -253,6 +253,10 @@ class BootLogger implements ILogger {
     //
     // (undocumented)
     error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -271,6 +275,10 @@ class BootLogger implements ILogger {
     //
     // (undocumented)
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
 }
 
 // @public
@@ -1420,6 +1428,12 @@ interface IConvertingResultMapConstructorParams<TK extends string, TSRC, TTARGET
     inner: TSRCMAP;
 }
 
+// @public
+interface IDetailLogger extends ILogger {
+    errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
+    warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1782,6 +1796,11 @@ function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext
 // @public
 export function isDeferredResult<T>(result: Result<T> | DeferredResult<T>): result is DeferredResult<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IDetailLogger"
+//
+// @public
+function isDetailLogger(logger: ILogger): logger is IDetailLogger;
+
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
 
@@ -1901,7 +1920,7 @@ function literal_2<T extends string | number | boolean | symbol | null | undefin
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-abstract class LoggerBase implements ILogger {
+abstract class LoggerBase implements IDetailLogger {
     protected constructor(logLevel?: ReporterLogLevel);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1911,6 +1930,10 @@ abstract class LoggerBase implements ILogger {
     //
     // (undocumented)
     error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     protected _format(message?: unknown, ...parameters: unknown[]): string;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1930,6 +1953,10 @@ abstract class LoggerBase implements ILogger {
     //
     // (undocumented)
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
 }
 
 declare namespace Logging {
@@ -1937,8 +1964,10 @@ declare namespace Logging {
         BootLogger,
         shouldLog,
         stringifyLogValue,
+        isDetailLogger,
         ReporterLogLevel,
         ILogger,
+        IDetailLogger,
         LoggerBase,
         InMemoryLogger,
         ConsoleLogger,
@@ -1958,7 +1987,7 @@ type LogMessageFormatter<TD = unknown> = (message: string, detail?: TD) => strin
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
+class LogReporter<T, TD = unknown> implements IDetailLogger, IResultReporter<T, TD> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params?: ILogReporterCreateParams<T, TD>);
@@ -1974,6 +2003,10 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     //
     // (undocumented)
     error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1998,6 +2031,10 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     //
     // (undocumented)
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     withValueFormatter<TN>(valueFormatter: LogValueFormatter<TN, TD>): LogReporter<TN, TD>;

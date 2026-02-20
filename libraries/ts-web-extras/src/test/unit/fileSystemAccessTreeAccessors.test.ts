@@ -106,6 +106,153 @@ describe('FileSystemAccessTreeAccessors', () => {
     });
   });
 
+  describe('fromFileHandle', () => {
+    test('creates single-file accessors from a file handle', async () => {
+      const fileHandle = createMockFileHandle('collection.yaml', {
+        content: 'metadata:\n  name: Test\nitems: {}',
+        type: 'text/plain'
+      });
+
+      const result = await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle);
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        expect(accessors).toBeInstanceOf(FileSystemAccessTreeAccessors);
+        expect(accessors.getFileContents('/collection.yaml')).toSucceedWith(
+          'metadata:\n  name: Test\nitems: {}'
+        );
+      });
+    });
+
+    test('fails when write permission required but not granted', async () => {
+      const fileHandle = createMockFileHandle(
+        'collection.yaml',
+        { content: 'content', type: 'text/plain' },
+        undefined,
+        { hasWritePermission: false }
+      );
+
+      const result = await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle, {
+        requireWritePermission: true
+      });
+      expect(result).toFailWith(/write permission required/i);
+    });
+
+    test('succeeds read-only when write permission not required', async () => {
+      const fileHandle = createMockFileHandle(
+        'collection.yaml',
+        { content: 'content', type: 'text/plain' },
+        undefined,
+        { hasWritePermission: false }
+      );
+
+      const result = await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle, {
+        requireWritePermission: false
+      });
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        expect(accessors.getFileContents('/collection.yaml')).toSucceedWith('content');
+      });
+    });
+
+    test('grants permission via prompt', async () => {
+      const fileHandle = createMockFileHandle(
+        'collection.yaml',
+        { content: 'content', type: 'text/plain' },
+        undefined,
+        { permissionStatus: 'prompt', requestGranted: true }
+      );
+
+      const result = await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle);
+      expect(result).toSucceed();
+    });
+
+    test('fails gracefully when queryPermission throws', async () => {
+      const fileHandle = {
+        kind: 'file' as const,
+        name: 'collection.yaml',
+        async getFile(): Promise<File> {
+          return createMockFileHandle('collection.yaml', {
+            content: 'content',
+            type: 'text/plain'
+          }).getFile();
+        },
+        async createWritable(): Promise<FileSystemWritableFileStream> {
+          throw new Error('not writable');
+        },
+        async queryPermission(): Promise<PermissionState> {
+          throw new Error('Permission API unavailable');
+        },
+        async requestPermission(): Promise<PermissionState> {
+          throw new Error('Permission API unavailable');
+        },
+        isSameEntry: async (): Promise<boolean> => false
+      } as unknown as import('../../packlets/file-api-types').FileSystemFileHandle;
+
+      const result = await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle, {
+        requireWritePermission: true
+      });
+      expect(result).toFailWith(/write permission required/i);
+    });
+
+    test('places file at specified filePath when filePath is provided', async () => {
+      const fileHandle = createMockFileHandle('collection.yaml', {
+        content: 'items: {}',
+        type: 'text/plain'
+      });
+
+      const result = await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle, {
+        filePath: '/data/confections/collection.yaml'
+      });
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        expect(accessors.getFileContents('/data/confections/collection.yaml')).toSucceedWith('items: {}');
+      });
+    });
+
+    test('write-back syncs to original file handle', async () => {
+      let writtenContent = '';
+      const fileHandle = createMockFileHandle(
+        'collection.yaml',
+        { content: 'original', type: 'text/plain' },
+        (content) => {
+          writtenContent = content;
+        }
+      );
+
+      const accessors = (await FileSystemAccessTreeAccessors.fromFileHandle(fileHandle)).orThrow();
+      accessors.saveFileContents('/collection.yaml', 'modified').orThrow();
+      expect(accessors.isDirty()).toBe(true);
+
+      const syncResult = await accessors.syncToDisk();
+      expect(syncResult).toSucceed();
+      expect(accessors.isDirty()).toBe(false);
+      expect(writtenContent).toBe('modified');
+    });
+  });
+
+  describe('FileApiTreeAccessors.createPersistentFromFile', () => {
+    test('creates a FileTree from a single file handle', async () => {
+      const fileHandle = createMockFileHandle('collection.yaml', {
+        content: 'metadata:\n  name: Test\nitems: {}',
+        type: 'text/plain'
+      });
+
+      const result = await FileApiTreeAccessors.createPersistentFromFile(fileHandle);
+      expect(result).toSucceedAndSatisfy((tree) => {
+        expect(tree).toBeInstanceOf(FileTree.FileTree);
+        expect(tree.getFile('/collection.yaml')).toSucceed();
+      });
+    });
+
+    test('fails when file handle cannot be opened', async () => {
+      const fileHandle = createMockFileHandle('collection.yaml', {
+        content: 'content',
+        type: 'text/plain',
+        failOnRead: true
+      });
+
+      const result = await FileApiTreeAccessors.createPersistentFromFile(fileHandle);
+      expect(result).toFail();
+    });
+  });
+
   describe('persistence operations', () => {
     describe('isDirty and getDirtyPaths', () => {
       test('returns false when no changes made', async () => {

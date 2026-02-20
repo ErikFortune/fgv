@@ -18,7 +18,7 @@ both [ILogger](../interfaces/ILogger.md) and [IResultReporter](../../../../inter
 
 ## Implements
 
-- [`ILogger`](../interfaces/ILogger.md)
+- [`IDetailLogger`](../interfaces/IDetailLogger.md)
 - [`IResultReporter`](../../../../interfaces/IResultReporter.md)\<`T`, `TD`\>
 
 ## Constructors
@@ -63,7 +63,7 @@ The level of logging to be used.
 
 #### Implementation of
 
-[`ILogger`](../interfaces/ILogger.md).[`logLevel`](../interfaces/ILogger.md#loglevel)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`logLevel`](../interfaces/IDetailLogger.md#loglevel)
 
 ## Methods
 
@@ -89,7 +89,7 @@ Logs a detail message.
 
 #### Implementation of
 
-[`ILogger`](../interfaces/ILogger.md).[`detail`](../interfaces/ILogger.md#detail)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`detail`](../interfaces/IDetailLogger.md#detail)
 
 ***
 
@@ -115,7 +115,30 @@ Logs an error message.
 
 #### Implementation of
 
-[`ILogger`](../interfaces/ILogger.md).[`error`](../interfaces/ILogger.md#error)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`error`](../interfaces/IDetailLogger.md#error)
+
+***
+
+### errorWithDetail()
+
+> **errorWithDetail**(`message`, `detail`): [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+Logs a short error summary at `error` level, then emits `detail` at `detail` level.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `message` | `string` | Short human-readable summary. |
+| `detail` | `unknown` | Full detail (e.g. raw converter error) logged at `detail` level. |
+
+#### Returns
+
+[`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+#### Implementation of
+
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`errorWithDetail`](../interfaces/IDetailLogger.md#errorwithdetail)
 
 ***
 
@@ -141,7 +164,7 @@ Logs an info message.
 
 #### Implementation of
 
-[`ILogger`](../interfaces/ILogger.md).[`info`](../interfaces/ILogger.md#info)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`info`](../interfaces/IDetailLogger.md#info)
 
 ***
 
@@ -168,7 +191,7 @@ Logs a message at the given level.
 
 #### Implementation of
 
-[`ILogger`](../interfaces/ILogger.md).[`log`](../interfaces/ILogger.md#log)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`log`](../interfaces/IDetailLogger.md#log)
 
 ***
 
@@ -243,7 +266,30 @@ Logs a warning message.
 
 #### Implementation of
 
-[`ILogger`](../interfaces/ILogger.md).[`warn`](../interfaces/ILogger.md#warn)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`warn`](../interfaces/IDetailLogger.md#warn)
+
+***
+
+### warnWithDetail()
+
+> **warnWithDetail**(`message`, `detail`): [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+Logs a short warning summary at `warning` level, then emits `detail` at `detail` level.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `message` | `string` | Short human-readable summary. |
+| `detail` | `unknown` | Full detail logged at `detail` level. |
+
+#### Returns
+
+[`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+#### Implementation of
+
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`warnWithDetail`](../interfaces/IDetailLogger.md#warnwithdetail)
 
 ***
 

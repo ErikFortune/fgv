@@ -2,94 +2,27 @@
 
 ***
 
-[@fgv/ts-utils](../../../../README.md) / [Logging](../README.md) / ConsoleLogger
+[@fgv/ts-utils](../../../../README.md) / [Logging](../README.md) / IDetailLogger
 
-# Class: ConsoleLogger
+# Interface: IDetailLogger
 
-A console logger that outputs messages to the console.
+Extended logger interface that supports logging a short summary message at a
+primary level (error/warn) while emitting the full detail at `detail` level.
+
+The detail is suppressed by default (requires log level `'detail'` or `'all'`),
+keeping the primary log clean while preserving the full context for debugging.
 
 ## Extends
 
-- [`LoggerBase`](LoggerBase.md)
-
-## Constructors
-
-### Constructor
-
-> **new ConsoleLogger**(`logLevel?`): `ConsoleLogger`
-
-Creates a new console logger.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `logLevel?` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | The level of logging to be used. |
-
-#### Returns
-
-`ConsoleLogger`
-
-#### Overrides
-
-[`LoggerBase`](LoggerBase.md).[`constructor`](LoggerBase.md#constructor)
+- [`ILogger`](ILogger.md)
 
 ## Properties
 
-| Property | Modifier | Type | Default value | Description |
-| ------ | ------ | ------ | ------ | ------ |
-| <a id="loglevel"></a> `logLevel` | `public` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | `'info'` | The level of logging to be used. |
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| <a id="loglevel"></a> `logLevel` | `readonly` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | The level of logging to be used. |
 
 ## Methods
-
-### \_format()
-
-> **\_format**(`message?`, ...`parameters?`): `string`
-
-Formats a message and parameters into a string.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `message?` | `unknown` | The message to format. |
-| ...`parameters?` | `unknown`[] | The parameters to format. |
-
-#### Returns
-
-`string`
-
-The formatted message.
-
-#### Inherited from
-
-[`LoggerBase`](LoggerBase.md).[`_format`](LoggerBase.md#_format)
-
-***
-
-### \_suppressLog()
-
-> **\_suppressLog**(`__level`, `__message?`, ...`__parameters?`): [`Success`](../../../../classes/Success.md)\<`undefined`\>
-
-Inner method called for suppressed log messages.
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `__level` | [`MessageLogLevel`](../../../../type-aliases/MessageLogLevel.md) |
-| `__message?` | `unknown` |
-| ...`__parameters?` | `unknown`[] |
-
-#### Returns
-
-[`Success`](../../../../classes/Success.md)\<`undefined`\>
-
-#### Inherited from
-
-[`LoggerBase`](LoggerBase.md).[`_suppressLog`](LoggerBase.md#_suppresslog)
-
-***
 
 ### detail()
 
@@ -113,7 +46,7 @@ Logs a detail message.
 
 #### Inherited from
 
-[`LoggerBase`](LoggerBase.md).[`detail`](LoggerBase.md#detail)
+[`ILogger`](ILogger.md).[`detail`](ILogger.md#detail)
 
 ***
 
@@ -139,7 +72,7 @@ Logs an error message.
 
 #### Inherited from
 
-[`LoggerBase`](LoggerBase.md).[`error`](LoggerBase.md#error)
+[`ILogger`](ILogger.md).[`error`](ILogger.md#error)
 
 ***
 
@@ -159,10 +92,6 @@ Logs a short error summary at `error` level, then emits `detail` at `detail` lev
 #### Returns
 
 [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
-
-#### Inherited from
-
-[`LoggerBase`](LoggerBase.md).[`errorWithDetail`](LoggerBase.md#errorwithdetail)
 
 ***
 
@@ -188,7 +117,7 @@ Logs an info message.
 
 #### Inherited from
 
-[`LoggerBase`](LoggerBase.md).[`info`](LoggerBase.md#info)
+[`ILogger`](ILogger.md).[`info`](ILogger.md#info)
 
 ***
 
@@ -215,7 +144,7 @@ Logs a message at the given level.
 
 #### Inherited from
 
-[`LoggerBase`](LoggerBase.md).[`log`](LoggerBase.md#log)
+[`ILogger`](ILogger.md).[`log`](ILogger.md#log)
 
 ***
 
@@ -241,7 +170,7 @@ Logs a warning message.
 
 #### Inherited from
 
-[`LoggerBase`](LoggerBase.md).[`warn`](LoggerBase.md#warn)
+[`ILogger`](ILogger.md).[`warn`](ILogger.md#warn)
 
 ***
 
@@ -261,7 +190,3 @@ Logs a short warning summary at `warning` level, then emits `detail` at `detail`
 #### Returns
 
 [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
-
-#### Inherited from
-
-[`LoggerBase`](LoggerBase.md).[`warnWithDetail`](LoggerBase.md#warnwithdetail)

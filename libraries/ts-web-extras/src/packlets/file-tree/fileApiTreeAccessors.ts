@@ -131,6 +131,28 @@ export class FileApiTreeAccessors<TCT extends string = string> {
   }
 
   /**
+   * Create a persistent FileTree from a single File System Access API file handle.
+   * The tree contains exactly one file at `/<filename>`.
+   * Changes can be synced back to the original file via `syncToDisk()`.
+   *
+   * @param fileHandle - FileSystemFileHandle to load
+   * @param params - Optional parameters including autoSync and permission settings
+   * @returns Promise resolving to a FileTree with persistence capability
+   * @public
+   */
+  public static async createPersistentFromFile<TCT extends string = string>(
+    fileHandle: FileSystemFileHandle,
+    params?: IFileSystemAccessTreeParams<TCT>
+  ): Promise<Result<FileTree.FileTree<TCT>>> {
+    const accessorsResult = await FileSystemAccessTreeAccessors.fromFileHandle<TCT>(fileHandle, params);
+    if (accessorsResult.isFailure()) {
+      return fail(accessorsResult.message);
+    }
+
+    return FileTree.FileTree.create<TCT>(accessorsResult.value);
+  }
+
+  /**
    * Create a persistent FileTree from browser localStorage.
    * Changes to files can be synced back to localStorage.
    *

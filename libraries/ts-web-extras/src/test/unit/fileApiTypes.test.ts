@@ -279,6 +279,18 @@ describe('File API Types', () => {
 
       await expect(safeShowOpenFilePicker(mockWindow)).rejects.toThrow('User cancelled file picker');
     });
+
+    test('returns null when user cancels (AbortError)', async () => {
+      const abortError = new DOMException('The user aborted a request.', 'AbortError');
+      const mockWindow = {
+        showOpenFilePicker: jest.fn().mockRejectedValue(abortError),
+        showSaveFilePicker: jest.fn(),
+        showDirectoryPicker: jest.fn()
+      } as unknown as WindowWithFsAccess;
+
+      const result = await safeShowOpenFilePicker(mockWindow);
+      expect(result).toBeNull();
+    });
   });
 
   describe('safeShowSaveFilePicker', () => {
@@ -356,6 +368,18 @@ describe('File API Types', () => {
       } as unknown as WindowWithFsAccess;
 
       await expect(safeShowSaveFilePicker(mockWindow)).rejects.toThrow('Save operation failed');
+    });
+
+    test('returns null when user cancels (AbortError)', async () => {
+      const abortError = new DOMException('The user aborted a request.', 'AbortError');
+      const mockWindow = {
+        showOpenFilePicker: jest.fn(),
+        showSaveFilePicker: jest.fn().mockRejectedValue(abortError),
+        showDirectoryPicker: jest.fn()
+      } as unknown as WindowWithFsAccess;
+
+      const result = await safeShowSaveFilePicker(mockWindow);
+      expect(result).toBeNull();
     });
   });
 
@@ -440,6 +464,18 @@ describe('File API Types', () => {
       } as unknown as WindowWithFsAccess;
 
       await expect(safeShowDirectoryPicker(mockWindow)).rejects.toThrow('Directory access denied');
+    });
+
+    test('returns null when user cancels (AbortError)', async () => {
+      const abortError = new DOMException('The user aborted a request.', 'AbortError');
+      const mockWindow = {
+        showOpenFilePicker: jest.fn(),
+        showSaveFilePicker: jest.fn(),
+        showDirectoryPicker: jest.fn().mockRejectedValue(abortError)
+      } as unknown as WindowWithFsAccess;
+
+      const result = await safeShowDirectoryPicker(mockWindow);
+      expect(result).toBeNull();
     });
   });
 

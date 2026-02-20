@@ -104,14 +104,25 @@ export class MockFileSystemWritableFileStream {
 }
 
 /**
+ * Options for mock file handle
+ */
+export interface MockFileHandleOptions {
+  hasWritePermission?: boolean;
+  permissionStatus?: PermissionState;
+  requestGranted?: boolean;
+}
+
+/**
  * Mock implementation of FileSystemFileHandle
  */
 export function createMockFileHandle(
   name: string,
   data: MockFileData,
-  onWrite?: (content: string) => void
+  onWrite?: (content: string) => void,
+  options: MockFileHandleOptions = {}
 ): FileSystemFileHandle {
   let currentContent = data.content;
+  const { hasWritePermission = true, permissionStatus, requestGranted = true } = options;
 
   const handle = {
     kind: 'file' as const,
@@ -138,10 +149,22 @@ export function createMockFileHandle(
     },
 
     async queryPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState> {
+      if (permissionStatus) {
+        return permissionStatus;
+      }
+      if (descriptor?.mode === 'readwrite' && !hasWritePermission) {
+        return 'denied';
+      }
       return 'granted';
     },
 
     async requestPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState> {
+      if (permissionStatus === 'prompt') {
+        return requestGranted ? 'granted' : 'denied';
+      }
+      if (descriptor?.mode === 'readwrite' && !hasWritePermission) {
+        return 'denied';
+      }
       return 'granted';
     },
 

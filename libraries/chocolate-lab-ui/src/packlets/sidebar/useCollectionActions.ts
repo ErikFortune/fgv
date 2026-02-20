@@ -34,7 +34,12 @@ import { useCallback } from 'react';
 import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
 import { ZipFileTree } from '@fgv/ts-extras';
 import { type CollectionId, Helpers, LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
-import { FileApiTreeAccessors, safeShowDirectoryPicker, supportsFileSystemAccess } from '@fgv/ts-web-extras';
+import {
+  FileApiTreeAccessors,
+  safeShowDirectoryPicker,
+  safeShowOpenFilePicker,
+  supportsFileSystemAccess
+} from '@fgv/ts-web-extras';
 
 import { selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -118,8 +123,10 @@ export interface ICollectionActions {
   readonly exportCollection: (collectionId: string) => void;
   /** Export all mutable collections for the active tab as a zip download */
   readonly exportAllAsZip: () => void;
-  /** Import a collection from a YAML/JSON file (opens file picker) */
+  /** Import a collection from a YAML/JSON file (opens file picker, in-memory only) */
   readonly importCollection: () => Promise<void>;
+  /** Open a collection YAML/JSON file for in-place editing via File System Access API */
+  readonly openCollectionFromFile: () => Promise<void>;
   /** Save all dirty persistent trees to disk */
   readonly saveAll: () => Promise<void>;
   /** Whether any persistent trees have unsaved changes */
@@ -410,7 +417,10 @@ export function useCollectionActions(): ICollectionActions {
     );
 
     if (addResult.isFailure()) {
-      workspace.data.logger.error(`Failed to import '${collectionId}': ${addResult.message}`);
+      workspace.data.logger.errorWithDetail(
+        `Failed to import '${collectionId}' into ${activeTab} — is this the right tab?`,
+        addResult.message
+      );
       return;
     }
 
@@ -420,6 +430,74 @@ export function useCollectionActions(): ICollectionActions {
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();
   }, [workspace, reactiveWorkspace, activeTab]);
+
+  const openCollectionFromFile = useCallback(async (): Promise<void> => {
+    if (!canAddDirectory) {
+      workspace.data.logger.warn('File System Access API not supported in this browser');
+      return;
+    }
+
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    if (!subLibrary) {
+      workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+      return;
+    }
+
+    const handles = await safeShowOpenFilePicker(window, {
+      multiple: false,
+      types: [{ description: 'Collection files', accept: { 'text/plain': ['.yaml', '.yml', '.json'] } }],
+      id: 'chocolate-lab-open-collection'
+    });
+
+    if (!handles || handles.length === 0) return;
+    const fileHandle = handles[0];
+
+    // Place the file at the sub-library path so the navigator can find it
+    // (e.g., /data/confections/common.yaml instead of /common.yaml)
+    const subLibraryPath = getSubLibraryPathForTab(activeTab);
+    const filePath = subLibraryPath ? `/${subLibraryPath}/${fileHandle.name}` : undefined;
+    const treeResult = await FileApiTreeAccessors.createPersistentFromFile(fileHandle, { filePath });
+    if (treeResult.isFailure()) {
+      workspace.data.logger.error(`Failed to open file: ${treeResult.message}`);
+      return;
+    }
+
+    const tree = treeResult.value;
+    const rootResult = tree.getDirectory('/');
+    if (rootResult.isFailure()) {
+      workspace.data.logger.error(`Failed to access file tree root: ${rootResult.message}`);
+      return;
+    }
+
+    const loadResult = subLibrary.loadFromFileTreeSource({
+      directory: rootResult.value,
+      load: true,
+      mutable: true
+    });
+
+    if (loadResult.isFailure()) {
+      workspace.data.logger.errorWithDetail(
+        `Failed to load '${fileHandle.name}' into ${activeTab} — is this the right tab?`,
+        loadResult.message
+      );
+      return;
+    }
+
+    workspace.data.logger.info(`Opened '${fileHandle.name}' (edits save back in place)`);
+
+    // Register the persistent tree for dirty tracking / save-in-place
+    const accessors = tree.hal;
+    if ('syncToDisk' in accessors && 'isDirty' in accessors) {
+      reactiveWorkspace.registerPersistentTree(fileHandle.name, {
+        tree,
+        accessors: accessors as FileTree.IPersistentFileTreeAccessors,
+        label: fileHandle.name
+      });
+    }
+
+    workspace.data.clearCache();
+    reactiveWorkspace.notifyChange();
+  }, [canAddDirectory, workspace, reactiveWorkspace, activeTab]);
 
   const saveAll = useCallback(async (): Promise<void> => {
     const result = await reactiveWorkspace.syncAllToDisk();
@@ -439,6 +517,7 @@ export function useCollectionActions(): ICollectionActions {
     exportCollection,
     exportAllAsZip,
     importCollection,
+    openCollectionFromFile,
     saveAll,
     hasDirtyTrees: reactiveWorkspace.hasDirtyTrees
   };

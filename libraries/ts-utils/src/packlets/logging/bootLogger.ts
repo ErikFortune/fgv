@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 import { MessageLogLevel, Success } from '../base';
-import { ILogger, InMemoryLogger, ReporterLogLevel } from './logger';
+import { IDetailLogger, ILogger, InMemoryLogger, isDetailLogger, ReporterLogLevel } from './logger';
 
 /**
  * A recorded log entry capturing the raw arguments before formatting.
@@ -59,7 +59,7 @@ interface IBootLogEntry {
  *
  * @public
  */
-export class BootLogger implements ILogger {
+export class BootLogger implements IDetailLogger {
   private _buffer: IBootLogEntry[] = [];
   private _delegate: ILogger;
   private _isReady: boolean = false;
@@ -145,5 +145,27 @@ export class BootLogger implements ILogger {
    */
   public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('error', message, ...parameters);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.errorWithDetail}
+   */
+  public errorWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    if (isDetailLogger(this._delegate)) {
+      return this._delegate.errorWithDetail(message, detail);
+    }
+    this.log('detail', detail);
+    return this.log('error', message);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.warnWithDetail}
+   */
+  public warnWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    if (isDetailLogger(this._delegate)) {
+      return this._delegate.warnWithDetail(message, detail);
+    }
+    this.log('detail', detail);
+    return this.log('warning', message);
   }
 }

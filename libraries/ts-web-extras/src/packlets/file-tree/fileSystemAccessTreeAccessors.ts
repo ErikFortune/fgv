@@ -44,6 +44,13 @@ export interface IFileSystemAccessTreeParams<TCT extends string = string>
    * @defaultValue true
    */
   requireWritePermission?: boolean;
+
+  /**
+   * Override the path at which the file is stored in the tree (for fromFileHandle).
+   * Must be an absolute path (e.g., '/data/confections/common.yaml').
+   * If omitted, defaults to `/<filename>`.
+   */
+  filePath?: string;
 }
 
 /**
@@ -118,6 +125,54 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
   }
 
   /**
+   * Creates a new FileSystemAccessTreeAccessors instance from a single file handle.
+   *
+   * The resulting tree contains exactly one file at `/<filename>`.
+   * `syncToDisk()` writes changes back to the original file via the File System Access API.
+   * New file creation is not supported on this tree (no parent directory handle).
+   *
+   * @param fileHandle - The FileSystemFileHandle to load.
+   * @param params - Optional parameters including autoSync and permission settings.
+   * @returns Promise resolving to a FileSystemAccessTreeAccessors instance.
+   * @public
+   */
+  public static async fromFileHandle<TCT extends string = string>(
+    fileHandle: FileSystemFileHandle,
+    params?: IFileSystemAccessTreeParams<TCT>
+  ): Promise<Result<FileSystemAccessTreeAccessors<TCT>>> {
+    try {
+      const hasWritePermission = await this._checkFileWritePermission(fileHandle);
+
+      if (!hasWritePermission && (params?.requireWritePermission ?? true)) {
+        return fail('Write permission required but not granted');
+      }
+
+      const file = await fileHandle.getFile();
+      const contents = await file.text();
+      const path = params?.filePath ?? `/${fileHandle.name}`;
+      const contentType = params?.inferContentType
+        ? params.inferContentType(path, file.type).orDefault()
+        : undefined;
+
+      const files: FileTree.IInMemoryFile<TCT>[] = [{ path, contents, contentType }];
+      const handles = new Map<string, FileSystemFileHandle>([[path, fileHandle]]);
+
+      const dummyRoot = {} as FileSystemDirectoryHandle;
+      const effectiveParams: IFileSystemAccessTreeParams<TCT> = {
+        ...params,
+        mutable: hasWritePermission ? true : params?.mutable ?? false
+      };
+
+      return succeed(
+        new FileSystemAccessTreeAccessors<TCT>(files, dummyRoot, handles, effectiveParams, hasWritePermission)
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return fail(`Failed to create FileSystemAccessTreeAccessors from file: ${message}`);
+    }
+  }
+
+  /**
    * Check if the directory handle has write permission.
    * @param handle - The directory handle to check.
    * @returns Promise resolving to true if write permission is granted.
@@ -139,6 +194,31 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
       return false;
     } catch (error) {
       // Permission API might not be available or might throw
+      return false;
+    }
+  }
+
+  /**
+   * Check if the file handle has write permission.
+   * @param handle - The file handle to check.
+   * @returns Promise resolving to true if write permission is granted.
+   * @internal
+   */
+  private static async _checkFileWritePermission(handle: FileSystemFileHandle): Promise<boolean> {
+    try {
+      const permission = await handle.queryPermission({ mode: 'readwrite' });
+
+      if (permission === 'granted') {
+        return true;
+      }
+
+      if (permission === 'prompt') {
+        const requested = await handle.requestPermission({ mode: 'readwrite' });
+        return requested === 'granted';
+      }
+
+      return false;
+    } catch (error) {
       return false;
     }
   }

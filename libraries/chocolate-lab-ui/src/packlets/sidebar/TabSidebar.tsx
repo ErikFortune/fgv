@@ -102,6 +102,8 @@ export interface ITabSidebarProps {
   readonly onExportAllAsZip?: () => void;
   /** Callback when "Import Collection" is clicked in the collection section header */
   readonly onImportCollection?: () => void;
+  /** Callback when "Open from File" is clicked (File System Access API, write-back) */
+  readonly onOpenCollectionFromFile?: () => void;
 }
 
 // ============================================================================
@@ -126,7 +128,8 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     onDeleteCollection,
     onExportCollection,
     onExportAllAsZip,
-    onImportCollection
+    onImportCollection,
+    onOpenCollectionFromFile
   } = props;
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -235,6 +238,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onExportCollection={onExportCollection}
         onExportAllAsZip={onExportAllAsZip}
         onImportCollection={onImportCollection}
+        onOpenCollectionFromFile={onOpenCollectionFromFile}
       />
 
       {onCreateCollection && (

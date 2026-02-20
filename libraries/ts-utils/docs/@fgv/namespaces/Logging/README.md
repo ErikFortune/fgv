@@ -17,6 +17,7 @@
 
 ## Interfaces
 
+- [IDetailLogger](interfaces/IDetailLogger.md)
 - [ILogger](interfaces/ILogger.md)
 - [ILogReporterCreateParams](interfaces/ILogReporterCreateParams.md)
 
@@ -28,5 +29,6 @@
 
 ## Functions
 
+- [isDetailLogger](functions/isDetailLogger.md)
 - [shouldLog](functions/shouldLog.md)
 - [stringifyLogValue](functions/stringifyLogValue.md)

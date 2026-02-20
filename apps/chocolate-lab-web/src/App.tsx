@@ -180,7 +180,8 @@ function TabSidebarWithActions(props: {
     deleteCollection,
     exportCollection,
     exportAllAsZip,
-    importCollection
+    importCollection,
+    openCollectionFromFile
   } = useCollectionActions();
 
   return (
@@ -192,6 +193,7 @@ function TabSidebarWithActions(props: {
       onExportCollection={exportCollection}
       onExportAllAsZip={exportAllAsZip}
       onImportCollection={importCollection}
+      onOpenCollectionFromFile={openCollectionFromFile}
     />
   );
 }

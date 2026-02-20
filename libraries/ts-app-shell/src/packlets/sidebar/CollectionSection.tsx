@@ -81,6 +81,8 @@ export interface ICollectionSectionProps {
   readonly onExportAllAsZip?: () => void;
   /** Callback when "Import Collection" is clicked (header-level) */
   readonly onImportCollection?: () => void;
+  /** Callback when "Open from File" is clicked (header-level, File System Access API) */
+  readonly onOpenCollectionFromFile?: () => void;
   /** Whether the section starts collapsed */
   readonly defaultCollapsed?: boolean;
 }
@@ -184,6 +186,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
     onExportCollection,
     onExportAllAsZip,
     onImportCollection,
+    onOpenCollectionFromFile,
     defaultCollapsed = false
   } = props;
 
@@ -230,11 +233,21 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
               ↓{'🗂'}
             </button>
           )}
+          {onOpenCollectionFromFile && (
+            <button
+              onClick={onOpenCollectionFromFile}
+              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              title="Open collection file for in-place editing"
+              aria-label="Open collection from file"
+            >
+              {'📂'}
+            </button>
+          )}
           {onImportCollection && (
             <button
               onClick={onImportCollection}
               className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
-              title="Import collection from file"
+              title="Import collection from file (in-memory)"
               aria-label="Import collection from file"
             >
               ↑

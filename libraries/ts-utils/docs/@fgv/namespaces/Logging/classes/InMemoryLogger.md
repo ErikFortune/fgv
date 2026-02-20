@@ -159,6 +159,29 @@ Logs an error message.
 
 ***
 
+### errorWithDetail()
+
+> **errorWithDetail**(`message`, `detail`): [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+Logs a short error summary at `error` level, then emits `detail` at `detail` level.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `message` | `string` | Short human-readable summary. |
+| `detail` | `unknown` | Full detail (e.g. raw converter error) logged at `detail` level. |
+
+#### Returns
+
+[`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+#### Inherited from
+
+[`LoggerBase`](LoggerBase.md).[`errorWithDetail`](LoggerBase.md#errorwithdetail)
+
+***
+
 ### info()
 
 > **info**(`message?`, ...`parameters?`): [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
@@ -235,3 +258,26 @@ Logs a warning message.
 #### Inherited from
 
 [`LoggerBase`](LoggerBase.md).[`warn`](LoggerBase.md#warn)
+
+***
+
+### warnWithDetail()
+
+> **warnWithDetail**(`message`, `detail`): [`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+Logs a short warning summary at `warning` level, then emits `detail` at `detail` level.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `message` | `string` | Short human-readable summary. |
+| `detail` | `unknown` | Full detail logged at `detail` level. |
+
+#### Returns
+
+[`Success`](../../../../classes/Success.md)\<`string` \| `undefined`\>
+
+#### Inherited from
+
+[`LoggerBase`](LoggerBase.md).[`warnWithDetail`](LoggerBase.md#warnwithdetail)

@@ -8,6 +8,10 @@
 
 Generic Result-aware logger interface with multiple levels of logging.
 
+## Extended by
+
+- [`IDetailLogger`](IDetailLogger.md)
+
 ## Properties
 
 | Property | Modifier | Type | Description |

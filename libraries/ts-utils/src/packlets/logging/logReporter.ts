@@ -19,7 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { ILogger, ReporterLogLevel, NoOpLogger, stringifyLogValue } from './logger';
+import {
+  IDetailLogger,
+  ILogger,
+  isDetailLogger,
+  ReporterLogLevel,
+  NoOpLogger,
+  stringifyLogValue
+} from './logger';
 import { captureResult, ErrorFormatter, IResultReporter, MessageLogLevel, Result, Success } from '../base';
 
 /**
@@ -49,7 +56,7 @@ export interface ILogReporterCreateParams<T, TD = unknown> {
  * both {@link Logging.ILogger | ILogger} and {@link IResultReporter | IResultReporter}.
  * @public
  */
-export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
+export class LogReporter<T, TD = unknown> implements IDetailLogger, IResultReporter<T, TD> {
   /**
    * Base logger used to by this reporter.
    * @public
@@ -124,6 +131,28 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
    */
   public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.logger.error(message, ...parameters);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.errorWithDetail}
+   */
+  public errorWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    if (isDetailLogger(this.logger)) {
+      return this.logger.errorWithDetail(message, detail);
+    }
+    this.logger.detail(detail);
+    return this.logger.error(message);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.warnWithDetail}
+   */
+  public warnWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    if (isDetailLogger(this.logger)) {
+      return this.logger.warnWithDetail(message, detail);
+    }
+    this.logger.detail(detail);
+    return this.logger.warn(message);
   }
 
   /**

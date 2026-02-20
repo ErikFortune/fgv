@@ -68,6 +68,7 @@ export class FileApiTreeAccessors<TCT extends string = string> {
     static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static createFromLocalStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<FileTree.FileTree<TCT>>;
     static createPersistent<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createPersistentFromFile<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static extractFileMetadata(file: File): IFileMetadata;
     static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
@@ -87,6 +88,7 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string> extends 
     protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromDirectoryHandle<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
+    static fromFileHandle<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
     getDirtyPaths(): string[];
     isDirty(): boolean;
     saveFileContents(path: string, contents: string): Result<string>;
@@ -248,6 +250,7 @@ export interface IFileMetadata {
 // @public
 export interface IFileSystemAccessTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
     autoSync?: boolean;
+    filePath?: string;
     requireWritePermission?: boolean;
 }
 

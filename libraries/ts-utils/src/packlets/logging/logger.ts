@@ -136,10 +136,47 @@ export interface ILogger {
 }
 
 /**
- * Abstract base class which implements {@link Logging.ILogger | ILogger}.
+ * Extended logger interface that supports logging a short summary message at a
+ * primary level (error/warn) while emitting the full detail at `detail` level.
+ *
+ * The detail is suppressed by default (requires log level `'detail'` or `'all'`),
+ * keeping the primary log clean while preserving the full context for debugging.
  * @public
  */
-export abstract class LoggerBase implements ILogger {
+export interface IDetailLogger extends ILogger {
+  /**
+   * Logs a short error summary at `error` level, then emits `detail` at `detail` level.
+   * @param message - Short human-readable summary.
+   * @param detail - Full detail (e.g. raw converter error) logged at `detail` level.
+   */
+  errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
+
+  /**
+   * Logs a short warning summary at `warning` level, then emits `detail` at `detail` level.
+   * @param message - Short human-readable summary.
+   * @param detail - Full detail logged at `detail` level.
+   */
+  warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
+}
+
+/**
+ * Type guard that checks whether a logger implements {@link IDetailLogger}.
+ * @param logger - The logger to check.
+ * @returns `true` if the logger implements `IDetailLogger`.
+ * @public
+ */
+export function isDetailLogger(logger: ILogger): logger is IDetailLogger {
+  return (
+    typeof (logger as IDetailLogger).errorWithDetail === 'function' &&
+    typeof (logger as IDetailLogger).warnWithDetail === 'function'
+  );
+}
+
+/**
+ * Abstract base class which implements {@link Logging.IDetailLogger | IDetailLogger}.
+ * @public
+ */
+export abstract class LoggerBase implements IDetailLogger {
   /**
    * {@inheritDoc Logging.ILogger.logLevel}
    */
@@ -175,6 +212,22 @@ export abstract class LoggerBase implements ILogger {
    */
   public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('error', message, ...parameters);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.errorWithDetail}
+   */
+  public errorWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    this.detail(detail);
+    return this.error(message);
+  }
+
+  /**
+   * {@inheritDoc Logging.IDetailLogger.warnWithDetail}
+   */
+  public warnWithDetail(message: string, detail: unknown): Success<string | undefined> {
+    this.detail(detail);
+    return this.warn(message);
   }
 
   /**
