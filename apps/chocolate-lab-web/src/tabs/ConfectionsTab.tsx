@@ -656,16 +656,48 @@ export function ConfectionsTabContent(): React.ReactElement {
     return cascadeStack.map((entry, index) => {
       // Per-pane drill-down callbacks that squash to the right of this pane
       const onIngredientClick = (id: IngredientId): void => {
-        squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+        const nextEntry = cascadeStack[index + 1];
+        if (nextEntry?.entityType === 'ingredient' && nextEntry.entityId === id) {
+          squashCascade(cascadeStack.slice(0, index + 1));
+        } else {
+          squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+        }
       };
-      const onFillingClick = (id: FillingId): void => {
-        squashAt(index, { entityType: 'filling', entityId: id, mode: 'view' });
+      const onFillingClick = (
+        id: FillingId,
+        targetWeight?: number,
+        sourceConfectionId?: string,
+        sourceSlotId?: string
+      ): void => {
+        const nextEntry = cascadeStack[index + 1];
+        if (nextEntry?.entityType === 'filling' && nextEntry.entityId === id) {
+          squashCascade(cascadeStack.slice(0, index + 1));
+        } else {
+          squashAt(index, {
+            entityType: 'filling',
+            entityId: id,
+            mode: 'view',
+            targetWeight,
+            sourceConfectionId,
+            sourceSlotId
+          });
+        }
       };
       const onMoldClick = (id: MoldId): void => {
-        squashAt(index, { entityType: 'mold', entityId: id, mode: 'view' });
+        const nextEntry = cascadeStack[index + 1];
+        if (nextEntry?.entityType === 'mold' && nextEntry.entityId === id) {
+          squashCascade(cascadeStack.slice(0, index + 1));
+        } else {
+          squashAt(index, { entityType: 'mold', entityId: id, mode: 'view' });
+        }
       };
       const onProcedureClick = (id: ProcedureId): void => {
-        squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+        const nextEntry = cascadeStack[index + 1];
+        if (nextEntry?.entityType === 'procedure' && nextEntry.entityId === id) {
+          squashCascade(cascadeStack.slice(0, index + 1));
+        } else {
+          squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+        }
       };
       const onDecorationClick = (id: DecorationId): void => {
         squashAt(index, { entityType: 'decoration', entityId: id, mode: 'view' });
@@ -881,6 +913,26 @@ export function ConfectionsTabContent(): React.ReactElement {
             content: <div className="p-4 text-red-500">Failed to load filling: {entry.entityId}</div>
           };
         }
+        const liveTargetWeight = (() => {
+          if (!entry.sourceConfectionId || !entry.sourceSlotId) return entry.targetWeight;
+          const confResult = workspace.data.confections.get(entry.sourceConfectionId as ConfectionId);
+          if (confResult.isFailure()) return entry.targetWeight;
+          const settings = viewSettingsMap.get(entry.sourceConfectionId);
+          if (!settings) return entry.targetWeight;
+          const variation = confResult.value.goldenVariation;
+          const target: LibraryRuntime.IConfectionScalingTarget = {
+            targetFrames: settings.targetFrames,
+            bufferPercentage: settings.bufferPercentage,
+            targetCount: settings.targetCount,
+            selectedMoldId: settings.moldId,
+            fillingSelections: settings.fillingSelections
+          };
+          if (!LibraryRuntime.canScale(variation, target)) return undefined;
+          const scaleResult = LibraryRuntime.computeScaledFillings(variation, target);
+          if (!scaleResult.isSuccess()) return entry.targetWeight;
+          const slot = scaleResult.value.slots.find((s) => s.slotId === entry.sourceSlotId);
+          return slot?.targetWeight ?? entry.targetWeight;
+        })();
         return {
           key: entry.entityId,
           label: result.value.name,
@@ -889,6 +941,8 @@ export function ConfectionsTabContent(): React.ReactElement {
               filling={result.value}
               onIngredientClick={onIngredientClick}
               onProcedureClick={onProcedureClick}
+              targetYield={liveTargetWeight}
+              onClose={(): void => popCascadeTo(index)}
             />
           )
         };
@@ -941,7 +995,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <IngredientDetail ingredient={result.value} />
+          content: <IngredientDetail ingredient={result.value} onClose={(): void => popCascadeTo(index)} />
         };
       }
       if (entry.entityType === 'mold') {
@@ -956,7 +1010,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.displayName,
-          content: <MoldDetail mold={result.value} />
+          content: <MoldDetail mold={result.value} onClose={(): void => popCascadeTo(index)} />
         };
       }
       if (entry.entityType === 'decoration') {
@@ -1029,7 +1083,13 @@ export function ConfectionsTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.name,
-          content: <ProcedureDetail procedure={result.value} onTaskClick={onTaskClick} />
+          content: (
+            <ProcedureDetail
+              procedure={result.value}
+              onTaskClick={onTaskClick}
+              onClose={(): void => popCascadeTo(index)}
+            />
+          )
         };
       }
       if (entry.entityType === 'task') {

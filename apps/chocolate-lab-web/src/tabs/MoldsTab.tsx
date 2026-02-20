@@ -352,7 +352,13 @@ export function MoldsTabContent(): React.ReactElement {
         return {
           key: entry.entityId,
           label: result.value.displayName,
-          content: <MoldDetail mold={result.value} onEdit={(): void => handleEdit(entry.entityId)} />
+          content: (
+            <MoldDetail
+              mold={result.value}
+              onEdit={(): void => handleEdit(entry.entityId)}
+              onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+            />
+          )
         };
       });
   }, [

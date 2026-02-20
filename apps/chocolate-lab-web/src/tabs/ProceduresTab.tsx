@@ -377,6 +377,7 @@ export function ProceduresTabContent(): React.ReactElement {
               onTaskClick={onTaskClick}
               onEdit={(): void => handleEditProcedure(entry.entityId)}
               onPreview={(): void => handlePreviewProcedure(entry.entityId)}
+              onClose={(): void => popCascadeTo(index)}
             />
           )
         };

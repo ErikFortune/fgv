@@ -48,6 +48,8 @@ export interface IProcedureDetailProps {
   readonly onEdit?: () => void;
   /** Called when the user clicks the Preview button */
   readonly onPreview?: () => void;
+  /** Optional callback to close this panel */
+  readonly onClose?: () => void;
 }
 
 // ============================================================================
@@ -234,7 +236,7 @@ function StepRow({
  * @public
  */
 export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElement {
-  const { procedure, onTaskClick, onEdit, onPreview } = props;
+  const { procedure, onTaskClick, onEdit, onPreview, onClose } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -250,6 +252,7 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
         subtitle={procedure.id}
         onPreview={onPreview}
         onEdit={onEdit}
+        onClose={onClose}
       />
 
       {/* Timing summary */}

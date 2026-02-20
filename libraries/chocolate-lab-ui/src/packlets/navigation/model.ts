@@ -146,6 +146,12 @@ export interface ICascadeEntry {
   readonly entityId: string;
   /** Whether the column is in view or edit mode */
   readonly mode: CascadeColumnMode;
+  /** Optional target weight in grams (used when drilling into a filling from a scaled confection) */
+  readonly targetWeight?: number;
+  /** Source confection ID when drilling into a filling slot (for live weight recomputation) */
+  readonly sourceConfectionId?: string;
+  /** Source slot ID within the confection (for live weight recomputation) */
+  readonly sourceSlotId?: string;
 }
 
 // ============================================================================

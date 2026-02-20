@@ -714,10 +714,20 @@ export function DecorationsTabContent(): React.ReactElement {
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
       const onIngredientClick = (id: IngredientId): void => {
-        squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+        const nextEntry = cascadeStack[index + 1];
+        if (nextEntry?.entityType === 'ingredient' && nextEntry.entityId === id) {
+          squashCascade(cascadeStack.slice(0, index + 1));
+        } else {
+          squashAt(index, { entityType: 'ingredient', entityId: id, mode: 'view' });
+        }
       };
       const onProcedureClick = (id: ProcedureId): void => {
-        squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+        const nextEntry = cascadeStack[index + 1];
+        if (nextEntry?.entityType === 'procedure' && nextEntry.entityId === id) {
+          squashCascade(cascadeStack.slice(0, index + 1));
+        } else {
+          squashAt(index, { entityType: 'procedure', entityId: id, mode: 'view' });
+        }
       };
       const onTaskClick = (id: TaskId): void => {
         squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
@@ -884,6 +894,7 @@ export function DecorationsTabContent(): React.ReactElement {
                   { ...cascadeStack[index], mode: 'edit' as const }
                 ]);
               }}
+              onClose={(): void => popCascadeTo(index)}
             />
           )
         };
@@ -958,6 +969,7 @@ export function DecorationsTabContent(): React.ReactElement {
                   { ...cascadeStack[index], mode: 'edit' as const }
                 ]);
               }}
+              onClose={(): void => popCascadeTo(index)}
             />
           )
         };

@@ -26,7 +26,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow, DetailSection, DetailRow, TagList, StatusBadge, DetailHeader } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
@@ -57,6 +57,8 @@ export interface IFillingDetailProps {
   readonly onEdit?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Optional callback to open the preview pane */
   readonly onPreview?: () => void;
+  /** Optional callback to close this panel */
+  readonly onClose?: () => void;
   /** Target yield in grams for scaling ingredient quantities */
   readonly targetYield?: number;
   /** Callback when the user changes the target yield */
@@ -213,6 +215,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     defaultVariationSpec,
     onEdit,
     onPreview,
+    onClose,
     targetYield,
     onTargetYieldChange
   } = props;
@@ -318,6 +321,16 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               >
                 <PencilSquareIcon className="w-4 h-4" />
                 Edit
+              </button>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                title="Close"
+              >
+                <XMarkIcon className="w-4 h-4" />
               </button>
             )}
           </>

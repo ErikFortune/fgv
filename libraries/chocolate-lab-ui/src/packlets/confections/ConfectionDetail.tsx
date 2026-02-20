@@ -40,7 +40,7 @@ import type {
   MoldId,
   ProcedureId
 } from '@fgv/ts-chocolate';
-import { Entities } from '@fgv/ts-chocolate';
+import { Entities, LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import type { IConfectionViewSettings } from './viewSettings';
 
@@ -55,8 +55,13 @@ import type { IConfectionViewSettings } from './viewSettings';
 export interface IConfectionDetailProps {
   /** The resolved confection to display */
   readonly confection: LibraryRuntime.IConfectionBase;
-  /** Callback when a filling recipe is clicked for drill-down */
-  readonly onFillingClick?: (id: FillingId) => void;
+  /** Callback when a filling recipe is clicked for drill-down, with optional scaled target weight and source context */
+  readonly onFillingClick?: (
+    id: FillingId,
+    targetWeight?: number,
+    sourceConfectionId?: string,
+    sourceSlotId?: string
+  ) => void;
   /** Callback when an ingredient is clicked for drill-down */
   readonly onIngredientClick?: (id: IngredientId) => void;
   /** Callback when a mold is clicked for drill-down */
@@ -145,13 +150,22 @@ function FillingSlotRow({
   onFillingClick,
   onIngredientClick,
   selectedOptionId,
-  onSelect
+  onSelect,
+  scaledTargetWeight,
+  confectionId
 }: {
   readonly slot: LibraryRuntime.IResolvedFillingSlot;
-  readonly onFillingClick?: (id: FillingId) => void;
+  readonly onFillingClick?: (
+    id: FillingId,
+    targetWeight?: number,
+    sourceConfectionId?: string,
+    sourceSlotId?: string
+  ) => void;
   readonly onIngredientClick?: (id: IngredientId) => void;
   readonly selectedOptionId?: string;
   readonly onSelect?: (id: string) => void;
+  readonly scaledTargetWeight?: number;
+  readonly confectionId?: string;
 }): React.ReactElement {
   const items = useMemo(() => {
     return slot.filling.options.map((opt) => ({
@@ -168,12 +182,12 @@ function FillingSlotRow({
     return (id: string): void => {
       const opt = slot.filling.options.find((o) => o.id === id);
       if (opt?.type === 'recipe' && onFillingClick) {
-        onFillingClick(id as FillingId);
+        onFillingClick(id as FillingId, scaledTargetWeight, confectionId, slot.slotId);
       } else if (opt?.type === 'ingredient' && onIngredientClick) {
         onIngredientClick(id as IngredientId);
       }
     };
-  }, [slot, onFillingClick, onIngredientClick]);
+  }, [slot, onFillingClick, onIngredientClick, scaledTargetWeight, confectionId]);
 
   return (
     <div className="mb-1">
@@ -194,13 +208,22 @@ function FillingSlotsSection({
   onFillingClick,
   onIngredientClick,
   fillingSelections,
-  onFillingSelect
+  onFillingSelect,
+  scaledSlotWeights,
+  confectionId
 }: {
   readonly fillings: ReadonlyArray<LibraryRuntime.IResolvedFillingSlot>;
-  readonly onFillingClick?: (id: FillingId) => void;
+  readonly onFillingClick?: (
+    id: FillingId,
+    targetWeight?: number,
+    sourceConfectionId?: string,
+    sourceSlotId?: string
+  ) => void;
   readonly onIngredientClick?: (id: IngredientId) => void;
   readonly fillingSelections?: Readonly<Record<string, string>>;
   readonly onFillingSelect?: (slotId: string, optionId: string) => void;
+  readonly scaledSlotWeights?: Readonly<Record<string, number>>;
+  readonly confectionId?: string;
 }): React.ReactElement | null {
   if (fillings.length === 0) {
     return null;
@@ -215,6 +238,8 @@ function FillingSlotsSection({
           onIngredientClick={onIngredientClick}
           selectedOptionId={fillingSelections?.[slot.slotId]}
           onSelect={onFillingSelect ? (id): void => onFillingSelect(slot.slotId, id) : undefined}
+          scaledTargetWeight={scaledSlotWeights?.[slot.slotId]}
+          confectionId={confectionId}
         />
       ))}
     </DetailSection>
@@ -676,6 +701,25 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     [viewSettings, handleSettingChange]
   );
 
+  const scaledSlotWeights = useMemo((): Readonly<Record<string, number>> | undefined => {
+    if (!viewSettings) return undefined;
+    const target: LR.IConfectionScalingTarget = {
+      targetFrames: viewSettings.targetFrames,
+      bufferPercentage: viewSettings.bufferPercentage,
+      targetCount: viewSettings.targetCount,
+      selectedMoldId: viewSettings.moldId,
+      fillingSelections: viewSettings.fillingSelections
+    };
+    if (!LR.canScale(selectedVariation, target)) return undefined;
+    const result = LR.computeScaledFillings(selectedVariation, target);
+    if (!result.isSuccess()) return undefined;
+    const weights: Record<string, number> = {};
+    for (const slot of result.value.slots) {
+      weights[slot.slotId] = slot.targetWeight;
+    }
+    return weights;
+  }, [selectedVariation, viewSettings]);
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
@@ -723,6 +767,8 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
           onIngredientClick={onIngredientClick}
           fillingSelections={viewSettings?.fillingSelections}
           onFillingSelect={onViewSettingsChange ? handleFillingSelect : undefined}
+          scaledSlotWeights={scaledSlotWeights}
+          confectionId={confection.id}
         />
       )}
 

@@ -32,7 +32,7 @@
  */
 
 import React from 'react';
-import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { DetailHeader, DetailSection, StatusBadge } from '@fgv/ts-app-shell';
 import type { Model } from '@fgv/ts-chocolate';
 
@@ -127,6 +127,8 @@ export interface IEntityDetailHeaderProps {
   readonly onEdit?: () => void;
   /** Additional action content rendered after Preview and Edit buttons */
   readonly extraActions?: React.ReactNode;
+  /** If provided, renders an X close button as the last action */
+  readonly onClose?: () => void;
 }
 
 /**
@@ -148,7 +150,8 @@ export function EntityDetailHeader({
   extraIndicators,
   onPreview,
   onEdit,
-  extraActions
+  extraActions,
+  onClose
 }: IEntityDetailHeaderProps): React.ReactElement {
   const indicators = (
     <>
@@ -182,6 +185,16 @@ export function EntityDetailHeader({
         </button>
       )}
       {extraActions}
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          title="Close"
+        >
+          <XMarkIcon className="w-4 h-4" />
+        </button>
+      )}
     </>
   );
 

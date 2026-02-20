@@ -44,6 +44,8 @@ export interface IMoldDetailProps {
   readonly mold: LibraryRuntime.IMold;
   /** Optional callback to switch to edit mode */
   readonly onEdit?: () => void;
+  /** Optional callback to close this panel */
+  readonly onClose?: () => void;
 }
 
 // ============================================================================
@@ -103,7 +105,7 @@ function DimensionsSection({
  * @public
  */
 export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
-  const { mold, onEdit } = props;
+  const { mold, onEdit, onClose } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -114,6 +116,7 @@ export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
         badge={{ label: mold.format, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
         subtitle={mold.id}
         onEdit={onEdit}
+        onClose={onClose}
       />
 
       {/* Manufacturer info */}

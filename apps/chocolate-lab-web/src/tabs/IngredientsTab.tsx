@@ -354,7 +354,11 @@ export function IngredientsTabContent(): React.ReactElement {
           key: entry.entityId,
           label: result.value.name,
           content: (
-            <IngredientDetail ingredient={result.value} onEdit={(): void => handleEdit(entry.entityId)} />
+            <IngredientDetail
+              ingredient={result.value}
+              onEdit={(): void => handleEdit(entry.entityId)}
+              onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+            />
           )
         };
       });

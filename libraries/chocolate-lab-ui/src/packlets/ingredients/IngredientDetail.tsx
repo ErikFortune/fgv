@@ -44,6 +44,8 @@ export interface IIngredientDetailProps {
   readonly ingredient: LibraryRuntime.AnyIngredient;
   /** Optional callback to switch to edit mode */
   readonly onEdit?: () => void;
+  /** Optional callback to close this panel */
+  readonly onClose?: () => void;
 }
 
 // ============================================================================
@@ -136,7 +138,7 @@ function ChocolateSection({
 export function IngredientDetail(props: IIngredientDetailProps): React.ReactElement {
   const { ingredient } = props;
 
-  const { onEdit } = props;
+  const { onEdit, onClose } = props;
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto">
@@ -155,6 +157,7 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
           ) : undefined
         }
         onEdit={onEdit}
+        onClose={onClose}
       />
 
       {/* Ganache Characteristics */}
