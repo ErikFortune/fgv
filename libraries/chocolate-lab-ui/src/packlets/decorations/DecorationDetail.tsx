@@ -215,9 +215,10 @@ export function DecorationDetail(props: IDecorationDetailProps): React.ReactElem
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-lg font-semibold text-gray-900">{decoration.name}</h2>
-          <div className="ml-auto flex items-center gap-1">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">{decoration.name}</h2>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-gray-400 font-mono">{decoration.id}</span>
+          <div className="flex items-center gap-1 shrink-0">
             {onPreview && (
               <button
                 type="button"
@@ -242,7 +243,6 @@ export function DecorationDetail(props: IDecorationDetailProps): React.ReactElem
             )}
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-0.5 font-mono">{decoration.id}</p>
         {decoration.description && <p className="text-sm text-gray-600 mt-1">{decoration.description}</p>}
       </div>
 

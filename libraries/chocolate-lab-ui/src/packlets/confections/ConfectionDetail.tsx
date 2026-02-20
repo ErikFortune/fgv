@@ -26,6 +26,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 import { EntityRow } from '@fgv/ts-app-shell';
 import type { ISelectableItem } from '@fgv/ts-app-shell';
@@ -68,6 +69,10 @@ export interface IConfectionDetailProps {
   readonly defaultVariationSpec?: ConfectionRecipeVariationSpec;
   /** Called when the user selects a different variation */
   readonly onVariationChange?: (spec: ConfectionRecipeVariationSpec) => void;
+  /** Optional callback to enter edit mode */
+  readonly onEdit?: () => void;
+  /** Optional callback to open the preview pane */
+  readonly onPreview?: () => void;
 }
 
 // ============================================================================
@@ -557,7 +562,9 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     onMoldClick,
     onProcedureClick,
     onDecorationClick,
-    onCompareVariations
+    onCompareVariations,
+    onEdit,
+    onPreview
   } = props;
 
   const { onVariationChange } = props;
@@ -589,12 +596,38 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-lg font-semibold text-gray-900">{confection.name}</h2>
-          <CategoryBadge label={confection.confectionType} />
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">{confection.name}</h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CategoryBadge label={confection.confectionType} />
+            <span className="text-xs text-gray-400 font-mono">{confection.id}</span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {onPreview && (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Preview confection"
+              >
+                <EyeIcon className="w-4 h-4" />
+                Preview
+              </button>
+            )}
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Edit confection"
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+          </div>
         </div>
-        {confection.description && <p className="text-sm text-gray-600">{confection.description}</p>}
-        <p className="text-xs text-gray-400 mt-0.5 font-mono">{confection.id}</p>
+        {confection.description && <p className="text-sm text-gray-600 mt-1">{confection.description}</p>}
       </div>
 
       {/* Variation selector */}

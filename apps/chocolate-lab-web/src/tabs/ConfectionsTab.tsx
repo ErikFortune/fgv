@@ -32,6 +32,7 @@ import {
   TaskDetail,
   ConfectionDetail,
   ConfectionEditView,
+  ConfectionPreviewPanel,
   DecorationDetail,
   useFilteredEntities,
   EntityCreateForm
@@ -84,6 +85,7 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   const [saveAsName, setSaveAsName] = useState('');
   const [showSaveAsForm, setShowSaveAsForm] = useState(false);
+  const [previewConfectionId, setPreviewConfectionId] = useState<ConfectionId | undefined>(undefined);
   const subIngredientRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
@@ -749,38 +751,44 @@ export function ConfectionsTabContent(): React.ReactElement {
           viewVariationSpecRef.current = undefined;
         }
         const entityId = entry.entityId;
+
+        // Preview mode
+        if (previewConfectionId === entityId) {
+          return {
+            key: `${entityId}__preview`,
+            label: `${result.value.name} — Preview`,
+            content: (
+              <ConfectionPreviewPanel
+                confection={result.value}
+                onClose={(): void => setPreviewConfectionId(undefined)}
+              />
+            )
+          };
+        }
+
         return {
           key: entityId,
           label: result.value.name,
           content: (
-            <div className="flex flex-col h-full">
-              <div className="flex justify-end px-4 pt-2 pb-0 border-b border-gray-200 bg-gray-50">
-                <button
-                  type="button"
-                  onClick={(): void =>
-                    handleEditConfection(entityId, viewingVariationSpecRef.current.get(entityId))
-                  }
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded text-gray-600 hover:text-choco-primary hover:bg-gray-100 transition-colors"
-                >
-                  Edit
-                </button>
-              </div>
-              <ConfectionDetail
-                confection={result.value}
-                defaultVariationSpec={defaultSpec}
-                onVariationChange={(spec): void => {
-                  viewingVariationSpecRef.current.set(entityId, spec);
-                }}
-                onFillingClick={onFillingClick}
-                onIngredientClick={onIngredientClick}
-                onMoldClick={onMoldClick}
-                onProcedureClick={onProcedureClick}
-                onDecorationClick={onDecorationClick}
-                onCompareVariations={(specs): void =>
-                  setVariationCompare({ id: entityId as ConfectionId, specs })
-                }
-              />
-            </div>
+            <ConfectionDetail
+              confection={result.value}
+              defaultVariationSpec={defaultSpec}
+              onVariationChange={(spec): void => {
+                viewingVariationSpecRef.current.set(entityId, spec);
+              }}
+              onFillingClick={onFillingClick}
+              onIngredientClick={onIngredientClick}
+              onMoldClick={onMoldClick}
+              onProcedureClick={onProcedureClick}
+              onDecorationClick={onDecorationClick}
+              onCompareVariations={(specs): void =>
+                setVariationCompare({ id: entityId as ConfectionId, specs })
+              }
+              onEdit={(): void =>
+                handleEditConfection(entityId, viewingVariationSpecRef.current.get(entityId))
+              }
+              onPreview={(): void => setPreviewConfectionId(entityId as ConfectionId)}
+            />
           )
         };
       }
