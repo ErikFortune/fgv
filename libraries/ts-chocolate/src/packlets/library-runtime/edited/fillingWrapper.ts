@@ -316,7 +316,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     options?: Helpers.IGenerateVariationSpecOptions
   ): Result<FillingRecipeVariationSpec> {
     const existingSpecs = this._current.variations.map((v) => v.variationSpec);
-    return Helpers.generateVariationSpec(existingSpecs, options).onSuccess((spec) => {
+    return Helpers.generateFillingVariationSpec(existingSpecs, options).onSuccess((spec) => {
       const today = options?.date ?? new Date().toISOString().split('T')[0];
       const variation: Fillings.IFillingRecipeVariationEntity = {
         variationSpec: spec,
@@ -346,7 +346,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
       return fail(`variation '${sourceSpec}' does not exist in this recipe`);
     }
     const existingSpecs = this._current.variations.map((v) => v.variationSpec);
-    return Helpers.generateVariationSpec(existingSpecs, options).onSuccess((spec) => {
+    return Helpers.generateFillingVariationSpec(existingSpecs, options).onSuccess((spec) => {
       const today = options?.date ?? new Date().toISOString().split('T')[0];
       const variation: Fillings.IFillingRecipeVariationEntity = {
         ...EditedFillingRecipe._deepCopyVariation(source),

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Model } from '../common';
+import { Helpers, Model } from '../common';
 
 /**
  * Builds a detailed AI prompt for generating an ingredient entity JSON object.
@@ -35,10 +35,7 @@ import { Model } from '../common';
  * @public
  */
 export function buildIngredientAiPrompt(ingredientName: string): string {
-  const baseId = ingredientName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  const baseId = Helpers.toKebabCase(ingredientName);
 
   return `Generate a JSON object representing the ingredient "${ingredientName}" for a chocolate-making application.
 

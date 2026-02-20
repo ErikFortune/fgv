@@ -27,10 +27,9 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ClipboardDocumentIcon, EyeIcon, StarIcon } from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid, CheckIcon } from '@heroicons/react/24/solid';
-import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
-import { EditField, EditSection, TextInput, TagsInput, MultiActionButton } from '@fgv/ts-app-shell';
+import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
 import type {
   Entities,
   IngredientId,
@@ -383,31 +382,10 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     }
   }, [entity.procedures, availableProcedures, procedureMatcher, unresolvedNewProcedure]);
 
-  const customSaveButton = onSaveAs ? (
-    <MultiActionButton
-      primaryAction={{
-        id: 'save',
-        label: 'Save',
-        icon: <CheckIcon className="h-3.5 w-3.5" />,
-        onSelect: ctx.save
-      }}
-      alternativeActions={[
-        {
-          id: 'save-as',
-          label: 'Save to\u2026',
-          icon: <DocumentDuplicateIcon className="h-3.5 w-3.5" />,
-          onSelect: (): void => ctx.saveAs?.()
-        }
-      ]}
-      variant="primary"
-    />
-  ) : undefined;
-
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       <EditingToolbar
         context={ctx}
-        customSaveButton={customSaveButton}
         extraButtons={
           onPreview ? (
             <button

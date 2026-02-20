@@ -66,6 +66,8 @@ export interface IConfectionDetailProps {
   readonly onCompareVariations?: (specs: ReadonlyArray<ConfectionRecipeVariationSpec>) => void;
   /** Override the initially selected variation (defaults to golden) */
   readonly defaultVariationSpec?: ConfectionRecipeVariationSpec;
+  /** Called when the user selects a different variation */
+  readonly onVariationChange?: (spec: ConfectionRecipeVariationSpec) => void;
 }
 
 // ============================================================================
@@ -558,8 +560,17 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     onCompareVariations
   } = props;
 
+  const { onVariationChange } = props;
   const [selectedSpec, setSelectedSpec] = useState<ConfectionRecipeVariationSpec>(
     props.defaultVariationSpec ?? confection.goldenVariationSpec
+  );
+
+  const handleVariationSelect = React.useCallback(
+    (spec: ConfectionRecipeVariationSpec): void => {
+      setSelectedSpec(spec);
+      onVariationChange?.(spec);
+    },
+    [onVariationChange]
   );
 
   const selectedVariation = useMemo(() => {
@@ -593,7 +604,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
             items={variationItems}
             selectedId={selectedSpec}
             preferredId={confection.goldenVariationSpec}
-            onSelect={setSelectedSpec}
+            onSelect={handleVariationSelect}
             onCompare={onCompareVariations}
             label="Variations"
           />

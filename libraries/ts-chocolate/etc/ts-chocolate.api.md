@@ -39,7 +39,10 @@ declare namespace AiAssist {
         AI_NOTE_CATEGORY,
         extractAiNote,
         buildIngredientAiPrompt,
-        buildMoldAiPrompt
+        buildMoldAiPrompt,
+        buildFillingAiPrompt,
+        buildProcedureAiPrompt,
+        buildDecorationAiPrompt
     }
 }
 export { AiAssist }
@@ -480,10 +483,19 @@ const baseTaskId_2: Validator<BaseTaskId>;
 const bonBonDimensions: Converter<IBonBonDimensions>;
 
 // @public
+function buildDecorationAiPrompt(decorationName: string): string;
+
+// @public
+function buildFillingAiPrompt(fillingName: string): string;
+
+// @public
 function buildIngredientAiPrompt(ingredientName: string): string;
 
 // @public
 function buildMoldAiPrompt(moldDescription: string): string;
+
+// @public
+function buildProcedureAiPrompt(procedureName: string): string;
 
 declare namespace BuiltIn {
     export {
@@ -848,6 +860,7 @@ abstract class ConfectionBase<TVariation extends AnyConfectionRecipeVariation = 
     getEffectiveUrls(variation?: Confections.AnyConfectionRecipeVariationEntity): ReadonlyArray<Model.ICategorizedUrl>;
     getGoldenVariation(): Result<TVariation>;
     getVariation(variationSpec: ConfectionRecipeVariationSpec): Result<TVariation>;
+    getVariationFromEntity(entity: Confections.AnyConfectionRecipeVariationEntity): Result<TVariation>;
     getVariations(): Result<ReadonlyArray<TVariation>>;
     get goldenVariation(): TVariation;
     // (undocumented)
@@ -1689,6 +1702,41 @@ abstract class EditableWrapper<T> implements ISnapshotProvider<T> {
     restoreSnapshot(snapshot: T): Result<void>;
     get snapshot(): T;
     undo(): Result<boolean>;
+}
+
+// @public
+class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfectionRecipeEntity> {
+    addVariation(variation: Confections.AnyConfectionRecipeVariationEntity): Result<void>;
+    get confectionType(): ConfectionType;
+    static create(initial: Confections.AnyConfectionRecipeEntity): Result<EditedConfectionRecipe>;
+    createBlankVariation(options?: Helpers.IGenerateVariationSpecOptions): Result<ConfectionRecipeVariationSpec>;
+    // (undocumented)
+    protected _deepCopy(entity: Confections.AnyConfectionRecipeEntity): Confections.AnyConfectionRecipeEntity;
+    duplicateVariation(sourceSpec: ConfectionRecipeVariationSpec, options?: Helpers.IGenerateVariationSpecOptions): Result<ConfectionRecipeVariationSpec>;
+    getChanges(original: Confections.AnyConfectionRecipeEntity): IConfectionRecipeChanges;
+    get goldenVariationSpec(): ConfectionRecipeVariationSpec;
+    hasChanges(original: Confections.AnyConfectionRecipeEntity): boolean;
+    get name(): ConfectionName;
+    removeVariation(spec: ConfectionRecipeVariationSpec): Result<void>;
+    replaceVariation(spec: ConfectionRecipeVariationSpec, variation: Confections.AnyConfectionRecipeVariationEntity): Result<void>;
+    static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Confections.AnyConfectionRecipeEntity>): Result<EditedConfectionRecipe>;
+    setDescription(description: string | undefined): Result<void>;
+    setGoldenVariationSpec(spec: ConfectionRecipeVariationSpec): Result<void>;
+    setName(name: ConfectionName): Result<void>;
+    setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
+    setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
+    setVariationAdditionalChocolates(spec: ConfectionRecipeVariationSpec, additionalChocolates: ReadonlyArray<Confections.IAdditionalChocolateEntity> | undefined): Result<void>;
+    setVariationCoatings(spec: ConfectionRecipeVariationSpec, coatings: Confections.ICoatingsEntity | undefined): Result<void>;
+    setVariationDecorations(spec: ConfectionRecipeVariationSpec, decorations: Model.IOptionsWithPreferred<Decorations.IDecorationRefEntity, DecorationId> | undefined): Result<void>;
+    setVariationEnrobingChocolate(spec: ConfectionRecipeVariationSpec, enrobingChocolate: Confections.IChocolateSpec | undefined): Result<void>;
+    setVariationFillings(spec: ConfectionRecipeVariationSpec, fillings: ReadonlyArray<Confections.IFillingSlotEntity> | undefined): Result<void>;
+    setVariationMolds(spec: ConfectionRecipeVariationSpec, molds: Model.IOptionsWithPreferred<Confections.IConfectionMoldRef, MoldId>): Result<void>;
+    setVariationName(spec: ConfectionRecipeVariationSpec, name: string | undefined): Result<void>;
+    setVariationNotes(spec: ConfectionRecipeVariationSpec, notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
+    setVariationProcedures(spec: ConfectionRecipeVariationSpec, procedures: Model.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined): Result<void>;
+    setVariationShellChocolate(spec: ConfectionRecipeVariationSpec, shellChocolate: Confections.IChocolateSpec): Result<void>;
+    setVariationYield(spec: ConfectionRecipeVariationSpec, yieldSpec: Confections.AnyConfectionYield): Result<void>;
+    get variations(): ReadonlyArray<Confections.AnyConfectionRecipeVariationEntity>;
 }
 
 // @public
@@ -2552,6 +2600,12 @@ type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', Li
 const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
 
 // @public
+function generateConfectionVariationSpec(existingSpecs: ReadonlyArray<ConfectionRecipeVariationSpec>, options?: IGenerateVariationSpecOptions): Result<ConfectionRecipeVariationSpec>;
+
+// @public
+function generateFillingVariationSpec(existingSpecs: ReadonlyArray<FillingRecipeVariationSpec>, options?: IGenerateVariationSpecOptions): Result<FillingRecipeVariationSpec>;
+
+// @public
 function generateJournalId(): Result<BaseJournalId>;
 
 // @public
@@ -2564,7 +2618,7 @@ function generateUniqueBaseId(baseId: string, existingIds: ReadonlySet<string> |
 function generateUniqueBaseIdFromName(name: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
 
 // @public
-function generateVariationSpec(existingSpecs: ReadonlyArray<FillingRecipeVariationSpec>, options?: IGenerateVariationSpecOptions): Result<FillingRecipeVariationSpec>;
+function generateVariationSpec<TSpec extends string>(existingSpecs: ReadonlyArray<TSpec>, converter: Converter<TSpec>, options?: IGenerateVariationSpecOptions): Result<TSpec>;
 
 // @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -2710,6 +2764,8 @@ declare namespace Helpers {
         parseConfectionRecipeVariationId,
         createFillingRecipeVariationIdValidated,
         generateVariationSpec,
+        generateFillingVariationSpec,
+        generateConfectionVariationSpec,
         getPreferred,
         getPreferredOrFirst,
         getPreferredId,
@@ -3108,6 +3164,17 @@ interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBas
     // (undocumented)
     readonly type: 'confection-production';
     readonly yield: IConfectionYield;
+}
+
+// @public
+interface IConfectionRecipeChanges {
+    readonly descriptionChanged: boolean;
+    readonly goldenVariationSpecChanged: boolean;
+    readonly hasChanges: boolean;
+    readonly nameChanged: boolean;
+    readonly tagsChanged: boolean;
+    readonly urlsChanged: boolean;
+    readonly variationsChanged: boolean;
 }
 
 // @public
@@ -6309,7 +6376,9 @@ declare namespace LibraryRuntime {
         IDecorationChanges,
         EditedDecoration,
         IFillingRecipeChanges,
-        EditedFillingRecipe
+        EditedFillingRecipe,
+        IConfectionRecipeChanges,
+        EditedConfectionRecipe
     }
 }
 export { LibraryRuntime }

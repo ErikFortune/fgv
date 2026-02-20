@@ -183,6 +183,15 @@ Mutable wrapper for IFillingRecipeEntity with undo/redo support.
 </td></tr>
 <tr><td>
 
+[EditedConfectionRecipe](./classes/EditedConfectionRecipe.md)
+
+</td><td>
+
+Mutable wrapper for AnyConfectionRecipeEntity with undo/redo support.
+
+</td></tr>
+<tr><td>
+
 [ChocolateLibrary](./classes/ChocolateLibrary.md)
 
 </td><td>
@@ -886,6 +895,15 @@ Structure describing what changed between two decoration entities
 </td><td>
 
 Structure describing what changed between two filling recipe entities at the recipe level
+
+</td></tr>
+<tr><td>
+
+[IConfectionRecipeChanges](./interfaces/IConfectionRecipeChanges.md)
+
+</td><td>
+
+Structure describing what changed between two confection recipe entities at the recipe level.
 
 </td></tr>
 <tr><td>

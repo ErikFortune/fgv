@@ -40,6 +40,9 @@ import {
   DocumentDuplicateIcon
 } from '@heroicons/react/20/solid';
 
+import { MultiActionButton } from '@fgv/ts-app-shell';
+import type { IMultiActionButtonAction } from '@fgv/ts-app-shell';
+
 import type { IEditable, IEditingContext } from './useEditingContext';
 
 // ============================================================================
@@ -162,24 +165,34 @@ export function EditingToolbar<TWrapper extends IEditable>(
             <XMarkIcon className="h-3.5 w-3.5" />
             <span>Cancel</span>
           </ToolbarButton>
-          {customSaveButton ? (
-            customSaveButton
-          ) : (
-            <>
-              {!context.readOnly && (
-                <ToolbarButton onClick={context.save} title="Save changes" variant="primary">
-                  <CheckIcon className="h-3.5 w-3.5" />
-                  <span>Save</span>
-                </ToolbarButton>
-              )}
-              {context.saveAs !== undefined && (
-                <ToolbarButton onClick={context.saveAs} title="Save to another collection" variant="primary">
-                  <DocumentDuplicateIcon className="h-3.5 w-3.5" />
-                  <span>Save to&hellip;</span>
-                </ToolbarButton>
-              )}
-            </>
-          )}
+          {(() => {
+            if (customSaveButton) return customSaveButton;
+            const actions: IMultiActionButtonAction[] = [];
+            if (!context.readOnly) {
+              actions.push({
+                id: 'save',
+                label: 'Save',
+                icon: <CheckIcon className="h-3.5 w-3.5" />,
+                onSelect: context.save
+              });
+            }
+            if (context.saveAs) {
+              actions.push({
+                id: 'save-to',
+                label: 'Save to\u2026',
+                icon: <DocumentDuplicateIcon className="h-3.5 w-3.5" />,
+                onSelect: context.saveAs
+              });
+            }
+            if (actions.length === 0) return null;
+            return (
+              <MultiActionButton
+                primaryAction={actions[0]!}
+                alternativeActions={actions.slice(1)}
+                variant="primary"
+              />
+            );
+          })()}
         </div>
       </div>
     </div>

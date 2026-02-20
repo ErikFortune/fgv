@@ -8,3 +8,9 @@ export { AI_NOTE_CATEGORY, extractAiNote } from './normalizeNotes';
 export { buildIngredientAiPrompt } from './ingredientPrompt';
 
 export { buildMoldAiPrompt } from './moldPrompt';
+
+export { buildFillingAiPrompt } from './fillingPrompt';
+
+export { buildProcedureAiPrompt } from './procedurePrompt';
+
+export { buildDecorationAiPrompt } from './decorationPrompt';

@@ -264,6 +264,21 @@ describe('MaterializedLibrary Functionality Tests', () => {
       });
     });
 
+    test('getVariationFromEntity() wraps an entity using the confection context', () => {
+      const result = ctx.confections.get('common.dark-dome-bonbon' as ConfectionId);
+
+      expect(result).toSucceedAndSatisfy((confection) => {
+        const goldenSpec = confection.goldenVariationSpec;
+        const goldenEntity = confection.entity.variations.find((v) => v.variationSpec === goldenSpec);
+        expect(goldenEntity).toBeDefined();
+        if (goldenEntity) {
+          expect(confection.getVariationFromEntity(goldenEntity)).toSucceedAndSatisfy((v) => {
+            expect(v.variationSpec).toBe(goldenSpec);
+          });
+        }
+      });
+    });
+
     test('get() fails for non-existent confection', () => {
       const result = ctx.confections.get('common.nonexistent' as ConfectionId);
       expect(result).toFail();

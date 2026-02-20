@@ -2,7 +2,7 @@
 
 # Interface: IGenerateVariationSpecOptions
 
-Options for generating a filling recipe variation spec.
+Options for generating a recipe variation spec.
 
 ## Properties
 

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import * as yaml from 'js-yaml';
 
 import {
@@ -51,7 +51,9 @@ import {
 } from './ids';
 import {
   confectionRecipeVariationId,
+  confectionRecipeVariationSpec,
   fillingRecipeVariationId,
+  fillingRecipeVariationSpec,
   ParsedConfectionRecipeVariationId,
   ParsedFillingId,
   ParsedFillingRecipeVariationId,
@@ -339,7 +341,7 @@ export function createFillingRecipeVariationIdValidated(parts: {
 }
 
 /**
- * Options for generating a filling recipe variation spec.
+ * Options for generating a recipe variation spec.
  * @public
  */
 export interface IGenerateVariationSpecOptions {
@@ -358,29 +360,29 @@ export interface IGenerateVariationSpecOptions {
 }
 
 /**
- * Generates a unique {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec} from
- * the given options, auto-selecting the next available index for the date if not specified.
+ * Generates a unique variation spec of the given branded type from the given options,
+ * auto-selecting the next available index for the date if not specified.
+ * The converter validates and brands the resulting string.
  * @param existingSpecs - Existing variation specs to avoid collisions
+ * @param converter - Converter that validates and brands the spec string
  * @param options - Optional date, index, and name
- * @returns Result with a valid FillingRecipeVariationSpec or failure
+ * @returns Result with a valid branded variation spec or failure
  * @public
  */
-export function generateVariationSpec(
-  existingSpecs: ReadonlyArray<FillingRecipeVariationSpec>,
+export function generateVariationSpec<TSpec extends string>(
+  existingSpecs: ReadonlyArray<TSpec>,
+  converter: Converter<TSpec>,
   options?: IGenerateVariationSpecOptions
-): Result<FillingRecipeVariationSpec> {
+): Result<TSpec> {
   const date = options?.date ?? new Date().toISOString().split('T')[0];
   const nameSuffix = options?.name ? `-${toKebabCase(options.name)}` : '';
 
   if (options?.index !== undefined) {
-    const spec = `${date}-${String(options.index).padStart(
-      2,
-      '0'
-    )}${nameSuffix}` as FillingRecipeVariationSpec;
-    if (existingSpecs.includes(spec)) {
-      return fail(`variation spec '${spec}' already exists`);
+    const candidate = `${date}-${String(options.index).padStart(2, '0')}${nameSuffix}`;
+    if (existingSpecs.includes(candidate as TSpec)) {
+      return fail(`variation spec '${candidate}' already exists`);
     }
-    return succeed(spec);
+    return converter.convert(candidate);
   }
 
   // Auto-increment: find the highest NN used for this date and add 1
@@ -396,8 +398,38 @@ export function generateVariationSpec(
   if (nextIndex > 99) {
     return fail(`no available index for date '${date}' (all 01-99 are taken)`);
   }
-  const spec = `${date}-${String(nextIndex).padStart(2, '0')}${nameSuffix}` as FillingRecipeVariationSpec;
-  return succeed(spec);
+  const candidate = `${date}-${String(nextIndex).padStart(2, '0')}${nameSuffix}`;
+  return converter.convert(candidate);
+}
+
+/**
+ * Generates a unique {@link FillingRecipeVariationSpec | FillingRecipeVariationSpec} from
+ * the given options, auto-selecting the next available index for the date if not specified.
+ * @param existingSpecs - Existing variation specs to avoid collisions
+ * @param options - Optional date, index, and name
+ * @returns Result with a valid FillingRecipeVariationSpec or failure
+ * @public
+ */
+export function generateFillingVariationSpec(
+  existingSpecs: ReadonlyArray<FillingRecipeVariationSpec>,
+  options?: IGenerateVariationSpecOptions
+): Result<FillingRecipeVariationSpec> {
+  return generateVariationSpec(existingSpecs, fillingRecipeVariationSpec, options);
+}
+
+/**
+ * Generates a unique {@link ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec} from
+ * the given options, auto-selecting the next available index for the date if not specified.
+ * @param existingSpecs - Existing variation specs to avoid collisions
+ * @param options - Optional date, index, and name
+ * @returns Result with a valid ConfectionRecipeVariationSpec or failure
+ * @public
+ */
+export function generateConfectionVariationSpec(
+  existingSpecs: ReadonlyArray<ConfectionRecipeVariationSpec>,
+  options?: IGenerateVariationSpecOptions
+): Result<ConfectionRecipeVariationSpec> {
+  return generateVariationSpec(existingSpecs, confectionRecipeVariationSpec, options);
 }
 
 // ============================================================================

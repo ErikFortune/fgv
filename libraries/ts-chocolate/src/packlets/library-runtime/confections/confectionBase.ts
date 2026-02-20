@@ -262,6 +262,19 @@ export abstract class ConfectionBase<
   }
 
   /**
+   * Wraps an arbitrary variation entity using this confection's context.
+   * Used to create a runtime variation from an in-memory entity that may not yet
+   * be persisted (e.g., a newly created variation from EditedConfectionRecipe).
+   * Does not cache the result.
+   * @param entity - The variation entity to wrap
+   * @returns Result with runtime variation, or Failure if creation fails
+   * @public
+   */
+  public getVariationFromEntity(entity: Confections.AnyConfectionRecipeVariationEntity): Result<TVariation> {
+    return this._createVariation(entity);
+  }
+
+  /**
    * Gets a specific variation by variation specifier.
    * @param variationSpec - The variation specifier to find
    * @returns Success with runtime variation, or Failure if not found or creation fails

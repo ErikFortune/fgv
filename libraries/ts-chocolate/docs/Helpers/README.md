@@ -22,7 +22,7 @@ Description
 
 </td><td>
 
-Options for generating a filling recipe variation spec.
+Options for generating a recipe variation spec.
 
 </td></tr>
 <tr><td>
@@ -261,7 +261,26 @@ Creates and validates a FillingRecipeVariationId | filling variation ID from com
 
 </td><td>
 
+Generates a unique variation spec of the given branded type from the given options,
+auto-selecting the next available index for the date if not specified.
+
+</td></tr>
+<tr><td>
+
+[generateFillingVariationSpec](./functions/generateFillingVariationSpec.md)
+
+</td><td>
+
 Generates a unique FillingRecipeVariationSpec | FillingRecipeVariationSpec from
+
+</td></tr>
+<tr><td>
+
+[generateConfectionVariationSpec](./functions/generateConfectionVariationSpec.md)
+
+</td><td>
+
+Generates a unique ConfectionRecipeVariationSpec | ConfectionRecipeVariationSpec from
 
 </td></tr>
 <tr><td>

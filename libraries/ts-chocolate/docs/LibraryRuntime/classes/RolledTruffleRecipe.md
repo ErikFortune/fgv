@@ -428,6 +428,19 @@ Gets all variations - resolved.
 </td></tr>
 <tr><td>
 
+[getVariationFromEntity(entity)](./ConfectionBase.getVariationFromEntity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Wraps an arbitrary variation entity using this confection's context.
+
+</td></tr>
+<tr><td>
+
 [getVariation(variationSpec)](./ConfectionBase.getVariation.md)
 
 </td><td>

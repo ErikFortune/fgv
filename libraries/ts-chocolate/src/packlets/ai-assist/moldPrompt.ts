@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Model } from '../common';
+import { Helpers, Model } from '../common';
 
 /**
  * Builds a detailed AI prompt for generating a mold entity JSON object.
@@ -35,10 +35,7 @@ import { Model } from '../common';
  * @public
  */
 export function buildMoldAiPrompt(moldDescription: string): string {
-  const baseId = moldDescription
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  const baseId = Helpers.toKebabCase(moldDescription);
 
   return `Generate a JSON object representing the chocolate mold "${moldDescription}" for a chocolate-making application.
 

@@ -732,7 +732,7 @@ export function DecorationsTabContent(): React.ReactElement {
             content: (
               <EntityCreateForm<Entities.Decorations.IDecorationEntity>
                 slugify={slugify}
-                buildPrompt={(name: string): string => name}
+                buildPrompt={AiAssist.buildDecorationAiPrompt}
                 convert={(from: unknown) => Entities.Decorations.Converters.decorationEntity.convert(from)}
                 makeBlank={(name: string, id: string): Entities.Decorations.IDecorationEntity =>
                   createBlankDecorationEntity(id as BaseDecorationId, name)
@@ -897,7 +897,7 @@ export function DecorationsTabContent(): React.ReactElement {
             content: (
               <EntityCreateForm<Entities.Procedures.IProcedureEntity>
                 slugify={slugify}
-                buildPrompt={(name: string): string => name}
+                buildPrompt={AiAssist.buildProcedureAiPrompt}
                 convert={(from: unknown) => Entities.Procedures.Converters.procedureEntity.convert(from)}
                 makeBlank={(name: string, id: string): Entities.Procedures.IProcedureEntity =>
                   createBlankRawProcedureEntity(id as BaseProcedureId, name)

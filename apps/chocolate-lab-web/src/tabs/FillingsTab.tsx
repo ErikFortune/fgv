@@ -926,7 +926,7 @@ export function FillingsTabContent(): React.ReactElement {
             content: (
               <EntityCreateForm<Entities.Fillings.IFillingRecipeEntity>
                 slugify={slugify}
-                buildPrompt={(name: string): string => name}
+                buildPrompt={AiAssist.buildFillingAiPrompt}
                 convert={(from: unknown) => Entities.Fillings.Converters.fillingRecipeEntity.convert(from)}
                 makeBlank={(name: string, id: string): Entities.Fillings.IFillingRecipeEntity =>
                   createBlankFillingRecipeEntity(id as BaseFillingId, name)
@@ -1103,16 +1103,14 @@ export function FillingsTabContent(): React.ReactElement {
             content: (
               <EntityCreateForm<Entities.Procedures.IProcedureEntity>
                 slugify={slugify}
-                buildPrompt={(name: string): string => name}
+                buildPrompt={AiAssist.buildProcedureAiPrompt}
                 convert={(from: unknown) => Entities.Procedures.Converters.procedureEntity.convert(from)}
                 makeBlank={(name: string, id: string): Entities.Procedures.IProcedureEntity =>
                   createBlankRawProcedureEntity(id as BaseProcedureId, name)
                 }
+                initialName={subEntitySeed}
                 onCreate={handleSubEntityProcedureCreate}
                 onCancel={handleSubEntityCancel}
-                namePlaceholder="e.g. Ganache Preparation"
-                entityLabel="Procedure"
-                initialName={subEntitySeed}
               />
             )
           };

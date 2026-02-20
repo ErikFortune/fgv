@@ -43,6 +43,33 @@ Builds a detailed AI prompt for generating an ingredient entity JSON object.
 Builds a detailed AI prompt for generating a mold entity JSON object.
 
 </td></tr>
+<tr><td>
+
+[buildFillingAiPrompt](./functions/buildFillingAiPrompt.md)
+
+</td><td>
+
+Builds a detailed AI prompt for generating a filling recipe entity JSON object.
+
+</td></tr>
+<tr><td>
+
+[buildProcedureAiPrompt](./functions/buildProcedureAiPrompt.md)
+
+</td><td>
+
+Builds a detailed AI prompt for generating a procedure entity JSON object.
+
+</td></tr>
+<tr><td>
+
+[buildDecorationAiPrompt](./functions/buildDecorationAiPrompt.md)
+
+</td><td>
+
+Builds a detailed AI prompt for generating a decoration entity JSON object.
+
+</td></tr>
 </tbody></table>
 
 ## Variables

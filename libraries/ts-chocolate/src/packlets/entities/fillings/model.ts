@@ -367,7 +367,7 @@ export function createBlankFillingRecipeEntity(
   variationLabel?: string
 ): IFillingRecipeEntity {
   const today = new Date().toISOString().split('T')[0];
-  const variationSpec = Helpers.generateVariationSpec([], {
+  const variationSpec = Helpers.generateFillingVariationSpec([], {
     date: today,
     name: variationLabel
   }).orThrow();
