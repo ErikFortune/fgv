@@ -26,9 +26,10 @@
  */
 
 import React from 'react';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
+import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { LibraryRuntime } from '@fgv/ts-chocolate';
+import { EntityDetailHeader, NotesSection } from '../common';
 
 // ============================================================================
 // Props
@@ -46,62 +47,10 @@ export interface IIngredientDetailProps {
 }
 
 // ============================================================================
-// Section Helpers
+// Category Colors
 // ============================================================================
 
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">{title}</h4>
-      {children}
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value
-}: {
-  readonly label: string;
-  readonly value: React.ReactNode;
-}): React.ReactElement | null {
-  if (value === undefined || value === null) {
-    return null;
-  }
-  return (
-    <div className="flex items-baseline gap-2 py-0.5">
-      <span className="text-xs text-gray-500 w-32 shrink-0">{label}</span>
-      <span className="text-sm text-gray-800">{value}</span>
-    </div>
-  );
-}
-
-function TagList({ tags }: { readonly tags: ReadonlyArray<string> }): React.ReactElement | null {
-  if (tags.length === 0) {
-    return null;
-  }
-  return (
-    <div className="flex flex-wrap gap-1">
-      {tags.map((tag) => (
-        <span key={tag} className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-          {tag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// ============================================================================
-// Category Badge
-// ============================================================================
-
-const CATEGORY_COLORS: Record<string, string> = {
+const INGREDIENT_CATEGORY_COLORS: Record<string, string> = {
   chocolate: 'bg-amber-100 text-amber-800',
   dairy: 'bg-blue-100 text-blue-800',
   sugar: 'bg-pink-100 text-pink-800',
@@ -111,15 +60,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   flavor: 'bg-green-100 text-green-800',
   other: 'bg-gray-100 text-gray-800'
 };
-
-function CategoryBadge({ category }: { readonly category: string }): React.ReactElement {
-  const colorClass = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.other;
-  return (
-    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${colorClass}`}>
-      {category}
-    </span>
-  );
-}
 
 // ============================================================================
 // Ganache Characteristics
@@ -201,25 +141,21 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
   return (
     <div className="flex flex-col p-4 overflow-y-auto">
       {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-lg font-semibold text-choco-primary">{ingredient.name}</h3>
-          <CategoryBadge category={ingredient.category} />
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="ml-auto flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-              title="Edit ingredient"
-            >
-              <PencilSquareIcon className="w-4 h-4" />
-              Edit
-            </button>
-          )}
-        </div>
-        {ingredient.manufacturer && <p className="text-sm text-gray-500">{ingredient.manufacturer}</p>}
-        {ingredient.description && <p className="text-sm text-gray-600 mt-1">{ingredient.description}</p>}
-        <p className="text-xs text-gray-400 mt-1 font-mono">{ingredient.id}</p>
-      </div>
+      <EntityDetailHeader
+        title={ingredient.name}
+        description={ingredient.description}
+        badge={{
+          label: ingredient.category,
+          colorClass: INGREDIENT_CATEGORY_COLORS[ingredient.category] ?? INGREDIENT_CATEGORY_COLORS.other
+        }}
+        subtitle={ingredient.id}
+        extraIndicators={
+          ingredient.manufacturer ? (
+            <span className="text-xs text-gray-500">{ingredient.manufacturer}</span>
+          ) : undefined
+        }
+        onEdit={onEdit}
+      />
 
       {/* Ganache Characteristics */}
       <GanacheSection ingredient={ingredient} />
@@ -259,18 +195,7 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
       {ingredient.vegan !== undefined && <DetailRow label="Vegan" value={ingredient.vegan ? 'Yes' : 'No'} />}
 
       {/* Notes */}
-      {ingredient.notes.length > 0 && (
-        <DetailSection title="Notes">
-          {ingredient.notes.map((note, i) => (
-            <div key={i} className="mb-1.5">
-              <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-500 rounded mr-1.5">
-                {note.category}
-              </span>
-              <span className="text-sm text-gray-700">{note.note}</span>
-            </div>
-          ))}
-        </DetailSection>
-      )}
+      <NotesSection notes={ingredient.notes} />
     </div>
   );
 }

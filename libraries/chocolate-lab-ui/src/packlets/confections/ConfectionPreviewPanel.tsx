@@ -28,7 +28,9 @@
 import React from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
-import type { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { Entities, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
+
+import type { IConfectionViewSettings } from './viewSettings';
 
 import { renderPreview } from '../tasks';
 
@@ -39,6 +41,7 @@ import { renderPreview } from '../tasks';
 export interface IConfectionPreviewPanelProps {
   readonly confection: LibraryRuntime.IConfectionBase;
   readonly draftEntity?: Entities.Confections.AnyConfectionRecipeEntity;
+  readonly viewSettings?: IConfectionViewSettings;
   readonly onClose?: () => void;
 }
 
@@ -90,25 +93,25 @@ function MetaRow({
 }
 
 function FillingSlotSection({
-  slot
+  slot,
+  selectedOptionId
 }: {
   readonly slot: LibraryRuntime.IResolvedFillingSlot;
+  readonly selectedOptionId?: string;
 }): React.ReactElement {
-  const preferred =
-    slot.filling.options.find((o) => o.id === slot.filling.preferredId) ?? slot.filling.options[0];
-  const alternates = slot.filling.options.filter((o) => o.id !== preferred?.id);
-  const preferredName = preferred?.type === 'recipe' ? preferred.filling.name : preferred?.ingredient.name;
+  const displayId = selectedOptionId ?? slot.filling.preferredId;
+  const displayed = slot.filling.options.find((o) => o.id === displayId) ?? slot.filling.options[0];
+  const displayedName = displayed?.type === 'recipe' ? displayed.filling.name : displayed?.ingredient.name;
+  const isPreferred = displayed?.id === slot.filling.preferredId;
 
   return (
-    <div className="px-4 py-2.5 flex items-start justify-between hover:bg-gray-50">
+    <div className="px-4 py-2.5 flex items-start hover:bg-gray-50">
       <div className="flex-1">
-        <span className="text-xs text-gray-400 block mb-0.5">{slot.name ?? slot.slotId}</span>
-        <span className="text-sm font-medium text-gray-900">{preferredName ?? '—'}</span>
-        {alternates.length > 0 && (
-          <span className="ml-2 text-xs text-amber-600">
-            or {alternates.map((o) => (o.type === 'recipe' ? o.filling.name : o.ingredient.name)).join(', ')}
-          </span>
-        )}
+        <span className="text-xs text-gray-400 block mb-0.5">
+          {slot.name ?? slot.slotId}
+          {!isPreferred ? ' (alternate)' : ''}
+        </span>
+        <span className="text-sm font-medium text-gray-900">{displayedName ?? '—'}</span>
       </div>
     </div>
   );
@@ -180,41 +183,70 @@ function StepsSection({
   );
 }
 
+function OptionSlot({ role, name }: { readonly role: string; readonly name: string }): React.ReactElement {
+  return (
+    <div className="px-4 py-2.5 flex items-start hover:bg-gray-50">
+      <div className="flex-1">
+        <span className="text-xs text-gray-400 block mb-0.5">{role}</span>
+        <span className="text-sm font-medium text-gray-900">{name}</span>
+      </div>
+    </div>
+  );
+}
+
+function ChocolateSlotDisplay({
+  spec,
+  selectedId
+}: {
+  readonly spec: LibraryRuntime.IResolvedChocolateSpec;
+  readonly selectedId?: IngredientId;
+}): React.ReactElement {
+  const all = [spec.chocolate, ...spec.alternates];
+  const selected = selectedId ? all.find((i) => i.id === selectedId) : undefined;
+  const displayed = selected ?? spec.chocolate;
+  const isPreferred = displayed.id === spec.chocolate.id;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+      <OptionSlot role={isPreferred ? 'Preferred' : 'Alternate'} name={displayed.name} />
+    </div>
+  );
+}
+
 function MoldedBonBonSection({
-  variation
+  variation,
+  viewSettings
 }: {
   readonly variation: LibraryRuntime.IMoldedBonBonRecipeVariation;
+  readonly viewSettings?: IConfectionViewSettings;
 }): React.ReactElement {
-  const preferredMold = variation.preferredMold;
+  const selectedMoldId = viewSettings?.moldId;
+  const allMolds = variation.molds.options;
+  const displayedMold = selectedMoldId
+    ? allMolds.find((m) => m.id === selectedMoldId)?.mold ?? variation.preferredMold?.mold
+    : variation.preferredMold?.mold;
   const shellChoc = variation.shellChocolate;
   const additionalChocs = variation.additionalChocolates ?? [];
 
   return (
     <>
-      {preferredMold && (
+      {displayedMold && (
         <PreviewSection title="Mold">
           <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <MetaRow label="Model" value={preferredMold.mold.displayName} />
-            {preferredMold.mold.format && <MetaRow label="Format" value={preferredMold.mold.format} />}
+            <MetaRow label="Model" value={displayedMold.displayName} />
+            {displayedMold.format && <MetaRow label="Format" value={displayedMold.format} />}
           </div>
         </PreviewSection>
       )}
       <PreviewSection title="Shell Chocolate">
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <MetaRow label="Preferred" value={shellChoc.chocolate.name} />
-          {shellChoc.alternates.length > 0 && (
-            <MetaRow label="Alternates" value={shellChoc.alternates.map((a) => a.name).join(', ')} />
-          )}
-        </div>
+        <ChocolateSlotDisplay spec={shellChoc} selectedId={viewSettings?.shellChocolateId} />
       </PreviewSection>
       {additionalChocs.map((ac, i) => (
         <PreviewSection
           key={i}
           title={`${ac.purpose.charAt(0).toUpperCase() + ac.purpose.slice(1)} Chocolate`}
         >
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <MetaRow label="Preferred" value={ac.chocolate.chocolate.name} />
-          </div>
+          <ChocolateSlotDisplay spec={ac.chocolate} />
         </PreviewSection>
       ))}
     </>
@@ -222,9 +254,11 @@ function MoldedBonBonSection({
 }
 
 function BarTruffleSection({
-  variation
+  variation,
+  viewSettings
 }: {
   readonly variation: LibraryRuntime.IBarTruffleRecipeVariation;
+  readonly viewSettings?: IConfectionViewSettings;
 }): React.ReactElement {
   const fd = variation.frameDimensions;
   const bd = variation.singleBonBonDimensions;
@@ -239,15 +273,10 @@ function BarTruffleSection({
       </PreviewSection>
       {variation.enrobingChocolate && (
         <PreviewSection title="Enrobing Chocolate">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <MetaRow label="Preferred" value={variation.enrobingChocolate.chocolate.name} />
-            {variation.enrobingChocolate.alternates.length > 0 && (
-              <MetaRow
-                label="Alternates"
-                value={variation.enrobingChocolate.alternates.map((a) => a.name).join(', ')}
-              />
-            )}
-          </div>
+          <ChocolateSlotDisplay
+            spec={variation.enrobingChocolate}
+            selectedId={viewSettings?.enrobingChocolateId}
+          />
         </PreviewSection>
       )}
     </>
@@ -255,35 +284,37 @@ function BarTruffleSection({
 }
 
 function RolledTruffleSection({
-  variation
+  variation,
+  viewSettings
 }: {
   readonly variation: LibraryRuntime.IRolledTruffleRecipeVariation;
+  readonly viewSettings?: IConfectionViewSettings;
 }): React.ReactElement {
+  const selectedCoatingId = viewSettings?.coatingId;
+  const coatings = variation.coatings;
+  const displayedCoating = coatings
+    ? (selectedCoatingId ? coatings.options.find((c) => c.id === selectedCoatingId) : coatings.preferred) ??
+      coatings.preferred
+    : undefined;
+  const isPreferredCoating = displayedCoating?.id === coatings?.preferred?.id;
+
   return (
     <>
       {variation.enrobingChocolate && (
         <PreviewSection title="Enrobing Chocolate">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <MetaRow label="Preferred" value={variation.enrobingChocolate.chocolate.name} />
-            {variation.enrobingChocolate.alternates.length > 0 && (
-              <MetaRow
-                label="Alternates"
-                value={variation.enrobingChocolate.alternates.map((a) => a.name).join(', ')}
-              />
-            )}
-          </div>
+          <ChocolateSlotDisplay
+            spec={variation.enrobingChocolate}
+            selectedId={viewSettings?.enrobingChocolateId}
+          />
         </PreviewSection>
       )}
-      {variation.coatings && (
-        <PreviewSection title="Coatings">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            {variation.coatings.options.map((c) => (
-              <MetaRow
-                key={c.id}
-                label={c.id === variation.coatings?.preferred?.id ? 'Preferred' : 'Alternate'}
-                value={c.ingredient.name}
-              />
-            ))}
+      {displayedCoating && (
+        <PreviewSection title="Coating">
+          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+            <OptionSlot
+              role={isPreferredCoating ? 'Preferred' : 'Alternate'}
+              name={displayedCoating.ingredient.name}
+            />
           </div>
         </PreviewSection>
       )}
@@ -310,7 +341,7 @@ function RolledTruffleSection({
  * @public
  */
 export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): React.ReactElement {
-  const { confection, draftEntity, onClose } = props;
+  const { confection, draftEntity, viewSettings, onClose } = props;
 
   const entity = draftEntity ?? confection.entity;
   const goldenVariation = confection.goldenVariation;
@@ -391,16 +422,26 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
         <PreviewSection title={`Fillings (${fillings.length} slot${fillings.length !== 1 ? 's' : ''})`}>
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
             {fillings.map((slot) => (
-              <FillingSlotSection key={slot.slotId} slot={slot} />
+              <FillingSlotSection
+                key={slot.slotId}
+                slot={slot}
+                selectedOptionId={viewSettings?.fillingSelections?.[slot.slotId]}
+              />
             ))}
           </div>
         </PreviewSection>
       )}
 
       {/* Subtype-specific sections */}
-      {goldenVariation.isMoldedBonBonVariation() && <MoldedBonBonSection variation={goldenVariation} />}
-      {goldenVariation.isBarTruffleVariation() && <BarTruffleSection variation={goldenVariation} />}
-      {goldenVariation.isRolledTruffleVariation() && <RolledTruffleSection variation={goldenVariation} />}
+      {goldenVariation.isMoldedBonBonVariation() && (
+        <MoldedBonBonSection variation={goldenVariation} viewSettings={viewSettings} />
+      )}
+      {goldenVariation.isBarTruffleVariation() && (
+        <BarTruffleSection variation={goldenVariation} viewSettings={viewSettings} />
+      )}
+      {goldenVariation.isRolledTruffleVariation() && (
+        <RolledTruffleSection variation={goldenVariation} viewSettings={viewSettings} />
+      )}
 
       {/* Decorations */}
       {decorations && decorations.options.length > 0 && (

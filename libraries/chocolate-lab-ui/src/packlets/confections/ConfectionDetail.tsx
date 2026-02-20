@@ -25,11 +25,11 @@
  * @packageDocumentation
  */
 
-import React, { useMemo, useState } from 'react';
-import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import React, { useCallback, useMemo, useState } from 'react';
 
-import { EntityRow } from '@fgv/ts-app-shell';
+import { EntityRow, DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { ISelectableItem } from '@fgv/ts-app-shell';
+import { EntityDetailHeader, NotesSection, UrlsSection } from '../common';
 import type {
   LibraryRuntime,
   Model,
@@ -41,6 +41,8 @@ import type {
   ProcedureId
 } from '@fgv/ts-chocolate';
 import { Entities } from '@fgv/ts-chocolate';
+
+import type { IConfectionViewSettings } from './viewSettings';
 
 // ============================================================================
 // Props
@@ -69,116 +71,14 @@ export interface IConfectionDetailProps {
   readonly defaultVariationSpec?: ConfectionRecipeVariationSpec;
   /** Called when the user selects a different variation */
   readonly onVariationChange?: (spec: ConfectionRecipeVariationSpec) => void;
-  /** Optional callback to enter edit mode */
-  readonly onEdit?: () => void;
+  /** Optional callback to enter edit mode - receives the currently selected variation spec */
+  readonly onEdit?: (spec: ConfectionRecipeVariationSpec) => void;
   /** Optional callback to open the preview pane */
   readonly onPreview?: () => void;
-}
-
-// ============================================================================
-// Shared Helpers
-// ============================================================================
-
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value
-}: {
-  readonly label: string;
-  readonly value: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="flex items-baseline justify-between py-0.5 text-sm">
-      <span className="text-gray-500 shrink-0 mr-2">{label}</span>
-      <span className="text-gray-900 text-right">{value}</span>
-    </div>
-  );
-}
-
-function CategoryBadge({ label }: { readonly label: string }): React.ReactElement {
-  return (
-    <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded-full bg-choco-primary/10 text-choco-primary">
-      {label}
-    </span>
-  );
-}
-
-function TagList({ tags }: { readonly tags: ReadonlyArray<string> }): React.ReactElement | null {
-  if (tags.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Tags">
-      <div className="flex flex-wrap gap-1">
-        {tags.map((tag) => (
-          <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </DetailSection>
-  );
-}
-
-function NotesSection({
-  notes
-}: {
-  readonly notes: ReadonlyArray<Model.ICategorizedNote>;
-}): React.ReactElement | null {
-  if (notes.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Notes">
-      {notes.map((note, i) => (
-        <div key={i} className="text-sm text-gray-700 mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
-          {note.note}
-        </div>
-      ))}
-    </DetailSection>
-  );
-}
-
-function UrlsSection({
-  urls
-}: {
-  readonly urls: ReadonlyArray<Model.ICategorizedUrl>;
-}): React.ReactElement | null {
-  if (urls.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Links">
-      {urls.map((u, i) => (
-        <div key={i} className="text-sm mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{u.category}]</span>
-          <a
-            href={u.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-choco-primary hover:underline"
-          >
-            {u.url}
-          </a>
-        </div>
-      ))}
-    </DetailSection>
-  );
+  /** Current view settings (alternate selections, scaling) */
+  readonly viewSettings?: IConfectionViewSettings;
+  /** Callback when any view setting changes */
+  readonly onViewSettingsChange?: (settings: IConfectionViewSettings) => void;
 }
 
 // ============================================================================
@@ -206,10 +106,14 @@ function YieldSection({
 
 function DecorationsSection({
   decorations,
-  onDecorationClick
+  onDecorationClick,
+  selectedId,
+  onSelect
 }: {
   readonly decorations: LibraryRuntime.IConfectionBase['decorations'] & {};
   readonly onDecorationClick?: (id: DecorationId) => void;
+  readonly selectedId?: DecorationId;
+  readonly onSelect?: (id: DecorationId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
     return decorations.options.map((d) => ({
@@ -224,6 +128,8 @@ function DecorationsSection({
       <EntityRow<DecorationId>
         items={items}
         preferredId={decorations.preferredId}
+        selectedId={selectedId}
+        onSelect={onSelect}
         onClick={onDecorationClick}
       />
     </DetailSection>
@@ -237,11 +143,15 @@ function DecorationsSection({
 function FillingSlotRow({
   slot,
   onFillingClick,
-  onIngredientClick
+  onIngredientClick,
+  selectedOptionId,
+  onSelect
 }: {
   readonly slot: LibraryRuntime.IResolvedFillingSlot;
   readonly onFillingClick?: (id: FillingId) => void;
   readonly onIngredientClick?: (id: IngredientId) => void;
+  readonly selectedOptionId?: string;
+  readonly onSelect?: (id: string) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
     return slot.filling.options.map((opt) => ({
@@ -268,7 +178,13 @@ function FillingSlotRow({
   return (
     <div className="mb-1">
       <div className="text-xs text-gray-400 mb-0.5 pl-[22px]">{slot.name ?? slot.slotId}</div>
-      <EntityRow items={items} preferredId={slot.filling.preferredId} onClick={handleClick} />
+      <EntityRow
+        items={items}
+        preferredId={slot.filling.preferredId}
+        selectedId={selectedOptionId}
+        onSelect={onSelect}
+        onClick={handleClick}
+      />
     </div>
   );
 }
@@ -276,11 +192,15 @@ function FillingSlotRow({
 function FillingSlotsSection({
   fillings,
   onFillingClick,
-  onIngredientClick
+  onIngredientClick,
+  fillingSelections,
+  onFillingSelect
 }: {
   readonly fillings: ReadonlyArray<LibraryRuntime.IResolvedFillingSlot>;
   readonly onFillingClick?: (id: FillingId) => void;
   readonly onIngredientClick?: (id: IngredientId) => void;
+  readonly fillingSelections?: Readonly<Record<string, string>>;
+  readonly onFillingSelect?: (slotId: string, optionId: string) => void;
 }): React.ReactElement | null {
   if (fillings.length === 0) {
     return null;
@@ -293,6 +213,8 @@ function FillingSlotsSection({
           slot={slot}
           onFillingClick={onFillingClick}
           onIngredientClick={onIngredientClick}
+          selectedOptionId={fillingSelections?.[slot.slotId]}
+          onSelect={onFillingSelect ? (id): void => onFillingSelect(slot.slotId, id) : undefined}
         />
       ))}
     </DetailSection>
@@ -305,10 +227,14 @@ function FillingSlotsSection({
 
 function ProceduresSection({
   procedures,
-  onProcedureClick
+  onProcedureClick,
+  selectedId,
+  onSelect
 }: {
   readonly procedures: Model.IOptionsWithPreferred<LibraryRuntime.IResolvedConfectionProcedure, ProcedureId>;
   readonly onProcedureClick?: (id: ProcedureId) => void;
+  readonly selectedId?: ProcedureId;
+  readonly onSelect?: (id: ProcedureId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
     return procedures.options.map((p) => ({
@@ -320,7 +246,13 @@ function ProceduresSection({
 
   return (
     <DetailSection title="Procedures">
-      <EntityRow<ProcedureId> items={items} preferredId={procedures.preferredId} onClick={onProcedureClick} />
+      <EntityRow<ProcedureId>
+        items={items}
+        preferredId={procedures.preferredId}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        onClick={onProcedureClick}
+      />
     </DetailSection>
   );
 }
@@ -332,11 +264,15 @@ function ProceduresSection({
 function ChocolateSpecSection({
   title,
   spec,
-  onIngredientClick
+  onIngredientClick,
+  selectedId,
+  onSelect
 }: {
   readonly title: string;
   readonly spec: LibraryRuntime.IResolvedChocolateSpec;
   readonly onIngredientClick?: (id: IngredientId) => void;
+  readonly selectedId?: IngredientId;
+  readonly onSelect?: (id: IngredientId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
     const result: ISelectableItem<IngredientId>[] = [{ id: spec.chocolate.id, label: spec.chocolate.name }];
@@ -348,7 +284,13 @@ function ChocolateSpecSection({
 
   return (
     <DetailSection title={title}>
-      <EntityRow<IngredientId> items={items} preferredId={spec.chocolate.id} onClick={onIngredientClick} />
+      <EntityRow<IngredientId>
+        items={items}
+        preferredId={spec.chocolate.id}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        onClick={onIngredientClick}
+      />
     </DetailSection>
   );
 }
@@ -359,10 +301,14 @@ function ChocolateSpecSection({
 
 function MoldsSection({
   molds,
-  onMoldClick
+  onMoldClick,
+  selectedId,
+  onSelect
 }: {
   readonly molds: Model.IOptionsWithPreferred<LibraryRuntime.IResolvedConfectionMoldRef, MoldId>;
   readonly onMoldClick?: (id: MoldId) => void;
+  readonly selectedId?: MoldId;
+  readonly onSelect?: (id: MoldId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
     return molds.options.map((m) => ({
@@ -374,7 +320,13 @@ function MoldsSection({
 
   return (
     <DetailSection title="Molds">
-      <EntityRow<MoldId> items={items} preferredId={molds.preferredId} onClick={onMoldClick} />
+      <EntityRow<MoldId>
+        items={items}
+        preferredId={molds.preferredId}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        onClick={onMoldClick}
+      />
     </DetailSection>
   );
 }
@@ -431,10 +383,14 @@ function DimensionsSection({
 
 function CoatingsSection({
   coatings,
-  onIngredientClick
+  onIngredientClick,
+  selectedId,
+  onSelect
 }: {
   readonly coatings: LibraryRuntime.IResolvedCoatings;
   readonly onIngredientClick?: (id: IngredientId) => void;
+  readonly selectedId?: IngredientId;
+  readonly onSelect?: (id: IngredientId) => void;
 }): React.ReactElement {
   const items = useMemo(() => {
     return coatings.options.map((c) => ({
@@ -448,6 +404,8 @@ function CoatingsSection({
       <EntityRow<IngredientId>
         items={items}
         preferredId={coatings.preferred?.id}
+        selectedId={selectedId}
+        onSelect={onSelect}
         onClick={onIngredientClick}
       />
     </DetailSection>
@@ -462,20 +420,31 @@ function MoldedBonBonContent({
   confection,
   variation,
   onIngredientClick,
-  onMoldClick
+  onMoldClick,
+  viewSettings,
+  onSettingChange
 }: {
   readonly confection: LibraryRuntime.IMoldedBonBonRecipe;
   readonly variation: LibraryRuntime.IMoldedBonBonRecipeVariation;
   readonly onIngredientClick?: (id: IngredientId) => void;
   readonly onMoldClick?: (id: MoldId) => void;
+  readonly viewSettings?: IConfectionViewSettings;
+  readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
 }): React.ReactElement {
   return (
     <>
-      <MoldsSection molds={variation.molds} onMoldClick={onMoldClick} />
+      <MoldsSection
+        molds={variation.molds}
+        onMoldClick={onMoldClick}
+        selectedId={viewSettings?.moldId}
+        onSelect={onSettingChange ? (id): void => onSettingChange({ moldId: id }) : undefined}
+      />
       <ChocolateSpecSection
         title="Shell Chocolate"
         spec={variation.shellChocolate}
         onIngredientClick={onIngredientClick}
+        selectedId={viewSettings?.shellChocolateId}
+        onSelect={onSettingChange ? (id): void => onSettingChange({ shellChocolateId: id }) : undefined}
       />
       {variation.additionalChocolates && (
         <AdditionalChocolatesSection
@@ -489,10 +458,14 @@ function MoldedBonBonContent({
 
 function BarTruffleContent({
   variation,
-  onIngredientClick
+  onIngredientClick,
+  viewSettings,
+  onSettingChange
 }: {
   readonly variation: LibraryRuntime.IBarTruffleRecipeVariation;
   readonly onIngredientClick?: (id: IngredientId) => void;
+  readonly viewSettings?: IConfectionViewSettings;
+  readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
 }): React.ReactElement {
   return (
     <>
@@ -505,6 +478,8 @@ function BarTruffleContent({
           title="Enrobing Chocolate"
           spec={variation.enrobingChocolate}
           onIngredientClick={onIngredientClick}
+          selectedId={viewSettings?.enrobingChocolateId}
+          onSelect={onSettingChange ? (id): void => onSettingChange({ enrobingChocolateId: id }) : undefined}
         />
       )}
     </>
@@ -513,10 +488,14 @@ function BarTruffleContent({
 
 function RolledTruffleContent({
   variation,
-  onIngredientClick
+  onIngredientClick,
+  viewSettings,
+  onSettingChange
 }: {
   readonly variation: LibraryRuntime.IRolledTruffleRecipeVariation;
   readonly onIngredientClick?: (id: IngredientId) => void;
+  readonly viewSettings?: IConfectionViewSettings;
+  readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
 }): React.ReactElement {
   return (
     <>
@@ -525,10 +504,17 @@ function RolledTruffleContent({
           title="Enrobing Chocolate"
           spec={variation.enrobingChocolate}
           onIngredientClick={onIngredientClick}
+          selectedId={viewSettings?.enrobingChocolateId}
+          onSelect={onSettingChange ? (id): void => onSettingChange({ enrobingChocolateId: id }) : undefined}
         />
       )}
       {variation.coatings && (
-        <CoatingsSection coatings={variation.coatings} onIngredientClick={onIngredientClick} />
+        <CoatingsSection
+          coatings={variation.coatings}
+          onIngredientClick={onIngredientClick}
+          selectedId={viewSettings?.coatingId}
+          onSelect={onSettingChange ? (id): void => onSettingChange({ coatingId: id }) : undefined}
+        />
       )}
     </>
   );
@@ -564,7 +550,9 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     onDecorationClick,
     onCompareVariations,
     onEdit,
-    onPreview
+    onPreview,
+    viewSettings,
+    onViewSettingsChange
   } = props;
 
   const { onVariationChange } = props;
@@ -592,43 +580,35 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     }));
   }, [confection]);
 
+  const handleSettingChange = useCallback(
+    (patch: Partial<IConfectionViewSettings>): void => {
+      if (onViewSettingsChange) {
+        onViewSettingsChange({ ...viewSettings, ...patch });
+      }
+    },
+    [viewSettings, onViewSettingsChange]
+  );
+
+  const handleFillingSelect = useCallback(
+    (slotId: string, optionId: string): void => {
+      handleSettingChange({
+        fillingSelections: { ...viewSettings?.fillingSelections, [slotId]: optionId }
+      });
+    },
+    [viewSettings, handleSettingChange]
+  );
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">{confection.name}</h2>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CategoryBadge label={confection.confectionType} />
-            <span className="text-xs text-gray-400 font-mono">{confection.id}</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {onPreview && (
-              <button
-                type="button"
-                onClick={onPreview}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-                title="Preview confection"
-              >
-                <EyeIcon className="w-4 h-4" />
-                Preview
-              </button>
-            )}
-            {onEdit && (
-              <button
-                type="button"
-                onClick={onEdit}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-                title="Edit confection"
-              >
-                <PencilSquareIcon className="w-4 h-4" />
-                Edit
-              </button>
-            )}
-          </div>
-        </div>
-        {confection.description && <p className="text-sm text-gray-600 mt-1">{confection.description}</p>}
-      </div>
+      <EntityDetailHeader
+        title={confection.name}
+        description={confection.description}
+        badge={{ label: confection.confectionType, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
+        subtitle={confection.id}
+        onPreview={onPreview}
+        onEdit={onEdit ? (): void => onEdit(selectedSpec) : undefined}
+      />
 
       {/* Variation selector */}
       {confection.variations.length > 1 && (
@@ -656,6 +636,8 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
           fillings={selectedVariation.fillings}
           onFillingClick={onFillingClick}
           onIngredientClick={onIngredientClick}
+          fillingSelections={viewSettings?.fillingSelections}
+          onFillingSelect={onViewSettingsChange ? handleFillingSelect : undefined}
         />
       )}
 
@@ -666,13 +648,25 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
           variation={selectedVariation}
           onIngredientClick={onIngredientClick}
           onMoldClick={onMoldClick}
+          viewSettings={viewSettings}
+          onSettingChange={onViewSettingsChange ? handleSettingChange : undefined}
         />
       )}
       {selectedVariation.isBarTruffleVariation() && (
-        <BarTruffleContent variation={selectedVariation} onIngredientClick={onIngredientClick} />
+        <BarTruffleContent
+          variation={selectedVariation}
+          onIngredientClick={onIngredientClick}
+          viewSettings={viewSettings}
+          onSettingChange={onViewSettingsChange ? handleSettingChange : undefined}
+        />
       )}
       {selectedVariation.isRolledTruffleVariation() && (
-        <RolledTruffleContent variation={selectedVariation} onIngredientClick={onIngredientClick} />
+        <RolledTruffleContent
+          variation={selectedVariation}
+          onIngredientClick={onIngredientClick}
+          viewSettings={viewSettings}
+          onSettingChange={onViewSettingsChange ? handleSettingChange : undefined}
+        />
       )}
 
       {/* Decorations */}
@@ -680,12 +674,21 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
         <DecorationsSection
           decorations={selectedVariation.decorations}
           onDecorationClick={onDecorationClick}
+          selectedId={viewSettings?.decorationId}
+          onSelect={
+            onViewSettingsChange ? (id): void => handleSettingChange({ decorationId: id }) : undefined
+          }
         />
       )}
 
       {/* Procedures */}
       {selectedVariation.procedures && (
-        <ProceduresSection procedures={selectedVariation.procedures} onProcedureClick={onProcedureClick} />
+        <ProceduresSection
+          procedures={selectedVariation.procedures}
+          onProcedureClick={onProcedureClick}
+          selectedId={viewSettings?.procedureId}
+          onSelect={onViewSettingsChange ? (id): void => handleSettingChange({ procedureId: id }) : undefined}
+        />
       )}
 
       {/* Notes */}

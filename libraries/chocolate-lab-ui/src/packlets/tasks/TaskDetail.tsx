@@ -26,9 +26,10 @@
  */
 
 import React from 'react';
-import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-import type { LibraryRuntime, Model } from '@fgv/ts-chocolate';
+import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
+import type { LibraryRuntime } from '@fgv/ts-chocolate';
+import { EntityDetailHeader, NotesSection } from '../common';
 
 // ============================================================================
 // Props
@@ -50,73 +51,6 @@ export interface ITaskDetailProps {
 // ============================================================================
 // Shared Helpers
 // ============================================================================
-
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value
-}: {
-  readonly label: string;
-  readonly value: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="flex items-baseline justify-between py-0.5 text-sm">
-      <span className="text-gray-500 shrink-0 mr-2">{label}</span>
-      <span className="text-gray-900 text-right">{value}</span>
-    </div>
-  );
-}
-
-function TagList({ tags }: { readonly tags: ReadonlyArray<string> }): React.ReactElement | null {
-  if (tags.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Tags">
-      <div className="flex flex-wrap gap-1">
-        {tags.map((tag) => (
-          <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </DetailSection>
-  );
-}
-
-function NotesSection({
-  notes
-}: {
-  readonly notes: ReadonlyArray<Model.ICategorizedNote>;
-}): React.ReactElement | null {
-  if (notes.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Notes">
-      {notes.map((note, i) => (
-        <div key={i} className="text-sm text-gray-700 mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
-          {note.note}
-        </div>
-      ))}
-    </DetailSection>
-  );
-}
 
 // ============================================================================
 // Timing Section
@@ -229,34 +163,7 @@ export function TaskDetail(props: ITaskDetailProps): React.ReactElement {
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-lg font-semibold text-gray-900">{task.name}</h2>
-          <div className="ml-auto flex items-center gap-1">
-            {onPreview && (
-              <button
-                onClick={onPreview}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-                title="Preview template"
-              >
-                <EyeIcon className="w-4 h-4" />
-                Preview
-              </button>
-            )}
-            {onEdit && (
-              <button
-                onClick={onEdit}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-                title="Edit task"
-              >
-                <PencilSquareIcon className="w-4 h-4" />
-                Edit
-              </button>
-            )}
-          </div>
-        </div>
-        <p className="text-xs text-gray-400 mt-0.5 font-mono">{task.id}</p>
-      </div>
+      <EntityDetailHeader title={task.name} subtitle={task.id} onPreview={onPreview} onEdit={onEdit} />
 
       {/* Template */}
       <TemplateSection template={task.template} />

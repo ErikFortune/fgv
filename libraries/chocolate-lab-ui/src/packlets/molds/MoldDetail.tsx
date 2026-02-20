@@ -26,9 +26,10 @@
  */
 
 import React from 'react';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
-import type { LibraryRuntime, Model, Entities } from '@fgv/ts-chocolate';
+import { DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
+import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
+import { EntityDetailHeader, NotesSection, UrlsSection } from '../common';
 
 // ============================================================================
 // Props
@@ -43,65 +44,6 @@ export interface IMoldDetailProps {
   readonly mold: LibraryRuntime.IMold;
   /** Optional callback to switch to edit mode */
   readonly onEdit?: () => void;
-}
-
-// ============================================================================
-// Shared Helpers
-// ============================================================================
-
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value
-}: {
-  readonly label: string;
-  readonly value: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="flex items-baseline justify-between py-0.5 text-sm">
-      <span className="text-gray-500 shrink-0 mr-2">{label}</span>
-      <span className="text-gray-900 text-right">{value}</span>
-    </div>
-  );
-}
-
-function CategoryBadge({ label }: { readonly label: string }): React.ReactElement {
-  return (
-    <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded-full bg-choco-primary/10 text-choco-primary">
-      {label}
-    </span>
-  );
-}
-
-function TagList({ tags }: { readonly tags: ReadonlyArray<string> }): React.ReactElement | null {
-  if (tags.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Tags">
-      <div className="flex flex-wrap gap-1">
-        {tags.map((tag) => (
-          <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </DetailSection>
-  );
 }
 
 // ============================================================================
@@ -145,61 +87,6 @@ function DimensionsSection({
 }
 
 // ============================================================================
-// Notes Section
-// ============================================================================
-
-function NotesSection({
-  notes
-}: {
-  readonly notes: ReadonlyArray<Model.ICategorizedNote>;
-}): React.ReactElement | null {
-  if (notes.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Notes">
-      {notes.map((note, i) => (
-        <div key={i} className="text-sm text-gray-700 mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
-          {note.note}
-        </div>
-      ))}
-    </DetailSection>
-  );
-}
-
-// ============================================================================
-// URLs Section
-// ============================================================================
-
-function UrlsSection({
-  urls
-}: {
-  readonly urls: ReadonlyArray<Model.ICategorizedUrl>;
-}): React.ReactElement | null {
-  if (urls.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Links">
-      {urls.map((u, i) => (
-        <div key={i} className="text-sm mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{u.category}]</span>
-          <a
-            href={u.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-choco-primary hover:underline"
-          >
-            {u.url}
-          </a>
-        </div>
-      ))}
-    </DetailSection>
-  );
-}
-
-// ============================================================================
 // MoldDetail Component
 // ============================================================================
 
@@ -221,24 +108,13 @@ export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-lg font-semibold text-gray-900">{mold.displayName}</h2>
-          <CategoryBadge label={mold.format} />
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="ml-auto flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-              title="Edit mold"
-            >
-              <PencilSquareIcon className="w-4 h-4" />
-              Edit
-            </button>
-          )}
-        </div>
-        {mold.description && <p className="text-sm text-gray-600">{mold.description}</p>}
-        <p className="text-xs text-gray-400 mt-0.5 font-mono">{mold.id}</p>
-      </div>
+      <EntityDetailHeader
+        title={mold.displayName}
+        description={mold.description}
+        badge={{ label: mold.format, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
+        subtitle={mold.id}
+        onEdit={onEdit}
+      />
 
       {/* Manufacturer info */}
       <DetailSection title="Manufacturer">

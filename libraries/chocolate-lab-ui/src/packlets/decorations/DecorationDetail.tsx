@@ -26,11 +26,11 @@
  */
 
 import React, { useMemo } from 'react';
-import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-import { EntityRow } from '@fgv/ts-app-shell';
+import { EntityRow, DetailSection, TagList } from '@fgv/ts-app-shell';
 import type { IngredientId, ProcedureId } from '@fgv/ts-chocolate';
-import type { LibraryRuntime, Model, Entities } from '@fgv/ts-chocolate';
+import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
+import { EntityDetailHeader, NotesSection } from '../common';
 
 // ============================================================================
 // Props
@@ -51,62 +51,6 @@ export interface IDecorationDetailProps {
   readonly onEdit?: () => void;
   /** Optional callback to open preview pane */
   readonly onPreview?: () => void;
-}
-
-// ============================================================================
-// Shared Helpers
-// ============================================================================
-
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function TagList({ tags }: { readonly tags: ReadonlyArray<string> }): React.ReactElement | null {
-  if (tags.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Tags">
-      <div className="flex flex-wrap gap-1">
-        {tags.map((tag) => (
-          <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </DetailSection>
-  );
-}
-
-function NotesSection({
-  notes
-}: {
-  readonly notes: ReadonlyArray<Model.ICategorizedNote>;
-}): React.ReactElement | null {
-  if (notes.length === 0) {
-    return null;
-  }
-  return (
-    <DetailSection title="Notes">
-      {notes.map((note, i) => (
-        <div key={i} className="text-sm text-gray-700 mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
-          {note.note}
-        </div>
-      ))}
-    </DetailSection>
-  );
 }
 
 // ============================================================================
@@ -214,37 +158,13 @@ export function DecorationDetail(props: IDecorationDetailProps): React.ReactElem
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">{decoration.name}</h2>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-gray-400 font-mono">{decoration.id}</span>
-          <div className="flex items-center gap-1 shrink-0">
-            {onPreview && (
-              <button
-                type="button"
-                onClick={onPreview}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-                title="Preview decoration"
-              >
-                <EyeIcon className="w-4 h-4" />
-                Preview
-              </button>
-            )}
-            {onEdit && (
-              <button
-                type="button"
-                onClick={onEdit}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
-                title="Edit decoration"
-              >
-                <PencilSquareIcon className="w-4 h-4" />
-                Edit
-              </button>
-            )}
-          </div>
-        </div>
-        {decoration.description && <p className="text-sm text-gray-600 mt-1">{decoration.description}</p>}
-      </div>
+      <EntityDetailHeader
+        title={decoration.name}
+        description={decoration.description}
+        subtitle={decoration.id}
+        onPreview={onPreview}
+        onEdit={onEdit}
+      />
 
       {/* Ingredients */}
       {decoration.ingredients.length > 0 && (

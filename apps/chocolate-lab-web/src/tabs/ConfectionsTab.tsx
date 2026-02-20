@@ -35,7 +35,8 @@ import {
   ConfectionPreviewPanel,
   DecorationDetail,
   useFilteredEntities,
-  EntityCreateForm
+  EntityCreateForm,
+  type IConfectionViewSettings
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -83,9 +84,22 @@ export function ConfectionsTabContent(): React.ReactElement {
   const editVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
   const viewVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
 
+  const [viewSettingsMap, setViewSettingsMap] = useState<Map<string, IConfectionViewSettings>>(
+    () => new Map()
+  );
+  const handleViewSettingsChange = useCallback(
+    (entityId: string, settings: IConfectionViewSettings): void => {
+      setViewSettingsMap((prev) => {
+        const next = new Map(prev);
+        next.set(entityId, settings);
+        return next;
+      });
+    },
+    []
+  );
+
   const [saveAsName, setSaveAsName] = useState('');
   const [showSaveAsForm, setShowSaveAsForm] = useState(false);
-  const [previewConfectionId, setPreviewConfectionId] = useState<ConfectionId | undefined>(undefined);
   const subIngredientRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
@@ -122,9 +136,6 @@ export function ConfectionsTabContent(): React.ReactElement {
   const availableDecorations = useMemo<ReadonlyArray<LibraryRuntime.IDecoration>>(() => {
     return Array.from(workspace.data.decorations.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
-
-  // Track the currently-viewed variation spec per confection entity (for Edit button)
-  const viewingVariationSpecRef = useRef<Map<string, ConfectionRecipeVariationSpec>>(new Map());
 
   const { entities: confections, selectedId } = useEntityList<LibraryRuntime.AnyConfection, ConfectionId>({
     getAll: () => workspace.data.confections.values(),
@@ -198,6 +209,29 @@ export function ConfectionsTabContent(): React.ReactElement {
       if (idx < 0) return;
       editVariationSpecRef.current = variationSpec;
       squashCascade([...cascadeStack.slice(0, idx), { ...cascadeStack[idx], mode: 'edit' as const }]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handlePreviewConfection = useCallback(
+    (entityId: string): void => {
+      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'confection');
+      if (idx < 0) return;
+      squashCascade([
+        ...cascadeStack.slice(0, idx + 1),
+        { entityType: 'confection', entityId, mode: 'preview' }
+      ]);
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const handleCloseConfectionPreview = useCallback(
+    (entityId: string): void => {
+      squashCascade(
+        cascadeStack.filter(
+          (e) => !(e.entityType === 'confection' && e.entityId === entityId && e.mode === 'preview')
+        )
+      );
     },
     [cascadeStack, squashCascade]
   );
@@ -753,14 +787,15 @@ export function ConfectionsTabContent(): React.ReactElement {
         const entityId = entry.entityId;
 
         // Preview mode
-        if (previewConfectionId === entityId) {
+        if (entry.mode === 'preview') {
           return {
-            key: `${entityId}__preview`,
-            label: `${result.value.name} — Preview`,
+            key: `${entityId}:preview`,
+            label: `Preview: ${result.value.name}`,
             content: (
               <ConfectionPreviewPanel
                 confection={result.value}
-                onClose={(): void => setPreviewConfectionId(undefined)}
+                viewSettings={viewSettingsMap.get(entityId)}
+                onClose={(): void => handleCloseConfectionPreview(entityId)}
               />
             )
           };
@@ -773,9 +808,6 @@ export function ConfectionsTabContent(): React.ReactElement {
             <ConfectionDetail
               confection={result.value}
               defaultVariationSpec={defaultSpec}
-              onVariationChange={(spec): void => {
-                viewingVariationSpecRef.current.set(entityId, spec);
-              }}
               onFillingClick={onFillingClick}
               onIngredientClick={onIngredientClick}
               onMoldClick={onMoldClick}
@@ -784,10 +816,10 @@ export function ConfectionsTabContent(): React.ReactElement {
               onCompareVariations={(specs): void =>
                 setVariationCompare({ id: entityId as ConfectionId, specs })
               }
-              onEdit={(): void =>
-                handleEditConfection(entityId, viewingVariationSpecRef.current.get(entityId))
-              }
-              onPreview={(): void => setPreviewConfectionId(entityId as ConfectionId)}
+              onEdit={(spec): void => handleEditConfection(entityId, spec)}
+              onPreview={(): void => handlePreviewConfection(entityId)}
+              viewSettings={viewSettingsMap.get(entityId)}
+              onViewSettingsChange={(s): void => handleViewSettingsChange(entityId, s)}
             />
           )
         };
@@ -1028,7 +1060,8 @@ export function ConfectionsTabContent(): React.ReactElement {
     showSaveAsForm,
     saveAsName,
     handleSaveAsConfection,
-    mutableCollectionId
+    mutableCollectionId,
+    viewSettingsMap
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {

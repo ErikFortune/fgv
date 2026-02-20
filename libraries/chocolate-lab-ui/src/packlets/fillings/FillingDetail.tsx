@@ -28,7 +28,7 @@
 import React, { useMemo, useState } from 'react';
 import { EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-import { EntityRow } from '@fgv/ts-app-shell';
+import { EntityRow, DetailSection, DetailRow, TagList, StatusBadge, DetailHeader } from '@fgv/ts-app-shell';
 import type { LibraryRuntime, Entities, Measurement, MeasurementUnit } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
@@ -63,59 +63,7 @@ export interface IFillingDetailProps {
 }
 
 // ============================================================================
-// Section Helpers
-// ============================================================================
-
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="mb-4">
-      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">{title}</h4>
-      {children}
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value
-}: {
-  readonly label: string;
-  readonly value: React.ReactNode;
-}): React.ReactElement | null {
-  if (value === undefined || value === null) {
-    return null;
-  }
-  return (
-    <div className="flex items-baseline gap-2 py-0.5">
-      <span className="text-xs text-gray-500 w-32 shrink-0">{label}</span>
-      <span className="text-sm text-gray-800">{value}</span>
-    </div>
-  );
-}
-
-function TagList({ tags }: { readonly tags: ReadonlyArray<string> }): React.ReactElement | null {
-  if (tags.length === 0) {
-    return null;
-  }
-  return (
-    <div className="flex flex-wrap gap-1">
-      {tags.map((tag) => (
-        <span key={tag} className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-          {tag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// ============================================================================
-// Category Badge
+// Category Colors
 // ============================================================================
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -123,15 +71,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   caramel: 'bg-orange-100 text-orange-800',
   gianduja: 'bg-emerald-100 text-emerald-800'
 };
-
-function CategoryBadge({ category }: { readonly category: string }): React.ReactElement {
-  const colorClass = CATEGORY_COLORS[category] ?? 'bg-gray-100 text-gray-800';
-  return (
-    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${colorClass}`}>
-      {category}
-    </span>
-  );
-}
 
 // ============================================================================
 // Amount Formatting
@@ -378,14 +317,20 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Header */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-choco-primary mb-1">{filling.name}</h3>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CategoryBadge category={filling.entity.category} />
+      <DetailHeader
+        title={filling.name}
+        description={filling.description}
+        indicators={
+          <>
+            <StatusBadge
+              label={filling.entity.category}
+              colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-gray-100 text-gray-800'}
+            />
             <span className="text-xs text-gray-400 font-mono">{filling.id}</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
+          </>
+        }
+        actions={
+          <>
             {onPreview && (
               <button
                 type="button"
@@ -408,10 +353,9 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
                 Edit
               </button>
             )}
-          </div>
-        </div>
-        {filling.description && <p className="text-sm text-gray-600 mt-1">{filling.description}</p>}
-      </div>
+          </>
+        }
+      />
 
       {/* Variation Selector */}
       {filling.variations.length > 1 && (

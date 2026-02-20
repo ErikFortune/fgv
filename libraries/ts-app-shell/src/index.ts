@@ -40,3 +40,6 @@ export * from './packlets/drop-zone';
 
 // Generic edit field primitives for entity editors
 export * from './packlets/editing';
+
+// Generic detail-view primitive components
+export * from './packlets/detail';

@@ -35,6 +35,9 @@ export * from './packlets/tasks';
 // Procedure presentation components
 export * from './packlets/procedures';
 
+// Shared chocolate-lab detail-view primitives
+export * from './packlets/common';
+
 // Confection presentation components
 export * from './packlets/confections';
 
