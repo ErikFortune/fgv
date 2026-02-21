@@ -40,6 +40,7 @@ import {
   WorkspaceFilterOptionProvider,
   useCollectionActions,
   initializeBrowserPlatform,
+  restoreSavedDirectories,
   SettingsCascadeView
 } from '@fgv/chocolate-lab-ui';
 
@@ -142,7 +143,14 @@ function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
           })
         )
         .orThrow();
-      return new ReactiveWorkspace(workspace);
+      const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
+      reactiveWorkspace.registerLocalStorageRoot('Browser Storage');
+      await restoreSavedDirectories({
+        reactiveWorkspace,
+        entities: workspace.data.entities,
+        logger: _bootReporter
+      });
+      return reactiveWorkspace;
     })();
   }
   return _reactiveWorkspacePromise;

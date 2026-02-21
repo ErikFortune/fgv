@@ -93,4 +93,21 @@ readonly [IExternalLibraryRefConfig](../../interfaces/IExternalLibraryRefConfig.
 External library references (paths resolved by platform)
 
 </td></tr>
+<tr><td>
+
+[defaultStorageTargets](./ICommonSettings.defaultStorageTargets.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IDefaultStorageTargets](../../interfaces/IDefaultStorageTargets.md)
+
+</td><td>
+
+Default storage locations for new collections (global + per-sublibrary)
+
+</td></tr>
 </tbody></table>

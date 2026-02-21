@@ -144,4 +144,21 @@ Override tool settings for this device
 Platform-specific file tree path overrides
 
 </td></tr>
+<tr><td>
+
+[localDirectories](./IDeviceSettings.localDirectories.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ILocalDirectoryRef](ILocalDirectoryRef.md)[]
+
+</td><td>
+
+Local directories added by the user via File System Access API
+
+</td></tr>
 </tbody></table>

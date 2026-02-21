@@ -114,6 +114,24 @@ Reference to an external library before platform resolution.
 </td></tr>
 <tr><td>
 
+[ILocalDirectoryRef](./interfaces/ILocalDirectoryRef.md)
+
+</td><td>
+
+Reference to a local directory added by the user via the File System Access API.
+
+</td></tr>
+<tr><td>
+
+[IDefaultStorageTargets](./interfaces/IDefaultStorageTargets.md)
+
+</td><td>
+
+Configures where new collections are created.
+
+</td></tr>
+<tr><td>
+
 [ICommonSettings](./interfaces/ICommonSettings.md)
 
 </td><td>
@@ -205,6 +223,15 @@ Unique identifier for a device/platform instance.
 </td><td>
 
 Reference to an external library (path or URI).
+
+</td></tr>
+<tr><td>
+
+[StorageRootId](./type-aliases/StorageRootId.md)
+
+</td><td>
+
+Branded string identifying a storage root.
 
 </td></tr>
 </tbody></table>

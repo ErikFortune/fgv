@@ -45,16 +45,6 @@ import type { IWorkspace } from '@fgv/ts-chocolate';
 export type WorkspaceListener = () => void;
 
 /**
- * A reactive wrapper around IWorkspace that provides a subscription model
- * compatible with React's useSyncExternalStore.
- *
- * Maintains a monotonically increasing version counter that is bumped
- * whenever the workspace data changes. React components subscribe to
- * the version and re-render when it changes.
- *
- * @public
- */
-/**
  * A registered persistent file tree with its accessors.
  * @public
  */
@@ -67,14 +57,58 @@ export interface IPersistentTreeEntry {
   readonly label: string;
 }
 
+/**
+ * Summary of a single active storage root.
+ * @public
+ */
+export interface IStorageRootSummary {
+  /** Unique identifier for this storage root */
+  readonly id: string;
+  /** Human-readable label */
+  readonly label: string;
+  /** Whether this is the built-in embedded library */
+  readonly isBuiltIn: boolean;
+  /** Whether this storage root is mutable (user can write to it) */
+  readonly isMutable: boolean;
+  /** Whether this is a local directory opened via the File System Access API */
+  readonly isLocal: boolean;
+}
+
+/**
+ * Summary of all active storage roots in the workspace.
+ * Used by the UI to display storage status.
+ * @public
+ */
+export interface IStorageSummary {
+  /** All active storage roots, in display order (built-in first, then local) */
+  readonly roots: ReadonlyArray<IStorageRootSummary>;
+  /** Whether the built-in library is currently loaded */
+  readonly hasBuiltIn: boolean;
+  /** Number of local directories currently open */
+  readonly localDirectoryCount: number;
+}
+
+/**
+ * A reactive wrapper around IWorkspace that provides a subscription model
+ * compatible with React's useSyncExternalStore.
+ *
+ * Maintains a monotonically increasing version counter that is bumped
+ * whenever the workspace data changes. React components subscribe to
+ * the version and re-render when it changes.
+ *
+ * @public
+ */
 export class ReactiveWorkspace {
   private readonly _workspace: IWorkspace;
   private readonly _listeners: Set<WorkspaceListener> = new Set();
   private _version: number = 0;
   private readonly _persistentTrees: Map<string, IPersistentTreeEntry> = new Map();
+  private _builtInLoaded: boolean = false;
+  private _localStorageLabel: string | undefined = undefined;
 
-  public constructor(workspace: IWorkspace) {
+  public constructor(workspace: IWorkspace, builtInLoaded: boolean = false) {
     this._workspace = workspace;
+    this._builtInLoaded = builtInLoaded;
   }
 
   // ============================================================================
@@ -94,6 +128,73 @@ export class ReactiveWorkspace {
    */
   public get version(): number {
     return this._version;
+  }
+
+  /**
+   * Whether the built-in embedded library is currently loaded.
+   */
+  public get builtInLoaded(): boolean {
+    return this._builtInLoaded;
+  }
+
+  /**
+   * Sets the built-in loaded flag. Does not notify subscribers.
+   * Call notifyChange() after updating if UI should re-render.
+   */
+  public setBuiltInLoaded(loaded: boolean): void {
+    this._builtInLoaded = loaded;
+  }
+
+  /**
+   * Registers the localStorage root as a named storage root for display.
+   * Does not notify subscribers — call notifyChange() if needed.
+   */
+  public registerLocalStorageRoot(label: string): void {
+    this._localStorageLabel = label;
+  }
+
+  /**
+   * A summary of all active storage roots for UI display.
+   * Built-in root (if loaded) appears first, followed by local directories.
+   */
+  public get storageSummary(): IStorageSummary {
+    const roots: IStorageRootSummary[] = [];
+
+    if (this._builtInLoaded) {
+      roots.push({
+        id: 'builtin',
+        label: 'Built-in Library',
+        isBuiltIn: true,
+        isMutable: false,
+        isLocal: false
+      });
+    }
+
+    if (this._localStorageLabel !== undefined) {
+      roots.push({
+        id: 'localStorage',
+        label: this._localStorageLabel,
+        isBuiltIn: false,
+        isMutable: true,
+        isLocal: false
+      });
+    }
+
+    for (const [id, entry] of this._persistentTrees) {
+      roots.push({
+        id,
+        label: entry.label,
+        isBuiltIn: false,
+        isMutable: true,
+        isLocal: true
+      });
+    }
+
+    return {
+      roots,
+      hasBuiltIn: this._builtInLoaded,
+      localDirectoryCount: this._persistentTrees.size
+    };
   }
 
   // ============================================================================

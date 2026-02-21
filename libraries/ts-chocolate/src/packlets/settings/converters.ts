@@ -32,13 +32,16 @@ import {
   ExternalLibraryRef,
   ICommonSettings,
   IDefaultCollectionTargets,
+  IDefaultStorageTargets,
   IDeviceFileTreeOverrides,
   IDeviceSettings,
   IExternalLibraryRefConfig,
+  ILocalDirectoryRef,
   IScalingDefaults,
   IToolSettings,
   IWorkflowPreferences,
-  SETTINGS_SCHEMA_VERSION
+  SETTINGS_SCHEMA_VERSION,
+  StorageRootId
 } from './model';
 
 // ============================================================================
@@ -198,6 +201,61 @@ const schemaVersion: Converter<typeof SETTINGS_SCHEMA_VERSION> = Converters.enum
 ]);
 
 /**
+ * Converter for {@link StorageRootId}.
+ * @public
+ */
+export const storageRootId: Converter<StorageRootId> = Converters.string.map((s) => {
+  if (s.length === 0) {
+    return fail('Storage root ID cannot be empty');
+  }
+  return succeed(s as unknown as StorageRootId);
+});
+
+/**
+ * Converter for {@link ILocalDirectoryRef}.
+ * @public
+ */
+export const localDirectoryRef: Converter<ILocalDirectoryRef> = Converters.object<ILocalDirectoryRef>({
+  label: Converters.string,
+  mutable: Converters.boolean,
+  load: subLibraryLoadSpec.optional()
+});
+
+/**
+ * Converter for per-sublibrary storage root overrides.
+ * @internal
+ */
+const sublibraryStorageOverrides: Converter<Partial<Record<SubLibraryId, StorageRootId>>> =
+  Converters.generic<Partial<Record<SubLibraryId, StorageRootId>>>((from: unknown) => {
+    if (typeof from !== 'object' || from === null) {
+      return fail('Expected object for sublibrary storage overrides');
+    }
+    const result: Partial<Record<SubLibraryId, StorageRootId>> = {};
+    const obj = from as Record<string, unknown>;
+    for (const key of Object.keys(obj)) {
+      if (!allSubLibraryIds.includes(key as SubLibraryId)) {
+        return fail(`Invalid sublibrary ID: ${key}`);
+      }
+      const converted = storageRootId.convert(obj[key]);
+      if (converted.isFailure()) {
+        return fail(`sublibrary "${key}": ${converted.message}`);
+      }
+      result[key as SubLibraryId] = converted.value;
+    }
+    return succeed(result);
+  });
+
+/**
+ * Converter for {@link IDefaultStorageTargets}.
+ * @public
+ */
+export const defaultStorageTargets: Converter<IDefaultStorageTargets> =
+  Converters.object<IDefaultStorageTargets>({
+    globalDefault: storageRootId.optional(),
+    sublibraryOverrides: sublibraryStorageOverrides.optional()
+  });
+
+/**
  * Converter for {@link ICommonSettings}.
  * @public
  */
@@ -205,7 +263,8 @@ export const commonSettings: Converter<ICommonSettings> = Converters.object<ICom
   schemaVersion: schemaVersion,
   defaultTargets: defaultCollectionTargets.optional(),
   tools: toolSettings.optional(),
-  externalLibraries: Converters.arrayOf(externalLibraryRefConfig).optional()
+  externalLibraries: Converters.arrayOf(externalLibraryRefConfig).optional(),
+  defaultStorageTargets: defaultStorageTargets.optional()
 });
 
 // ============================================================================
@@ -244,5 +303,6 @@ export const deviceSettings: Converter<IDeviceSettings> = Converters.object<IDev
   lastActiveSessionId: Converters.string.optional(),
   defaultTargetsOverride: defaultCollectionTargets.optional(),
   toolsOverride: partialToolSettings.optional(),
-  fileTreeOverrides: deviceFileTreeOverrides.optional()
+  fileTreeOverrides: deviceFileTreeOverrides.optional(),
+  localDirectories: Converters.arrayOf(localDirectoryRef).optional()
 });

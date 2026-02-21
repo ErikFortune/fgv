@@ -153,6 +153,57 @@ export interface IDefaultCollectionTargets {
 }
 
 // ============================================================================
+// Storage Root Identifiers
+// ============================================================================
+
+/**
+ * Branded string identifying a storage root.
+ * Prefix conventions: 'builtin', 'local:<label>', 'external:<name>'
+ * @public
+ */
+export type StorageRootId = string & { readonly __brand: 'StorageRootId' };
+
+// ============================================================================
+// Local Directory References (Device-Specific)
+// ============================================================================
+
+/**
+ * Reference to a local directory added by the user via the File System Access API.
+ * The handle is persisted in IndexedDB; this record is stored in device settings
+ * to track which directories should be re-opened on startup.
+ * @public
+ */
+export interface ILocalDirectoryRef {
+  /** Display name (matches the FileSystemDirectoryHandle.name) */
+  readonly label: string;
+  /** Whether the directory was opened with write access */
+  readonly mutable: boolean;
+  /**
+   * Which sublibraries to load from this directory.
+   * - true (default): load all
+   * - false: load none
+   * - object: per-sublibrary control with optional 'default'
+   */
+  readonly load?: boolean | Partial<Record<SubLibraryId | 'default', boolean>>;
+}
+
+// ============================================================================
+// Default Storage Targets (Where New Collections Are Created)
+// ============================================================================
+
+/**
+ * Configures where new collections are created.
+ * Distinct from {@link IDefaultCollectionTargets} which targets existing collections for new entities.
+ * @public
+ */
+export interface IDefaultStorageTargets {
+  /** Global default storage root for new collections */
+  readonly globalDefault?: StorageRootId;
+  /** Per-sublibrary overrides for default storage root */
+  readonly sublibraryOverrides?: Partial<Record<SubLibraryId, StorageRootId>>;
+}
+
+// ============================================================================
 // External Library References
 // ============================================================================
 
@@ -195,6 +246,8 @@ export interface ICommonSettings {
   readonly tools?: IToolSettings;
   /** External library references (paths resolved by platform) */
   readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
+  /** Default storage locations for new collections (global + per-sublibrary) */
+  readonly defaultStorageTargets?: IDefaultStorageTargets;
 }
 
 // ============================================================================
@@ -233,6 +286,8 @@ export interface IDeviceSettings {
   readonly toolsOverride?: Partial<IToolSettings>;
   /** Platform-specific file tree path overrides */
   readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
+  /** Local directories added by the user via File System Access API */
+  readonly localDirectories?: ReadonlyArray<ILocalDirectoryRef>;
 }
 
 // ============================================================================

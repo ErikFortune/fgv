@@ -46,7 +46,26 @@ declare namespace CryptoUtils {
 export { CryptoUtils }
 
 // @public
+export const DEFAULT_DIRECTORY_HANDLE_DB = "chocolate-lab-storage";
+
+// @public
+export const DEFAULT_DIRECTORY_HANDLE_STORE = "directory-handles";
+
+// @public
 const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;
+
+// @public
+export class DirectoryHandleStore {
+    constructor(dbName?: string, storeName?: string);
+    getAll(): Promise<Result<Array<{
+        label: string;
+        handle: FileSystemDirectoryHandle_2;
+    }>>>;
+    getAllLabels(): Promise<Result<string[]>>;
+    load(label: string): Promise<Result<FileSystemDirectoryHandle_2 | undefined>>;
+    remove(label: string): Promise<Result<void>>;
+    save(label: string, handle: FileSystemDirectoryHandle_2): Promise<Result<void>>;
+}
 
 // @public
 export function exportAsJson(data: unknown, filename: string): void;

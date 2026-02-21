@@ -1293,6 +1293,9 @@ declare namespace Converters_12 {
         toolSettings,
         defaultCollectionTargets,
         externalLibraryRefConfig,
+        storageRootId,
+        localDirectoryRef,
+        defaultStorageTargets,
         commonSettings,
         deviceFileTreeOverrides,
         partialToolSettings,
@@ -1620,6 +1623,11 @@ const defaultRenderOptions: Required<Omit<IRenderOptions, 'additionalContext'>>;
 
 // @public
 const defaultScalerRegistry: UnitScalerRegistry;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDefaultStorageTargets"
+//
+// @public
+const defaultStorageTargets: Converter<IDefaultStorageTargets>;
 
 // @public
 export const DefaultUrlCategory: UrlCategory;
@@ -3066,6 +3074,7 @@ interface ICollectionSourceMetadata {
 
 // @public
 interface ICommonSettings {
+    readonly defaultStorageTargets?: IDefaultStorageTargets;
     readonly defaultTargets?: IDefaultCollectionTargets;
     readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
     readonly schemaVersion: SettingsSchemaVersion;
@@ -3437,6 +3446,14 @@ interface IDefaultCollectionTargets {
     readonly tasks?: CollectionId;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDefaultCollectionTargets"
+//
+// @public
+interface IDefaultStorageTargets {
+    readonly globalDefault?: StorageRootId;
+    readonly sublibraryOverrides?: Partial<Record<SubLibraryId, StorageRootId>>;
+}
+
 // @public
 interface IDeviceFileTreeOverrides {
     readonly keyStorePath?: string;
@@ -3450,6 +3467,7 @@ interface IDeviceSettings {
     readonly deviceName?: string;
     readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
     readonly lastActiveSessionId?: string;
+    readonly localDirectories?: ReadonlyArray<ILocalDirectoryRef>;
     readonly schemaVersion: SettingsSchemaVersion;
     readonly toolsOverride?: Partial<IToolSettings>;
 }
@@ -4213,6 +4231,13 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
     readonly onEncryptedFile?: EncryptedFileHandling;
     // (undocumented)
     readonly recurseWithDelimiter?: string;
+}
+
+// @public
+interface ILocalDirectoryRef {
+    readonly label: string;
+    readonly load?: boolean | Partial<Record<SubLibraryId | 'default', boolean>>;
+    readonly mutable: boolean;
 }
 
 // @public
@@ -6458,6 +6483,11 @@ class LinearScaler implements IUnitScaler {
     readonly supportsScaling: boolean;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ILocalDirectoryRef"
+//
+// @public
+const localDirectoryRef: Converter<ILocalDirectoryRef>;
+
 // @public
 class MaterializedLibrary<TId extends string, TEntity, TMaterialized, TQuerySpec = never> extends Collections.ReadOnlyConvertingResultMap<TId, TEntity, TMaterialized> {
     constructor(params: IMaterializedLibraryParams<TId, TEntity, TMaterialized, TQuerySpec>);
@@ -7542,6 +7572,9 @@ declare namespace Settings {
         IToolSettings,
         IDefaultCollectionTargets,
         IExternalLibraryRefConfig,
+        StorageRootId,
+        ILocalDirectoryRef,
+        IDefaultStorageTargets,
         ICommonSettings,
         IDeviceSettings,
         IDeviceFileTreeOverrides,
@@ -7654,6 +7687,16 @@ const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
 
 // @public
 export type StartupMode = 'fail-on-error' | 'ignore-errors';
+
+// @public
+type StorageRootId = string & {
+    readonly __brand: 'StorageRootId';
+};
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "StorageRootId"
+//
+// @public
+const storageRootId: Converter<StorageRootId>;
 
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata> {

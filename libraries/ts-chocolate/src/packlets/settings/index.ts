@@ -45,6 +45,10 @@ export {
   type IDefaultCollectionTargets,
   // External libraries
   type IExternalLibraryRefConfig,
+  // Storage roots and local directories
+  type StorageRootId,
+  type ILocalDirectoryRef,
+  type IDefaultStorageTargets,
   // Settings types
   type ICommonSettings,
   type IDeviceSettings,

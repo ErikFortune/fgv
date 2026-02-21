@@ -15,6 +15,7 @@ import { useWorkspace } from '../workspace';
 export interface ICommonSettingsDraft {
   readonly defaultTargets: Settings.ICommonSettings['defaultTargets'];
   readonly externalLibraries: ReadonlyArray<Settings.IExternalLibraryRefConfig>;
+  readonly defaultStorageTargets: Settings.IDefaultStorageTargets | undefined;
   readonly scaling: {
     readonly weightUnit: string;
     readonly measurementUnit: string;
@@ -36,6 +37,7 @@ export interface ICommonSettingsDraft {
  */
 export interface IDeviceSettingsDraft {
   readonly deviceName: string;
+  readonly localDirectories: ReadonlyArray<Settings.ILocalDirectoryRef>;
 }
 
 /**
@@ -62,6 +64,7 @@ function buildCommonDraft(settings: Settings.ICommonSettings): ICommonSettingsDr
   return {
     defaultTargets: settings.defaultTargets,
     externalLibraries: settings.externalLibraries ?? [],
+    defaultStorageTargets: settings.defaultStorageTargets,
     scaling: {
       weightUnit: settings.tools?.scaling?.weightUnit ?? 'g',
       measurementUnit: settings.tools?.scaling?.measurementUnit ?? 'g',
@@ -80,7 +83,8 @@ function buildCommonDraft(settings: Settings.ICommonSettings): ICommonSettingsDr
 
 function buildDeviceDraft(settings: Settings.IDeviceSettings): IDeviceSettingsDraft {
   return {
-    deviceName: settings.deviceName ?? ''
+    deviceName: settings.deviceName ?? '',
+    localDirectories: settings.localDirectories ?? []
   };
 }
 
@@ -89,7 +93,9 @@ function draftsEqual(a: ICommonSettingsDraft, b: ICommonSettingsDraft): boolean 
 }
 
 function deviceDraftsEqual(a: IDeviceSettingsDraft, b: IDeviceSettingsDraft): boolean {
-  return a.deviceName === b.deviceName;
+  return (
+    a.deviceName === b.deviceName && JSON.stringify(a.localDirectories) === JSON.stringify(b.localDirectories)
+  );
 }
 
 // ============================================================================
@@ -150,6 +156,7 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
     };
     const commonResult = settingsManager.updateCommonSettings({
       externalLibraries: commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined,
+      defaultStorageTargets: commonDraft.defaultStorageTargets,
       tools: { scaling: scalingUpdate, workflow: workflowUpdate }
     });
 
@@ -160,7 +167,8 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
     }
 
     const deviceResult = settingsManager.updateDeviceSettings({
-      deviceName: deviceDraft.deviceName || undefined
+      deviceName: deviceDraft.deviceName || undefined,
+      localDirectories: deviceDraft.localDirectories.length > 0 ? deviceDraft.localDirectories : undefined
     });
 
     if (deviceResult.isFailure()) {

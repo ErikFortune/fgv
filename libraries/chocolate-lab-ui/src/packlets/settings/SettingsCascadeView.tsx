@@ -8,14 +8,15 @@ import { useSettingsDraft } from './useSettingsDraft';
 import { WorkspaceSection } from './sections/WorkspaceSection';
 import { ScalingSection } from './sections/ScalingSection';
 import { WorkflowSection } from './sections/WorkflowSection';
-import { ExternalLibrariesSection } from './sections/ExternalLibrariesSection';
+import { StorageSection } from './sections/StorageSection';
+import { LibrarySection } from './sections/LibrarySection';
 import { SecuritySection } from './sections/SecuritySection';
 
 // ============================================================================
 // Section definitions
 // ============================================================================
 
-type SettingsSection = 'workspace' | 'scaling' | 'workflow' | 'libraries' | 'security';
+type SettingsSection = 'workspace' | 'scaling' | 'workflow' | 'storage' | 'libraries' | 'security';
 
 interface ISectionDef {
   readonly id: SettingsSection;
@@ -26,6 +27,7 @@ const SECTIONS: ReadonlyArray<ISectionDef> = [
   { id: 'workspace', label: 'Workspace' },
   { id: 'scaling', label: 'Scaling' },
   { id: 'workflow', label: 'Workflow' },
+  { id: 'storage', label: 'Storage' },
   { id: 'libraries', label: 'Libraries' },
   { id: 'security', label: 'Security' }
 ];
@@ -45,14 +47,37 @@ export interface ISettingsCascadeViewProps {
 
 function SectionContent({
   section,
-  draft
+  draft,
+  sectionKey,
+  sectionLabel,
+  onSetColumns
 }: {
   readonly section: SettingsSection;
   readonly draft: NonNullable<ReturnType<typeof useSettingsDraft>>;
+  readonly sectionKey: string;
+  readonly sectionLabel: string;
+  readonly onSetColumns: (cols: ReadonlyArray<ICascadeColumn>) => void;
 }): React.ReactElement {
   const workspace = useWorkspace();
   const deviceId = workspace.settings?.deviceId;
   const { common, device, updateCommon, updateDevice } = draft;
+
+  function handleSquashColumns(detailCols: ReadonlyArray<ICascadeColumn>): void {
+    const sectionCol: ICascadeColumn = {
+      key: sectionKey,
+      label: sectionLabel,
+      content: (
+        <SectionContent
+          section={section}
+          draft={draft}
+          sectionKey={sectionKey}
+          sectionLabel={sectionLabel}
+          onSetColumns={onSetColumns}
+        />
+      )
+    };
+    onSetColumns([sectionCol, ...detailCols]);
+  }
 
   switch (section) {
     case 'workspace':
@@ -65,10 +90,10 @@ function SectionContent({
       return <ScalingSection scaling={common.scaling} onChange={updateCommon} />;
     case 'workflow':
       return <WorkflowSection workflow={common.workflow} onChange={updateCommon} />;
+    case 'storage':
+      return <StorageSection onSquashColumns={handleSquashColumns} />;
     case 'libraries':
-      return (
-        <ExternalLibrariesSection externalLibraries={common.externalLibraries} onChange={updateCommon} />
-      );
+      return <LibrarySection />;
     case 'security':
       return <SecuritySection />;
   }
@@ -117,13 +142,20 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
 
   function handleSelectSection(section: ISectionDef): void {
     setActiveSection(section.id);
-    setCascadeColumns([
-      {
-        key: section.id,
-        label: section.label,
-        content: <SectionContent section={section.id} draft={resolvedDraft} />
-      }
-    ]);
+    const sectionColumn: ICascadeColumn = {
+      key: section.id,
+      label: section.label,
+      content: (
+        <SectionContent
+          section={section.id}
+          draft={resolvedDraft}
+          sectionKey={section.id}
+          sectionLabel={section.label}
+          onSetColumns={setCascadeColumns}
+        />
+      )
+    };
+    setCascadeColumns([sectionColumn]);
   }
 
   return (

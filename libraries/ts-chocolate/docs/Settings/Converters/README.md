@@ -90,6 +90,33 @@ Converter for IExternalLibraryRefConfig.
 </td></tr>
 <tr><td>
 
+[storageRootId](./variables/storageRootId.md)
+
+</td><td>
+
+Converter for StorageRootId.
+
+</td></tr>
+<tr><td>
+
+[localDirectoryRef](./variables/localDirectoryRef.md)
+
+</td><td>
+
+Converter for ILocalDirectoryRef.
+
+</td></tr>
+<tr><td>
+
+[defaultStorageTargets](./variables/defaultStorageTargets.md)
+
+</td><td>
+
+Converter for IDefaultStorageTargets.
+
+</td></tr>
+<tr><td>
+
 [commonSettings](./variables/commonSettings.md)
 
 </td><td>

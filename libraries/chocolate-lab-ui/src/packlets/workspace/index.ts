@@ -16,7 +16,15 @@ export {
   type IBrowserPlatformInitOptions
 } from './browserPlatformInit';
 
-export { ReactiveWorkspace, type WorkspaceListener, type IPersistentTreeEntry } from './reactiveWorkspace';
+export {
+  ReactiveWorkspace,
+  type WorkspaceListener,
+  type IPersistentTreeEntry,
+  type IStorageRootSummary,
+  type IStorageSummary
+} from './reactiveWorkspace';
+
+export { restoreSavedDirectories, type IRestoreSavedDirectoriesParams } from './restoreSavedDirectories';
 
 export {
   WorkspaceProvider,

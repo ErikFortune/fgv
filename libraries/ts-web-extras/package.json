@@ -87,5 +87,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "dependencies": {
+    "idb-keyval": "^6.2.2"
   }
 }

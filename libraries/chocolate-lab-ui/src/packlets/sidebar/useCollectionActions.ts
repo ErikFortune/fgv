@@ -36,6 +36,7 @@ import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
 import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
 import { type CollectionId, Helpers, LibraryData, type LibraryRuntime, Settings } from '@fgv/ts-chocolate';
 import {
+  DirectoryHandleStore,
   FileApiTreeAccessors,
   safeShowDirectoryPicker,
   safeShowOpenFilePicker,
@@ -272,6 +273,13 @@ export function useCollectionActions(): ICollectionActions {
         accessors: accessors as FileTree.IPersistentFileTreeAccessors,
         label: dirHandle.name
       });
+    }
+
+    // Persist the handle to IndexedDB so it can be restored on next page load
+    const store = new DirectoryHandleStore();
+    const saveResult = await store.save(dirHandle.name, dirHandle);
+    if (saveResult.isFailure()) {
+      workspace.data.logger.warn(`Failed to persist directory handle: ${saveResult.message}`);
     }
 
     // Invalidate caches and notify React
