@@ -44,6 +44,8 @@ export interface ITabBarProps<TTab extends string> {
   readonly activeTab: TTab;
   /** Callback when a tab is selected */
   readonly onTabChange: (tab: TTab) => void;
+  /** Optional content pinned to the far right of the tab bar */
+  readonly rightContent?: React.ReactNode;
 }
 
 /**
@@ -51,7 +53,7 @@ export interface ITabBarProps<TTab extends string> {
  * @public
  */
 export function TabBar<TTab extends string>(props: ITabBarProps<TTab>): React.ReactElement {
-  const { tabs, activeTab, onTabChange } = props;
+  const { tabs, activeTab, onTabChange, rightContent } = props;
 
   return (
     <div className="flex items-center gap-1 px-4 py-1 bg-choco-secondary text-white border-t border-white/10">
@@ -69,6 +71,12 @@ export function TabBar<TTab extends string>(props: ITabBarProps<TTab>): React.Re
           {tab.label}
         </button>
       ))}
+      {rightContent !== undefined && (
+        <>
+          <div className="flex-1" />
+          {rightContent}
+        </>
+      )}
     </div>
   );
 }

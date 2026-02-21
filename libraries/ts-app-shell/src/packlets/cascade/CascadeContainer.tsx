@@ -61,6 +61,8 @@ export interface ICascadeContainerProps {
   readonly minColumnWidth?: string;
   /** Callback when the user clicks inside a cascade column (signals list should collapse) */
   readonly onFocus?: () => void;
+  /** Label for the breadcrumb root link (default: 'List') */
+  readonly rootLabel?: string;
 }
 
 // ============================================================================
@@ -77,7 +79,7 @@ export interface ICascadeContainerProps {
  * @public
  */
 export function CascadeContainer(props: ICascadeContainerProps): React.ReactElement | null {
-  const { columns, onPopTo, minColumnWidth = '400px', onFocus } = props;
+  const { columns, onPopTo, minColumnWidth = '400px', onFocus, rootLabel = 'List' } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((): void => {
@@ -125,7 +127,7 @@ export function CascadeContainer(props: ICascadeContainerProps): React.ReactElem
           onClick={(): void => onPopTo(0)}
           className="text-choco-accent hover:text-choco-primary hover:underline shrink-0"
         >
-          List
+          {rootLabel}
         </button>
         {columns.map((col, idx) => (
           <React.Fragment key={col.key}>

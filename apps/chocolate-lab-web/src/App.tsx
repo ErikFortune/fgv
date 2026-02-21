@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   ConfirmDialog,
   ModeSelector,
@@ -41,7 +40,7 @@ import {
   WorkspaceFilterOptionProvider,
   useCollectionActions,
   initializeBrowserPlatform,
-  SettingsView
+  SettingsCascadeView
 } from '@fgv/chocolate-lab-ui';
 
 import { IngredientsTabContent } from './tabs/IngredientsTab';
@@ -69,23 +68,6 @@ const URL_SYNC_CONFIG: IUrlSyncConfig<AppMode, AppTab> = {
 
 function getTabConfigs(tabs: ReadonlyArray<AppTab>): ReadonlyArray<ITabConfig<AppTab>> {
   return tabs.map((id) => ({ id, label: TAB_LABELS[id] }));
-}
-
-// ============================================================================
-// Settings Button
-// ============================================================================
-
-function SettingsButton({ onOpen }: { readonly onOpen: () => void }): React.ReactElement {
-  return (
-    <button
-      onClick={onOpen}
-      className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-      aria-label="Settings"
-      title="Settings"
-    >
-      <Cog6ToothIcon className="w-5 h-5" />
-    </button>
-  );
 }
 
 // ============================================================================
@@ -282,6 +264,7 @@ function AppShell(): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingSettingsClose, setPendingSettingsClose] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
@@ -308,8 +291,12 @@ function AppShell(): React.ReactElement {
   const guardedSetTab = useCallback(
     (tab: AppTab): void => {
       if (hasUnsavedChanges) {
-        setPendingNavigation(() => (): void => setTab(tab));
+        setPendingNavigation(() => (): void => {
+          setSettingsOpen(false);
+          setTab(tab);
+        });
       } else {
+        setSettingsOpen(false);
         setTab(tab);
       }
     },
@@ -319,13 +306,25 @@ function AppShell(): React.ReactElement {
   const guardedSetMode = useCallback(
     (newMode: AppMode): void => {
       if (hasUnsavedChanges) {
-        setPendingNavigation(() => (): void => setMode(newMode));
+        setPendingNavigation(() => (): void => {
+          setSettingsOpen(false);
+          setMode(newMode);
+        });
       } else {
+        setSettingsOpen(false);
         setMode(newMode);
       }
     },
     [hasUnsavedChanges, setMode]
   );
+
+  const guardedOpenSettings = useCallback((): void => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(() => (): void => setSettingsOpen(true));
+    } else {
+      setSettingsOpen(true);
+    }
+  }, [hasUnsavedChanges]);
 
   const handleNavConfirm = useCallback((): void => {
     if (pendingNavigation) {
@@ -395,28 +394,54 @@ function AppShell(): React.ReactElement {
         activeMode={mode}
         onModeChange={guardedSetMode}
         rightContent={
-          <div className="flex items-center gap-2">
-            {workspaceState !== 'no-keystore' && (
-              <LockButton
-                isLocked={workspaceState === 'locked'}
-                onLock={lock}
-                onUnlock={(): void => setUnlockOpen(true)}
-              />
-            )}
-            <SettingsButton onOpen={(): void => setSettingsOpen(true)} />
-          </div>
+          workspaceState !== 'no-keystore' ? (
+            <LockButton
+              isLocked={workspaceState === 'locked'}
+              onLock={lock}
+              onUnlock={(): void => setUnlockOpen(true)}
+            />
+          ) : undefined
         }
       />
 
       {/* Second bar: tab selector */}
-      <TabBar<AppTab> tabs={getTabConfigs(modeTabs)} activeTab={activeTab} onTabChange={guardedSetTab} />
+      <TabBar<AppTab>
+        tabs={getTabConfigs(modeTabs)}
+        activeTab={activeTab}
+        onTabChange={guardedSetTab}
+        rightContent={
+          <button
+            onClick={(): void => {
+              if (settingsOpen) {
+                setSettingsOpen(false);
+              } else {
+                guardedOpenSettings();
+              }
+            }}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              settingsOpen ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            Settings
+          </button>
+        }
+      />
 
-      {/* Main content area: sidebar + tab content */}
-      <SidebarLayout
-        sidebar={<TabSidebarWithActions optionProvider={filterOptionProvider} actions={collectionActions} />}
-      >
-        <TabContent tab={activeTab} />
-      </SidebarLayout>
+      {/* Main content area: sidebar + tab content, or settings cascade */}
+      {settingsOpen ? (
+        <SettingsCascadeView
+          onClose={(): void => setSettingsOpen(false)}
+          onDirtyClose={(): void => setPendingSettingsClose(true)}
+        />
+      ) : (
+        <SidebarLayout
+          sidebar={
+            <TabSidebarWithActions optionProvider={filterOptionProvider} actions={collectionActions} />
+          }
+        >
+          <TabContent tab={activeTab} />
+        </SidebarLayout>
+      )}
 
       {/* Toast notifications */}
       <ToastContainer toasts={activeToasts} onDismiss={dismissMessage} />
@@ -424,10 +449,20 @@ function AppShell(): React.ReactElement {
       {/* Status bar / log panel */}
       <StatusBar messages={messages} onClear={clearMessages} />
 
-      {/* Settings modal */}
-      <Modal isOpen={settingsOpen} onClose={(): void => setSettingsOpen(false)} title="Settings">
-        <SettingsView onClose={(): void => setSettingsOpen(false)} />
-      </Modal>
+      {/* Settings dirty-close confirmation */}
+      <ConfirmDialog
+        isOpen={pendingSettingsClose}
+        title="Unsaved Settings"
+        message="You have unsaved settings changes. Discard them and close?"
+        confirmLabel="Discard"
+        cancelLabel="Stay"
+        severity="warning"
+        onConfirm={(): void => {
+          setPendingSettingsClose(false);
+          setSettingsOpen(false);
+        }}
+        onCancel={(): void => setPendingSettingsClose(false)}
+      />
     </div>
   );
 }
