@@ -55,10 +55,11 @@ export function IngredientsTabContent(): React.ReactElement {
   } | null>(null);
   const entityActions = useEntityActions();
 
-  const mutableCollectionId = useMutableCollection(workspace.data.entities.ingredients.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.ingredients.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+  );
 
   const { entities: ingredients, selectedId } = useEntityList<LibraryRuntime.AnyIngredient, IngredientId>({
     getAll: () => workspace.data.ingredients.values(),

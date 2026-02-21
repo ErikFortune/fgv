@@ -568,20 +568,15 @@ export class SettingsManager implements ISettingsManager {
     fileName: string,
     settings: ICommonSettings | IDeviceSettings
   ): Result<boolean> {
-    // The file tree API doesn't directly support creating new files through the directory item
-    // We need to use the accessors if available, or rely on the platform to handle this
-    // For now, we'll return a failure indicating the file needs to be created by the platform
-    //
-    // In practice, the platform initializer will ensure the settings files exist with defaults
-    // before creating the SettingsManager, so this path should rarely be hit
-
-    // Try to find if any existing file in the directory can give us access to setContents
-    // This is a workaround - ideally the FileTree API would support file creation
-    return fail(
-      `Cannot create new settings file: ${fileName}. ` +
-        `The settings directory exists but the file does not. ` +
-        `Platform initializer should create default settings files.`
-    );
+    if (dir.createChildFile === undefined) {
+      return fail(
+        `Cannot create new settings file: ${fileName}. ` +
+          `The settings directory exists but the file does not. ` +
+          `Platform initializer should create default settings files.`
+      );
+    }
+    const content = JSON.stringify(settings, null, 2);
+    return dir.createChildFile(fileName, content).onSuccess(() => succeed(true));
   }
 
   // ============================================================================

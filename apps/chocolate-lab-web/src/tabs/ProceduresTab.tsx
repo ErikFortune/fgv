@@ -59,10 +59,11 @@ export function ProceduresTabContent(): React.ReactElement {
 
   const [newProcedureName, setNewProcedureName] = useState('');
 
-  const mutableProcedureCollectionId = useMutableCollection(workspace.data.entities.procedures.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableProcedureCollectionId = useMutableCollection(
+    workspace.data.entities.procedures.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
 
   const { entities: procedures, selectedId } = useEntityList<LibraryRuntime.IProcedure, ProcedureId>({
     getAll: () => workspace.data.procedures.values(),

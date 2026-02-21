@@ -85,10 +85,11 @@ export function ConfectionsTabContent(): React.ReactElement {
     { id: ConfectionId; specs: ReadonlyArray<string> } | undefined
   >(undefined);
 
-  const mutableCollectionId = useMutableCollection(workspace.data.entities.confections.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.confections.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.confections
+  );
 
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);

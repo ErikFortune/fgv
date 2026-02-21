@@ -40,7 +40,8 @@ import {
   UnlockDialog,
   WorkspaceFilterOptionProvider,
   useCollectionActions,
-  initializeBrowserPlatform
+  initializeBrowserPlatform,
+  SettingsView
 } from '@fgv/chocolate-lab-ui';
 
 import { IngredientsTabContent } from './tabs/IngredientsTab';
@@ -230,6 +231,7 @@ function TabSidebarWithActions(props: {
     addDirectory,
     createCollection,
     deleteCollection,
+    setDefaultCollection,
     exportCollection,
     exportAllAsZip,
     importCollection,
@@ -248,6 +250,7 @@ function TabSidebarWithActions(props: {
       onAddDirectory={addDirectory}
       onCreateCollection={createCollection}
       onDeleteCollection={deleteCollection}
+      onSetDefaultCollection={setDefaultCollection}
       onExportCollection={exportCollection}
       onExportAllAsZip={exportAllAsZip}
       onImportCollection={importCollection}
@@ -423,7 +426,7 @@ function AppShell(): React.ReactElement {
 
       {/* Settings modal */}
       <Modal isOpen={settingsOpen} onClose={(): void => setSettingsOpen(false)} title="Settings">
-        <p className="text-gray-500">Settings content coming soon.</p>
+        <SettingsView onClose={(): void => setSettingsOpen(false)} />
       </Modal>
     </div>
   );

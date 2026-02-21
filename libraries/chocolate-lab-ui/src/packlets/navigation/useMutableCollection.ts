@@ -21,7 +21,7 @@
  */
 
 /**
- * Hook that finds the first mutable collection ID from an entity collection map.
+ * Hook that finds the default or first mutable collection ID from an entity collection map.
  *
  * @packageDocumentation
  */
@@ -47,27 +47,36 @@ export interface ICollectionMap {
 // ============================================================================
 
 /**
- * Finds the first mutable collection ID from an entity collection map.
- * Returns undefined if no mutable collection exists.
+ * Finds the default or first mutable collection ID from an entity collection map.
+ * If `preferredId` is provided and refers to a mutable collection, it is returned.
+ * Otherwise returns the first mutable collection, or undefined if none exists.
  *
  * @param collections - The entity collection map to search.
  * @param deps - Memo dependencies (typically `[workspace, reactiveWorkspace.version]`).
+ * @param preferredId - Optional preferred collection ID (e.g. from settings default targets).
  * @public
  */
 export function useMutableCollection(
   collections: ICollectionMap,
-  deps: ReadonlyArray<unknown>
+  deps: ReadonlyArray<unknown>,
+  preferredId?: string
 ): CollectionId | undefined {
   return useMemo<CollectionId | undefined>(
     () => {
+      let firstMutable: CollectionId | undefined;
       for (const [id, col] of collections.entries()) {
         if (col.isMutable) {
-          return id as CollectionId;
+          if (preferredId !== undefined && id === preferredId) {
+            return id as CollectionId;
+          }
+          if (firstMutable === undefined) {
+            firstMutable = id as CollectionId;
+          }
         }
       }
-      return undefined;
+      return firstMutable;
     },
     // Deps are caller-provided to match the memoization pattern used throughout the tab components.
-    deps
+    [...deps, preferredId]
   );
 }

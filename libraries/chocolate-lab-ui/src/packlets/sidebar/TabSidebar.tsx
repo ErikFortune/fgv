@@ -99,6 +99,8 @@ export interface ITabSidebarProps {
   readonly onCreateCollection?: (data: ICreateCollectionData) => void;
   /** Callback when delete is clicked for a mutable collection */
   readonly onDeleteCollection?: (collectionId: string) => void;
+  /** Callback when the star/default is clicked for a collection */
+  readonly onSetDefaultCollection?: (collectionId: string) => void;
   /** Callback when export is clicked for a mutable collection */
   readonly onExportCollection?: (collectionId: string) => void;
   /** Callback when "Export All" zip is clicked in the collection section header */
@@ -141,6 +143,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     onAddDirectory,
     onCreateCollection,
     onDeleteCollection,
+    onSetDefaultCollection,
     onExportCollection,
     onExportAllAsZip,
     onImportCollection,
@@ -256,6 +259,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onAddDirectory={onAddDirectory}
         onCreateCollection={onCreateCollection ? handleOpenCreateDialog : undefined}
         onDeleteCollection={onDeleteCollection ? handleRequestDeleteCollection : undefined}
+        onSetDefaultCollection={onSetDefaultCollection}
         onExportCollection={onExportCollection}
         onExportAllAsZip={onExportAllAsZip}
         onImportCollection={onImportCollection}

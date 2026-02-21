@@ -50,10 +50,11 @@ export function MoldsTabContent(): React.ReactElement {
   } | null>(null);
   const entityActions = useEntityActions();
 
-  const mutableCollectionId = useMutableCollection(workspace.data.entities.molds.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.molds.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.molds
+  );
 
   const handleCreateMold = useCallback(
     (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): void => {

@@ -34,7 +34,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
-import { type CollectionId, Helpers, LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
+import { type CollectionId, Helpers, LibraryData, type LibraryRuntime, Settings } from '@fgv/ts-chocolate';
 import {
   FileApiTreeAccessors,
   safeShowDirectoryPicker,
@@ -42,7 +42,7 @@ import {
   supportsFileSystemAccess
 } from '@fgv/ts-web-extras';
 
-import { selectActiveTab, useNavigationStore } from '../navigation';
+import { type AppTab, selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type ICreateCollectionData } from './CreateCollectionDialog';
 import { type ImportCollisionResolution } from './ImportCollisionDialog';
@@ -141,6 +141,8 @@ export interface ICollectionActions {
   readonly createCollection: (data: ICreateCollectionData) => Promise<void>;
   /** Delete a mutable collection by ID */
   readonly deleteCollection: (collectionId: string) => void;
+  /** Set the default collection for new entities in the active tab's sub-library */
+  readonly setDefaultCollection: (collectionId: string) => void;
   /** Export a mutable collection to a YAML file download (encrypted if the collection has a secretName and the key is available) */
   readonly exportCollection: (collectionId: string) => Promise<void>;
   /** Export all mutable collections for the active tab as a zip download (encrypted per-collection where keys are available) */
@@ -406,6 +408,50 @@ export function useCollectionActions(): ICollectionActions {
       }
 
       workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+    },
+    [workspace, reactiveWorkspace, activeTab]
+  );
+
+  const setDefaultCollection = useCallback(
+    (collectionId: string): void => {
+      const settingsManager = workspace.settings;
+      if (!settingsManager) {
+        workspace.data.logger.warn('No settings manager available');
+        return;
+      }
+
+      const tabToKey: Partial<Record<AppTab, keyof Settings.IDefaultCollectionTargets>> = {
+        ingredients: 'ingredients',
+        fillings: 'fillings',
+        confections: 'confections',
+        molds: 'molds',
+        procedures: 'procedures',
+        tasks: 'tasks'
+      };
+      const key = tabToKey[activeTab as AppTab];
+      if (!key) {
+        workspace.data.logger.warn(`No default target key for tab '${activeTab}'`);
+        return;
+      }
+
+      const result = settingsManager.updateDefaultTargets({ [key]: collectionId });
+      if (result.isFailure()) {
+        workspace.data.logger.error(`Failed to set default collection: ${result.message}`);
+        return;
+      }
+
+      settingsManager
+        .save()
+        .then((saveResult) => {
+          if (saveResult.isFailure()) {
+            workspace.data.logger.warn(`Default collection set but save failed: ${saveResult.message}`);
+          }
+        })
+        .catch((err: unknown) => {
+          workspace.data.logger.warn(`Default collection set but save threw: ${String(err)}`);
+        });
+
       reactiveWorkspace.notifyChange();
     },
     [workspace, reactiveWorkspace, activeTab]
@@ -760,6 +806,7 @@ export function useCollectionActions(): ICollectionActions {
     addDirectory,
     createCollection,
     deleteCollection,
+    setDefaultCollection,
     exportCollection,
     exportAllAsZip,
     importCollection,

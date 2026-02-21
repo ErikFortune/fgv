@@ -80,10 +80,11 @@ export function DecorationsTabContent(): React.ReactElement {
   } | null>(null);
   const entityActions = useEntityActions();
 
-  const mutableCollectionId = useMutableCollection(workspace.data.entities.decorations.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.decorations.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.decorations
+  );
 
   const { entities: decorations, selectedId } = useEntityList<LibraryRuntime.IDecoration, DecorationId>({
     getAll: () => workspace.data.decorations.values(),

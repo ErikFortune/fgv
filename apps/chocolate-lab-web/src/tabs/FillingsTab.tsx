@@ -108,10 +108,11 @@ export function FillingsTabContent(): React.ReactElement {
   } | null>(null);
   const entityActions = useEntityActions();
 
-  const mutableCollectionId = useMutableCollection(workspace.data.entities.fillings.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.fillings.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.fillings
+  );
 
   const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
     getAll: () => workspace.data.fillings.values(),

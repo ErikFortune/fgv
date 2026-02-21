@@ -309,7 +309,7 @@ Get the FileTree source item for a collection, if available.
 </td></tr>
 <tr><td>
 
-[createCollectionFile(collectionId, yamlContent)](./SubLibraryBase.createCollectionFile.md)
+[createCollectionFile(collectionId, content, extension)](./SubLibraryBase.createCollectionFile.md)
 
 </td><td>
 
@@ -317,7 +317,7 @@ Get the FileTree source item for a collection, if available.
 
 </td><td>
 
-Creates a YAML file for a collection in the mutable data directory and
+Creates a file for a collection in the mutable data directory and
 
 </td></tr>
 <tr><td>

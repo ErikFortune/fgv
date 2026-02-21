@@ -3427,6 +3427,7 @@ type IDecorationsLibraryParams = ISubLibraryParams<DecorationsLibrary, Decoratio
 // @public
 interface IDefaultCollectionTargets {
     readonly confections?: CollectionId;
+    readonly decorations?: CollectionId;
     readonly fillings?: CollectionId;
     readonly ingredients?: CollectionId;
     readonly journals?: CollectionId;

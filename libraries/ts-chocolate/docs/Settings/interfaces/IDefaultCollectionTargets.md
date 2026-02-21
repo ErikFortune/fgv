@@ -161,4 +161,21 @@ Default collection for new procedures
 Default collection for new tasks
 
 </td></tr>
+<tr><td>
+
+[decorations](./IDefaultCollectionTargets.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CollectionId](../../type-aliases/CollectionId.md)
+
+</td><td>
+
+Default collection for new decorations
+
+</td></tr>
 </tbody></table>

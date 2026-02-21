@@ -54,6 +54,8 @@ export interface ICollectionRowItem {
   readonly isUnlocked: boolean;
   /** Whether this collection is currently visible */
   readonly isVisible: boolean;
+  /** Whether this collection is the default target for new entities */
+  readonly isDefault: boolean;
 }
 
 // ============================================================================
@@ -75,6 +77,8 @@ export interface ICollectionSectionProps {
   readonly onCreateCollection?: () => void;
   /** Callback when delete is clicked for a mutable collection */
   readonly onDeleteCollection?: (collectionId: string) => void;
+  /** Callback when the star/default is clicked for a collection */
+  readonly onSetDefaultCollection?: (collectionId: string) => void;
   /** Callback when export is clicked for a mutable collection */
   readonly onExportCollection?: (collectionId: string) => void;
   /** Callback when "Export All as Zip" is clicked (header-level) */
@@ -94,10 +98,11 @@ export interface ICollectionSectionProps {
 function CollectionRow(props: {
   readonly collection: ICollectionRowItem;
   readonly onToggleVisibility: (id: string) => void;
+  readonly onSetDefault?: (id: string) => void;
   readonly onDelete?: (id: string) => void;
   readonly onExport?: (id: string) => void;
 }): React.ReactElement {
-  const { collection, onToggleVisibility, onDelete, onExport } = props;
+  const { collection, onToggleVisibility, onSetDefault, onDelete, onExport } = props;
   const displayName = collection.name ?? collection.id;
 
   return (
@@ -115,6 +120,31 @@ function CollectionRow(props: {
       >
         {collection.isVisible ? '\u{1F441}' : '\u{1F441}\u{FE0F}\u{200D}\u{1F5E8}\u{FE0F}'}
       </button>
+
+      {/* Default collection star */}
+      {onSetDefault && collection.isMutable && (
+        <button
+          onClick={(): void => onSetDefault(collection.id)}
+          className={`shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${
+            collection.isDefault
+              ? 'text-yellow-400 hover:text-yellow-500'
+              : 'text-gray-300 hover:text-yellow-400'
+          }`}
+          title={
+            collection.isDefault
+              ? 'Default collection for new items'
+              : 'Set as default collection for new items'
+          }
+          aria-label={
+            collection.isDefault
+              ? `${collection.name ?? collection.id} is default`
+              : `Set ${collection.name ?? collection.id} as default`
+          }
+          aria-pressed={collection.isDefault}
+        >
+          {collection.isDefault ? '★' : '☆'}
+        </button>
+      )}
 
       {/* Status indicators */}
       {!collection.isMutable && (
@@ -183,6 +213,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
     onAddDirectory,
     onCreateCollection,
     onDeleteCollection,
+    onSetDefaultCollection,
     onExportCollection,
     onExportAllAsZip,
     onImportCollection,
@@ -277,6 +308,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
                 key={collection.id}
                 collection={collection}
                 onToggleVisibility={onToggleVisibility}
+                onSetDefault={onSetDefaultCollection}
                 onDelete={onDeleteCollection}
                 onExport={onExportCollection}
               />

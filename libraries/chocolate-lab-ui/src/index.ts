@@ -46,3 +46,6 @@ export * from './packlets/decorations';
 
 // Editing context and toolbar
 export * from './packlets/editing';
+
+// Settings view and draft hook
+export * from './packlets/settings';

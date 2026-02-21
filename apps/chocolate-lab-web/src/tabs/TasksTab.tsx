@@ -53,10 +53,11 @@ export function TasksTabContent(): React.ReactElement {
   // Counter that increments on each edit mutation — forces the preview column to re-render with live data.
   const [previewVersion, setPreviewVersion] = useState(0);
 
-  const mutableCollectionId = useMutableCollection(workspace.data.entities.tasks.collections, [
-    workspace,
-    reactiveWorkspace.version
-  ]);
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.tasks.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.tasks
+  );
 
   const handleCreateTask = useCallback(
     (entity: Entities.Tasks.IRawTaskEntity, source: 'manual'): void => {

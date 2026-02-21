@@ -148,6 +148,8 @@ export interface IDefaultCollectionTargets {
   readonly procedures?: CollectionId;
   /** Default collection for new tasks */
   readonly tasks?: CollectionId;
+  /** Default collection for new decorations */
+  readonly decorations?: CollectionId;
 }
 
 // ============================================================================

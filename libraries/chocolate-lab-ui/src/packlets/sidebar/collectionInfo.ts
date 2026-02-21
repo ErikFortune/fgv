@@ -31,7 +31,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 
-import type { LibraryData, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { LibraryData, LibraryRuntime, Settings } from '@fgv/ts-chocolate';
 
 import {
   type AppTab,
@@ -67,11 +67,38 @@ export interface ICollectionInfo {
   readonly isUnlocked: boolean;
   /** Whether this collection is currently visible (not hidden by user) */
   readonly isVisible: boolean;
+  /** Whether this collection is the default target for new entities in this sub-library */
+  readonly isDefault: boolean;
 }
 
 // ============================================================================
 // Sub-Library Accessor
 // ============================================================================
+
+/**
+ * Maps a tab name to the corresponding key in IDefaultCollectionTargets.
+ * @internal
+ */
+function getDefaultTargetKeyForTab(tab: AppTab): keyof Settings.IDefaultCollectionTargets | undefined {
+  switch (tab) {
+    case 'ingredients':
+      return 'ingredients';
+    case 'fillings':
+      return 'fillings';
+    case 'confections':
+      return 'confections';
+    case 'decorations':
+      return undefined;
+    case 'molds':
+      return 'molds';
+    case 'procedures':
+      return 'procedures';
+    case 'tasks':
+      return 'tasks';
+    default:
+      return undefined;
+  }
+}
 
 /**
  * Returns the entity-layer sub-library for a given tab, or undefined for
@@ -103,12 +130,13 @@ function getSubLibraryForTab(
 }
 
 /**
- * Builds collection info array from a sub-library and visibility state.
+ * Builds collection info array from a sub-library, visibility state, and default targets.
  * @internal
  */
 function buildCollectionInfos(
   subLibrary: LibraryData.SubLibraryBase<string, string, unknown>,
-  visibility: ICollectionVisibility
+  visibility: ICollectionVisibility,
+  defaultCollectionId: string | undefined
 ): ReadonlyArray<ICollectionInfo> {
   const protectedIds = new Set(subLibrary.protectedCollections.map((pc) => pc.collectionId));
 
@@ -125,7 +153,8 @@ function buildCollectionInfos(
       isMutable: entry.isMutable,
       isProtected,
       isUnlocked: isProtected ? entry.items.size > 0 : true,
-      isVisible: isCollectionVisible(visibility, entry.id)
+      isVisible: isCollectionVisible(visibility, entry.id),
+      isDefault: entry.id === defaultCollectionId
     });
   }
 
@@ -166,6 +195,9 @@ export function useCollectionInfo(): ReadonlyArray<ICollectionInfo> {
     if (!subLibrary) {
       return [];
     }
-    return buildCollectionInfos(subLibrary, visibility);
+    const defaultTargetKey = getDefaultTargetKeyForTab(activeTab);
+    const defaultTargets = workspace.settings?.getResolvedSettings().defaultTargets;
+    const defaultCollectionId = defaultTargetKey ? defaultTargets?.[defaultTargetKey] : undefined;
+    return buildCollectionInfos(subLibrary, visibility, defaultCollectionId);
   }, [workspace, activeTab, visibility, version]);
 }
