@@ -110,7 +110,7 @@ export function applyStorageTargets(
   entities: LibraryRuntime.ChocolateEntityLibrary,
   localStorageRootDir: FileTree.IFileTreeDirectoryItem,
   persistentTrees: StorageRootTreeMap,
-  logger?: { info(msg: string): void; warn(msg: string): void }
+  logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void }
 ): void {
   const subLibIds: ReadonlyArray<LibraryData.SubLibraryId> = [
     'ingredients',
@@ -152,12 +152,12 @@ export function applyStorageTargets(
     const dataDir = resolveSubLibraryDataDir(rootDir, subLibId);
     if (!dataDir) {
       subLib.setActiveMutableSource(sourceName, undefined, rootDir);
-      logger?.info(`applyStorageTargets: '${subLibId}' → '${sourceName}' (data dir pending creation)`);
+      logger?.detail(`applyStorageTargets: '${subLibId}' → '${sourceName}' (data dir pending creation)`);
       continue;
     }
 
     subLib.setActiveMutableSource(sourceName, dataDir);
-    logger?.info(`applyStorageTargets: '${subLibId}' → '${sourceName}'`);
+    logger?.detail(`applyStorageTargets: '${subLibId}' → '${sourceName}'`);
   }
 }
 
@@ -173,7 +173,7 @@ export function applyStorageTargetsFromWorkspace(params: {
   readonly persistentTrees: ReadonlyMap<string, IPersistentTreeEntry>;
   readonly targets: Settings.IDefaultStorageTargets | undefined;
   readonly entities: LibraryRuntime.ChocolateEntityLibrary;
-  readonly logger?: { info(msg: string): void; warn(msg: string): void };
+  readonly logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void };
 }): void {
   const { localStorageRootDir, persistentTrees, targets, entities, logger } = params;
   if (!localStorageRootDir) {

@@ -156,14 +156,14 @@ function _readConfigNamespace(): string | undefined {
 
 const _configNamespace = _readConfigNamespace();
 
-let _reactiveWorkspacePromise: Promise<ReactiveWorkspace> | undefined;
-
-async function _buildReactiveWorkspace(): Promise<{
+interface IBuildResult {
   reactiveWorkspace: ReactiveWorkspace;
   warnings: ReadonlyArray<ISettingsValidationWarning>;
   logSettings: Settings.ILogSettings | undefined;
   configNamespace: string | undefined;
-}> {
+}
+
+async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   const storageKeyPrefix = _configNamespace ? `chocolate-lab:${_configNamespace}` : 'chocolate-lab';
   const platformInit = await initializeBrowserPlatform({
     userLibraryPath: 'localStorage',
@@ -197,6 +197,24 @@ async function _buildReactiveWorkspace(): Promise<{
     logger: _bootReporter
   });
 
+  // Log storage summary
+  const storage = reactiveWorkspace.storageSummary;
+  const storageParts: string[] = [];
+  if (storage.hasBuiltIn) {
+    storageParts.push('built-in library');
+  }
+  if (localStorageRootDir) {
+    storageParts.push('local storage');
+  }
+  if (storage.localDirectoryCount > 0) {
+    storageParts.push(
+      `${storage.localDirectoryCount} external director${storage.localDirectoryCount === 1 ? 'y' : 'ies'}`
+    );
+  } else {
+    storageParts.push('no external files');
+  }
+  _bootReporter.info(`Storage: ${storageParts.join(', ')}`);
+
   // Post-construction validation
   const resolvedSettings = workspace.settings?.getResolvedSettings();
   const warnings: ReadonlyArray<ISettingsValidationWarning> = resolvedSettings
@@ -210,11 +228,15 @@ async function _buildReactiveWorkspace(): Promise<{
   return { reactiveWorkspace, warnings, logSettings, configNamespace: _configNamespace };
 }
 
-function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
-  if (!_reactiveWorkspacePromise) {
-    _reactiveWorkspacePromise = _buildReactiveWorkspace().then((r) => r.reactiveWorkspace);
+// Cache the build result so React 18 StrictMode double-invocation
+// of useEffect doesn't run workspace initialization twice.
+let _cachedBuildResult: Promise<IBuildResult> | undefined;
+
+function _getOrBuildWorkspace(): Promise<IBuildResult> {
+  if (!_cachedBuildResult) {
+    _cachedBuildResult = _buildReactiveWorkspace();
   }
-  return _reactiveWorkspacePromise;
+  return _cachedBuildResult;
 }
 
 // ============================================================================
@@ -594,7 +616,7 @@ function WorkspaceBootstrap(): React.ReactElement {
   }, [reporter]);
 
   useEffect(() => {
-    _buildReactiveWorkspace()
+    _getOrBuildWorkspace()
       .then(({ reactiveWorkspace: rw, warnings, logSettings: ls }) => {
         setLogSettings(ls);
         if (warnings.length > 0) {

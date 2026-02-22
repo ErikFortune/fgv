@@ -95,7 +95,7 @@ export abstract class BaseIndexer<TId, TConfig> implements IIndexer<TId, TConfig
       this._buildIndex();
       this._isBuilt = true;
       const elapsed = Date.now() - start;
-      this._logger.info(`${this._indexerName} index built in ${elapsed}ms`);
+      this._logger.detail(`${this._indexerName} index built in ${elapsed}ms`);
     }
   }
 

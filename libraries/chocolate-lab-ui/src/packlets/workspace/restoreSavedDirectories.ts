@@ -45,7 +45,7 @@ function loadAllSubLibrariesFromTree(
   tree: FileTree.FileTree,
   entities: LibraryRuntime.ChocolateEntityLibrary,
   sourceName: string,
-  logger?: { warn(msg: string): void; info(msg: string): void }
+  logger?: { detail(msg: string): void; warn(msg: string): void; info(msg: string): void }
 ): number {
   // Get the tree root — loadFromFileTreeSource expects the root directory,
   // not the data subdirectory (the navigator handles the path).
@@ -97,7 +97,7 @@ export interface IRestoreSavedDirectoriesParams {
   /** The entity library to load collections into */
   readonly entities: LibraryRuntime.ChocolateEntityLibrary;
   /** Optional logger for diagnostics */
-  readonly logger?: { warn(msg: string): void; info(msg: string): void };
+  readonly logger?: { detail(msg: string): void; warn(msg: string): void; info(msg: string): void };
 }
 
 /**
@@ -152,7 +152,7 @@ export async function restoreSavedDirectories(params: IRestoreSavedDirectoriesPa
       });
     }
 
-    logger?.info(`restoreSavedDirectories: restored "${label}" (${loaded} collection(s))`);
+    logger?.detail(`restoreSavedDirectories: restored "${label}" (${loaded} collection(s))`);
     restoredCount++;
   }
 

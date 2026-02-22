@@ -1041,7 +1041,7 @@ export abstract class SubLibraryBase<
         this._protectedCollections.set(pc.ref.collectionId, pc);
       }
 
-      this._logger.info(`Loaded ${loadResult.collections.length} collections from file source`);
+      this._logger.detail(`Loaded ${loadResult.collections.length} collections from file source`);
       return Success.with(loadResult.collections.length);
     });
   }
