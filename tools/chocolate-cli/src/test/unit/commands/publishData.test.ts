@@ -347,6 +347,7 @@ describe('publishData command', () => {
     test('uses metadata.secretName when present in source file', async () => {
       mockReaddirSync.mockReturnValue([createDirent('data.json', false)]);
       mockReadFileSync
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         .mockReturnValueOnce(JSON.stringify({ 'test-secret': validKey }))
         .mockReturnValueOnce(
           JSON.stringify({ metadata: { secretName: 'test-secret' }, items: [{ id: '1' }] })
@@ -357,15 +358,10 @@ describe('publishData command', () => {
 
       const cmd = createPublishDataCommand();
 
-      await cmd.parseAsync([
-        'publish-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--secrets-file',
-        '/secrets.yaml'
-      ]);
+      await cmd.parseAsync(
+        ['publish-data', '--source', '/src', '--dest', '/dst', '--secrets-file', '/secrets.yaml'],
+        { from: 'user' }
+      );
 
       expect(mockCreateEncryptedFile).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -377,7 +373,7 @@ describe('publishData command', () => {
     test('errors when secret from metadata not found in secrets file', async () => {
       mockReaddirSync.mockReturnValue([createDirent('data.json', false)]);
       mockReadFileSync
-        .mockReturnValueOnce(JSON.stringify({ 'other-secret': validKey }))
+        .mockReturnValueOnce(JSON.stringify({ otherSecret: validKey }))
         .mockReturnValueOnce(
           JSON.stringify({ metadata: { secretName: 'missing-secret' }, items: [{ id: '1' }] })
         );
@@ -385,15 +381,10 @@ describe('publishData command', () => {
       const cmd = createPublishDataCommand();
 
       await expect(
-        cmd.parseAsync([
-          'publish-data',
-          '--source',
-          '/src',
-          '--dest',
-          '/dst',
-          '--secrets-file',
-          '/secrets.yaml'
-        ])
+        cmd.parseAsync(
+          ['publish-data', '--source', '/src', '--dest', '/dst', '--secrets-file', '/secrets.yaml'],
+          { from: 'user' }
+        )
       ).rejects.toThrow('process.exit');
 
       expect(mockConsoleError).toHaveBeenCalledWith(
@@ -421,15 +412,10 @@ describe('publishData command', () => {
 
       const cmd = createPublishDataCommand();
 
-      await cmd.parseAsync([
-        'publish-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--secrets-file',
-        '/secrets.yaml'
-      ]);
+      await cmd.parseAsync(
+        ['publish-data', '--source', '/src', '--dest', '/dst', '--secrets-file', '/secrets.yaml'],
+        { from: 'user' }
+      );
 
       expect(mockCreateEncryptedFile).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -465,7 +451,9 @@ describe('publishData command', () => {
 
       const cmd = createPublishDataCommand();
 
-      await cmd.parseAsync(['publish-data', '--source', '/src', '--dest', '/dst', '--secret-name', 'test']);
+      await cmd.parseAsync(['publish-data', '--source', '/src', '--dest', '/dst', '--secret-name', 'test'], {
+        from: 'user'
+      });
 
       expect(mockCreateEncryptedFile).toHaveBeenCalled();
     });
@@ -485,17 +473,10 @@ describe('publishData command', () => {
       const cmd = createPublishDataCommand();
 
       await expect(
-        cmd.parseAsync([
-          'publish-data',
-          '--source',
-          '/src',
-          '--dest',
-          '/dst',
-          '--secret-name',
-          'test',
-          '--key',
-          validKey
-        ])
+        cmd.parseAsync(
+          ['publish-data', '--source', '/src', '--dest', '/dst', '--secret-name', 'test', '--key', validKey],
+          { from: 'user' }
+        )
       ).rejects.toThrow('process.exit');
 
       expect(mockExit).toHaveBeenCalledWith(1);
@@ -518,17 +499,10 @@ describe('publishData command', () => {
 
       const cmd = createPublishDataCommand();
 
-      await cmd.parseAsync([
-        'publish-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--secret-name',
-        'test',
-        '--key',
-        validKey
-      ]);
+      await cmd.parseAsync(
+        ['publish-data', '--source', '/src', '--dest', '/dst', '--secret-name', 'test', '--key', validKey],
+        { from: 'user' }
+      );
 
       expect(mockCreateEncryptedFile).toHaveBeenCalledWith(
         expect.objectContaining({

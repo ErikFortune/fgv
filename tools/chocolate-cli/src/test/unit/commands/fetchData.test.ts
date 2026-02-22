@@ -37,33 +37,26 @@ jest.mock('fs', () => ({
 
 const mockTryDecryptFile = jest.fn();
 jest.mock('@fgv/ts-extras', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const actual = jest.requireActual('@fgv/ts-extras');
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     ...actual,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     CryptoUtils: {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      ...((actual as any).CryptoUtils ?? {}),
+      ...actual.CryptoUtils,
       tryDecryptFile: mockTryDecryptFile,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      nodeCryptoProvider: (actual as any).CryptoUtils?.nodeCryptoProvider
+      nodeCryptoProvider: actual.CryptoUtils.nodeCryptoProvider
     }
   };
 });
 
 const mockIsEncryptedCollectionFile = jest.fn();
 jest.mock('@fgv/ts-chocolate', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const actual = jest.requireActual('@fgv/ts-chocolate');
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     ...actual,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     LibraryData: {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      ...((actual as any).LibraryData ?? {}),
+      ...actual.LibraryData,
       isEncryptedCollectionFile: mockIsEncryptedCollectionFile
     }
   };
@@ -128,9 +121,9 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await expect(cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst'])).rejects.toThrow(
-        'process.exit'
-      );
+      await expect(
+        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst'], { from: 'user' })
+      ).rejects.toThrow('process.exit');
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining('No decryption key provided'));
       expect(mockExit).toHaveBeenCalledWith(1);
@@ -148,7 +141,9 @@ describe('fetchData command', () => {
       const cmd = createFetchDataCommand();
 
       await expect(
-        cmd.parseAsync(['fetch-data', '--source', '/nonexistent', '--dest', '/dst', '--key', validKey])
+        cmd.parseAsync(['fetch-data', '--source', '/nonexistent', '--dest', '/dst', '--key', validKey], {
+          from: 'user'
+        })
       ).rejects.toThrow('process.exit');
 
       expect(mockConsoleError).toHaveBeenCalledWith(
@@ -168,7 +163,9 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey]);
+      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+        from: 'user'
+      });
 
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('No JSON files found'));
       expect(mockExit).not.toHaveBeenCalled();
@@ -184,7 +181,9 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey]);
+      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+        from: 'user'
+      });
 
       expect(mockTryDecryptFile).toHaveBeenCalled();
       expect(mockWriteFileSync).toHaveBeenCalledWith(
@@ -200,6 +199,7 @@ describe('fetchData command', () => {
     test('decrypts encrypted file using secrets-file lookup', async () => {
       mockReaddirSync.mockReturnValue([createDirent('data.json', false)]);
       mockReadFileSync
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         .mockReturnValueOnce(JSON.stringify({ 'test-secret': validKey }))
         .mockReturnValueOnce(
           JSON.stringify({ secretName: 'test-secret', encryptedData: 'abc', algorithm: 'aes-256-gcm' })
@@ -209,15 +209,10 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync([
-        'fetch-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--secrets-file',
-        '/secrets.yaml'
-      ]);
+      await cmd.parseAsync(
+        ['fetch-data', '--source', '/src', '--dest', '/dst', '--secrets-file', '/secrets.yaml'],
+        { from: 'user' }
+      );
 
       expect(mockTryDecryptFile).toHaveBeenCalled();
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Decrypted'));
@@ -230,7 +225,9 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey]);
+      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+        from: 'user'
+      });
 
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         expect.stringContaining('plain.yaml'),
@@ -247,16 +244,10 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync([
-        'fetch-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--key',
-        validKey,
-        '--skip-plain'
-      ]);
+      await cmd.parseAsync(
+        ['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey, '--skip-plain'],
+        { from: 'user' }
+      );
 
       expect(mockWriteFileSync).not.toHaveBeenCalled();
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Skipped (not encrypted)'));
@@ -269,7 +260,9 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey]);
+      await cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+        from: 'user'
+      });
 
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         expect.stringContaining('data.yaml'),
@@ -285,17 +278,10 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync([
-        'fetch-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--key',
-        validKey,
-        '-f',
-        'json'
-      ]);
+      await cmd.parseAsync(
+        ['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey, '-f', 'json'],
+        { from: 'user' }
+      );
 
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         expect.stringContaining('data.json'),
@@ -324,7 +310,9 @@ describe('fetchData command', () => {
       const cmd = createFetchDataCommand();
 
       await expect(
-        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey])
+        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+          from: 'user'
+        })
       ).rejects.toThrow('process.exit');
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining('ERROR: fail.json'));
@@ -340,7 +328,9 @@ describe('fetchData command', () => {
       const cmd = createFetchDataCommand();
 
       await expect(
-        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey])
+        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+          from: 'user'
+        })
       ).rejects.toThrow('process.exit');
 
       expect(mockConsoleError).toHaveBeenCalledWith(
@@ -352,7 +342,7 @@ describe('fetchData command', () => {
     test('errors when secret not found in secrets file', async () => {
       mockReaddirSync.mockReturnValue([createDirent('data.json', false)]);
       mockReadFileSync
-        .mockReturnValueOnce(JSON.stringify({ 'other-secret': validKey }))
+        .mockReturnValueOnce(JSON.stringify({ otherSecret: validKey }))
         .mockReturnValueOnce(
           JSON.stringify({ secretName: 'missing-secret', encryptedData: 'abc', algorithm: 'aes-256-gcm' })
         );
@@ -361,15 +351,10 @@ describe('fetchData command', () => {
       const cmd = createFetchDataCommand();
 
       await expect(
-        cmd.parseAsync([
-          'fetch-data',
-          '--source',
-          '/src',
-          '--dest',
-          '/dst',
-          '--secrets-file',
-          '/secrets.yaml'
-        ])
+        cmd.parseAsync(
+          ['fetch-data', '--source', '/src', '--dest', '/dst', '--secrets-file', '/secrets.yaml'],
+          { from: 'user' }
+        )
       ).rejects.toThrow('process.exit');
 
       expect(mockConsoleError).toHaveBeenCalledWith(
@@ -388,16 +373,10 @@ describe('fetchData command', () => {
 
       const cmd = createFetchDataCommand();
 
-      await cmd.parseAsync([
-        'fetch-data',
-        '--source',
-        '/src',
-        '--dest',
-        '/dst',
-        '--key',
-        validKey,
-        '--dry-run'
-      ]);
+      await cmd.parseAsync(
+        ['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey, '--dry-run'],
+        { from: 'user' }
+      );
 
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Would decrypt: data.json'));
       expect(mockWriteFileSync).not.toHaveBeenCalled();
@@ -418,7 +397,9 @@ describe('fetchData command', () => {
       const cmd = createFetchDataCommand();
 
       await expect(
-        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey])
+        cmd.parseAsync(['fetch-data', '--source', '/src', '--dest', '/dst', '--key', validKey], {
+          from: 'user'
+        })
       ).rejects.toThrow('process.exit');
 
       expect(mockExit).toHaveBeenCalledWith(1);
