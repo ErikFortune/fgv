@@ -1108,12 +1108,12 @@ describe('SettingsManager', () => {
       const manager = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
-        manager.updateDefaultStorageTargets({ globalDefault: 'main' as StorageRootId })
+        manager.updateDefaultStorageTargets({ libraryDefault: 'main' as StorageRootId })
       ).toSucceedAndSatisfy((targets) => {
-        expect(targets.globalDefault).toBe('main');
+        expect(targets.libraryDefault).toBe('main');
       });
 
-      expect(manager.getPreferencesSettings()?.defaultStorageTargets?.globalDefault).toBe('main');
+      expect(manager.getPreferencesSettings()?.defaultStorageTargets?.libraryDefault).toBe('main');
     });
 
     test('updateDefaultStorageTargets routes to common in legacy mode', () => {
@@ -1121,12 +1121,12 @@ describe('SettingsManager', () => {
       const manager = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
-        manager.updateDefaultStorageTargets({ globalDefault: 'main' as StorageRootId })
+        manager.updateDefaultStorageTargets({ libraryDefault: 'main' as StorageRootId })
       ).toSucceedAndSatisfy((targets) => {
-        expect(targets.globalDefault).toBe('main');
+        expect(targets.libraryDefault).toBe('main');
       });
 
-      expect(manager.getCommonSettings().defaultStorageTargets?.globalDefault).toBe('main');
+      expect(manager.getCommonSettings().defaultStorageTargets?.libraryDefault).toBe('main');
     });
 
     test('updateToolSettings routes to preferences', () => {

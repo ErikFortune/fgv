@@ -93,7 +93,8 @@ export function useRemoveStorageRoot(): IRemoveStorageRootActions {
         const targets = resolved.defaultStorageTargets;
         if (targets) {
           const rootId = id as Settings.StorageRootId;
-          const newGlobal = targets.globalDefault === rootId ? undefined : targets.globalDefault;
+          const newLibraryDefault = targets.libraryDefault === rootId ? undefined : targets.libraryDefault;
+          const newUserDataDefault = targets.userDataDefault === rootId ? undefined : targets.userDataDefault;
           const existingOverrides = targets.sublibraryOverrides ?? {};
           const newOverrides: Record<string, Settings.StorageRootId> = {};
           for (const [key, val] of Object.entries(existingOverrides)) {
@@ -102,11 +103,13 @@ export function useRemoveStorageRoot(): IRemoveStorageRootActions {
             }
           }
           const hasChanges =
-            newGlobal !== targets.globalDefault ||
+            newLibraryDefault !== targets.libraryDefault ||
+            newUserDataDefault !== targets.userDataDefault ||
             Object.keys(newOverrides).length !== Object.keys(existingOverrides).length;
           if (hasChanges) {
             settingsManager.updateDefaultStorageTargets({
-              globalDefault: newGlobal,
+              libraryDefault: newLibraryDefault,
+              userDataDefault: newUserDataDefault,
               sublibraryOverrides: Object.keys(newOverrides).length > 0 ? newOverrides : undefined
             });
             settingsManager.save().catch(() => undefined);

@@ -251,13 +251,38 @@ const sublibraryStorageOverrides: Converter<Partial<Record<SubLibraryId, Storage
   });
 
 /**
+ * Raw converter that accepts both legacy `globalDefault` and new `libraryDefault`/`userDataDefault`.
+ * @internal
+ */
+interface IDefaultStorageTargetsRaw {
+  globalDefault?: StorageRootId;
+  libraryDefault?: StorageRootId;
+  userDataDefault?: StorageRootId;
+  sublibraryOverrides?: Partial<Record<SubLibraryId, StorageRootId>>;
+}
+
+const defaultStorageTargetsRaw: Converter<IDefaultStorageTargetsRaw> =
+  Converters.object<IDefaultStorageTargetsRaw>({
+    globalDefault: storageRootId.optional(),
+    libraryDefault: storageRootId.optional(),
+    userDataDefault: storageRootId.optional(),
+    sublibraryOverrides: sublibraryStorageOverrides.optional()
+  });
+
+/**
  * Converter for {@link IDefaultStorageTargets}.
+ * Handles migration from legacy `globalDefault` field to `libraryDefault`.
  * @public
  */
 export const defaultStorageTargets: Converter<IDefaultStorageTargets> =
-  Converters.object<IDefaultStorageTargets>({
-    globalDefault: storageRootId.optional(),
-    sublibraryOverrides: sublibraryStorageOverrides.optional()
+  Converters.generic<IDefaultStorageTargets>((from: unknown) => {
+    return defaultStorageTargetsRaw.convert(from).onSuccess((raw) => {
+      return succeed({
+        libraryDefault: raw.libraryDefault ?? raw.globalDefault,
+        userDataDefault: raw.userDataDefault,
+        sublibraryOverrides: raw.sublibraryOverrides
+      });
+    });
   });
 
 // ============================================================================

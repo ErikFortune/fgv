@@ -91,9 +91,9 @@ describe('validateResolvedSettings', () => {
       expect(validateResolvedSettings(resolved, context)).toEqual([]);
     });
 
-    test('when globalDefault root is available', () => {
+    test('when libraryDefault root is available', () => {
       const resolved = makeResolved({
-        defaultStorageTargets: { globalDefault: makeRoot('localStorage') }
+        defaultStorageTargets: { libraryDefault: makeRoot('localStorage') }
       });
       const context = makeContext(['localStorage']);
       expect(validateResolvedSettings(resolved, context)).toEqual([]);
@@ -153,9 +153,9 @@ describe('validateResolvedSettings', () => {
   // ============================================================================
 
   describe('missing-root warnings', () => {
-    test('warns when globalDefault root is missing', () => {
+    test('warns when libraryDefault root is missing', () => {
       const resolved = makeResolved({
-        defaultStorageTargets: { globalDefault: makeRoot('missing-root') }
+        defaultStorageTargets: { libraryDefault: makeRoot('missing-root') }
       });
       const context = makeContext(['localStorage']);
       const warnings = validateResolvedSettings(resolved, context);
@@ -163,7 +163,21 @@ describe('validateResolvedSettings', () => {
       expect(warnings[0]).toMatchObject({
         kind: 'missing-root',
         rootId: 'missing-root',
-        context: 'defaultStorageTargets.globalDefault'
+        context: 'defaultStorageTargets.libraryDefault'
+      });
+    });
+
+    test('warns when userDataDefault root is missing', () => {
+      const resolved = makeResolved({
+        defaultStorageTargets: { userDataDefault: makeRoot('missing-user-root') }
+      });
+      const context = makeContext(['localStorage']);
+      const warnings = validateResolvedSettings(resolved, context);
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatchObject({
+        kind: 'missing-root',
+        rootId: 'missing-user-root',
+        context: 'defaultStorageTargets.userDataDefault'
       });
     });
 
@@ -188,7 +202,7 @@ describe('validateResolvedSettings', () => {
     test('warns for each missing sublibrary override root', () => {
       const resolved = makeResolved({
         defaultStorageTargets: {
-          globalDefault: makeRoot('ok-root'),
+          libraryDefault: makeRoot('ok-root'),
           sublibraryOverrides: {
             ingredients: makeRoot('missing-1'),
             fillings: makeRoot('missing-2'),
@@ -205,10 +219,10 @@ describe('validateResolvedSettings', () => {
       expect(rootIds).toContain('missing-2');
     });
 
-    test('warns for both globalDefault and sublibrary override when both missing', () => {
+    test('warns for both libraryDefault and sublibrary override when both missing', () => {
       const resolved = makeResolved({
         defaultStorageTargets: {
-          globalDefault: makeRoot('missing-global'),
+          libraryDefault: makeRoot('missing-global'),
           sublibraryOverrides: {
             ingredients: makeRoot('missing-sub')
           }
@@ -270,7 +284,7 @@ describe('validateResolvedSettings', () => {
   describe('mixed warnings', () => {
     test('returns both missing-root and missing-collection warnings', () => {
       const resolved = makeResolved({
-        defaultStorageTargets: { globalDefault: makeRoot('gone') },
+        defaultStorageTargets: { libraryDefault: makeRoot('gone') },
         defaultTargets: {
           ingredients: makeCollection('gone-collection') as never
         }

@@ -132,11 +132,19 @@ export function validateResolvedSettings(
   // Check defaultStorageTargets
   const dst = resolved.defaultStorageTargets;
   if (dst !== undefined) {
-    if (dst.globalDefault !== undefined && !context.availableRoots.has(dst.globalDefault)) {
+    if (dst.libraryDefault !== undefined && !context.availableRoots.has(dst.libraryDefault)) {
       warnings.push({
         kind: 'missing-root',
-        rootId: dst.globalDefault,
-        context: 'defaultStorageTargets.globalDefault'
+        rootId: dst.libraryDefault,
+        context: 'defaultStorageTargets.libraryDefault'
+      });
+    }
+
+    if (dst.userDataDefault !== undefined && !context.availableRoots.has(dst.userDataDefault)) {
+      warnings.push({
+        kind: 'missing-root',
+        rootId: dst.userDataDefault,
+        context: 'defaultStorageTargets.userDataDefault'
       });
     }
 

@@ -197,8 +197,10 @@ export interface ILocalDirectoryRef {
  * @public
  */
 export interface IDefaultStorageTargets {
-  /** Global default storage root for new collections */
-  readonly globalDefault?: StorageRootId;
+  /** Default storage root for new library collections (ingredients, fillings, etc.) */
+  readonly libraryDefault?: StorageRootId;
+  /** Default storage root for new user data (journals, sessions, inventory) */
+  readonly userDataDefault?: StorageRootId;
   /** Per-sublibrary overrides for default storage root */
   readonly sublibraryOverrides?: Partial<Record<SubLibraryId, StorageRootId>>;
 }

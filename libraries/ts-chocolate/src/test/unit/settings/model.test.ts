@@ -212,10 +212,10 @@ describe('settings model', () => {
     test('splits defaultStorageTargets into preferences', () => {
       const common: ICommonSettings = {
         schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultStorageTargets: { globalDefault: 'main' as StorageRootId }
+        defaultStorageTargets: { libraryDefault: 'main' as StorageRootId }
       };
       const { preferences } = splitCommonSettings(common);
-      expect(preferences.defaultStorageTargets?.globalDefault).toBe('main');
+      expect(preferences.defaultStorageTargets?.libraryDefault).toBe('main');
     });
 
     test('splits tools into preferences', () => {
@@ -314,10 +314,10 @@ describe('settings model', () => {
     test('passes through defaultStorageTargets', () => {
       const prefs: IPreferencesSettings = {
         schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultStorageTargets: { globalDefault: 'main' as StorageRootId }
+        defaultStorageTargets: { libraryDefault: 'main' as StorageRootId }
       };
       const resolved = resolvePreferencesSettings(prefs, testDeviceId);
-      expect(resolved.defaultStorageTargets?.globalDefault).toBe('main');
+      expect(resolved.defaultStorageTargets?.libraryDefault).toBe('main');
     });
 
     test('does not include lastActiveSessionId', () => {

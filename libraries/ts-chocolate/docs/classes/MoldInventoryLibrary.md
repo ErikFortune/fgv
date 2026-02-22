@@ -322,6 +322,19 @@ Creates a file for a collection in the mutable data directory and
 </td></tr>
 <tr><td>
 
+[setActiveMutableSource(sourceName, dataDirectory, sourceRoot)](./SubLibraryBase.setActiveMutableSource.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the active mutable source for new collection creation.
+
+</td></tr>
+<tr><td>
+
 [removeSource(sourceName)](./SubLibraryBase.removeSource.md)
 
 </td><td>

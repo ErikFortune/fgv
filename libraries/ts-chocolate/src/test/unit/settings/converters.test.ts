@@ -612,13 +612,13 @@ describe('settings converters', () => {
       const input = {
         schemaVersion: SETTINGS_SCHEMA_VERSION,
         defaultTargets: { fillings: 'user' },
-        defaultStorageTargets: { globalDefault: 'main' },
+        defaultStorageTargets: { libraryDefault: 'main' },
         tools: { scaling: { weightUnit: 'g' } }
       };
       expect(Converters.preferencesSettings.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
         expect(result.defaultTargets?.fillings).toBe('user');
-        expect(result.defaultStorageTargets?.globalDefault).toBe('main');
+        expect(result.defaultStorageTargets?.libraryDefault).toBe('main');
         expect(result.tools?.scaling?.weightUnit).toBe('g');
       });
     });
@@ -667,13 +667,38 @@ describe('settings converters', () => {
   // ============================================================================
 
   describe('defaultStorageTargets', () => {
-    test('converts with globalDefault only', () => {
-      expect(Converters.defaultStorageTargets.convert({ globalDefault: 'main' })).toSucceedAndSatisfy(
+    test('converts with libraryDefault only', () => {
+      expect(Converters.defaultStorageTargets.convert({ libraryDefault: 'main' })).toSucceedAndSatisfy(
         (result) => {
-          expect(result.globalDefault).toBe('main');
+          expect(result.libraryDefault).toBe('main');
           expect(result.sublibraryOverrides).toBeUndefined();
         }
       );
+    });
+
+    test('converts with userDataDefault', () => {
+      expect(Converters.defaultStorageTargets.convert({ userDataDefault: 'browser' })).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.userDataDefault).toBe('browser');
+        }
+      );
+    });
+
+    test('migrates legacy globalDefault to libraryDefault', () => {
+      expect(Converters.defaultStorageTargets.convert({ globalDefault: 'main' })).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.libraryDefault).toBe('main');
+          expect(result.userDataDefault).toBeUndefined();
+        }
+      );
+    });
+
+    test('libraryDefault takes precedence over legacy globalDefault', () => {
+      expect(
+        Converters.defaultStorageTargets.convert({ globalDefault: 'old', libraryDefault: 'new' })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.libraryDefault).toBe('new');
+      });
     });
 
     test('converts with valid sublibrary overrides', () => {

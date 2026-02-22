@@ -128,7 +128,7 @@ export function applyStorageTargets(
       continue;
     }
 
-    const rootId = targets?.sublibraryOverrides?.[subLibId] ?? targets?.globalDefault ?? 'localStorage';
+    const rootId = targets?.sublibraryOverrides?.[subLibId] ?? targets?.libraryDefault ?? 'localStorage';
 
     let rootDir: FileTree.IFileTreeDirectoryItem | undefined;
     let sourceName: string;

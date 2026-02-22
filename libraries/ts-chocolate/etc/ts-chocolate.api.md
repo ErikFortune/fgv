@@ -3507,8 +3507,9 @@ interface IDefaultCollectionTargets {
 //
 // @public
 interface IDefaultStorageTargets {
-    readonly globalDefault?: StorageRootId;
+    readonly libraryDefault?: StorageRootId;
     readonly sublibraryOverrides?: Partial<Record<SubLibraryId, StorageRootId>>;
+    readonly userDataDefault?: StorageRootId;
 }
 
 // @public

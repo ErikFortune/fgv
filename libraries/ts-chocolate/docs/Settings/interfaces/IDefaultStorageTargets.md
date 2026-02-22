@@ -27,7 +27,7 @@ Description
 <tbody>
 <tr><td>
 
-[globalDefault](./IDefaultStorageTargets.globalDefault.md)
+[libraryDefault](./IDefaultStorageTargets.libraryDefault.md)
 
 </td><td>
 
@@ -39,7 +39,24 @@ Description
 
 </td><td>
 
-Global default storage root for new collections
+Default storage root for new library collections (ingredients, fillings, etc.)
+
+</td></tr>
+<tr><td>
+
+[userDataDefault](./IDefaultStorageTargets.userDataDefault.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[StorageRootId](../../type-aliases/StorageRootId.md)
+
+</td><td>
+
+Default storage root for new user data (journals, sessions, inventory)
 
 </td></tr>
 <tr><td>

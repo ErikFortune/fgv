@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import type { ICascadeColumn } from '@fgv/ts-app-shell';
 import { ConfirmDialog } from '@fgv/ts-app-shell';
@@ -77,18 +77,69 @@ const CATEGORY_BADGE_CLASS: Record<StorageCategory, string> = {
   settings: 'bg-gray-50 text-gray-500 border-gray-200'
 };
 
+/**
+ * Maps a storage category to the corresponding field in IDefaultStorageTargets.
+ * Returns undefined for categories that don't have a default (e.g. 'settings').
+ */
+function categoryToTargetField(cat: StorageCategory): 'libraryDefault' | 'userDataDefault' | undefined {
+  switch (cat) {
+    case 'library':
+      return 'libraryDefault';
+    case 'user-data':
+      return 'userDataDefault';
+    default:
+      return undefined;
+  }
+}
+
 function CategoryBadges({
-  categories
+  categories,
+  rootId,
+  isMutable,
+  targets,
+  onToggleDefault
 }: {
   readonly categories: ReadonlyArray<StorageCategory>;
+  readonly rootId: string;
+  readonly isMutable: boolean;
+  readonly targets: Settings.IDefaultStorageTargets | undefined;
+  readonly onToggleDefault: (field: 'libraryDefault' | 'userDataDefault') => void;
 }): React.ReactElement {
   return (
     <div className="flex flex-wrap gap-1">
-      {categories.map((cat) => (
-        <span key={cat} className={`text-xs border rounded px-1.5 py-0.5 ${CATEGORY_BADGE_CLASS[cat]}`}>
-          {CATEGORY_LABELS[cat]}
-        </span>
-      ))}
+      {categories.map((cat) => {
+        const field = categoryToTargetField(cat);
+        const isDefault = field !== undefined && targets?.[field] === (rootId as Settings.StorageRootId);
+        const canBeDefault = field !== undefined && isMutable;
+
+        return (
+          <span
+            key={cat}
+            className={`text-xs border rounded px-1.5 py-0.5 inline-flex items-center gap-1 ${CATEGORY_BADGE_CLASS[cat]}`}
+          >
+            {CATEGORY_LABELS[cat]}
+            {canBeDefault && (
+              <button
+                type="button"
+                onClick={(e): void => {
+                  e.stopPropagation();
+                  onToggleDefault(field);
+                }}
+                className={`leading-none ${
+                  isDefault ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                }`}
+                title={
+                  isDefault
+                    ? `${CATEGORY_LABELS[cat]}: default write destination`
+                    : `Set as default for ${CATEGORY_LABELS[cat]}`
+                }
+              >
+                {isDefault ? '\u2605' : '\u2606'}
+              </button>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -169,12 +220,16 @@ export function StorageCollectionsDetail(props: IStorageCollectionsDetailProps):
 interface IStorageRootDetailProps {
   readonly root: IStorageRootSummary;
   readonly subLibraries: ReadonlyArray<ISubLibraryDef>;
+  readonly targets: Settings.IDefaultStorageTargets | undefined;
+  readonly onToggleDefault: (field: 'libraryDefault' | 'userDataDefault') => void;
+  readonly onToggleSublibraryOverride: (subLibKey: string) => void;
   readonly onPushColumn: (col: ICascadeColumn) => void;
   readonly onClose: () => void;
 }
 
 export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactElement {
-  const { root, subLibraries, onPushColumn, onClose } = props;
+  const { root, subLibraries, targets, onToggleDefault, onToggleSublibraryOverride, onPushColumn, onClose } =
+    props;
   const [selectedSubLibKey, setSelectedSubLibKey] = useState<string | undefined>(undefined);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const { removeStorageRoot } = useRemoveStorageRoot();
@@ -207,6 +262,27 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
     setConfirmRemove(false);
     await removeStorageRoot(root.id);
     onClose();
+  }
+
+  /**
+   * Determine star state for a sub-library row.
+   * - 'explicit': this root has an explicit sublibraryOverride for this sub-lib
+   * - 'inherited': no override, but this root is the category-level default
+   * - 'none': this root is not the default for this sub-lib
+   */
+  function getSubLibStarState(subLibKey: string): 'explicit' | 'inherited' | 'none' {
+    const overrideRoot = targets?.sublibraryOverrides?.[subLibKey as LibraryData.SubLibraryId];
+    if (overrideRoot === (root.id as Settings.StorageRootId)) {
+      return 'explicit';
+    }
+    // Check if inherited from category default (library category only for now)
+    if (
+      root.categories.includes('library') &&
+      targets?.libraryDefault === (root.id as Settings.StorageRootId)
+    ) {
+      return overrideRoot === undefined ? 'inherited' : 'none';
+    }
+    return 'none';
   }
 
   return (
@@ -256,7 +332,13 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
           <dd className="text-gray-700">{rootTypeLabel(root)}</dd>
           <dt className="text-gray-400">Stores</dt>
           <dd>
-            <CategoryBadges categories={root.categories} />
+            <CategoryBadges
+              categories={root.categories}
+              rootId={root.id}
+              isMutable={root.isMutable}
+              targets={targets}
+              onToggleDefault={onToggleDefault}
+            />
           </dd>
         </dl>
 
@@ -266,38 +348,68 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
             <p className="text-sm text-gray-400 italic">No sub-libraries loaded.</p>
           ) : (
             <ul className="space-y-1">
-              {subLibraries.map((sub) => (
-                <li key={sub.key}>
-                  <button
-                    type="button"
-                    onClick={(): void => handleSelectSubLib(sub)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors group ${
-                      selectedSubLibKey === sub.key
-                        ? 'bg-choco-accent/10 text-choco-accent'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <span
-                      className={`text-sm font-medium ${
-                        selectedSubLibKey === sub.key
-                          ? 'text-choco-accent'
-                          : 'text-gray-800 group-hover:text-gray-900'
-                      }`}
-                    >
-                      {sub.label}
-                    </span>
-                    <span className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-                      <span>
-                        {sub.collectionCount} collection{sub.collectionCount !== 1 ? 's' : ''}
-                      </span>
-                      <span>
-                        {sub.itemCount} item{sub.itemCount !== 1 ? 's' : ''}
-                      </span>
-                      <span className="text-gray-300">{selectedSubLibKey === sub.key ? '‹' : '›'}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {subLibraries.map((sub) => {
+                const starState = root.isMutable ? getSubLibStarState(sub.key) : undefined;
+                return (
+                  <li key={sub.key}>
+                    <div className="flex items-center">
+                      {root.isMutable && (
+                        <button
+                          type="button"
+                          onClick={(e): void => {
+                            e.stopPropagation();
+                            onToggleSublibraryOverride(sub.key);
+                          }}
+                          className={`mr-1 text-sm leading-none ${
+                            starState === 'explicit'
+                              ? 'text-amber-500'
+                              : starState === 'inherited'
+                              ? 'text-amber-300/50'
+                              : 'text-gray-300 hover:text-amber-400'
+                          }`}
+                          title={
+                            starState === 'explicit'
+                              ? 'Explicit default (click to clear)'
+                              : starState === 'inherited'
+                              ? 'Inherited from category default (click to set explicit)'
+                              : 'Click to set as default'
+                          }
+                        >
+                          {starState === 'none' ? '\u2606' : '\u2605'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(): void => handleSelectSubLib(sub)}
+                        className={`flex-1 flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors group ${
+                          selectedSubLibKey === sub.key
+                            ? 'bg-choco-accent/10 text-choco-accent'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-medium ${
+                            selectedSubLibKey === sub.key
+                              ? 'text-choco-accent'
+                              : 'text-gray-800 group-hover:text-gray-900'
+                          }`}
+                        >
+                          {sub.label}
+                        </span>
+                        <span className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
+                          <span>
+                            {sub.collectionCount} collection{sub.collectionCount !== 1 ? 's' : ''}
+                          </span>
+                          <span>
+                            {sub.itemCount} item{sub.itemCount !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-gray-300">{selectedSubLibKey === sub.key ? '‹' : '›'}</span>
+                        </span>
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -318,22 +430,22 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
   const entities = workspace.data.entities;
   const [selectedRootId, setSelectedRootId] = useState<string | undefined>(undefined);
 
+  const SUB_LIB_DEFS: ReadonlyArray<{ key: string; label: string; lib: ISubLibWithCollections }> = [
+    { key: 'ingredients', label: 'Ingredients', lib: entities.ingredients },
+    { key: 'fillings', label: 'Fillings', lib: entities.fillings },
+    { key: 'confections', label: 'Confections', lib: entities.confections },
+    { key: 'decorations', label: 'Decorations', lib: entities.decorations },
+    { key: 'molds', label: 'Molds', lib: entities.molds },
+    { key: 'procedures', label: 'Procedures', lib: entities.procedures },
+    { key: 'tasks', label: 'Tasks', lib: entities.tasks }
+  ];
+
   function getSubLibrariesForRoot(root: IStorageRootSummary): ISubLibraryDef[] {
     const sn = root.sourceName;
-    const defs: ReadonlyArray<{ key: string; label: string; lib: ISubLibWithCollections }> = [
-      { key: 'ingredients', label: 'Ingredients', lib: entities.ingredients },
-      { key: 'fillings', label: 'Fillings', lib: entities.fillings },
-      { key: 'confections', label: 'Confections', lib: entities.confections },
-      { key: 'decorations', label: 'Decorations', lib: entities.decorations },
-      { key: 'molds', label: 'Molds', lib: entities.molds },
-      { key: 'procedures', label: 'Procedures', lib: entities.procedures },
-      { key: 'tasks', label: 'Tasks', lib: entities.tasks }
-    ];
-
     const result: ISubLibraryDef[] = [];
-    for (const { key, label, lib } of defs) {
+    for (const { key, label, lib } of SUB_LIB_DEFS) {
       const collections = buildCollections(lib, sn);
-      if (collections.length > 0) {
+      if (collections.length > 0 || root.isMutable) {
         result.push({
           key,
           label,
@@ -346,6 +458,51 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
     return result;
   }
 
+  const handleToggleCategoryDefault = useCallback(
+    (rootId: string, field: 'libraryDefault' | 'userDataDefault'): void => {
+      const current = currentStorageTargets?.[field];
+      const typedRootId = rootId as Settings.StorageRootId;
+      const newValue = current === typedRootId ? undefined : typedRootId;
+      onUpdateCommon({
+        defaultStorageTargets: {
+          ...currentStorageTargets,
+          [field]: newValue
+        }
+      });
+    },
+    [currentStorageTargets, onUpdateCommon]
+  );
+
+  const handleToggleSublibraryOverride = useCallback(
+    (rootId: string, subLibKey: string): void => {
+      const typedRootId = rootId as Settings.StorageRootId;
+      const existing = currentStorageTargets?.sublibraryOverrides ?? {};
+      const currentOverride = existing[subLibKey as LibraryData.SubLibraryId];
+      const isExplicit = currentOverride === typedRootId;
+
+      let updated: Partial<Record<string, Settings.StorageRootId>>;
+      if (isExplicit) {
+        // Clear explicit override → revert to category default
+        updated = { ...existing };
+        delete updated[subLibKey];
+      } else {
+        // Set explicit override for this sub-library
+        updated = { ...existing, [subLibKey]: typedRootId };
+      }
+
+      onUpdateCommon({
+        defaultStorageTargets: {
+          ...currentStorageTargets,
+          sublibraryOverrides:
+            Object.keys(updated).length > 0
+              ? (updated as Settings.IDefaultStorageTargets['sublibraryOverrides'])
+              : undefined
+        }
+      });
+    },
+    [currentStorageTargets, onUpdateCommon]
+  );
+
   function buildRootColumn(root: IStorageRootSummary, subLibraries: ISubLibraryDef[]): ICascadeColumn {
     const rootKey = `storage-root-${root.id}`;
     const col: ICascadeColumn = {
@@ -355,6 +512,9 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
         <StorageRootDetail
           root={root}
           subLibraries={subLibraries}
+          targets={currentStorageTargets}
+          onToggleDefault={(field): void => handleToggleCategoryDefault(root.id, field)}
+          onToggleSublibraryOverride={(subLibKey): void => handleToggleSublibraryOverride(root.id, subLibKey)}
           onClose={(): void => {
             setSelectedRootId(undefined);
             onSquashColumns([]);
@@ -416,7 +576,13 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
                   <span className="text-xs text-gray-400">
                     {rootTypeLabel(root)} · {rootAccessLabel(root)}
                   </span>
-                  <CategoryBadges categories={root.categories} />
+                  <CategoryBadges
+                    categories={root.categories}
+                    rootId={root.id}
+                    isMutable={root.isMutable}
+                    targets={currentStorageTargets}
+                    onToggleDefault={(field): void => handleToggleCategoryDefault(root.id, field)}
+                  />
                 </div>
                 <span
                   className={`flex-shrink-0 text-xs border rounded px-1.5 py-0.5 ${rootBadgeClass(root)}`}
@@ -432,141 +598,7 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
         </ul>
       )}
 
-      <DefaultStorageTargets onUpdateCommon={onUpdateCommon} currentTargets={currentStorageTargets} />
-
       <AddStorageRootButton />
-    </div>
-  );
-}
-
-// ============================================================================
-// DefaultStorageTargets — dropdowns for global default + per-sublibrary overrides
-// ============================================================================
-
-const SUBLIBRARY_LABELS: ReadonlyArray<{ key: LibraryData.SubLibraryId; label: string }> = [
-  { key: 'ingredients', label: 'Ingredients' },
-  { key: 'fillings', label: 'Fillings' },
-  { key: 'confections', label: 'Confections' },
-  { key: 'decorations', label: 'Decorations' },
-  { key: 'molds', label: 'Molds' },
-  { key: 'procedures', label: 'Procedures' },
-  { key: 'tasks', label: 'Tasks' }
-];
-
-function DefaultStorageTargets({
-  onUpdateCommon,
-  currentTargets
-}: {
-  readonly onUpdateCommon: (
-    updates: Partial<{ defaultStorageTargets: Settings.IDefaultStorageTargets | undefined }>
-  ) => void;
-  readonly currentTargets: Settings.IDefaultStorageTargets | undefined;
-}): React.ReactElement {
-  const reactiveWorkspace = useReactiveWorkspace();
-  const summary = reactiveWorkspace.storageSummary;
-  const mitigatedRoots = reactiveWorkspace.mitigatedRoots;
-  const mutableRoots = summary.roots.filter((r) => r.isMutable);
-
-  if (mutableRoots.length === 0 && mitigatedRoots.size === 0) {
-    return <></>;
-  }
-
-  function handleGlobalDefaultChange(rootId: string): void {
-    const value = rootId === '' ? undefined : (rootId as Settings.StorageRootId);
-    onUpdateCommon({
-      defaultStorageTargets: {
-        ...currentTargets,
-        globalDefault: value
-      }
-    });
-  }
-
-  function handleSublibraryOverrideChange(subLibId: LibraryData.SubLibraryId, rootId: string): void {
-    const value = rootId === '' ? undefined : (rootId as Settings.StorageRootId);
-    const existing = currentTargets?.sublibraryOverrides ?? {};
-    const updated = { ...existing, [subLibId]: value };
-    if (value === undefined) {
-      delete updated[subLibId];
-    }
-    onUpdateCommon({
-      defaultStorageTargets: {
-        ...currentTargets,
-        sublibraryOverrides: Object.keys(updated).length > 0 ? updated : undefined
-      }
-    });
-  }
-
-  const globalDefault = currentTargets?.globalDefault;
-  const globalIsMitigated = globalDefault !== undefined && mitigatedRoots.has(globalDefault);
-
-  return (
-    <div className="pt-2 border-t border-gray-100">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Default Storage</p>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <label className="text-xs text-gray-600 shrink-0 w-28">Global default</label>
-          <div className="flex-1 flex items-center gap-1.5">
-            <select
-              value={globalDefault ?? ''}
-              onChange={(e): void => handleGlobalDefaultChange(e.target.value)}
-              className={`flex-1 text-xs border rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent ${
-                globalIsMitigated ? 'border-amber-400' : 'border-gray-200'
-              }`}
-            >
-              <option value="">— browser storage —</option>
-              {mutableRoots.map((root) => (
-                <option key={root.id} value={root.id}>
-                  {root.label}
-                </option>
-              ))}
-              {globalIsMitigated && globalDefault && (
-                <option value={globalDefault}>{globalDefault} (unavailable)</option>
-              )}
-            </select>
-            {globalIsMitigated && (
-              <span title="This storage root is unavailable" className="text-amber-500 text-sm flex-shrink-0">
-                ⚠
-              </span>
-            )}
-          </div>
-        </div>
-        {SUBLIBRARY_LABELS.map(({ key, label }) => {
-          const subOverride = currentTargets?.sublibraryOverrides?.[key];
-          const subIsMitigated = subOverride !== undefined && mitigatedRoots.has(subOverride);
-          return (
-            <div key={key} className="flex items-center justify-between gap-3">
-              <label className="text-xs text-gray-400 shrink-0 w-28 pl-2">{label}</label>
-              <div className="flex-1 flex items-center gap-1.5">
-                <select
-                  value={subOverride ?? ''}
-                  onChange={(e): void => handleSublibraryOverrideChange(key, e.target.value)}
-                  className={`flex-1 text-xs border rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-accent ${
-                    subIsMitigated ? 'border-amber-400' : 'border-gray-200'
-                  }`}
-                >
-                  <option value="">— use global default —</option>
-                  {mutableRoots.map((root) => (
-                    <option key={root.id} value={root.id}>
-                      {root.label}
-                    </option>
-                  ))}
-                  {subIsMitigated && subOverride && (
-                    <option value={subOverride}>{subOverride} (unavailable)</option>
-                  )}
-                </select>
-                {subIsMitigated && (
-                  <span
-                    title="This storage root is unavailable"
-                    className="text-amber-500 text-sm flex-shrink-0"
-                  >
-                    ⚠
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
