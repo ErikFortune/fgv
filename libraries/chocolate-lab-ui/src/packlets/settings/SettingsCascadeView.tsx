@@ -5,6 +5,7 @@ import { CascadeContainer, type ICascadeColumn } from '@fgv/ts-app-shell';
 import { useWorkspace } from '../workspace';
 
 import { useSettingsDraft } from './useSettingsDraft';
+import { BootstrapSection } from './sections/BootstrapSection';
 import { WorkspaceSection } from './sections/WorkspaceSection';
 import { ScalingSection } from './sections/ScalingSection';
 import { WorkflowSection } from './sections/WorkflowSection';
@@ -16,7 +17,14 @@ import { SecuritySection } from './sections/SecuritySection';
 // Section definitions
 // ============================================================================
 
-type SettingsSection = 'workspace' | 'scaling' | 'workflow' | 'storage' | 'libraries' | 'security';
+type SettingsSection =
+  | 'startup'
+  | 'workspace'
+  | 'scaling'
+  | 'workflow'
+  | 'storage'
+  | 'libraries'
+  | 'security';
 
 interface ISectionDef {
   readonly id: SettingsSection;
@@ -24,6 +32,7 @@ interface ISectionDef {
 }
 
 const SECTIONS: ReadonlyArray<ISectionDef> = [
+  { id: 'startup', label: 'Startup' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'scaling', label: 'Scaling' },
   { id: 'workflow', label: 'Workflow' },
@@ -60,7 +69,8 @@ function SectionContent({
 }): React.ReactElement {
   const workspace = useWorkspace();
   const deviceId = workspace.settings?.deviceId;
-  const { common, device, updateCommon, updateDevice } = draft;
+  const { bootstrap, common, device, hasBootstrapChanges, updateBootstrap, updateCommon, updateDevice } =
+    draft;
 
   function handleSquashColumns(detailCols: ReadonlyArray<ICascadeColumn>): void {
     const sectionCol: ICascadeColumn = {
@@ -80,6 +90,14 @@ function SectionContent({
   }
 
   switch (section) {
+    case 'startup':
+      return (
+        <BootstrapSection
+          bootstrap={bootstrap}
+          onChange={updateBootstrap}
+          hasRestartPending={hasBootstrapChanges}
+        />
+      );
     case 'workspace':
       return deviceId !== undefined ? (
         <WorkspaceSection deviceId={deviceId} device={device} onDeviceChange={updateDevice} />
@@ -96,6 +114,8 @@ function SectionContent({
       return <LibrarySection />;
     case 'security':
       return <SecuritySection />;
+    default:
+      return <div className="p-6 text-sm text-gray-400">Unknown section.</div>;
   }
 }
 

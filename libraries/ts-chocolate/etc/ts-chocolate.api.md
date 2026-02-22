@@ -1319,6 +1319,8 @@ declare namespace Converters_12 {
         deviceSettings,
         settingsFileLocation,
         localStorageConfig,
+        reporterLogLevel,
+        logSettings,
         bootstrapSettings,
         preferencesSettings
     }
@@ -2900,6 +2902,7 @@ interface IBootstrapSettings {
     readonly includeBuiltIn?: boolean;
     readonly keystoreLocation?: ISettingsFileLocation;
     readonly localStorage?: ILocalStorageConfig;
+    readonly logging?: ILogSettings;
     readonly preferencesLocation?: ISettingsFileLocation;
     readonly schemaVersion: SettingsSchemaVersion;
 }
@@ -4301,6 +4304,13 @@ interface ILocalDirectoryRef {
 interface ILocalStorageConfig {
     readonly library?: boolean;
     readonly userData?: boolean;
+}
+
+// @public
+interface ILogSettings {
+    readonly displayLevel?: Logging.ReporterLogLevel;
+    readonly storeLevel?: Logging.ReporterLogLevel;
+    readonly toastLevel?: Logging.ReporterLogLevel;
 }
 
 // @public
@@ -6637,6 +6647,11 @@ const localDirectoryRef: Converter<ILocalDirectoryRef>;
 // @public
 const localStorageConfig: Converter<ILocalStorageConfig>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ILogSettings"
+//
+// @public
+const logSettings: Converter<ILogSettings>;
+
 // @public
 class MaterializedLibrary<TId extends string, TEntity, TMaterialized, TQuerySpec = never> extends Collections.ReadOnlyConvertingResultMap<TId, TEntity, TMaterialized> {
     constructor(params: IMaterializedLibraryParams<TId, TEntity, TMaterialized, TQuerySpec>);
@@ -7445,6 +7460,9 @@ const removeJsonExtension: Converter<string>;
 const renderOptions: Converter<IRenderOptions>;
 
 // @public
+const reporterLogLevel: Converter<Logging.ReporterLogLevel>;
+
+// @public
 type ResolutionStatus = 'resolved' | 'missing' | 'error';
 
 // @public
@@ -7739,6 +7757,7 @@ declare namespace Settings {
         IDefaultStorageTargets,
         ISettingsFileLocation,
         ILocalStorageConfig,
+        ILogSettings,
         IBootstrapSettings,
         IPreferencesSettings,
         createDefaultBootstrapSettings,

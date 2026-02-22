@@ -18,11 +18,12 @@ import {
   type IShortcut,
   SidebarLayout
 } from '@fgv/ts-app-shell';
-import { Logging } from '@fgv/ts-utils';
+import { Logging, type MessageLogLevel } from '@fgv/ts-utils';
 import {
   createWorkspaceFromPlatform,
   validateResolvedSettings,
-  type ISettingsValidationWarning
+  type ISettingsValidationWarning,
+  type Settings
 } from '@fgv/ts-chocolate';
 import {
   type AppMode,
@@ -143,6 +144,7 @@ let _reactiveWorkspacePromise: Promise<ReactiveWorkspace> | undefined;
 async function _buildReactiveWorkspace(): Promise<{
   reactiveWorkspace: ReactiveWorkspace;
   warnings: ReadonlyArray<ISettingsValidationWarning>;
+  logSettings: Settings.ILogSettings | undefined;
 }> {
   const platformInit = await initializeBrowserPlatform({ userLibraryPath: 'localStorage' });
   const workspace = platformInit
@@ -172,7 +174,9 @@ async function _buildReactiveWorkspace(): Promise<{
       })
     : [];
 
-  return { reactiveWorkspace, warnings };
+  const logSettings = workspace.settings?.getBootstrapSettings()?.logging;
+
+  return { reactiveWorkspace, warnings, logSettings };
 }
 
 function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
@@ -286,7 +290,13 @@ function TabSidebarWithActions(props: {
 // App Shell (inner, needs MessagesProvider)
 // ============================================================================
 
-function AppShell(): React.ReactElement {
+interface IAppShellProps {
+  readonly displayLevel?: Logging.ReporterLogLevel;
+  readonly toastLevel?: Logging.ReporterLogLevel;
+}
+
+function AppShell(props: IAppShellProps): React.ReactElement {
+  const { displayLevel, toastLevel } = props;
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
   const { state: workspaceState, unlock, lock } = useWorkspaceState();
@@ -304,6 +314,17 @@ function AppShell(): React.ReactElement {
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
   const collectionActions = useCollectionActions();
+
+  const filteredToasts = useMemo(
+    () =>
+      toastLevel !== undefined
+        ? activeToasts.filter((msg) => {
+            const level = msg.severity === 'success' ? 'info' : (msg.severity as MessageLogLevel);
+            return Logging.shouldLog(level, toastLevel);
+          })
+        : activeToasts,
+    [activeToasts, toastLevel]
+  );
 
   // NOTE: Guard fires whenever an edit/create pane is open, regardless of whether the user
   // has actually made changes. A finer-grained check (wrapper.hasChanges()) would require
@@ -491,10 +512,10 @@ function AppShell(): React.ReactElement {
       )}
 
       {/* Toast notifications */}
-      <ToastContainer toasts={activeToasts} onDismiss={dismissMessage} />
+      <ToastContainer toasts={filteredToasts} onDismiss={dismissMessage} />
 
       {/* Status bar / log panel */}
-      <StatusBar messages={messages} onClear={clearMessages} />
+      <StatusBar messages={messages} onClear={clearMessages} initialFilterLevel={displayLevel} />
 
       {/* Settings dirty-close confirmation */}
       <ConfirmDialog
@@ -521,8 +542,9 @@ function AppShell(): React.ReactElement {
 /**
  * Root application component for Chocolate Lab Web Edition.
  */
-function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }): React.ReactElement {
-  const reporter = useLogReporter();
+function WorkspaceBootstrap(): React.ReactElement {
+  const [logSettings, setLogSettings] = useState<Settings.ILogSettings | undefined>(undefined);
+  const reporter = useLogReporter({ logLevel: logSettings?.storeLevel ?? 'info' });
   const [reactiveWorkspace, setReactiveWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [pendingWarnings, setPendingWarnings] = useState<ReadonlyArray<ISettingsValidationWarning>>([]);
@@ -536,7 +558,8 @@ function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }
 
   useEffect(() => {
     _buildReactiveWorkspace()
-      .then(({ reactiveWorkspace: rw, warnings }) => {
+      .then(({ reactiveWorkspace: rw, warnings, logSettings: ls }) => {
+        setLogSettings(ls);
         if (warnings.length > 0) {
           // Hold the workspace and show the recovery dialog
           setPendingWorkspace(rw);
@@ -592,17 +615,22 @@ function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }
     return <div className="p-8 text-gray-500">Loading workspace…</div>;
   }
 
-  return <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>{children}</WorkspaceProvider>;
+  return (
+    <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>
+      <KeyboardShortcutProvider>
+        <AppShell
+          displayLevel={logSettings?.displayLevel}
+          toastLevel={logSettings?.toastLevel ?? 'warning'}
+        />
+      </KeyboardShortcutProvider>
+    </WorkspaceProvider>
+  );
 }
 
 export default function App(): React.ReactElement {
   return (
     <MessagesProvider>
-      <WorkspaceBootstrap>
-        <KeyboardShortcutProvider>
-          <AppShell />
-        </KeyboardShortcutProvider>
-      </WorkspaceBootstrap>
+      <WorkspaceBootstrap />
     </MessagesProvider>
   );
 }

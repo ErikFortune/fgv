@@ -86,6 +86,8 @@ const FILTER_LEVELS: ReadonlyArray<{ readonly label: string; readonly level: Log
 export interface IStatusBarProps {
   readonly messages: ReadonlyArray<IMessage>;
   readonly onClear: () => void;
+  /** Initial filter level for the log panel. Defaults to 'all'. */
+  readonly initialFilterLevel?: Logging.ReporterLogLevel;
 }
 
 /**
@@ -96,10 +98,10 @@ export interface IStatusBarProps {
  * @public
  */
 export function StatusBar(props: IStatusBarProps): React.ReactElement {
-  const { messages, onClear } = props;
+  const { messages, onClear, initialFilterLevel } = props;
   const [expanded, setExpanded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [filterLevel, setFilterLevel] = useState<Logging.ReporterLogLevel>('all');
+  const [filterLevel, setFilterLevel] = useState<Logging.ReporterLogLevel>(initialFilterLevel ?? 'all');
   const [searchTerm, setSearchTerm] = useState('');
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
 

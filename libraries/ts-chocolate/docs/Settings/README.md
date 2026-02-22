@@ -145,6 +145,15 @@ Controls what is loaded from local (browser) storage.
 </td></tr>
 <tr><td>
 
+[ILogSettings](./interfaces/ILogSettings.md)
+
+</td><td>
+
+Controls the logging verbosity for the application.
+
+</td></tr>
+<tr><td>
+
 [IBootstrapSettings](./interfaces/IBootstrapSettings.md)
 
 </td><td>

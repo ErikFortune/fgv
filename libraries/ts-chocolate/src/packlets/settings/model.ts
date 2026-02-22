@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import { Brand } from '@fgv/ts-utils';
+import { Brand, Logging } from '@fgv/ts-utils';
 
 import { MeasurementUnit, CollectionId, WeightUnit } from '../common';
 import { SubLibraryId } from '../library-data';
@@ -256,6 +256,35 @@ export interface ILocalStorageConfig {
 }
 
 // ============================================================================
+// Logging Settings
+// ============================================================================
+
+/**
+ * Controls the logging verbosity for the application.
+ * All three settings use the full {@link @fgv/ts-utils#Logging.ReporterLogLevel | ReporterLogLevel} range.
+ * @public
+ */
+export interface ILogSettings {
+  /**
+   * Minimum level stored in the message log.
+   * Governs what is admitted into the log panel via MessagesLogger.
+   * @defaultValue 'info'
+   */
+  readonly storeLevel?: Logging.ReporterLogLevel;
+  /**
+   * Initial minimum level shown in the status bar log panel.
+   * Can be overridden interactively; this sets the default on load.
+   * @defaultValue 'info'
+   */
+  readonly displayLevel?: Logging.ReporterLogLevel;
+  /**
+   * Minimum level that triggers a toast popup.
+   * @defaultValue 'warning'
+   */
+  readonly toastLevel?: Logging.ReporterLogLevel;
+}
+
+// ============================================================================
 // Bootstrap Settings (Preload Configuration)
 // ============================================================================
 
@@ -296,6 +325,9 @@ export interface IBootstrapSettings {
    * Affects where the user library tree root is resolved.
    */
   readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
+
+  /** Logging verbosity settings. */
+  readonly logging?: ILogSettings;
 }
 
 // ============================================================================

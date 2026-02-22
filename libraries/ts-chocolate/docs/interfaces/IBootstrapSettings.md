@@ -146,4 +146,21 @@ Where to find the keystore file.
 Platform-specific file tree overrides (moved from device settings).
 
 </td></tr>
+<tr><td>
+
+[logging](./IBootstrapSettings.logging.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ILogSettings](ILogSettings.md)
+
+</td><td>
+
+Logging verbosity settings.
+
+</td></tr>
 </tbody></table>

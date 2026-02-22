@@ -16,6 +16,9 @@ export interface IBootstrapSettingsDraft {
   readonly includeBuiltIn: boolean;
   readonly localStorageLibrary: boolean;
   readonly localStorageUserData: boolean;
+  readonly storeLevel: Settings.ILogSettings['storeLevel'];
+  readonly displayLevel: Settings.ILogSettings['displayLevel'];
+  readonly toastLevel: Settings.ILogSettings['toastLevel'];
 }
 
 /**
@@ -77,7 +80,10 @@ function buildBootstrapDraft(settings: Settings.IBootstrapSettings | undefined):
   return {
     includeBuiltIn: settings?.includeBuiltIn ?? true,
     localStorageLibrary: settings?.localStorage?.library ?? true,
-    localStorageUserData: settings?.localStorage?.userData ?? true
+    localStorageUserData: settings?.localStorage?.userData ?? true,
+    storeLevel: settings?.logging?.storeLevel,
+    displayLevel: settings?.logging?.displayLevel,
+    toastLevel: settings?.logging?.toastLevel
   };
 }
 
@@ -85,7 +91,10 @@ function bootstrapDraftsEqual(a: IBootstrapSettingsDraft, b: IBootstrapSettingsD
   return (
     a.includeBuiltIn === b.includeBuiltIn &&
     a.localStorageLibrary === b.localStorageLibrary &&
-    a.localStorageUserData === b.localStorageUserData
+    a.localStorageUserData === b.localStorageUserData &&
+    a.storeLevel === b.storeLevel &&
+    a.displayLevel === b.displayLevel &&
+    a.toastLevel === b.toastLevel
   );
 }
 
@@ -194,12 +203,23 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
     };
     // Save bootstrap settings if changed
     if (savedBootstrap && !bootstrapDraftsEqual(bootstrapDraft, savedBootstrap)) {
+      const hasLogging =
+        bootstrapDraft.storeLevel !== undefined ||
+        bootstrapDraft.displayLevel !== undefined ||
+        bootstrapDraft.toastLevel !== undefined;
       const bootstrapResult = settingsManager.updateBootstrapSettings({
         includeBuiltIn: bootstrapDraft.includeBuiltIn,
         localStorage: {
           library: bootstrapDraft.localStorageLibrary,
           userData: bootstrapDraft.localStorageUserData
-        }
+        },
+        logging: hasLogging
+          ? {
+              storeLevel: bootstrapDraft.storeLevel,
+              displayLevel: bootstrapDraft.displayLevel,
+              toastLevel: bootstrapDraft.toastLevel
+            }
+          : undefined
       });
       if (bootstrapResult.isFailure()) {
         setSaveError(`Failed to update bootstrap settings: ${bootstrapResult.message}`);

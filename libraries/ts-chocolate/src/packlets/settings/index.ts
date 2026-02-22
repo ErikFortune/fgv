@@ -56,6 +56,7 @@ export {
   // Bootstrap and preferences (new two-phase model)
   type ISettingsFileLocation,
   type ILocalStorageConfig,
+  type ILogSettings,
   type IBootstrapSettings,
   type IPreferencesSettings,
   createDefaultBootstrapSettings,

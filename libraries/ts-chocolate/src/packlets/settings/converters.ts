@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Logging, fail, succeed } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../common';
 import { SubLibraryId, allSubLibraryIds } from '../library-data';
@@ -39,6 +39,7 @@ import {
   IExternalLibraryRefConfig,
   ILocalDirectoryRef,
   ILocalStorageConfig,
+  ILogSettings,
   IPreferencesSettings,
   IScalingDefaults,
   ISettingsFileLocation,
@@ -357,6 +358,34 @@ export const localStorageConfig: Converter<ILocalStorageConfig> = Converters.obj
 });
 
 // ============================================================================
+// Logging Settings Converter
+// ============================================================================
+
+/**
+ * Converter for a single {@link @fgv/ts-utils#Logging.ReporterLogLevel | ReporterLogLevel} value.
+ * @public
+ */
+export const reporterLogLevel: Converter<Logging.ReporterLogLevel> =
+  Converters.enumeratedValue<Logging.ReporterLogLevel>([
+    'all',
+    'detail',
+    'info',
+    'warning',
+    'error',
+    'silent'
+  ]);
+
+/**
+ * Converter for {@link ILogSettings}.
+ * @public
+ */
+export const logSettings: Converter<ILogSettings> = Converters.object<ILogSettings>({
+  storeLevel: reporterLogLevel.optional(),
+  displayLevel: reporterLogLevel.optional(),
+  toastLevel: reporterLogLevel.optional()
+});
+
+// ============================================================================
 // Bootstrap Settings Converter
 // ============================================================================
 
@@ -371,7 +400,8 @@ export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.objec
   externalLibraries: Converters.arrayOf(externalLibraryRefConfig).optional(),
   preferencesLocation: settingsFileLocation.optional(),
   keystoreLocation: settingsFileLocation.optional(),
-  fileTreeOverrides: deviceFileTreeOverrides.optional()
+  fileTreeOverrides: deviceFileTreeOverrides.optional(),
+  logging: logSettings.optional()
 });
 
 // ============================================================================

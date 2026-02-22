@@ -40,18 +40,19 @@ import { type IMessagesContextValue } from './MessagesContext';
 
 /**
  * Maps ts-utils MessageLogLevel to our MessageSeverity.
- * `detail` and `quiet` are suppressed (return undefined).
+ * `detail` maps to `'info'` (shown when logLevel is 'detail' or 'all').
+ * `quiet` is always suppressed (only shown when reporter level is 'all', handled upstream).
  * @internal
  */
 function mapLogLevel(level: MessageLogLevel): MessageSeverity | undefined {
   switch (level) {
+    case 'detail':
     case 'info':
       return 'info';
     case 'warning':
       return 'warning';
     case 'error':
       return 'error';
-    case 'detail':
     case 'quiet':
       return undefined;
   }

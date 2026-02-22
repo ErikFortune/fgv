@@ -171,6 +171,24 @@ Converter for ILocalStorageConfig.
 </td></tr>
 <tr><td>
 
+[reporterLogLevel](./variables/reporterLogLevel.md)
+
+</td><td>
+
+Converter for a single @fgv/ts-utils#Logging.ReporterLogLevel | ReporterLogLevel value.
+
+</td></tr>
+<tr><td>
+
+[logSettings](./variables/logSettings.md)
+
+</td><td>
+
+Converter for ILogSettings.
+
+</td></tr>
+<tr><td>
+
 [bootstrapSettings](./variables/bootstrapSettings.md)
 
 </td><td>

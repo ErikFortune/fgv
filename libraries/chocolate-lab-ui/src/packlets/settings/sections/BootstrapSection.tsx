@@ -28,7 +28,65 @@
 
 import React from 'react';
 
+import type { Logging } from '@fgv/ts-utils';
+
 import type { IBootstrapSettingsDraft } from '../useSettingsDraft';
+
+// ============================================================================
+// Log Level Options
+// ============================================================================
+
+const LOG_LEVEL_OPTIONS: ReadonlyArray<{ readonly value: Logging.ReporterLogLevel; readonly label: string }> =
+  [
+    { value: 'all', label: 'All (including detail)' },
+    { value: 'detail', label: 'Detail' },
+    { value: 'info', label: 'Info' },
+    { value: 'warning', label: 'Warning' },
+    { value: 'error', label: 'Error only' },
+    { value: 'silent', label: 'Silent' }
+  ];
+
+// ============================================================================
+// Log Level Row
+// ============================================================================
+
+function LogLevelRow({
+  label,
+  description,
+  value,
+  defaultLabel,
+  onChange
+}: {
+  readonly label: string;
+  readonly description: string;
+  readonly value: Logging.ReporterLogLevel | undefined;
+  readonly defaultLabel: string;
+  readonly onChange: (value: Logging.ReporterLogLevel | undefined) => void;
+}): React.ReactElement {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-800">{label}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+      </div>
+      <select
+        className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+        value={value ?? ''}
+        onChange={(e): void => {
+          const v = e.target.value;
+          onChange(v === '' ? undefined : (v as Logging.ReporterLogLevel));
+        }}
+      >
+        <option value="">{defaultLabel}</option>
+        {LOG_LEVEL_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 // ============================================================================
 // Toggle Row
@@ -146,6 +204,32 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
           description="Load journals, sessions, and inventory stored in browser local storage."
           checked={bootstrap.localStorageUserData}
           onChange={(v): void => onChange({ localStorageUserData: v })}
+        />
+      </div>
+
+      {/* Logging */}
+      <div className="space-y-4 pt-2 border-t border-gray-100">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Logging</p>
+        <LogLevelRow
+          label="Store level"
+          description="Minimum severity admitted into the message log."
+          value={bootstrap.storeLevel}
+          defaultLabel="Default (info)"
+          onChange={(v): void => onChange({ storeLevel: v })}
+        />
+        <LogLevelRow
+          label="Display level"
+          description="Initial minimum severity shown in the log panel (can be changed interactively)."
+          value={bootstrap.displayLevel}
+          defaultLabel="Default (info)"
+          onChange={(v): void => onChange({ displayLevel: v })}
+        />
+        <LogLevelRow
+          label="Toast level"
+          description="Minimum severity that triggers a toast popup notification."
+          value={bootstrap.toastLevel}
+          defaultLabel="Default (warning)"
+          onChange={(v): void => onChange({ toastLevel: v })}
         />
       </div>
     </div>
