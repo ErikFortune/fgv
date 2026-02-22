@@ -6,8 +6,12 @@ Workspace settings packlet.
 
 Provides types and utilities for workspace settings management.
 Settings are stored in a directory structure with:
-- `common.json` - Shared across all devices
-- `device-{deviceId}.json` - Device-specific overrides
+- `bootstrap.json` - Preload configuration (what data sources to set up)
+- `preferences.json` - Runtime preferences (defaults, tools, etc.)
+
+Legacy files (deprecated, migration only):
+- `common.json` - Previously shared across all devices
+- `device-{deviceId}.json` - Previously device-specific overrides
 
 ## Namespaces
 
@@ -132,6 +136,33 @@ Configures where new collections are created.
 </td></tr>
 <tr><td>
 
+[ILocalStorageConfig](./interfaces/ILocalStorageConfig.md)
+
+</td><td>
+
+Controls what is loaded from local (browser) storage.
+
+</td></tr>
+<tr><td>
+
+[IBootstrapSettings](./interfaces/IBootstrapSettings.md)
+
+</td><td>
+
+Preload configuration that determines what data sources to set up.
+
+</td></tr>
+<tr><td>
+
+[IPreferencesSettings](./interfaces/IPreferencesSettings.md)
+
+</td><td>
+
+Runtime preferences that don't affect what data is loaded.
+
+</td></tr>
+<tr><td>
+
 [ICommonSettings](./interfaces/ICommonSettings.md)
 
 </td><td>
@@ -177,11 +208,20 @@ Interface for managing workspace settings.
 </td></tr>
 <tr><td>
 
+[ISettingsManagerBootstrapParams](./interfaces/ISettingsManagerBootstrapParams.md)
+
+</td><td>
+
+Parameters for creating a SettingsManager with bootstrap/preferences.
+
+</td></tr>
+<tr><td>
+
 [ISettingsManagerParams](./interfaces/ISettingsManagerParams.md)
 
 </td><td>
 
-Parameters for creating a SettingsManager.
+Parameters for creating a SettingsManager (legacy).
 
 </td></tr>
 </tbody></table>
@@ -234,6 +274,15 @@ Reference to an external library (path or URI).
 Branded string identifying a storage root.
 
 </td></tr>
+<tr><td>
+
+[ISettingsFileLocation](./type-aliases/ISettingsFileLocation.md)
+
+</td><td>
+
+Specifies where a settings or keystore file lives.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -248,6 +297,42 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[createDefaultBootstrapSettings](./functions/createDefaultBootstrapSettings.md)
+
+</td><td>
+
+Creates default bootstrap settings for first run.
+
+</td></tr>
+<tr><td>
+
+[createDefaultPreferencesSettings](./functions/createDefaultPreferencesSettings.md)
+
+</td><td>
+
+Creates default preferences settings for first run.
+
+</td></tr>
+<tr><td>
+
+[resolvePreferencesSettings](./functions/resolvePreferencesSettings.md)
+
+</td><td>
+
+Resolves settings from preferences (new two-phase model).
+
+</td></tr>
+<tr><td>
+
+[splitCommonSettings](./functions/splitCommonSettings.md)
+
+</td><td>
+
+Splits a legacy ICommonSettings into bootstrap + preferences.
+
+</td></tr>
 <tr><td>
 
 [resolveSettings](./functions/resolveSettings.md)
@@ -341,6 +426,24 @@ Default tool settings.
 </td><td>
 
 Path to the settings directory within the user library.
+
+</td></tr>
+<tr><td>
+
+[BOOTSTRAP_SETTINGS_FILENAME](./variables/BOOTSTRAP_SETTINGS_FILENAME.md)
+
+</td><td>
+
+Filename for bootstrap settings.
+
+</td></tr>
+<tr><td>
+
+[PREFERENCES_SETTINGS_FILENAME](./variables/PREFERENCES_SETTINGS_FILENAME.md)
+
+</td><td>
+
+Filename for preferences settings.
 
 </td></tr>
 <tr><td>

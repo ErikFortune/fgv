@@ -26,7 +26,8 @@ import {
   SETTINGS_SCHEMA_VERSION,
   DeviceId,
   ExternalLibraryRef,
-  StorageRootId
+  StorageRootId,
+  type ISettingsFileLocation
 } from '../../../packlets/settings';
 
 describe('settings converters', () => {
@@ -482,6 +483,162 @@ describe('settings converters', () => {
 
     test('converts empty object', () => {
       expect(Converters.partialToolSettings.convert({})).toSucceed();
+    });
+  });
+
+  // ============================================================================
+  // settingsFileLocation converter
+  // ============================================================================
+
+  describe('settingsFileLocation', () => {
+    test('converts local type', () => {
+      expect(Converters.settingsFileLocation.convert({ type: 'local' })).toSucceedAndSatisfy(
+        (result: ISettingsFileLocation) => {
+          expect(result.type).toBe('local');
+        }
+      );
+    });
+
+    test('converts external type with rootName', () => {
+      expect(
+        Converters.settingsFileLocation.convert({ type: 'external', rootName: 'shared-drive' })
+      ).toSucceedAndSatisfy((result: ISettingsFileLocation) => {
+        expect(result.type).toBe('external');
+        if (result.type === 'external') {
+          expect(result.rootName).toBe('shared-drive');
+        }
+      });
+    });
+
+    test('fails for external type without rootName', () => {
+      expect(Converters.settingsFileLocation.convert({ type: 'external' })).toFailWith(/rootName/i);
+    });
+
+    test('fails for external type with empty rootName', () => {
+      expect(Converters.settingsFileLocation.convert({ type: 'external', rootName: '' })).toFailWith(
+        /rootName/i
+      );
+    });
+
+    test('fails for unknown type', () => {
+      expect(Converters.settingsFileLocation.convert({ type: 'cloud' })).toFailWith(
+        /invalid settings file location type/i
+      );
+    });
+
+    test('fails for non-object input', () => {
+      expect(Converters.settingsFileLocation.convert('local')).toFailWith(/expected object/i);
+    });
+
+    test('fails for null input', () => {
+      expect(Converters.settingsFileLocation.convert(null)).toFailWith(/expected object/i);
+    });
+  });
+
+  // ============================================================================
+  // localStorageConfig converter
+  // ============================================================================
+
+  describe('localStorageConfig', () => {
+    test('converts full object', () => {
+      expect(Converters.localStorageConfig.convert({ library: true, userData: false })).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.library).toBe(true);
+          expect(result.userData).toBe(false);
+        }
+      );
+    });
+
+    test('converts empty object (all optional)', () => {
+      expect(Converters.localStorageConfig.convert({})).toSucceed();
+    });
+
+    test('fails for non-boolean library', () => {
+      expect(Converters.localStorageConfig.convert({ library: 'yes' })).toFail();
+    });
+  });
+
+  // ============================================================================
+  // bootstrapSettings converter
+  // ============================================================================
+
+  describe('bootstrapSettings', () => {
+    test('converts full settings', () => {
+      const input = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        includeBuiltIn: true,
+        localStorage: { library: true, userData: true },
+        externalLibraries: [{ name: 'Lib', ref: '/path' }],
+        preferencesLocation: { type: 'local' },
+        keystoreLocation: { type: 'external', rootName: 'drive' },
+        fileTreeOverrides: { userLibraryPath: '/custom' }
+      };
+      expect(Converters.bootstrapSettings.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
+        expect(result.includeBuiltIn).toBe(true);
+        expect(result.localStorage?.library).toBe(true);
+        expect(result.externalLibraries).toHaveLength(1);
+        expect(result.preferencesLocation?.type).toBe('local');
+        expect(result.fileTreeOverrides?.userLibraryPath).toBe('/custom');
+      });
+    });
+
+    test('converts minimal settings (only schemaVersion)', () => {
+      expect(
+        Converters.bootstrapSettings.convert({ schemaVersion: SETTINGS_SCHEMA_VERSION })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
+        expect(result.includeBuiltIn).toBeUndefined();
+        expect(result.localStorage).toBeUndefined();
+        expect(result.externalLibraries).toBeUndefined();
+      });
+    });
+
+    test('fails for wrong schemaVersion', () => {
+      expect(Converters.bootstrapSettings.convert({ schemaVersion: 999 })).toFail();
+    });
+
+    test('fails when schemaVersion is missing', () => {
+      expect(Converters.bootstrapSettings.convert({})).toFail();
+    });
+  });
+
+  // ============================================================================
+  // preferencesSettings converter
+  // ============================================================================
+
+  describe('preferencesSettings', () => {
+    test('converts full settings', () => {
+      const input = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        defaultTargets: { fillings: 'user' },
+        defaultStorageTargets: { globalDefault: 'main' },
+        tools: { scaling: { weightUnit: 'g' } }
+      };
+      expect(Converters.preferencesSettings.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
+        expect(result.defaultTargets?.fillings).toBe('user');
+        expect(result.defaultStorageTargets?.globalDefault).toBe('main');
+        expect(result.tools?.scaling?.weightUnit).toBe('g');
+      });
+    });
+
+    test('converts minimal settings (only schemaVersion)', () => {
+      expect(
+        Converters.preferencesSettings.convert({ schemaVersion: SETTINGS_SCHEMA_VERSION })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
+        expect(result.defaultTargets).toBeUndefined();
+        expect(result.tools).toBeUndefined();
+      });
+    });
+
+    test('fails for wrong schemaVersion', () => {
+      expect(Converters.preferencesSettings.convert({ schemaVersion: 999 })).toFail();
+    });
+
+    test('fails when schemaVersion is missing', () => {
+      expect(Converters.preferencesSettings.convert({})).toFail();
     });
   });
 

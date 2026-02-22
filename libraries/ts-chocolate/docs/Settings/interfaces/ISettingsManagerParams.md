@@ -2,7 +2,7 @@
 
 # Interface: ISettingsManagerParams
 
-Parameters for creating a SettingsManager.
+Parameters for creating a SettingsManager (legacy).
 
 ## Properties
 

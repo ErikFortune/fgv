@@ -30,6 +30,7 @@ import { SubLibraryId, allSubLibraryIds } from '../library-data';
 import {
   DeviceId,
   ExternalLibraryRef,
+  IBootstrapSettings,
   ICommonSettings,
   IDefaultCollectionTargets,
   IDefaultStorageTargets,
@@ -37,7 +38,10 @@ import {
   IDeviceSettings,
   IExternalLibraryRefConfig,
   ILocalDirectoryRef,
+  ILocalStorageConfig,
+  IPreferencesSettings,
   IScalingDefaults,
+  ISettingsFileLocation,
   IToolSettings,
   IWorkflowPreferences,
   SETTINGS_SCHEMA_VERSION,
@@ -255,8 +259,13 @@ export const defaultStorageTargets: Converter<IDefaultStorageTargets> =
     sublibraryOverrides: sublibraryStorageOverrides.optional()
   });
 
+// ============================================================================
+// Common Settings Converter (Legacy)
+// ============================================================================
+
 /**
  * Converter for {@link ICommonSettings}.
+ * @deprecated Use {@link bootstrapSettings} and {@link preferencesSettings} instead.
  * @public
  */
 export const commonSettings: Converter<ICommonSettings> = Converters.object<ICommonSettings>({
@@ -268,7 +277,7 @@ export const commonSettings: Converter<ICommonSettings> = Converters.object<ICom
 });
 
 // ============================================================================
-// Device Settings Converter
+// Device Settings Converter (Legacy)
 // ============================================================================
 
 /**
@@ -294,6 +303,7 @@ export const partialToolSettings: Converter<Partial<IToolSettings>> = Converters
 
 /**
  * Converter for {@link IDeviceSettings}.
+ * @deprecated Use {@link bootstrapSettings} and {@link preferencesSettings} instead.
  * @public
  */
 export const deviceSettings: Converter<IDeviceSettings> = Converters.object<IDeviceSettings>({
@@ -305,4 +315,76 @@ export const deviceSettings: Converter<IDeviceSettings> = Converters.object<IDev
   toolsOverride: partialToolSettings.optional(),
   fileTreeOverrides: deviceFileTreeOverrides.optional(),
   localDirectories: Converters.arrayOf(localDirectoryRef).optional()
+});
+
+// ============================================================================
+// Settings File Location Converter
+// ============================================================================
+
+/**
+ * Converter for {@link ISettingsFileLocation}.
+ * @public
+ */
+export const settingsFileLocation: Converter<ISettingsFileLocation> =
+  Converters.generic<ISettingsFileLocation>((from: unknown) => {
+    if (typeof from !== 'object' || from === null) {
+      return fail('Expected object for settings file location');
+    }
+    const obj = from as Record<string, unknown>;
+    if (obj.type === 'local') {
+      return succeed({ type: 'local' } as ISettingsFileLocation);
+    }
+    if (obj.type === 'external') {
+      if (typeof obj.rootName !== 'string' || obj.rootName.length === 0) {
+        return fail('External settings file location requires a non-empty rootName');
+      }
+      return succeed({ type: 'external', rootName: obj.rootName } as ISettingsFileLocation);
+    }
+    return fail(`Invalid settings file location type: ${String(obj.type)}`);
+  });
+
+// ============================================================================
+// Local Storage Configuration Converter
+// ============================================================================
+
+/**
+ * Converter for {@link ILocalStorageConfig}.
+ * @public
+ */
+export const localStorageConfig: Converter<ILocalStorageConfig> = Converters.object<ILocalStorageConfig>({
+  library: Converters.boolean.optional(),
+  userData: Converters.boolean.optional()
+});
+
+// ============================================================================
+// Bootstrap Settings Converter
+// ============================================================================
+
+/**
+ * Converter for {@link IBootstrapSettings}.
+ * @public
+ */
+export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.object<IBootstrapSettings>({
+  schemaVersion: schemaVersion,
+  includeBuiltIn: Converters.boolean.optional(),
+  localStorage: localStorageConfig.optional(),
+  externalLibraries: Converters.arrayOf(externalLibraryRefConfig).optional(),
+  preferencesLocation: settingsFileLocation.optional(),
+  keystoreLocation: settingsFileLocation.optional(),
+  fileTreeOverrides: deviceFileTreeOverrides.optional()
+});
+
+// ============================================================================
+// Preferences Settings Converter
+// ============================================================================
+
+/**
+ * Converter for {@link IPreferencesSettings}.
+ * @public
+ */
+export const preferencesSettings: Converter<IPreferencesSettings> = Converters.object<IPreferencesSettings>({
+  schemaVersion: schemaVersion,
+  defaultTargets: defaultCollectionTargets.optional(),
+  defaultStorageTargets: defaultStorageTargets.optional(),
+  tools: toolSettings.optional()
 });

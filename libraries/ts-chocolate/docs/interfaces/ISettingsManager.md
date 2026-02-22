@@ -86,7 +86,59 @@ Description
 
 </td><td>
 
-Gets the resolved settings (common merged with device overrides).
+Gets the resolved settings.
+
+</td></tr>
+<tr><td>
+
+[getBootstrapSettings()](./ISettingsManager.getBootstrapSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the bootstrap settings (preload configuration).
+
+</td></tr>
+<tr><td>
+
+[getPreferencesSettings()](./ISettingsManager.getPreferencesSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the preferences settings (runtime configuration).
+
+</td></tr>
+<tr><td>
+
+[updateBootstrapSettings(updates)](./ISettingsManager.updateBootstrapSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates bootstrap settings with partial values.
+
+</td></tr>
+<tr><td>
+
+[updatePreferencesSettings(updates)](./ISettingsManager.updatePreferencesSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates preferences settings with partial values.
 
 </td></tr>
 <tr><td>
@@ -152,6 +204,19 @@ Updates device-specific settings with partial values.
 </td><td>
 
 Updates the default collection targets (convenience method).
+
+</td></tr>
+<tr><td>
+
+[updateDefaultStorageTargets(targets)](./ISettingsManager.updateDefaultStorageTargets.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the default storage targets (convenience method).
 
 </td></tr>
 <tr><td>

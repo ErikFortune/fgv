@@ -229,12 +229,105 @@ export interface IExternalLibraryRefConfig {
 }
 
 // ============================================================================
+// Settings File Location
+// ============================================================================
+
+/**
+ * Specifies where a settings or keystore file lives.
+ * @public
+ */
+export type ISettingsFileLocation =
+  | { readonly type: 'local' }
+  | { readonly type: 'external'; readonly rootName: string };
+
+// ============================================================================
+// Local Storage Configuration
+// ============================================================================
+
+/**
+ * Controls what is loaded from local (browser) storage.
+ * @public
+ */
+export interface ILocalStorageConfig {
+  /** Load library entity collections from local storage. @defaultValue true */
+  readonly library?: boolean;
+  /** Load user data (journals, sessions, inventory) from local storage. @defaultValue true */
+  readonly userData?: boolean;
+}
+
+// ============================================================================
+// Bootstrap Settings (Preload Configuration)
+// ============================================================================
+
+/**
+ * Preload configuration that determines what data sources to set up.
+ * Stored in: `data/settings/bootstrap.json` (always in fixed local location).
+ *
+ * Editable from the settings UI; changes require a page reload.
+ * @public
+ */
+export interface IBootstrapSettings {
+  /** Schema version for migration support */
+  readonly schemaVersion: SettingsSchemaVersion;
+
+  /** Whether to include built-in (embedded) library data. @defaultValue true */
+  readonly includeBuiltIn?: boolean;
+
+  /** What to include from local storage. Defaults to all enabled. */
+  readonly localStorage?: ILocalStorageConfig;
+
+  /** External roots to load and their configuration */
+  readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
+
+  /**
+   * Where to find the preferences file.
+   * Defaults to local: `data/settings/preferences.json` in local storage.
+   */
+  readonly preferencesLocation?: ISettingsFileLocation;
+
+  /**
+   * Where to find the keystore file.
+   * Defaults to local: `keystore.json` in user library root.
+   */
+  readonly keystoreLocation?: ISettingsFileLocation;
+
+  /**
+   * Platform-specific file tree overrides (moved from device settings).
+   * Affects where the user library tree root is resolved.
+   */
+  readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
+}
+
+// ============================================================================
+// Preferences Settings (Runtime Configuration)
+// ============================================================================
+
+/**
+ * Runtime preferences that don't affect what data is loaded.
+ * Stored in: `data/settings/preferences.json` (location specified by bootstrap).
+ * @public
+ */
+export interface IPreferencesSettings {
+  /** Schema version for migration support */
+  readonly schemaVersion: SettingsSchemaVersion;
+  /** Default target collections for each sublibrary */
+  readonly defaultTargets?: IDefaultCollectionTargets;
+  /** Default storage locations for new collections (global + per-sublibrary) */
+  readonly defaultStorageTargets?: IDefaultStorageTargets;
+  /** Tool configuration (scaling, workflow, etc.) */
+  readonly tools?: IToolSettings;
+}
+
+// ============================================================================
 // Common Settings (Shared Across Devices)
 // ============================================================================
 
 /**
  * Settings that are shared across all devices.
  * Stored in: data/settings/common.json
+ *
+ * @deprecated Use {@link IBootstrapSettings} and {@link IPreferencesSettings} instead.
+ * Retained temporarily for migration from common.json.
  * @public
  */
 export interface ICommonSettings {
@@ -269,6 +362,10 @@ export interface IDeviceFileTreeOverrides {
 /**
  * Settings specific to a device/platform instance.
  * Stored in: `data/settings/device-[deviceId].json`
+ *
+ * @deprecated Device settings are vestigial — no UI reads these fields.
+ * Directory handles are persisted in IndexedDB, device ID in localStorage.
+ * Retained temporarily for migration.
  * @public
  */
 export interface IDeviceSettings {
@@ -353,8 +450,38 @@ export const DEFAULT_TOOL_SETTINGS: IToolSettings = {
 // ============================================================================
 
 /**
+ * Resolves settings from preferences (new two-phase model).
+ * @param preferences - Runtime preferences
+ * @param deviceId - The current device ID
+ * @returns Fully resolved settings
+ * @public
+ */
+export function resolvePreferencesSettings(
+  preferences: IPreferencesSettings,
+  deviceId: DeviceId
+): IResolvedSettings {
+  return {
+    deviceId,
+    defaultTargets: preferences.defaultTargets ?? {},
+    tools: {
+      scaling: {
+        ...DEFAULT_SCALING,
+        ...preferences.tools?.scaling
+      },
+      workflow: {
+        ...DEFAULT_WORKFLOW,
+        ...preferences.tools?.workflow
+      }
+    },
+    defaultStorageTargets: preferences.defaultStorageTargets
+  };
+}
+
+/**
  * Resolves settings by merging common and device-specific settings.
  * Device settings override common settings.
+ *
+ * @deprecated Use {@link resolvePreferencesSettings} instead.
  * @param common - Common settings shared across devices
  * @param device - Device-specific settings
  * @returns Fully resolved settings
@@ -392,7 +519,63 @@ export function resolveSettings(common: ICommonSettings, device: IDeviceSettings
 }
 
 /**
+ * Creates default bootstrap settings for first run.
+ * @returns Default bootstrap settings
+ * @public
+ */
+export function createDefaultBootstrapSettings(): IBootstrapSettings {
+  return {
+    schemaVersion: SETTINGS_SCHEMA_VERSION,
+    includeBuiltIn: true,
+    localStorage: { library: true, userData: true },
+    externalLibraries: []
+  };
+}
+
+/**
+ * Creates default preferences settings for first run.
+ * @returns Default preferences settings
+ * @public
+ */
+export function createDefaultPreferencesSettings(): IPreferencesSettings {
+  return {
+    schemaVersion: SETTINGS_SCHEMA_VERSION,
+    defaultTargets: {},
+    tools: DEFAULT_TOOL_SETTINGS
+  };
+}
+
+/**
+ * Splits a legacy {@link ICommonSettings} into bootstrap + preferences.
+ * Used for one-time migration from common.json.
+ * @param common - The legacy common settings
+ * @returns Bootstrap and preferences settings
+ * @public
+ */
+export function splitCommonSettings(common: ICommonSettings): {
+  bootstrap: IBootstrapSettings;
+  preferences: IPreferencesSettings;
+} {
+  return {
+    bootstrap: {
+      schemaVersion: SETTINGS_SCHEMA_VERSION,
+      includeBuiltIn: true,
+      localStorage: { library: true, userData: true },
+      externalLibraries: common.externalLibraries
+    },
+    preferences: {
+      schemaVersion: SETTINGS_SCHEMA_VERSION,
+      defaultTargets: common.defaultTargets,
+      defaultStorageTargets: common.defaultStorageTargets,
+      tools: common.tools
+    }
+  };
+}
+
+/**
  * Creates default common settings for first run.
+ *
+ * @deprecated Use {@link createDefaultBootstrapSettings} and {@link createDefaultPreferencesSettings} instead.
  * @returns Default common settings
  * @public
  */
@@ -407,6 +590,8 @@ export function createDefaultCommonSettings(): ICommonSettings {
 
 /**
  * Creates default device settings for first run.
+ *
+ * @deprecated Device settings are vestigial.
  * @param deviceId - The device identifier
  * @param deviceName - Optional human-readable name
  * @returns Default device settings

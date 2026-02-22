@@ -2,7 +2,7 @@
 
 ## ISettingsManager.getResolvedSettings() method
 
-Gets the resolved settings (common merged with device overrides).
+Gets the resolved settings.
 
 **Signature:**
 

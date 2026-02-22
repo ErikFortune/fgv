@@ -151,4 +151,40 @@ Converter for partial tool settings (for device overrides).
 Converter for IDeviceSettings.
 
 </td></tr>
+<tr><td>
+
+[settingsFileLocation](./variables/settingsFileLocation.md)
+
+</td><td>
+
+Converter for ISettingsFileLocation.
+
+</td></tr>
+<tr><td>
+
+[localStorageConfig](./variables/localStorageConfig.md)
+
+</td><td>
+
+Converter for ILocalStorageConfig.
+
+</td></tr>
+<tr><td>
+
+[bootstrapSettings](./variables/bootstrapSettings.md)
+
+</td><td>
+
+Converter for IBootstrapSettings.
+
+</td></tr>
+<tr><td>
+
+[preferencesSettings](./variables/preferencesSettings.md)
+
+</td><td>
+
+Converter for IPreferencesSettings.
+
+</td></tr>
 </tbody></table>

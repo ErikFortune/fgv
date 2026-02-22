@@ -2,7 +2,8 @@
 
 ## SettingsManager.updateToolSettings() method
 
-Updates tool settings in common settings.
+Updates tool settings.
+Routes to preferences if available, otherwise common settings.
 
 **Signature:**
 

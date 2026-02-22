@@ -80,6 +80,33 @@ Description
 <tbody>
 <tr><td>
 
+[createFromBootstrap(params)](./SettingsManager.createFromBootstrap.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new SettingsManager from bootstrap + preferences files.
+
+</td></tr>
+<tr><td>
+
+[createFromBootstrapWithMigration(params)](./SettingsManager.createFromBootstrapWithMigration.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new SettingsManager from bootstrap + preferences files,
+auto-migrating from common.json if bootstrap.json doesn't exist yet.
+
+</td></tr>
+<tr><td>
+
 [create(params)](./SettingsManager.create.md)
 
 </td><td>
@@ -101,7 +128,59 @@ Creates a new SettingsManager, loading settings from the file tree.
 
 </td><td>
 
-Gets the resolved settings (common merged with device overrides).
+Gets the resolved settings.
+
+</td></tr>
+<tr><td>
+
+[getBootstrapSettings()](./SettingsManager.getBootstrapSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the bootstrap settings (preload configuration).
+
+</td></tr>
+<tr><td>
+
+[getPreferencesSettings()](./SettingsManager.getPreferencesSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the preferences settings (runtime configuration).
+
+</td></tr>
+<tr><td>
+
+[updateBootstrapSettings(updates)](./SettingsManager.updateBootstrapSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates bootstrap settings with partial values.
+
+</td></tr>
+<tr><td>
+
+[updatePreferencesSettings(updates)](./SettingsManager.updatePreferencesSettings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates preferences settings with partial values.
 
 </td></tr>
 <tr><td>
@@ -171,6 +250,19 @@ Updates the default collection targets (convenience method).
 </td></tr>
 <tr><td>
 
+[updateDefaultStorageTargets(targets)](./SettingsManager.updateDefaultStorageTargets.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the default storage targets (convenience method).
+
+</td></tr>
+<tr><td>
+
 [updateLastActiveSessionId(sessionId)](./SettingsManager.updateLastActiveSessionId.md)
 
 </td><td>
@@ -205,7 +297,7 @@ Saves all pending changes to the file tree.
 
 </td><td>
 
-Updates tool settings in common settings.
+Updates tool settings.
 
 </td></tr>
 <tr><td>

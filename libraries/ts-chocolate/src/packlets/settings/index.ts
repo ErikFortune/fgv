@@ -23,8 +23,12 @@
  *
  * Provides types and utilities for workspace settings management.
  * Settings are stored in a directory structure with:
- * - `common.json` - Shared across all devices
- * - `device-{deviceId}.json` - Device-specific overrides
+ * - `bootstrap.json` - Preload configuration (what data sources to set up)
+ * - `preferences.json` - Runtime preferences (defaults, tools, etc.)
+ *
+ * Legacy files (deprecated, migration only):
+ * - `common.json` - Previously shared across all devices
+ * - `device-{deviceId}.json` - Previously device-specific overrides
  *
  * @packageDocumentation
  */
@@ -49,7 +53,16 @@ export {
   type StorageRootId,
   type ILocalDirectoryRef,
   type IDefaultStorageTargets,
-  // Settings types
+  // Bootstrap and preferences (new two-phase model)
+  type ISettingsFileLocation,
+  type ILocalStorageConfig,
+  type IBootstrapSettings,
+  type IPreferencesSettings,
+  createDefaultBootstrapSettings,
+  createDefaultPreferencesSettings,
+  resolvePreferencesSettings,
+  splitCommonSettings,
+  // Legacy settings types (deprecated)
   type ICommonSettings,
   type IDeviceSettings,
   type IDeviceFileTreeOverrides,
@@ -58,7 +71,7 @@ export {
   DEFAULT_SCALING,
   DEFAULT_WORKFLOW,
   DEFAULT_TOOL_SETTINGS,
-  // Functions
+  // Legacy functions (deprecated)
   resolveSettings,
   createDefaultCommonSettings,
   createDefaultDeviceSettings
@@ -74,9 +87,12 @@ export { DEVICE_ID_PATTERN } from './converters';
 // Settings manager exports
 export {
   type ISettingsManager,
+  type ISettingsManagerBootstrapParams,
   type ISettingsManagerParams,
   SettingsManager,
   SETTINGS_DIR_PATH,
+  BOOTSTRAP_SETTINGS_FILENAME,
+  PREFERENCES_SETTINGS_FILENAME,
   COMMON_SETTINGS_FILENAME,
   DEVICE_SETTINGS_PREFIX,
   DEVICE_SETTINGS_SUFFIX,
