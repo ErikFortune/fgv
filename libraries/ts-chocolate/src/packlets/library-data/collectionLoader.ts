@@ -119,6 +119,12 @@ export interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string>
    * Defaults to `false`.
    */
   readonly isBuiltIn?: boolean;
+  /**
+   * Identifies which storage root loaded these collections.
+   * Stamped into each collection's metadata as `sourceName`.
+   * @defaultValue 'unknown'
+   */
+  readonly sourceName?: string;
 }
 
 /**
@@ -176,9 +182,8 @@ export class CollectionLoader<
    */
   public loadFromFileTree(
     fileTree: FileTree.FileTreeItem,
-    params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>
+    params: ILoadCollectionFromFileTreeParams<TCOLLECTIONID> = {}
   ): Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>> {
-    params = params ?? {};
     const mutabilitySpec = params.mutable ?? this._mutableDefault;
     const onEncryptedFile = params.onEncryptedFile ?? 'capture';
     /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
@@ -254,7 +259,7 @@ export class CollectionLoader<
                   id: item.name,
                   isMutable: this._isMutable(item.name, mutabilitySpec),
                   items: sourceFile.items,
-                  metadata: sourceFile.metadata
+                  metadata: { ...sourceFile.metadata, sourceName: params.sourceName ?? 'unknown' }
                 })
                 .onSuccess((collection) => {
                   // Add sourceItem to create IRuntimeCollection
@@ -291,9 +296,8 @@ export class CollectionLoader<
    */
   public async loadFromFileTreeAsync(
     fileTree: FileTree.FileTreeItem,
-    params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>
+    params: ILoadCollectionFromFileTreeParams<TCOLLECTIONID> = {}
   ): Promise<Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>> {
-    params = params ?? {};
     const mutabilitySpec = params.mutable ?? this._mutableDefault;
     const encryption = params.encryption;
     const onEncryptedFile = params.onEncryptedFile ?? 'capture';
@@ -355,7 +359,8 @@ export class CollectionLoader<
           onEncryptedFile,
           protectedCollections,
           isBuiltIn,
-          item.item
+          item.item,
+          params.sourceName ?? 'unknown'
         );
         if (encryptedResult === undefined) {
           // Skipped or captured due to missing key
@@ -377,7 +382,7 @@ export class CollectionLoader<
             id: item.name,
             isMutable: this._isMutable(item.name, mutabilitySpec),
             items: sourceFile.items,
-            metadata: sourceFile.metadata
+            metadata: { ...sourceFile.metadata, sourceName: params.sourceName ?? 'unknown' }
           })
           .onSuccess((collection) => {
             // Add sourceItem to create IRuntimeCollection
@@ -410,7 +415,8 @@ export class CollectionLoader<
     onEncryptedFile: EncryptedFileHandling,
     protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
     isBuiltIn: boolean,
-    sourceItem: FileTree.FileTreeItem
+    sourceItem: FileTree.FileTreeItem,
+    sourceName: string
   ): Promise<Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>> | undefined> {
     // Validate the encrypted file structure first (needed for both decrypt and capture)
     const tombstoneResult = LibraryConverters.encryptedCollectionFile.convert(json);
@@ -471,6 +477,7 @@ export class CollectionLoader<
         isMutable: this._isMutable(collectionName, mutabilitySpec),
         items: decryptResult.value,
         metadata: {
+          sourceName,
           secretName: encryptedFile.secretName,
           /* c8 ignore next 1 - defense in depth */
           ...(encryptedFile.metadata?.description ? { description: encryptedFile.metadata.description } : {})

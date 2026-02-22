@@ -568,15 +568,15 @@ export class SettingsManager implements ISettingsManager {
     fileName: string,
     settings: ICommonSettings | IDeviceSettings
   ): Result<boolean> {
+    /* c8 ignore next 3 - defensive: all current implementations define createChildFile */
     if (dir.createChildFile === undefined) {
-      return fail(
-        `Cannot create new settings file: ${fileName}. ` +
-          `The settings directory exists but the file does not. ` +
-          `Platform initializer should create default settings files.`
-      );
+      return fail(`Cannot create new settings file ${fileName}: file creation not supported`);
     }
     const content = JSON.stringify(settings, null, 2);
-    return dir.createChildFile(fileName, content).onSuccess(() => succeed(true));
+    return dir
+      .createChildFile(fileName, content)
+      .withErrorFormat((msg) => `Cannot create new settings file ${fileName}: ${msg}`)
+      .onSuccess(() => succeed(true));
   }
 
   // ============================================================================

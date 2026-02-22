@@ -7,7 +7,7 @@ Get metadata for a specific collection by ID.
 **Signature:**
 
 ```typescript
-get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
+get(collectionId: CollectionId): Result<ICollectionRuntimeMetadata>;
 ```
 
 **Parameters:**
@@ -19,4 +19,4 @@ get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
 
 **Returns:**
 
-Result&lt;[ICollectionSourceMetadata](../interfaces/ICollectionSourceMetadata.md)&gt;
+Result&lt;[ICollectionRuntimeMetadata](../interfaces/ICollectionRuntimeMetadata.md)&gt;

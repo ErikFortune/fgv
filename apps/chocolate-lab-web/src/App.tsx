@@ -139,6 +139,7 @@ function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
             platformInit: init,
             builtin: true,
             preWarm: true,
+            userLibrarySourceName: 'Browser Storage',
             logger: _bootReporter
           })
         )

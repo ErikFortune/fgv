@@ -1,9 +1,9 @@
-[Home](../README.md) > ICollectionSourceMetadata
+[Home](../../README.md) > [LibraryData](../README.md) > ICollectionFileMetadata
 
-# Interface: ICollectionSourceMetadata
+# Interface: ICollectionFileMetadata
 
-Optional metadata for collection source files.
-When present in source files, provides additional information about the collection.
+Metadata as stored in collection source files (YAML/JSON).
+Does not include `sourceName` since that is not known at file-write time.
 
 ## Properties
 
@@ -27,7 +27,7 @@ Description
 <tbody>
 <tr><td>
 
-[secretName](./ICollectionSourceMetadata.secretName.md)
+[secretName](./ICollectionFileMetadata.secretName.md)
 
 </td><td>
 
@@ -44,7 +44,7 @@ Secret name for encryption/decryption.
 </td></tr>
 <tr><td>
 
-[name](./ICollectionSourceMetadata.name.md)
+[name](./ICollectionFileMetadata.name.md)
 
 </td><td>
 
@@ -61,7 +61,7 @@ Human-readable name for the collection.
 </td></tr>
 <tr><td>
 
-[description](./ICollectionSourceMetadata.description.md)
+[description](./ICollectionFileMetadata.description.md)
 
 </td><td>
 
@@ -78,7 +78,7 @@ Description of the collection's purpose/contents.
 </td></tr>
 <tr><td>
 
-[variation](./ICollectionSourceMetadata.variation.md)
+[variation](./ICollectionFileMetadata.variation.md)
 
 </td><td>
 
@@ -95,7 +95,7 @@ Variation identifier for the collection.
 </td></tr>
 <tr><td>
 
-[tags](./ICollectionSourceMetadata.tags.md)
+[tags](./ICollectionFileMetadata.tags.md)
 
 </td><td>
 

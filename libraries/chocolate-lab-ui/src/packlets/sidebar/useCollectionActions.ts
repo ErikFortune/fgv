@@ -309,7 +309,8 @@ export function useCollectionActions(): ICollectionActions {
         return;
       }
 
-      const metadata: LibraryData.ICollectionSourceMetadata = {
+      const metadata: LibraryData.ICollectionRuntimeMetadata = {
+        sourceName: subLibrary.mutableSourceName ?? 'unknown',
         name: data.name,
         ...(data.description ? { description: data.description } : {}),
         ...(data.tags && data.tags.length > 0 ? { tags: data.tags } : {}),
@@ -712,10 +713,14 @@ export function useCollectionActions(): ICollectionActions {
       }
     }
 
+    const metadata: LibraryData.ICollectionRuntimeMetadata | undefined = sourceFile.metadata
+      ? { ...sourceFile.metadata, sourceName: subLibrary.mutableSourceName ?? 'unknown' }
+      : undefined;
+
     const addResult = subLibrary.addCollectionWithItems(
       targetId,
       Array.from(Object.entries(sourceFile.items)),
-      { metadata: sourceFile.metadata }
+      { metadata }
     );
 
     if (addResult.isFailure()) {

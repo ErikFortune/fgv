@@ -289,6 +289,6 @@ function createFileTreeSource(dirPath: string, mutable: boolean): Result<ILibrar
     mutable
   });
   return FileTree.DirectoryItem.create('.', accessors).onSuccess((directory) =>
-    succeed({ directory, mutable })
+    succeed({ sourceName: resolvedPath, directory, mutable })
   );
 }

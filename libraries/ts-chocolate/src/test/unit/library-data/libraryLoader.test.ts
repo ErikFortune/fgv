@@ -189,7 +189,7 @@ describe('libraryLoader', () => {
   describe('resolveFileTreeSourceForSubLibrary', () => {
     test('resolves enabled sub-library with default load spec', () => {
       const tree = getLibraryDir(fullLibraryFiles);
-      const source: ILibraryFileTreeSource = { directory: tree };
+      const source: ILibraryFileTreeSource = { sourceName: 'test', directory: tree };
 
       expect(resolveFileTreeSourceForSubLibrary(source, 'ingredients')).toSucceedAndSatisfy((result) => {
         expect(result).toBeDefined();
@@ -202,6 +202,7 @@ describe('libraryLoader', () => {
     test('returns undefined for disabled sub-library', () => {
       const tree = getLibraryDir(fullLibraryFiles);
       const source: ILibraryFileTreeSource = {
+        sourceName: 'test',
         directory: tree,
         load: { ingredients: false }
       };
@@ -212,6 +213,7 @@ describe('libraryLoader', () => {
     test('respects mutable setting', () => {
       const tree = getLibraryDir(fullLibraryFiles);
       const source: ILibraryFileTreeSource = {
+        sourceName: 'test',
         directory: tree,
         mutable: true
       };
@@ -223,7 +225,7 @@ describe('libraryLoader', () => {
 
     test('fails when directory does not exist', () => {
       const tree = getLibraryDir(emptyLibraryFiles);
-      const source: ILibraryFileTreeSource = { directory: tree };
+      const source: ILibraryFileTreeSource = { sourceName: 'test', directory: tree };
 
       expect(resolveFileTreeSourceForSubLibrary(source, 'ingredients')).toFail();
     });
@@ -236,7 +238,7 @@ describe('libraryLoader', () => {
   describe('resolveFileTreeSource', () => {
     test('resolves all sub-libraries from complete tree', () => {
       const tree = getLibraryDir(fullLibraryFiles);
-      const source: ILibraryFileTreeSource = { directory: tree };
+      const source: ILibraryFileTreeSource = { sourceName: 'test', directory: tree };
 
       expect(resolveFileTreeSource(source)).toSucceedAndSatisfy((results) => {
         expect(results.length).toBe(2);
@@ -247,7 +249,7 @@ describe('libraryLoader', () => {
 
     test('skips missing directories gracefully', () => {
       const tree = getLibraryDir(ingredientsOnlyFiles);
-      const source: ILibraryFileTreeSource = { directory: tree };
+      const source: ILibraryFileTreeSource = { sourceName: 'test', directory: tree };
 
       expect(resolveFileTreeSource(source)).toSucceedAndSatisfy((results) => {
         expect(results.length).toBe(1);
@@ -257,7 +259,7 @@ describe('libraryLoader', () => {
 
     test('returns empty array when all directories missing', () => {
       const tree = getLibraryDir(emptyLibraryFiles);
-      const source: ILibraryFileTreeSource = { directory: tree };
+      const source: ILibraryFileTreeSource = { sourceName: 'test', directory: tree };
 
       expect(resolveFileTreeSource(source)).toSucceedWith([]);
     });
@@ -265,6 +267,7 @@ describe('libraryLoader', () => {
     test('respects per-sub-library load specs', () => {
       const tree = getLibraryDir(fullLibraryFiles);
       const source: ILibraryFileTreeSource = {
+        sourceName: 'test',
         directory: tree,
         load: { ingredients: true, fillings: false }
       };
@@ -382,7 +385,7 @@ describe('libraryLoader', () => {
     });
 
     test('wraps single source in array', () => {
-      const source: IFileTreeSource = { directory: mockDirectory };
+      const source: IFileTreeSource = { sourceName: 'test', directory: mockDirectory };
       const result = normalizeFileSources(source);
       expect(result).toEqual([source]);
       expect(result.length).toBe(1);
@@ -390,8 +393,8 @@ describe('libraryLoader', () => {
 
     test('returns array unchanged', () => {
       const sources: IFileTreeSource[] = [
-        { directory: mockDirectory },
-        { directory: mockDirectory, load: false }
+        { sourceName: 'test', directory: mockDirectory },
+        { sourceName: 'test', directory: mockDirectory, load: false }
       ];
       const result = normalizeFileSources(sources);
       expect(result).toBe(sources);
@@ -400,6 +403,7 @@ describe('libraryLoader', () => {
 
     test('works with ILibraryFileTreeSource', () => {
       const source: ILibraryFileTreeSource = {
+        sourceName: 'test',
         directory: mockDirectory,
         load: { ingredients: true, fillings: false },
         mutable: true
@@ -410,8 +414,8 @@ describe('libraryLoader', () => {
 
     test('works with array of ILibraryFileTreeSource', () => {
       const sources: ILibraryFileTreeSource[] = [
-        { directory: mockDirectory, load: true },
-        { directory: mockDirectory, mutable: true }
+        { sourceName: 'test', directory: mockDirectory, load: true },
+        { sourceName: 'test', directory: mockDirectory, mutable: true }
       ];
       const result = normalizeFileSources(sources);
       expect(result).toBe(sources);

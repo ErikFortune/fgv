@@ -3,10 +3,10 @@
 # Type Alias: SubLibraryCollectionEntry
 
 A single entry in a sub-library collection.
-Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
+Fixes the collection ID type to SourceId and metadata type to ICollectionRuntimeMetadata.
 
 ## Type
 
 ```typescript
-type SubLibraryCollectionEntry = Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>
+type SubLibraryCollectionEntry = Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>
 ```

@@ -95,6 +95,23 @@ Whether to pre-warm the runtime caches on creation.
 </td></tr>
 <tr><td>
 
+[userLibrarySourceName](./ICommonWorkspaceInitParams.userLibrarySourceName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+The source name to stamp on collections loaded from the user library tree.
+
+</td></tr>
+<tr><td>
+
 [logger](./ICommonWorkspaceInitParams.logger.md)
 
 </td><td>

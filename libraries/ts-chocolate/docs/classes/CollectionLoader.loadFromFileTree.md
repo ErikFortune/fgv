@@ -16,7 +16,7 @@ to decrypt encrypted files during loading.
 **Signature:**
 
 ```typescript
-loadFromFileTree(fileTree: FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>;
+loadFromFileTree(fileTree: FileTreeItem, params: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>;
 ```
 
 **Parameters:**

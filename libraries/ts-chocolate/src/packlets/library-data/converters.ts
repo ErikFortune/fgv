@@ -24,8 +24,9 @@ import { CryptoUtils, Yaml } from '@fgv/ts-extras';
 import {
   EncryptedCollectionFile,
   ICollection,
+  ICollectionFileMetadata,
+  ICollectionRuntimeMetadata,
   ICollectionSourceFile,
-  ICollectionSourceMetadata,
   IEncryptedCollectionMetadata
 } from './model';
 
@@ -63,12 +64,27 @@ export function removeExtension(extensions: ReadonlyArray<string>): Converter<st
 export const removeJsonExtension: Converter<string> = removeExtension(['.json']);
 
 /**
- * Converter for collection source metadata.
- * All fields are optional.
+ * Converter for collection file metadata (as stored in YAML/JSON files).
+ * Does not include `sourceName` since that is injected at load time.
  * @public
  */
-export const collectionSourceMetadata: Converter<ICollectionSourceMetadata> =
-  Converters.object<ICollectionSourceMetadata>({
+export const collectionFileMetadata: Converter<ICollectionFileMetadata> =
+  Converters.object<ICollectionFileMetadata>({
+    secretName: Converters.string.optional(),
+    name: Converters.string.optional(),
+    description: Converters.string.optional(),
+    variation: Converters.string.optional(),
+    tags: Converters.arrayOf(Converters.string).optional()
+  });
+
+/**
+ * Converter for runtime collection metadata.
+ * Includes `sourceName` which is required at runtime.
+ * @public
+ */
+export const collectionRuntimeMetadata: Converter<ICollectionRuntimeMetadata> =
+  Converters.object<ICollectionRuntimeMetadata>({
+    sourceName: Converters.string,
     secretName: Converters.string.optional(),
     name: Converters.string.optional(),
     description: Converters.string.optional(),
@@ -86,7 +102,7 @@ export function collectionSourceFile<T>(
   itemConverter: Converter<T> | Validator<T>
 ): Converter<ICollectionSourceFile<T>> {
   return Converters.object<ICollectionSourceFile<T>>({
-    metadata: collectionSourceMetadata.optional(),
+    metadata: collectionFileMetadata.optional(),
     items: Converters.recordOf(itemConverter)
   });
 }
@@ -115,7 +131,7 @@ export function collection<TCOLLECTIONID extends string, TITEMID extends string,
     id: params.collectionIdConverter,
     isMutable: Converters.boolean,
     items: Converters.recordOf(params.itemConverter, { keyConverter: params.itemIdConverter }),
-    metadata: collectionSourceMetadata.optional()
+    metadata: collectionRuntimeMetadata.optional()
   });
 }
 

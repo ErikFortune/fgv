@@ -89,11 +89,20 @@ Optional unencrypted metadata for encrypted collection files.
 </td></tr>
 <tr><td>
 
-[ICollectionSourceMetadata](./interfaces/ICollectionSourceMetadata.md)
+[ICollectionFileMetadata](./interfaces/ICollectionFileMetadata.md)
 
 </td><td>
 
-Optional metadata for collection source files.
+Metadata as stored in collection source files (YAML/JSON).
+
+</td></tr>
+<tr><td>
+
+[ICollectionRuntimeMetadata](./interfaces/ICollectionRuntimeMetadata.md)
+
+</td><td>
+
+Runtime metadata for a loaded collection.
 
 </td></tr>
 <tr><td>

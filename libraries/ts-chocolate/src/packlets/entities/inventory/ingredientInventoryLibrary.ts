@@ -28,7 +28,7 @@ import { captureResult, fail, Logging, Result, succeed } from '@fgv/ts-utils';
 import { IngredientId, CollectionId } from '../../common';
 import {
   getIngredientInventoryDirectory,
-  ICollectionSourceMetadata,
+  ICollectionRuntimeMetadata,
   ISubLibraryAsyncParams,
   ISubLibraryCreateParams,
   ISubLibraryParams,
@@ -311,7 +311,7 @@ export class IngredientInventoryLibrary extends SubLibraryBase<
    */
   public createCollection(
     collectionId: CollectionId,
-    metadata?: ICollectionSourceMetadata
+    metadata?: ICollectionRuntimeMetadata
   ): Result<CollectionId> {
     if (this.collections.has(collectionId)) {
       return fail(`Collection ${collectionId} already exists`);

@@ -8,5 +8,5 @@ May be undefined for collections created programmatically.
 **Signature:**
 
 ```typescript
-readonly metadata: ICollectionSourceMetadata;
+readonly metadata: ICollectionRuntimeMetadata;
 ```

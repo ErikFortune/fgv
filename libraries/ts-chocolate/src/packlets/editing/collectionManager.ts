@@ -25,7 +25,12 @@
 
 import { Collections, Converter, Converters, fail, Result, succeed } from '@fgv/ts-utils';
 import { CollectionId, Helpers as CommonHelpers } from '../common';
-import { ICollectionSourceFile, ICollectionSourceMetadata, SubLibraryBase } from '../library-data';
+import {
+  ICollectionFileMetadata,
+  ICollectionSourceFile,
+  ICollectionRuntimeMetadata,
+  SubLibraryBase
+} from '../library-data';
 import { ICollectionManager } from './model';
 
 /**
@@ -77,8 +82,8 @@ function maxLengthString(maxLength: number, fieldName: string): Converter<string
  * - version: optional string
  * - tags: optional array of strings
  */
-const validatedMetadataConverter: Converter<ICollectionSourceMetadata> =
-  Converters.object<ICollectionSourceMetadata>({
+const validatedMetadataConverter: Converter<ICollectionFileMetadata> =
+  Converters.object<ICollectionFileMetadata>({
     name: trimmedNonEmptyString(200, 'Collection name').optional(),
     description: maxLengthString(2000, 'Collection description').optional(),
     secretName: trimmedNonEmptyString(100, 'Secret name').optional(),
@@ -121,13 +126,15 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   /**
    * Get metadata for a specific collection by ID.
    */
-  public get(collectionId: CollectionId): Result<ICollectionSourceMetadata> {
+  public get(collectionId: CollectionId): Result<ICollectionRuntimeMetadata> {
     return this._library.collections
       .get(collectionId)
       .asResult.onFailure(() => fail(`Collection "${collectionId}" not found`))
       .onSuccess((collection) => {
-        // Return actual metadata from the collection entry, or empty object if not set
-        return succeed(collection.metadata ?? {});
+        if (collection.metadata === undefined) {
+          return fail(`Collection "${collectionId}" has no metadata`);
+        }
+        return succeed(collection.metadata);
       });
   }
 
@@ -136,21 +143,24 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    */
   public create(
     collectionId: CollectionId,
-    metadata: ICollectionSourceMetadata
-  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
+    metadata: ICollectionFileMetadata
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>> {
     // Check if collection already exists
     if (this._library.collections.has(collectionId)) {
       return fail(`Collection "${collectionId}" already exists`);
     }
 
-    // Validate metadata
+    // Validate metadata and inject sourceName from the library's mutable source
     return this._validateMetadata(metadata).onSuccess((validatedMetadata) => {
-      // Create empty collection entry with metadata
+      const runtimeMetadata: ICollectionRuntimeMetadata = {
+        ...validatedMetadata,
+        sourceName: this._library.mutableSourceName ?? 'unknown'
+      };
       return this._library.addCollectionEntry({
         id: collectionId,
         isMutable: true,
         items: {},
-        metadata: validatedMetadata
+        metadata: runtimeMetadata
       });
     });
   }
@@ -167,11 +177,11 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    */
   public createWithFile(
     collectionId: CollectionId,
-    metadata: ICollectionSourceMetadata
-  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
+    metadata: ICollectionFileMetadata
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>> {
     // Create the in-memory collection first
     return this.create(collectionId, metadata).onSuccess((entry) => {
-      // Build initial YAML content: metadata + empty items
+      // Build initial YAML content: file metadata (no sourceName) + empty items
       const sourceFile: ICollectionSourceFile = {
         metadata,
         items: {}
@@ -194,7 +204,7 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    */
   public delete(
     collectionId: CollectionId
-  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>> {
     // Delegate to public method
     return this._library.removeCollection(collectionId);
   }
@@ -204,8 +214,8 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    */
   public updateMetadata(
     collectionId: CollectionId,
-    metadata: Partial<ICollectionSourceMetadata>
-  ): Result<ICollectionSourceMetadata> {
+    metadata: Partial<ICollectionRuntimeMetadata>
+  ): Result<ICollectionRuntimeMetadata> {
     // Delegate to public method
     return this._library.updateCollectionMetadata(collectionId, metadata);
   }
@@ -309,7 +319,7 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   /**
    * Validate collection metadata for creation.
    */
-  private _validateMetadata(metadata: ICollectionSourceMetadata): Result<ICollectionSourceMetadata> {
+  private _validateMetadata(metadata: ICollectionFileMetadata): Result<ICollectionFileMetadata> {
     return validatedMetadataConverter.convert(metadata).onFailure((msg) => fail(`Invalid metadata: ${msg}`));
   }
 

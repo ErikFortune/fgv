@@ -107,11 +107,20 @@ A converter that removes the `.json` extension from the end of a string.
 </td></tr>
 <tr><td>
 
-[collectionSourceMetadata](./variables/collectionSourceMetadata.md)
+[collectionFileMetadata](./variables/collectionFileMetadata.md)
 
 </td><td>
 
-Converter for collection source metadata.
+Converter for collection file metadata (as stored in YAML/JSON files).
+
+</td></tr>
+<tr><td>
+
+[collectionRuntimeMetadata](./variables/collectionRuntimeMetadata.md)
+
+</td><td>
+
+Converter for runtime collection metadata.
 
 </td></tr>
 <tr><td>

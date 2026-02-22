@@ -242,6 +242,13 @@ export interface ICommonWorkspaceInitParams {
   readonly preWarm?: boolean;
 
   /**
+   * The source name to stamp on collections loaded from the user library tree.
+   * Matches the label used when registering the local storage root.
+   * @defaultValue 'localStorage'
+   */
+  readonly userLibrarySourceName?: string;
+
+  /**
    * Optional logger for workspace operations.
    * If not provided, a default NoOp logger is used.
    */
@@ -274,6 +281,7 @@ export function toLibraryFileSources(
     }
 
     return {
+      sourceName: lib.name,
       directory: lib.fileTree,
       load,
       mutable: lib.mutable
@@ -290,9 +298,11 @@ export function toLibraryFileSources(
  */
 export function toUserLibrarySource(
   userLibraryTree: FileTree.IFileTreeDirectoryItem,
+  sourceName: string = 'unknown',
   mutable: boolean = true
 ): ILibraryFileTreeSource {
   return {
+    sourceName,
     directory: userLibraryTree,
     load: {
       // User library only loads user-specific sub-libraries (journals, sessions).
@@ -423,7 +433,13 @@ export function ensureWorkspaceDirectoriesInTree(root: FileTree.IFileTreeDirecto
  * @public
  */
 export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams): Result<IWorkspace> {
-  const { platformInit, builtin, additionalFileSources, preWarm } = params;
+  const {
+    platformInit,
+    builtin,
+    additionalFileSources,
+    preWarm,
+    userLibrarySourceName = 'localStorage'
+  } = params;
 
   // Create settings manager and workspace from the platform init result
   return (
@@ -439,13 +455,14 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
         const externalSources = toLibraryFileSources(platformInit.externalLibraries);
 
         // Convert user library to file tree source (journals/sessions only)
-        const userSource = toUserLibrarySource(platformInit.userLibraryTree);
+        const userSource = toUserLibrarySource(platformInit.userLibraryTree, userLibrarySourceName);
 
         // The entity library also needs to load from the user tree so that
         // user-created entity collections (ingredients, fillings, etc.) are
         // found on restart.  Built-in data comes from builtInData.generated.ts,
         // not from this tree, so there is no risk of duplicate loading.
         const userEntitySource: ILibraryFileTreeSource = {
+          sourceName: userLibrarySourceName,
           directory: platformInit.userLibraryTree,
           load: true,
           mutable: true,

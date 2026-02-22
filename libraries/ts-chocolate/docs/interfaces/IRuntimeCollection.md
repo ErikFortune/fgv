@@ -105,7 +105,7 @@ Record&lt;TITEMID, T&gt;
 
 </td><td>
 
-[ICollectionSourceMetadata](ICollectionSourceMetadata.md)
+[ICollectionRuntimeMetadata](ICollectionRuntimeMetadata.md)
 
 </td><td>
 

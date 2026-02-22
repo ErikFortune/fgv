@@ -13,7 +13,7 @@ This abstract class standardizes:
 This reduces the type parameter count from 4 to 3 and eliminates
 boilerplate in derived classes.
 
-**Extends:** `AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata>`
+**Extends:** `AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>`
 
 ## Properties
 

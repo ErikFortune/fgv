@@ -23,7 +23,7 @@ import { fail, succeed } from '@fgv/ts-utils';
 import { CollectionManager } from '../../../packlets/editing';
 import { IngredientsLibrary } from '../../../packlets/entities';
 import { CollectionId } from '../../../packlets/common';
-import { ICollectionSourceMetadata } from '../../../packlets/library-data';
+import { ICollectionFileMetadata, ICollectionRuntimeMetadata } from '../../../packlets/library-data';
 
 describe('CollectionManager', () => {
   let library: IngredientsLibrary;
@@ -56,7 +56,7 @@ describe('CollectionManager', () => {
     });
 
     test('returns all collection IDs after creating collections', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Test Collection'
       };
 
@@ -76,7 +76,7 @@ describe('CollectionManager', () => {
 
   describe('get', () => {
     test('returns metadata for existing collection', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Test Collection',
         description: 'A test collection'
       };
@@ -92,7 +92,7 @@ describe('CollectionManager', () => {
       expect(manager.get('nonexistent' as CollectionId)).toFailWith(/not found/i);
     });
 
-    test('returns empty object when collection has no metadata', () => {
+    test('fails when collection has no metadata', () => {
       // Add collection directly to library without metadata
       library.addCollectionEntry({
         id: 'no-metadata' as CollectionId,
@@ -101,9 +101,7 @@ describe('CollectionManager', () => {
         // Note: no metadata field
       });
 
-      expect(manager.get('no-metadata' as CollectionId)).toSucceedAndSatisfy((result) => {
-        expect(result).toEqual({});
-      });
+      expect(manager.get('no-metadata' as CollectionId)).toFailWith(/has no metadata/i);
     });
   });
 
@@ -113,7 +111,7 @@ describe('CollectionManager', () => {
 
   describe('create', () => {
     test('creates collection with valid metadata', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'New Collection',
         description: 'A new test collection'
       };
@@ -123,7 +121,7 @@ describe('CollectionManager', () => {
     });
 
     test('creates collection with minimal metadata', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Minimal'
       };
 
@@ -131,7 +129,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails when collection already exists', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Duplicate'
       };
 
@@ -140,7 +138,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with empty collection name', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: ''
       };
 
@@ -148,7 +146,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with whitespace-only name', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: '   '
       };
 
@@ -156,7 +154,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with leading whitespace in name', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: '  Leading'
       };
 
@@ -164,7 +162,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with trailing whitespace in name', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Trailing  '
       };
 
@@ -172,7 +170,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with name exceeding 200 characters', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'a'.repeat(201)
       };
 
@@ -180,7 +178,7 @@ describe('CollectionManager', () => {
     });
 
     test('succeeds with name exactly 200 characters', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'a'.repeat(200)
       };
 
@@ -188,7 +186,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with description exceeding 2000 characters', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Valid Name',
         description: 'a'.repeat(2001)
       };
@@ -197,7 +195,7 @@ describe('CollectionManager', () => {
     });
 
     test('succeeds with description exactly 2000 characters', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Valid Name',
         description: 'a'.repeat(2000)
       };
@@ -206,7 +204,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with empty secretName', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Valid Name',
         secretName: ''
       };
@@ -215,7 +213,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with secretName exceeding 100 characters', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Valid Name',
         secretName: 'a'.repeat(101)
       };
@@ -224,7 +222,7 @@ describe('CollectionManager', () => {
     });
 
     test('succeeds with valid secretName', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Valid Name',
         secretName: 'my-secret'
       };
@@ -239,7 +237,7 @@ describe('CollectionManager', () => {
 
   describe('delete', () => {
     test('deletes existing mutable collection', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'To Delete'
       };
 
@@ -272,7 +270,7 @@ describe('CollectionManager', () => {
 
   describe('updateMetadata', () => {
     beforeEach(() => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Original Name',
         description: 'Original description'
       };
@@ -280,7 +278,7 @@ describe('CollectionManager', () => {
     });
 
     test('updates collection name', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'Updated Name'
       };
 
@@ -288,7 +286,7 @@ describe('CollectionManager', () => {
     });
 
     test('updates collection description', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         description: 'Updated description'
       };
 
@@ -296,7 +294,7 @@ describe('CollectionManager', () => {
     });
 
     test('updates multiple metadata fields', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'New Name',
         description: 'New description'
       };
@@ -305,7 +303,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails for non-existent collection', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'New Name'
       };
 
@@ -319,7 +317,7 @@ describe('CollectionManager', () => {
         items: {}
       });
 
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'New Name'
       };
 
@@ -329,7 +327,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with empty name', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: ''
       };
 
@@ -337,7 +335,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with whitespace-only name', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: '   '
       };
 
@@ -345,7 +343,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with leading whitespace', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: '  Leading'
       };
 
@@ -355,7 +353,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with trailing whitespace', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'Trailing  '
       };
 
@@ -365,7 +363,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with name exceeding 200 characters', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'a'.repeat(201)
       };
 
@@ -375,7 +373,7 @@ describe('CollectionManager', () => {
     });
 
     test('fails with description exceeding 2000 characters', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         description: 'a'.repeat(2001)
       };
 
@@ -385,7 +383,7 @@ describe('CollectionManager', () => {
     });
 
     test('succeeds with empty updates object', () => {
-      const updates: Partial<ICollectionSourceMetadata> = {};
+      const updates: Partial<ICollectionRuntimeMetadata> = {};
 
       expect(manager.updateMetadata('test-coll' as CollectionId, updates)).toSucceed();
     });
@@ -401,7 +399,7 @@ describe('CollectionManager', () => {
     });
 
     test('returns true for existing collection', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Existing'
       };
 
@@ -410,7 +408,7 @@ describe('CollectionManager', () => {
     });
 
     test('returns false after collection is deleted', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'To Delete'
       };
 
@@ -428,7 +426,7 @@ describe('CollectionManager', () => {
 
   describe('isMutable', () => {
     test('returns true for mutable collection', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Mutable'
       };
 
@@ -458,7 +456,7 @@ describe('CollectionManager', () => {
   describe('createWithFile', () => {
     describe('without mutable file source', () => {
       test('fails when no mutable data directory is available', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'File Collection'
         };
 
@@ -471,7 +469,7 @@ describe('CollectionManager', () => {
       });
 
       test('fails with invalid metadata', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: ''
         };
 
@@ -479,7 +477,7 @@ describe('CollectionManager', () => {
       });
 
       test('fails when collection already exists', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'Existing'
         };
 
@@ -517,7 +515,7 @@ describe('CollectionManager', () => {
       });
 
       test('successfully creates collection with file', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'Test Collection',
           description: 'A test collection with file'
         };
@@ -538,7 +536,7 @@ describe('CollectionManager', () => {
       });
 
       test('created file contains metadata and empty items', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'Test Collection',
           description: 'Description here'
         };
@@ -556,7 +554,7 @@ describe('CollectionManager', () => {
       });
 
       test('registers source item after file creation', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'With Source'
         };
 
@@ -570,7 +568,7 @@ describe('CollectionManager', () => {
       });
 
       test('rolls back collection on file creation failure', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'Rollback Test'
         };
 
@@ -586,7 +584,7 @@ describe('CollectionManager', () => {
       });
 
       test('fails with invalid metadata', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'a'.repeat(201)
         };
 
@@ -599,7 +597,7 @@ describe('CollectionManager', () => {
       });
 
       test('fails when collection already exists', () => {
-        const metadata: ICollectionSourceMetadata = {
+        const metadata: ICollectionFileMetadata = {
           name: 'Duplicate'
         };
 
@@ -809,7 +807,7 @@ describe('CollectionManager', () => {
 
   describe('integration scenarios', () => {
     test('create, update, and delete lifecycle', () => {
-      const metadata: ICollectionSourceMetadata = {
+      const metadata: ICollectionFileMetadata = {
         name: 'Initial Name',
         description: 'Initial description'
       };
@@ -819,7 +817,7 @@ describe('CollectionManager', () => {
       expect(manager.exists('lifecycle' as CollectionId)).toBe(true);
 
       // Update
-      const updates: Partial<ICollectionSourceMetadata> = {
+      const updates: Partial<ICollectionRuntimeMetadata> = {
         name: 'Updated Name',
         description: 'Updated description'
       };
@@ -831,9 +829,9 @@ describe('CollectionManager', () => {
     });
 
     test('multiple collections can be managed independently', () => {
-      const metadata1: ICollectionSourceMetadata = { name: 'Collection 1' };
-      const metadata2: ICollectionSourceMetadata = { name: 'Collection 2' };
-      const metadata3: ICollectionSourceMetadata = { name: 'Collection 3' };
+      const metadata1: ICollectionFileMetadata = { name: 'Collection 1' };
+      const metadata2: ICollectionFileMetadata = { name: 'Collection 2' };
+      const metadata3: ICollectionFileMetadata = { name: 'Collection 3' };
 
       manager.create('coll1' as CollectionId, metadata1).orThrow();
       manager.create('coll2' as CollectionId, metadata2).orThrow();

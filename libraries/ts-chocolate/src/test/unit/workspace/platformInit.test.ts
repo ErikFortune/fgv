@@ -183,7 +183,7 @@ describe('workspace platformInit helpers', () => {
 
     test('respects mutable: false override', () => {
       const tree = createInMemoryTree();
-      const result = toUserLibrarySource(tree, false);
+      const result = toUserLibrarySource(tree, 'unknown', false);
       expect(result.mutable).toBe(false);
     });
 
@@ -420,6 +420,7 @@ describe('workspace platformInit helpers', () => {
       const extTree = createInMemoryTree();
       const additionalFileSources = [
         {
+          sourceName: 'test',
           directory: extTree,
           load: false
         }

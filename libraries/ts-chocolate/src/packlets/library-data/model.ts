@@ -70,11 +70,11 @@ export function isEncryptedCollectionFile(json: unknown): boolean {
 // ============================================================================
 
 /**
- * Optional metadata for collection source files.
- * When present in source files, provides additional information about the collection.
+ * Metadata as stored in collection source files (YAML/JSON).
+ * Does not include `sourceName` since that is not known at file-write time.
  * @public
  */
-export interface ICollectionSourceMetadata {
+export interface ICollectionFileMetadata {
   /**
    * Secret name for encryption/decryption.
    * If provided, the publish command uses this to look up the encryption key.
@@ -103,6 +103,21 @@ export interface ICollectionSourceMetadata {
 }
 
 /**
+ * Runtime metadata for a loaded collection.
+ * Extends {@link ICollectionFileMetadata} with `sourceName`, which is injected
+ * at load time from the file tree source rather than read from the file.
+ * @public
+ */
+export interface ICollectionRuntimeMetadata extends ICollectionFileMetadata {
+  /**
+   * Identifies which storage root loaded this collection.
+   * Matches the `id` field of the corresponding `IStorageRootSummary`.
+   * Examples: `'builtin'`, `'localStorage'`, or a persistent tree label.
+   */
+  readonly sourceName: string;
+}
+
+/**
  * Structure of collection source files (YAML/JSON).
  * @public
  */
@@ -110,7 +125,7 @@ export interface ICollectionSourceFile<T = JsonObject> {
   /**
    * Optional metadata about the collection.
    */
-  readonly metadata?: ICollectionSourceMetadata;
+  readonly metadata?: ICollectionFileMetadata;
 
   /**
    * The actual collection items, keyed by item ID.
@@ -195,7 +210,7 @@ export interface ICollection<
    * Optional metadata from the source file.
    * May be undefined for collections created programmatically.
    */
-  readonly metadata?: ICollectionSourceMetadata;
+  readonly metadata?: ICollectionRuntimeMetadata;
 }
 
 /**
@@ -316,6 +331,13 @@ export function resolveSubLibraryLoadSpec(
  */
 export interface IFileTreeSource<TCollectionId extends string = string> {
   /**
+   * Identifies which storage root loaded collections from this source.
+   * Stamped into each collection's metadata as `sourceName`.
+   * @defaultValue 'unknown'
+   */
+  readonly sourceName?: string;
+
+  /**
    * Root directory of the library tree.
    * The loader will navigate to the appropriate sub-path (e.g., 'data/ingredients' or 'data/recipes').
    */
@@ -355,6 +377,12 @@ export interface IFileTreeSource<TCollectionId extends string = string> {
  * @public
  */
 export interface ILibraryFileTreeSource {
+  /**
+   * Identifies which storage root loaded collections from this source.
+   * Stamped into each collection's metadata as `sourceName`.
+   */
+  readonly sourceName: string;
+
   /**
    * Root directory of the library tree.
    * The loader will navigate to sub-paths like 'data/ingredients' and 'data/recipes'.

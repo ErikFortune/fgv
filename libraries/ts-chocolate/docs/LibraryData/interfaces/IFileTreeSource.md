@@ -30,6 +30,23 @@ Description
 <tbody>
 <tr><td>
 
+[sourceName](./IFileTreeSource.sourceName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Identifies which storage root loaded collections from this source.
+
+</td></tr>
+<tr><td>
+
 [directory](./IFileTreeSource.directory.md)
 
 </td><td>

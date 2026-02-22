@@ -51,7 +51,7 @@ Collection identifier.
 
 </td><td>
 
-[ICollectionSourceMetadata](ICollectionSourceMetadata.md)
+[ICollectionFileMetadata](ICollectionFileMetadata.md)
 
 </td><td>
 

@@ -679,7 +679,7 @@ describe('SettingsManager', () => {
       expect(result).toFailWith(/failed to save.*device-.*\.json/i);
     });
 
-    test('saves common settings even if device save fails', async () => {
+    test('creates missing device settings file on mutable tree', async () => {
       // Create a tree with settings directory but only common file exists
       const files: FileTree.IInMemoryFile[] = [
         {
@@ -698,12 +698,12 @@ describe('SettingsManager', () => {
       manager.updateCommonSettings({ tools: { scaling: { weightUnit: 'kg' } } }).orThrow();
       manager.updateDeviceSettings({ deviceName: 'Updated' }).orThrow();
 
-      // Should fail on device save (file doesn't exist but directory does)
+      // Mutable trees support createChildFile, so new device file is created
       const result = await manager.save();
-      expect(result).toFailWith(/cannot create new settings file.*device/i);
+      expect(result).toSucceedWith(true);
     });
 
-    test('clears common dirty flag even if device save fails', async () => {
+    test('persists both common and device settings when device file is created', async () => {
       // Create a tree with settings directory and common file but no device file
       const files: FileTree.IInMemoryFile[] = [
         {
@@ -722,9 +722,10 @@ describe('SettingsManager', () => {
 
       await manager.save();
 
-      // After failed save, common should be persisted but device should not
+      // Both common and device settings should be persisted
       const manager2 = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
       expect(manager2.getCommonSettings().tools?.scaling?.weightUnit).toBe('kg');
+      expect(manager2.getDeviceSettings().deviceName).toBe('Updated');
     });
   });
 
@@ -733,8 +734,8 @@ describe('SettingsManager', () => {
   // ============================================================================
 
   describe('_createNewSettingsFile', () => {
-    test('fails when trying to create new file in existing directory', async () => {
-      // Create settings directory with only one settings file
+    test('creates missing device file on mutable tree', async () => {
+      // Create settings directory with only common settings file
       const files: FileTree.IInMemoryFile[] = [
         {
           path: `/library/${SETTINGS_DIR_PATH}/${COMMON_SETTINGS_FILENAME}`,
@@ -748,15 +749,14 @@ describe('SettingsManager', () => {
       const manager = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
 
       // Device file doesn't exist, only common exists
-      // Update device to make it dirty
       manager.updateDeviceSettings({ deviceName: 'New Device' }).orThrow();
 
-      // Save should fail because we can't create the new device file
+      // Mutable trees support createChildFile, so new device file is created
       const result = await manager.save();
-      expect(result).toFailWith(/cannot create new settings file/i);
+      expect(result).toSucceedWith(true);
     });
 
-    test('hits file creation path when common file is missing', async () => {
+    test('creates missing common file on mutable tree', async () => {
       // Create settings directory with only device file
       const files: FileTree.IInMemoryFile[] = [
         {
@@ -773,9 +773,30 @@ describe('SettingsManager', () => {
       // Common file doesn't exist, will be dirty with defaults
       expect(manager.isDirty).toBe(true);
 
-      // Try to save - should fail trying to create common.json
+      // Mutable trees support createChildFile, so common file is created
       const result = await manager.save();
-      expect(result).toFailWith(/cannot create new settings file/i);
+      expect(result).toSucceedWith(true);
+    });
+
+    test('fails when tree does not support file creation', async () => {
+      // Create immutable settings directory with only common settings file
+      const files: FileTree.IInMemoryFile[] = [
+        {
+          path: `/library/${SETTINGS_DIR_PATH}/${COMMON_SETTINGS_FILENAME}`,
+          contents: validCommonSettings
+        },
+        { path: `/library/${SETTINGS_DIR_PATH}/readme.txt`, contents: 'placeholder' }
+      ];
+      const tree = FileTree.inMemory(files).orThrow();
+      const fileTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      const manager = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+
+      // Device file doesn't exist and tree is immutable
+      manager.updateDeviceSettings({ deviceName: 'New Device' }).orThrow();
+
+      const result = await manager.save();
+      expect(result).toFailWith(/cannot create new settings file.*mutability is disabled/i);
     });
   });
 });

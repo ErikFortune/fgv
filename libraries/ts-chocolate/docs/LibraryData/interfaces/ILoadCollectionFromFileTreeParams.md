@@ -113,6 +113,23 @@ Whether collections loaded from this source are built-in library data.
 </td></tr>
 <tr><td>
 
+[sourceName](./ILoadCollectionFromFileTreeParams.sourceName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Identifies which storage root loaded these collections.
+
+</td></tr>
+<tr><td>
+
 [included](./ILoadCollectionFromFileTreeParams.included.md)
 
 </td><td>

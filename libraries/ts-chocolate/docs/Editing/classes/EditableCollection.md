@@ -125,7 +125,7 @@ Protected raw access to the inner `Map<TK, TV>` object.
 
 </td><td>
 
-[ICollectionSourceMetadata](../../interfaces/ICollectionSourceMetadata.md)
+[ICollectionFileMetadata](../../interfaces/ICollectionFileMetadata.md)
 
 </td><td>
 

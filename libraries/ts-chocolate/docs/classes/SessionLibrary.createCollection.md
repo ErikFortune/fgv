@@ -7,7 +7,7 @@ Creates a new mutable collection for sessions.
 **Signature:**
 
 ```typescript
-createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
+createCollection(collectionId: CollectionId, metadata?: ICollectionRuntimeMetadata): Result<CollectionId>;
 ```
 
 **Parameters:**
@@ -15,7 +15,7 @@ createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadat
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>collectionId</td><td>CollectionId</td><td>The ID for the new collection</td></tr>
-<tr><td>metadata</td><td>ICollectionSourceMetadata</td><td>Optional metadata for the collection</td></tr>
+<tr><td>metadata</td><td>ICollectionRuntimeMetadata</td><td>Optional metadata for the collection</td></tr>
 </tbody></table>
 
 **Returns:**

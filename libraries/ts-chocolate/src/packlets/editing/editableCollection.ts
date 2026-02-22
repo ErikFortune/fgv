@@ -28,13 +28,15 @@ import {
   Success,
   ValidatingResultMap,
   fail,
+  omit,
   succeed
 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { CollectionId, Helpers as CommonHelpers } from '../common';
 import {
   ICollectionSourceFile,
-  ICollectionSourceMetadata,
+  ICollectionFileMetadata,
+  ICollectionRuntimeMetadata,
   SubLibraryBase,
   Converters as LibraryDataConverters
 } from '../library-data';
@@ -58,8 +60,9 @@ export interface IEditableCollectionParams<T, TBaseId extends string = string> {
 
   /**
    * Collection metadata (name, description, etc.).
+   * Accepts ICollectionFileMetadata or ICollectionRuntimeMetadata; sourceName is stripped and not stored.
    */
-  readonly metadata: ICollectionSourceMetadata;
+  readonly metadata: ICollectionFileMetadata;
 
   /**
    * Whether this collection is mutable.
@@ -123,7 +126,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    */
   public readonly sourceItem?: FileTree.FileTreeItem;
 
-  private _metadata: ICollectionSourceMetadata;
+  private _metadata: ICollectionFileMetadata;
 
   /**
    * Create an editable collection.
@@ -132,7 +135,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   private constructor(
     collectionId: CollectionId,
     isMutable: boolean,
-    metadata: ICollectionSourceMetadata,
+    metadata: ICollectionFileMetadata,
     params: Collections.IValidatingResultMapConstructorParams<TBaseId, T>,
     sourceItem?: FileTree.FileTreeItem
   ) {
@@ -232,7 +235,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
 
       return EditableCollection.createEditable({
         ...params,
-        metadata: sourceFile.metadata ?? params.metadata,
+        metadata: { ...params.metadata, ...sourceFile.metadata },
         initialItems: itemsMap
       });
     });
@@ -262,7 +265,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
 
       return EditableCollection.createEditable({
         ...params,
-        metadata: sourceFile.metadata ?? params.metadata,
+        metadata: { ...params.metadata, ...sourceFile.metadata },
         initialItems: itemsMap
       });
     });
@@ -312,7 +315,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
 
         return EditableCollection.createEditable({
           ...params,
-          metadata: sourceFile.metadata ?? params.metadata,
+          metadata: { ...params.metadata, ...sourceFile.metadata },
           initialItems: itemsMap
         });
       });
@@ -355,9 +358,11 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     }
 
     // Create editable collection with sourceItem for persistence
+    // Strip sourceName (load-time concern) from metadata for editable context
+    const fileMetadata = omit(collection.metadata ?? ({} as ICollectionRuntimeMetadata), ['sourceName']);
     return EditableCollection.createEditable({
       collectionId,
-      metadata: collection.metadata ?? {},
+      metadata: fileMetadata,
       isMutable: collection.isMutable,
       initialItems: itemsMap,
       keyConverter,
@@ -373,7 +378,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   /**
    * Collection metadata.
    */
-  public get metadata(): ICollectionSourceMetadata {
+  public get metadata(): ICollectionFileMetadata {
     return { ...this._metadata };
   }
 
@@ -382,7 +387,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * @param metadata - Partial metadata to update
    * @returns Result indicating success or failure
    */
-  public updateMetadata(metadata: Partial<ICollectionSourceMetadata>): Result<void> {
+  public updateMetadata(metadata: Partial<ICollectionFileMetadata>): Result<void> {
     if (!this.isMutable) {
       return Failure.with(`Collection "${this.collectionId}" is immutable and cannot be modified`);
     }

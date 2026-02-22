@@ -43,7 +43,8 @@ import { type ReactiveWorkspace } from './reactiveWorkspace';
  */
 function loadAllSubLibrariesFromTree(
   tree: FileTree.FileTree,
-  entities: LibraryRuntime.ChocolateEntityLibrary
+  entities: LibraryRuntime.ChocolateEntityLibrary,
+  sourceName: string
 ): number {
   const subLibraries: Array<{ path: string; lib: LibraryData.SubLibraryBase<string, string, unknown> }> = [
     { path: LibraryData.LibraryPaths.ingredients, lib: entities.ingredients },
@@ -62,6 +63,7 @@ function loadAllSubLibrariesFromTree(
       continue;
     }
     const loadResult = lib.loadFromFileTreeSource({
+      sourceName,
       directory: dirResult.value,
       load: true,
       mutable: true
@@ -131,7 +133,7 @@ export async function restoreSavedDirectories(params: IRestoreSavedDirectoriesPa
     }
 
     const tree = treeResult.value;
-    const loaded = loadAllSubLibrariesFromTree(tree, entities);
+    const loaded = loadAllSubLibrariesFromTree(tree, entities, label);
 
     const accessors = tree.hal;
     if ('syncToDisk' in accessors && 'isDirty' in accessors) {

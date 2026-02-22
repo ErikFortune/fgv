@@ -37,7 +37,7 @@ import {
 } from '../../common';
 import {
   getSessionsDirectory,
-  ICollectionSourceMetadata,
+  ICollectionRuntimeMetadata,
   ISubLibraryAsyncParams,
   ISubLibraryCreateParams,
   ISubLibraryParams,
@@ -539,7 +539,7 @@ export class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, Any
    */
   public createCollection(
     collectionId: CollectionId,
-    metadata?: ICollectionSourceMetadata
+    metadata?: ICollectionRuntimeMetadata
   ): Result<CollectionId> {
     if (this.collections.has(collectionId)) {
       return fail(`Collection ${collectionId} already exists`);

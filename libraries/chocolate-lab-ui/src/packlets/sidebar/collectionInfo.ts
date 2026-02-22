@@ -143,7 +143,7 @@ function buildCollectionInfos(
   const infos: ICollectionInfo[] = [];
 
   for (const entry of subLibrary.collections.values()) {
-    const metadata = entry.metadata as LibraryData.ICollectionSourceMetadata | undefined;
+    const metadata = entry.metadata as LibraryData.ICollectionRuntimeMetadata | undefined;
     const isProtected = protectedIds.has(entry.id) || metadata?.secretName !== undefined;
 
     infos.push({

@@ -55,7 +55,7 @@ Collection identifier.
 
 </td><td>
 
-[ICollectionSourceMetadata](ICollectionSourceMetadata.md)
+[ICollectionRuntimeMetadata](ICollectionRuntimeMetadata.md)
 
 </td><td>
 
@@ -123,7 +123,7 @@ Remove item from collection.
 
 </td><td>
 
-(metadata: Partial&lt;[ICollectionSourceMetadata](ICollectionSourceMetadata.md)&gt;) =&gt; Result&lt;void&gt;
+(metadata: Partial&lt;[ICollectionRuntimeMetadata](ICollectionRuntimeMetadata.md)&gt;) =&gt; Result&lt;void&gt;
 
 </td><td>
 

@@ -291,6 +291,7 @@ export class ChocolateEntityLibrary {
     subLibraryId: SubLibraryId
   ): ReadonlyArray<IFileTreeSource<CollectionId>> {
     return sources.map((source) => ({
+      sourceName: source.sourceName,
       directory: source.directory,
       load: resolveBuiltInSpec<CollectionId>(source.load, subLibraryId),
       mutable: source.mutable,

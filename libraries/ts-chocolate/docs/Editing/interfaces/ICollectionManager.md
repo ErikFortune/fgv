@@ -52,7 +52,7 @@ Get all collection IDs in the library.
 
 </td><td>
 
-(collectionId: [CollectionId](../../type-aliases/CollectionId.md)) =&gt; Result&lt;[ICollectionSourceMetadata](../../interfaces/ICollectionSourceMetadata.md)&gt;
+(collectionId: [CollectionId](../../type-aliases/CollectionId.md)) =&gt; Result&lt;[ICollectionRuntimeMetadata](../../interfaces/ICollectionRuntimeMetadata.md)&gt;
 
 </td><td>
 
@@ -69,7 +69,7 @@ Get metadata for a specific collection by ID.
 
 </td><td>
 
-(collectionId: [CollectionId](../../type-aliases/CollectionId.md), metadata: [ICollectionSourceMetadata](../../interfaces/ICollectionSourceMetadata.md)) =&gt; Result&lt;AggregatedResultMapEntry&lt;[CollectionId](../../type-aliases/CollectionId.md), TBaseId, TItem&gt;&gt;
+(collectionId: [CollectionId](../../type-aliases/CollectionId.md), metadata: [ICollectionFileMetadata](../../interfaces/ICollectionFileMetadata.md)) =&gt; Result&lt;AggregatedResultMapEntry&lt;[CollectionId](../../type-aliases/CollectionId.md), TBaseId, TItem&gt;&gt;
 
 </td><td>
 
@@ -86,7 +86,7 @@ Create a new mutable collection.
 
 </td><td>
 
-(collectionId: [CollectionId](../../type-aliases/CollectionId.md)) =&gt; Result&lt;AggregatedResultMapEntry&lt;[CollectionId](../../type-aliases/CollectionId.md), TBaseId, TItem, [ICollectionSourceMetadata](../../interfaces/ICollectionSourceMetadata.md)&gt;&gt;
+(collectionId: [CollectionId](../../type-aliases/CollectionId.md)) =&gt; Result&lt;AggregatedResultMapEntry&lt;[CollectionId](../../type-aliases/CollectionId.md), TBaseId, TItem, [ICollectionRuntimeMetadata](../../interfaces/ICollectionRuntimeMetadata.md)&gt;&gt;
 
 </td><td>
 
@@ -103,7 +103,7 @@ Delete a mutable collection.
 
 </td><td>
 
-(collectionId: [CollectionId](../../type-aliases/CollectionId.md), metadata: Partial&lt;[ICollectionSourceMetadata](../../interfaces/ICollectionSourceMetadata.md)&gt;) =&gt; Result&lt;[ICollectionSourceMetadata](../../interfaces/ICollectionSourceMetadata.md)&gt;
+(collectionId: [CollectionId](../../type-aliases/CollectionId.md), metadata: Partial&lt;[ICollectionRuntimeMetadata](../../interfaces/ICollectionRuntimeMetadata.md)&gt;) =&gt; Result&lt;[ICollectionRuntimeMetadata](../../interfaces/ICollectionRuntimeMetadata.md)&gt;
 
 </td><td>
 

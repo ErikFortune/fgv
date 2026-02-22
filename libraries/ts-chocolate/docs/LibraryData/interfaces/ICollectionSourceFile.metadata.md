@@ -7,5 +7,5 @@ Optional metadata about the collection.
 **Signature:**
 
 ```typescript
-readonly metadata: ICollectionSourceMetadata;
+readonly metadata: ICollectionFileMetadata;
 ```

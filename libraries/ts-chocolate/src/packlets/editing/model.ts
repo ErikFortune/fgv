@@ -19,7 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 import { Collections, Result, ValidatingResultMap } from '@fgv/ts-utils';
-import { ICollectionSourceFile, ICollectionSourceMetadata } from '../library-data';
+import { ICollectionFileMetadata, ICollectionSourceFile, ICollectionRuntimeMetadata } from '../library-data';
 import { CollectionId } from '../common';
 
 // ============================================================================
@@ -235,7 +235,7 @@ export interface IEditableCollection<T, TBaseId extends string = string, TId ext
   /**
    * Collection metadata (name, description, etc.).
    */
-  readonly metadata: ICollectionSourceMetadata;
+  readonly metadata: ICollectionRuntimeMetadata;
 
   /**
    * Whether this collection is mutable.
@@ -261,7 +261,7 @@ export interface IEditableCollection<T, TBaseId extends string = string, TId ext
    * @param metadata - Partial metadata to update
    * @returns Result indicating success or failure
    */
-  readonly updateMetadata: (metadata: Partial<ICollectionSourceMetadata>) => Result<void>;
+  readonly updateMetadata: (metadata: Partial<ICollectionRuntimeMetadata>) => Result<void>;
 
   /**
    * Export collection to ICollectionSourceFile format.
@@ -291,7 +291,7 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @param collectionId - Collection identifier
    * @returns Result containing the collection metadata or failure
    */
-  readonly get: (collectionId: CollectionId) => Result<ICollectionSourceMetadata>;
+  readonly get: (collectionId: CollectionId) => Result<ICollectionRuntimeMetadata>;
 
   /**
    * Create a new mutable collection.
@@ -301,7 +301,7 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    */
   readonly create: (
     collectionId: CollectionId,
-    metadata: ICollectionSourceMetadata
+    metadata: ICollectionFileMetadata
   ) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
 
   /**
@@ -311,7 +311,7 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    */
   readonly delete: (
     collectionId: CollectionId
-  ) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+  ) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
 
   /**
    * Update collection metadata.
@@ -321,8 +321,8 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    */
   readonly updateMetadata: (
     collectionId: CollectionId,
-    metadata: Partial<ICollectionSourceMetadata>
-  ) => Result<ICollectionSourceMetadata>;
+    metadata: Partial<ICollectionRuntimeMetadata>
+  ) => Result<ICollectionRuntimeMetadata>;
 
   /**
    * Check if a collection exists.

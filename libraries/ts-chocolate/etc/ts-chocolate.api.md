@@ -747,6 +747,9 @@ function collectionContains<T, V>(value: V, getter: (item: T) => ReadonlyArray<V
 function collectionContainsAny<T, V>(values: V[], getter: (item: T) => ReadonlyArray<V> | undefined): FilterPredicate<T>;
 
 // @public
+const collectionFileMetadata: Converter<ICollectionFileMetadata>;
+
+// @public
 class CollectionFilter<T extends string> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -793,23 +796,23 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 class CollectionManager<TCompositeId extends string, TBaseId extends string, TItem> implements ICollectionManager {
     constructor(library: SubLibraryBase<TCompositeId, TBaseId, TItem>);
     copyEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
-    create(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
-    createWithFile(collectionId: CollectionId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
-    delete(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    create(collectionId: CollectionId, metadata: ICollectionFileMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
+    createWithFile(collectionId: CollectionId, metadata: ICollectionFileMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
+    delete(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
     deleteEntity(compositeId: string): Result<unknown>;
     exists(collectionId: CollectionId): boolean;
-    get(collectionId: CollectionId): Result<ICollectionSourceMetadata>;
+    get(collectionId: CollectionId): Result<ICollectionRuntimeMetadata>;
     getAll(): ReadonlyArray<CollectionId>;
     isMutable(collectionId: CollectionId): Result<boolean>;
     moveEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
-    updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
+    updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>): Result<ICollectionRuntimeMetadata>;
 }
 
 // @public
-function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
+const collectionRuntimeMetadata: Converter<ICollectionRuntimeMetadata>;
 
 // @public
-const collectionSourceMetadata: Converter<ICollectionSourceMetadata>;
+function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
 // @public
 function collectionYamlConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
@@ -1276,7 +1279,8 @@ declare namespace Converters_11 {
         collectionYamlConverter,
         collectionJsonConverter,
         removeJsonExtension,
-        collectionSourceMetadata,
+        collectionFileMetadata,
+        collectionRuntimeMetadata,
         ICollectionConverterParams,
         encryptedCollectionMetadata,
         encryptedCollectionFile
@@ -1688,7 +1692,7 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     static fromYaml<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     isDirty(): boolean;
     readonly isMutable: boolean;
-    get metadata(): ICollectionSourceMetadata;
+    get metadata(): ICollectionFileMetadata;
     static parse<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     save(): Result<void>;
     serialize(format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
@@ -1697,7 +1701,7 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     set(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     readonly sourceItem?: FileTree.FileTreeItem;
     update(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
-    updateMetadata(metadata: Partial<ICollectionSourceMetadata>): Result<void>;
+    updateMetadata(metadata: Partial<ICollectionFileMetadata>): Result<void>;
     static validateStructure(data: unknown): Result<true>;
 }
 
@@ -2986,7 +2990,7 @@ interface ICollection<T = JsonObject, TCOLLECTIONID extends string = string, TIT
     readonly isMutable: boolean;
     // (undocumented)
     readonly items: Record<TITEMID, T>;
-    readonly metadata?: ICollectionSourceMetadata;
+    readonly metadata?: ICollectionRuntimeMetadata;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2999,6 +3003,15 @@ interface ICollectionConverterParams<TCOLLECTIONID extends string, TITEMID exten
     itemConverter: Converter<TITEM> | Validator<TITEM>;
     // (undocumented)
     itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
+}
+
+// @public
+interface ICollectionFileMetadata {
+    readonly description?: string;
+    readonly name?: string;
+    readonly secretName?: string;
+    readonly tags?: ReadonlyArray<string>;
+    readonly variation?: string;
 }
 
 // @public
@@ -3038,15 +3051,22 @@ interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = s
 // @public
 interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
     readonly copyEntity: (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string) => Result<string>;
-    readonly create: (collectionId: CollectionId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
-    readonly delete: (collectionId: CollectionId) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    readonly create: (collectionId: CollectionId, metadata: ICollectionFileMetadata) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
+    readonly delete: (collectionId: CollectionId) => Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
     readonly deleteEntity: (compositeId: string) => Result<unknown>;
     readonly exists: (collectionId: CollectionId) => boolean;
-    readonly get: (collectionId: CollectionId) => Result<ICollectionSourceMetadata>;
+    readonly get: (collectionId: CollectionId) => Result<ICollectionRuntimeMetadata>;
     readonly getAll: () => ReadonlyArray<CollectionId>;
     readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
     readonly moveEntity: (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string) => Result<string>;
-    readonly updateMetadata: (collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>) => Result<ICollectionSourceMetadata>;
+    readonly updateMetadata: (collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>) => Result<ICollectionRuntimeMetadata>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICollectionFileMetadata"
+//
+// @public
+interface ICollectionRuntimeMetadata extends ICollectionFileMetadata {
+    readonly sourceName: string;
 }
 
 // @public
@@ -3060,16 +3080,7 @@ interface ICollectionSet<TCollectionId extends string = string> {
 // @public
 interface ICollectionSourceFile<T = JsonObject> {
     readonly items: Record<string, T>;
-    readonly metadata?: ICollectionSourceMetadata;
-}
-
-// @public
-interface ICollectionSourceMetadata {
-    readonly description?: string;
-    readonly name?: string;
-    readonly secretName?: string;
-    readonly tags?: ReadonlyArray<string>;
-    readonly variation?: string;
+    readonly metadata?: ICollectionFileMetadata;
 }
 
 // @public
@@ -3088,6 +3099,7 @@ export interface ICommonWorkspaceInitParams {
     readonly logger?: Logging.LogReporter<unknown>;
     readonly platformInit: IPlatformInitResult;
     readonly preWarm?: boolean;
+    readonly userLibrarySourceName?: string;
 }
 
 // @public
@@ -3497,9 +3509,9 @@ interface IEditableCollection<T, TBaseId extends string = string, TId extends st
     readonly export: () => Result<ICollectionSourceFile<T>>;
     readonly isMutable: boolean;
     readonly items: ReadonlyMap<TBaseId, T>;
-    readonly metadata: ICollectionSourceMetadata;
+    readonly metadata: ICollectionRuntimeMetadata;
     readonly remove: (baseId: TBaseId) => Result<T>;
-    readonly updateMetadata: (metadata: Partial<ICollectionSourceMetadata>) => Result<void>;
+    readonly updateMetadata: (metadata: Partial<ICollectionRuntimeMetadata>) => Result<void>;
 }
 
 // @public
@@ -3508,7 +3520,7 @@ interface IEditableCollectionParams<T, TBaseId extends string = string> {
     readonly initialItems: ReadonlyMap<TBaseId, T>;
     readonly isMutable: boolean;
     readonly keyConverter: Converter<TBaseId, unknown>;
-    readonly metadata: ICollectionSourceMetadata;
+    readonly metadata: ICollectionFileMetadata;
     readonly sourceItem?: FileTree.FileTreeItem;
     readonly valueConverter: Converter<T, unknown>;
 }
@@ -3618,6 +3630,7 @@ interface IFileTreeSource<TCollectionId extends string = string> {
     readonly load?: LibraryLoadSpec<TCollectionId>;
     readonly mutable?: MutabilitySpec;
     readonly skipMissingDirectories?: boolean;
+    readonly sourceName?: string;
 }
 
 // @public
@@ -4207,6 +4220,7 @@ interface ILibraryFileTreeSource {
     readonly load?: FullLibraryLoadSpec;
     readonly mutable?: MutabilitySpec;
     readonly skipMissingDirectories?: boolean;
+    readonly sourceName: string;
 }
 
 // @public
@@ -4231,6 +4245,7 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
     readonly onEncryptedFile?: EncryptedFileHandling;
     // (undocumented)
     readonly recurseWithDelimiter?: string;
+    readonly sourceName?: string;
 }
 
 // @public
@@ -4604,7 +4619,7 @@ class IngredientInventoryLibrary extends SubLibraryBase<IngredientInventoryEntry
     static create(params?: IIngredientInventoryLibraryParams): Result<IngredientInventoryLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: IIngredientInventoryLibraryAsyncParams): Promise<Result<IngredientInventoryLibrary>>;
-    createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
+    createCollection(collectionId: CollectionId, metadata?: ICollectionRuntimeMetadata): Result<CollectionId>;
     getAllEntries(): ReadonlyArray<IIngredientInventoryEntryEntity>;
     getForIngredient(ingredientId: IngredientId): Result<IIngredientInventoryEntryEntity>;
     hasForIngredient(ingredientId: IngredientId): boolean;
@@ -6218,7 +6233,8 @@ declare namespace LibraryData {
         resolveSubLibraryLoadSpec,
         IEncryptedCollectionMetadata,
         EncryptedCollectionFile,
-        ICollectionSourceMetadata,
+        ICollectionFileMetadata,
+        ICollectionRuntimeMetadata,
         ICollectionSourceFile,
         FilterPattern,
         ILibraryLoadParams,
@@ -6744,7 +6760,7 @@ class MoldInventoryLibrary extends SubLibraryBase<MoldInventoryEntryId, MoldInve
     static create(params?: IMoldInventoryLibraryParams): Result<MoldInventoryLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: IMoldInventoryLibraryAsyncParams): Promise<Result<MoldInventoryLibrary>>;
-    createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
+    createCollection(collectionId: CollectionId, metadata?: ICollectionRuntimeMetadata): Result<CollectionId>;
     getAllEntries(): ReadonlyArray<IMoldInventoryEntryEntity>;
     getForMold(moldId: MoldId): Result<IMoldInventoryEntryEntity>;
     hasForMold(moldId: MoldId): boolean;
@@ -7537,7 +7553,7 @@ class SessionLibrary extends SubLibraryBase<SessionId, BaseSessionId, AnySession
     static create(params?: ISessionLibraryParams): Result<SessionLibrary>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createAsync(params?: ISessionLibraryAsyncParams): Promise<Result<SessionLibrary>>;
-    createCollection(collectionId: CollectionId, metadata?: ICollectionSourceMetadata): Result<CollectionId>;
+    createCollection(collectionId: CollectionId, metadata?: ICollectionRuntimeMetadata): Result<CollectionId>;
     getActiveSessions(): ReadonlyArray<AnySessionEntity>;
     getAllSessions(): ReadonlyArray<AnySessionEntity>;
     getSession(sessionId: SessionId): Result<AnySessionEntity>;
@@ -7699,25 +7715,27 @@ type StorageRootId = string & {
 const storageRootId: Converter<StorageRootId>;
 
 // @public
-abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionSourceMetadata> {
+abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
     createCollectionFile(collectionId: CollectionId, content: string, extension?: 'yaml' | 'json'): Result<FileTree.FileTreeItem>;
     getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined;
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
     loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<CollectionId>>>;
+    // @internal
+    get mutableSourceName(): string | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<CollectionId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
-    removeCollection(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    removeCollection(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
-    updateCollectionMetadata(collectionId: CollectionId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
+    updateCollectionMetadata(collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>): Result<ICollectionRuntimeMetadata>;
 }
 
 // @public
@@ -7727,7 +7745,7 @@ type SubLibraryBuiltInTreeProvider = () => Result<FileTree.IFileTreeDirectoryIte
 type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<CollectionId, SubLibraryCollectionEntry<TBaseId, TItem>>;
 
 // @public
-type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>;
+type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>;
 
 // @public
 type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
@@ -7736,7 +7754,7 @@ type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collect
 type SubLibraryDirectoryNavigator = (tree: FileTree.FileTreeItem) => Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>;
+type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>;
 
 // @public
 type SubLibraryFileTreeSource = IFileTreeSource<CollectionId>;
@@ -7988,7 +8006,7 @@ function toSlotId(from: unknown): Result<SlotId>;
 function toUrlCategory(from: unknown): Result<UrlCategory>;
 
 // @public
-export function toUserLibrarySource(userLibraryTree: FileTree.IFileTreeDirectoryItem, mutable?: boolean): ILibraryFileTreeSource;
+export function toUserLibrarySource(userLibraryTree: FileTree.IFileTreeDirectoryItem, sourceName?: string, mutable?: boolean): ILibraryFileTreeSource;
 
 // @public
 class UnitScalerRegistry {

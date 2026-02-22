@@ -11,7 +11,7 @@ captured in the result's `protectedCollections` for later decryption.
 **Signature:**
 
 ```typescript
-loadFromFileTreeAsync(fileTree: FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>>;
+loadFromFileTreeAsync(fileTree: FileTreeItem, params: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>>;
 ```
 
 **Parameters:**

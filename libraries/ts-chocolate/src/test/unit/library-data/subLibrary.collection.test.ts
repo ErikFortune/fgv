@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 import { IngredientsLibrary } from '../../../packlets/entities';
 import { CollectionId } from '../../../packlets/common';
-import { ICollectionSourceMetadata } from '../../../packlets/library-data';
+import { ICollectionRuntimeMetadata } from '../../../packlets/library-data';
 
 describe('SubLibraryBase Collection Management', () => {
   let library: IngredientsLibrary;
@@ -124,7 +124,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('successfully validates metadata update for mutable collection', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'Updated Name',
         description: 'Updated description'
       };
@@ -133,7 +133,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('fails when collection does not exist', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'New Name'
       };
 
@@ -149,7 +149,7 @@ describe('SubLibraryBase Collection Management', () => {
         items: {}
       });
 
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'New Name'
       };
 
@@ -159,7 +159,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates empty collection name', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: ''
       };
 
@@ -169,7 +169,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates whitespace-only name', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: '   '
       };
 
@@ -179,7 +179,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates name with leading whitespace', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: '  Leading'
       };
 
@@ -189,7 +189,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates name with trailing whitespace', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'Trailing  '
       };
 
@@ -199,7 +199,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates name length exceeding 200 characters', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'a'.repeat(201)
       };
 
@@ -209,7 +209,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts name with exactly 200 characters', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'a'.repeat(200)
       };
 
@@ -217,7 +217,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates description length exceeding 2000 characters', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         description: 'a'.repeat(2001)
       };
 
@@ -227,7 +227,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts description with exactly 2000 characters', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         description: 'a'.repeat(2000)
       };
 
@@ -235,7 +235,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts valid name update', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'Valid Name'
       };
 
@@ -243,7 +243,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts valid description update', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         description: 'A valid description'
       };
 
@@ -251,7 +251,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts update with both name and description', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'Updated Name',
         description: 'Updated description'
       };
@@ -260,13 +260,13 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts empty metadata object', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {};
+      const metadata: Partial<ICollectionRuntimeMetadata> = {};
 
       expect(library.updateCollectionMetadata('test-collection' as CollectionId, metadata)).toSucceed();
     });
 
     test('treats empty secretName as removal (no validation error)', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         secretName: ''
       };
 
@@ -274,7 +274,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates secretName with leading/trailing whitespace when set', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         secretName: '  my-secret '
       };
 
@@ -284,7 +284,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('validates secretName length exceeding 100 characters', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         secretName: 'a'.repeat(101)
       };
 
@@ -294,7 +294,7 @@ describe('SubLibraryBase Collection Management', () => {
     });
 
     test('accepts valid secretName', () => {
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         secretName: 'my-secret'
       };
 
@@ -334,7 +334,7 @@ describe('SubLibraryBase Collection Management', () => {
         items: {}
       });
 
-      const metadata: Partial<ICollectionSourceMetadata> = {
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
         name: 'Updated Name'
       };
 
@@ -402,7 +402,7 @@ describe('SubLibraryBase Collection Management', () => {
         items: {}
       });
 
-      const badMetadata: Partial<ICollectionSourceMetadata> = {
+      const badMetadata: Partial<ICollectionRuntimeMetadata> = {
         name: '  ',
         description: 'a'.repeat(2001)
       };

@@ -7,5 +7,5 @@ Update collection metadata.
 **Signature:**
 
 ```typescript
-readonly updateMetadata: (metadata: Partial<ICollectionSourceMetadata>) => Result<void>;
+readonly updateMetadata: (metadata: Partial<ICollectionRuntimeMetadata>) => Result<void>;
 ```

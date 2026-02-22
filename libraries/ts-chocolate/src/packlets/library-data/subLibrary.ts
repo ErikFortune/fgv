@@ -43,12 +43,12 @@ import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 
 import { CollectionId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { collectionSourceMetadata as collectionSourceMetadataConverter } from './converters';
+import { collectionRuntimeMetadata as collectionRuntimeMetadataConverter } from './converters';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
 import {
-  ICollectionSourceMetadata,
+  ICollectionRuntimeMetadata,
   IEncryptionConfig,
   IFileTreeSource,
   IMergeLibrarySource,
@@ -71,7 +71,7 @@ import { navigateToDirectory } from './navigation';
 
 /**
  * A single entry in a sub-library collection.
- * Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
+ * Fixes the collection ID type to SourceId and metadata type to ICollectionRuntimeMetadata.
  *
  * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
  * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
@@ -81,12 +81,12 @@ export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collectio
   CollectionId,
   TBaseId,
   TItem,
-  ICollectionSourceMetadata
+  ICollectionRuntimeMetadata
 >;
 
 /**
  * Initialization type for a sub-library collection entry.
- * Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
+ * Fixes the collection ID type to SourceId and metadata type to ICollectionRuntimeMetadata.
  *
  * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
  * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
@@ -96,7 +96,7 @@ export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Agg
   CollectionId,
   TBaseId,
   TItem,
-  ICollectionSourceMetadata
+  ICollectionRuntimeMetadata
 >;
 
 /**
@@ -363,7 +363,7 @@ export abstract class SubLibraryBase<
   CollectionId,
   TBaseId,
   TItem,
-  ICollectionSourceMetadata
+  ICollectionRuntimeMetadata
 > {
   /**
    * The item ID converter for creating loaders.
@@ -408,6 +408,12 @@ export abstract class SubLibraryBase<
    * Used when the data directory doesn't exist yet at construction time.
    */
   private _mutableSourceRoot: FileTree.IFileTreeDirectoryItem | undefined;
+
+  /**
+   * Source name for the mutable file source.
+   * Injected into metadata when creating new collections.
+   */
+  private _mutableSourceName: string | undefined;
 
   /**
    * Creates a new SubLibraryBase instance with full loading support.
@@ -498,7 +504,7 @@ export abstract class SubLibraryBase<
       separator: '.',
       itemIdConverter: params.itemIdConverter,
       itemConverter: params.itemConverter,
-      metadataConverter: collectionSourceMetadataConverter,
+      metadataConverter: collectionRuntimeMetadataConverter,
       collections: allCollections
     });
 
@@ -549,10 +555,12 @@ export abstract class SubLibraryBase<
     // Find the first mutable file source and store its data directory.
     // A source is mutable if mutable is true, an array, or an object (anything except false/undefined).
     this._mutableDataDirectory = undefined;
+    this._mutableSourceName = undefined;
     for (const source of fileSources) {
       if (source.mutable === false || source.mutable === undefined) {
         continue;
       }
+      this._mutableSourceName = source.sourceName;
       const dataDirResult = params.directoryNavigator(source.directory);
       if (dataDirResult.isSuccess()) {
         this._mutableDataDirectory = dataDirResult.value;
@@ -596,6 +604,7 @@ export abstract class SubLibraryBase<
 
     return builtInTreeProvider().onSuccess((libraryRoot) => {
       const source: SubLibraryFileTreeSource = {
+        sourceName: 'builtin',
         directory: libraryRoot,
         load: spec,
         mutable: false // Built-ins are always immutable
@@ -658,7 +667,11 @@ export abstract class SubLibraryBase<
     }
 
     return loader
-      .loadFromFileTree(dataDirResult.value, { ...loadParams, onEncryptedFile })
+      .loadFromFileTree(dataDirResult.value, {
+        ...loadParams,
+        onEncryptedFile,
+        sourceName: source.sourceName ?? 'unknown'
+      })
       .onSuccess((result) => {
         // Mark protected collections with isBuiltIn flag
         /* c8 ignore next 4 - protected collection paths tested but coverage intermittently missed */
@@ -765,6 +778,7 @@ export abstract class SubLibraryBase<
     }
 
     const source: SubLibraryFileTreeSource = {
+      sourceName: 'builtin',
       directory: libraryRootResult.value,
       load: spec,
       mutable: false // Built-ins are always immutable
@@ -1370,6 +1384,15 @@ export abstract class SubLibraryBase<
     });
   }
 
+  /**
+   * The source name for the mutable file source.
+   * Used to inject sourceName into metadata when creating new collections.
+   * @internal
+   */
+  public get mutableSourceName(): string | undefined {
+    return this._mutableSourceName;
+  }
+
   // ============================================================================
   // Collection Manipulation Methods (for use by CollectionManager)
   // ============================================================================
@@ -1388,7 +1411,7 @@ export abstract class SubLibraryBase<
    */
   public removeCollection(
     collectionId: CollectionId
-  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionSourceMetadata>> {
+  ): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>> {
     return this.collections
       .get(collectionId)
       .asResult.withErrorFormat((msg) => `Collection "${collectionId}" not found: ${msg}`)
@@ -1416,8 +1439,8 @@ export abstract class SubLibraryBase<
    */
   public updateCollectionMetadata(
     collectionId: CollectionId,
-    metadata: Partial<ICollectionSourceMetadata>
-  ): Result<ICollectionSourceMetadata> {
+    metadata: Partial<ICollectionRuntimeMetadata>
+  ): Result<ICollectionRuntimeMetadata> {
     // Validation - collections.get returns a DetailedResult, use .asResult to convert
     const collectionResult = this.collections.get(collectionId).asResult;
     if (collectionResult.isFailure()) {
@@ -1435,19 +1458,13 @@ export abstract class SubLibraryBase<
       const omitSecret = metadata.secretName?.trim() === '';
 
       // Merge new metadata with existing metadata
-      const existingMetadata = collection.metadata ?? {};
-      const mergedMetadata: ICollectionSourceMetadata = omitSecret
-        ? omit(
-            {
-              ...existingMetadata,
-              ...metadata
-            },
-            ['secretName']
-          )
-        : {
-            ...existingMetadata,
-            ...metadata
-          };
+      const existingMetadata: ICollectionRuntimeMetadata = collection.metadata ?? {
+        sourceName: this._mutableSourceName ?? 'unknown'
+      };
+      const merged = { ...existingMetadata, ...metadata };
+      const mergedMetadata: ICollectionRuntimeMetadata = omitSecret
+        ? { ...omit(merged, ['secretName']), sourceName: existingMetadata.sourceName }
+        : merged;
 
       // Use parent's setCollectionMetadata to persist the metadata
       return this.setCollectionMetadata(collectionId, mergedMetadata);
@@ -1459,7 +1476,7 @@ export abstract class SubLibraryBase<
    * @param metadata - Partial metadata to validate
    * @returns Result indicating validation success or specific error
    */
-  private _validateMetadataUpdate(metadata: Partial<ICollectionSourceMetadata>): Result<void> {
+  private _validateMetadataUpdate(metadata: Partial<ICollectionRuntimeMetadata>): Result<void> {
     const aggregator = new MessageAggregator();
 
     // Validate name if provided
