@@ -284,6 +284,18 @@ describe('outputFormatter', () => {
       expect(result).toContain('x');
       expect(result).toContain('ExItem');
     });
+
+    test('respects minWidth in column config', () => {
+      const columnsWithMin: IColumnConfig[] = [
+        { header: 'ID', getValue: (item) => item.id, minWidth: 15 },
+        { header: 'Name', getValue: (item) => item.name }
+      ];
+      const items: IGenericListItem[] = [{ id: 'ab', name: 'Short', collectionId: 'c' as CollectionId }];
+      const result = formatGenericListTable(items, 'item', columnsWithMin);
+      const lines = result.split('\n');
+      // Header line should have ID padded to at least minWidth (15)
+      expect(lines[0].indexOf('|')).toBeGreaterThanOrEqual(15);
+    });
   });
 
   // ============================================================================
