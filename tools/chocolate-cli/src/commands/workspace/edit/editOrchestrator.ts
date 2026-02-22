@@ -105,6 +105,7 @@ export async function executeAdd(
  * Executes the update flow: modify an existing entity.
  *
  * @param workspace - The workspace
+ * @param entityType - Type of entity to update
  * @param entityId - Full entity ID (e.g., "user.my-task")
  * @param fromFile - Optional file path to import from
  * @param collectionOption - Optional collection ID override
@@ -112,16 +113,17 @@ export async function executeAdd(
  */
 export async function executeUpdate(
   workspace: IWorkspace,
+  entityType: EntityTypeName,
   entityId: string,
   fromFile?: string,
   collectionOption?: string
 ): Promise<Result<string>> {
-  // Parse entity ID to determine type and collection
+  // Parse entity ID to extract collection and base ID
   const parsed = parseEntityId(entityId);
   if (parsed.isFailure()) {
     return fail(parsed.message);
   }
-  const { entityType, collectionId: parsedCollectionId, baseId } = parsed.value;
+  const { collectionId: parsedCollectionId, baseId } = parsed.value;
   const collectionId = collectionOption ? (collectionOption as unknown as CollectionId) : parsedCollectionId;
 
   // Get existing entity
@@ -217,7 +219,7 @@ export async function executeInteractive(
     return fail(entityIdResult.message);
   }
 
-  return executeUpdate(workspace, entityIdResult.value, undefined, collectionOption);
+  return executeUpdate(workspace, entityType, entityIdResult.value, undefined, collectionOption);
 }
 
 // ============================================================================
@@ -393,12 +395,9 @@ async function selectEntityForUpdate(
 }
 
 /**
- * Parses a full entity ID like "user.my-task" into type, collection, and baseId.
- * The entity type must be determined by trying each sub-library.
+ * Parses a full entity ID like "user.my-task" into collection and baseId.
  */
-function parseEntityId(
-  entityId: string
-): Result<{ entityType: EntityTypeName; collectionId: CollectionId; baseId: string }> {
+function parseEntityId(entityId: string): Result<{ collectionId: CollectionId; baseId: string }> {
   const dotIndex = entityId.indexOf('.');
   if (dotIndex < 0) {
     return fail(`Invalid entity ID "${entityId}": expected format "collectionId.baseId"`);
@@ -411,13 +410,7 @@ function parseEntityId(
     return fail(`Invalid entity ID "${entityId}": both collection ID and base ID are required`);
   }
 
-  // Entity type is not encoded in the ID, so we need it from context
-  // For the update command, we'll require the entity type to be known from
-  // the interactive selection flow. For now, fail with a helpful message.
-  return fail(
-    `Cannot determine entity type from ID "${entityId}". ` +
-      'Use the interactive flow or specify --type when updating.'
-  );
+  return succeed({ collectionId, baseId });
 }
 
 /**

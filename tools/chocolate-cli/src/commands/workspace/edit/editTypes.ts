@@ -80,6 +80,7 @@ export interface IAddCommandOptions extends IEditCommandOptions {
  * Options for the update subcommand.
  */
 export interface IUpdateCommandOptions extends IEditCommandOptions {
+  readonly type: EntityTypeName;
   readonly fromFile?: string;
   readonly collection?: string;
 }

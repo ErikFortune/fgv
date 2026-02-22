@@ -126,6 +126,10 @@ function createUpdateSubcommand(): Command {
     .description('Edit an existing entity in a workspace collection')
     .argument('<entity-id>', 'Entity ID to edit (e.g., "user.my-task")')
     .requiredOption('-w, --workspace <path>', 'Path to workspace directory')
+    .requiredOption(
+      '-t, --type <type>',
+      'Entity type (task, ingredient, mold, procedure, filling, confection)'
+    )
     .option('-f, --from-file <path>', 'Import updated entity from a JSON or YAML file')
     .option('-c, --collection <id>', 'Collection ID override')
     .option('-d, --device-name <name>', 'Device name for this instance')
@@ -135,7 +139,13 @@ function createUpdateSubcommand(): Command {
         process.exit(1);
       }
 
-      const result = await executeUpdate(workspace, entityId, options.fromFile, options.collection);
+      const result = await executeUpdate(
+        workspace,
+        options.type,
+        entityId,
+        options.fromFile,
+        options.collection
+      );
 
       if (result.isFailure()) {
         showError(result.message);
