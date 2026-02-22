@@ -391,6 +391,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
 
     // Add to the TreeBuilder (read layer)
     const treeResult = this._tree.addDirectory(absolutePath);
+    /* c8 ignore next 3 - defensive: read layer failure would indicate internal inconsistency */
     if (treeResult.isFailure()) {
       return fail(treeResult.message);
     }
@@ -400,6 +401,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
     let dir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
     for (const part of parts) {
       const result = dir.getOrAddDirectory(part);
+      /* c8 ignore next 3 - defensive: mutable layer should match read layer state */
       if (result.isFailure()) {
         return fail(result.message);
       }

@@ -40,6 +40,30 @@ Protected constructor for derived classes.
 
 ## Methods
 
+### createDirectory()
+
+> **createDirectory**(`dirPath`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+
+Creates a directory at the given path, including any missing parent directories.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `dirPath` | `string` | The path of the directory to create. |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+
+`Success` with the absolute path if created, or `Failure` with an error message.
+
+#### Implementation of
+
+[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`createDirectory`](../interfaces/IMutableFileTreeAccessors.md#createdirectory)
+
+***
+
 ### fileIsMutable()
 
 > **fileIsMutable**(`path`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](../type-aliases/SaveDetail.md)\>

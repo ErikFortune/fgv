@@ -119,6 +119,7 @@ export class DirectoryItem<TCT extends string = string> implements IFileTreeDire
       return fail(`${this.absolutePath}: mutation not supported`);
     }
 
+    /* c8 ignore next 3 - defensive: createDirectory should always exist if isMutableAccessors is true */
     if (this._hal.createDirectory === undefined) {
       return fail(`${this.absolutePath}: directory creation not supported`);
     }
