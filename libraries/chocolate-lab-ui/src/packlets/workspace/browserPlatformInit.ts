@@ -133,7 +133,7 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
     const browserOptions = options as IBrowserPlatformInitOptions;
     const prefix = browserOptions.storageKeyPrefix ?? 'chocolate-lab';
     const autoSync = browserOptions.autoSync ?? true;
-    const deviceId = options.deviceId ?? this._generateDeviceId(browserOptions.storage);
+    const deviceId = options.deviceId ?? this._generateDeviceId(prefix, browserOptions.storage);
 
     return BrowserCrypto.createBrowserCryptoProvider()
       .withErrorFormat((msg) => `browser crypto provider: ${msg}`)
@@ -206,8 +206,8 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
    * @param storage - Optional storage override
    * @internal
    */
-  private _generateDeviceId(storage?: Storage): Settings.DeviceId {
-    const storageKey = 'chocolate-lab:device-id';
+  private _generateDeviceId(prefix: string, storage?: Storage): Settings.DeviceId {
+    const storageKey = `${prefix}:device-id`;
     const resolvedStorage = storage ?? (typeof window !== 'undefined' ? window.localStorage : undefined);
 
     if (resolvedStorage) {

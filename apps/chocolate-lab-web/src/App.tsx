@@ -139,14 +139,35 @@ function LockButton({
 const _bootLogger = new Logging.BootLogger();
 const _bootReporter = new Logging.LogReporter<unknown>({ logger: _bootLogger });
 
+/**
+ * Read the `?config=xxx` URL parameter once at module load.
+ * Only alphanumeric characters and hyphens are allowed.
+ */
+function _readConfigNamespace(): string | undefined {
+  const raw = new URLSearchParams(window.location.search).get('config');
+  if (!raw) return undefined;
+  if (!/^[a-zA-Z0-9-]+$/.test(raw)) {
+    _bootLogger.warn(`Ignoring invalid config namespace '${raw}' — only [a-zA-Z0-9-] allowed`);
+    return undefined;
+  }
+  return raw;
+}
+
+const _configNamespace = _readConfigNamespace();
+
 let _reactiveWorkspacePromise: Promise<ReactiveWorkspace> | undefined;
 
 async function _buildReactiveWorkspace(): Promise<{
   reactiveWorkspace: ReactiveWorkspace;
   warnings: ReadonlyArray<ISettingsValidationWarning>;
   logSettings: Settings.ILogSettings | undefined;
+  configNamespace: string | undefined;
 }> {
-  const platformInit = await initializeBrowserPlatform({ userLibraryPath: 'localStorage' });
+  const storageKeyPrefix = _configNamespace ? `chocolate-lab:${_configNamespace}` : 'chocolate-lab';
+  const platformInit = await initializeBrowserPlatform({
+    userLibraryPath: 'localStorage',
+    storageKeyPrefix
+  });
   const workspace = platformInit
     .onSuccess((init) =>
       createWorkspaceFromPlatform({
@@ -176,7 +197,7 @@ async function _buildReactiveWorkspace(): Promise<{
 
   const logSettings = workspace.settings?.getBootstrapSettings()?.logging;
 
-  return { reactiveWorkspace, warnings, logSettings };
+  return { reactiveWorkspace, warnings, logSettings, configNamespace: _configNamespace };
 }
 
 function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
@@ -293,10 +314,11 @@ function TabSidebarWithActions(props: {
 interface IAppShellProps {
   readonly displayLevel?: Logging.ReporterLogLevel;
   readonly toastLevel?: Logging.ReporterLogLevel;
+  readonly configNamespace?: string;
 }
 
 function AppShell(props: IAppShellProps): React.ReactElement {
-  const { displayLevel, toastLevel } = props;
+  const { displayLevel, toastLevel, configNamespace } = props;
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
   const { state: workspaceState, unlock, lock } = useWorkspaceState();
@@ -314,6 +336,11 @@ function AppShell(props: IAppShellProps): React.ReactElement {
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
   const collectionActions = useCollectionActions();
+
+  // Set document title to include config namespace
+  useEffect(() => {
+    document.title = configNamespace ? `Chocolate Lab [${configNamespace}]` : 'Chocolate Lab';
+  }, [configNamespace]);
 
   const filteredToasts = useMemo(
     () =>
@@ -433,7 +460,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
 
       {/* Top bar: mode selector */}
       <ModeSelector<AppMode>
-        title="Chocolate Lab"
+        title={configNamespace ? `Chocolate Lab [${configNamespace}]` : 'Chocolate Lab'}
         modes={MODES}
         activeMode={mode}
         onModeChange={guardedSetMode}
@@ -621,6 +648,7 @@ function WorkspaceBootstrap(): React.ReactElement {
         <AppShell
           displayLevel={logSettings?.displayLevel}
           toastLevel={logSettings?.toastLevel ?? 'warning'}
+          configNamespace={_configNamespace}
         />
       </KeyboardShortcutProvider>
     </WorkspaceProvider>
