@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Settings } from '@fgv/ts-chocolate';
 
-import { useWorkspace } from '../workspace';
+import { applyStorageTargetsFromWorkspace, useReactiveWorkspace, useWorkspace } from '../workspace';
 
 // ============================================================================
 // Draft Types
@@ -161,7 +161,23 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
   useEffect(() => {
     if (!settingsManager) return;
     const bootstrap = buildBootstrapDraft(settingsManager.getBootstrapSettings());
-    const common = buildCommonDraft(settingsManager.getCommonSettings());
+
+    // In bootstrap mode, getCommonSettings() returns a stub. Merge real values
+    // from preferences/bootstrap so the draft reflects persisted state.
+    const commonSettings = settingsManager.getCommonSettings();
+    const prefs = settingsManager.getPreferencesSettings();
+    const bootstrapSettings = settingsManager.getBootstrapSettings();
+    const commonSource = prefs
+      ? {
+          ...commonSettings,
+          defaultStorageTargets: prefs.defaultStorageTargets,
+          defaultTargets: prefs.defaultTargets,
+          tools: prefs.tools,
+          externalLibraries: bootstrapSettings?.externalLibraries
+        }
+      : commonSettings;
+    const common = buildCommonDraft(commonSource);
+
     const device = buildDeviceDraft(settingsManager.getDeviceSettings());
     setBootstrapDraft(bootstrap);
     setCommonDraft(common);
@@ -182,6 +198,8 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
   const updateDevice = useCallback((updates: Partial<IDeviceSettingsDraft>): void => {
     setDeviceDraft((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
+
+  const reactiveWorkspace = useReactiveWorkspace();
 
   const save = useCallback(async (): Promise<void> => {
     if (!settingsManager || !bootstrapDraft || !commonDraft || !deviceDraft) return;
@@ -228,16 +246,40 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
       }
     }
 
-    const commonResult = settingsManager.updateCommonSettings({
-      externalLibraries: commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined,
-      defaultStorageTargets: commonDraft.defaultStorageTargets,
-      tools: { scaling: scalingUpdate, workflow: workflowUpdate }
-    });
-
-    if (commonResult.isFailure()) {
-      setSaveError(`Failed to update common settings: ${commonResult.message}`);
-      setIsSaving(false);
-      return;
+    // Route fields to the correct settings file based on mode
+    if (settingsManager.getPreferencesSettings() !== undefined) {
+      // Bootstrap mode: preferences gets tools + storageTargets, bootstrap gets externalLibraries
+      const prefsResult = settingsManager.updatePreferencesSettings({
+        defaultStorageTargets: commonDraft.defaultStorageTargets,
+        tools: { scaling: scalingUpdate, workflow: workflowUpdate }
+      });
+      if (prefsResult.isFailure()) {
+        setSaveError(`Failed to update preferences settings: ${prefsResult.message}`);
+        setIsSaving(false);
+        return;
+      }
+      const extLibResult = settingsManager.updateBootstrapSettings({
+        externalLibraries:
+          commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined
+      });
+      if (extLibResult.isFailure()) {
+        setSaveError(`Failed to update bootstrap settings: ${extLibResult.message}`);
+        setIsSaving(false);
+        return;
+      }
+    } else {
+      // Legacy mode: all goes to common
+      const commonResult = settingsManager.updateCommonSettings({
+        externalLibraries:
+          commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined,
+        defaultStorageTargets: commonDraft.defaultStorageTargets,
+        tools: { scaling: scalingUpdate, workflow: workflowUpdate }
+      });
+      if (commonResult.isFailure()) {
+        setSaveError(`Failed to update common settings: ${commonResult.message}`);
+        setIsSaving(false);
+        return;
+      }
     }
 
     const deviceResult = settingsManager.updateDeviceSettings({
@@ -258,9 +300,24 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
       setSavedBootstrap(bootstrapDraft);
       setSavedCommon(commonDraft);
       setSavedDevice(deviceDraft);
+
+      applyStorageTargetsFromWorkspace({
+        localStorageRootDir: reactiveWorkspace.localStorageRootDir,
+        persistentTrees: reactiveWorkspace.persistentTrees,
+        targets: commonDraft.defaultStorageTargets,
+        entities: workspace.data.entities
+      });
     }
     setIsSaving(false);
-  }, [settingsManager, bootstrapDraft, savedBootstrap, commonDraft, deviceDraft]);
+  }, [
+    settingsManager,
+    bootstrapDraft,
+    savedBootstrap,
+    commonDraft,
+    deviceDraft,
+    reactiveWorkspace,
+    workspace
+  ]);
 
   const revert = useCallback((): void => {
     setBootstrapDraft(savedBootstrap);

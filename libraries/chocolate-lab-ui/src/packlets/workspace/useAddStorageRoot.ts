@@ -37,6 +37,7 @@ import {
   supportsFileSystemAccess
 } from '@fgv/ts-web-extras';
 
+import { applyStorageTargetsFromWorkspace } from './applyStorageTargets';
 import { useReactiveWorkspace, useWorkspace } from './useWorkspace';
 
 // ============================================================================
@@ -83,7 +84,7 @@ export function useAddStorageRoot(): IAddStorageRootActions {
       return;
     }
 
-    const treeResult = await FileApiTreeAccessors.createPersistent(dirHandle);
+    const treeResult = await FileApiTreeAccessors.createPersistent(dirHandle, { autoSync: true });
     if (treeResult.isFailure()) {
       workspace.data.logger.error(`Failed to open directory: ${treeResult.message}`);
       return;
@@ -93,27 +94,32 @@ export function useAddStorageRoot(): IAddStorageRootActions {
     const sourceName = dirHandle.name;
     const entities = workspace.data.entities;
 
-    const subLibraries: Array<{ path: string; lib: LibraryData.SubLibraryBase<string, string, unknown> }> = [
-      { path: LibraryData.LibraryPaths.ingredients, lib: entities.ingredients },
-      { path: LibraryData.LibraryPaths.fillings, lib: entities.fillings },
-      { path: LibraryData.LibraryPaths.confections, lib: entities.confections },
-      { path: LibraryData.LibraryPaths.decorations, lib: entities.decorations },
-      { path: LibraryData.LibraryPaths.molds, lib: entities.molds },
-      { path: LibraryData.LibraryPaths.procedures, lib: entities.procedures },
-      { path: LibraryData.LibraryPaths.tasks, lib: entities.tasks }
+    // Get tree root — loadFromFileTreeSource expects the root directory,
+    // not the data subdirectory (the navigator handles the path).
+    const rootResult = tree.getDirectory('/');
+    if (rootResult.isFailure()) {
+      workspace.data.logger.error(`Failed to get tree root: ${rootResult.message}`);
+      return;
+    }
+
+    const subLibraries: ReadonlyArray<{ lib: LibraryData.SubLibraryBase<string, string, unknown> }> = [
+      { lib: entities.ingredients },
+      { lib: entities.fillings },
+      { lib: entities.confections },
+      { lib: entities.decorations },
+      { lib: entities.molds },
+      { lib: entities.procedures },
+      { lib: entities.tasks }
     ];
 
     let totalLoaded = 0;
-    for (const { path, lib } of subLibraries) {
-      const dirResult = tree.getDirectory(`/${path}`);
-      if (dirResult.isFailure()) {
-        continue;
-      }
+    for (const { lib } of subLibraries) {
       const loadResult = lib.loadFromFileTreeSource({
         sourceName,
-        directory: dirResult.value,
+        directory: rootResult.value,
         load: true,
-        mutable: true
+        mutable: true,
+        skipMissingDirectories: true
       });
       if (loadResult.isSuccess()) {
         totalLoaded += loadResult.value;
@@ -136,6 +142,13 @@ export function useAddStorageRoot(): IAddStorageRootActions {
     if (saveResult.isFailure()) {
       workspace.data.logger.warn(`Failed to persist directory handle: ${saveResult.message}`);
     }
+
+    applyStorageTargetsFromWorkspace({
+      localStorageRootDir: reactiveWorkspace.localStorageRootDir,
+      persistentTrees: reactiveWorkspace.persistentTrees,
+      targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
+      entities
+    });
 
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();

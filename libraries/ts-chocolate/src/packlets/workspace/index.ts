@@ -86,6 +86,8 @@ export {
   type IWorkspaceInitResult,
   initializeWorkspace,
   createWorkspaceDirectories,
+  writeBootstrapSettings,
+  writePreferencesSettings,
   writeCommonSettings,
   writeDeviceSettings
 } from './workspaceInit';

@@ -30,11 +30,15 @@ import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
 import { createDefaultLibraryDirectories, LibraryPaths } from '../library-data';
 import {
+  createDefaultBootstrapSettings,
   createDefaultCommonSettings,
   createDefaultDeviceSettings,
+  createDefaultPreferencesSettings,
   DeviceId,
+  IBootstrapSettings,
   ICommonSettings,
-  IDeviceSettings
+  IDeviceSettings,
+  IPreferencesSettings
 } from '../settings';
 import { createDefaultUserEntityDirectories } from '../user-entities';
 
@@ -70,12 +74,22 @@ export interface IWorkspaceInitResult {
   readonly workspacePath: string;
 
   /**
-   * Created common settings.
+   * Created bootstrap settings.
+   */
+  readonly bootstrapSettings: IBootstrapSettings;
+
+  /**
+   * Created preferences settings.
+   */
+  readonly preferencesSettings: IPreferencesSettings;
+
+  /**
+   * Created common settings (legacy, for backward compatibility).
    */
   readonly commonSettings: ICommonSettings;
 
   /**
-   * Created device settings.
+   * Created device settings (legacy, for backward compatibility).
    */
   readonly deviceSettings: IDeviceSettings;
 }
@@ -110,6 +124,41 @@ export function createWorkspaceDirectories(workspacePath: string): Result<void> 
         )
       )
   );
+}
+
+/**
+ * Writes bootstrap settings to disk.
+ *
+ * @param workspacePath - Absolute path to workspace root
+ * @param settings - Bootstrap settings to write
+ * @returns Success or failure
+ * @public
+ */
+export function writeBootstrapSettings(workspacePath: string, settings: IBootstrapSettings): Result<void> {
+  const settingsPath = path.join(workspacePath, LibraryPaths.settings, LibraryPaths.settingsBootstrap);
+
+  return captureResult(() => {
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+  }).onFailure((msg) => fail(`Failed to write bootstrap settings: ${msg}`));
+}
+
+/**
+ * Writes preferences settings to disk.
+ *
+ * @param workspacePath - Absolute path to workspace root
+ * @param settings - Preferences settings to write
+ * @returns Success or failure
+ * @public
+ */
+export function writePreferencesSettings(
+  workspacePath: string,
+  settings: IPreferencesSettings
+): Result<void> {
+  const settingsPath = path.join(workspacePath, LibraryPaths.settings, LibraryPaths.settingsPreferences);
+
+  return captureResult(() => {
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+  }).onFailure((msg) => fail(`Failed to write preferences settings: ${msg}`));
 }
 
 /**
@@ -156,19 +205,33 @@ export function writeDeviceSettings(
  * This is the primary initialization function that tools should call.
  * It creates:
  * - Standard directory structure
- * - Default common settings with schemaVersion
- * - Default device settings with schemaVersion
+ * - Default bootstrap settings (two-phase init)
+ * - Default preferences settings (two-phase init)
+ * - Default common settings (legacy, for backward compatibility)
+ * - Default device settings (legacy, for backward compatibility)
  *
  * @param params - Workspace initialization parameters
  * @returns Success with initialization result, or Failure
  * @public
  */
 export function initializeWorkspace(params: IWorkspaceInitParams): Result<IWorkspaceInitResult> {
+  const bootstrapSettings = createDefaultBootstrapSettings();
+  const preferencesSettings = createDefaultPreferencesSettings();
   const commonSettings = createDefaultCommonSettings();
   const deviceSettings = createDefaultDeviceSettings(params.deviceId, params.deviceName);
 
   return createWorkspaceDirectories(params.workspacePath)
+    .onSuccess(() => writeBootstrapSettings(params.workspacePath, bootstrapSettings))
+    .onSuccess(() => writePreferencesSettings(params.workspacePath, preferencesSettings))
     .onSuccess(() => writeCommonSettings(params.workspacePath, commonSettings))
     .onSuccess(() => writeDeviceSettings(params.workspacePath, params.deviceId, deviceSettings))
-    .onSuccess(() => succeed({ workspacePath: params.workspacePath, commonSettings, deviceSettings }));
+    .onSuccess(() =>
+      succeed({
+        workspacePath: params.workspacePath,
+        bootstrapSettings,
+        preferencesSettings,
+        commonSettings,
+        deviceSettings
+      })
+    );
 }

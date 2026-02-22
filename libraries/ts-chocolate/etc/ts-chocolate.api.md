@@ -6245,8 +6245,10 @@ export interface IWorkspaceInitParams {
 
 // @public
 export interface IWorkspaceInitResult {
+    readonly bootstrapSettings: IBootstrapSettings;
     readonly commonSettings: ICommonSettings;
     readonly deviceSettings: IDeviceSettings;
+    readonly preferencesSettings: IPreferencesSettings;
     readonly workspacePath: string;
 }
 
@@ -7951,6 +7953,8 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     //
     // @internal
     removeCollection(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
+    removeSource(sourceName: string): number;
+    setActiveMutableSource(sourceName: string, dataDirectory: FileTree.IFileTreeDirectoryItem | undefined, sourceRoot?: FileTree.IFileTreeDirectoryItem): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //

@@ -2,7 +2,7 @@
 
 ## IWorkspaceInitResult.commonSettings property
 
-Created common settings.
+Created common settings (legacy, for backward compatibility).
 
 **Signature:**
 

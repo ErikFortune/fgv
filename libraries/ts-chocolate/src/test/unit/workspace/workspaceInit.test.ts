@@ -26,17 +26,23 @@ import '@fgv/ts-utils-jest';
 
 import {
   createWorkspaceDirectories,
+  writeBootstrapSettings,
+  writePreferencesSettings,
   writeCommonSettings,
   writeDeviceSettings,
   initializeWorkspace,
   IWorkspaceInitParams
 } from '../../../packlets/workspace';
 import {
+  createDefaultBootstrapSettings,
+  createDefaultPreferencesSettings,
   createDefaultCommonSettings,
   createDefaultDeviceSettings,
   DeviceId,
+  IBootstrapSettings,
   ICommonSettings,
-  IDeviceSettings
+  IDeviceSettings,
+  IPreferencesSettings
 } from '../../../packlets/settings';
 import { LibraryPaths } from '../../../packlets/library-data';
 
@@ -192,6 +198,93 @@ describe('workspaceInit', () => {
   });
 
   // ============================================================================
+  // writeBootstrapSettings
+  // ============================================================================
+
+  describe('writeBootstrapSettings', () => {
+    let bootstrapSettings: IBootstrapSettings;
+
+    beforeEach(() => {
+      createWorkspaceDirectories(tempDir).orThrow();
+      bootstrapSettings = createDefaultBootstrapSettings();
+    });
+
+    test('writes valid bootstrap settings JSON to correct path', () => {
+      expect(writeBootstrapSettings(tempDir, bootstrapSettings)).toSucceed();
+
+      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsBootstrap);
+      expect(fs.existsSync(settingsPath)).toBe(true);
+
+      const content = fs.readFileSync(settingsPath, 'utf8');
+      const parsed = JSON.parse(content) as IBootstrapSettings;
+      expect(parsed.schemaVersion).toBe(bootstrapSettings.schemaVersion);
+      expect(parsed.includeBuiltIn).toBe(true);
+    });
+
+    test('file contains properly formatted JSON with indentation', () => {
+      expect(writeBootstrapSettings(tempDir, bootstrapSettings)).toSucceed();
+
+      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsBootstrap);
+      const content = fs.readFileSync(settingsPath, 'utf8');
+      expect(content).toContain('\n  ');
+    });
+
+    test('fails when settings directory does not exist', () => {
+      const newTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-dirs-test-'));
+      try {
+        expect(writeBootstrapSettings(newTempDir, bootstrapSettings)).toFailWith(
+          /failed to write bootstrap settings/i
+        );
+      } finally {
+        fs.rmSync(newTempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  // ============================================================================
+  // writePreferencesSettings
+  // ============================================================================
+
+  describe('writePreferencesSettings', () => {
+    let preferencesSettings: IPreferencesSettings;
+
+    beforeEach(() => {
+      createWorkspaceDirectories(tempDir).orThrow();
+      preferencesSettings = createDefaultPreferencesSettings();
+    });
+
+    test('writes valid preferences settings JSON to correct path', () => {
+      expect(writePreferencesSettings(tempDir, preferencesSettings)).toSucceed();
+
+      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsPreferences);
+      expect(fs.existsSync(settingsPath)).toBe(true);
+
+      const content = fs.readFileSync(settingsPath, 'utf8');
+      const parsed = JSON.parse(content) as IPreferencesSettings;
+      expect(parsed.schemaVersion).toBe(preferencesSettings.schemaVersion);
+    });
+
+    test('file contains properly formatted JSON with indentation', () => {
+      expect(writePreferencesSettings(tempDir, preferencesSettings)).toSucceed();
+
+      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsPreferences);
+      const content = fs.readFileSync(settingsPath, 'utf8');
+      expect(content).toContain('\n  ');
+    });
+
+    test('fails when settings directory does not exist', () => {
+      const newTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-dirs-test-'));
+      try {
+        expect(writePreferencesSettings(newTempDir, preferencesSettings)).toFailWith(
+          /failed to write preferences settings/i
+        );
+      } finally {
+        fs.rmSync(newTempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  // ============================================================================
   // writeDeviceSettings
   // ============================================================================
 
@@ -289,8 +382,12 @@ describe('workspaceInit', () => {
       expect(initializeWorkspace(params)).toSucceedAndSatisfy((result) => {
         // Verify result structure
         expect(result.workspacePath).toBe(tempDir);
+        expect(result.bootstrapSettings).toBeDefined();
+        expect(result.preferencesSettings).toBeDefined();
         expect(result.commonSettings).toBeDefined();
         expect(result.deviceSettings).toBeDefined();
+        expect(result.bootstrapSettings.schemaVersion).toBe(1);
+        expect(result.preferencesSettings.schemaVersion).toBe(1);
         expect(result.commonSettings.schemaVersion).toBe(1);
         expect(result.deviceSettings.schemaVersion).toBe(1);
         expect(result.deviceSettings.deviceId).toBe(deviceId);
@@ -300,13 +397,17 @@ describe('workspaceInit', () => {
         expect(fs.existsSync(path.join(tempDir, LibraryPaths.ingredients))).toBe(true);
         expect(fs.existsSync(path.join(tempDir, LibraryPaths.confections))).toBe(true);
 
-        // Verify settings files exist
+        // Verify all settings files exist
+        const bootstrapPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsBootstrap);
+        const preferencesPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsPreferences);
         const commonPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
         const devicePath = path.join(
           tempDir,
           LibraryPaths.settings,
           `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`
         );
+        expect(fs.existsSync(bootstrapPath)).toBe(true);
+        expect(fs.existsSync(preferencesPath)).toBe(true);
         expect(fs.existsSync(commonPath)).toBe(true);
         expect(fs.existsSync(devicePath)).toBe(true);
       });
@@ -320,10 +421,17 @@ describe('workspaceInit', () => {
       };
 
       expect(initializeWorkspace(params)).toSucceedAndSatisfy((result) => {
-        // Verify common settings
+        // Verify bootstrap settings
+        expect(result.bootstrapSettings.schemaVersion).toBe(1);
+        expect(result.bootstrapSettings.includeBuiltIn).toBe(true);
+
+        // Verify preferences settings
+        expect(result.preferencesSettings.schemaVersion).toBe(1);
+
+        // Verify common settings (legacy)
         expect(result.commonSettings.schemaVersion).toBe(1);
 
-        // Verify device settings
+        // Verify device settings (legacy)
         expect(result.deviceSettings.deviceId).toBe(deviceId);
         expect(result.deviceSettings.deviceName).toBe(deviceName);
         expect(result.deviceSettings.schemaVersion).toBe(1);
@@ -338,13 +446,26 @@ describe('workspaceInit', () => {
 
       expect(initializeWorkspace(params)).toSucceed();
 
-      // Read and parse common settings
+      // Read and parse bootstrap settings
+      const bootstrapPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsBootstrap);
+      const bootstrapContent = fs.readFileSync(bootstrapPath, 'utf8');
+      const bootstrapParsed = JSON.parse(bootstrapContent) as IBootstrapSettings;
+      expect(bootstrapParsed.schemaVersion).toBe(1);
+      expect(bootstrapParsed.includeBuiltIn).toBe(true);
+
+      // Read and parse preferences settings
+      const preferencesPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsPreferences);
+      const preferencesContent = fs.readFileSync(preferencesPath, 'utf8');
+      const preferencesParsed = JSON.parse(preferencesContent) as IPreferencesSettings;
+      expect(preferencesParsed.schemaVersion).toBe(1);
+
+      // Read and parse common settings (legacy)
       const commonPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
       const commonContent = fs.readFileSync(commonPath, 'utf8');
       const commonParsed = JSON.parse(commonContent) as ICommonSettings;
       expect(commonParsed.schemaVersion).toBe(1);
 
-      // Read and parse device settings
+      // Read and parse device settings (legacy)
       const devicePath = path.join(
         tempDir,
         LibraryPaths.settings,
@@ -394,7 +515,7 @@ describe('workspaceInit', () => {
       expect(initializeWorkspace(params)).toFailWith(/failed to create workspace directories/i);
     });
 
-    test('fails gracefully if common settings write fails', () => {
+    test('fails gracefully if bootstrap settings write fails', () => {
       // Create directories but make settings directory read-only
       createWorkspaceDirectories(tempDir).orThrow();
       const settingsDir = path.join(tempDir, LibraryPaths.settings);
@@ -406,20 +527,19 @@ describe('workspaceInit', () => {
       };
 
       try {
-        expect(initializeWorkspace(params)).toFailWith(/failed to write common settings/i);
+        // Bootstrap is the first settings file written, so it fails first
+        expect(initializeWorkspace(params)).toFailWith(/failed to write bootstrap settings/i);
       } finally {
-        // Cleanup: restore permissions
         fs.chmodSync(settingsDir, 0o755);
       }
     });
 
     test('fails gracefully if device settings write fails', () => {
-      // Create directories
+      // Create directories and write all preceding settings files
       createWorkspaceDirectories(tempDir).orThrow();
-
-      // Write common settings successfully
-      const commonSettings = createDefaultCommonSettings();
-      writeCommonSettings(tempDir, commonSettings).orThrow();
+      writeBootstrapSettings(tempDir, createDefaultBootstrapSettings()).orThrow();
+      writePreferencesSettings(tempDir, createDefaultPreferencesSettings()).orThrow();
+      writeCommonSettings(tempDir, createDefaultCommonSettings()).orThrow();
 
       // Now make settings directory read-only to block device settings write
       const settingsDir = path.join(tempDir, LibraryPaths.settings);
@@ -433,7 +553,6 @@ describe('workspaceInit', () => {
       try {
         expect(initializeWorkspace(params)).toFailWith(/failed to write device settings/i);
       } finally {
-        // Cleanup: restore permissions
         fs.chmodSync(settingsDir, 0o755);
       }
     });

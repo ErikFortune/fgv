@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { CascadeContainer, type ICascadeColumn } from '@fgv/ts-app-shell';
 
@@ -51,6 +51,54 @@ export interface ISettingsCascadeViewProps {
 }
 
 // ============================================================================
+// Section list column content
+// ============================================================================
+
+function SectionListColumn({
+  activeSection,
+  onSelectSection
+}: {
+  readonly activeSection: SettingsSection | undefined;
+  readonly onSelectSection: (section: ISectionDef) => void;
+}): React.ReactElement {
+  const [sectionFilter, setSectionFilter] = useState('');
+  const filtered = SECTIONS.filter(
+    (s) => sectionFilter === '' || s.label.toLowerCase().includes(sectionFilter.toLowerCase())
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-2 py-1.5 border-b border-gray-200 shrink-0">
+        <input
+          type="search"
+          value={sectionFilter}
+          onChange={(e): void => setSectionFilter(e.target.value)}
+          placeholder="Filter…"
+          className="w-full px-2 py-1 text-xs border border-gray-200 rounded bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-choco-accent"
+        />
+      </div>
+      <nav className="flex-1 py-2 overflow-y-auto">
+        {filtered.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={(): void => onSelectSection(section)}
+            className={[
+              'w-full text-left px-4 py-2 text-sm transition-colors',
+              activeSection === section.id
+                ? 'bg-choco-accent/10 text-choco-accent font-medium border-r-2 border-choco-accent'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+            ].join(' ')}
+          >
+            {section.label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+// ============================================================================
 // Section content renderer
 // ============================================================================
 
@@ -72,7 +120,7 @@ function SectionContent({
   const { bootstrap, common, device, hasBootstrapChanges, updateBootstrap, updateCommon, updateDevice } =
     draft;
 
-  function handleSquashColumns(detailCols: ReadonlyArray<ICascadeColumn>): void {
+  function handleSquashColumns(subCols: ReadonlyArray<ICascadeColumn>): void {
     const sectionCol: ICascadeColumn = {
       key: sectionKey,
       label: sectionLabel,
@@ -86,7 +134,7 @@ function SectionContent({
         />
       )
     };
-    onSetColumns([sectionCol, ...detailCols]);
+    onSetColumns([sectionCol, ...subCols]);
   }
 
   switch (section) {
@@ -109,7 +157,13 @@ function SectionContent({
     case 'workflow':
       return <WorkflowSection workflow={common.workflow} onChange={updateCommon} />;
     case 'storage':
-      return <StorageSection onSquashColumns={handleSquashColumns} />;
+      return (
+        <StorageSection
+          onSquashColumns={handleSquashColumns}
+          onUpdateCommon={updateCommon}
+          currentStorageTargets={common.defaultStorageTargets}
+        />
+      );
     case 'libraries':
       return <LibrarySection />;
     case 'security':
@@ -126,13 +180,21 @@ function SectionContent({
 export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.ReactElement {
   const { onClose, onDirtyClose } = props;
   const draft = useSettingsDraft();
-  const [cascadeColumns, setCascadeColumns] = useState<ReadonlyArray<ICascadeColumn>>([]);
   const [activeSection, setActiveSection] = useState<SettingsSection | undefined>(undefined);
 
+  // Stable ref so handlePopTo/handleSelectSection can be called without stale closures
+  const handleSelectSectionRef = useRef<(section: ISectionDef) => void>(() => undefined);
+
+  // Column 0 is always the section list; columns 1+ are section content and detail panels
+  const [detailColumns, setDetailColumns] = useState<ReadonlyArray<ICascadeColumn>>([]);
+
+  // depth 0 = section list only; depth 1+ = section list + detail columns
   const handlePopTo = useCallback((depth: number): void => {
-    setCascadeColumns((prev) => prev.slice(0, depth));
-    if (depth === 0) {
+    if (depth <= 1) {
       setActiveSection(undefined);
+      setDetailColumns([]);
+    } else {
+      setDetailColumns((prev) => prev.slice(0, depth - 1));
     }
   }, []);
 
@@ -147,9 +209,6 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
 
   async function handleSave(): Promise<void> {
     await save();
-    if (!resolvedDraft.saveError) {
-      onClose();
-    }
   }
 
   function handleClose(): void {
@@ -162,90 +221,77 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
 
   function handleSelectSection(section: ISectionDef): void {
     setActiveSection(section.id);
-    const sectionColumn: ICascadeColumn = {
-      key: section.id,
-      label: section.label,
-      content: (
-        <SectionContent
-          section={section.id}
-          draft={resolvedDraft}
-          sectionKey={section.id}
-          sectionLabel={section.label}
-          onSetColumns={setCascadeColumns}
-        />
-      )
-    };
-    setCascadeColumns([sectionColumn]);
+    setDetailColumns([
+      {
+        key: section.id,
+        label: section.label,
+        content: (
+          <SectionContent
+            section={section.id}
+            draft={resolvedDraft}
+            sectionKey={section.id}
+            sectionLabel={section.label}
+            onSetColumns={setDetailColumns}
+          />
+        )
+      }
+    ]);
   }
 
+  // Keep the ref current so handlePopTo always calls the latest handleSelectSection
+  handleSelectSectionRef.current = handleSelectSection;
+
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Left: section list */}
-      <div className="flex flex-col w-48 shrink-0 border-r border-gray-200 overflow-hidden bg-white">
-        {/* Header */}
-        <div className="flex items-center px-3 py-1.5 border-b border-gray-200 shrink-0 bg-gray-50">
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Settings</span>
-        </div>
-
-        {/* Section nav */}
-        <nav className="flex-1 py-2 overflow-y-auto">
-          {SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              onClick={(): void => handleSelectSection(section)}
-              className={[
-                'w-full text-left px-4 py-2 text-sm transition-colors',
-                activeSection === section.id
-                  ? 'bg-choco-accent/10 text-choco-accent font-medium border-r-2 border-choco-accent'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-              ].join(' ')}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Footer: save/revert/cancel */}
-        <div className="border-t border-gray-200 px-3 py-3 shrink-0">
-          {saveError && <p className="text-xs text-red-600 mb-2">{saveError}</p>}
-          <div className="flex flex-col gap-1.5">
-            {isDirty && (
-              <button
-                type="button"
-                onClick={revert}
-                disabled={isSaving}
-                className="w-full px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
-                Revert
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isSaving}
-              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving || !isDirty}
-              className="w-full px-3 py-1.5 text-xs bg-choco-accent text-white rounded-md hover:bg-choco-accent/90 disabled:opacity-50 transition-colors"
-            >
-              {isSaving ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </div>
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Toolbar: full-width, above sidebar+cascade */}
+      <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-gray-200 bg-gray-50 shrink-0">
+        <div className="flex-1" />
+        {saveError && <span className="text-xs text-red-600">{saveError}</span>}
+        {isDirty && (
+          <button
+            type="button"
+            onClick={revert}
+            disabled={isSaving}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Revert
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={handleClose}
+          disabled={isSaving}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving || !isDirty}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-white bg-choco-primary hover:bg-choco-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isSaving ? 'Saving…' : 'Save'}
+        </button>
       </div>
 
-      {/* Right: cascade columns */}
-      {cascadeColumns.length > 0 ? (
-        <CascadeContainer columns={cascadeColumns} onPopTo={handlePopTo} rootLabel="Settings" />
-      ) : (
-        <div className="flex flex-1 items-center justify-center text-sm text-gray-400">Select a section</div>
-      )}
+      <CascadeContainer
+        columns={[
+          {
+            key: '__sections__',
+            label: 'Settings',
+            content: (
+              <SectionListColumn
+                activeSection={activeSection}
+                onSelectSection={(s): void => handleSelectSectionRef.current(s)}
+              />
+            )
+          },
+          ...detailColumns
+        ]}
+        onPopTo={handlePopTo}
+        rootLabel="Settings"
+      />
     </div>
   );
 }

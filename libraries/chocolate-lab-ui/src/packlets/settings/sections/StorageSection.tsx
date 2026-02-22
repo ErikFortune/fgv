@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
 import type { ICascadeColumn } from '@fgv/ts-app-shell';
+import { ConfirmDialog } from '@fgv/ts-app-shell';
 import { type Settings, type LibraryData } from '@fgv/ts-chocolate';
 
 import {
   useReactiveWorkspace,
   useWorkspace,
   useAddStorageRoot,
+  useRemoveStorageRoot,
   type IStorageRootSummary,
   type StorageCategory
 } from '../../workspace';
@@ -17,6 +19,10 @@ import {
 
 export interface IStorageSectionProps {
   readonly onSquashColumns: (cols: ReadonlyArray<ICascadeColumn>) => void;
+  readonly onUpdateCommon: (
+    updates: Partial<{ defaultStorageTargets: Settings.IDefaultStorageTargets | undefined }>
+  ) => void;
+  readonly currentStorageTargets: Settings.IDefaultStorageTargets | undefined;
 }
 
 interface ICollectionEntry {
@@ -170,6 +176,8 @@ interface IStorageRootDetailProps {
 export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactElement {
   const { root, subLibraries, onPushColumn, onClose } = props;
   const [selectedSubLibKey, setSelectedSubLibKey] = useState<string | undefined>(undefined);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const { removeStorageRoot } = useRemoveStorageRoot();
 
   function handleSelectSubLib(sub: ISubLibraryDef): void {
     if (selectedSubLibKey === sub.key) {
@@ -195,76 +203,106 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
     });
   }
 
+  async function handleConfirmRemove(): Promise<void> {
+    setConfirmRemove(false);
+    await removeStorageRoot(root.id);
+    onClose();
+  }
+
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900">{root.label}</h3>
-          <p className="text-xs text-gray-400 mt-0.5">{rootTypeLabel(root)}</p>
+    <>
+      <ConfirmDialog
+        isOpen={confirmRemove}
+        title="Remove Storage Root"
+        message={`Remove "${root.label}" from this session? Collections from this directory will be unloaded and any default storage targets pointing to it will be cleared.`}
+        confirmLabel="Remove"
+        severity="danger"
+        onConfirm={(): void => {
+          handleConfirmRemove().catch(() => undefined);
+        }}
+        onCancel={(): void => setConfirmRemove(false)}
+      />
+      <div className="p-6 space-y-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">{root.label}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">{rootTypeLabel(root)}</p>
+          </div>
+          <div className="flex items-center gap-2 ml-2">
+            {root.isLocal && (
+              <button
+                type="button"
+                onClick={(): void => setConfirmRemove(true)}
+                className="text-xs text-red-500 hover:text-red-700 hover:underline"
+              >
+                Remove
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 text-lg leading-none ml-2"
-          aria-label="Close"
-        >
-          &times;
-        </button>
-      </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-        <dt className="text-gray-400">Access</dt>
-        <dd className="text-gray-700 font-medium">{rootAccessLabel(root)}</dd>
-        <dt className="text-gray-400">Type</dt>
-        <dd className="text-gray-700">{rootTypeLabel(root)}</dd>
-        <dt className="text-gray-400">Stores</dt>
-        <dd>
-          <CategoryBadges categories={root.categories} />
-        </dd>
-      </dl>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          <dt className="text-gray-400">Access</dt>
+          <dd className="text-gray-700 font-medium">{rootAccessLabel(root)}</dd>
+          <dt className="text-gray-400">Type</dt>
+          <dd className="text-gray-700">{rootTypeLabel(root)}</dd>
+          <dt className="text-gray-400">Stores</dt>
+          <dd>
+            <CategoryBadges categories={root.categories} />
+          </dd>
+        </dl>
 
-      <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sub-libraries</p>
-        {subLibraries.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">No sub-libraries loaded.</p>
-        ) : (
-          <ul className="space-y-1">
-            {subLibraries.map((sub) => (
-              <li key={sub.key}>
-                <button
-                  type="button"
-                  onClick={(): void => handleSelectSubLib(sub)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors group ${
-                    selectedSubLibKey === sub.key
-                      ? 'bg-choco-accent/10 text-choco-accent'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <span
-                    className={`text-sm font-medium ${
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sub-libraries</p>
+          {subLibraries.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">No sub-libraries loaded.</p>
+          ) : (
+            <ul className="space-y-1">
+              {subLibraries.map((sub) => (
+                <li key={sub.key}>
+                  <button
+                    type="button"
+                    onClick={(): void => handleSelectSubLib(sub)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors group ${
                       selectedSubLibKey === sub.key
-                        ? 'text-choco-accent'
-                        : 'text-gray-800 group-hover:text-gray-900'
+                        ? 'bg-choco-accent/10 text-choco-accent'
+                        : 'hover:bg-gray-50'
                     }`}
                   >
-                    {sub.label}
-                  </span>
-                  <span className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-                    <span>
-                      {sub.collectionCount} collection{sub.collectionCount !== 1 ? 's' : ''}
+                    <span
+                      className={`text-sm font-medium ${
+                        selectedSubLibKey === sub.key
+                          ? 'text-choco-accent'
+                          : 'text-gray-800 group-hover:text-gray-900'
+                      }`}
+                    >
+                      {sub.label}
                     </span>
-                    <span>
-                      {sub.itemCount} item{sub.itemCount !== 1 ? 's' : ''}
+                    <span className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
+                      <span>
+                        {sub.collectionCount} collection{sub.collectionCount !== 1 ? 's' : ''}
+                      </span>
+                      <span>
+                        {sub.itemCount} item{sub.itemCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="text-gray-300">{selectedSubLibKey === sub.key ? '‹' : '›'}</span>
                     </span>
-                    <span className="text-gray-300">{selectedSubLibKey === sub.key ? '‹' : '›'}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -273,7 +311,7 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
 // ============================================================================
 
 export function StorageSection(props: IStorageSectionProps): React.ReactElement {
-  const { onSquashColumns } = props;
+  const { onSquashColumns, onUpdateCommon, currentStorageTargets } = props;
   const reactiveWorkspace = useReactiveWorkspace();
   const workspace = useWorkspace();
   const summary = reactiveWorkspace.storageSummary;
@@ -282,59 +320,30 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
 
   function getSubLibrariesForRoot(root: IStorageRootSummary): ISubLibraryDef[] {
     const sn = root.sourceName;
-    const allSubLibs: ISubLibraryDef[] = [
-      {
-        key: 'ingredients',
-        label: 'Ingredients',
-        collectionCount: entities.ingredients.collectionCount,
-        itemCount: entities.ingredients.size,
-        collections: buildCollections(entities.ingredients, sn)
-      },
-      {
-        key: 'fillings',
-        label: 'Fillings',
-        collectionCount: entities.fillings.collectionCount,
-        itemCount: entities.fillings.size,
-        collections: buildCollections(entities.fillings, sn)
-      },
-      {
-        key: 'confections',
-        label: 'Confections',
-        collectionCount: entities.confections.collectionCount,
-        itemCount: entities.confections.size,
-        collections: buildCollections(entities.confections, sn)
-      },
-      {
-        key: 'decorations',
-        label: 'Decorations',
-        collectionCount: entities.decorations.collectionCount,
-        itemCount: entities.decorations.size,
-        collections: buildCollections(entities.decorations, sn)
-      },
-      {
-        key: 'molds',
-        label: 'Molds',
-        collectionCount: entities.molds.collectionCount,
-        itemCount: entities.molds.size,
-        collections: buildCollections(entities.molds, sn)
-      },
-      {
-        key: 'procedures',
-        label: 'Procedures',
-        collectionCount: entities.procedures.collectionCount,
-        itemCount: entities.procedures.size,
-        collections: buildCollections(entities.procedures, sn)
-      },
-      {
-        key: 'tasks',
-        label: 'Tasks',
-        collectionCount: entities.tasks.collectionCount,
-        itemCount: entities.tasks.size,
-        collections: buildCollections(entities.tasks, sn)
-      }
+    const defs: ReadonlyArray<{ key: string; label: string; lib: ISubLibWithCollections }> = [
+      { key: 'ingredients', label: 'Ingredients', lib: entities.ingredients },
+      { key: 'fillings', label: 'Fillings', lib: entities.fillings },
+      { key: 'confections', label: 'Confections', lib: entities.confections },
+      { key: 'decorations', label: 'Decorations', lib: entities.decorations },
+      { key: 'molds', label: 'Molds', lib: entities.molds },
+      { key: 'procedures', label: 'Procedures', lib: entities.procedures },
+      { key: 'tasks', label: 'Tasks', lib: entities.tasks }
     ];
 
-    return allSubLibs.filter((s) => s.collections.length > 0);
+    const result: ISubLibraryDef[] = [];
+    for (const { key, label, lib } of defs) {
+      const collections = buildCollections(lib, sn);
+      if (collections.length > 0) {
+        result.push({
+          key,
+          label,
+          collectionCount: collections.length,
+          itemCount: collections.reduce((sum, c) => sum + c.itemCount, 0),
+          collections
+        });
+      }
+    }
+    return result;
   }
 
   function buildRootColumn(root: IStorageRootSummary, subLibraries: ISubLibraryDef[]): ICascadeColumn {
@@ -423,7 +432,7 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
         </ul>
       )}
 
-      <DefaultStorageTargets />
+      <DefaultStorageTargets onUpdateCommon={onUpdateCommon} currentTargets={currentStorageTargets} />
 
       <AddStorageRootButton />
     </div>
@@ -444,19 +453,18 @@ const SUBLIBRARY_LABELS: ReadonlyArray<{ key: LibraryData.SubLibraryId; label: s
   { key: 'tasks', label: 'Tasks' }
 ];
 
-function DefaultStorageTargets(): React.ReactElement {
-  const workspace = useWorkspace();
+function DefaultStorageTargets({
+  onUpdateCommon,
+  currentTargets
+}: {
+  readonly onUpdateCommon: (
+    updates: Partial<{ defaultStorageTargets: Settings.IDefaultStorageTargets | undefined }>
+  ) => void;
+  readonly currentTargets: Settings.IDefaultStorageTargets | undefined;
+}): React.ReactElement {
   const reactiveWorkspace = useReactiveWorkspace();
   const summary = reactiveWorkspace.storageSummary;
-  const settingsManager = workspace.settings;
   const mitigatedRoots = reactiveWorkspace.mitigatedRoots;
-
-  if (!settingsManager) {
-    return <></>;
-  }
-
-  const resolved = settingsManager.getResolvedSettings();
-  const currentTargets = resolved.defaultStorageTargets;
   const mutableRoots = summary.roots.filter((r) => r.isMutable);
 
   if (mutableRoots.length === 0 && mitigatedRoots.size === 0) {
@@ -464,38 +472,28 @@ function DefaultStorageTargets(): React.ReactElement {
   }
 
   function handleGlobalDefaultChange(rootId: string): void {
-    if (!settingsManager) return;
     const value = rootId === '' ? undefined : (rootId as Settings.StorageRootId);
-    const result = settingsManager.updateCommonSettings({
+    onUpdateCommon({
       defaultStorageTargets: {
         ...currentTargets,
         globalDefault: value
       }
     });
-    if (result.isSuccess()) {
-      settingsManager.save().catch(() => undefined);
-      reactiveWorkspace.notifyChange();
-    }
   }
 
   function handleSublibraryOverrideChange(subLibId: LibraryData.SubLibraryId, rootId: string): void {
-    if (!settingsManager) return;
     const value = rootId === '' ? undefined : (rootId as Settings.StorageRootId);
     const existing = currentTargets?.sublibraryOverrides ?? {};
     const updated = { ...existing, [subLibId]: value };
     if (value === undefined) {
       delete updated[subLibId];
     }
-    const result = settingsManager.updateCommonSettings({
+    onUpdateCommon({
       defaultStorageTargets: {
         ...currentTargets,
         sublibraryOverrides: Object.keys(updated).length > 0 ? updated : undefined
       }
     });
-    if (result.isSuccess()) {
-      settingsManager.save().catch(() => undefined);
-      reactiveWorkspace.notifyChange();
-    }
   }
 
   const globalDefault = currentTargets?.globalDefault;

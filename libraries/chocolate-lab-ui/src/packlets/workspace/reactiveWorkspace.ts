@@ -115,6 +115,7 @@ export class ReactiveWorkspace {
   private readonly _persistentTrees: Map<string, IPersistentTreeEntry> = new Map();
   private _builtInLoaded: boolean = false;
   private _localStorageLabel: string | undefined = undefined;
+  private _localStorageRootDir: FileTree.IFileTreeDirectoryItem | undefined = undefined;
   private _mitigatedRoots: ReadonlySet<string> = new Set();
   private _validationWarnings: ReadonlyArray<ISettingsValidationWarning> = [];
 
@@ -223,8 +224,16 @@ export class ReactiveWorkspace {
    * Registers the localStorage root as a named storage root for display.
    * Does not notify subscribers — call notifyChange() if needed.
    */
-  public registerLocalStorageRoot(label: string): void {
+  public registerLocalStorageRoot(label: string, rootDir?: FileTree.IFileTreeDirectoryItem): void {
     this._localStorageLabel = label;
+    this._localStorageRootDir = rootDir;
+  }
+
+  /**
+   * The localStorage root directory item, if registered.
+   */
+  public get localStorageRootDir(): FileTree.IFileTreeDirectoryItem | undefined {
+    return this._localStorageRootDir;
   }
 
   /**
@@ -329,6 +338,14 @@ export class ReactiveWorkspace {
    */
   public registerPersistentTree(id: string, entry: IPersistentTreeEntry): void {
     this._persistentTrees.set(id, entry);
+  }
+
+  /**
+   * Unregister a persistent FileTree by id.
+   * @param id - The id previously passed to registerPersistentTree
+   */
+  public unregisterPersistentTree(id: string): void {
+    this._persistentTrees.delete(id);
   }
 
   /**

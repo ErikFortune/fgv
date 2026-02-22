@@ -46,6 +46,7 @@ import {
   useCollectionActions,
   initializeBrowserPlatform,
   restoreSavedDirectories,
+  applyStorageTargetsFromWorkspace,
   SettingsCascadeView,
   RecoveryDialog,
   type RecoveryAction
@@ -174,15 +175,24 @@ async function _buildReactiveWorkspace(): Promise<{
         platformInit: init,
         builtin: true,
         preWarm: true,
-        userLibrarySourceName: 'Browser Storage',
+        userLibrarySourceName: 'localStorage',
         logger: _bootReporter
       })
     )
     .orThrow();
   const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
-  reactiveWorkspace.registerLocalStorageRoot('Browser Storage');
+  const localStorageRootDir = platformInit.value?.userLibraryTree;
+  reactiveWorkspace.registerLocalStorageRoot('Browser Storage', localStorageRootDir);
   await restoreSavedDirectories({
     reactiveWorkspace,
+    entities: workspace.data.entities,
+    logger: _bootReporter
+  });
+
+  applyStorageTargetsFromWorkspace({
+    localStorageRootDir,
+    persistentTrees: reactiveWorkspace.persistentTrees,
+    targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
     entities: workspace.data.entities,
     logger: _bootReporter
   });

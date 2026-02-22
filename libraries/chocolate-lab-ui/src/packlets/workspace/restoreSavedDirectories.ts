@@ -44,32 +44,40 @@ import { type ReactiveWorkspace } from './reactiveWorkspace';
 function loadAllSubLibrariesFromTree(
   tree: FileTree.FileTree,
   entities: LibraryRuntime.ChocolateEntityLibrary,
-  sourceName: string
+  sourceName: string,
+  logger?: { warn(msg: string): void; info(msg: string): void }
 ): number {
-  const subLibraries: Array<{ path: string; lib: LibraryData.SubLibraryBase<string, string, unknown> }> = [
-    { path: LibraryData.LibraryPaths.ingredients, lib: entities.ingredients },
-    { path: LibraryData.LibraryPaths.fillings, lib: entities.fillings },
-    { path: LibraryData.LibraryPaths.confections, lib: entities.confections },
-    { path: LibraryData.LibraryPaths.decorations, lib: entities.decorations },
-    { path: LibraryData.LibraryPaths.molds, lib: entities.molds },
-    { path: LibraryData.LibraryPaths.procedures, lib: entities.procedures },
-    { path: LibraryData.LibraryPaths.tasks, lib: entities.tasks }
+  // Get the tree root — loadFromFileTreeSource expects the root directory,
+  // not the data subdirectory (the navigator handles the path).
+  const rootResult = tree.getDirectory('/');
+  if (rootResult.isFailure()) {
+    logger?.warn(`loadAllSubLibrariesFromTree: failed to get tree root: ${rootResult.message}`);
+    return 0;
+  }
+
+  const subLibraries: ReadonlyArray<{ lib: LibraryData.SubLibraryBase<string, string, unknown> }> = [
+    { lib: entities.ingredients },
+    { lib: entities.fillings },
+    { lib: entities.confections },
+    { lib: entities.decorations },
+    { lib: entities.molds },
+    { lib: entities.procedures },
+    { lib: entities.tasks }
   ];
 
   let totalLoaded = 0;
-  for (const { path, lib } of subLibraries) {
-    const dirResult = tree.getDirectory(`/${path}`);
-    if (dirResult.isFailure()) {
-      continue;
-    }
+  for (const { lib } of subLibraries) {
     const loadResult = lib.loadFromFileTreeSource({
       sourceName,
-      directory: dirResult.value,
+      directory: rootResult.value,
       load: true,
-      mutable: true
+      mutable: true,
+      skipMissingDirectories: true
     });
     if (loadResult.isSuccess()) {
       totalLoaded += loadResult.value;
+    } else {
+      logger?.warn(`loadAllSubLibrariesFromTree: failed to load from "${sourceName}": ${loadResult.message}`);
     }
   }
   return totalLoaded;
@@ -126,14 +134,14 @@ export async function restoreSavedDirectories(params: IRestoreSavedDirectoriesPa
       continue;
     }
 
-    const treeResult = await FileApiTreeAccessors.createPersistent(handle);
+    const treeResult = await FileApiTreeAccessors.createPersistent(handle, { autoSync: true });
     if (treeResult.isFailure()) {
       logger?.warn(`restoreSavedDirectories: failed to open "${label}": ${treeResult.message}`);
       continue;
     }
 
     const tree = treeResult.value;
-    const loaded = loadAllSubLibrariesFromTree(tree, entities, label);
+    const loaded = loadAllSubLibrariesFromTree(tree, entities, label, logger);
 
     const accessors = tree.hal;
     if ('syncToDisk' in accessors && 'isDirty' in accessors) {

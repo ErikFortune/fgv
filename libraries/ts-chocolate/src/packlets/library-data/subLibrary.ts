@@ -1030,6 +1030,11 @@ export abstract class SubLibraryBase<
         this.addCollectionEntry(coll);
       }
 
+      // Register source items for persistence (enables canSave/save on editable collections)
+      for (const [id, item] of loadResult.sourceItems) {
+        this._sourceItems.set(id, item);
+      }
+
       // Add protected collections
       /* c8 ignore next 3 - protected collection paths tested but coverage intermittently missed */
       for (const pc of loadResult.protectedCollections) {
@@ -1393,9 +1398,50 @@ export abstract class SubLibraryBase<
     return this._mutableSourceName;
   }
 
+  /**
+   * Sets the active mutable source for new collection creation.
+   *
+   * Called by the UI layer when `defaultStorageTargets` is applied (on init or settings save)
+   * to route new collections to the correct storage root.
+   *
+   * @param sourceName - The source name to stamp on new collections (matches `ICollectionRuntimeMetadata.sourceName`)
+   * @param dataDirectory - The directory where new collection files will be created
+   * @public
+   */
+  public setActiveMutableSource(
+    sourceName: string,
+    dataDirectory: FileTree.IFileTreeDirectoryItem | undefined,
+    sourceRoot?: FileTree.IFileTreeDirectoryItem
+  ): void {
+    this._mutableSourceName = sourceName;
+    this._mutableDataDirectory = dataDirectory;
+    this._mutableSourceRoot = sourceRoot;
+  }
+
   // ============================================================================
   // Collection Manipulation Methods (for use by CollectionManager)
   // ============================================================================
+
+  /**
+   * Remove all mutable collections whose metadata `sourceName` matches the given source.
+   * Used to unload a storage root (e.g., a local directory) from the library at runtime.
+   *
+   * @param sourceName - The source name to remove (matches `ICollectionRuntimeMetadata.sourceName`)
+   * @returns The number of collections removed
+   * @public
+   */
+  public removeSource(sourceName: string): number {
+    const toRemove: CollectionId[] = [];
+    for (const [colId, col] of this.collections.entries()) {
+      if (col.metadata?.sourceName === sourceName && col.isMutable) {
+        toRemove.push(colId);
+      }
+    }
+    for (const colId of toRemove) {
+      this._deleteCollection(colId);
+    }
+    return toRemove.length;
+  }
 
   /**
    * Remove a collection from the library.

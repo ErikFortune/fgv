@@ -2,7 +2,7 @@
 
 ## IWorkspaceInitResult.deviceSettings property
 
-Created device settings.
+Created device settings (legacy, for backward compatibility).
 
 **Signature:**
 

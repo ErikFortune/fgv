@@ -215,6 +215,19 @@ Creates a file for a collection in the mutable data directory and
 </td></tr>
 <tr><td>
 
+[removeSource(sourceName)](./SubLibraryBase.removeSource.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Remove all mutable collections whose metadata `sourceName` matches the given source.
+
+</td></tr>
+<tr><td>
+
 [get(key)](./SubLibraryBase.get.md)
 
 </td><td>

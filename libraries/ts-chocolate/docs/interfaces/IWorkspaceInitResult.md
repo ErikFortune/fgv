@@ -43,6 +43,40 @@ Path to the created workspace.
 </td></tr>
 <tr><td>
 
+[bootstrapSettings](./IWorkspaceInitResult.bootstrapSettings.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IBootstrapSettings](IBootstrapSettings.md)
+
+</td><td>
+
+Created bootstrap settings.
+
+</td></tr>
+<tr><td>
+
+[preferencesSettings](./IWorkspaceInitResult.preferencesSettings.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IPreferencesSettings](IPreferencesSettings.md)
+
+</td><td>
+
+Created preferences settings.
+
+</td></tr>
+<tr><td>
+
 [commonSettings](./IWorkspaceInitResult.commonSettings.md)
 
 </td><td>
@@ -55,7 +89,7 @@ Path to the created workspace.
 
 </td><td>
 
-Created common settings.
+Created common settings (legacy, for backward compatibility).
 
 </td></tr>
 <tr><td>
@@ -72,7 +106,7 @@ Created common settings.
 
 </td><td>
 
-Created device settings.
+Created device settings (legacy, for backward compatibility).
 
 </td></tr>
 </tbody></table>

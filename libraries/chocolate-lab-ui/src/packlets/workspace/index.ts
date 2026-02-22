@@ -28,8 +28,14 @@ export {
 } from './reactiveWorkspace';
 
 export { restoreSavedDirectories, type IRestoreSavedDirectoriesParams } from './restoreSavedDirectories';
+export {
+  applyStorageTargets,
+  applyStorageTargetsFromWorkspace,
+  type StorageRootTreeMap
+} from './applyStorageTargets';
 
 export { useAddStorageRoot, type IAddStorageRootActions } from './useAddStorageRoot';
+export { useRemoveStorageRoot, type IRemoveStorageRootActions } from './useRemoveStorageRoot';
 
 export {
   WorkspaceProvider,

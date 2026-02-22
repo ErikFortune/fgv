@@ -114,8 +114,14 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
       // Load all files from the directory (always use '/' as base, prefix is handled by parent)
       const { files, handles } = await this._loadDirectory<TCT>(dirHandle, '/', params);
 
+      // Enable tree mutability when write permission is granted and caller didn't explicitly set mutable
+      const effectiveParams: IFileSystemAccessTreeParams<TCT> = {
+        ...params,
+        mutable: params?.mutable ?? (hasWritePermission ? true : false)
+      };
+
       return succeed(
-        new FileSystemAccessTreeAccessors<TCT>(files, dirHandle, handles, params, hasWritePermission)
+        new FileSystemAccessTreeAccessors<TCT>(files, dirHandle, handles, effectiveParams, hasWritePermission)
       );
       /* c8 ignore next 4 - defensive: outer catch for unexpected errors */
     } catch (error) {
