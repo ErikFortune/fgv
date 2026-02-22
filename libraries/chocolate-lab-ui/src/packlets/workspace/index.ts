@@ -16,6 +16,8 @@ export {
   type IBrowserPlatformInitOptions
 } from './browserPlatformInit';
 
+export { RecoveryDialog, type IRecoveryDialogProps, type RecoveryAction } from './RecoveryDialog';
+
 export {
   ReactiveWorkspace,
   type WorkspaceListener,

@@ -19,7 +19,11 @@ import {
   SidebarLayout
 } from '@fgv/ts-app-shell';
 import { Logging } from '@fgv/ts-utils';
-import { createWorkspaceFromPlatform } from '@fgv/ts-chocolate';
+import {
+  createWorkspaceFromPlatform,
+  validateResolvedSettings,
+  type ISettingsValidationWarning
+} from '@fgv/ts-chocolate';
 import {
   type AppMode,
   type AppTab,
@@ -41,7 +45,9 @@ import {
   useCollectionActions,
   initializeBrowserPlatform,
   restoreSavedDirectories,
-  SettingsCascadeView
+  SettingsCascadeView,
+  RecoveryDialog,
+  type RecoveryAction
 } from '@fgv/chocolate-lab-ui';
 
 import { IngredientsTabContent } from './tabs/IngredientsTab';
@@ -134,30 +140,44 @@ const _bootReporter = new Logging.LogReporter<unknown>({ logger: _bootLogger });
 
 let _reactiveWorkspacePromise: Promise<ReactiveWorkspace> | undefined;
 
+async function _buildReactiveWorkspace(): Promise<{
+  reactiveWorkspace: ReactiveWorkspace;
+  warnings: ReadonlyArray<ISettingsValidationWarning>;
+}> {
+  const platformInit = await initializeBrowserPlatform({ userLibraryPath: 'localStorage' });
+  const workspace = platformInit
+    .onSuccess((init) =>
+      createWorkspaceFromPlatform({
+        platformInit: init,
+        builtin: true,
+        preWarm: true,
+        userLibrarySourceName: 'Browser Storage',
+        logger: _bootReporter
+      })
+    )
+    .orThrow();
+  const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
+  reactiveWorkspace.registerLocalStorageRoot('Browser Storage');
+  await restoreSavedDirectories({
+    reactiveWorkspace,
+    entities: workspace.data.entities,
+    logger: _bootReporter
+  });
+
+  // Post-construction validation
+  const resolvedSettings = workspace.settings?.getResolvedSettings();
+  const warnings: ReadonlyArray<ISettingsValidationWarning> = resolvedSettings
+    ? validateResolvedSettings(resolvedSettings, {
+        availableRoots: new Set(reactiveWorkspace.storageSummary.roots.map((r) => r.sourceName as never))
+      })
+    : [];
+
+  return { reactiveWorkspace, warnings };
+}
+
 function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
   if (!_reactiveWorkspacePromise) {
-    _reactiveWorkspacePromise = (async () => {
-      const platformInit = await initializeBrowserPlatform({ userLibraryPath: 'localStorage' });
-      const workspace = platformInit
-        .onSuccess((init) =>
-          createWorkspaceFromPlatform({
-            platformInit: init,
-            builtin: true,
-            preWarm: true,
-            userLibrarySourceName: 'Browser Storage',
-            logger: _bootReporter
-          })
-        )
-        .orThrow();
-      const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
-      reactiveWorkspace.registerLocalStorageRoot('Browser Storage');
-      await restoreSavedDirectories({
-        reactiveWorkspace,
-        entities: workspace.data.entities,
-        logger: _bootReporter
-      });
-      return reactiveWorkspace;
-    })();
+    _reactiveWorkspacePromise = _buildReactiveWorkspace().then((r) => r.reactiveWorkspace);
   }
   return _reactiveWorkspacePromise;
 }
@@ -424,6 +444,36 @@ function AppShell(): React.ReactElement {
         }
       />
 
+      {/* Mitigated state banner — shown when some storage roots are unavailable */}
+      {reactiveWorkspace.isMitigated && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs">
+          <svg
+            className="w-4 h-4 text-amber-500 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+          <span>
+            <strong>Mitigated mode:</strong> Some configured storage roots are unavailable. Writes to those
+            roots are blocked. Go to{' '}
+            <button
+              onClick={(): void => guardedSetTab('settings' as AppTab)}
+              className="underline hover:text-amber-900"
+            >
+              Settings
+            </button>{' '}
+            to reset or reconfigure storage.
+          </span>
+        </div>
+      )}
+
       {/* Main content area: sidebar + tab content, or settings cascade */}
       {settingsOpen ? (
         <SettingsCascadeView
@@ -475,6 +525,8 @@ function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }
   const reporter = useLogReporter();
   const [reactiveWorkspace, setReactiveWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [pendingWarnings, setPendingWarnings] = useState<ReadonlyArray<ISettingsValidationWarning>>([]);
+  const [pendingWorkspace, setPendingWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
 
   useEffect(() => {
     // Connect the boot logger to the real logger so buffered messages
@@ -483,13 +535,57 @@ function WorkspaceBootstrap({ children }: { readonly children: React.ReactNode }
   }, [reporter]);
 
   useEffect(() => {
-    getReactiveWorkspaceAsync()
-      .then(setReactiveWorkspace)
+    _buildReactiveWorkspace()
+      .then(({ reactiveWorkspace: rw, warnings }) => {
+        if (warnings.length > 0) {
+          // Hold the workspace and show the recovery dialog
+          setPendingWorkspace(rw);
+          setPendingWarnings(warnings);
+        } else {
+          setReactiveWorkspace(rw);
+        }
+      })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
 
+  const handleRecover = useCallback(
+    (action: RecoveryAction): void => {
+      if (!pendingWorkspace) return;
+      if (action === 'quit') {
+        window.close();
+        return;
+      }
+      if (action === 'reset') {
+        // Clear invalid references from settings, then proceed
+        const settings = pendingWorkspace.workspace.settings;
+        if (settings) {
+          const prefs = settings.getPreferencesSettings();
+          if (prefs) {
+            void settings.updatePreferencesSettings({
+              ...prefs,
+              defaultStorageTargets: undefined,
+              defaultTargets: {}
+            });
+            void settings.save();
+          }
+        }
+      } else {
+        // action === 'mitigate'
+        pendingWorkspace.applyMitigation(pendingWarnings);
+      }
+      setPendingWarnings([]);
+      setPendingWorkspace(undefined);
+      setReactiveWorkspace(pendingWorkspace);
+    },
+    [pendingWorkspace, pendingWarnings]
+  );
+
   if (error) {
     return <div className="p-8 text-red-600">Failed to initialize workspace: {error}</div>;
+  }
+
+  if (pendingWarnings.length > 0) {
+    return <RecoveryDialog isOpen={true} warnings={pendingWarnings} onRecover={handleRecover} />;
   }
 
   if (!reactiveWorkspace) {

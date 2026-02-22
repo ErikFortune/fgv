@@ -54,7 +54,13 @@ export {
   toLibraryFileSources,
   toUserLibrarySource,
   ensureDirectoryPath,
-  ensureWorkspaceDirectoriesInTree
+  ensureWorkspaceDirectoriesInTree,
+  type ISettingsValidationWarning,
+  type IMissingRootWarning,
+  type IMissingCollectionWarning,
+  type IMissingPreferencesLocationWarning,
+  type ISettingsValidationContext,
+  validateResolvedSettings
 } from './packlets/workspace';
 
 // All branded types and common utilities

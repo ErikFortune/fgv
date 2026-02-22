@@ -70,6 +70,16 @@ export {
   initializeNodePlatform
 } from './nodePlatformInit';
 
+// Settings validation (re-exported for convenience)
+export {
+  type ISettingsValidationWarning,
+  type IMissingRootWarning,
+  type IMissingCollectionWarning,
+  type IMissingPreferencesLocationWarning,
+  type ISettingsValidationContext,
+  validateResolvedSettings
+} from '../settings';
+
 // Workspace initialization helpers
 export {
   type IWorkspaceInitParams,

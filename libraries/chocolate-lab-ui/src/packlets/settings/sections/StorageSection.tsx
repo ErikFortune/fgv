@@ -449,6 +449,7 @@ function DefaultStorageTargets(): React.ReactElement {
   const reactiveWorkspace = useReactiveWorkspace();
   const summary = reactiveWorkspace.storageSummary;
   const settingsManager = workspace.settings;
+  const mitigatedRoots = reactiveWorkspace.mitigatedRoots;
 
   if (!settingsManager) {
     return <></>;
@@ -458,7 +459,7 @@ function DefaultStorageTargets(): React.ReactElement {
   const currentTargets = resolved.defaultStorageTargets;
   const mutableRoots = summary.roots.filter((r) => r.isMutable);
 
-  if (mutableRoots.length === 0) {
+  if (mutableRoots.length === 0 && mitigatedRoots.size === 0) {
     return <></>;
   }
 
@@ -497,42 +498,76 @@ function DefaultStorageTargets(): React.ReactElement {
     }
   }
 
+  const globalDefault = currentTargets?.globalDefault;
+  const globalIsMitigated = globalDefault !== undefined && mitigatedRoots.has(globalDefault);
+
   return (
     <div className="pt-2 border-t border-gray-100">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Default Storage</p>
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <label className="text-xs text-gray-600 shrink-0 w-28">Global default</label>
-          <select
-            value={currentTargets?.globalDefault ?? ''}
-            onChange={(e): void => handleGlobalDefaultChange(e.target.value)}
-            className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
-          >
-            <option value="">— browser storage —</option>
-            {mutableRoots.map((root) => (
-              <option key={root.id} value={root.id}>
-                {root.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {SUBLIBRARY_LABELS.map(({ key, label }) => (
-          <div key={key} className="flex items-center justify-between gap-3">
-            <label className="text-xs text-gray-400 shrink-0 w-28 pl-2">{label}</label>
+          <div className="flex-1 flex items-center gap-1.5">
             <select
-              value={currentTargets?.sublibraryOverrides?.[key] ?? ''}
-              onChange={(e): void => handleSublibraryOverrideChange(key, e.target.value)}
-              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+              value={globalDefault ?? ''}
+              onChange={(e): void => handleGlobalDefaultChange(e.target.value)}
+              className={`flex-1 text-xs border rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent ${
+                globalIsMitigated ? 'border-amber-400' : 'border-gray-200'
+              }`}
             >
-              <option value="">— use global default —</option>
+              <option value="">— browser storage —</option>
               {mutableRoots.map((root) => (
                 <option key={root.id} value={root.id}>
                   {root.label}
                 </option>
               ))}
+              {globalIsMitigated && globalDefault && (
+                <option value={globalDefault}>{globalDefault} (unavailable)</option>
+              )}
             </select>
+            {globalIsMitigated && (
+              <span title="This storage root is unavailable" className="text-amber-500 text-sm flex-shrink-0">
+                ⚠
+              </span>
+            )}
           </div>
-        ))}
+        </div>
+        {SUBLIBRARY_LABELS.map(({ key, label }) => {
+          const subOverride = currentTargets?.sublibraryOverrides?.[key];
+          const subIsMitigated = subOverride !== undefined && mitigatedRoots.has(subOverride);
+          return (
+            <div key={key} className="flex items-center justify-between gap-3">
+              <label className="text-xs text-gray-400 shrink-0 w-28 pl-2">{label}</label>
+              <div className="flex-1 flex items-center gap-1.5">
+                <select
+                  value={subOverride ?? ''}
+                  onChange={(e): void => handleSublibraryOverrideChange(key, e.target.value)}
+                  className={`flex-1 text-xs border rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-accent ${
+                    subIsMitigated ? 'border-amber-400' : 'border-gray-200'
+                  }`}
+                >
+                  <option value="">— use global default —</option>
+                  {mutableRoots.map((root) => (
+                    <option key={root.id} value={root.id}>
+                      {root.label}
+                    </option>
+                  ))}
+                  {subIsMitigated && subOverride && (
+                    <option value={subOverride}>{subOverride} (unavailable)</option>
+                  )}
+                </select>
+                {subIsMitigated && (
+                  <span
+                    title="This storage root is unavailable"
+                    className="text-amber-500 text-sm flex-shrink-0"
+                  >
+                    ⚠
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useWorkspace } from '../workspace';
 
 import { useSettingsDraft } from './useSettingsDraft';
+import { BootstrapSection } from './sections/BootstrapSection';
 import { WorkspaceSection } from './sections/WorkspaceSection';
 import { ScalingSection } from './sections/ScalingSection';
 import { WorkflowSection } from './sections/WorkflowSection';
@@ -13,7 +14,7 @@ import { SecuritySection } from './sections/SecuritySection';
 // Nav tabs
 // ============================================================================
 
-type SettingsTab = 'workspace' | 'scaling' | 'workflow' | 'libraries' | 'security';
+type SettingsTab = 'startup' | 'workspace' | 'scaling' | 'workflow' | 'libraries' | 'security';
 
 interface ITabDef {
   readonly id: SettingsTab;
@@ -21,6 +22,7 @@ interface ITabDef {
 }
 
 const TABS: ReadonlyArray<ITabDef> = [
+  { id: 'startup', label: 'Startup' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'scaling', label: 'Scaling' },
   { id: 'workflow', label: 'Workflow' },
@@ -53,7 +55,20 @@ export function SettingsView(props: ISettingsViewProps): React.ReactElement {
     );
   }
 
-  const { common, device, isDirty, isSaving, saveError, updateCommon, updateDevice, save, revert } = draft;
+  const {
+    bootstrap,
+    common,
+    device,
+    isDirty,
+    hasBootstrapChanges,
+    isSaving,
+    saveError,
+    updateBootstrap,
+    updateCommon,
+    updateDevice,
+    save,
+    revert
+  } = draft;
 
   async function handleSave(): Promise<void> {
     await save();
@@ -85,6 +100,13 @@ export function SettingsView(props: ISettingsViewProps): React.ReactElement {
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto min-h-0">
+        {activeTab === 'startup' && (
+          <BootstrapSection
+            bootstrap={bootstrap}
+            onChange={updateBootstrap}
+            hasRestartPending={hasBootstrapChanges}
+          />
+        )}
         {activeTab === 'workspace' && deviceId !== undefined && (
           <WorkspaceSection deviceId={deviceId} device={device} onDeviceChange={updateDevice} />
         )}

@@ -84,6 +84,16 @@ export { Converters };
 // Re-export validation pattern
 export { DEVICE_ID_PATTERN } from './converters';
 
+// Settings validation exports
+export {
+  type ISettingsValidationWarning,
+  type IMissingRootWarning,
+  type IMissingCollectionWarning,
+  type IMissingPreferencesLocationWarning,
+  type ISettingsValidationContext,
+  validateResolvedSettings
+} from './settingsValidation';
+
 // Settings manager exports
 export {
   type ISettingsManager,

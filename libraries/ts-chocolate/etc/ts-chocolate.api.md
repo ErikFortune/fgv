@@ -4324,6 +4324,31 @@ interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
 }
 
 // @public
+export interface IMissingCollectionWarning {
+    readonly collectionId: CollectionId;
+    readonly context: string;
+    // (undocumented)
+    readonly kind: 'missing-collection';
+    readonly subLibraryId: SubLibraryId;
+}
+
+// @public
+export interface IMissingPreferencesLocationWarning {
+    readonly context: string;
+    // (undocumented)
+    readonly kind: 'missing-preferences-location';
+    readonly rootName: string;
+}
+
+// @public
+export interface IMissingRootWarning {
+    readonly context: string;
+    // (undocumented)
+    readonly kind: 'missing-root';
+    readonly rootId: StorageRootId;
+}
+
+// @public
 interface IMold {
     readonly baseId: BaseMoldId;
     readonly cavities: ICavities;
@@ -5714,6 +5739,15 @@ interface ISettingsManagerParams {
     readonly deviceName?: string;
     readonly fileTree: FileTree.IFileTreeDirectoryItem;
 }
+
+// @public
+export interface ISettingsValidationContext {
+    readonly availableCollections?: Partial<Record<SubLibraryId, ReadonlySet<CollectionId>>>;
+    readonly availableRoots: ReadonlySet<StorageRootId>;
+}
+
+// @public
+export type ISettingsValidationWarning = IMissingRootWarning | IMissingCollectionWarning | IMissingPreferencesLocationWarning;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -7723,6 +7757,12 @@ declare namespace Settings {
         createDefaultDeviceSettings,
         Converters_12 as Converters,
         DEVICE_ID_PATTERN,
+        ISettingsValidationWarning,
+        IMissingRootWarning,
+        IMissingCollectionWarning,
+        IMissingPreferencesLocationWarning,
+        ISettingsValidationContext,
+        validateResolvedSettings,
         ISettingsManager,
         ISettingsManagerBootstrapParams,
         ISettingsManagerParams,
@@ -8378,6 +8418,9 @@ function validateProcedureName(entity: IProcedureEntity_2): Result<true>;
 //
 // @public
 function validateRawTaskEntity(entity: IRawTaskEntity_2): Result<IRawTaskEntity_2>;
+
+// @public
+export function validateResolvedSettings(resolved: IResolvedSettings, context: ISettingsValidationContext): ISettingsValidationWarning[];
 
 // @public
 function validateStepOrder(entity: IProcedureEntity_2): Result<true>;

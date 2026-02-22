@@ -322,6 +322,42 @@ Parameters for common workspace initialization (Stage 2).
 An external library reference after platform resolution.
 
 </td></tr>
+<tr><td>
+
+[IMissingRootWarning](./interfaces/IMissingRootWarning.md)
+
+</td><td>
+
+A storage root referenced in settings is not available.
+
+</td></tr>
+<tr><td>
+
+[IMissingCollectionWarning](./interfaces/IMissingCollectionWarning.md)
+
+</td><td>
+
+A collection referenced in defaultTargets does not exist in the workspace.
+
+</td></tr>
+<tr><td>
+
+[IMissingPreferencesLocationWarning](./interfaces/IMissingPreferencesLocationWarning.md)
+
+</td><td>
+
+The preferences file location references an unavailable root.
+
+</td></tr>
+<tr><td>
+
+[ISettingsValidationContext](./interfaces/ISettingsValidationContext.md)
+
+</td><td>
+
+Context provided to the validator describing what is actually available
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -894,6 +930,15 @@ Behavior when a required file or directory is missing.
 Directory layout mode for workspace initialization.
 
 </td></tr>
+<tr><td>
+
+[ISettingsValidationWarning](./type-aliases/ISettingsValidationWarning.md)
+
+</td><td>
+
+Union of all settings validation warning types.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -987,6 +1032,15 @@ Ensures a directory path exists in a FileTree, creating intermediate
 </td><td>
 
 Ensures the standard workspace directory structure exists in a FileTree.
+
+</td></tr>
+<tr><td>
+
+[validateResolvedSettings](./functions/validateResolvedSettings.md)
+
+</td><td>
+
+Validates resolved settings against the actual workspace state.
 
 </td></tr>
 </tbody></table>

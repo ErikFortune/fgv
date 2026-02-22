@@ -9,6 +9,16 @@ import { useWorkspace } from '../workspace';
 // ============================================================================
 
 /**
+ * Mutable draft of bootstrap settings fields exposed in the UI.
+ * @public
+ */
+export interface IBootstrapSettingsDraft {
+  readonly includeBuiltIn: boolean;
+  readonly localStorageLibrary: boolean;
+  readonly localStorageUserData: boolean;
+}
+
+/**
  * Mutable draft of common settings fields exposed in the UI.
  * @public
  */
@@ -45,11 +55,14 @@ export interface IDeviceSettingsDraft {
  * @public
  */
 export interface ISettingsDraft {
+  readonly bootstrap: IBootstrapSettingsDraft;
   readonly common: ICommonSettingsDraft;
   readonly device: IDeviceSettingsDraft;
   readonly isDirty: boolean;
+  readonly hasBootstrapChanges: boolean;
   readonly isSaving: boolean;
   readonly saveError: string | undefined;
+  readonly updateBootstrap: (updates: Partial<IBootstrapSettingsDraft>) => void;
   readonly updateCommon: (updates: Partial<ICommonSettingsDraft>) => void;
   readonly updateDevice: (updates: Partial<IDeviceSettingsDraft>) => void;
   readonly save: () => Promise<void>;
@@ -59,6 +72,22 @@ export interface ISettingsDraft {
 // ============================================================================
 // Helpers
 // ============================================================================
+
+function buildBootstrapDraft(settings: Settings.IBootstrapSettings | undefined): IBootstrapSettingsDraft {
+  return {
+    includeBuiltIn: settings?.includeBuiltIn ?? true,
+    localStorageLibrary: settings?.localStorage?.library ?? true,
+    localStorageUserData: settings?.localStorage?.userData ?? true
+  };
+}
+
+function bootstrapDraftsEqual(a: IBootstrapSettingsDraft, b: IBootstrapSettingsDraft): boolean {
+  return (
+    a.includeBuiltIn === b.includeBuiltIn &&
+    a.localStorageLibrary === b.localStorageLibrary &&
+    a.localStorageUserData === b.localStorageUserData
+  );
+}
 
 function buildCommonDraft(settings: Settings.ICommonSettings): ICommonSettingsDraft {
   return {
@@ -111,8 +140,10 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
   const workspace = useWorkspace();
   const settingsManager = workspace.settings;
 
+  const [bootstrapDraft, setBootstrapDraft] = useState<IBootstrapSettingsDraft | undefined>(undefined);
   const [commonDraft, setCommonDraft] = useState<ICommonSettingsDraft | undefined>(undefined);
   const [deviceDraft, setDeviceDraft] = useState<IDeviceSettingsDraft | undefined>(undefined);
+  const [savedBootstrap, setSavedBootstrap] = useState<IBootstrapSettingsDraft | undefined>(undefined);
   const [savedCommon, setSavedCommon] = useState<ICommonSettingsDraft | undefined>(undefined);
   const [savedDevice, setSavedDevice] = useState<IDeviceSettingsDraft | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
@@ -120,13 +151,20 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
 
   useEffect(() => {
     if (!settingsManager) return;
+    const bootstrap = buildBootstrapDraft(settingsManager.getBootstrapSettings());
     const common = buildCommonDraft(settingsManager.getCommonSettings());
     const device = buildDeviceDraft(settingsManager.getDeviceSettings());
+    setBootstrapDraft(bootstrap);
     setCommonDraft(common);
     setDeviceDraft(device);
+    setSavedBootstrap(bootstrap);
     setSavedCommon(common);
     setSavedDevice(device);
   }, [settingsManager]);
+
+  const updateBootstrap = useCallback((updates: Partial<IBootstrapSettingsDraft>): void => {
+    setBootstrapDraft((prev) => (prev ? { ...prev, ...updates } : prev));
+  }, []);
 
   const updateCommon = useCallback((updates: Partial<ICommonSettingsDraft>): void => {
     setCommonDraft((prev) => (prev ? { ...prev, ...updates } : prev));
@@ -137,7 +175,7 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
   }, []);
 
   const save = useCallback(async (): Promise<void> => {
-    if (!settingsManager || !commonDraft || !deviceDraft) return;
+    if (!settingsManager || !bootstrapDraft || !commonDraft || !deviceDraft) return;
     setIsSaving(true);
     setSaveError(undefined);
 
@@ -154,6 +192,22 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
       autoExpandIngredients: commonDraft.workflow.autoExpandIngredients,
       adaptedRecipeNameSuffix: commonDraft.workflow.adaptedRecipeNameSuffix
     };
+    // Save bootstrap settings if changed
+    if (savedBootstrap && !bootstrapDraftsEqual(bootstrapDraft, savedBootstrap)) {
+      const bootstrapResult = settingsManager.updateBootstrapSettings({
+        includeBuiltIn: bootstrapDraft.includeBuiltIn,
+        localStorage: {
+          library: bootstrapDraft.localStorageLibrary,
+          userData: bootstrapDraft.localStorageUserData
+        }
+      });
+      if (bootstrapResult.isFailure()) {
+        setSaveError(`Failed to update bootstrap settings: ${bootstrapResult.message}`);
+        setIsSaving(false);
+        return;
+      }
+    }
+
     const commonResult = settingsManager.updateCommonSettings({
       externalLibraries: commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined,
       defaultStorageTargets: commonDraft.defaultStorageTargets,
@@ -181,30 +235,47 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
     if (saveResult.isFailure()) {
       setSaveError(`Failed to save settings: ${saveResult.message}`);
     } else {
+      setSavedBootstrap(bootstrapDraft);
       setSavedCommon(commonDraft);
       setSavedDevice(deviceDraft);
     }
     setIsSaving(false);
-  }, [settingsManager, commonDraft, deviceDraft]);
+  }, [settingsManager, bootstrapDraft, savedBootstrap, commonDraft, deviceDraft]);
 
   const revert = useCallback((): void => {
+    setBootstrapDraft(savedBootstrap);
     setCommonDraft(savedCommon);
     setDeviceDraft(savedDevice);
     setSaveError(undefined);
-  }, [savedCommon, savedDevice]);
+  }, [savedBootstrap, savedCommon, savedDevice]);
 
-  if (!settingsManager || !commonDraft || !deviceDraft || !savedCommon || !savedDevice) {
+  if (
+    !settingsManager ||
+    !bootstrapDraft ||
+    !commonDraft ||
+    !deviceDraft ||
+    !savedBootstrap ||
+    !savedCommon ||
+    !savedDevice
+  ) {
     return undefined;
   }
 
-  const isDirty = !draftsEqual(commonDraft, savedCommon) || !deviceDraftsEqual(deviceDraft, savedDevice);
+  const hasBootstrapChanges = !bootstrapDraftsEqual(bootstrapDraft, savedBootstrap);
+  const isDirty =
+    hasBootstrapChanges ||
+    !draftsEqual(commonDraft, savedCommon) ||
+    !deviceDraftsEqual(deviceDraft, savedDevice);
 
   return {
+    bootstrap: bootstrapDraft,
     common: commonDraft,
     device: deviceDraft,
     isDirty,
+    hasBootstrapChanges,
     isSaving,
     saveError,
+    updateBootstrap,
     updateCommon,
     updateDevice,
     save,

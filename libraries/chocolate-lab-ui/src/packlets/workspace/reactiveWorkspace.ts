@@ -32,7 +32,7 @@
 
 import { type Result, succeed, fail } from '@fgv/ts-utils';
 import { type FileTree } from '@fgv/ts-json-base';
-import type { IWorkspace } from '@fgv/ts-chocolate';
+import type { ISettingsValidationWarning, IWorkspace } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // ReactiveWorkspace
@@ -115,6 +115,8 @@ export class ReactiveWorkspace {
   private readonly _persistentTrees: Map<string, IPersistentTreeEntry> = new Map();
   private _builtInLoaded: boolean = false;
   private _localStorageLabel: string | undefined = undefined;
+  private _mitigatedRoots: ReadonlySet<string> = new Set();
+  private _validationWarnings: ReadonlyArray<ISettingsValidationWarning> = [];
 
   public constructor(workspace: IWorkspace, builtInLoaded: boolean = false) {
     this._workspace = workspace;
@@ -145,6 +147,68 @@ export class ReactiveWorkspace {
    */
   public get builtInLoaded(): boolean {
     return this._builtInLoaded;
+  }
+
+  /**
+   * The set of storage root IDs currently in mitigated state.
+   * Writes targeting these roots are blocked to prevent data loss.
+   */
+  public get mitigatedRoots(): ReadonlySet<string> {
+    return this._mitigatedRoots;
+  }
+
+  /**
+   * Whether any storage roots are in mitigated state.
+   */
+  public get isMitigated(): boolean {
+    return this._mitigatedRoots.size > 0;
+  }
+
+  /**
+   * The validation warnings from the most recent settings validation.
+   */
+  public get validationWarnings(): ReadonlyArray<ISettingsValidationWarning> {
+    return this._validationWarnings;
+  }
+
+  /**
+   * Records validation warnings and marks affected roots as mitigated.
+   * Call this after post-construction validation when using 'proceed mitigated' recovery.
+   * @param warnings - The validation warnings to record
+   */
+  public applyMitigation(warnings: ReadonlyArray<ISettingsValidationWarning>): void {
+    this._validationWarnings = warnings;
+    const mitigated = new Set<string>();
+    for (const warning of warnings) {
+      if (warning.kind === 'missing-root') {
+        mitigated.add(warning.rootId);
+      }
+    }
+    this._mitigatedRoots = mitigated;
+  }
+
+  /**
+   * Clears all mitigated state and validation warnings.
+   * Call this when the user resolves the mitigation (e.g., reconnects a drive).
+   */
+  public clearMitigation(): void {
+    this._mitigatedRoots = new Set();
+    this._validationWarnings = [];
+  }
+
+  /**
+   * Checks whether a write to the given storage root is blocked due to mitigation.
+   * @param rootId - The storage root ID to check
+   * @returns Failure with a descriptive message if blocked, Success otherwise
+   */
+  public checkWriteAllowed(rootId: string): Result<void> {
+    if (this._mitigatedRoots.has(rootId)) {
+      return fail(
+        `Write to '${rootId}' is blocked: this storage root is unavailable (mitigated state). ` +
+          `Reconnect the storage root or reset the configuration to resume writes.`
+      );
+    }
+    return succeed(undefined);
   }
 
   /**
