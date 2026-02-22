@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 
 import type { ICascadeColumn } from '@fgv/ts-app-shell';
+import { type Settings, type LibraryData } from '@fgv/ts-chocolate';
 
-import { useReactiveWorkspace, useWorkspace, type IStorageRootSummary } from '../../workspace';
+import {
+  useReactiveWorkspace,
+  useWorkspace,
+  useAddStorageRoot,
+  type IStorageRootSummary,
+  type StorageCategory
+} from '../../workspace';
 
 // ============================================================================
 // Types
@@ -50,6 +57,34 @@ function rootBadgeLabel(root: IStorageRootSummary): string {
   if (root.isBuiltIn) return 'built-in';
   if (root.isLocal) return 'local';
   return 'browser';
+}
+
+const CATEGORY_LABELS: Record<StorageCategory, string> = {
+  library: 'Library data',
+  'user-data': 'User data',
+  settings: 'Settings'
+};
+
+const CATEGORY_BADGE_CLASS: Record<StorageCategory, string> = {
+  library: 'bg-blue-50 text-blue-600 border-blue-200',
+  'user-data': 'bg-amber-50 text-amber-600 border-amber-200',
+  settings: 'bg-gray-50 text-gray-500 border-gray-200'
+};
+
+function CategoryBadges({
+  categories
+}: {
+  readonly categories: ReadonlyArray<StorageCategory>;
+}): React.ReactElement {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {categories.map((cat) => (
+        <span key={cat} className={`text-xs border rounded px-1.5 py-0.5 ${CATEGORY_BADGE_CLASS[cat]}`}>
+          {CATEGORY_LABELS[cat]}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 // ============================================================================
@@ -182,6 +217,10 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
         <dd className="text-gray-700 font-medium">{rootAccessLabel(root)}</dd>
         <dt className="text-gray-400">Type</dt>
         <dd className="text-gray-700">{rootTypeLabel(root)}</dd>
+        <dt className="text-gray-400">Stores</dt>
+        <dd>
+          <CategoryBadges categories={root.categories} />
+        </dd>
       </dl>
 
       <div>
@@ -242,62 +281,60 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
   const [selectedRootId, setSelectedRootId] = useState<string | undefined>(undefined);
 
   function getSubLibrariesForRoot(root: IStorageRootSummary): ISubLibraryDef[] {
+    const sn = root.sourceName;
     const allSubLibs: ISubLibraryDef[] = [
       {
         key: 'ingredients',
         label: 'Ingredients',
         collectionCount: entities.ingredients.collectionCount,
         itemCount: entities.ingredients.size,
-        collections: buildCollections(entities.ingredients)
+        collections: buildCollections(entities.ingredients, sn)
       },
       {
         key: 'fillings',
         label: 'Fillings',
         collectionCount: entities.fillings.collectionCount,
         itemCount: entities.fillings.size,
-        collections: buildCollections(entities.fillings)
+        collections: buildCollections(entities.fillings, sn)
       },
       {
         key: 'confections',
         label: 'Confections',
         collectionCount: entities.confections.collectionCount,
         itemCount: entities.confections.size,
-        collections: buildCollections(entities.confections)
+        collections: buildCollections(entities.confections, sn)
       },
       {
         key: 'decorations',
         label: 'Decorations',
         collectionCount: entities.decorations.collectionCount,
         itemCount: entities.decorations.size,
-        collections: buildCollections(entities.decorations)
+        collections: buildCollections(entities.decorations, sn)
       },
       {
         key: 'molds',
         label: 'Molds',
         collectionCount: entities.molds.collectionCount,
         itemCount: entities.molds.size,
-        collections: buildCollections(entities.molds)
+        collections: buildCollections(entities.molds, sn)
       },
       {
         key: 'procedures',
         label: 'Procedures',
         collectionCount: entities.procedures.collectionCount,
         itemCount: entities.procedures.size,
-        collections: buildCollections(entities.procedures)
+        collections: buildCollections(entities.procedures, sn)
       },
       {
         key: 'tasks',
         label: 'Tasks',
         collectionCount: entities.tasks.collectionCount,
         itemCount: entities.tasks.size,
-        collections: buildCollections(entities.tasks)
+        collections: buildCollections(entities.tasks, sn)
       }
     ];
 
-    if (root.isBuiltIn) {
-      return allSubLibs.filter((s) => s.collectionCount > 0);
-    }
-    return allSubLibs.filter((s) => s.collectionCount > 0);
+    return allSubLibs.filter((s) => s.collections.length > 0);
   }
 
   function buildRootColumn(root: IStorageRootSummary, subLibraries: ISubLibraryDef[]): ICascadeColumn {
@@ -370,6 +407,7 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
                   <span className="text-xs text-gray-400">
                     {rootTypeLabel(root)} · {rootAccessLabel(root)}
                   </span>
+                  <CategoryBadges categories={root.categories} />
                 </div>
                 <span
                   className={`flex-shrink-0 text-xs border rounded px-1.5 py-0.5 ${rootBadgeClass(root)}`}
@@ -385,7 +423,147 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
         </ul>
       )}
 
-      <p className="text-xs text-gray-400 pt-2">Use the sidebar directory picker to add local directories.</p>
+      <DefaultStorageTargets />
+
+      <AddStorageRootButton />
+    </div>
+  );
+}
+
+// ============================================================================
+// DefaultStorageTargets — dropdowns for global default + per-sublibrary overrides
+// ============================================================================
+
+const SUBLIBRARY_LABELS: ReadonlyArray<{ key: LibraryData.SubLibraryId; label: string }> = [
+  { key: 'ingredients', label: 'Ingredients' },
+  { key: 'fillings', label: 'Fillings' },
+  { key: 'confections', label: 'Confections' },
+  { key: 'decorations', label: 'Decorations' },
+  { key: 'molds', label: 'Molds' },
+  { key: 'procedures', label: 'Procedures' },
+  { key: 'tasks', label: 'Tasks' }
+];
+
+function DefaultStorageTargets(): React.ReactElement {
+  const workspace = useWorkspace();
+  const reactiveWorkspace = useReactiveWorkspace();
+  const summary = reactiveWorkspace.storageSummary;
+  const settingsManager = workspace.settings;
+
+  if (!settingsManager) {
+    return <></>;
+  }
+
+  const resolved = settingsManager.getResolvedSettings();
+  const currentTargets = resolved.defaultStorageTargets;
+  const mutableRoots = summary.roots.filter((r) => r.isMutable);
+
+  if (mutableRoots.length === 0) {
+    return <></>;
+  }
+
+  function handleGlobalDefaultChange(rootId: string): void {
+    if (!settingsManager) return;
+    const value = rootId === '' ? undefined : (rootId as Settings.StorageRootId);
+    const result = settingsManager.updateCommonSettings({
+      defaultStorageTargets: {
+        ...currentTargets,
+        globalDefault: value
+      }
+    });
+    if (result.isSuccess()) {
+      settingsManager.save().catch(() => undefined);
+      reactiveWorkspace.notifyChange();
+    }
+  }
+
+  function handleSublibraryOverrideChange(subLibId: LibraryData.SubLibraryId, rootId: string): void {
+    if (!settingsManager) return;
+    const value = rootId === '' ? undefined : (rootId as Settings.StorageRootId);
+    const existing = currentTargets?.sublibraryOverrides ?? {};
+    const updated = { ...existing, [subLibId]: value };
+    if (value === undefined) {
+      delete updated[subLibId];
+    }
+    const result = settingsManager.updateCommonSettings({
+      defaultStorageTargets: {
+        ...currentTargets,
+        sublibraryOverrides: Object.keys(updated).length > 0 ? updated : undefined
+      }
+    });
+    if (result.isSuccess()) {
+      settingsManager.save().catch(() => undefined);
+      reactiveWorkspace.notifyChange();
+    }
+  }
+
+  return (
+    <div className="pt-2 border-t border-gray-100">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Default Storage</p>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <label className="text-xs text-gray-600 shrink-0 w-28">Global default</label>
+          <select
+            value={currentTargets?.globalDefault ?? ''}
+            onChange={(e): void => handleGlobalDefaultChange(e.target.value)}
+            className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+          >
+            <option value="">— browser storage —</option>
+            {mutableRoots.map((root) => (
+              <option key={root.id} value={root.id}>
+                {root.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {SUBLIBRARY_LABELS.map(({ key, label }) => (
+          <div key={key} className="flex items-center justify-between gap-3">
+            <label className="text-xs text-gray-400 shrink-0 w-28 pl-2">{label}</label>
+            <select
+              value={currentTargets?.sublibraryOverrides?.[key] ?? ''}
+              onChange={(e): void => handleSublibraryOverrideChange(key, e.target.value)}
+              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+            >
+              <option value="">— use global default —</option>
+              {mutableRoots.map((root) => (
+                <option key={root.id} value={root.id}>
+                  {root.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// AddStorageRootButton — button to add a new local directory as a storage root
+// ============================================================================
+
+function AddStorageRootButton(): React.ReactElement {
+  const { canAddStorageRoot, addStorageRoot } = useAddStorageRoot();
+
+  if (!canAddStorageRoot) {
+    return (
+      <p className="text-xs text-gray-400 pt-2">Local directory storage is not supported in this browser.</p>
+    );
+  }
+
+  return (
+    <div className="pt-2">
+      <button
+        type="button"
+        onClick={(): Promise<void> => addStorageRoot()}
+        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-choco-accent border border-choco-accent/30 rounded-md hover:bg-choco-accent/5 transition-colors"
+      >
+        <span className="text-base leading-none">+</span>
+        Add Local Directory
+      </button>
+      <p className="text-xs text-gray-400 mt-1.5">
+        Opens a directory picker and loads all collections from the selected folder.
+      </p>
     </div>
   );
 }
@@ -394,16 +572,27 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
 // Helpers for building collection lists from sub-libraries
 // ============================================================================
 
+interface ICollectionEntryRaw {
+  readonly isMutable: boolean;
+  readonly items: { readonly size: number };
+  readonly metadata?: { readonly sourceName?: string };
+}
+
 interface ISubLibWithCollections {
   readonly collections: {
-    entries(): Iterable<[string, { readonly isMutable: boolean; readonly items: { readonly size: number } }]>;
+    entries(): Iterable<[string, ICollectionEntryRaw]>;
   };
 }
 
-function buildCollections(subLib: ISubLibWithCollections): ReadonlyArray<ICollectionEntry> {
+function buildCollections(
+  subLib: ISubLibWithCollections,
+  sourceName: string
+): ReadonlyArray<ICollectionEntry> {
   const result: ICollectionEntry[] = [];
   for (const [id, col] of subLib.collections.entries()) {
-    result.push({ id, itemCount: col.items.size, isMutable: col.isMutable });
+    if (col.metadata?.sourceName === sourceName) {
+      result.push({ id, itemCount: col.items.size, isMutable: col.isMutable });
+    }
   }
   return result;
 }

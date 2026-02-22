@@ -104,5 +104,8 @@ export const TAB_FILTER_DEFINITIONS: Record<AppTab, ReadonlyArray<IFilterDefinit
   'mold-inventory': [
     { key: 'shape', label: 'Shape' },
     { key: 'available', label: 'Availability', multiple: false }
-  ]
+  ],
+
+  // Settings tab — no filters
+  settings: []
 } as const;

@@ -5309,6 +5309,7 @@ interface IResolvedRecipeFillingOption {
 
 // @public
 interface IResolvedSettings {
+    readonly defaultStorageTargets?: IDefaultStorageTargets;
     readonly defaultTargets: IDefaultCollectionTargets;
     readonly deviceId: DeviceId;
     readonly lastActiveSessionId?: string;

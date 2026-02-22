@@ -253,6 +253,7 @@ export function useCollectionActions(): ICollectionActions {
     }
 
     const loadResult = subLibrary.loadFromFileTreeSource({
+      sourceName: dirHandle.name,
       directory: sourceDirResult.value,
       load: true,
       mutable: true
@@ -775,6 +776,7 @@ export function useCollectionActions(): ICollectionActions {
     }
 
     const loadResult = subLibrary.loadFromFileTreeSource({
+      sourceName: fileHandle.name,
       directory: rootResult.value,
       load: true,
       mutable: true

@@ -59,10 +59,16 @@ export type LibraryTab =
   | 'procedures';
 
 /**
+ * The settings tab identifier. Mode-independent — valid in any mode.
+ * @public
+ */
+export type SettingsTab = 'settings';
+
+/**
  * Union of all tab identifiers.
  * @public
  */
-export type AppTab = ProductionTab | LibraryTab;
+export type AppTab = ProductionTab | LibraryTab | SettingsTab;
 
 /**
  * Default tab for each mode.
@@ -97,7 +103,8 @@ export const TAB_LABELS: Record<AppTab, string> = {
   decorations: 'Decorations',
   molds: 'Molds',
   tasks: 'Tasks',
-  procedures: 'Procedures'
+  procedures: 'Procedures',
+  settings: 'Settings'
 } as const;
 
 /**

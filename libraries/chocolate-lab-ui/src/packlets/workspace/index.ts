@@ -21,10 +21,13 @@ export {
   type WorkspaceListener,
   type IPersistentTreeEntry,
   type IStorageRootSummary,
-  type IStorageSummary
+  type IStorageSummary,
+  type StorageCategory
 } from './reactiveWorkspace';
 
 export { restoreSavedDirectories, type IRestoreSavedDirectoriesParams } from './restoreSavedDirectories';
+
+export { useAddStorageRoot, type IAddStorageRootActions } from './useAddStorageRoot';
 
 export {
   WorkspaceProvider,

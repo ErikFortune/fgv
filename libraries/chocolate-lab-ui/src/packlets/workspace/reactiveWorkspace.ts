@@ -58,6 +58,12 @@ export interface IPersistentTreeEntry {
 }
 
 /**
+ * Categories of data that a storage root holds or can hold.
+ * @public
+ */
+export type StorageCategory = 'library' | 'user-data' | 'settings';
+
+/**
  * Summary of a single active storage root.
  * @public
  */
@@ -66,12 +72,16 @@ export interface IStorageRootSummary {
   readonly id: string;
   /** Human-readable label */
   readonly label: string;
+  /** The sourceName stamped on collections loaded from this root (matches ICollectionRuntimeMetadata.sourceName) */
+  readonly sourceName: string;
   /** Whether this is the built-in embedded library */
   readonly isBuiltIn: boolean;
   /** Whether this storage root is mutable (user can write to it) */
   readonly isMutable: boolean;
   /** Whether this is a local directory opened via the File System Access API */
   readonly isLocal: boolean;
+  /** Categories of data held or manageable in this root */
+  readonly categories: ReadonlyArray<StorageCategory>;
 }
 
 /**
@@ -164,9 +174,11 @@ export class ReactiveWorkspace {
       roots.push({
         id: 'builtin',
         label: 'Built-in Library',
+        sourceName: 'builtin',
         isBuiltIn: true,
         isMutable: false,
-        isLocal: false
+        isLocal: false,
+        categories: ['library']
       });
     }
 
@@ -174,9 +186,11 @@ export class ReactiveWorkspace {
       roots.push({
         id: 'localStorage',
         label: this._localStorageLabel,
+        sourceName: 'localStorage',
         isBuiltIn: false,
         isMutable: true,
-        isLocal: false
+        isLocal: false,
+        categories: ['library', 'user-data', 'settings']
       });
     }
 
@@ -184,9 +198,11 @@ export class ReactiveWorkspace {
       roots.push({
         id,
         label: entry.label,
+        sourceName: id,
         isBuiltIn: false,
         isMutable: true,
-        isLocal: true
+        isLocal: true,
+        categories: ['library']
       });
     }
 

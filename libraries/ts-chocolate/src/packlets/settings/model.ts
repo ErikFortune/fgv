@@ -308,6 +308,8 @@ export interface IResolvedSettings {
   readonly tools: IToolSettings;
   /** Last active session ID */
   readonly lastActiveSessionId?: string;
+  /** Default storage root targets for new collections (from common settings) */
+  readonly defaultStorageTargets?: IDefaultStorageTargets;
 }
 
 // ============================================================================
@@ -382,7 +384,10 @@ export function resolveSettings(common: ICommonSettings, device: IDeviceSettings
       }
     },
 
-    lastActiveSessionId: device.lastActiveSessionId
+    lastActiveSessionId: device.lastActiveSessionId,
+
+    // Default storage targets come from common settings (shared across devices)
+    defaultStorageTargets: common.defaultStorageTargets
   };
 }
 

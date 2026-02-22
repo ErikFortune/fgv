@@ -93,4 +93,21 @@ string
 Last active session ID
 
 </td></tr>
+<tr><td>
+
+[defaultStorageTargets](./IResolvedSettings.defaultStorageTargets.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IDefaultStorageTargets](IDefaultStorageTargets.md)
+
+</td><td>
+
+Default storage root targets for new collections (from common settings)
+
+</td></tr>
 </tbody></table>

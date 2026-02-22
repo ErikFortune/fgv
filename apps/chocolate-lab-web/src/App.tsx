@@ -61,9 +61,14 @@ const MODES: ReadonlyArray<IModeConfig<AppMode>> = [
   { id: 'library', label: MODE_LABELS.library }
 ];
 
+const VALID_TABS_WITH_SETTINGS: Record<AppMode, ReadonlyArray<AppTab>> = {
+  production: [...MODE_TABS.production, 'settings' as AppTab],
+  library: [...MODE_TABS.library, 'settings' as AppTab]
+};
+
 const URL_SYNC_CONFIG: IUrlSyncConfig<AppMode, AppTab> = {
   validModes: ['production', 'library'],
-  validTabs: MODE_TABS,
+  validTabs: VALID_TABS_WITH_SETTINGS,
   defaultTabs: DEFAULT_TABS
 };
 
@@ -161,7 +166,7 @@ function getReactiveWorkspaceAsync(): Promise<ReactiveWorkspace> {
 // Empty Tab Content (for tabs not yet implemented)
 // ============================================================================
 
-const TAB_DESCRIPTIONS: Record<AppTab, string> = {
+const TAB_DESCRIPTIONS: Record<string, string> = {
   sessions: 'Manage production sessions — plan, execute, and track your chocolate-making runs.',
   journal: 'View journal entries and production history.',
   'ingredient-inventory': 'Track your ingredient stock levels and locations.',
@@ -172,7 +177,8 @@ const TAB_DESCRIPTIONS: Record<AppTab, string> = {
   decorations: 'Browse decoration techniques with ingredients, procedures, and ratings.',
   molds: 'Catalog your mold collection with cavity specifications.',
   tasks: 'Define reusable tasks for production procedures.',
-  procedures: 'Build step-by-step procedures from task sequences.'
+  procedures: 'Build step-by-step procedures from task sequences.',
+  settings: 'Configure storage roots, default targets, and workspace preferences.'
 };
 
 function TabPlaceholder({ tab }: { readonly tab: AppTab }): React.ReactElement {
@@ -272,7 +278,7 @@ function AppShell(): React.ReactElement {
   const popCascade = useNavigationStore((s) => s.popCascade);
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpen = (activeTab as string) === 'settings';
   const [pendingSettingsClose, setPendingSettingsClose] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
@@ -301,11 +307,9 @@ function AppShell(): React.ReactElement {
     (tab: AppTab): void => {
       if (hasUnsavedChanges) {
         setPendingNavigation(() => (): void => {
-          setSettingsOpen(false);
           setTab(tab);
         });
       } else {
-        setSettingsOpen(false);
         setTab(tab);
       }
     },
@@ -316,24 +320,14 @@ function AppShell(): React.ReactElement {
     (newMode: AppMode): void => {
       if (hasUnsavedChanges) {
         setPendingNavigation(() => (): void => {
-          setSettingsOpen(false);
           setMode(newMode);
         });
       } else {
-        setSettingsOpen(false);
         setMode(newMode);
       }
     },
     [hasUnsavedChanges, setMode]
   );
-
-  const guardedOpenSettings = useCallback((): void => {
-    if (hasUnsavedChanges) {
-      setPendingNavigation(() => (): void => setSettingsOpen(true));
-    } else {
-      setSettingsOpen(true);
-    }
-  }, [hasUnsavedChanges]);
 
   const handleNavConfirm = useCallback((): void => {
     if (pendingNavigation) {
@@ -420,13 +414,7 @@ function AppShell(): React.ReactElement {
         onTabChange={guardedSetTab}
         rightContent={
           <button
-            onClick={(): void => {
-              if (settingsOpen) {
-                setSettingsOpen(false);
-              } else {
-                guardedOpenSettings();
-              }
-            }}
+            onClick={(): void => guardedSetTab('settings' as AppTab)}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               settingsOpen ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white hover:bg-white/10'
             }`}
@@ -439,7 +427,7 @@ function AppShell(): React.ReactElement {
       {/* Main content area: sidebar + tab content, or settings cascade */}
       {settingsOpen ? (
         <SettingsCascadeView
-          onClose={(): void => setSettingsOpen(false)}
+          onClose={(): void => guardedSetTab(modeTabs[0] as AppTab)}
           onDirtyClose={(): void => setPendingSettingsClose(true)}
         />
       ) : (
@@ -468,7 +456,7 @@ function AppShell(): React.ReactElement {
         severity="warning"
         onConfirm={(): void => {
           setPendingSettingsClose(false);
-          setSettingsOpen(false);
+          guardedSetTab(modeTabs[0] as AppTab);
         }}
         onCancel={(): void => setPendingSettingsClose(false)}
       />
