@@ -95,6 +95,23 @@ The key store file contents, if found.
 </td></tr>
 <tr><td>
 
+[bootstrapSettings](./IPlatformInitResult.bootstrapSettings.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IBootstrapSettings](IBootstrapSettings.md)
+
+</td><td>
+
+The bootstrap settings loaded during platform init.
+
+</td></tr>
+<tr><td>
+
 [commonSettings](./IPlatformInitResult.commonSettings.md)
 
 </td><td>
