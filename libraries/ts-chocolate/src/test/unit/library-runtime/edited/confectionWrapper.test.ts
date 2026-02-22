@@ -1370,4 +1370,235 @@ describe('EditedConfectionRecipe', () => {
       expect(wrapper.canUndo()).toBe(true);
     });
   });
+
+  // ============================================================================
+  // setVariationMolds
+  // ============================================================================
+
+  describe('setVariationMolds', () => {
+    test('sets molds on molded bonbon variation', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const molds = {
+        options: [makeMoldRef('new-mold')],
+        preferredId: 'new-mold' as MoldId
+      };
+      expect(wrapper.setVariationMolds('v1' as ConfectionRecipeVariationSpec, molds)).toSucceed();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.molds.preferredId).toBe('new-mold');
+        expect(v.molds.options).toHaveLength(1);
+      }
+    });
+
+    test('fails when variation does not exist', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const molds = { options: [makeMoldRef('m')], preferredId: 'm' as MoldId };
+      expect(wrapper.setVariationMolds('nope' as ConfectionRecipeVariationSpec, molds)).toFailWith(
+        /does not exist/
+      );
+    });
+
+    test('fails when variation is not a molded bonbon', () => {
+      const entity = makeBarTruffleEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const molds = { options: [makeMoldRef('m')], preferredId: 'm' as MoldId };
+      expect(wrapper.setVariationMolds('v1' as ConfectionRecipeVariationSpec, molds)).toFailWith(
+        /not a molded bon-bon/
+      );
+    });
+
+    test('supports undo', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const molds = { options: [makeMoldRef('new-mold')], preferredId: 'new-mold' as MoldId };
+      wrapper.setVariationMolds('v1' as ConfectionRecipeVariationSpec, molds);
+      wrapper.undo();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.molds.preferredId).toBe('round-mold');
+      }
+    });
+  });
+
+  // ============================================================================
+  // setVariationShellChocolate
+  // ============================================================================
+
+  describe('setVariationShellChocolate', () => {
+    test('sets shell chocolate on molded bonbon variation', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const shellChocolate = makeChocolateSpec('milk-40');
+      expect(
+        wrapper.setVariationShellChocolate('v1' as ConfectionRecipeVariationSpec, shellChocolate)
+      ).toSucceed();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.shellChocolate.preferredId).toBe('milk-40');
+      }
+    });
+
+    test('fails when variation does not exist', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(
+        wrapper.setVariationShellChocolate('nope' as ConfectionRecipeVariationSpec, makeChocolateSpec('x'))
+      ).toFailWith(/does not exist/);
+    });
+
+    test('fails when variation is not a molded bonbon', () => {
+      const entity = makeRolledTruffleEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(
+        wrapper.setVariationShellChocolate('v1' as ConfectionRecipeVariationSpec, makeChocolateSpec('x'))
+      ).toFailWith(/not a molded bon-bon/);
+    });
+
+    test('supports undo', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      wrapper.setVariationShellChocolate('v1' as ConfectionRecipeVariationSpec, makeChocolateSpec('milk-40'));
+      wrapper.undo();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.shellChocolate.preferredId).toBe('dark-70');
+      }
+    });
+  });
+
+  // ============================================================================
+  // setVariationAdditionalChocolates
+  // ============================================================================
+
+  describe('setVariationAdditionalChocolates', () => {
+    test('sets additional chocolates on molded bonbon variation', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const additionalChocolates: Confections.IAdditionalChocolateEntity[] = [
+        {
+          chocolate: { ids: ['white-30' as IngredientId], preferredId: 'white-30' as IngredientId },
+          purpose: 'seal'
+        }
+      ];
+      expect(
+        wrapper.setVariationAdditionalChocolates('v1' as ConfectionRecipeVariationSpec, additionalChocolates)
+      ).toSucceed();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.additionalChocolates).toHaveLength(1);
+        expect(v.additionalChocolates![0].purpose).toBe('seal');
+      }
+    });
+
+    test('clears additional chocolates when undefined', () => {
+      const entity = makeMoldedBonBonEntity({
+        variations: [
+          makeMoldedBonBonVariation('v1', {
+            additionalChocolates: [
+              {
+                chocolate: { ids: ['white-30' as IngredientId], preferredId: 'white-30' as IngredientId },
+                purpose: 'seal'
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(
+        wrapper.setVariationAdditionalChocolates('v1' as ConfectionRecipeVariationSpec, undefined)
+      ).toSucceed();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.additionalChocolates).toBeUndefined();
+      }
+    });
+
+    test('fails when variation does not exist', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(
+        wrapper.setVariationAdditionalChocolates('nope' as ConfectionRecipeVariationSpec, [])
+      ).toFailWith(/does not exist/);
+    });
+
+    test('fails when variation is not a molded bonbon', () => {
+      const entity = makeRolledTruffleEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(wrapper.setVariationAdditionalChocolates('v1' as ConfectionRecipeVariationSpec, [])).toFailWith(
+        /not a molded bon-bon/
+      );
+    });
+
+    test('supports undo', () => {
+      const entity = makeMoldedBonBonEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const additionalChocolates: Confections.IAdditionalChocolateEntity[] = [
+        {
+          chocolate: { ids: ['white-30' as IngredientId], preferredId: 'white-30' as IngredientId },
+          purpose: 'seal'
+        }
+      ];
+      wrapper.setVariationAdditionalChocolates('v1' as ConfectionRecipeVariationSpec, additionalChocolates);
+      wrapper.undo();
+      const v = wrapper.variations[0];
+      if (Confections.isMoldedBonBonRecipeVariationEntity(v)) {
+        expect(v.additionalChocolates).toBeUndefined();
+      }
+    });
+  });
+
+  // ============================================================================
+  // setVariationDecorations
+  // ============================================================================
+
+  describe('setVariationDecorations', () => {
+    test('sets decorations on any variation type', () => {
+      const entity = makeRolledTruffleEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const decorations = {
+        options: [{ id: 'dec-1' as DecorationId }],
+        preferredId: 'dec-1' as DecorationId
+      };
+      expect(wrapper.setVariationDecorations('v1' as ConfectionRecipeVariationSpec, decorations)).toSucceed();
+      expect(wrapper.variations[0].decorations?.preferredId).toBe('dec-1');
+    });
+
+    test('clears decorations when undefined', () => {
+      const entity = makeMoldedBonBonEntity({
+        variations: [
+          makeMoldedBonBonVariation('v1', {
+            decorations: {
+              options: [{ id: 'dec-1' as DecorationId }],
+              preferredId: 'dec-1' as DecorationId
+            }
+          })
+        ]
+      });
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(wrapper.setVariationDecorations('v1' as ConfectionRecipeVariationSpec, undefined)).toSucceed();
+      expect(wrapper.variations[0].decorations).toBeUndefined();
+    });
+
+    test('fails when variation does not exist', () => {
+      const entity = makeRolledTruffleEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      expect(wrapper.setVariationDecorations('nope' as ConfectionRecipeVariationSpec, undefined)).toFailWith(
+        /does not exist/
+      );
+    });
+
+    test('supports undo', () => {
+      const entity = makeRolledTruffleEntity();
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+      const decorations = {
+        options: [{ id: 'dec-1' as DecorationId }],
+        preferredId: 'dec-1' as DecorationId
+      };
+      wrapper.setVariationDecorations('v1' as ConfectionRecipeVariationSpec, decorations);
+      wrapper.undo();
+      expect(wrapper.variations[0].decorations).toBeUndefined();
+    });
+  });
 });

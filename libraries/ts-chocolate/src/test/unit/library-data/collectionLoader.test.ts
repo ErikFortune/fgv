@@ -192,6 +192,44 @@ describe('CollectionLoader', () => {
       });
     });
 
+    test('sets sourceName to "unknown" when not provided', () => {
+      const collectionData = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Item', value: 1 }
+        }
+      };
+
+      const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.json', contents: collectionData }];
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections[0].metadata?.sourceName).toBe('unknown');
+          });
+        });
+      });
+    });
+
+    test('uses provided sourceName in metadata', () => {
+      const collectionData = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Item', value: 1 }
+        }
+      };
+
+      const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.json', contents: collectionData }];
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          expect(loader.loadFromFileTree(dir, { sourceName: 'my-source' })).toSucceedAndSatisfy((result) => {
+            expect(result.collections[0].metadata?.sourceName).toBe('my-source');
+          });
+        });
+      });
+    });
+
     test('loads multiple collections from directory', () => {
       const collection1 = {
         items: {
@@ -861,6 +899,44 @@ describe('CollectionLoader', () => {
         expect(r.collections).toHaveLength(1);
         expect(r.collections[0].id).toBe('test-collection');
         expect(Object.keys(r.collections[0].items)).toHaveLength(2);
+      });
+    });
+
+    test('sets sourceName to "unknown" when not provided (async)', async () => {
+      const collectionData = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Item', value: 1 }
+        }
+      };
+
+      const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.json', contents: collectionData }];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir);
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.collections[0].metadata?.sourceName).toBe('unknown');
+      });
+    });
+
+    test('uses provided sourceName in metadata (async)', async () => {
+      const collectionData = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Item', value: 1 }
+        }
+      };
+
+      const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.json', contents: collectionData }];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir, { sourceName: 'async-source' });
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.collections[0].metadata?.sourceName).toBe('async-source');
       });
     });
 

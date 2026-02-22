@@ -414,5 +414,28 @@ describe('SubLibraryBase Collection Management', () => {
       expect(result.isFailure() && result.message).toMatch(/cannot be empty/i);
       expect(result.isFailure() && result.message).toMatch(/exceeds 2000 characters/i);
     });
+
+    test('updates metadata on collection with no existing metadata, using "unknown" sourceName', () => {
+      // Library created with { builtin: false } has no mutable source name
+      // Adding a collection directly without metadata tests the double fallback
+      library.addCollectionEntry({
+        id: 'no-metadata' as CollectionId,
+        isMutable: true,
+        items: {}
+        // Note: no metadata
+      });
+
+      const metadata: Partial<ICollectionRuntimeMetadata> = {
+        name: 'Added Name'
+      };
+
+      expect(library.updateCollectionMetadata('no-metadata' as CollectionId, metadata)).toSucceed();
+
+      // Verify that the merged metadata has sourceName 'unknown' from the fallback
+      expect(library.collections.get('no-metadata' as CollectionId).asResult).toSucceedAndSatisfy((entry) => {
+        expect(entry.metadata?.name).toBe('Added Name');
+        expect(entry.metadata?.sourceName).toBe('unknown');
+      });
+    });
   });
 });

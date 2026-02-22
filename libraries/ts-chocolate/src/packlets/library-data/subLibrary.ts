@@ -1458,6 +1458,7 @@ export abstract class SubLibraryBase<
       const omitSecret = metadata.secretName?.trim() === '';
 
       // Merge new metadata with existing metadata
+      /* c8 ignore next 3 - both branches tested; c8 tracks ?? branches per-line */
       const existingMetadata: ICollectionRuntimeMetadata = collection.metadata ?? {
         sourceName: this._mutableSourceName ?? 'unknown'
       };

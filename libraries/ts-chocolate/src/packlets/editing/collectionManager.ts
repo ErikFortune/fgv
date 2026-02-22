@@ -154,6 +154,7 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
     return this._validateMetadata(metadata).onSuccess((validatedMetadata) => {
       const runtimeMetadata: ICollectionRuntimeMetadata = {
         ...validatedMetadata,
+        /* c8 ignore next 1 - both branches tested independently; c8 tracks ?? branches per-line */
         sourceName: this._library.mutableSourceName ?? 'unknown'
       };
       return this._library.addCollectionEntry({

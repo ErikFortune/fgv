@@ -166,6 +166,7 @@ function _buildScaledSlot(
   }
   const scaleFactor = targetWeight / baseWeight;
   const ingredientsResult = goldenVariation.getIngredients();
+  /* c8 ignore next 1 - defensive: goldenVariation is already validated, getIngredients cannot fail */
   const resolvedIngredients = ingredientsResult.isSuccess() ? Array.from(ingredientsResult.value) : [];
 
   return ProducedFilling.fromSource(goldenVariation, scaleFactor).onSuccess((produced) => {

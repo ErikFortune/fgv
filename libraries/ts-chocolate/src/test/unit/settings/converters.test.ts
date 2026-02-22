@@ -25,7 +25,8 @@ import {
   DEVICE_ID_PATTERN,
   SETTINGS_SCHEMA_VERSION,
   DeviceId,
-  ExternalLibraryRef
+  ExternalLibraryRef,
+  StorageRootId
 } from '../../../packlets/settings';
 
 describe('settings converters', () => {
@@ -481,6 +482,83 @@ describe('settings converters', () => {
 
     test('converts empty object', () => {
       expect(Converters.partialToolSettings.convert({})).toSucceed();
+    });
+  });
+
+  // ============================================================================
+  // storageRootId converter
+  // ============================================================================
+
+  describe('storageRootId', () => {
+    test('converts non-empty strings', () => {
+      expect(Converters.storageRootId.convert('my-storage')).toSucceedWith(
+        'my-storage' as unknown as StorageRootId
+      );
+    });
+
+    test('fails for empty string', () => {
+      expect(Converters.storageRootId.convert('')).toFailWith(/cannot be empty/i);
+    });
+
+    test('fails for non-string input', () => {
+      expect(Converters.storageRootId.convert(123)).toFail();
+    });
+  });
+
+  // ============================================================================
+  // defaultStorageTargets converter (exercises sublibraryStorageOverrides)
+  // ============================================================================
+
+  describe('defaultStorageTargets', () => {
+    test('converts with globalDefault only', () => {
+      expect(Converters.defaultStorageTargets.convert({ globalDefault: 'main' })).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.globalDefault).toBe('main');
+          expect(result.sublibraryOverrides).toBeUndefined();
+        }
+      );
+    });
+
+    test('converts with valid sublibrary overrides', () => {
+      const input = {
+        sublibraryOverrides: { ingredients: 'storage-1', fillings: 'storage-2' }
+      };
+      expect(Converters.defaultStorageTargets.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.sublibraryOverrides?.ingredients).toBe('storage-1');
+        expect(result.sublibraryOverrides?.fillings).toBe('storage-2');
+      });
+    });
+
+    test('converts empty overrides object', () => {
+      expect(Converters.defaultStorageTargets.convert({ sublibraryOverrides: {} })).toSucceed();
+    });
+
+    test('converts empty object', () => {
+      expect(Converters.defaultStorageTargets.convert({})).toSucceed();
+    });
+
+    test('fails for non-object sublibrary overrides', () => {
+      expect(Converters.defaultStorageTargets.convert({ sublibraryOverrides: 'invalid' })).toFailWith(
+        /expected object/i
+      );
+    });
+
+    test('fails for null sublibrary overrides', () => {
+      expect(Converters.defaultStorageTargets.convert({ sublibraryOverrides: null })).toFailWith(
+        /expected object/i
+      );
+    });
+
+    test('fails for invalid sublibrary ID in overrides', () => {
+      expect(
+        Converters.defaultStorageTargets.convert({ sublibraryOverrides: { notASubLibrary: 'storage' } })
+      ).toFailWith(/invalid sublibrary id/i);
+    });
+
+    test('fails when storage root ID is empty in overrides', () => {
+      expect(
+        Converters.defaultStorageTargets.convert({ sublibraryOverrides: { ingredients: '' } })
+      ).toFailWith(/cannot be empty/i);
     });
   });
 });

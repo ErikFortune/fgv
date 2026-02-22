@@ -229,6 +229,21 @@ describe('CollectionManager', () => {
 
       expect(manager.create('test' as CollectionId, metadata)).toSucceed();
     });
+
+    test('injects "unknown" sourceName when library has no mutable source', () => {
+      // Library created with { builtin: false } has no mutable file source
+      const metadata: ICollectionFileMetadata = {
+        name: 'No Source'
+      };
+
+      manager.create('no-source' as CollectionId, metadata).orThrow();
+
+      // Verify the runtime metadata has sourceName 'unknown'
+      expect(library.collections.get('no-source' as CollectionId).asResult).toSucceedAndSatisfy((entry) => {
+        const runtimeMetadata = entry.metadata as ICollectionRuntimeMetadata;
+        expect(runtimeMetadata.sourceName).toBe('unknown');
+      });
+    });
   });
 
   // ============================================================================

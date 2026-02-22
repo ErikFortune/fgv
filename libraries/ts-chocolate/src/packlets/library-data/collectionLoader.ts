@@ -360,6 +360,7 @@ export class CollectionLoader<
           protectedCollections,
           isBuiltIn,
           item.item,
+          /* c8 ignore next 1 - encrypted async path only called with sourceName from sub-library */
           params.sourceName ?? 'unknown'
         );
         if (encryptedResult === undefined) {
