@@ -43,6 +43,7 @@ import { FullLibraryLoadSpec, ILibraryFileTreeSource, LibraryPaths, SubLibraryId
 import {
   DeviceId,
   ExternalLibraryRef,
+  IBootstrapSettings,
   ICommonSettings,
   IDeviceSettings,
   IExternalLibraryRefConfig,
@@ -119,12 +120,20 @@ export interface IPlatformInitResult {
   readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
 
   /**
+   * The bootstrap settings loaded during platform init.
+   * Present when the platform loads bootstrap.json (or migrates from common.json).
+   */
+  readonly bootstrapSettings?: IBootstrapSettings;
+
+  /**
    * The common settings (loaded from file or defaults).
+   * @deprecated Use bootstrapSettings for preload config, preferences via SettingsManager.
    */
   readonly commonSettings: ICommonSettings;
 
   /**
    * The device settings (loaded from file or defaults).
+   * @deprecated Device settings are vestigial. Use deviceId directly.
    */
   readonly deviceSettings: IDeviceSettings;
 
@@ -441,9 +450,11 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
     userLibrarySourceName = 'localStorage'
   } = params;
 
-  // Create settings manager and workspace from the platform init result
+  // Create settings manager using bootstrap-with-migration factory.
+  // This handles bootstrap.json + preferences.json, with automatic migration
+  // from legacy common.json if needed.
   return (
-    SettingsManager.create({
+    SettingsManager.createFromBootstrapWithMigration({
       fileTree: platformInit.userLibraryTree,
       deviceId: platformInit.deviceId
     })

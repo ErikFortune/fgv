@@ -160,9 +160,9 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
                   return fail(`workspace directories: ${dirsResult.message}`);
                 }
 
-                return this._loadSettings(tree, deviceId, browserOptions.deviceName)
+                return this._loadSettingsWithBootstrap(tree, deviceId, browserOptions.deviceName)
                   .withErrorFormat((msg) => `settings: ${msg}`)
-                  .onSuccess(({ common, device }) => {
+                  .onSuccess(({ bootstrap, common, device }) => {
                     const keyStoreFile = this._loadKeyStoreFromStorage(
                       browserOptions.storage ??
                         (typeof window !== 'undefined' ? window.localStorage : undefined),
@@ -174,6 +174,7 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
                       userLibraryTree,
                       externalLibraries: [] as IResolvedExternalLibrary[],
                       keyStoreFile: keyStoreFile.isSuccess() ? keyStoreFile.value : undefined,
+                      bootstrapSettings: bootstrap,
                       commonSettings: common,
                       deviceSettings: device,
                       resolvedSettings: Settings.resolveSettings(common, device),
@@ -230,20 +231,48 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads settings from the FileTree.
+   * Loads settings from the FileTree, including bootstrap settings.
    * @param tree - The FileTree instance (for path-based file lookup)
    * @param deviceId - Device ID for device settings
    * @param deviceName - Optional device name for new device settings
    * @internal
    */
-  private _loadSettings(
+  private _loadSettingsWithBootstrap(
     tree: FileTree.FileTree,
     deviceId: Settings.DeviceId,
     deviceName?: string
-  ): Result<{ common: Settings.ICommonSettings; device: Settings.IDeviceSettings }> {
-    return this._loadCommonSettings(tree).onSuccess((common) =>
-      this._loadDeviceSettings(tree, deviceId, deviceName).onSuccess((device) => succeed({ common, device }))
+  ): Result<{
+    bootstrap: Settings.IBootstrapSettings | undefined;
+    common: Settings.ICommonSettings;
+    device: Settings.IDeviceSettings;
+  }> {
+    return this._loadBootstrapSettings(tree).onSuccess((bootstrap) =>
+      this._loadCommonSettings(tree).onSuccess((common) =>
+        this._loadDeviceSettings(tree, deviceId, deviceName).onSuccess((device) =>
+          succeed({ bootstrap, common, device })
+        )
+      )
     );
+  }
+
+  /**
+   * Loads bootstrap settings from the FileTree.
+   * Returns undefined (not failure) if the file doesn't exist.
+   * @internal
+   */
+  private _loadBootstrapSettings(tree: FileTree.FileTree): Result<Settings.IBootstrapSettings | undefined> {
+    const settingsPath = `/${LibraryData.LibraryPaths.settings}/${LibraryData.LibraryPaths.settingsBootstrap}`;
+
+    const fileResult = tree.getFile(settingsPath);
+    if (fileResult.isFailure()) {
+      return succeed(undefined);
+    }
+
+    return fileResult.value
+      .getContents()
+      .onSuccess((json) =>
+        Settings.Converters.bootstrapSettings.convert(json).withErrorFormat((e) => `bootstrap.json: ${e}`)
+      );
   }
 
   /**

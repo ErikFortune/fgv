@@ -78,12 +78,22 @@ export const LibraryPaths = {
    */
   settings: 'data/settings',
   /**
+   * Filename for bootstrap settings (within settings directory).
+   */
+  settingsBootstrap: 'bootstrap.json',
+  /**
+   * Filename for preferences settings (within settings directory).
+   */
+  settingsPreferences: 'preferences.json',
+  /**
    * Filename for common settings (within settings directory).
+   * @deprecated Use settingsBootstrap and settingsPreferences.
    */
   settingsCommon: 'common.json',
   /**
    * Filename prefix for device-specific settings (within settings directory).
    * Full filename is `device-{deviceId}.json`.
+   * @deprecated Device settings are vestigial.
    */
   settingsDevicePrefix: 'device-',
   /**

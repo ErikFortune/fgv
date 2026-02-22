@@ -39,6 +39,7 @@ import {
   createDefaultDeviceSettings,
   DeviceId,
   ExternalLibraryRef,
+  IBootstrapSettings,
   ICommonSettings,
   IDeviceSettings,
   IExternalLibraryRefConfig,
@@ -96,15 +97,17 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     }
     const userLibraryTree = userLibraryTreeResult.value;
 
-    // 3. Load settings (common and device-specific)
-    const settingsResult = this._loadSettings(userLibraryTree, deviceId, options.deviceName);
-    if (settingsResult.isFailure()) {
-      return fail(`Failed to load settings: ${settingsResult.message}`);
+    // 3. Load bootstrap settings (try bootstrap.json, fall back to common.json)
+    const settingsDir = this._navigateToDirectory(userLibraryTree, LibraryPaths.settings);
+    const bootstrapResult = this._loadBootstrapOrFallback(settingsDir, deviceId, options.deviceName);
+    if (bootstrapResult.isFailure()) {
+      return fail(`Failed to load settings: ${bootstrapResult.message}`);
     }
-    const { common, device } = settingsResult.value;
+    const { bootstrap, common, device } = bootstrapResult.value;
 
-    // 4. Resolve external libraries
-    const externalLibrariesResult = this._resolveExternalLibraries(common.externalLibraries ?? []);
+    // 4. Resolve external libraries from bootstrap (or common fallback)
+    const externalLibConfigs = bootstrap?.externalLibraries ?? common.externalLibraries ?? [];
+    const externalLibrariesResult = this._resolveExternalLibraries(externalLibConfigs);
     if (externalLibrariesResult.isFailure()) {
       return fail(`Failed to resolve external libraries: ${externalLibrariesResult.message}`);
     }
@@ -121,6 +124,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
       userLibraryTree,
       externalLibraries: externalLibrariesResult.value,
       keyStoreFile: keyStoreFileResult.isSuccess() ? keyStoreFileResult.value : undefined,
+      bootstrapSettings: bootstrap,
       commonSettings: common,
       deviceSettings: device,
       resolvedSettings,
@@ -203,25 +207,59 @@ export class NodePlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads settings from the user library.
+   * Loads bootstrap settings, with fallback to common settings for external library resolution.
+   * Also loads legacy common + device settings for backward compatibility.
    * @internal
    */
-  private _loadSettings(
-    userLibraryTree: FileTree.IFileTreeDirectoryItem,
+  private _loadBootstrapOrFallback(
+    settingsDir: Result<FileTree.IFileTreeDirectoryItem>,
     deviceId: DeviceId,
     deviceName?: string
-  ): Result<{ common: ICommonSettings; device: IDeviceSettings }> {
-    // Try to navigate to settings directory
-    const settingsDir = this._navigateToDirectory(userLibraryTree, LibraryPaths.settings);
+  ): Result<{ bootstrap: IBootstrapSettings | undefined; common: ICommonSettings; device: IDeviceSettings }> {
+    // Try to load bootstrap.json
+    const bootstrap = this._loadBootstrapSettings(settingsDir);
+    if (bootstrap.isFailure()) {
+      return fail(`Failed to load bootstrap settings: ${bootstrap.message}`);
+    }
 
-    // Load common and device settings
+    // Load common and device settings (legacy, for backward compat + resolvedSettings)
     return this._loadCommonSettings(settingsDir)
       .withErrorFormat((msg) => `Failed to load common settings: ${msg}`)
       .onSuccess((common) =>
         this._loadDeviceSettings(settingsDir, deviceId, deviceName)
           .withErrorFormat((msg) => `Failed to load device settings: ${msg}`)
-          .onSuccess((device) => succeed({ common, device }))
+          .onSuccess((device) => succeed({ bootstrap: bootstrap.value, common, device }))
       );
+  }
+
+  /**
+   * Loads bootstrap settings from the settings directory.
+   * Returns undefined (not failure) if the file doesn't exist.
+   * @internal
+   */
+  private _loadBootstrapSettings(
+    settingsDir: Result<FileTree.IFileTreeDirectoryItem>
+  ): Result<IBootstrapSettings | undefined> {
+    if (settingsDir.isFailure()) {
+      // Settings directory doesn't exist — no bootstrap file
+      return succeed(undefined);
+    }
+
+    return settingsDir.value.getChildren().onSuccess((children) => {
+      const bootstrapFile = children.find(
+        (c) => c.name === LibraryPaths.settingsBootstrap && c.type === 'file'
+      ) as FileTree.IFileTreeFileItem | undefined;
+
+      if (!bootstrapFile) {
+        return succeed(undefined);
+      }
+
+      return bootstrapFile
+        .getContents()
+        .onSuccess((json) =>
+          SettingsConverters.bootstrapSettings.convert(json).withErrorFormat((e) => `bootstrap.json: ${e}`)
+        );
+    });
   }
 
   /**

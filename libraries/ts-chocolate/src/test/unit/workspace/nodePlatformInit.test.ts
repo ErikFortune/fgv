@@ -34,6 +34,7 @@ import {
 import {
   DeviceId,
   ExternalLibraryRef,
+  IBootstrapSettings,
   ICommonSettings,
   IDeviceSettings,
   IExternalLibraryRefConfig,
@@ -434,6 +435,128 @@ describe('NodePlatformInitializer', () => {
         expect(init.resolvedSettings.deviceId).toBe(testDeviceId);
         expect(init.resolvedSettings.defaultTargets.fillings).toBe('user');
       });
+    });
+  });
+
+  // ============================================================================
+  // initialize - bootstrap settings
+  // ============================================================================
+
+  describe('initialize with bootstrap', () => {
+    const validBootstrapSettings: IBootstrapSettings = {
+      schemaVersion: SETTINGS_SCHEMA_VERSION,
+      includeBuiltIn: true,
+      localStorage: { library: true, userData: true },
+      externalLibraries: []
+    };
+
+    test('loads bootstrap.json when present', async () => {
+      const userLibPath = mkDir('user-library');
+      writeJsonFile('user-library/data/settings/bootstrap.json', validBootstrapSettings);
+      writeJsonFile('user-library/data/settings/common.json', validCommonSettings);
+      writeJsonFile(`user-library/data/settings/device-${testDeviceId}.json`, validDeviceSettings);
+
+      const result = await initializeNodePlatform({
+        userLibraryPath: userLibPath,
+        deviceId: testDeviceId
+      });
+
+      expect(result).toSucceedAndSatisfy((init) => {
+        expect(init.bootstrapSettings).toBeDefined();
+        expect(init.bootstrapSettings?.includeBuiltIn).toBe(true);
+      });
+    });
+
+    test('bootstrapSettings is undefined when bootstrap.json does not exist', async () => {
+      const userLibPath = mkDir('user-library');
+      writeJsonFile('user-library/data/settings/common.json', validCommonSettings);
+      writeJsonFile(`user-library/data/settings/device-${testDeviceId}.json`, validDeviceSettings);
+
+      const result = await initializeNodePlatform({
+        userLibraryPath: userLibPath,
+        deviceId: testDeviceId
+      });
+
+      expect(result).toSucceedAndSatisfy((init) => {
+        expect(init.bootstrapSettings).toBeUndefined();
+      });
+    });
+
+    test('uses bootstrap externalLibraries for resolution', async () => {
+      const extLibPath = mkDir('ext-library-bootstrap');
+      const userLibPath = mkDir('user-library');
+
+      const bootstrapWithExtLib: IBootstrapSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        externalLibraries: [
+          {
+            name: 'Bootstrap External',
+            ref: extLibPath as never,
+            load: false
+          }
+        ]
+      };
+      writeJsonFile('user-library/data/settings/bootstrap.json', bootstrapWithExtLib);
+      // common.json has NO external libraries
+      writeJsonFile('user-library/data/settings/common.json', {
+        ...validCommonSettings,
+        externalLibraries: []
+      });
+      writeJsonFile(`user-library/data/settings/device-${testDeviceId}.json`, validDeviceSettings);
+
+      const result = await initializeNodePlatform({
+        userLibraryPath: userLibPath,
+        deviceId: testDeviceId
+      });
+
+      expect(result).toSucceedAndSatisfy((init) => {
+        // External lib came from bootstrap, not common
+        expect(init.externalLibraries).toHaveLength(1);
+        expect(init.externalLibraries[0].name).toBe('Bootstrap External');
+      });
+    });
+
+    test('falls back to common externalLibraries when no bootstrap', async () => {
+      const extLibPath = mkDir('ext-library-common');
+      const userLibPath = mkDir('user-library');
+
+      const commonWithExtLib: ICommonSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        externalLibraries: [
+          {
+            name: 'Common External',
+            ref: extLibPath as never,
+            load: false
+          }
+        ]
+      };
+      writeJsonFile('user-library/data/settings/common.json', commonWithExtLib);
+      writeJsonFile(`user-library/data/settings/device-${testDeviceId}.json`, validDeviceSettings);
+
+      const result = await initializeNodePlatform({
+        userLibraryPath: userLibPath,
+        deviceId: testDeviceId
+      });
+
+      expect(result).toSucceedAndSatisfy((init) => {
+        expect(init.bootstrapSettings).toBeUndefined();
+        expect(init.externalLibraries).toHaveLength(1);
+        expect(init.externalLibraries[0].name).toBe('Common External');
+      });
+    });
+
+    test('fails when bootstrap.json has invalid content', async () => {
+      const userLibPath = mkDir('user-library');
+      writeJsonFile('user-library/data/settings/bootstrap.json', { schemaVersion: 999 });
+      writeJsonFile('user-library/data/settings/common.json', validCommonSettings);
+      writeJsonFile(`user-library/data/settings/device-${testDeviceId}.json`, validDeviceSettings);
+
+      const result = await initializeNodePlatform({
+        userLibraryPath: userLibPath,
+        deviceId: testDeviceId
+      });
+
+      expect(result).toFailWith(/bootstrap/i);
     });
   });
 

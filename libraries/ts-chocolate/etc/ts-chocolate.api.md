@@ -4953,9 +4953,12 @@ export interface IPlatformInitOptions {
 
 // @public
 export interface IPlatformInitResult {
+    readonly bootstrapSettings?: IBootstrapSettings;
+    // @deprecated
     readonly commonSettings: ICommonSettings;
     readonly cryptoProvider: CryptoUtils.ICryptoProvider;
     readonly deviceId: DeviceId;
+    // @deprecated
     readonly deviceSettings: IDeviceSettings;
     readonly externalLibraries: ReadonlyArray<IResolvedExternalLibrary>;
     readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
@@ -6419,6 +6422,8 @@ const LibraryPaths: {
     readonly moldInventory: "data/mold-inventory";
     readonly ingredientInventory: "data/ingredient-inventory";
     readonly settings: "data/settings";
+    readonly settingsBootstrap: "bootstrap.json";
+    readonly settingsPreferences: "preferences.json";
     readonly settingsCommon: "common.json";
     readonly settingsDevicePrefix: "device-";
     readonly keyStore: "keystore.json";
